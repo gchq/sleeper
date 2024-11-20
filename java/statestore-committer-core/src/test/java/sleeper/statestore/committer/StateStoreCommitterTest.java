@@ -165,8 +165,7 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
-                    .isInstanceOf(RuntimeException.class)
-                    .cause().isInstanceOf(ReplaceRequestsFailedException.class)
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
                     .cause().isInstanceOf(FileNotFoundException.class));
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
@@ -238,8 +237,7 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
-                    .isInstanceOf(RuntimeException.class)
-                    .cause().isSameAs(failure));
+                    .isSameAs(failure));
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
                     jobCreated(job, createdTime,
                             ProcessRun.builder().taskId("test-task")
@@ -291,8 +289,7 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
-                    .isInstanceOf(RuntimeException.class)
-                    .cause().isInstanceOf(FileReferenceAssignedToJobException.class));
+                    .isInstanceOf(FileReferenceAssignedToJobException.class));
             assertThat(stateStore.getFileReferences()).containsExactly(
                     withJobId("job1", fileFactory.rootFile("input.parquet", 123L)));
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).isEmpty();
@@ -310,8 +307,7 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
-                    .isInstanceOf(RuntimeException.class)
-                    .cause().isInstanceOf(FileReferenceNotFoundException.class));
+                    .isInstanceOf(FileReferenceNotFoundException.class));
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).isEmpty();
         }
@@ -423,8 +419,7 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
-                    .isInstanceOf(RuntimeException.class)
-                    .cause().isInstanceOf(StateStoreException.class));
+                    .isInstanceOf(StateStoreException.class));
         }
     }
 
@@ -469,8 +464,7 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
-                    .isInstanceOf(RuntimeException.class)
-                    .cause().isInstanceOf(FileHasReferencesException.class));
+                    .isInstanceOf(FileHasReferencesException.class));
         }
     }
 
@@ -659,11 +653,7 @@ public class StateStoreCommitterTest {
 
     private void createTable(TableProperties tableProperties) {
         propertiesByTableId.put(tableProperties.get(TABLE_ID), tableProperties);
-        try {
-            stateStore(tableProperties).initialise(partitions.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStore(tableProperties).initialise(partitions.getAllPartitions());
     }
 
     private StateStore stateStore(TableProperties tableProperties) {

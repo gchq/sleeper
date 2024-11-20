@@ -36,7 +36,6 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
@@ -94,7 +93,7 @@ public class FindPartitionsToSplitLambda implements RequestHandler<SQSEvent, SQS
         for (TableProperties tableProperties : tables) {
             try {
                 findPartitionsToSplit.run(tableProperties);
-            } catch (StateStoreException | RuntimeException e) {
+            } catch (RuntimeException e) {
                 TableStatus tableStatus = tableProperties.getStatus();
                 LOGGER.error("Failed for table {}", tableStatus, e);
                 messagesByTableId.get(tableStatus.getTableUniqueId()).stream()

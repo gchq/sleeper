@@ -55,7 +55,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     private StateStore store = stateStore();
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         store.initialise(partitions.buildList());
     }
 
@@ -64,7 +64,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     class RetryAddTransaction {
 
         @Test
-        void shouldAddTransactionWhenAnotherProcessAddedATransaction() throws Exception {
+        void shouldAddTransactionWhenAnotherProcessAddedATransaction() {
             // Given
             PartitionTree afterRootSplit = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
             otherProcess().atomicallyUpdatePartitionAndCreateNewOnes(
@@ -84,7 +84,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldRetryAddTransactionWhenAnotherProcessAddedATransactionBetweenUpdateAndAdd() throws Exception {
+        void shouldRetryAddTransactionWhenAnotherProcessAddedATransactionBetweenUpdateAndAdd() {
             // Given
             FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
             FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
@@ -104,7 +104,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldRetryAddTransactionWhenConflictOccurredAddingTransaction() throws Exception {
+        void shouldRetryAddTransactionWhenConflictOccurredAddingTransaction() {
             // Given we cause a transaction conflict by adding another file during an update
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
@@ -122,7 +122,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldFailAfterTooManyConflictsAddingTransaction() throws Exception {
+        void shouldFailAfterTooManyConflictsAddingTransaction() {
             // Given we only allow one attempt adding a transaction
             store = stateStore(builder -> builder.maxAddTransactionAttempts(1));
             // And we cause a transaction conflict by adding another file during an update
@@ -142,7 +142,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldFailIfNoAttemptsConfigured() throws Exception {
+        void shouldFailIfNoAttemptsConfigured() {
             // Given
             store = stateStore(builder -> builder.maxAddTransactionAttempts(0));
             FileReference file = fileFactory().rootFile("file.parquet", 100);
@@ -158,7 +158,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldFailIfReadingTransactionsFails() throws Exception {
+        void shouldFailIfReadingTransactionsFails() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             RuntimeException failure = new RuntimeException("Unexpected failure");
@@ -176,7 +176,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldFailOnUnexpectedFailureAddingTransaction() throws Exception {
+        void shouldFailOnUnexpectedFailureAddingTransaction() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             RuntimeException failure = new RuntimeException("Unexpected failure");
@@ -199,7 +199,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     class NoUpdateFromLogBeforeAddTransaction {
 
         @Test
-        void shouldRetryAddTransactionImmediatelyWhenSetNotToReadFirstAndAnotherProcessAddedATransaction() throws Exception {
+        void shouldRetryAddTransactionImmediatelyWhenSetNotToReadFirstAndAnotherProcessAddedATransaction() {
             // Given
             FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
             FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
@@ -218,7 +218,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldRetryAddTransactionTwiceWhenSetNotToReadFirstAndTwoOtherProcessesAddedTransactions() throws Exception {
+        void shouldRetryAddTransactionTwiceWhenSetNotToReadFirstAndTwoOtherProcessesAddedTransactions() {
             // Given
             FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
             FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
@@ -244,7 +244,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldUpdateLocalStateImmediatelyWhenSetNotToReadFirstAndTransactionOnlyValidatesWithOtherProcessTransaction() throws Exception {
+        void shouldUpdateLocalStateImmediatelyWhenSetNotToReadFirstAndTransactionOnlyValidatesWithOtherProcessTransaction() {
             // Given
             FileReference file = fileFactory().rootFile("test.parquet", 100);
             store = stateStore(builder -> builder.updateLogBeforeAddTransaction(false));
@@ -265,7 +265,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     class ExponentialBackoffRetries {
 
         @Test
-        void shouldBackoffExponentiallyOnRetries() throws Exception {
+        void shouldBackoffExponentiallyOnRetries() {
             // Given
             store = stateStore(builder -> builder
                     .maxAddTransactionAttempts(TransactionLogStateStore.DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS)
@@ -300,7 +300,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldSkipFirstWaitWhenNotUpdatingLogBeforeAddingTransaction() throws Exception {
+        void shouldSkipFirstWaitWhenNotUpdatingLogBeforeAddingTransaction() {
             // Given
             store = stateStore(builder -> builder
                     .maxAddTransactionAttempts(TransactionLogStateStore.DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS)
@@ -340,7 +340,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     class IgnoreEmptyTransactions {
 
         @Test
-        void shouldNotAddSplitFileTransactionWithNoRequests() throws Exception {
+        void shouldNotAddSplitFileTransactionWithNoRequests() {
             // Given
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
@@ -352,7 +352,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldNotAddSplitFileTransactionWithNoRequestsDirectly() throws Exception {
+        void shouldNotAddSplitFileTransactionWithNoRequestsDirectly() {
             // Given
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
@@ -364,7 +364,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldNotAddNoFiles() throws Exception {
+        void shouldNotAddNoFiles() {
             // Given
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
@@ -376,7 +376,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldNotAddNoFilesWithReferences() throws Exception {
+        void shouldNotAddNoFilesWithReferences() {
             // Given
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
@@ -388,7 +388,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldNotAssignJobIdsWithNoRequests() throws Exception {
+        void shouldNotAssignJobIdsWithNoRequests() {
             // Given
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
@@ -400,7 +400,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldNotAssignJobIdsWithNoFiles() throws Exception {
+        void shouldNotAssignJobIdsWithNoFiles() {
             // Given
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
@@ -413,7 +413,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldNotDeleteNoGCFiles() throws Exception {
+        void shouldNotDeleteNoGCFiles() {
             // Given
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 

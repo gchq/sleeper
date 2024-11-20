@@ -20,7 +20,6 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.record.Record;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -44,7 +43,7 @@ public class AwsDirectIngestDriver implements DirectIngestDriver {
     public void ingest(Path tempDir, Iterator<Record> records) {
         try {
             factory(tempDir).ingestFromRecordIterator(instance.getTableProperties(), records);
-        } catch (StateStoreException | IteratorCreationException e) {
+        } catch (IteratorCreationException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
             throw new UncheckedIOException(e);

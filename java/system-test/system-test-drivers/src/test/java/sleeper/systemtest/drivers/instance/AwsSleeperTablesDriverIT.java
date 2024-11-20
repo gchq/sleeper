@@ -20,7 +20,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -55,7 +54,7 @@ public class AwsSleeperTablesDriverIT {
     }
 
     @Test
-    void shouldInitialiseTablePartitions(SleeperSystemTest sleeper) throws StateStoreException {
+    void shouldInitialiseTablePartitions(SleeperSystemTest sleeper) {
         sleeper.tables().create("A", DEFAULT_SCHEMA);
         assertThat(sleeper.table("A").partitioning().tree().getAllPartitions())
                 .hasSize(1);

@@ -39,7 +39,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.task.common.QueueMessageCount;
 
@@ -78,7 +77,7 @@ public class StatusReport {
         this.tablePropertiesProvider = tablePropertiesProvider;
     }
 
-    private void run() throws StateStoreException {
+    private void run() {
         System.out.println("\nFull Status Report:\n--------------------------");
         // Partitions
         new PartitionsStatusReport(stateStore, tableProperties, new PartitionsStatusReporter(System.out)).run();
@@ -101,7 +100,7 @@ public class StatusReport {
         new DeadLettersStatusReport(sqsClient, messageCount, instanceProperties, tablePropertiesProvider).run();
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) {
         if (2 != args.length && 3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <optional-verbose-true-or-false>");
         }

@@ -40,7 +40,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
@@ -160,7 +159,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
             // The load method is called by the cache whenever it does not already contain the desired value.
             // The key is a pair of (tablename, as-of instant) and the key is the table partition stucture.
             @Override
-            public SleeperTablePartitionStructure load(Pair<String, Instant> keyPair) throws StateStoreException {
+            public SleeperTablePartitionStructure load(Pair<String, Instant> keyPair) {
                 String tableId = keyPair.getLeft();
                 Instant instant = keyPair.getRight();
                 // Check that this transaction is not older than the cache expiry time as this will confuse the cache
@@ -211,19 +210,18 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     /**
      * Retrieve the table partition structure for a single table.
      *
-     * @param  tableName           the name of the table
-     * @param  asOfInstant         this argument is currently ignored because there is no mechanism to retrieve the
-     *                             structure as-of a specified time from the state store
-     * @return                     the partition structure
-     * @throws StateStoreException when an error occurs accessing the state store
+     * @param  tableName   the name of the table
+     * @param  asOfInstant this argument is currently ignored because there is no mechanism to retrieve the
+     *                     structure as-of a specified time from the state store
+     * @return             the partition structure
      */
     public SleeperTablePartitionStructure getSleeperTablePartitionStructure(
-            String tableName, Instant asOfInstant) throws StateStoreException {
+            String tableName, Instant asOfInstant) {
         return getSleeperTablePartitionStructure(tablePropertiesProvider.getByName(tableName), asOfInstant);
     }
 
     public synchronized SleeperTablePartitionStructure getSleeperTablePartitionStructure(
-            TableProperties tableProperties, Instant asOfInstant) throws StateStoreException {
+            TableProperties tableProperties, Instant asOfInstant) {
         // Use of the state store provider is not thread-safe and this requires the use of a synchronized method.
         // The state store which is returned may not be thread-safe either.
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);

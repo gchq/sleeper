@@ -256,7 +256,7 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
             try {
                 atomicallyReplaceFileReferencesWithNewOne(request);
                 succeeded.add(request);
-            } catch (StateStoreException | RuntimeException e) {
+            } catch (RuntimeException e) {
                 LOGGER.error("Failed replacing file references for job {}", request.getJobId(), e);
                 failures.add(e);
                 failed.add(request);

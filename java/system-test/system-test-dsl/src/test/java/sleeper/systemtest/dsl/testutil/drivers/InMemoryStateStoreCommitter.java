@@ -16,7 +16,6 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.committer.StateStoreCommitRequest;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
@@ -117,8 +116,6 @@ public class InMemoryStateStoreCommitter {
                     numCommitsByTableId.compute(
                             request.getTableId(),
                             (id, count) -> count == null ? 1 : count + 1);
-                } catch (StateStoreException e) {
-                    throw new RuntimeException(e);
                 } catch (TableNotFoundException e) {
                     // Discard messages from other tests
                 }

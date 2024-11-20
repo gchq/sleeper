@@ -28,7 +28,6 @@ import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.BufferedReader;
@@ -53,11 +52,10 @@ public class InitialiseStateStoreFromExportedPartitions {
     /**
      * Initialises a state store from exported partitions from the command line.
      *
-     * @param  args                the command line arguments
-     * @throws StateStoreException if the state store initialisation fails
-     * @throws IOException         if we could not read the partitions file
+     * @param  args        the command line arguments
+     * @throws IOException if we could not read the partitions file
      */
-    public static void main(String[] args) throws StateStoreException, IOException {
+    public static void main(String[] args) throws IOException {
         if (3 != args.length) {
             System.out.println("Usage: <instance-id> <table-name> <partitions-file>");
             return;

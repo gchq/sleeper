@@ -22,7 +22,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.table.InMemoryTableIndex;
@@ -58,11 +57,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
         addInstanceIfNotPresent(instanceId);
         deployedInstancePropertiesStore(instanceId).createTable(properties);
         StateStore stateStore = inMemoryStateStoreUninitialised(properties.getSchema());
-        try {
-            stateStore.initialise();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStore.initialise();
         stateStoresByInstanceId.get(instanceId)
                 .put(properties.get(TABLE_NAME), stateStore);
     }

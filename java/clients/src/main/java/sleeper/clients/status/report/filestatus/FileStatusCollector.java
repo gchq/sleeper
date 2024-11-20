@@ -18,7 +18,6 @@ package sleeper.clients.status.report.filestatus;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,7 @@ public class FileStatusCollector {
         this.stateStore = stateStore;
     }
 
-    public TableFilesStatus run(int maxNumberOFilesWithNoReferencesToCount) throws StateStoreException {
+    public TableFilesStatus run(int maxNumberOFilesWithNoReferencesToCount) {
         AllReferencesToAllFiles files = stateStore.getAllFilesWithMaxUnreferenced(maxNumberOFilesWithNoReferencesToCount);
         List<Partition> partitions = stateStore.getAllPartitions();
 

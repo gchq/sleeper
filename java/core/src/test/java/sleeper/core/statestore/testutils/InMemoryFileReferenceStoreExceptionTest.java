@@ -52,17 +52,6 @@ public class InMemoryFileReferenceStoreExceptionTest {
     }
 
     @Test
-    void shouldFailQueryWithUnexpectedExceptionType() {
-        // Given
-        Exception e = new Exception("Test failure");
-        fileStore.setFailuresForExpectedQueries(List.of(Optional.of(e)));
-
-        // When / Then
-        assertThatThrownBy(fileStore::getFileReferences)
-                .isInstanceOf(IllegalStateException.class);
-    }
-
-    @Test
     void shouldFailReadyForGCQueryWithExpectedException() {
         // Given
         RuntimeException e = new RuntimeException("Test failure");

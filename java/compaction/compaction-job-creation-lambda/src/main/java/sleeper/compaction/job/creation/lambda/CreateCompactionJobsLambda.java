@@ -44,7 +44,6 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
@@ -115,7 +114,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
                 createJobs.createJobs(tableProperties);
-            } catch (RuntimeException | StateStoreException | IOException | ObjectFactoryException e) {
+            } catch (RuntimeException | IOException | ObjectFactoryException e) {
                 LOGGER.error("Failed creating jobs for table {}", tableId, e);
                 tableMessages.stream()
                         .map(SQSMessage::getMessageId)

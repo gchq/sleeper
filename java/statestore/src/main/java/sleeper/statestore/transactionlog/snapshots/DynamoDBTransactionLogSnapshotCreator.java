@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
@@ -110,7 +109,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 snapshotStore.saveFilesSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new files snapshot");
             }
-        } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
+        } catch (DuplicateSnapshotException | IOException e) {
             LOGGER.error("Failed to create files snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }
@@ -125,7 +124,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 snapshotStore.savePartitionsSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new partitions snapshot");
             }
-        } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
+        } catch (DuplicateSnapshotException | IOException e) {
             LOGGER.error("Failed to create partitions snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }

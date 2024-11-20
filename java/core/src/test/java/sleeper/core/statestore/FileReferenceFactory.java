@@ -81,11 +81,7 @@ public class FileReferenceFactory {
      * @return            the factory
      */
     public static FileReferenceFactory from(StateStore stateStore) {
-        try {
-            return from(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return from(stateStore.getAllPartitions());
     }
 
     /**
@@ -122,11 +118,7 @@ public class FileReferenceFactory {
      * @return                      the factory
      */
     public static FileReferenceFactory fromUpdatedAt(StateStore stateStore, Instant lastStateStoreUpdate) {
-        try {
-            return fromUpdatedAt(stateStore.getAllPartitions(), lastStateStoreUpdate);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return fromUpdatedAt(stateStore.getAllPartitions(), lastStateStoreUpdate);
     }
 
     /**

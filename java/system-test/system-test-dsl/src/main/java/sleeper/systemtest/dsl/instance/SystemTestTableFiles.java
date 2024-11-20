@@ -20,7 +20,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.util.List;
 import java.util.Map;
@@ -38,19 +37,11 @@ public class SystemTestTableFiles {
     }
 
     public AllReferencesToAllFiles all() {
-        try {
-            return instance.getStateStore().getAllFilesWithMaxUnreferenced(10000);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return instance.getStateStore().getAllFilesWithMaxUnreferenced(10000);
     }
 
     public List<FileReference> references() {
-        try {
-            return instance.getStateStore().getFileReferences();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return instance.getStateStore().getFileReferences();
     }
 
     public Map<String, Long> recordsByFilename() {
@@ -71,21 +62,12 @@ public class SystemTestTableFiles {
 
     private Map.Entry<String, List<FileReference>> getReferences(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
-        try {
-            return entry(properties.get(TABLE_NAME), stateStore.getFileReferences());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return entry(properties.get(TABLE_NAME), stateStore.getFileReferences());
     }
 
     private Map.Entry<String, AllReferencesToAllFiles> getFiles(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
-        try {
-            return entry(
-                    properties.get(TABLE_NAME),
-                    stateStore.getAllFilesWithMaxUnreferenced(100));
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return entry(properties.get(TABLE_NAME),
+                stateStore.getAllFilesWithMaxUnreferenced(100));
     }
 }

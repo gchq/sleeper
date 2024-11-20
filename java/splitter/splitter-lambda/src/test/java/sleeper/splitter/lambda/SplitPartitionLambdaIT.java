@@ -48,7 +48,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
@@ -183,12 +182,8 @@ public class SplitPartitionLambdaIT {
     private TableProperties createTable(Schema schema, PartitionTree partitionTree) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         S3TableProperties.createStore(instanceProperties, s3, dynamoDB).createTable(tableProperties);
-        try {
-            stateStoreProvider().getStateStore(tableProperties)
-                    .initialise(partitionTree.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStoreProvider().getStateStore(tableProperties)
+                .initialise(partitionTree.getAllPartitions());
         return tableProperties;
     }
 
