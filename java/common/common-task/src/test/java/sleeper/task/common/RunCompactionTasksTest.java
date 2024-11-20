@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
@@ -274,6 +275,7 @@ public class RunCompactionTasksTest {
 
             // Then
             assertThat(scaleToHostsRequests).containsExactly(3);
+            assertThat(launchTasksRequests).containsExactly(3);
         }
 
         @Test
@@ -290,6 +292,7 @@ public class RunCompactionTasksTest {
 
             // Then
             assertThat(scaleToHostsRequests).containsExactly(1);
+            assertThat(launchTasksRequests).containsExactly(3);
         }
 
         @Test
@@ -302,10 +305,11 @@ public class RunCompactionTasksTest {
             instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
 
             // When
-            runTasks(jobsOnQueue(5), noExistingTasks());
+            runTasks(jobsOnQueue(6), noExistingTasks());
 
             // Then
             assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(launchTasksRequests).containsExactly(6);
         }
 
         @Test
@@ -318,6 +322,23 @@ public class RunCompactionTasksTest {
 
             // Then
             assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(launchTasksRequests).containsExactly(3);
+        }
+
+        @Test
+        void shouldFailWhenInstanceTypeDoesNotFitOneTask() {
+            // Given
+            instanceProperties.set(COMPACTION_EC2_TYPE, "test-type");
+            instanceTypes.put("test-type", new InstanceType(1, 1024));
+            instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+            instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
+
+            // When / Then
+            assertThatThrownBy(() -> runTasks(jobsOnQueue(5), noExistingTasks()))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(launchTasksRequests).isEmpty();
         }
 
         @Test
@@ -327,6 +348,7 @@ public class RunCompactionTasksTest {
 
             // Then
             assertThat(scaleToHostsRequests).containsExactly(0);
+            assertThat(launchTasksRequests).isEmpty();
         }
 
         @Test
@@ -339,6 +361,7 @@ public class RunCompactionTasksTest {
 
             // Then
             assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(launchTasksRequests).containsExactly(3);
         }
     }
 
