@@ -86,7 +86,7 @@ public class CompactionTaskHostScaler {
         String ec2InstanceType = instanceProperties.get(COMPACTION_EC2_TYPE).toLowerCase(Locale.ROOT);
         try {
             return Optional.of(instanceTypeCache.computeIfAbsent(ec2InstanceType,
-                    type -> ec2Query.getEc2InstanceTypeInfo(type)));
+                    type -> ec2Query.getInstanceTypeInfo(type)));
         } catch (RuntimeException e) {
             LOGGER.error("Couldn't lookup EC2 type information for type " + ec2InstanceType, e);
             return Optional.empty();
@@ -134,7 +134,7 @@ public class CompactionTaskHostScaler {
     }
 
     public interface CheckInstanceType {
-        InstanceType getEc2InstanceTypeInfo(String instanceType);
+        InstanceType getInstanceTypeInfo(String instanceType);
     }
 
     public record InstanceType(int defaultVCpus, long memoryMiB) {
