@@ -103,7 +103,10 @@ public class EC2Scaler {
             throw new IllegalStateException("instead of 1, received " + result.getAutoScalingGroups().size()
                     + " records for describe_auto_scaling_groups on group name " + groupName);
         }
-        return result.getAutoScalingGroups().get(0);
+        AutoScalingGroup group = result.getAutoScalingGroups().get(0);
+        LOGGER.debug("Auto scaling group instance count: minimum {}, desired size {}, maximum size {}",
+                group.getMinSize(), group.getDesiredCapacity(), group.getMaxSize());
+        return group;
     }
 
     /**
@@ -125,8 +128,6 @@ public class EC2Scaler {
 
         // Retrieve the details of the scaling group
         AutoScalingGroup asg = getAutoScalingGroupInfo(asGroupName, asClient);
-        LOGGER.debug("Auto scaling group instance count: minimum {}, desired size {}, maximum size {}, containers per instance {}",
-                asg.getMinSize(), asg.getDesiredCapacity(), asg.getMaxSize(), containersPerInstance);
 
         int instancesDesired = (int) (Math.ceil(numberContainers / (double) containersPerInstance));
         int newClusterSize = Math.min(instancesDesired, asg.getMaxSize());
