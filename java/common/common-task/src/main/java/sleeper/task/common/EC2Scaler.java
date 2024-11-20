@@ -94,7 +94,7 @@ public class EC2Scaler {
      * @param  client    the client object
      * @return           group data
      */
-    public static AutoScalingGroup getAutoScalingGroupInfo(String groupName, AmazonAutoScaling client) {
+    public static int getAutoScalingGroupMaxSize(String groupName, AmazonAutoScaling client) {
         DescribeAutoScalingGroupsRequest req = new DescribeAutoScalingGroupsRequest()
                 .withAutoScalingGroupNames(groupName)
                 .withMaxRecords(1);
@@ -106,7 +106,7 @@ public class EC2Scaler {
         AutoScalingGroup group = result.getAutoScalingGroups().get(0);
         LOGGER.debug("Auto scaling group instance count: minimum {}, desired size {}, maximum size {}",
                 group.getMinSize(), group.getDesiredCapacity(), group.getMaxSize());
-        return group;
+        return group.getMaxSize();
     }
 
     /**
@@ -127,10 +127,10 @@ public class EC2Scaler {
         int containersPerInstance = (containerPerInstanceKnown()) ? this.cachedContainersPerInstance : 1;
 
         // Retrieve the details of the scaling group
-        AutoScalingGroup asg = getAutoScalingGroupInfo(asGroupName, asClient);
+        int maxInstances = getAutoScalingGroupMaxSize(asGroupName, asClient);
 
         int instancesDesired = (int) (Math.ceil(numberContainers / (double) containersPerInstance));
-        int newClusterSize = Math.min(instancesDesired, asg.getMaxSize());
+        int newClusterSize = Math.min(instancesDesired, maxInstances);
         LOGGER.info("Total containers wanted (including existing ones) {}, containers per instance {}, " +
                 "so total instances wanted {}, limited to {} by ASG maximum size limit", numberContainers, containersPerInstance,
                 instancesDesired, newClusterSize);
