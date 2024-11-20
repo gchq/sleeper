@@ -49,7 +49,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -213,11 +212,7 @@ public class CreateCompactionJobsIT {
 
     private StateStore createAndInitialiseStateStore(TableProperties tableProperties) {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        try {
-            stateStore.initialise();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStore.initialise();
         return stateStore;
     }
 

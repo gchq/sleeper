@@ -20,7 +20,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 
 import java.time.Instant;
@@ -54,7 +53,7 @@ public class CompactionJobDispatcher {
         this.timeSupplier = timeSupplier;
     }
 
-    public void dispatch(CompactionJobDispatchRequest request) throws StateStoreException {
+    public void dispatch(CompactionJobDispatchRequest request) {
         List<CompactionJob> batch = readBatch.read(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
             for (CompactionJob job : batch) {
@@ -69,7 +68,7 @@ public class CompactionJobDispatcher {
         }
     }
 
-    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, String tableId) throws StateStoreException {
+    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, String tableId) {
         StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
         return stateStore.isAssigned(batch.stream()
                 .map(CompactionJob::createInputFileAssignmentsCheck)
