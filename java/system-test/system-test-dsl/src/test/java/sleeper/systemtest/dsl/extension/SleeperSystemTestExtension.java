@@ -116,6 +116,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     @Override
     public void afterEach(ExtensionContext context) {
+        systemTestContext.instance().takeTestTablesOfflineIfConnected();
         TestContext testContext = TestContextFactory.testContext(context);
         context.getExecutionException().ifPresentOrElse(failure -> {
             reporting.afterTestFailed(testContext);
