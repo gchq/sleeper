@@ -51,7 +51,7 @@ public final class DeployedSleeperInstance {
         this.instanceAdminDrivers = instanceAdminDrivers;
     }
 
-    public static DeployedSleeperInstance loadOrDeployIfNeeded(
+    public static DeployedSleeperInstance loadOrDeployAtFirstConnect(
             String instanceId, SystemTestInstanceConfiguration configuration,
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
             SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver, SnapshotsDriver snapshotsDriver) {
@@ -72,6 +72,7 @@ public final class DeployedSleeperInstance {
         if (!newInstance && instance.isRedeployNeeded(parameters, systemTest)) {
             instance.redeploy(driver, parameters);
         }
+        instance.resetInstanceProperties(driver);
         return instance;
     }
 
@@ -89,7 +90,7 @@ public final class DeployedSleeperInstance {
                         .streamAllTables().collect(toUnmodifiableList()));
     }
 
-    public void resetInstanceProperties(SleeperInstanceDriver driver) {
+    private void resetInstanceProperties(SleeperInstanceDriver driver) {
         ResetProperties.reset(instanceProperties, configuration.getInstanceProperties());
         driver.saveInstanceProperties(instanceProperties);
     }
