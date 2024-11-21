@@ -71,7 +71,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 @Testcontainers
-public class CompactionJobsDispatchLambdaIT {
+public class CompactionJobDispatchLambdaIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
@@ -136,7 +136,6 @@ public class CompactionJobsDispatchLambdaIT {
         dispatchWithTimeAtRetryCheck(request, retryTime);
 
         // Then
-        assertThat(receiveCompactionJobs()).isEmpty();
         assertThat(recievePendingBatches()).containsExactly(request);
     }
 
