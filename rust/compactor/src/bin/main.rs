@@ -22,7 +22,7 @@ use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, io::Write};
-use url::Url;
+use url::{ParseError, Url};
 
 /// Implements a Sleeper compaction algorithm in Rust.
 ///
@@ -90,12 +90,29 @@ async fn main() -> color_eyre::Result<()> {
     let input_urls = args
         .input
         .iter()
-        .map(|x| Url::parse(x).or_else(|_e| Url::parse(&("file://".to_owned() + x))))
+        .map(|x| {
+            Url::parse(x).or_else(|_e| {
+                Url::parse(
+                    &("file://".to_owned()
+                        + std::path::absolute(x)
+                            .map_err(|_| ParseError::RelativeUrlWithoutBase)?
+                            .to_str()
+                            .unwrap()),
+                )
+            })
+        })
         .collect::<Result<Vec<_>, _>>()?;
 
     // Convert output URL
-    let output_url = Url::parse(&args.output)
-        .or_else(|_e| Url::parse(&("file://".to_owned() + &args.output)))?;
+    let output_url = Url::parse(&args.output).or_else(|_e| {
+        Url::parse(
+            &("file://".to_owned()
+                + std::path::absolute(&args.output)
+                    .map_err(|_| ParseError::RelativeUrlWithoutBase)?
+                    .to_str()
+                    .unwrap()),
+        )
+    })?;
 
     assert_eq!(args.row_keys.len(), args.region_maxs.len());
     assert_eq!(args.row_keys.len(), args.region_mins.len());
