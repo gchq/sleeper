@@ -117,7 +117,7 @@ import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION
 
 public class CompactionTaskResources {
 
-    public static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
+    private static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
     private final InstanceProperties instanceProperties;
     private final Stack stack;
 
@@ -134,8 +134,6 @@ public class CompactionTaskResources {
         this.stack = stack;
 
         ecsClusterForCompactionTasks(coreStacks, jarsBucket, lambdaCode, compactionJobsQueue);
-
-        // Lambda to create compaction tasks
         lambdaToCreateCompactionTasks(coreStacks, lambdaCode, compactionJobsQueue);
 
         // Allow running compaction tasks
