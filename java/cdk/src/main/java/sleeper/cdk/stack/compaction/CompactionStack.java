@@ -78,11 +78,12 @@ public class CompactionStack extends NestedStack {
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
         // SQS queue for the compaction jobs
-        compactionJobsQueue = new CompactionJobResources(this, instanceProperties, lambdaCode, jarsBucket, topic, coreStacks, errorMetrics)
+        compactionJobsQueue = new CompactionJobResources(this,
+                instanceProperties, lambdaCode, jarsBucket, topic, coreStacks, errorMetrics)
                 .getCompactionJobsQueue();
 
-        new CompactionTaskResources(this, instanceProperties, lambdaCode, jarsBucket,
-                compactionJobsQueue, topic, coreStacks, errorMetrics);
+        new CompactionTaskResources(this,
+                instanceProperties, lambdaCode, jarsBucket, compactionJobsQueue, topic, coreStacks, errorMetrics);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
