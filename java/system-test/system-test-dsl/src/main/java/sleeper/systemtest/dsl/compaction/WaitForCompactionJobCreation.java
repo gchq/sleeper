@@ -25,6 +25,7 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -50,7 +51,7 @@ public class WaitForCompactionJobCreation {
         try {
             List<String> newJobs = poll.queryUntil("compaction jobs were created",
                     () -> newJobIds(jobsBefore),
-                    jobIds -> jobIds.size() == expectedJobs);
+                    meetsExpectedJobs(expectedJobs));
             LOGGER.info("Created {} new compaction jobs", newJobs.size());
             return newJobs;
         } catch (InterruptedException e) {
@@ -65,6 +66,16 @@ public class WaitForCompactionJobCreation {
                 .collect(toUnmodifiableList());
         LOGGER.info("Found {} new compaction jobs", jobIds.size());
         return jobIds;
+    }
+
+    private Predicate<List<String>> meetsExpectedJobs(int expectedJobs) {
+        return jobIds -> {
+            if (jobIds.size() > expectedJobs) {
+                throw new IllegalStateException("Expected " + expectedJobs + " new compaction jobs, found " + jobIds.size());
+            } else {
+                return jobIds.size() == expectedJobs;
+            }
+        };
     }
 
     private Stream<String> allJobIds() {
