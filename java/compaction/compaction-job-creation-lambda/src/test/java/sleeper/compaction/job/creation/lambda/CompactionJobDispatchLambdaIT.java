@@ -195,7 +195,7 @@ public class CompactionJobDispatchLambdaIT {
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
-        return CompactionJobDispatchLambda.dispatcher(s3, dynamoDB, sqs, conf, instanceProperties.get(CONFIG_BUCKET), times.iterator()::next);
+        return CompactionJobDispatchLambda.dispatcher(s3, dynamoDB, sqs, conf, instanceProperties, times.iterator()::next);
     }
 
     private List<CompactionJob> receiveCompactionJobs() {

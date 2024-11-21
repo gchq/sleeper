@@ -16,8 +16,14 @@
 package sleeper.compaction.job.creation.lambda;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 
@@ -30,6 +36,7 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJob;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
@@ -37,17 +44,32 @@ import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class CompactionJobDispatchLambda {
+public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Void> {
+
+    private final CompactionJobDispatcher dispatcher;
+    private final CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
 
     private CompactionJobDispatchLambda() {
+        AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
+        AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
+        String configBucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, configBucket);
+        Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
+        dispatcher = dispatcher(s3, dynamoDB, sqs, conf, instanceProperties, Instant::now);
+    }
+
+    @Override
+    public Void handleRequest(SQSEvent event, Context context) {
+        event.getRecords().forEach(message -> dispatcher.dispatch(serDe.fromJson(message.getBody())));
+        return null;
     }
 
     public static CompactionJobDispatcher dispatcher(
-            AmazonS3 s3, AmazonDynamoDB dynamoDB, AmazonSQS sqs, Configuration conf, String configBucket, Supplier<Instant> timeSupplier) {
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3, configBucket);
+            AmazonS3 s3, AmazonDynamoDB dynamoDB, AmazonSQS sqs, Configuration conf, InstanceProperties instanceProperties, Supplier<Instant> timeSupplier) {
         CompactionJobSerDe compactionJobSerDe = new CompactionJobSerDe();
-
         return new CompactionJobDispatcher(instanceProperties,
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
