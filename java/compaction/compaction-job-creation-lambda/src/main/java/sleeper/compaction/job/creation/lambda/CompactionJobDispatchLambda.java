@@ -90,12 +90,9 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
 
     private static ReturnRequestToPendingQueue returnToQueue(InstanceProperties instanceProperties, AmazonSQS sqs) {
         CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
-        return (request, delaySeconds) -> {
-            SendMessageRequest sendRequest = new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
-                    .withMessageBody(serDe.toJson(request))
-                    .withDelaySeconds(delaySeconds);
-            sqs.sendMessage(sendRequest);
-        };
+        return (request, delaySeconds) -> sqs.sendMessage(new SendMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
+                .withMessageBody(serDe.toJson(request))
+                .withDelaySeconds(delaySeconds));
     }
 }
