@@ -75,6 +75,7 @@
     clippy::must_use_candidate,
     clippy::missing_errors_doc
 )]
+
 pub mod i32 {
 
     unsafe extern "C++" {
@@ -200,6 +201,7 @@ unsafe impl Send for i32::i32_sketch_t {}
 mod i32_tests {
 
     const N: i32 = 1_000_000;
+    const ALLOWED_F64_EPSILON: f64 = 0.01;
 
     use super::{
         i32::{i32_deserialize, i32_sketch_t},
@@ -229,13 +231,13 @@ mod i32_tests {
         sketch
     }
 
-    fn check_approx_equal(lhs: UniquePtr<sketch_type>, rhs: UniquePtr<sketch_type>) {
+    fn check_approx_equal(lhs: &UniquePtr<sketch_type>, rhs: &UniquePtr<sketch_type>) {
         assert_eq!(lhs.is_empty(), rhs.is_empty());
         assert_eq!(lhs.get_k(), rhs.get_k());
         assert_eq!(lhs.get_n(), rhs.get_n());
-        assert_eq!(
-            lhs.get_normalized_rank_error(true),
-            rhs.get_normalized_rank_error(true)
+        assert!(
+            (lhs.get_normalized_rank_error(true) - rhs.get_normalized_rank_error(true)).abs()
+                < ALLOWED_F64_EPSILON
         );
         assert_eq!(lhs.get_num_retained(), rhs.get_num_retained());
 
@@ -282,7 +284,7 @@ mod i32_tests {
         let sketch = create_empty();
         let serial = sketch.serialize(0).unwrap();
         let deserial = i32_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -306,7 +308,7 @@ mod i32_tests {
     #[test]
     fn single_sketch_returns_rank() {
         let sketch = create_single_entry();
-        assert_eq!(sketch.get_rank(10, true).unwrap(), 1.0);
+        assert!((sketch.get_rank(10, true).unwrap() - 1.0).abs() < ALLOWED_F64_EPSILON);
     }
 
     #[test]
@@ -324,7 +326,7 @@ mod i32_tests {
         let sketch = create_single_entry();
         let serial = sketch.serialize(0).unwrap();
         let deserial = i32_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -341,7 +343,7 @@ mod i32_tests {
         let sketch_r = create_single_entry();
         sketch_l.pin_mut().merge(&sketch_r).unwrap();
         assert_eq!(sketch_l.get_n(), 1);
-        check_approx_equal(sketch_l, sketch_r);
+        check_approx_equal(&sketch_l, &sketch_r);
     }
 
     #[test]
@@ -369,7 +371,7 @@ mod i32_tests {
             expected.pin_mut().update(i);
             expected.pin_mut().update(i);
         }
-        check_approx_equal(sketch_l, expected);
+        check_approx_equal(&sketch_l, &expected);
     }
 
     #[test]
@@ -393,7 +395,7 @@ mod i32_tests {
     #[test]
     fn multi_sketch_returns_rank() {
         let sketch = create_multiple_entries();
-        assert_eq!(sketch.get_rank(0, true).unwrap(), 0.0);
+        assert!((sketch.get_rank(0, true).unwrap() - 0.0).abs() < ALLOWED_F64_EPSILON);
     }
 
     #[test]
@@ -411,7 +413,7 @@ mod i32_tests {
         let sketch = create_multiple_entries();
         let serial = sketch.serialize(0).unwrap();
         let deserial = i32_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -426,7 +428,7 @@ mod i32_tests {
 
         let serial = sketch.serialize(0).unwrap();
         let deserial = i32_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 }
 
@@ -553,6 +555,7 @@ unsafe impl Send for i64::i64_sketch_t {}
 mod i64_tests {
 
     const N: i32 = 1_000_000;
+    const ALLOWED_F64_EPSILON: f64 = 0.01;
 
     use super::{
         i64::{i64_deserialize, i64_sketch_t},
@@ -582,13 +585,13 @@ mod i64_tests {
         sketch
     }
 
-    fn check_approx_equal(lhs: UniquePtr<sketch_type>, rhs: UniquePtr<sketch_type>) {
+    fn check_approx_equal(lhs: &UniquePtr<sketch_type>, rhs: &UniquePtr<sketch_type>) {
         assert_eq!(lhs.is_empty(), rhs.is_empty());
         assert_eq!(lhs.get_k(), rhs.get_k());
         assert_eq!(lhs.get_n(), rhs.get_n());
-        assert_eq!(
-            lhs.get_normalized_rank_error(true),
-            rhs.get_normalized_rank_error(true)
+        assert!(
+            (lhs.get_normalized_rank_error(true) - rhs.get_normalized_rank_error(true)).abs()
+                < ALLOWED_F64_EPSILON
         );
         assert_eq!(lhs.get_num_retained(), rhs.get_num_retained());
 
@@ -635,7 +638,7 @@ mod i64_tests {
         let sketch = create_empty();
         let serial = sketch.serialize(0).unwrap();
         let deserial = i64_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -659,7 +662,7 @@ mod i64_tests {
     #[test]
     fn single_sketch_returns_rank() {
         let sketch = create_single_entry();
-        assert_eq!(sketch.get_rank(10, true).unwrap(), 1.0);
+        assert!((sketch.get_rank(10, true).unwrap() - 1.0).abs() < ALLOWED_F64_EPSILON);
     }
 
     #[test]
@@ -677,7 +680,7 @@ mod i64_tests {
         let sketch = create_single_entry();
         let serial = sketch.serialize(0).unwrap();
         let deserial = i64_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -694,7 +697,7 @@ mod i64_tests {
         let sketch_r = create_single_entry();
         sketch_l.pin_mut().merge(&sketch_r).unwrap();
         assert_eq!(sketch_l.get_n(), 1);
-        check_approx_equal(sketch_l, sketch_r);
+        check_approx_equal(&sketch_l, &sketch_r);
     }
 
     #[test]
@@ -722,7 +725,7 @@ mod i64_tests {
             expected.pin_mut().update(i);
             expected.pin_mut().update(i);
         }
-        check_approx_equal(sketch_l, expected);
+        check_approx_equal(&sketch_l, &expected);
     }
     #[test]
     fn multi_sketch_returns_min() {
@@ -745,7 +748,7 @@ mod i64_tests {
     #[test]
     fn multi_sketch_returns_rank() {
         let sketch = create_multiple_entries();
-        assert_eq!(sketch.get_rank(0, true).unwrap(), 0.0);
+        assert!((sketch.get_rank(0, true).unwrap() - 0.0).abs() < ALLOWED_F64_EPSILON);
     }
 
     #[test]
@@ -763,7 +766,7 @@ mod i64_tests {
         let sketch = create_multiple_entries();
         let serial = sketch.serialize(0).unwrap();
         let deserial = i64_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -778,7 +781,7 @@ mod i64_tests {
 
         let serial = sketch.serialize(0).unwrap();
         let deserial = i64_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 }
 
@@ -905,6 +908,7 @@ unsafe impl Send for str::string_sketch_t {}
 mod str_tests {
 
     const N: i32 = 100_000;
+    const ALLOWED_F64_EPSILON: f64 = 0.01;
 
     use super::{
         str::{str_deserialize, string_sketch_t},
@@ -928,7 +932,7 @@ mod str_tests {
 
     fn create_multiple_entries() -> UniquePtr<sketch_type> {
         let mut sketch = create_empty();
-        for i in 'a'..'z' {
+        for i in 'a'..='z' {
             sketch
                 .pin_mut()
                 .update(&String::from_utf8(vec![i as u8]).unwrap());
@@ -936,13 +940,13 @@ mod str_tests {
         sketch
     }
 
-    fn check_approx_equal(lhs: UniquePtr<sketch_type>, rhs: UniquePtr<sketch_type>) {
+    fn check_approx_equal(lhs: &UniquePtr<sketch_type>, rhs: &UniquePtr<sketch_type>) {
         assert_eq!(lhs.is_empty(), rhs.is_empty());
         assert_eq!(lhs.get_k(), rhs.get_k());
         assert_eq!(lhs.get_n(), rhs.get_n());
-        assert_eq!(
-            lhs.get_normalized_rank_error(true),
-            rhs.get_normalized_rank_error(true)
+        assert!(
+            (lhs.get_normalized_rank_error(true) - rhs.get_normalized_rank_error(true)).abs()
+                < ALLOWED_F64_EPSILON
         );
         assert_eq!(lhs.get_num_retained(), rhs.get_num_retained());
 
@@ -971,7 +975,7 @@ mod str_tests {
         assert!(sketch.get_min_item().is_err());
         assert!(sketch.get_max_item().is_err());
         assert!(sketch.get_quantile(0.0, true).is_err());
-        assert!(sketch.get_rank(&String::new(), true).is_err());
+        assert!(sketch.get_rank("", true).is_err());
     }
 
     #[test]
@@ -989,7 +993,7 @@ mod str_tests {
         let sketch = create_empty();
         let serial = sketch.serialize(0).unwrap();
         let deserial = str_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -1013,7 +1017,7 @@ mod str_tests {
     #[test]
     fn single_sketch_returns_rank() {
         let sketch = create_single_entry();
-        assert_eq!(sketch.get_rank("hello", true).unwrap(), 1.0);
+        assert!((sketch.get_rank("hello", true).unwrap() - 1.0).abs() < ALLOWED_F64_EPSILON);
     }
 
     #[test]
@@ -1031,7 +1035,7 @@ mod str_tests {
         let sketch = create_single_entry();
         let serial = sketch.serialize(0).unwrap();
         let deserial = str_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -1048,7 +1052,7 @@ mod str_tests {
         let sketch_r = create_single_entry();
         sketch_l.pin_mut().merge(&sketch_r).unwrap();
         assert_eq!(sketch_l.get_n(), 1);
-        check_approx_equal(sketch_l, sketch_r);
+        check_approx_equal(&sketch_l, &sketch_r);
     }
 
     #[test]
@@ -1072,7 +1076,7 @@ mod str_tests {
         assert_eq!(sketch_l.get_n(), sketch_r.get_n() * 2);
 
         let mut expected = create_empty();
-        for i in 'a'..'z' {
+        for i in 'a'..='z' {
             expected
                 .pin_mut()
                 .update(&String::from_utf8(vec![i as u8]).unwrap());
@@ -1080,7 +1084,7 @@ mod str_tests {
                 .pin_mut()
                 .update(&String::from_utf8(vec![i as u8]).unwrap());
         }
-        check_approx_equal(sketch_l, expected);
+        check_approx_equal(&sketch_l, &expected);
     }
 
     #[test]
@@ -1092,7 +1096,7 @@ mod str_tests {
     #[test]
     fn multi_sketch_returns_max() {
         let sketch = create_multiple_entries();
-        assert_eq!(sketch.get_max_item().unwrap(), "y");
+        assert_eq!(sketch.get_max_item().unwrap(), "z");
     }
 
     #[test]
@@ -1104,7 +1108,7 @@ mod str_tests {
     #[test]
     fn multi_sketch_returns_rank() {
         let sketch = create_multiple_entries();
-        assert_eq!(sketch.get_rank("a", true).unwrap(), 0.04);
+        assert!((sketch.get_rank("a", true).unwrap() - 0.04).abs() < ALLOWED_F64_EPSILON);
     }
 
     #[test]
@@ -1114,7 +1118,7 @@ mod str_tests {
 
     #[test]
     fn multi_sketch_contains_nine() {
-        assert_eq!(create_multiple_entries().get_n(), 25);
+        assert_eq!(create_multiple_entries().get_n(), 26);
     }
 
     #[test]
@@ -1122,7 +1126,7 @@ mod str_tests {
         let sketch = create_multiple_entries();
         let serial = sketch.serialize(0).unwrap();
         let deserial = str_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -1136,7 +1140,7 @@ mod str_tests {
 
         let serial = sketch.serialize(0).unwrap();
         let deserial = str_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 }
 
@@ -1263,6 +1267,7 @@ unsafe impl Send for byte::byte_sketch_t {}
 mod byte_tests {
 
     const N: i32 = 100_000;
+    const ALLOWED_F64_EPSILON: f64 = 0.01;
 
     use super::{
         byte::{byte_deserialize, byte_sketch_t},
@@ -1286,19 +1291,19 @@ mod byte_tests {
 
     fn create_multiple_entries() -> UniquePtr<sketch_type> {
         let mut sketch = create_empty();
-        for i in 'a'..'z' {
-            sketch.pin_mut().update(&vec![i as u8]);
+        for i in 'a'..='z' {
+            sketch.pin_mut().update(&[i as u8]);
         }
         sketch
     }
 
-    fn check_approx_equal(lhs: UniquePtr<sketch_type>, rhs: UniquePtr<sketch_type>) {
+    fn check_approx_equal(lhs: &UniquePtr<sketch_type>, rhs: &UniquePtr<sketch_type>) {
         assert_eq!(lhs.is_empty(), rhs.is_empty());
         assert_eq!(lhs.get_k(), rhs.get_k());
         assert_eq!(lhs.get_n(), rhs.get_n());
-        assert_eq!(
-            lhs.get_normalized_rank_error(true),
-            rhs.get_normalized_rank_error(true)
+        assert!(
+            (lhs.get_normalized_rank_error(true) - rhs.get_normalized_rank_error(true)).abs()
+                < ALLOWED_F64_EPSILON
         );
         assert_eq!(lhs.get_num_retained(), rhs.get_num_retained());
 
@@ -1345,7 +1350,7 @@ mod byte_tests {
         let sketch = create_empty();
         let serial = sketch.serialize(0).unwrap();
         let deserial = byte_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -1369,7 +1374,9 @@ mod byte_tests {
     #[test]
     fn single_sketch_returns_rank() {
         let sketch = create_single_entry();
-        assert_eq!(sketch.get_rank("hello".as_bytes(), true).unwrap(), 1.0);
+        assert!(
+            (sketch.get_rank("hello".as_bytes(), true).unwrap() - 1.0).abs() < ALLOWED_F64_EPSILON
+        );
     }
 
     #[test]
@@ -1387,7 +1394,7 @@ mod byte_tests {
         let sketch = create_single_entry();
         let serial = sketch.serialize(0).unwrap();
         let deserial = byte_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -1404,7 +1411,7 @@ mod byte_tests {
         let sketch_r = create_single_entry();
         sketch_l.pin_mut().merge(&sketch_r).unwrap();
         assert_eq!(sketch_l.get_n(), 1);
-        check_approx_equal(sketch_l, sketch_r);
+        check_approx_equal(&sketch_l, &sketch_r);
     }
 
     #[test]
@@ -1428,11 +1435,11 @@ mod byte_tests {
         assert_eq!(sketch_l.get_n(), sketch_r.get_n() * 2);
 
         let mut expected = create_empty();
-        for i in 'a'..'z' {
-            expected.pin_mut().update(&vec![i as u8]);
-            expected.pin_mut().update(&vec![i as u8]);
+        for i in 'a'..='z' {
+            expected.pin_mut().update(&[i as u8]);
+            expected.pin_mut().update(&[i as u8]);
         }
-        check_approx_equal(sketch_l, expected);
+        check_approx_equal(&sketch_l, &expected);
     }
 
     #[test]
@@ -1444,7 +1451,7 @@ mod byte_tests {
     #[test]
     fn multi_sketch_returns_max() {
         let sketch = create_multiple_entries();
-        assert_eq!(sketch.get_max_item().unwrap(), "y".as_bytes());
+        assert_eq!(sketch.get_max_item().unwrap(), "z".as_bytes());
     }
 
     #[test]
@@ -1456,7 +1463,9 @@ mod byte_tests {
     #[test]
     fn multi_sketch_returns_rank() {
         let sketch = create_multiple_entries();
-        assert_eq!(sketch.get_rank("a".as_bytes(), true).unwrap(), 0.04);
+        assert!(
+            (sketch.get_rank("a".as_bytes(), true).unwrap() - 0.04).abs() < ALLOWED_F64_EPSILON
+        );
     }
 
     #[test]
@@ -1466,7 +1475,7 @@ mod byte_tests {
 
     #[test]
     fn multi_sketch_contains_nine() {
-        assert_eq!(create_multiple_entries().get_n(), 25);
+        assert_eq!(create_multiple_entries().get_n(), 26);
     }
 
     #[test]
@@ -1474,7 +1483,7 @@ mod byte_tests {
         let sketch = create_multiple_entries();
         let serial = sketch.serialize(0).unwrap();
         let deserial = byte_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 
     #[test]
@@ -1483,11 +1492,11 @@ mod byte_tests {
 
         for _ in 0..N {
             let r = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
-            sketch.pin_mut().update(&r.as_bytes());
+            sketch.pin_mut().update(r.as_bytes());
         }
 
         let serial = sketch.serialize(0).unwrap();
         let deserial = byte_deserialize(&serial).unwrap();
-        check_approx_equal(sketch, deserial);
+        check_approx_equal(&sketch, &deserial);
     }
 }
