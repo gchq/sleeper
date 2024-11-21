@@ -52,7 +52,9 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction forceCreateJobs(int expectedJobs) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, PollWithRetries.noRetries(), driver::forceCreateJobs);
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofSeconds(20)),
+                driver::forceCreateJobs);
         return this;
     }
 
