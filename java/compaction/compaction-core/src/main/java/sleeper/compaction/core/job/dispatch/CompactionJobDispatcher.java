@@ -63,7 +63,8 @@ public class CompactionJobDispatcher {
             }
         } else {
             TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
-            Instant expiryTime = generateExpiryTime(tableProperties, request.getCreateTime());
+            Instant expiryTime = request.getCreateTime().plus(
+                    Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS)));
             if (timeSupplier.get().isAfter(expiryTime)) {
                 throw new CompactionJobBatchExpiredException(request, expiryTime);
             }
@@ -76,10 +77,6 @@ public class CompactionJobDispatcher {
         return stateStore.isAssigned(batch.stream()
                 .map(CompactionJob::createInputFileAssignmentsCheck)
                 .toList());
-    }
-
-    private Instant generateExpiryTime(TableProperties tableProperties, Instant createTime) {
-        return createTime.plus(Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS)));
     }
 
     @FunctionalInterface
