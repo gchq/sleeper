@@ -46,7 +46,7 @@ public class CompactionStatusStoreStack extends NestedStack implements Compactio
         RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
 
         updatesTable = Table.Builder
-                .create(scope, "DynamoDBCompactionJobUpdatesTable")
+                .create(this, "DynamoDBCompactionJobUpdatesTable")
                 .tableName(DynamoDBCompactionJobStatusStore.jobUpdatesTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
@@ -63,7 +63,7 @@ public class CompactionStatusStoreStack extends NestedStack implements Compactio
                 .build();
 
         jobsTable = Table.Builder
-                .create(scope, "DynamoDBCompactionJobLookupTable")
+                .create(this, "DynamoDBCompactionJobLookupTable")
                 .tableName(DynamoDBCompactionJobStatusStore.jobLookupTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
@@ -76,7 +76,7 @@ public class CompactionStatusStoreStack extends NestedStack implements Compactio
                 .build();
 
         tasksTable = Table.Builder
-                .create(scope, "DynamoDBCompactionTaskStatusTable")
+                .create(this, "DynamoDBCompactionTaskStatusTable")
                 .tableName(DynamoDBCompactionTaskStatusStore.taskStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
