@@ -68,7 +68,7 @@ public class WaitForCompactionJobCreation {
         return jobIds;
     }
 
-    private Predicate<List<String>> meetsExpectedJobs(int expectedJobs) {
+    private static Predicate<List<String>> meetsExpectedJobs(int expectedJobs) {
         return jobIds -> {
             if (jobIds.size() > expectedJobs) {
                 throw new IllegalStateException("Expected " + expectedJobs + " new compaction jobs, found " + jobIds.size());
