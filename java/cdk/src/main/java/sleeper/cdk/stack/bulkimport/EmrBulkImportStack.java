@@ -26,7 +26,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.stack.CoreStacks;
+import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 

@@ -26,8 +26,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.LoggingStack;
+import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 

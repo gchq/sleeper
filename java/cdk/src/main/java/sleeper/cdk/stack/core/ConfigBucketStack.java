@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.stack;
+package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;
@@ -25,6 +25,8 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.stack.LoggingStack;
+import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
