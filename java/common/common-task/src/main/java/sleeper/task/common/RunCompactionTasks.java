@@ -15,16 +15,14 @@
  */
 package sleeper.task.common;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScaling;
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.ecs.model.AwsVpcConfiguration;
 import software.amazon.awssdk.services.ecs.model.ContainerOverride;
@@ -67,7 +65,7 @@ public class RunCompactionTasks {
     private final TaskLauncher taskLauncher;
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, EcsClient ecsClient, AmazonAutoScaling asClient, AmazonEC2 ec2Client) {
+            InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
         this(instanceProperties,
                 () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
                 EC2Scaler.create(instanceProperties, asClient, ec2Client),
@@ -245,17 +243,15 @@ public class RunCompactionTasks {
         int numberOfTasks = Integer.parseInt(args[1]);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
-        AmazonEC2 ec2Client = AmazonEC2ClientBuilder.defaultClient();
-        try (EcsClient ecsClient = EcsClient.create()) {
+        try (EcsClient ecsClient = EcsClient.create();
+                AutoScalingClient asClient = AutoScalingClient.create();
+                Ec2Client ec2Client = Ec2Client.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client)
                     .runToMeetTargetTasks(numberOfTasks);
         } finally {
             sqsClient.shutdown();
             s3Client.shutdown();
-            asClient.shutdown();
-            ec2Client.shutdown();
         }
     }
 }

@@ -15,17 +15,14 @@
  */
 package sleeper.task.common;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScaling;
-import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
-import com.amazonaws.services.autoscaling.model.SetDesiredCapacityRequest;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.DescribeInstanceTypesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstanceTypesResult;
-import com.amazonaws.services.ec2.model.InstanceTypeInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.autoscaling.model.AutoScalingGroup;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsResponse;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.DescribeInstanceTypesResponse;
+import software.amazon.awssdk.services.ec2.model.InstanceTypeInfo;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -40,7 +37,7 @@ public class EC2Scaler {
     private EC2Scaler() {
     }
 
-    public static CompactionTaskHostScaler create(InstanceProperties instanceProperties, AmazonAutoScaling asClient, AmazonEC2 ec2Client) {
+    public static CompactionTaskHostScaler create(InstanceProperties instanceProperties, AutoScalingClient asClient, Ec2Client ec2Client) {
         return new CompactionTaskHostScaler(instanceProperties,
                 autoScalingGroup -> getAutoScalingGroupMaxSize(autoScalingGroup, asClient),
                 (autoScalingGroup, desiredSize) -> setClusterDesiredSize(asClient, autoScalingGroup, desiredSize),
@@ -54,32 +51,28 @@ public class EC2Scaler {
      * @param  client    the client object
      * @return           group data
      */
-    private static int getAutoScalingGroupMaxSize(String groupName, AmazonAutoScaling client) {
-        DescribeAutoScalingGroupsRequest req = new DescribeAutoScalingGroupsRequest()
-                .withAutoScalingGroupNames(groupName)
-                .withMaxRecords(1);
-        DescribeAutoScalingGroupsResult result = client.describeAutoScalingGroups(req);
-        if (result.getAutoScalingGroups().size() != 1) {
-            throw new IllegalStateException("instead of 1, received " + result.getAutoScalingGroups().size()
+    private static int getAutoScalingGroupMaxSize(String groupName, AutoScalingClient client) {
+        DescribeAutoScalingGroupsResponse result = client.describeAutoScalingGroups(req -> req.autoScalingGroupNames(groupName).maxRecords(1));
+        if (result.autoScalingGroups().size() != 1) {
+            throw new IllegalStateException("instead of 1, received " + result.autoScalingGroups().size()
                     + " records for describe_auto_scaling_groups on group name " + groupName);
         }
-        AutoScalingGroup group = result.getAutoScalingGroups().get(0);
+        AutoScalingGroup group = result.autoScalingGroups().get(0);
         LOGGER.debug("Auto scaling group instance count: minimum {}, desired size {}, maximum size {}",
-                group.getMinSize(), group.getDesiredCapacity(), group.getMaxSize());
-        return group.getMaxSize();
+                group.minSize(), group.desiredCapacity(), group.maxSize());
+        return group.maxSize();
     }
 
-    private static CompactionTaskHostScaler.InstanceType getEc2InstanceType(AmazonEC2 ec2Client, String instanceType) {
-        DescribeInstanceTypesRequest request = new DescribeInstanceTypesRequest().withInstanceTypes(instanceType);
-        DescribeInstanceTypesResult result = ec2Client.describeInstanceTypes(request);
-        if (result.getInstanceTypes().size() != 1) {
+    private static CompactionTaskHostScaler.InstanceType getEc2InstanceType(Ec2Client ec2Client, String instanceType) {
+        DescribeInstanceTypesResponse result = ec2Client.describeInstanceTypes(req -> req.instanceTypesWithStrings(instanceType));
+        if (result.instanceTypes().size() != 1) {
             throw new IllegalStateException("got more than 1 result for DescribeInstanceTypes for type " + instanceType);
         }
-        InstanceTypeInfo typeInfo = result.getInstanceTypes().get(0);
+        InstanceTypeInfo typeInfo = result.instanceTypes().get(0);
         LOGGER.info("EC2 instance type info: {}", typeInfo);
         return new CompactionTaskHostScaler.InstanceType(
-                typeInfo.getVCpuInfo().getDefaultVCpus(),
-                typeInfo.getMemoryInfo().getSizeInMiB());
+                typeInfo.vCpuInfo().defaultVCpus(),
+                typeInfo.memoryInfo().sizeInMiB());
     }
 
     /**
@@ -87,11 +80,8 @@ public class EC2Scaler {
      *
      * @param newClusterSize new desired size to set
      */
-    private static void setClusterDesiredSize(AmazonAutoScaling asClient, String asGroupName, int newClusterSize) {
+    private static void setClusterDesiredSize(AutoScalingClient asClient, String asGroupName, int newClusterSize) {
         LOGGER.info("Setting auto scaling group {} desired size to {}", asGroupName, newClusterSize);
-        SetDesiredCapacityRequest req = new SetDesiredCapacityRequest()
-                .withAutoScalingGroupName(asGroupName)
-                .withDesiredCapacity(newClusterSize);
-        asClient.setDesiredCapacity(req);
+        asClient.setDesiredCapacity(req -> req.autoScalingGroupName(asGroupName).desiredCapacity(newClusterSize));
     }
 }
