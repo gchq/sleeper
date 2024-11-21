@@ -189,6 +189,6 @@ public class EC2Scaler {
      */
     public void setClusterDesiredSize(int newClusterSize) {
         LOGGER.info("Setting auto scaling group {} desired size to {}", this.asGroupName, newClusterSize);
-        asClient.setDesiredCapacity(req ->req.autoScalingGroupName(asGroupName).desiredCapacity(newClusterSize));
+        asClient.setDesiredCapacity(req -> req.autoScalingGroupName(asGroupName).desiredCapacity(newClusterSize));
     }
 }

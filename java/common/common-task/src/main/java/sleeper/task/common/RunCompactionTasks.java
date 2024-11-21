@@ -257,9 +257,9 @@ public class RunCompactionTasks {
         int numberOfTasks = Integer.parseInt(args[1]);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AutoScalingClient asClient = AutoScalingClient.create();
-        Ec2Client ec2Client = Ec2Client.create();
-        try (EcsClient ecsClient = EcsClient.create()) {
+        try (EcsClient ecsClient = EcsClient.create();
+                AutoScalingClient asClient = AutoScalingClient.create();
+                Ec2Client ec2Client = Ec2Client.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
             new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client)
                     .runToMeetTargetTasks(numberOfTasks);
