@@ -27,13 +27,8 @@ import software.amazon.awscdk.services.ec2.VpcLookupOptions;
 import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
-import software.amazon.awscdk.services.ecs.ContainerDefinitionOptions;
 import software.amazon.awscdk.services.ecs.ContainerImage;
-import software.amazon.awscdk.services.ecs.CpuArchitecture;
-import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.ITaskDefinition;
-import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
-import software.amazon.awscdk.services.ecs.RuntimePlatform;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
@@ -49,8 +44,6 @@ import software.amazon.awscdk.services.sqs.Queue;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.util.Utils;
-import sleeper.configuration.CompactionTaskRequirements;
-import sleeper.core.ContainerConstants;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -58,7 +51,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -66,14 +58,12 @@ import static sleeper.cdk.util.Utils.shouldDeployPaused;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 
@@ -134,14 +124,8 @@ public class CompactionTaskResources {
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
         ITaskDefinition taskDefinition;
         if (launchType.equalsIgnoreCase("FARGATE")) {
-            FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition();
-            String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
-            instanceProperties.set(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY, fargateTaskDefinitionFamily);
-            ContainerDefinitionOptions fargateContainerDefinitionOptions = createFargateContainerDefinition(
-                    coreStacks, containerImage, environmentVariables, instanceProperties);
-            fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
-                    fargateContainerDefinitionOptions);
-            taskDefinition = fargateTaskDefinition;
+            taskDefinition = new CompactionOnFargateResources(instanceProperties, stack, coreStacks)
+                    .createTaskDefinition(containerImage, environmentVariables);
         } else {
             taskDefinition = new CompactionOnEc2Resources(instanceProperties, stack, coreStacks)
                     .createTaskDefinition(cluster, vpc, taskCreatorJar, containerImage, environmentVariables);
@@ -161,34 +145,6 @@ public class CompactionTaskResources {
                 .value(cluster.getClusterName())
                 .build();
         new CfnOutput(stack, COMPACTION_CLUSTER_NAME, compactionClusterProps);
-    }
-
-    private FargateTaskDefinition compactionFargateTaskDefinition() {
-        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
-        return FargateTaskDefinition.Builder
-                .create(stack, "CompactionFargateTaskDefinition")
-                .family(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), "CompactionTaskOnFargate"))
-                .cpu(requirements.getCpu())
-                .memoryLimitMiB(requirements.getMemoryLimitMiB())
-                .runtimePlatform(RuntimePlatform.builder()
-                        .cpuArchitecture(CpuArchitecture.of(architecture))
-                        .operatingSystemFamily(OperatingSystemFamily.LINUX)
-                        .build())
-                .build();
-    }
-
-    private ContainerDefinitionOptions createFargateContainerDefinition(
-            CoreStacks coreStacks, ContainerImage image, Map<String, String> environment, InstanceProperties instanceProperties) {
-        String architecture = instanceProperties.get(COMPACTION_TASK_CPU_ARCHITECTURE).toUpperCase(Locale.ROOT);
-        CompactionTaskRequirements requirements = CompactionTaskRequirements.getArchRequirements(architecture, instanceProperties);
-        return ContainerDefinitionOptions.builder()
-                .image(image)
-                .environment(environment)
-                .cpu(requirements.getCpu())
-                .memoryLimitMiB(requirements.getMemoryLimitMiB())
-                .logging(Utils.createECSContainerLogDriver(coreStacks, "FargateCompactionTasks"))
-                .build();
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
