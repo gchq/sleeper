@@ -46,12 +46,18 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
+/**
+ * Sends compaction jobs in batches from the pending jobs queue, running in AWS Lambda.
+ * The jobs are created by {@link CreateCompactionJobsLambda}, then are sent in batches in this class.
+ * This lambda also handles waiting for input files to be assigned to the jobs,
+ * when that is done asynchronously. Runs batches with {@link CompactionJobDispatcher}.
+ */
 public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Void> {
 
     private final CompactionJobDispatcher dispatcher;
     private final CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
 
-    private CompactionJobDispatchLambda() {
+    public CompactionJobDispatchLambda() {
         AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoDB = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
