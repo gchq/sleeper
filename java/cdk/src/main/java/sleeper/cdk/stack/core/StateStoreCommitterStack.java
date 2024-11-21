@@ -35,7 +35,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.CompactionStatusStoreResources;
+import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
 import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;

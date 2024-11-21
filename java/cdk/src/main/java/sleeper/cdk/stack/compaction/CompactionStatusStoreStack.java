@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.stack;
+package sleeper.cdk.stack.compaction;
 
 import software.amazon.awscdk.NestedStack;
 import software.constructs.Construct;
