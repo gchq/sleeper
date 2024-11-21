@@ -87,7 +87,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -169,20 +168,8 @@ public class CompactionTaskResources {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
         environmentVariables.put(Utils.AWS_REGION, instanceProperties.get(REGION));
 
-        Consumer<ITaskDefinition> grantPermissions = taskDef -> {
-            coreStacks.grantRunCompactionJobs(taskDef.getTaskRole());
-            jarsBucket.grantRead(taskDef.getTaskRole());
-
-            taskDef.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
-                    .create()
-                    .resources(Collections.singletonList("*"))
-                    .actions(List.of("ecs:DescribeContainerInstances"))
-                    .build());
-
-            compactionJobsQueue.grantConsumeMessages(taskDef.getTaskRole());
-        };
-
         String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
+        ITaskDefinition taskDefinition;
         if (launchType.equalsIgnoreCase("FARGATE")) {
             FargateTaskDefinition fargateTaskDefinition = compactionFargateTaskDefinition();
             String fargateTaskDefinitionFamily = fargateTaskDefinition.getFamily();
@@ -191,7 +178,7 @@ public class CompactionTaskResources {
                     coreStacks, containerImage, environmentVariables, instanceProperties);
             fargateTaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME,
                     fargateContainerDefinitionOptions);
-            grantPermissions.accept(fargateTaskDefinition);
+            taskDefinition = fargateTaskDefinition;
         } else {
             Ec2TaskDefinition ec2TaskDefinition = compactionEC2TaskDefinition();
             String ec2TaskDefinitionFamily = ec2TaskDefinition.getFamily();
@@ -199,9 +186,19 @@ public class CompactionTaskResources {
             ContainerDefinitionOptions ec2ContainerDefinitionOptions = createEC2ContainerDefinition(
                     coreStacks, containerImage, environmentVariables, instanceProperties);
             ec2TaskDefinition.addContainer(ContainerConstants.COMPACTION_CONTAINER_NAME, ec2ContainerDefinitionOptions);
-            grantPermissions.accept(ec2TaskDefinition);
             addEC2CapacityProvider(cluster, vpc, coreStacks, taskCreatorJar);
+            taskDefinition = ec2TaskDefinition;
         }
+        coreStacks.grantRunCompactionJobs(taskDefinition.getTaskRole());
+        jarsBucket.grantRead(taskDefinition.getTaskRole());
+
+        taskDefinition.getTaskRole().addToPrincipalPolicy(PolicyStatement.Builder
+                .create()
+                .resources(Collections.singletonList("*"))
+                .actions(List.of("ecs:DescribeContainerInstances"))
+                .build());
+
+        compactionJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
 
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
