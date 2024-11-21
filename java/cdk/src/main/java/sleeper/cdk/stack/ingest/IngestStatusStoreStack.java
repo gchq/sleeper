@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.cdk.stack;
+package sleeper.cdk.stack.ingest;
 
 import software.amazon.awscdk.NestedStack;
 import software.constructs.Construct;

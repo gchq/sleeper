@@ -25,7 +25,7 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.sqs.IQueue;
 
 import sleeper.cdk.stack.CompactionStatusStoreResources;
-import sleeper.cdk.stack.IngestStatusStoreResources;
+import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
 
 import javax.annotation.Nullable;
 
