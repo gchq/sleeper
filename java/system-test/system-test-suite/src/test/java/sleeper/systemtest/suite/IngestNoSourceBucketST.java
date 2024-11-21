@@ -28,7 +28,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.INGEST_NO_SOURCE_BUCKET;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.OPTIONAL_FEATURES_DISABLED;
 
 @SystemTest
 @Slow // Slow because it deploys a separate instance just for this test, and the CDK is slow
@@ -36,7 +36,7 @@ public class IngestNoSourceBucketST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(INGEST_NO_SOURCE_BUCKET);
+        sleeper.connectToInstance(OPTIONAL_FEATURES_DISABLED);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
