@@ -32,7 +32,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.OPTIONAL_FEAT
 
 @SystemTest
 @Slow // Slow because it deploys a separate instance just for this test, and the CDK is slow
-public class IngestNoSourceBucketST {
+public class OptionalFeaturesDisabledST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
@@ -41,7 +41,7 @@ public class IngestNoSourceBucketST {
     }
 
     @Test
-    void shouldIngest1FileFromDataBucket(SleeperSystemTest sleeper) {
+    void shouldIngest1FileFromDataBucketWhenSourceBucketAndStatusStoreDisabled(SleeperSystemTest sleeper) {
         // Given
         sleeper.sourceFiles().inDataBucket()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
