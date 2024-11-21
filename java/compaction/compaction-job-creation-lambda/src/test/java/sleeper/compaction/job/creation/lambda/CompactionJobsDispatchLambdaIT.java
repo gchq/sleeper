@@ -35,6 +35,7 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -60,8 +61,11 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -109,9 +113,38 @@ public class CompactionJobsDispatchLambdaIT {
         assertThat(receiveCompactionJobs()).containsExactly(job1, job2);
     }
 
+    @Test
+    void shouldReturnBatchToTheQueueIfTheFilesForTheBatchAreUnassigned() throws Exception {
+
+        // Given
+        FileReference file1 = fileFactory.rootFile("test3.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("test4.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
+        stateStore.addFiles(List.of(file1, file2));
+
+        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
+        tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 0);
+        saveTableProperties();
+
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                "test-batch", Instant.parse("2024-11-21T10:20:00Z"));
+        Instant retryTime = Instant.parse("2024-11-21T10:22:00Z");
+        putCompactionJobBatch(request, List.of(job1, job2));
+
+        // When
+        dispatchWithTimeAtRetryCheck(request, retryTime);
+
+        // Then
+        assertThat(receiveCompactionJobs()).isEmpty();
+        assertThat(recievePendingBatches()).containsExactly(request);
+    }
+
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
 
@@ -124,10 +157,16 @@ public class CompactionJobsDispatchLambdaIT {
 
     private TableProperties addTable(InstanceProperties instanceProperties, Schema schema, PartitionTree partitions) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3, dynamoDB).createTable(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
+                .createTable(tableProperties);
         stateStoreProvider.getStateStore(tableProperties)
                 .initialise(partitions.getAllPartitions());
         return tableProperties;
+    }
+
+    private void saveTableProperties() {
+        S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
+                .save(tableProperties);
     }
 
     private void assignJobIds(List<CompactionJob> jobs) {
@@ -167,5 +206,14 @@ public class CompactionJobsDispatchLambdaIT {
         return result.getMessages().stream()
                 .map(Message::getBody)
                 .map(new CompactionJobSerDe()::fromJson).toList();
+    }
+
+    private List<CompactionJobDispatchRequest> recievePendingBatches() {
+        ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
+                .withMaxNumberOfMessages(10));
+        return result.getMessages().stream()
+                .map(Message::getBody)
+                .map(new CompactionJobDispatchRequestSerDe()::fromJson).toList();
     }
 }

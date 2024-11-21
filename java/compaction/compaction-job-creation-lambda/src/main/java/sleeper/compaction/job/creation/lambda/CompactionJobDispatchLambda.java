@@ -18,11 +18,14 @@ package sleeper.compaction.job.creation.lambda;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReadBatch;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReturnRequestToPendingQueue;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJob;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -33,6 +36,7 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 
 public class CompactionJobDispatchLambda {
 
@@ -47,16 +51,29 @@ public class CompactionJobDispatchLambda {
         return new CompactionJobDispatcher(instanceProperties,
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
-                readBatch(s3, compactionJobSerDe), sendJob(instanceProperties, sqs, compactionJobSerDe), null, timeSupplier);
+                readBatch(s3, compactionJobSerDe),
+                sendJob(instanceProperties, sqs, compactionJobSerDe),
+                returnToQueue(instanceProperties, sqs), timeSupplier);
     }
 
-    private static SendJob sendJob(InstanceProperties instanceProperties, AmazonSQS sqsClient, CompactionJobSerDe compactionJobSerDe) {
-        return compactionJob -> sqsClient.sendMessage(
+    private static SendJob sendJob(InstanceProperties instanceProperties, AmazonSQS sqs, CompactionJobSerDe compactionJobSerDe) {
+        return compactionJob -> sqs.sendMessage(
                 instanceProperties.get(COMPACTION_JOB_QUEUE_URL),
                 compactionJobSerDe.toJson(compactionJob));
     }
 
     private static ReadBatch readBatch(AmazonS3 s3, CompactionJobSerDe compactionJobSerDe) {
         return (bucketName, key) -> compactionJobSerDe.batchFromJson(s3.getObjectAsString(bucketName, key));
+    }
+
+    private static ReturnRequestToPendingQueue returnToQueue(InstanceProperties instanceProperties, AmazonSQS sqs) {
+        CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
+        return (request, delaySeconds) -> {
+            SendMessageRequest sendRequest = new SendMessageRequest()
+                    .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
+                    .withMessageBody(serDe.toJson(request))
+                    .withDelaySeconds(delaySeconds);
+            sqs.sendMessage(sendRequest);
+        };
     }
 }
