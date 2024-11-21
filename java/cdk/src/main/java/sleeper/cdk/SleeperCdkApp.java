@@ -63,7 +63,6 @@ import sleeper.cdk.stack.ingest.IngestBatcherStack;
 import sleeper.cdk.stack.ingest.IngestStack;
 import sleeper.cdk.stack.ingest.IngestStacks;
 import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
-import sleeper.cdk.stack.ingest.IngestStatusStoreStack;
 import sleeper.cdk.stack.query.KeepLambdaWarmStack;
 import sleeper.cdk.stack.query.QueryQueueStack;
 import sleeper.cdk.stack.query.QueryStack;
@@ -144,10 +143,10 @@ public class SleeperCdkApp extends Stack {
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
                 transactionLogStateStoreStack, policiesStack);
-        IngestStatusStoreResources ingestStatusStore = new IngestStatusStoreStack(this, "IngestStatusStore",
-                instanceProperties, policiesStack).getResources();
-        CompactionStatusStoreResources compactionStatusStore = CompactionStatusStoreResources.from(this, "CompactionStatusStore",
-                instanceProperties, policiesStack);
+        IngestStatusStoreResources ingestStatusStore = IngestStatusStoreResources.from(
+                this, "IngestStatusStore", instanceProperties, policiesStack);
+        CompactionStatusStoreResources compactionStatusStore = CompactionStatusStoreResources.from(
+                this, "CompactionStatusStore", instanceProperties, policiesStack);
         ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
