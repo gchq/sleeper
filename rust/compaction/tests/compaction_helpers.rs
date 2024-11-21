@@ -14,7 +14,8 @@ use datafusion::parquet::{
 use tempfile::TempDir;
 use url::Url;
 
-#[allow(clippy::missing_panics_doc, clippy::must_use_candidate)]
+#[allow(clippy::missing_panics_doc)]
+#[must_use]
 pub fn file(dir: &TempDir, name: &str) -> Url {
     Url::from_file_path(dir.path().join(name)).unwrap()
 }
@@ -86,48 +87,44 @@ pub fn read_file_of_int_fields<const N: usize>(
     Ok(data)
 }
 
-#[allow(clippy::needless_question_mark)]
 fn get_int_arrays<'b, const N: usize>(
     batch: &'b RecordBatch,
     field_names: [&str; N],
 ) -> Result<Vec<&'b Int32Array>, Error> {
-    let result: Result<Vec<&Int32Array>, Error> = field_names
+    field_names
         .iter()
         .map(|field_name| get_int_array(field_name, batch))
-        .collect();
-    Ok(result?)
+        .collect()
 }
 
-#[allow(clippy::needless_range_loop)]
 fn read_row<const N: usize>(row_number: usize, arrays: &[&Int32Array]) -> [i32; N] {
     let mut row = [0; N];
-    for i in 0..N {
-        row[i] = arrays.get(i).unwrap().value(row_number);
+    for (i, array) in arrays.iter().enumerate() {
+        row[i] = array.value(row_number);
     }
     row
 }
 
-#[allow(clippy::needless_question_mark)]
 fn get_int_array<'b>(field_name: &str, batch: &'b RecordBatch) -> Result<&'b Int32Array, Error> {
-    Ok(batch
+    batch
         .column_by_name(field_name)
         .ok_or_else(|| Error::msg("field not found"))?
         .as_any()
         .downcast_ref::<Int32Array>()
-        .ok_or_else(|| Error::msg("could not read field as an integer"))?)
+        .ok_or_else(|| Error::msg("could not read field as an integer"))
 }
 
-#[allow(clippy::must_use_candidate)]
+#[must_use]
 pub fn single_int_range(field_name: &str, min: i32, max: i32) -> HashMap<String, ColRange<'_>> {
     HashMap::from([region_entry(field_name, int_range(min, max))])
 }
 
-#[allow(clippy::must_use_candidate)]
+#[must_use]
 pub fn region_entry<'r>(field_name: &str, range: ColRange<'r>) -> (String, ColRange<'r>) {
     (String::from(field_name), range)
 }
 
-#[allow(clippy::must_use_candidate)]
+#[must_use]
 pub fn int_range<'r>(min: i32, max: i32) -> ColRange<'r> {
     ColRange {
         lower: PartitionBound::Int32(min),
