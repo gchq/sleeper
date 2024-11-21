@@ -328,6 +328,22 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the dead letter queue for compaction jobs.")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
+    CdkDefinedInstanceProperty COMPACTION_PENDING_QUEUE_URL = Index.propertyBuilder("sleeper.compaction.pending.queue.url")
+            .description("The URL of the queue for pending compaction job batches.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_PENDING_QUEUE_ARN = Index.propertyBuilder("sleeper.compaction.pending.queue.arn")
+            .description("The ARN of the queue for pending compaction job batches.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_PENDING_DLQ_URL = Index.propertyBuilder("sleeper.compaction.pending.dlq.url")
+            .description("The URL of the dead letter queue for pending compaction job batches.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
+    CdkDefinedInstanceProperty COMPACTION_PENDING_DLQ_ARN = Index.propertyBuilder("sleeper.compaction.pending.dlq.arn")
+            .description("The ARN of the dead letter queue for pending compaction job batches.")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .build();
 
     CdkDefinedInstanceProperty COMPACTION_TASK_CREATION_LAMBDA_FUNCTION = Index.propertyBuilder("sleeper.compaction.task.creation.lambda.function")
             .description("The function name of the compaction task creation lambda.")

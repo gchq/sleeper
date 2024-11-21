@@ -16,7 +16,6 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.metrics.TableMetrics;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
@@ -44,13 +43,8 @@ public class InMemoryTableMetrics {
         @Override
         public void generateTableMetrics() {
             String instanceId = instance.getInstanceProperties().get(ID);
-            instance.streamTableProperties().forEach(table -> {
-                try {
-                    add(TableMetrics.from(instanceId, table.getStatus(), instance.getStateStore(table)));
-                } catch (StateStoreException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            instance.streamTableProperties().forEach(table -> add(
+                    TableMetrics.from(instanceId, table.getStatus(), instance.getStateStore(table))));
         }
 
         @Override

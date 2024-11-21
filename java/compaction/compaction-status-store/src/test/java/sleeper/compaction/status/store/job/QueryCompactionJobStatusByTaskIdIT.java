@@ -45,8 +45,7 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        storeJobsCreated(job1, job2);
         store.jobStarted(compactionJobStarted(job1, defaultStartTime()).taskId(searchingTaskId).build());
         store.jobStarted(compactionJobStarted(job2, defaultStartTime()).taskId("another-task").build());
 
@@ -70,7 +69,7 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(taskId1).build());
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(searchingTaskId).build());
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(taskId3).build());

@@ -16,20 +16,20 @@
 package sleeper.compaction.core.job.dispatch;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 
 public class CompactionJobDispatcher {
 
@@ -37,7 +37,6 @@ public class CompactionJobDispatcher {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final ReadBatch readBatch;
-    private final CompactionJobStatusStore statusStore;
     private final SendJob sendJob;
     private final ReturnRequestToPendingQueue returnToPendingQueue;
     private final Supplier<Instant> timeSupplier;
@@ -45,36 +44,35 @@ public class CompactionJobDispatcher {
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, ReadBatch readBatch,
-            CompactionJobStatusStore statusStore, SendJob sendJob,
-            ReturnRequestToPendingQueue returnToPendingQueue,
+            SendJob sendJob, ReturnRequestToPendingQueue returnToPendingQueue,
             Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.readBatch = readBatch;
-        this.statusStore = statusStore;
         this.sendJob = sendJob;
         this.returnToPendingQueue = returnToPendingQueue;
         this.timeSupplier = timeSupplier;
     }
 
-    public void dispatch(CompactionJobDispatchRequest request) throws StateStoreException {
+    public void dispatch(CompactionJobDispatchRequest request) {
         List<CompactionJob> batch = readBatch.read(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
             for (CompactionJob job : batch) {
-                statusStore.jobCreated(job);
                 sendJob.send(job);
             }
         } else {
-            if (timeSupplier.get().isAfter(request.getExpiryTime())) {
-                throw new CompactionJobBatchExpiredException(request);
-            }
             TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
+            Instant expiryTime = request.getCreateTime().plus(
+                    Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS)));
+            if (timeSupplier.get().isAfter(expiryTime)) {
+                throw new CompactionJobBatchExpiredException(request, expiryTime);
+            }
             returnToPendingQueue.sendWithDelay(request, tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS));
         }
     }
 
-    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, String tableId) throws StateStoreException {
+    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, String tableId) {
         StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
         return stateStore.isAssigned(batch.stream()
                 .map(CompactionJob::createInputFileAssignmentsCheck)

@@ -42,7 +42,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -263,7 +262,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenIdenticalRecordsInMultipleFilesInOnePartition() throws StateStoreException, IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenIdenticalRecordsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -327,7 +326,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInOnePartition() throws StateStoreException, IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInOnePartition() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -453,7 +452,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInMultiplePartitions() throws StateStoreException, IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInMultiplePartitions() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -559,7 +558,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWithMultidimRowKey() throws StateStoreException, IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWithMultidimRowKey() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Field field1 = new Field("key1", new LongType());
         Field field2 = new Field("key2", new StringType());
@@ -686,7 +685,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws StateStoreException, QueryException, IOException, IteratorCreationException, ObjectFactoryException {
+    public void shouldReturnCorrectDataWhenRecordsInMultipleFilesInMultiplePartitionsMultidimensionalKey() throws QueryException, IOException, IteratorCreationException, ObjectFactoryException {
         // Given
         Field field1 = new Field("key1", new StringType());
         Field field2 = new Field("key2", new StringType());
@@ -987,7 +986,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnDataCorrectlySorted() throws StateStoreException, IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnDataCorrectlySorted() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Field field = new Field("key", new LongType());
         Schema schema = Schema.builder()
@@ -1043,7 +1042,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenOneRecordInOneFileInOnePartitionAndCompactionIteratorApplied() throws StateStoreException, IOException, IteratorCreationException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenOneRecordInOneFileInOnePartitionAndCompactionIteratorApplied() throws IOException, IteratorCreationException, ObjectFactoryException, QueryException {
         // Given
         Field field = new Field("id", new StringType());
         Schema schema = Schema.builder()
@@ -1103,7 +1102,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnCorrectDataWhenQueryTimeIteratorApplied() throws IteratorCreationException, IOException, StateStoreException, ObjectFactoryException, QueryException {
+    public void shouldReturnCorrectDataWhenQueryTimeIteratorApplied() throws IteratorCreationException, IOException, ObjectFactoryException, QueryException {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -1143,7 +1142,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldReturnOnlyRequestedValuesWhenSpecified() throws StateStoreException, IteratorCreationException, ObjectFactoryException, IOException, QueryException {
+    public void shouldReturnOnlyRequestedValuesWhenSpecified() throws IteratorCreationException, ObjectFactoryException, IOException, QueryException {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -1174,7 +1173,7 @@ public class QueryExecutorIT {
     }
 
     @Test
-    public void shouldIncludeFieldsRequiredByIteratorsEvenIfNotSpecifiedByTheUser() throws StateStoreException, IteratorCreationException, ObjectFactoryException, IOException, QueryException {
+    public void shouldIncludeFieldsRequiredByIteratorsEvenIfNotSpecifiedByTheUser() throws IteratorCreationException, ObjectFactoryException, IOException, QueryException {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
@@ -1233,7 +1232,7 @@ public class QueryExecutorIT {
     }
 
     protected void ingestData(InstanceProperties instanceProperties, StateStore stateStore,
-            TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, StateStoreException, IteratorCreationException {
+            TableProperties tableProperties, Iterator<Record> recordIterator) throws IOException, IteratorCreationException {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())

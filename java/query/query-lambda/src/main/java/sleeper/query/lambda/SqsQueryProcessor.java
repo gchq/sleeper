@@ -28,7 +28,6 @@ import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -97,13 +96,13 @@ public class SqsQueryProcessor {
             Query parentQuery = query.asParentQuery();
             queryTrackers.queryInProgress(parentQuery);
             processRangeQuery(parentQuery, tableProperties, queryTrackers);
-        } catch (StateStoreException | QueryException e) {
+        } catch (RuntimeException | QueryException e) {
             LOGGER.error("Exception thrown executing query", e);
             query.reportFailed(queryTrackers, e);
         }
     }
 
-    private void processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
+    private void processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws QueryException {
         QueryExecutor queryExecutor = queryExecutorCache.computeIfAbsent(query.getTableName(), tableName -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(tableProperties);

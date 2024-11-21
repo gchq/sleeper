@@ -35,7 +35,6 @@ import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -95,7 +94,7 @@ public class AwsCompactionDriver implements CompactionDriver {
                         Mode.FORCE_ALL_FILES_AFTER_STRATEGY,
                         AssignJobIdQueueSender.bySqs(sqsClient, instance.getInstanceProperties()));
                 createJobs.createJobs(table);
-            } catch (StateStoreException | IOException | ObjectFactoryException e) {
+            } catch (IOException | ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
             }
         });

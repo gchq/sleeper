@@ -32,12 +32,12 @@ public abstract class InMemoryStateStoreTestBase {
     protected FileReferenceFactory factory;
     protected StateStore store = inMemoryStateStoreWithNoPartitions();
 
-    protected void initialiseWithSchema(Schema schema) throws Exception {
+    protected void initialiseWithSchema(Schema schema) {
         createStore(new PartitionsBuilder(schema).singlePartition("root"));
         store.initialise();
     }
 
-    protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
+    protected void initialiseWithPartitions(PartitionsBuilder partitions) {
         createStore(partitions);
         store.initialise(partitions.buildList());
     }

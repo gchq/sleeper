@@ -17,7 +17,7 @@ package sleeper.compaction.core.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
+import sleeper.compaction.core.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
 
@@ -71,7 +71,7 @@ public class CompactionJobStatusTaskIdAssignedTest {
 
     private CompactionJobStatus.Builder statusBuilder() {
         return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job,
+                .filesAssignedStatus(CompactionJobInputFilesAssignedStatus.from(job,
                         Instant.parse("2022-10-12T11:29:00.000Z")));
     }
 

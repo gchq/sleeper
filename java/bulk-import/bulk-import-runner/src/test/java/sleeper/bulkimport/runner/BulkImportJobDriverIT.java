@@ -71,7 +71,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
@@ -183,7 +182,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartition(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
         List<Record> records = getRecords();
@@ -232,7 +231,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldImportDataSinglePartitionIdenticalRowKeyDifferentSortKeys(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
         List<Record> records = getRecordsIdenticalRowKey();
@@ -281,7 +280,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldImportDataMultiplePartitions(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
         List<Record> records = getRecords();
@@ -323,7 +322,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldImportLargeAmountOfDataMultiplePartitions(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
         List<Record> records = getLotsOfRecords();
@@ -394,7 +393,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldNotThrowExceptionIfProvidedWithDirectoryWhichContainsParquetAndNonParquetFiles(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Write some data to be imported
         List<Record> records = getRecords();
@@ -431,7 +430,7 @@ class BulkImportJobDriverIT {
 
     @ParameterizedTest
     @MethodSource("getParameters")
-    void shouldImportDataWithS3StateStore(BulkImportJobRunner runner) throws IOException, StateStoreException {
+    void shouldImportDataWithS3StateStore(BulkImportJobRunner runner) throws IOException {
         // Given
         // - Set state store type
         tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
@@ -689,14 +688,14 @@ class BulkImportJobDriverIT {
         writer.close();
     }
 
-    private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) throws StateStoreException {
+    private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) {
         tablePropertiesStore(instanceProperties).save(tableProperties);
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, conf).getStateStore(tableProperties);
         stateStore.initialise(new PartitionsFromSplitPoints(getSchema(), splitPoints).construct());
         return stateStore;
     }
 
-    private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties) throws StateStoreException {
+    private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties) {
         return createTable(instanceProperties, tableProperties, Collections.emptyList());
     }
 

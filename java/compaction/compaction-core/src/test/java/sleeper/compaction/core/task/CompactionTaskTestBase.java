@@ -63,7 +63,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class CompactionTaskTestBase {
@@ -215,7 +214,7 @@ public class CompactionTaskTestBase {
                 .partitionId("root")
                 .inputFiles(List.of(UUID.randomUUID().toString()))
                 .outputFile(UUID.randomUUID().toString()).build();
-        jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
+        jobStore.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()), DEFAULT_CREATED_TIME);
         return job;
     }
 
@@ -226,7 +225,7 @@ public class CompactionTaskTestBase {
     }
 
     protected void assignFilesToJob(CompactionJob job, StateStore stateStore) throws Exception {
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
     }
 
     protected void send(CompactionJob job) {

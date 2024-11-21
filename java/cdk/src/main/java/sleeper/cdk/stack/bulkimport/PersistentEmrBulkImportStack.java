@@ -36,7 +36,7 @@ import software.constructs.Construct;
 
 import sleeper.bulkimport.core.configuration.ConfigurationUtils;
 import sleeper.cdk.jars.BuiltJars;
-import sleeper.cdk.stack.CoreStacks;
+import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;

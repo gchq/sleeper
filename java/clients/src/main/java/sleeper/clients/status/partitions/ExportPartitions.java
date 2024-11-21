@@ -31,7 +31,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.BufferedWriter;
@@ -60,14 +59,14 @@ public class ExportPartitions {
         this.partitionSerDe = new PartitionSerDe(schema);
     }
 
-    public List<String> getPartitionsAsJsonStrings() throws StateStoreException {
+    public List<String> getPartitionsAsJsonStrings() {
         return stateStore.getAllPartitions()
                 .stream()
                 .map(p -> partitionSerDe.toJson(p, false))
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public void writePartitionsToFile(String filename) throws IOException, StateStoreException {
+    public void writePartitionsToFile(String filename) throws IOException {
         List<String> partitionsAsJsonStrings = getPartitionsAsJsonStrings();
         try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filename), StandardCharsets.UTF_8))) {
             for (String partition : partitionsAsJsonStrings) {
@@ -78,7 +77,7 @@ public class ExportPartitions {
         LOGGER.info("Wrote {} partitions to file {}", partitionsAsJsonStrings.size(), filename);
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException {
+    public static void main(String[] args) throws IOException {
         if (3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <output-file>");
         }

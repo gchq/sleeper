@@ -149,7 +149,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
             try {
                 atomicallyReplaceFileReferencesWithNewOne(request);
                 succeeded.add(request);
-            } catch (StateStoreException | RuntimeException e) {
+            } catch (RuntimeException e) {
                 LOGGER.error("Failed replacing file references for job {}", request.getJobId(), e);
                 failures.add(e);
                 failed.add(request);
@@ -196,18 +196,11 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
     }
 
     private void checkQueryFailure() throws StateStoreException {
-        Optional<Exception> failureOpt = queryFailureChecker.getNextQueryFailure();
+        Optional<RuntimeException> failureOpt = queryFailureChecker.getNextQueryFailure();
         if (!failureOpt.isPresent()) {
             return;
         }
-        Exception failure = failureOpt.get();
-        if (failure instanceof StateStoreException) {
-            throw (StateStoreException) failure;
-        } else if (failure instanceof RuntimeException) {
-            throw (RuntimeException) failure;
-        } else {
-            throw new IllegalStateException("Unexpected exception type: " + failure.getClass());
-        }
+        throw failureOpt.get();
     }
 
     @Override
@@ -282,7 +275,7 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
      *
      * @param failures the failures for each expected query
      */
-    public void setFailuresForExpectedQueries(List<Optional<Exception>> failures) {
+    public void setFailuresForExpectedQueries(List<Optional<RuntimeException>> failures) {
         queryFailureChecker = failures.iterator()::next;
     }
 
@@ -291,6 +284,6 @@ public class InMemoryFileReferenceStore implements FileReferenceStore {
      */
     private interface QueryFailureChecker {
 
-        Optional<Exception> getNextQueryFailure();
+        Optional<RuntimeException> getNextQueryFailure();
     }
 }

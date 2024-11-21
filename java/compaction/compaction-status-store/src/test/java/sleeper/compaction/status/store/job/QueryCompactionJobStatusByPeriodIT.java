@@ -47,8 +47,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        storeJobsCreated(job1, job2);
 
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
@@ -70,7 +69,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
 
         // Then
         Instant periodStart = Instant.now().minus(Period.ofDays(2));
@@ -91,8 +90,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        storeJobsCreated(job1, job2);
 
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
@@ -113,7 +111,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
 
         // When
         Instant periodStart = Instant.now().minus(Period.ofDays(1));
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         Thread.sleep(1);
         Instant periodEnd = Instant.now();
@@ -137,7 +135,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         Thread.sleep(1);
         Instant periodStart = Instant.now();
         Thread.sleep(1);

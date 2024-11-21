@@ -35,7 +35,6 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
@@ -63,7 +62,7 @@ public class CreateCompactionJobsClient {
             "default", STRATEGY,
             "all", FORCE_ALL_FILES_AFTER_STRATEGY);
 
-    public static void main(String[] args) throws ObjectFactoryException, StateStoreException, IOException {
+    public static void main(String[] args) throws ObjectFactoryException, IOException {
         if (args.length < 2) {
             System.out.println("Usage: <mode-all-or-default> <instance-id> <table-names-as-args>");
             return;

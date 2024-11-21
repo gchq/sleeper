@@ -22,7 +22,6 @@ import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
@@ -71,7 +70,7 @@ public class WriteRandomDataDirect {
                 .addFilesToStateStore(addFilesToStateStore)
                 .build()) {
             new IngestRecordsFromIterator(ingestCoordinator, recordIterator).write();
-        } catch (StateStoreException | IteratorCreationException e) {
+        } catch (IteratorCreationException e) {
             throw new IOException("Failed to write records using iterator", e);
         }
     }

@@ -18,7 +18,6 @@ package sleeper.core.statestore.transactionlog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 
 import java.util.Optional;
@@ -39,19 +38,18 @@ public class TransactionLogSnapshotCreator {
      * The state object held in the previous snapshot will be mutated and reused in the new snapshot object if one is
      * made.
      *
-     * @param  <T>                 the type of the state derived from the log
-     * @param  lastSnapshot        the last snapshot
-     * @param  logStore            the transaction log to read from
-     * @param  transactionType     the type of transactions to read from the log
-     * @param  tableStatus         the Sleeper table the log is for, to be used in logging
-     * @return                     the new snapshot, if there were updates since the last snapshot
-     * @throws StateStoreException if there are any failures updating the state from the log
+     * @param  <T>             the type of the state derived from the log
+     * @param  lastSnapshot    the last snapshot
+     * @param  logStore        the transaction log to read from
+     * @param  transactionType the type of transactions to read from the log
+     * @param  tableStatus     the Sleeper table the log is for, to be used in logging
+     * @return                 the new snapshot, if there were updates since the last snapshot
      */
     public static <T> Optional<TransactionLogSnapshot> createSnapshotIfChanged(
             TransactionLogSnapshot lastSnapshot,
             TransactionLogStore logStore,
             Class<? extends StateStoreTransaction<T>> transactionType,
-            TableStatus tableStatus) throws StateStoreException {
+            TableStatus tableStatus) {
         TransactionLogSnapshot newSnapshot = updateState(
                 lastSnapshot, transactionType, logStore, tableStatus);
         if (lastSnapshot.getTransactionNumber() >= newSnapshot.getTransactionNumber()) {
@@ -69,7 +67,7 @@ public class TransactionLogSnapshotCreator {
     private static <T> TransactionLogSnapshot updateState(
             TransactionLogSnapshot lastSnapshot,
             Class<? extends StateStoreTransaction<T>> transactionType, TransactionLogStore logStore,
-            TableStatus table) throws StateStoreException {
+            TableStatus table) {
         T state = lastSnapshot.getState();
         TransactionLogHead<T> head = TransactionLogHead.builder()
                 .transactionType(transactionType)

@@ -35,7 +35,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
@@ -93,7 +92,7 @@ public class QueryClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void init(TableProperties tableProperties) throws StateStoreException {
+    protected void init(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(getInstanceProperties(), tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
@@ -137,7 +136,7 @@ public class QueryClient extends QueryCommandLineClient {
         return queryExecutor.execute(query);
     }
 
-    public static void main(String[] args) throws StateStoreException, ObjectFactoryException, InterruptedException {
+    public static void main(String[] args) throws ObjectFactoryException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }

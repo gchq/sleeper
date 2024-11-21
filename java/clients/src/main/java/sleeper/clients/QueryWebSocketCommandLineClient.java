@@ -29,7 +29,6 @@ import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.query.core.model.Query;
@@ -96,7 +95,7 @@ public class QueryWebSocketCommandLineClient extends QueryCommandLineClient {
         }
     }
 
-    public static void main(String[] args) throws StateStoreException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }

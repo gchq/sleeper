@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.LoggedDuration;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -58,11 +57,7 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     public SystemTestStateStoreFakeCommits setupStateStore(StateStoreSetup setup) {
-        try {
-            setup.setup(instance.getStateStore());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        setup.setup(instance.getStateStore());
         return this;
     }
 
@@ -141,6 +136,6 @@ public class SystemTestStateStoreFakeCommits {
     @FunctionalInterface
     public interface StateStoreSetup {
 
-        void setup(StateStore stateStore) throws StateStoreException;
+        void setup(StateStore stateStore);
     }
 }
