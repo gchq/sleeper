@@ -83,6 +83,8 @@ public class CompactionJobResources {
 
         compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);
         lambdaToCreateCompactionJobsBatchedViaSQS(coreStacks, topic, errorMetrics, jarsBucket, lambdaCode, compactionJobsQueue);
+
+        // TODO add compaction dispatch lambda
     }
 
     private Queue sqsQueueForCompactionJobs(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
