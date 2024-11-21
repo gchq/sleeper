@@ -21,7 +21,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
@@ -65,7 +64,7 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
                 .addFilesToStateStore(addFilesToStateStore)
                 .build()) {
             return new IngestRecordsFromIterator(coordinator, records).write();
-        } catch (StateStoreException | IteratorCreationException | IOException e) {
+        } catch (IteratorCreationException | IOException e) {
             throw new RuntimeException(e);
         }
     }

@@ -37,7 +37,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.query.core.model.Query;
@@ -85,14 +84,14 @@ public abstract class QueryCommandLineClient {
         this.out = out;
     }
 
-    public void run() throws StateStoreException, InterruptedException {
+    public void run() throws InterruptedException {
         TableProperties tableProperties = getTableProperties();
         init(tableProperties);
 
         runQueries(tableProperties);
     }
 
-    protected abstract void init(TableProperties tableProperties) throws StateStoreException;
+    protected abstract void init(TableProperties tableProperties);
 
     protected abstract void submitQuery(TableProperties tableProperties, Query query) throws InterruptedException;
 

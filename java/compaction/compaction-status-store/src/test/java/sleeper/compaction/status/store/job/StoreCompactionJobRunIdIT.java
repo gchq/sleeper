@@ -47,7 +47,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
@@ -67,7 +67,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
         store.jobFinished(compactionJobFinished(job, defaultSummary())
@@ -89,7 +89,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
         store.jobFinished(compactionJobFinished(job, defaultSummary())
@@ -113,7 +113,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
         store.jobFailed(compactionJobFailed(job, defaultRunTime()).failure(new RuntimeException("Failed"))
@@ -135,7 +135,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime())
                 .taskId("test-task").jobRunId("test-run-1").build());
         store.jobFinished(compactionJobFinished(job, defaultSummary())

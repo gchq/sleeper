@@ -19,7 +19,6 @@ package sleeper.systemtest.dsl.partitioning;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -73,18 +72,10 @@ public class SystemTestPartitioning {
     }
 
     private List<Partition> allPartitions(StateStore stateStore) {
-        try {
-            return stateStore.getAllPartitions();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return stateStore.getAllPartitions();
     }
 
     public void setPartitions(PartitionTree tree) {
-        try {
-            instance.getStateStore().initialise(tree.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        instance.getStateStore().initialise(tree.getAllPartitions());
     }
 }

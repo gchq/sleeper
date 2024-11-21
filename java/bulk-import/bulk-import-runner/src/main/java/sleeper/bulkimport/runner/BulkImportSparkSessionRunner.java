@@ -41,7 +41,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 
 import java.io.IOException;
@@ -88,13 +87,7 @@ public class BulkImportSparkSessionRunner implements BulkImportJobDriver.Session
         // Load statestore and partitions
         LOGGER.info("Loading statestore and partitions");
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        List<Partition> allPartitions;
-        try {
-            allPartitions = stateStore.getAllPartitions();
-        } catch (StateStoreException e) {
-            LOGGER.error("Could not load partitions", e);
-            throw new RuntimeException("Failed to load statestore. Are permissions correct for this service account?", e);
-        }
+        List<Partition> allPartitions = stateStore.getAllPartitions();
 
         Configuration conf = sparkContext.hadoopConfiguration();
         Broadcast<List<Partition>> broadcastedPartitions = javaSparkContext.broadcast(allPartitions);

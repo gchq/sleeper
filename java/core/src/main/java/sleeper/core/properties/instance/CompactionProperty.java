@@ -293,7 +293,7 @@ public interface CompactionProperty {
                     "The batch will be sent if all input files have been successfully assigned to the jobs, otherwise " +
                     "the batch will be retried after a delay.")
             .defaultValue("30")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")
             .description("Used by the SizeRatioCompactionStrategy to decide if a group of files should be compacted.\n" +

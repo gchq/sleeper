@@ -26,7 +26,6 @@ import sleeper.core.statestore.StateStore;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class CompactionRunnerTestUtils {
 
@@ -61,7 +60,7 @@ public class CompactionRunnerTestUtils {
 
     public static void assignJobIdsToInputFiles(StateStore stateStore, CompactionJob... jobs) throws Exception {
         stateStore.assignJobIds(Stream.of(jobs)
-                .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
+                .map(CompactionJob::createAssignJobIdRequest)
                 .collect(toUnmodifiableList()));
     }
 }

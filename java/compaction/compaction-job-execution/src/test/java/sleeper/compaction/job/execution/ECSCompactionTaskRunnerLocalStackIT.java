@@ -74,7 +74,6 @@ import sleeper.core.statestore.CheckFileAssignmentsRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
@@ -391,11 +390,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         tablePropertiesStore.save(tableProperties);
-        try {
-            stateStoreProvider.getStateStore(tableProperties).initialise();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStoreProvider.getStateStore(tableProperties).initialise();
+
         return tableProperties;
     }
 

@@ -24,7 +24,6 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 
 import java.util.Collection;
@@ -59,7 +58,7 @@ public class TableMetrics {
         return new Builder();
     }
 
-    public static TableMetrics from(String instanceId, TableStatus table, StateStore stateStore) throws StateStoreException {
+    public static TableMetrics from(String instanceId, TableStatus table, StateStore stateStore) {
 
         LOGGER.info("Querying state store for table {} for files", table);
         AllReferencesToAllFiles files = stateStore.getAllFilesWithMaxUnreferenced(0);

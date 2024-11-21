@@ -20,15 +20,13 @@ import sleeper.compaction.core.job.CompactionJob;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
-
 public class CompactionJobIdAssignmentCommitRequestTestHelper {
     private CompactionJobIdAssignmentCommitRequestTestHelper() {
     }
 
     public static CompactionJobIdAssignmentCommitRequest requestToAssignFilesToJobs(List<CompactionJob> jobs, String tableId) {
         return new CompactionJobIdAssignmentCommitRequest(jobs.stream()
-                .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
+                .map(job -> job.createAssignJobIdRequest())
                 .collect(Collectors.toList()),
                 tableId);
     }

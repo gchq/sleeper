@@ -28,7 +28,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.trino.testutils.PopulatedSleeperExternalResource;
 
 import java.util.List;
@@ -112,7 +111,7 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     }
 
     @Test
-    public void testNumberOfLeafPartitionsInUnpartitionedTable() throws StateStoreException {
+    public void testNumberOfLeafPartitionsInUnpartitionedTable() {
         int expectedNoOfLeafPartitionsInUnpartitionedTable = 1; // A root node is a single leaf partition
         assertThat(expectedNoOfLeafPartitionsInUnpartitionedTable)
                 .isEqualTo(POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned").getAllPartitions().stream()
@@ -121,7 +120,7 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     }
 
     @Test
-    public void testNumberOfLeafPartitionsInPartitionedTable() throws StateStoreException {
+    public void testNumberOfLeafPartitionsInPartitionedTable() {
         int expectedNoOfLeafPartitionsInPartitionedTable = (1 + NO_OF_NATION_KEYS / 2) * 2; // There are always an even number of partitions once it has split
         assertThat(expectedNoOfLeafPartitionsInPartitionedTable)
                 .isEqualTo(POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned").getAllPartitions().stream()
@@ -130,7 +129,7 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     }
 
     @Test
-    public void testMoreThanOneParquetFileInRootPartitionInUnpartitionedTable() throws StateStoreException {
+    public void testMoreThanOneParquetFileInRootPartitionInUnpartitionedTable() {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_unpartitioned");
         assertThat(stateStore.getPartitionToReferencedFilesMap())
                 .containsOnlyKeys("root")
@@ -138,7 +137,7 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     }
 
     @Test
-    public void testMoreThanOneParquetFileInAnyPartitionInPartitionedTable() throws StateStoreException {
+    public void testMoreThanOneParquetFileInAnyPartitionInPartitionedTable() {
         StateStore stateStore = POPULATED_SLEEPER_EXTERNAL_RESOURCE.getStateStore("customer_partitioned");
         assertThat(stateStore.getPartitionToReferencedFilesMap())
                 .anySatisfy((partitionId, files) -> assertThat(files).hasSizeGreaterThan(1));

@@ -41,7 +41,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.testutils.RecordGenerator;
@@ -98,7 +97,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
     private StateStore stateStore;
 
     @BeforeEach
-    public void before() throws StateStoreException {
+    public void before() {
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
@@ -174,7 +173,7 @@ public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
             int maxNoOfRecordsInMemory,
             long maxNoOfRecordsInLocalStore,
             String ingestLocalWorkingDirectory,
-            Stream<String> fileNames) throws StateStoreException, IteratorCreationException, IOException {
+            Stream<String> fileNames) throws IteratorCreationException, IOException {
         ParquetConfiguration parquetConfiguration = parquetConfiguration(
                 recordListAndSchema.sleeperSchema, hadoopConfiguration);
         try (IngestCoordinator<Record> ingestCoordinator = standardIngestCoordinatorBuilder(

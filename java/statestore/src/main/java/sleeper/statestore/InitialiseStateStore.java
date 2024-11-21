@@ -26,7 +26,6 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -42,10 +41,9 @@ public class InitialiseStateStore {
     /**
      * Initialises a state store with a single root partition from the command line.
      *
-     * @param  args                the command line arguments
-     * @throws StateStoreException if the state store initialisation fails
+     * @param args the command line arguments
      */
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) {
         if (2 != args.length) {
             System.out.println("Usage: <instance-id> <table-name>");
             return;

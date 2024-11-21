@@ -20,10 +20,8 @@ import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCommittedStatus;
-import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
@@ -37,6 +35,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -75,7 +74,6 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String FAILURE_REASONS = "FailureReasons";
     private static final String JOB_RUN_ID = "JobRunId";
     private static final String TASK_ID = "TaskId";
-    private static final String UPDATE_TYPE_CREATED = "created";
     private static final String UPDATE_TYPE_INPUT_FILES_ASSIGNED = "inputFilesAssigned";
     private static final String UPDATE_TYPE_STARTED = "started";
     private static final String UPDATE_TYPE_FINISHED = "finished";
@@ -87,17 +85,11 @@ class DynamoDBCompactionJobStatusFormat {
     private DynamoDBCompactionJobStatusFormat() {
     }
 
-    public static Map<String, AttributeValue> createJobCreatedUpdate(
-            CompactionJob job, DynamoDBRecordBuilder builder) {
-        builder.string(UPDATE_TYPE, UPDATE_TYPE_CREATED)
-                .string(PARTITION_ID, job.getPartitionId())
-                .number(INPUT_FILES_COUNT, job.getInputFiles().size());
-        return builder.build();
-    }
-
     public static Map<String, AttributeValue> createFilesAssignedUpdate(
-            DynamoDBRecordBuilder builder) {
-        builder.string(UPDATE_TYPE, UPDATE_TYPE_INPUT_FILES_ASSIGNED);
+            AssignJobIdRequest request, DynamoDBRecordBuilder builder) {
+        builder.string(UPDATE_TYPE, UPDATE_TYPE_INPUT_FILES_ASSIGNED)
+                .string(PARTITION_ID, request.getPartitionId())
+                .number(INPUT_FILES_COUNT, request.getFilenames().size());
         return builder.build();
     }
 
@@ -184,15 +176,12 @@ class DynamoDBCompactionJobStatusFormat {
 
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
-            case UPDATE_TYPE_CREATED:
-                return CompactionJobCreatedStatus.builder()
+            case UPDATE_TYPE_INPUT_FILES_ASSIGNED:
+                return CompactionJobInputFilesAssignedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .partitionId(getStringAttribute(item, PARTITION_ID))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .build();
-            case UPDATE_TYPE_INPUT_FILES_ASSIGNED:
-                return new CompactionJobInputFilesAssignedStatus(
-                        getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_STARTED:
                 return CompactionJobStartedStatus.startAndUpdateTime(
                         getInstantAttribute(item, START_TIME),

@@ -24,7 +24,6 @@ import sleeper.clients.status.report.partitions.PartitionsStatusReportArguments;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.splitter.core.status.PartitionsStatus;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -44,11 +43,11 @@ public class PartitionsStatusReport {
         this.reporter = reporter;
     }
 
-    public void run() throws StateStoreException {
+    public void run() {
         reporter.report(PartitionsStatus.from(tableProperties, store));
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) {
         PartitionsStatusReportArguments arguments;
         try {
             arguments = PartitionsStatusReportArguments.fromArgs(args);

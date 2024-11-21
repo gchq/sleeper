@@ -24,7 +24,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 
@@ -57,11 +56,11 @@ public class FindPartitionsToSplit {
         this.jobSender = jobSender;
     }
 
-    public void run(TableProperties tableProperties) throws StateStoreException {
+    public void run(TableProperties tableProperties) {
         findPartitionsToSplit(tableProperties, stateStoreProvider.getStateStore(tableProperties));
     }
 
-    private void findPartitionsToSplit(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
+    private void findPartitionsToSplit(TableProperties tableProperties, StateStore stateStore) {
         List<FindPartitionToSplitResult> results = getResults(tableProperties, stateStore);
         int maxFilesInJob = instanceProperties.getInt(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB);
         for (FindPartitionToSplitResult result : results) {
@@ -87,7 +86,7 @@ public class FindPartitionsToSplit {
     }
 
     public static List<FindPartitionToSplitResult> getResults(
-            TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
+            TableProperties tableProperties, StateStore stateStore) {
         TableStatus table = tableProperties.getStatus();
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         LOGGER.info("Running FindPartitionsToSplit for table {}, split threshold is {}", table, splitThreshold);
