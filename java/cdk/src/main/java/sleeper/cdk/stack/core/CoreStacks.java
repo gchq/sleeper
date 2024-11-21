@@ -26,12 +26,6 @@ import software.amazon.awscdk.services.sqs.IQueue;
 
 import sleeper.cdk.stack.CompactionStatusStoreResources;
 import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.LoggingStack;
-import sleeper.cdk.stack.ManagedPoliciesStack;
-import sleeper.cdk.stack.StateStoreCommitterStack;
-import sleeper.cdk.stack.StateStoreStacks;
-import sleeper.cdk.stack.TableDataStack;
-import sleeper.cdk.stack.TableIndexStack;
 
 import javax.annotation.Nullable;
 

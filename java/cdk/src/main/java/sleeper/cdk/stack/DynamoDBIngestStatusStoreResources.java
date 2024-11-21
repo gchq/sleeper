@@ -26,6 +26,7 @@ import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
+import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;

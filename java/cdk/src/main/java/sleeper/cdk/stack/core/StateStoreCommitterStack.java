@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.stack;
+package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
@@ -35,7 +35,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.ConfigBucketStack;
+import sleeper.cdk.stack.CompactionStatusStoreResources;
+import sleeper.cdk.stack.IngestStatusStoreResources;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.cdk.stack;
+package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.RemovalPolicy;

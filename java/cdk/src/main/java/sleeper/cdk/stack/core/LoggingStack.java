@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.cdk.stack;
+package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.logs.ILogGroup;

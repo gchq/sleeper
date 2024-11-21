@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.cdk.stack;
+package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.services.iam.IGrantable;
 
-import static sleeper.cdk.stack.StateStoreGrants.readActiveFilesAndPartitions;
-import static sleeper.cdk.stack.StateStoreGrants.readActiveFilesReadWritePartitions;
-import static sleeper.cdk.stack.StateStoreGrants.readAllFilesAndPartitions;
-import static sleeper.cdk.stack.StateStoreGrants.readPartitions;
-import static sleeper.cdk.stack.StateStoreGrants.readPartitionsReadWriteActiveFiles;
-import static sleeper.cdk.stack.StateStoreGrants.readWriteActiveAndReadyForGCFiles;
-import static sleeper.cdk.stack.StateStoreGrants.readWriteAllFilesAndPartitions;
-import static sleeper.cdk.stack.StateStoreGrants.readWritePartitions;
-import static sleeper.cdk.stack.StateStoreGrants.readWriteReadyForGCFiles;
+import static sleeper.cdk.stack.core.StateStoreGrants.readActiveFilesAndPartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readActiveFilesReadWritePartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readAllFilesAndPartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readPartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readPartitionsReadWriteActiveFiles;
+import static sleeper.cdk.stack.core.StateStoreGrants.readWriteActiveAndReadyForGCFiles;
+import static sleeper.cdk.stack.core.StateStoreGrants.readWriteAllFilesAndPartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readWritePartitions;
+import static sleeper.cdk.stack.core.StateStoreGrants.readWriteReadyForGCFiles;
 
 public final class StateStoreStacks {
 

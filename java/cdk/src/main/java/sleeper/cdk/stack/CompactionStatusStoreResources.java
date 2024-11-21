@@ -18,6 +18,7 @@ package sleeper.cdk.stack;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
+import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
