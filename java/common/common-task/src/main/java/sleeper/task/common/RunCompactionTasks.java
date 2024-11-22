@@ -61,19 +61,19 @@ public class RunCompactionTasks {
 
     private final InstanceProperties instanceProperties;
     private final TaskCounts taskCounts;
-    private final HostScaler hostScaler;
+    private final CompactionTaskHostScaler hostScaler;
     private final TaskLauncher taskLauncher;
 
     public RunCompactionTasks(
             InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
         this(instanceProperties,
                 () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
-                createEC2Scaler(instanceProperties, asClient, ec2Client),
+                EC2Scaler.create(instanceProperties, asClient, ec2Client),
                 (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort));
     }
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, TaskCounts taskCounts, HostScaler hostScaler, TaskLauncher taskLauncher) {
+            InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler hostScaler, TaskLauncher taskLauncher) {
         this.instanceProperties = instanceProperties;
         this.taskCounts = taskCounts;
         this.hostScaler = hostScaler;
@@ -86,10 +86,6 @@ public class RunCompactionTasks {
 
     public interface TaskLauncher {
         void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort);
-    }
-
-    public interface HostScaler {
-        void scaleTo(int numberContainers);
     }
 
     public void run(QueueMessageCount.Client queueMessageCount) {
@@ -153,16 +149,6 @@ public class RunCompactionTasks {
             return;
         }
         taskLauncher.launchTasks(createTasks, checkAbort);
-    }
-
-    private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AutoScalingClient asClient, Ec2Client ec2Client) {
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        // Only need scaler for EC2
-        if (!launchType.equalsIgnoreCase("EC2")) {
-            return hostCount -> {
-            };
-        }
-        return EC2Scaler.create(instanceProperties, asClient, ec2Client)::scaleTo;
     }
 
     /**
