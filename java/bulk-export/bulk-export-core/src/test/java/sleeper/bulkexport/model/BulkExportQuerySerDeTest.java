@@ -33,12 +33,14 @@ public class BulkExportQuerySerDeTest {
                 .build();
 
         // When
-        String serialisedQuery = querySerDe.toJson(bulkExportQuery);
+        String json = querySerDe.toJson(bulkExportQuery);
 
-        BulkExportQuery deserialisedQuery = querySerDe.fromJson(serialisedQuery);
+        BulkExportQuery deserialisedQuery = querySerDe.fromJson(json);
 
         // Then
+        String expectedJson = "{\"exportId\":\"e1\",\"tableName\":\"test-table\"}";
         assertThat(bulkExportQuery).isEqualTo(deserialisedQuery);
+        assertThat(json).isEqualTo(expectedJson);
     }
 
     @Test

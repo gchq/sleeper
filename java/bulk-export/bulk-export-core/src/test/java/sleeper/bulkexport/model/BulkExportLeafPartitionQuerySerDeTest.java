@@ -38,12 +38,15 @@ public class BulkExportLeafPartitionQuerySerDeTest {
                 .build();
 
         // When
-        String serialisedQuery = querySerDe.toJson(bulkExportLeafPartitionQuery);
+        String json = querySerDe.toJson(bulkExportLeafPartitionQuery);
 
-        BulkExportLeafPartitionQuery deserialisedQuery = querySerDe.fromJson(serialisedQuery);
+        BulkExportLeafPartitionQuery deserialisedQuery = querySerDe.fromJson(json);
 
         // Then
+        String expectedJson = "{\"tableId\":\"t1\",\"exportId\":\"e1\",\"subExportId\":\"se1\"," +
+                "\"leafPartitionId\":\"lp1\",\"files\":[\"/test/file.parquet\"]}";
         assertThat(bulkExportLeafPartitionQuery).isEqualTo(deserialisedQuery);
+        assertThat(json).isEqualTo(expectedJson);
     }
 
     @Test
