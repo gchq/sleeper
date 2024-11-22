@@ -21,8 +21,8 @@ use compaction::{merge_sorted_files, ColRange, CompactionInput};
 use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
-use std::{collections::HashMap, io::Write};
-use url::{ParseError, Url};
+use std::{collections::HashMap, io::Write, path::Path};
+use url::Url;
 
 /// Implements a Sleeper compaction algorithm in Rust.
 ///
@@ -58,6 +58,16 @@ struct CmdLineArgs {
     region_maxs: Vec<String>,
 }
 
+/// Converts a [`Path`] reference to an absolute path (if not already absolute)
+/// and returns it as a String.
+///
+/// # Panics
+/// If the path can't be made absolute due to not being able to get the current
+/// directory or the path is not valid or contains non UTF-8 characters.
+fn path_absolute<T: ?Sized + AsRef<Path>>(path: &T) -> String {
+    std::path::absolute(path).unwrap().to_str().unwrap().into()
+}
+
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
     // Install coloured errors
@@ -91,28 +101,13 @@ async fn main() -> color_eyre::Result<()> {
         .input
         .iter()
         .map(|x| {
-            Url::parse(x).or_else(|_e| {
-                Url::parse(
-                    &("file://".to_owned()
-                        + std::path::absolute(x)
-                            .map_err(|_| ParseError::RelativeUrlWithoutBase)?
-                            .to_str()
-                            .unwrap()),
-                )
-            })
+            Url::parse(x).or_else(|_e| Url::parse(&("file://".to_owned() + &path_absolute(x))))
         })
         .collect::<Result<Vec<_>, _>>()?;
 
     // Convert output URL
-    let output_url = Url::parse(&args.output).or_else(|_e| {
-        Url::parse(
-            &("file://".to_owned()
-                + std::path::absolute(&args.output)
-                    .map_err(|_| ParseError::RelativeUrlWithoutBase)?
-                    .to_str()
-                    .unwrap()),
-        )
-    })?;
+    let output_url = Url::parse(&args.output)
+        .or_else(|_e| Url::parse(&("file://".to_owned() + &path_absolute(&args.output))))?;
 
     assert_eq!(args.row_keys.len(), args.region_maxs.len());
     assert_eq!(args.row_keys.len(), args.region_mins.len());
@@ -165,4 +160,20 @@ async fn main() -> color_eyre::Result<()> {
         }
     };
     Ok(())
+}
+
+#[cdf(test)]
+mod path_test {
+
+    #[test]
+    fn relative_path_converts() {}
+
+    #[test]
+    fn absolute_path_unchanged() {}
+
+    #[test]
+    fn invalid_path_errors() {}
+
+    #[test]
+    fn empty_path() {}
 }
