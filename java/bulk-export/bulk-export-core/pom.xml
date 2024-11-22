@@ -30,6 +30,7 @@
             <groupId>sleeper</groupId>  
             <artifactId>core</artifactId>
             <version>${project.parent.version}</version>   
+            <scope>compile</scope>
         </dependency>
         <!-- Test dependencies -->
         <dependency>
@@ -39,32 +40,5 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
-
-     <!-- To be removed when bulk export complete. This is here to stop checkstyles complaining-->
-     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.8.1</version>
-                <executions>
-                    <execution>
-                        <id>analyze</id>
-                        <goals>
-                            <goal>analyze-only</goal>
-                        </goals>
-                        <configuration>
-                            <failOnWarning>false</failOnWarning>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>

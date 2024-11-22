@@ -26,8 +26,7 @@ public class BulkExportQuerySerDe {
     private final Gson gsonPrettyPrinting;
 
     public BulkExportQuerySerDe() {
-        GsonBuilder builder = new GsonBuilder()
-                .serializeNulls();
+        GsonBuilder builder = new GsonBuilder();
         gson = builder.create();
         gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
@@ -40,7 +39,7 @@ public class BulkExportQuerySerDe {
      * @return a JSON string of the query
      */
     public String toJson(BulkExportQuery query) {
-        return gson.toJson(BulkExportQueryJson.from(query));
+        return gson.toJson(query);
     }
 
     /**
@@ -54,20 +53,20 @@ public class BulkExportQuerySerDe {
      */
     public String toJson(BulkExportQuery query, boolean prettyPrint) {
         if (prettyPrint) {
-            return gsonPrettyPrinting.toJson(BulkExportQueryJson.from(query));
+            return gsonPrettyPrinting.toJson(query);
         }
         return toJson(query);
     }
 
     /**
-     * Formats a JSON string to a BulkExportQueryJson object.
+     * Formats a JSON string to a BulkExportQuery object.
      *
      * @param json The JSON string to format.
      *
-     * @return The parsed object as BulkExportQueryJson.
+     * @return The parsed object as BulkExportQuery.
      */
     public BulkExportQuery fromJson(String json) {
-        BulkExportQueryJson query = gson.fromJson(json, BulkExportQueryJson.class);
-        return query.to();
+        BulkExportQuery query = gson.fromJson(json, BulkExportQuery.class);
+        return query.validate();
     }
 }

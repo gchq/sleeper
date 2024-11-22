@@ -29,7 +29,6 @@ public class BulkExportQuerySerDeTest {
         // Given
         BulkExportQuery bulkExportQuery = BulkExportQuery.builder()
                 .tableName("test-table")
-                .tableId("t1")
                 .exportId("e1")
                 .build();
 
@@ -43,44 +42,44 @@ public class BulkExportQuerySerDeTest {
     }
 
     @Test
-    public void shouldThrowExceptionWithNullTableName() {
+    public void shouldThrowExceptionWithNullTableNameAndTableId() {
         // When / Then
         assertThatThrownBy(() -> querySerDe.toJson(BulkExportQuery.builder()
                 .exportId("id")
-                .tableId("id")
                 .build()))
                 .isInstanceOf(
                         BulkExportQueryValidationException.class)
                 .hasMessage("Query validation failed for export \"id\": " +
-                        "tableName field must be provided");
+                        "tableId or tableName field must be provided");
     }
 
     @Test
-    public void shouldThrowExceptionNoExportId() {
-        String queryJson = "{\n" +
-                "  \"tableName\": \"test-table\",\n" +
-                "  \"tableId\": \"id2\"\n" +
-                "}\n";
-
-        // When & Then
-        assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
-                .isInstanceOf(
-                        BulkExportQueryValidationException.class)
-                .hasMessage("Query validation failed: exportId field must be provided");
-    }
-
-    @Test
-    public void shouldThrowExceptionNoTableName() {
+    public void shouldThrowExceptionNoTableNameAndNoTableId() {
         // Given
         String queryJson = "{\n" +
-                "  \"exportId\": \"id\",\n" +
-                "  \"tableId\": \"id2\"\n" +
+                "  \"exportId\": \"id\"\n" +
                 "}\n";
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
                 .isInstanceOf(BulkExportQueryValidationException.class)
                 .hasMessage("Query validation failed for export \"id\": " +
-                        "tableName field must be provided");
+                        "tableId or tableName field must be provided");
+    }
+
+    @Test
+    public void shouldThrowExceptionBothTableNameAndTableId() {
+        // Given
+        String queryJson = "{\n" +
+                "  \"exportId\": \"id\"\n," +
+                "  \"tableId\": \"table-id\"\n," +
+                "  \"tableName\": \"id\"\n" +
+                "}\n";
+
+        // When & Then
+        assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
+                .isInstanceOf(BulkExportQueryValidationException.class)
+                .hasMessage("Query validation failed for export \"id\": " +
+                        "tableId or tableName field must be provided, not both");
     }
 }

@@ -16,6 +16,7 @@
 package sleeper.bulkexport.model;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * A request for a bulk export on a given table.
@@ -26,9 +27,30 @@ public class BulkExportQuery {
     private final String tableName;
 
     private BulkExportQuery(Builder builder) {
-        tableId = requireNonNull(builder.tableId, builder, "tableId field must be provided");
-        tableName = requireNonNull(builder.tableName, builder, "tableName field must be provided");
-        exportId = requireNonNull(builder.exportId, builder, "exportId field must be provided");
+        exportId = builder.exportId != null ? builder.exportId : UUID.randomUUID().toString();
+
+        if (builder.tableId == null && builder.tableName == null) {
+            throw new BulkExportQueryValidationException(exportId, "tableId or tableName field must be provided");
+        } else if (builder.tableId != null && builder.tableName != null) {
+            throw new BulkExportQueryValidationException(exportId,
+                    "tableId or tableName field must be provided, not both");
+        } else {
+            tableId = builder.tableId;
+            tableName = builder.tableName;
+        }
+    }
+
+    /**
+     * Checks that the object created is valid and has all of the required fields.
+     *
+     * @return the validated object.
+     */
+    public BulkExportQuery validate() {
+        return BulkExportQuery.builder()
+                .tableId(tableId)
+                .tableName(tableName)
+                .exportId(exportId)
+                .build();
     }
 
     public static Builder builder() {
@@ -73,13 +95,6 @@ public class BulkExportQuery {
                 ", tableName='" + tableName + '\'' +
                 ", exportId='" + exportId + '\'' +
                 '}';
-    }
-
-    private static <T> T requireNonNull(T obj, Builder builder, String message) {
-        if (obj == null) {
-            throw new BulkExportQueryValidationException(builder.exportId, message);
-        }
-        return obj;
     }
 
     /**

@@ -26,8 +26,7 @@ public class BulkExportLeafPartitionQuerySerDe {
     private final Gson gsonPrettyPrinting;
 
     public BulkExportLeafPartitionQuerySerDe() {
-        GsonBuilder builder = new GsonBuilder()
-                .serializeNulls();
+        GsonBuilder builder = new GsonBuilder();
         gson = builder.create();
         gsonPrettyPrinting = builder.setPrettyPrinting().create();
     }
@@ -40,7 +39,7 @@ public class BulkExportLeafPartitionQuerySerDe {
      * @return a JSON string of the query
      */
     public String toJson(BulkExportLeafPartitionQuery query) {
-        return gson.toJson(BulkExportLeafPartitionQueryJson.from(query));
+        return gson.toJson(query);
     }
 
     /**
@@ -54,7 +53,7 @@ public class BulkExportLeafPartitionQuerySerDe {
      */
     public String toJson(BulkExportLeafPartitionQuery query, boolean prettyPrint) {
         if (prettyPrint) {
-            return gsonPrettyPrinting.toJson(BulkExportLeafPartitionQueryJson.from(query));
+            return gsonPrettyPrinting.toJson(query);
         }
         return toJson(query);
     }
@@ -64,10 +63,10 @@ public class BulkExportLeafPartitionQuerySerDe {
      *
      * @param json The JSON string to format.
      *
-     * @return The parsed object as BulkExportLeafPartitionQueryJson.
+     * @return The parsed object as BulkExportLeafPartitionQuery.
      */
     public BulkExportLeafPartitionQuery fromJson(String json) {
-        BulkExportLeafPartitionQueryJson queryJson = gson.fromJson(json, BulkExportLeafPartitionQueryJson.class);
-        return queryJson.to();
+        BulkExportLeafPartitionQuery query = gson.fromJson(json, BulkExportLeafPartitionQuery.class);
+        return query.validate();
     }
 }

@@ -41,6 +41,21 @@ public class BulkExportLeafPartitionQuery {
         files = requireNonNull(builder.files, builder, "files field must be provided");
     }
 
+    /**
+     * Checks that the object created is valid and has all of the required fields.
+     *
+     * @return the validated object.
+     */
+    public BulkExportLeafPartitionQuery validate() {
+        return BulkExportLeafPartitionQuery.builder()
+                .tableId(tableId)
+                .exportId(exportId)
+                .subExportId(subExportId)
+                .leafPartitionId(leafPartitionId)
+                .files(files)
+                .build();
+    }
+
     public static Builder builder() {
         return new Builder();
     }

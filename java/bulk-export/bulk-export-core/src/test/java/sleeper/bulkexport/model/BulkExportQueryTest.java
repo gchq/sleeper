@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class BulkExportQueryTest {
 
@@ -27,20 +28,18 @@ public class BulkExportQueryTest {
     public void testEqualsAndHashcode() {
         // Given
         String tableId = UUID.randomUUID().toString();
+        String exportId = UUID.randomUUID().toString();
         BulkExportQuery query1 = BulkExportQuery.builder()
                 .tableId(tableId)
-                .tableName("T")
-                .exportId("A")
+                .exportId(exportId)
                 .build();
         BulkExportQuery query2 = BulkExportQuery.builder()
                 .tableId(tableId)
-                .tableName("T")
-                .exportId("A")
+                .exportId(exportId)
                 .build();
         BulkExportQuery query3 = BulkExportQuery.builder()
                 .tableId(tableId)
-                .tableName("S")
-                .exportId("B")
+                .exportId(exportId.split("-")[0])
                 .build();
 
         // When
@@ -54,5 +53,41 @@ public class BulkExportQueryTest {
         assertThat(test2).isFalse();
         assertThat(hashCode2).isEqualTo(hashCode1);
         assertThat(hashCode3).isNotEqualTo(hashCode1);
+    }
+
+    @Test
+    public void testAutoUUIDForExportId() {
+        // Given When
+        BulkExportQuery query1 = BulkExportQuery.builder()
+                .tableId("id")
+                .build();
+        // Then
+        assertThat(query1.getExportId()).isNotNull();
+    }
+
+    @Test
+    public void testTableIdAndNameCannotBothBeSet() {
+        // Given When Then
+        assertThatThrownBy(() -> BulkExportQuery.builder()
+                .exportId("960b3b01")
+                .tableId("id")
+                .tableName("test")
+                .build())
+                .isInstanceOf(
+                        BulkExportQueryValidationException.class)
+                .hasMessage(
+                        "Query validation failed for export \"960b3b01\": tableId or tableName field must be provided, not both");
+    }
+
+    @Test
+    public void testTableIdAndNameBothMissing() {
+        // Given When Then
+        assertThatThrownBy(() -> BulkExportQuery.builder()
+                .exportId("960b3b01")
+                .build())
+                .isInstanceOf(
+                        BulkExportQueryValidationException.class)
+                .hasMessage(
+                        "Query validation failed for export \"960b3b01\": tableId or tableName field must be provided");
     }
 }
