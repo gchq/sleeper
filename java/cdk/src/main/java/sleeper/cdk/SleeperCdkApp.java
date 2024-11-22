@@ -42,7 +42,6 @@ import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
-import sleeper.cdk.stack.compaction.CompactionStatusStoreStack;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.DynamoDBStateStoreStack;
@@ -64,7 +63,6 @@ import sleeper.cdk.stack.ingest.IngestBatcherStack;
 import sleeper.cdk.stack.ingest.IngestStack;
 import sleeper.cdk.stack.ingest.IngestStacks;
 import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
-import sleeper.cdk.stack.ingest.IngestStatusStoreStack;
 import sleeper.cdk.stack.query.KeepLambdaWarmStack;
 import sleeper.cdk.stack.query.QueryQueueStack;
 import sleeper.cdk.stack.query.QueryStack;
@@ -145,10 +143,10 @@ public class SleeperCdkApp extends Stack {
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
                 transactionLogStateStoreStack, policiesStack);
-        IngestStatusStoreResources ingestStatusStore = new IngestStatusStoreStack(this, "IngestStatusStore",
-                instanceProperties, policiesStack).getResources();
-        CompactionStatusStoreResources compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
-                instanceProperties, policiesStack).getResources();
+        IngestStatusStoreResources ingestStatusStore = IngestStatusStoreResources.from(
+                this, "IngestStatusStore", instanceProperties, policiesStack);
+        CompactionStatusStoreResources compactionStatusStore = CompactionStatusStoreResources.from(
+                this, "CompactionStatusStore", instanceProperties, policiesStack);
         ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
