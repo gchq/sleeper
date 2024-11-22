@@ -144,7 +144,6 @@ There are several stacks that allow data to be imported using the bulk import pr
 - `EmrServerlessBulkImportStack` - this causes an EMR Serverless application to be created when the Sleeper instance is deployed. 
   This is the default EMR Bulk Import Stack. The advantage of using EMR Serverless is that when there are no bulk import jobs 
   the applications stops with no wasted compute. The startup of the application is greatly reduced compared to standard EMR. 
-  This stack is experimental.
 - `EmrBulkImportStack` - this causes an EMR cluster to be deployed each time a job is submitted to the EMR bulk import
   queue. Each job is processed on a separate EMR cluster. The advantage of the cluster being used for one job and then
   destroyed is that there is no wasted compute if jobs are submitted infrequently. The downside is that there is a

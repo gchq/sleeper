@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.io.IOException;
 import java.util.List;
@@ -56,7 +55,7 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
     }
 
     @Override
-    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
+    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException {
         List<Object> splitPoints = readSplitPoints(tableProperties, splitPointsFileLocation, splitPointStringsBase64Encoded);
         stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
     }
@@ -88,7 +87,7 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
                     splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
-        } catch (RuntimeException | IOException | StateStoreException e) {
+        } catch (RuntimeException | IOException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());

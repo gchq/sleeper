@@ -40,7 +40,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
     class InitialiseWithKeyTypes {
 
         @Test
-        public void shouldInitialiseRootPartitionWithIntKey() throws Exception {
+        public void shouldInitialiseRootPartitionWithIntKey() {
             // Given
             Schema schema = schemaWithKey("key", new IntType());
 
@@ -53,7 +53,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldInitialiseRootPartitionWithLongKey() throws Exception {
+        public void shouldInitialiseRootPartitionWithLongKey() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
 
@@ -66,7 +66,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldInitialiseRootPartitionWithStringKey() throws Exception {
+        public void shouldInitialiseRootPartitionWithStringKey() {
             // Given
             Schema schema = schemaWithKey("key", new StringType());
 
@@ -79,7 +79,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldInitialiseRootPartitionWithByteArrayKey() throws Exception {
+        public void shouldInitialiseRootPartitionWithByteArrayKey() {
             // Given
             Schema schema = schemaWithKey("key", new ByteArrayType());
 
@@ -92,7 +92,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldStorePartitionsSplitOnLongKey() throws Exception {
+        public void shouldStorePartitionsSplitOnLongKey() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             PartitionsBuilder partitions = new PartitionsBuilder(schema)
@@ -107,7 +107,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldStorePartitionsSplitOnStringKey() throws Exception {
+        public void shouldStorePartitionsSplitOnStringKey() {
             // Given
             Schema schema = schemaWithKey("key", new StringType());
             PartitionsBuilder partitions = new PartitionsBuilder(schema)
@@ -122,7 +122,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldStorePartitionsSplitOnByteArrayKey() throws Exception {
+        public void shouldStorePartitionsSplitOnByteArrayKey() {
             // Given
             Schema schema = schemaWithKey("key", new ByteArrayType());
             PartitionsBuilder partitions = new PartitionsBuilder(schema)
@@ -137,7 +137,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldStorePartitionsSplitOnMultidimensionalByteArrayKey() throws Exception {
+        public void shouldStorePartitionsSplitOnMultidimensionalByteArrayKey() {
             // Given
             Schema schema = Schema.builder()
                     .rowKeyFields(
@@ -158,7 +158,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldStoreSeveralLayersOfPartitions() throws Exception {
+        public void shouldStoreSeveralLayersOfPartitions() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             PartitionsBuilder partitions = new PartitionsBuilder(schema)
@@ -180,7 +180,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
     class Reinitialise {
 
         @Test
-        void shouldReinitialisePartitionsWhenNoFilesArePresent() throws Exception {
+        void shouldReinitialisePartitionsWhenNoFilesArePresent() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             PartitionsBuilder partitionsBefore = new PartitionsBuilder(schema)
@@ -200,7 +200,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        void shouldNotReinitialisePartitionsWhenAFileIsPresent() throws Exception {
+        void shouldNotReinitialisePartitionsWhenAFileIsPresent() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             PartitionsBuilder partitionsBefore = new PartitionsBuilder(schema)
@@ -226,7 +226,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
     class SplitPartitions {
 
         @Test
-        public void shouldSplitAPartition() throws Exception {
+        public void shouldSplitAPartition() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
@@ -247,7 +247,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldSplitAChildToTwoNestedAndGetLeafPartitions() throws Exception {
+        public void shouldSplitAChildToTwoNestedAndGetLeafPartitions() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
@@ -270,7 +270,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldFailSplittingAPartitionWhichHasAlreadyBeenSplit() throws Exception {
+        public void shouldFailSplittingAPartitionWhichHasAlreadyBeenSplit() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
@@ -292,7 +292,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldFailSplittingAPartitionWithWrongChildren() throws Exception {
+        public void shouldFailSplittingAPartitionWithWrongChildren() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
@@ -311,7 +311,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldFailSplittingAPartitionWithChildrenOfWrongParent() throws Exception {
+        public void shouldFailSplittingAPartitionWithChildrenOfWrongParent() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             initialiseWithSchema(schema);
@@ -334,7 +334,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
         }
 
         @Test
-        public void shouldFailSplittingAPartitionWhenNewPartitionIsNotALeaf() throws Exception {
+        public void shouldFailSplittingAPartitionWhenNewPartitionIsNotALeaf() {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             initialiseWithSchema(schema);

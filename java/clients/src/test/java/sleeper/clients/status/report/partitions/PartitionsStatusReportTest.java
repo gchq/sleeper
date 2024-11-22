@@ -28,7 +28,6 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.StateStoreTestBuilder;
 import sleeper.splitter.core.status.PartitionsStatus;
 
@@ -218,7 +217,7 @@ class PartitionsStatusReportTest {
                 example("reports/partitions/rootWithSomeFilesOnJob.txt"));
     }
 
-    public static String getStandardReport(TableProperties tableProperties, StateStore stateStore) throws StateStoreException {
+    public static String getStandardReport(TableProperties tableProperties, StateStore stateStore) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
         PartitionsStatusReporter reporter = new PartitionsStatusReporter(output.getPrintStream());
         reporter.report(PartitionsStatus.from(tableProperties, stateStore));

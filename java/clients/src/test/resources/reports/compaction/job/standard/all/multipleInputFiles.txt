@@ -10,11 +10,9 @@ Runs in progress: 0
 Runs awaiting commit: 0
 Jobs finished successfully: 0
 Jobs finished successfully with more than one run: 0
-Statistics for delay between creation and input files assignment time:
-  no jobs assigned to input files
 Statistics for delay between finish and commit time:
   no jobs committed
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| STATE   | CREATE_TIME              | FILES_ASSIGNED_TIME | JOB_ID   | INPUT_FILES | PARTITION_ID   | TASK_ID | START_TIME | FINISH_TIME | COMMIT_TIME | DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
-| CREATED | 2022-10-13T12:00:00.001Z |                     | test-job |           5 | test-partition |         |            |             |             |          |              |                 |               |                |
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| STATE   | CREATE_TIME              | JOB_ID   | INPUT_FILES | PARTITION_ID   | TASK_ID | START_TIME | FINISH_TIME | COMMIT_TIME | DURATION | RECORDS_READ | RECORDS_WRITTEN | READ_RATE (s) | WRITE_RATE (s) |
+| PENDING | 2022-10-13T12:00:00.001Z | test-job |           5 | test-partition |         |            |             |             |          |              |                 |               |                |
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

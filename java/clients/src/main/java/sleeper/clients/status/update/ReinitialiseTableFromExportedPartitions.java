@@ -28,7 +28,6 @@ import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -61,7 +60,7 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
     }
 
     @Override
-    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
+    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException {
         stateStore.initialise(readPartitions(tableProperties.getSchema()));
     }
 
@@ -105,7 +104,7 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromExportedPartitions(s3Client, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
-        } catch (RuntimeException | IOException | StateStoreException e) {
+        } catch (RuntimeException | IOException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());

@@ -40,7 +40,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
@@ -108,12 +107,8 @@ public class StateStoreCommitterThroughputIT {
         Instant startTime = Instant.now();
         AtomicInteger numRequestsTracker = new AtomicInteger();
         requests.forEach(request -> {
-            try {
-                committer.apply(request);
-                numRequestsTracker.incrementAndGet();
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
-            }
+            committer.apply(request);
+            numRequestsTracker.incrementAndGet();
         });
         Instant endTime = Instant.now();
         return new Stats(numRequestsTracker.get(), startTime, endTime);
@@ -154,11 +149,7 @@ public class StateStoreCommitterThroughputIT {
     private TableProperties createTable(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         S3TableProperties.createStore(instanceProperties, s3, dynamoDB).createTable(tableProperties);
-        try {
-            stateStoreProvider().getStateStore(tableProperties).initialise();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStoreProvider().getStateStore(tableProperties).initialise();
         return tableProperties;
     }
 

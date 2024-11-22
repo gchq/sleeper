@@ -15,14 +15,14 @@
  */
 package sleeper.task.common;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScaling;
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.ecs.model.AwsVpcConfiguration;
 import software.amazon.awssdk.services.ecs.model.ContainerOverride;
@@ -61,19 +61,19 @@ public class RunCompactionTasks {
 
     private final InstanceProperties instanceProperties;
     private final TaskCounts taskCounts;
-    private final HostScaler hostScaler;
+    private final CompactionTaskHostScaler hostScaler;
     private final TaskLauncher taskLauncher;
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, EcsClient ecsClient, AmazonAutoScaling asClient) {
+            InstanceProperties instanceProperties, EcsClient ecsClient, AutoScalingClient asClient, Ec2Client ec2Client) {
         this(instanceProperties,
                 () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
-                createEC2Scaler(instanceProperties, asClient, ecsClient),
+                EC2Scaler.create(instanceProperties, asClient, ec2Client),
                 (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort));
     }
 
     public RunCompactionTasks(
-            InstanceProperties instanceProperties, TaskCounts taskCounts, HostScaler hostScaler, TaskLauncher taskLauncher) {
+            InstanceProperties instanceProperties, TaskCounts taskCounts, CompactionTaskHostScaler hostScaler, TaskLauncher taskLauncher) {
         this.instanceProperties = instanceProperties;
         this.taskCounts = taskCounts;
         this.hostScaler = hostScaler;
@@ -86,10 +86,6 @@ public class RunCompactionTasks {
 
     public interface TaskLauncher {
         void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort);
-    }
-
-    public interface HostScaler {
-        void scaleTo(int numberContainers);
     }
 
     public void run(QueueMessageCount.Client queueMessageCount) {
@@ -153,16 +149,6 @@ public class RunCompactionTasks {
             return;
         }
         taskLauncher.launchTasks(createTasks, checkAbort);
-    }
-
-    private static HostScaler createEC2Scaler(InstanceProperties instanceProperties, AmazonAutoScaling asClient, EcsClient ecsClient) {
-        String launchType = instanceProperties.get(COMPACTION_ECS_LAUNCHTYPE);
-        // Only need scaler for EC2
-        if (!launchType.equalsIgnoreCase("EC2")) {
-            return hostCount -> {
-            };
-        }
-        return EC2Scaler.create(instanceProperties, asClient, ecsClient)::scaleTo;
     }
 
     /**
@@ -257,15 +243,15 @@ public class RunCompactionTasks {
         int numberOfTasks = Integer.parseInt(args[1]);
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
-        AmazonAutoScaling asClient = AmazonAutoScalingClientBuilder.defaultClient();
-        try (EcsClient ecsClient = EcsClient.create()) {
+        try (EcsClient ecsClient = EcsClient.create();
+                AutoScalingClient asClient = AutoScalingClient.create();
+                Ec2Client ec2Client = Ec2Client.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            new RunCompactionTasks(instanceProperties, ecsClient, asClient)
+            new RunCompactionTasks(instanceProperties, ecsClient, asClient, ec2Client)
                     .runToMeetTargetTasks(numberOfTasks);
         } finally {
             sqsClient.shutdown();
             s3Client.shutdown();
-            asClient.shutdown();
         }
     }
 }

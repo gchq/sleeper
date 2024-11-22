@@ -19,7 +19,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 
 import java.time.Duration;
@@ -39,12 +38,12 @@ public class InMemoryTransactionLogStateStoreTestBase {
     protected FileReferenceFactory factory;
     protected StateStore store;
 
-    protected void initialiseWithSchema(Schema schema) throws Exception {
+    protected void initialiseWithSchema(Schema schema) {
         createStore(new PartitionsBuilder(schema).singlePartition("root"));
         store.initialise();
     }
 
-    protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
+    protected void initialiseWithPartitions(PartitionsBuilder partitions) {
         createStore(partitions);
         store.initialise(partitions.buildList());
     }
@@ -66,7 +65,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
         return transactionLogs.stateStoreBuilder(sleeperTable, schema);
     }
 
-    protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
+    protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
                 .applySplit(store, parentId);
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);

@@ -97,7 +97,7 @@ public class StateStoreCommitRequest {
         return tableId;
     }
 
-    void apply(StateStoreCommitter committer) throws StateStoreException {
+    void apply(StateStoreCommitter committer) {
         applyRequest.apply(committer);
     }
 

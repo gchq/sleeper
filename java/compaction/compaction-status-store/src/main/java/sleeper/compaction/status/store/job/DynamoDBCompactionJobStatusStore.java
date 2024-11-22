@@ -27,7 +27,6 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
@@ -51,7 +50,6 @@ import java.util.stream.Stream;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createFilesAssignedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCommittedUpdate;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCreatedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFailedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFinishedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobStartedUpdate;
@@ -113,19 +111,10 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobCreated(CompactionJob job) {
-        try {
-            save(createJobCreatedUpdate(job, jobUpdateBuilder(job)));
-        } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving created event for job " + job.getId(), e);
-        }
-    }
-
-    @Override
     public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
         for (AssignJobIdRequest request : requests) {
             try {
-                save(createFilesAssignedUpdate(jobUpdateBuilder(tableId, request.getJobId())));
+                save(createFilesAssignedUpdate(request, jobUpdateBuilder(tableId, request.getJobId())));
             } catch (RuntimeException e) {
                 throw new CompactionStatusStoreException("Failed saving input files assigned event for job " + request.getJobId(), e);
             }
@@ -212,10 +201,6 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
                 getStringAttribute(statusUpdate, JOB_ID),
                 result.getConsumedCapacity().getCapacityUnits(),
                 LoggedDuration.withFullOutput(startTime, Instant.now()));
-    }
-
-    private DynamoDBRecordBuilder jobUpdateBuilder(CompactionJob job) {
-        return jobUpdateBuilder(job.getTableId(), job.getId());
     }
 
     private DynamoDBRecordBuilder jobUpdateBuilder(String tableId, String jobId) {

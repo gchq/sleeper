@@ -28,7 +28,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
@@ -108,13 +107,13 @@ public class IngestRecordsTestBase {
         return ingestRecords.close();
     }
 
-    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorCreationException, IOException {
+    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator) throws IteratorCreationException, IOException {
         tableProperties.setSchema(schema);
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
-    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws StateStoreException, IteratorCreationException, IOException {
+    protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws IteratorCreationException, IOException {
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
     }

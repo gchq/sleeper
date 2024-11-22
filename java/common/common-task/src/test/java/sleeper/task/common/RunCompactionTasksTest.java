@@ -21,30 +21,42 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.task.common.RunCompactionTasks.HostScaler;
+import sleeper.task.common.CompactionTaskHostScaler.CheckAutoScalingGroup;
+import sleeper.task.common.CompactionTaskHostScaler.CheckInstanceType;
+import sleeper.task.common.CompactionTaskHostScaler.InstanceType;
+import sleeper.task.common.CompactionTaskHostScaler.SetDesiredInstances;
 import sleeper.task.common.RunCompactionTasks.TaskCounts;
 import sleeper.task.common.RunCompactionTasks.TaskLauncher;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.task.common.QueueMessageCount.approximateNumberVisibleAndNotVisible;
 
 public class RunCompactionTasksTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final List<Integer> scaleToHostsRequests = new ArrayList<>();
+    private final Map<String, InstanceType> instanceTypes = new HashMap<>();
+    private final Map<String, Integer> autoScalingGroupMaxSizeByName = new HashMap<>();
     private final List<Integer> launchTasksRequests = new ArrayList<>();
-    private final HostScaler scaler = scaleToHostsRequests::add;
-    private final TaskLauncher taskLauncher = (numberOfTasks, checkAbort) -> launchTasksRequests.add(numberOfTasks);
+    private final List<Integer> scaleToHostsRequests = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, "test-compaction-job-queue");
+        instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "FARGATE");
     }
 
     @DisplayName("Launch tasks using queue")
@@ -59,7 +71,6 @@ public class RunCompactionTasksTest {
             runTasks(noJobsOnQueue(), noExistingTasks());
 
             // Then
-            assertThat(scaleToHostsRequests).contains(0);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -72,7 +83,6 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(2), noExistingTasks());
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).containsExactly(2);
         }
 
@@ -85,7 +95,6 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(2), noExistingTasks());
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).containsExactly(2);
         }
 
@@ -98,7 +107,6 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(2), existingTasks(1));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(3);
             assertThat(launchTasksRequests).containsExactly(2);
         }
 
@@ -111,7 +119,6 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(1), existingTasks(2));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -124,7 +131,6 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(1), existingTasks(3));
 
             // Then
-            assertThat(scaleToHostsRequests).contains(2);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -137,7 +143,6 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(3), noExistingTasks());
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).containsExactly(2);
         }
 
@@ -150,7 +155,6 @@ public class RunCompactionTasksTest {
             runTasks(jobsOnQueue(2), existingTasks(2));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(3);
             assertThat(launchTasksRequests).containsExactly(1);
         }
 
@@ -163,7 +167,6 @@ public class RunCompactionTasksTest {
             runTasks(noJobsOnQueue(), existingTasks(3));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(3);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -176,7 +179,6 @@ public class RunCompactionTasksTest {
             runTasks(noJobsOnQueue(), existingTasks(3));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(3);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -189,7 +191,6 @@ public class RunCompactionTasksTest {
             runTasks(noJobsOnQueue(), existingTasks(3));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).isEmpty();
         }
     }
@@ -203,7 +204,6 @@ public class RunCompactionTasksTest {
             runToMeetTargetTasks(2, noExistingTasks());
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).containsExactly(2);
         }
 
@@ -216,7 +216,6 @@ public class RunCompactionTasksTest {
             runToMeetTargetTasks(3, noExistingTasks());
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(3);
             assertThat(launchTasksRequests).containsExactly(3);
         }
 
@@ -226,7 +225,6 @@ public class RunCompactionTasksTest {
             runToMeetTargetTasks(5, existingTasks(2));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(5);
             assertThat(launchTasksRequests).containsExactly(3);
         }
 
@@ -236,7 +234,6 @@ public class RunCompactionTasksTest {
             runToMeetTargetTasks(2, existingTasks(3));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(3);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -246,7 +243,6 @@ public class RunCompactionTasksTest {
             runToMeetTargetTasks(2, existingTasks(2));
 
             // Then
-            assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).isEmpty();
         }
 
@@ -256,8 +252,118 @@ public class RunCompactionTasksTest {
             runToMeetTargetTasks(0, noExistingTasks());
 
             // Then
+            assertThat(launchTasksRequests).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Scale hosts to support required tasks")
+    class ScaleHostsToTasks {
+
+        @BeforeEach
+        void setUp() {
+            instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
+            instanceProperties.set(COMPACTION_AUTO_SCALING_GROUP, "test-scaling-group");
+            instanceProperties.setNumber(MAXIMUM_CONCURRENT_COMPACTION_TASKS, 10);
+            setScalingGroupMaxSize(10);
+        }
+
+        @Test
+        void shouldScaleToTargetTasksWhenInstanceTypeIsUnknown() {
+            // When
+            runTasks(jobsOnQueue(3), noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(3);
+            assertThat(launchTasksRequests).containsExactly(3);
+        }
+
+        @Test
+        void shouldScaleToOneWhenInstanceTypeFitsThreeTasks() {
+            // Given
+            instanceProperties.set(COMPACTION_EC2_TYPE, "test-type");
+            instanceTypes.put("test-type", new InstanceType(4, 4096));
+            instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+            instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
+
+            // When
+            runTasks(jobsOnQueue(3), noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(1);
+            assertThat(launchTasksRequests).containsExactly(3);
+        }
+
+        @Test
+        void shouldScaleToTwoWhenInstanceTypeFitsThreeTasks() {
+            // Given
+            instanceProperties.set(COMPACTION_EC2_TYPE, "test-type");
+            instanceTypes.put("test-type", new InstanceType(4, 4096));
+            instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+            instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
+
+            // When
+            runTasks(jobsOnQueue(6), noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(launchTasksRequests).containsExactly(6);
+        }
+
+        @Test
+        void shouldScaleToMaxSizeWhenNeededTasksDoNotFit() {
+            // Given
+            setScalingGroupMaxSize(2);
+
+            // When
+            runTasks(jobsOnQueue(3), noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(2);
+            assertThat(launchTasksRequests).containsExactly(3);
+        }
+
+        @Test
+        void shouldFailWhenInstanceTypeDoesNotFitOneTask() {
+            // Given
+            instanceProperties.set(COMPACTION_EC2_TYPE, "test-type");
+            instanceTypes.put("test-type", new InstanceType(1, 1024));
+            instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+            instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
+
+            // When / Then
+            assertThatThrownBy(() -> runTasks(jobsOnQueue(5), noExistingTasks()))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Instance type does not fit a single compaction task with the configured requirements. " +
+                            "CPU required 1024, found 1024. Memory MiB required 1024, found 921.");
+            assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(launchTasksRequests).isEmpty();
+        }
+
+        @Test
+        void shouldScaleToZeroWhenNoTasksArePresentOrNeeded() {
+            // When
+            runTasks(noJobsOnQueue(), noExistingTasks());
+
+            // Then
             assertThat(scaleToHostsRequests).containsExactly(0);
             assertThat(launchTasksRequests).isEmpty();
+        }
+
+        @Test
+        void shouldNotScaleHostsForFargateLaunchType() {
+            // Given
+            instanceProperties.set(COMPACTION_ECS_LAUNCHTYPE, "FARGATE");
+
+            // When
+            runTasks(jobsOnQueue(3), noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).isEmpty();
+            assertThat(launchTasksRequests).containsExactly(3);
         }
     }
 
@@ -270,7 +376,27 @@ public class RunCompactionTasksTest {
     }
 
     private RunCompactionTasks taskRunner(TaskCounts taskCounts) {
-        return new RunCompactionTasks(instanceProperties, taskCounts, scaler, taskLauncher);
+        return new RunCompactionTasks(instanceProperties, taskCounts, hostScaler(), taskLauncher());
+    }
+
+    private CompactionTaskHostScaler hostScaler() {
+        return new CompactionTaskHostScaler(instanceProperties, checkAutoScalingGroup(), setDesiredInstances(), checkInstanceType());
+    }
+
+    private TaskLauncher taskLauncher() {
+        return (numberOfTasks, checkAbort) -> launchTasksRequests.add(numberOfTasks);
+    }
+
+    private CheckAutoScalingGroup checkAutoScalingGroup() {
+        return autoScalingGroupMaxSizeByName::get;
+    }
+
+    private SetDesiredInstances setDesiredInstances() {
+        return (group, desiredSize) -> scaleToHostsRequests.add(desiredSize);
+    }
+
+    private CheckInstanceType checkInstanceType() {
+        return instanceTypes::get;
     }
 
     private static TaskCounts noExistingTasks() {
@@ -291,4 +417,7 @@ public class RunCompactionTasksTest {
                         approximateNumberVisibleAndNotVisible(messageCount, 0)));
     }
 
+    private void setScalingGroupMaxSize(int maxSize) {
+        autoScalingGroupMaxSizeByName.put(instanceProperties.get(COMPACTION_AUTO_SCALING_GROUP), maxSize);
+    }
 }

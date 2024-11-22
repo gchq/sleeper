@@ -15,10 +15,12 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
+import java.time.Instant;
+
 public class CompactionJobBatchExpiredException extends RuntimeException {
 
-    public CompactionJobBatchExpiredException(CompactionJobDispatchRequest request) {
-        super("Dispatch request for table " + request.getTableId() + " expired at " + request.getExpiryTime() + ", batch key: " + request.getBatchKey());
+    public CompactionJobBatchExpiredException(CompactionJobDispatchRequest request, Instant expiryTime) {
+        super("Dispatch request for table " + request.getTableId() + " expired at " + expiryTime + ", batch key: " + request.getBatchKey());
     }
 
 }

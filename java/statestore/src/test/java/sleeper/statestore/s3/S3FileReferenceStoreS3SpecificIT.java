@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
-import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -95,13 +94,7 @@ public class S3FileReferenceStoreS3SpecificIT extends S3StateStoreOneTableTestBa
 
             // When
             CompletableFuture.allOf(files.stream()
-                    .map(file -> (Runnable) () -> {
-                        try {
-                            store.addFile(file);
-                        } catch (StateStoreException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
+                    .map(file -> (Runnable) () -> store.addFile(file))
                     .map(runnable -> CompletableFuture.runAsync(runnable, executorService))
                     .toArray(CompletableFuture[]::new)).join();
 

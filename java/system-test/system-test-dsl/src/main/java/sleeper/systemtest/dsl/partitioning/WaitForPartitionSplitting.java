@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.splitter.core.find.FindPartitionToSplitResult;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
@@ -83,24 +82,16 @@ public class WaitForPartitionSplitting {
     }
 
     private static Set<String> getLeafPartitionIds(StateStore stateStore) {
-        try {
-            return stateStore.getLeafPartitions().stream()
-                    .map(Partition::getId)
-                    .collect(Collectors.toSet());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return stateStore.getLeafPartitions().stream()
+                .map(Partition::getId)
+                .collect(Collectors.toSet());
     }
 
     private static List<FindPartitionToSplitResult> getResults(
             Stream<TableProperties> streamTableProperties, Function<TableProperties, StateStore> getStateStore) {
         return streamTableProperties.parallel()
-                .flatMap(properties -> {
-                    try {
-                        return FindPartitionsToSplit.getResults(properties, getStateStore.apply(properties)).stream();
-                    } catch (StateStoreException e) {
-                        throw new RuntimeException(e);
-                    }
-                }).collect(Collectors.toUnmodifiableList());
+                .flatMap(properties -> FindPartitionsToSplit.getResults(properties, getStateStore.apply(properties))
+                        .stream())
+                .collect(Collectors.toUnmodifiableList());
     }
 }

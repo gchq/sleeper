@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -41,15 +40,12 @@ import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class CompactionJobDispatcherTest {
@@ -62,7 +58,6 @@ public class CompactionJobDispatcherTest {
     StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
 
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
     Queue<CompactionJob> compactionQueue = new LinkedList<>();
@@ -79,10 +74,6 @@ public class CompactionJobDispatcherTest {
         stateStore.addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
 
-        Instant createTime1 = Instant.parse("2024-11-14T14:21:00Z");
-        Instant createTime2 = Instant.parse("2024-11-14T14:22:00Z");
-        statusStore.setTimeSupplier(List.of(createTime1, createTime2).iterator()::next);
-
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
                 "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
         putCompactionJobBatch(request, List.of(job1, job2));
@@ -93,8 +84,6 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
         assertThat(delayedPendingQueue).isEmpty();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(jobCreated(job2, createTime2), jobCreated(job1, createTime1));
     }
 
     @Test
@@ -121,7 +110,6 @@ public class CompactionJobDispatcherTest {
         assertThat(compactionQueue).isEmpty();
         assertThat(delayedPendingQueue).containsExactly(
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
     @Test
@@ -145,7 +133,6 @@ public class CompactionJobDispatcherTest {
                 .isInstanceOf(CompactionJobBatchExpiredException.class);
         assertThat(compactionQueue).isEmpty();
         assertThat(delayedPendingQueue).isEmpty();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
     }
 
     private void putCompactionJobBatch(CompactionJobDispatchRequest request, List<CompactionJob> jobs) {
@@ -163,7 +150,7 @@ public class CompactionJobDispatcherTest {
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore), readBatch(),
-                statusStore, compactionQueue::add, returnRequest(), times.iterator()::next);
+                compactionQueue::add, returnRequest(), times.iterator()::next);
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {
@@ -177,7 +164,7 @@ public class CompactionJobDispatcherTest {
 
     private void assignJobIds(List<CompactionJob> jobs) throws Exception {
         for (CompactionJob job : jobs) {
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+            stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
         }
     }
 

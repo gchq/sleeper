@@ -44,7 +44,6 @@ import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
@@ -115,7 +114,7 @@ public abstract class IngestJobQueueConsumerTestBase {
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
     }
 
-    protected StateStore createTable(Schema schema) throws IOException, StateStoreException {
+    protected StateStore createTable(Schema schema) throws IOException {
         tableProperties.setSchema(schema);
         tablePropertiesStore.save(tableProperties);
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3, dynamoDB, hadoopConfiguration)

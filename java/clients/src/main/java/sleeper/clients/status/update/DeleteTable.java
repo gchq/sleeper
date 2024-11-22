@@ -29,7 +29,6 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
 
@@ -59,7 +58,7 @@ public class DeleteTable {
         this.stateStoreProvider = stateStoreProvider;
     }
 
-    public void delete(String tableName) throws StateStoreException {
+    public void delete(String tableName) {
         TableProperties tableProperties = tablePropertiesStore.loadByName(tableName);
         /*
          * - First we clear the state store for the table. This needs to happen first so that if a transaction log
@@ -75,7 +74,7 @@ public class DeleteTable {
         LOGGER.info("Successfully deleted table {}", tableProperties.getStatus());
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) {
         if (args.length < 2 || args.length > 3) {
             System.out.println("Usage: <instance-id> <table-name> <optional-force-flag>");
         }

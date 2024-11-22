@@ -41,7 +41,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         Instant createdTime = Instant.parse("2024-09-06T09:53:00Z");
 
         // When
-        storeWithUpdateTime(createdTime).jobCreated(job);
+        storeJobCreatedAtTime(createdTime, job);
 
         // Then
         assertThat(getAllJobStatuses())
@@ -62,7 +62,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         Instant createdTime = Instant.parse("2024-09-06T09:53:00Z");
 
         // When
-        storeWithUpdateTime(createdTime).jobCreated(job);
+        storeJobCreatedAtTime(createdTime, job);
 
         // Then
         assertThat(getAllJobStatuses())
@@ -84,8 +84,8 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         Instant createdTime2 = Instant.parse("2024-09-06T09:55:00Z");
 
         // When
-        storeWithUpdateTime(createdTime1).jobCreated(job1);
-        storeWithUpdateTime(createdTime2).jobCreated(job2);
+        storeJobCreatedAtTime(createdTime1, job1);
+        storeJobCreatedAtTime(createdTime2, job2);
 
         // Then
         assertThat(getAllJobStatuses())

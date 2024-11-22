@@ -23,7 +23,6 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.query.core.model.Query;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -75,10 +74,6 @@ public class QueryCreator {
     }
 
     private PartitionTree getPartitionTree() {
-        try {
-            return new PartitionTree(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return new PartitionTree(stateStore.getAllPartitions());
     }
 }

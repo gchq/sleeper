@@ -31,7 +31,6 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 
 import java.util.HashMap;
@@ -85,12 +84,12 @@ public class FilesStatusReport {
         return FILE_STATUS_REPORTERS.get(outputType);
     }
 
-    public void run() throws StateStoreException {
+    public void run() {
         TableFilesStatus tableStatus = fileStatusCollector.run(this.maxNumberOfFilesWithNoReferencesToCount);
         fileStatusReporter.report(tableStatus, verbose);
     }
 
-    public static void main(String[] args) throws StateStoreException {
+    public static void main(String[] args) {
         if (!(args.length >= 2 && args.length <= 5)) {
             throw new IllegalArgumentException(
                     "Usage: <instance-id> <table-name> <optional-max-num-files-with-no-references-to-count> " +

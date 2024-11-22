@@ -30,7 +30,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.s3.S3StateStore;
 
@@ -72,7 +71,7 @@ public class ReinitialiseTable {
         }
     }
 
-    public void run() throws IOException, StateStoreException {
+    public void run() throws IOException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
@@ -102,7 +101,7 @@ public class ReinitialiseTable {
         }
     }
 
-    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException, StateStoreException {
+    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException {
         stateStore.initialise();
     }
 
@@ -133,7 +132,7 @@ public class ReinitialiseTable {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client, dynamoDBClient, instanceId, tableName, deletePartitions);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
-        } catch (RuntimeException | IOException | StateStoreException e) {
+        } catch (RuntimeException | IOException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());

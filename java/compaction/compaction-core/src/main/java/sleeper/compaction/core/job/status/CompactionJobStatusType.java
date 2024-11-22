@@ -25,12 +25,11 @@ import java.util.Collection;
  * any failed runs will be ignored for computing the status of the job.
  */
 public enum CompactionJobStatusType {
-    CREATED(1),
-    FILES_ASSIGNED(2),
-    FAILED(3),
-    IN_PROGRESS(4),
-    UNCOMMITTED(5),
-    FINISHED(6);
+    PENDING(1),
+    FAILED(2),
+    IN_PROGRESS(3),
+    UNCOMMITTED(4),
+    FINISHED(5);
 
     private final int order;
 
@@ -45,8 +44,8 @@ public enum CompactionJobStatusType {
      * @return                the status type
      */
     public static CompactionJobStatusType furthestStatusTypeOfJob(
-            CompactionJobStatusType jobStatusType, Collection<CompactionJobStatusType> runStatusTypes) {
-        FurthestStatusTracker furthestStatus = new FurthestStatusTracker(jobStatusType);
+            Collection<CompactionJobStatusType> runStatusTypes) {
+        FurthestStatusTracker furthestStatus = new FurthestStatusTracker(PENDING);
         for (CompactionJobStatusType runStatusType : runStatusTypes) {
             furthestStatus.setIfFurther(runStatusType);
         }
@@ -60,7 +59,7 @@ public enum CompactionJobStatusType {
      * @return     the status type
      */
     public static CompactionJobStatusType statusTypeOfJobRun(ProcessRun run) {
-        return CompactionJobUpdateType.typeOfFurthestUpdateInRun(run).getJobStatusTypeAfterUpdate();
+        return CompactionJobUpdateTypeInRun.typeOfFurthestUpdateInRun(run).getJobStatusTypeAfterUpdate();
     }
 
     /**
