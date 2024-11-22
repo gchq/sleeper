@@ -288,10 +288,10 @@ impl DataSketchVariant {
         match d {
             DataType::Int32 => DataSketchVariant::I32(new_i32_sketch(k)),
             DataType::Int64 => DataSketchVariant::I64(new_i64_sketch(k)),
-            t @ (DataType::Utf8 | DataType::LargeUtf8) => {
+            t @ (DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View) => {
                 DataSketchVariant::Str(t.clone(), new_str_sketch(k))
             }
-            t @ (DataType::Binary | DataType::LargeBinary) => {
+            t @ (DataType::Binary | DataType::LargeBinary | DataType::BinaryView) => {
                 DataSketchVariant::Bytes(t.clone(), new_byte_sketch(k))
             }
             _ => {

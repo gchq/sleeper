@@ -16,11 +16,12 @@
 
 package sleeper.systemtest.drivers.compaction;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
@@ -57,7 +58,8 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
     private final EcsClient ecsClient;
-    private final AmazonAutoScaling asClient;
+    private final AutoScalingClient asClient;
+    private final Ec2Client ec2Client;
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
@@ -66,6 +68,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         this.sqsClient = clients.getSqs();
         this.ecsClient = clients.getEcs();
         this.asClient = clients.getAutoScaling();
+        this.ec2Client = clients.getEc2();
     }
 
     @Override
@@ -118,7 +121,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     public void forceStartTasks(int numberOfTasks, PollWithRetries poll) {
         CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
         long tasksFinishedBefore = store.getAllTasks().stream().filter(CompactionTaskStatus::isFinished).count();
-        new RunCompactionTasks(instance.getInstanceProperties(), ecsClient, asClient)
+        new RunCompactionTasks(instance.getInstanceProperties(), ecsClient, asClient, ec2Client)
                 .runToMeetTargetTasks(numberOfTasks);
         try {
             poll.pollUntil("tasks are started", () -> {
@@ -134,6 +137,6 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     @Override
     public void scaleToZero() {
-        EC2Scaler.create(instance.getInstanceProperties(), asClient, ecsClient).scaleTo(0);
+        EC2Scaler.create(instance.getInstanceProperties(), asClient, ec2Client).scaleTo(0);
     }
 }
