@@ -23,7 +23,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -35,13 +34,13 @@ public class S3StateStoreOneTableTestBase extends S3StateStoreTestBase {
     protected FileReferenceFactory factory;
     protected StateStore store;
 
-    protected void initialiseWithSchema(Schema schema) throws Exception {
+    protected void initialiseWithSchema(Schema schema) {
         createStore(schema);
         setPartitions(new PartitionsBuilder(schema).singlePartition("root"));
         store.initialise();
     }
 
-    protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
+    protected void initialiseWithPartitions(PartitionsBuilder partitions) {
         createStore(partitions.getSchema());
         setPartitions(partitions);
         store.initialise(partitions.buildList());
@@ -58,7 +57,7 @@ public class S3StateStoreOneTableTestBase extends S3StateStoreTestBase {
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
-    protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
+    protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
                 .applySplit(store, parentId);
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);

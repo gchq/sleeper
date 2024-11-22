@@ -109,21 +109,27 @@ class TransactionLogHead<T> {
     private void prepareAddTransactionAttempt(int attempt, StateStoreTransaction<T> transaction) throws StateStoreException {
         if (updateLogBeforeAddTransaction) {
             forceUpdate();
-            transaction.validate(state);
+            validate(transaction);
             waitBeforeAttempt(attempt);
         } else if (attempt > 1) {
             forceUpdate();
-            transaction.validate(state);
+            validate(transaction);
             waitBeforeAttempt(attempt - 1);
         } else {
             try {
-                transaction.validate(state);
+                validate(transaction);
             } catch (StateStoreException e) {
                 LOGGER.warn("Failed validating transaction on first attempt for table {}, will update from log and revalidate: {}", sleeperTable, e.getMessage());
                 forceUpdate();
-                transaction.validate(state);
+                validate(transaction);
             }
         }
+    }
+
+    private void validate(StateStoreTransaction<T> transaction) throws StateStoreException {
+        Instant startTime = Instant.now();
+        transaction.validate(state);
+        LOGGER.debug("Validated transaction in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
     }
 
     private void waitBeforeAttempt(int attempt) throws StateStoreException {
@@ -142,8 +148,11 @@ class TransactionLogHead<T> {
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed adding transaction", e);
         }
+        Instant startApplyTime = Instant.now();
         transaction.apply(state, updateTime);
         lastTransactionNumber = transactionNumber;
+        LOGGER.debug("Applied transaction {} in {}",
+                transactionNumber, LoggedDuration.withShortOutput(startApplyTime, Instant.now()));
     }
 
     /**

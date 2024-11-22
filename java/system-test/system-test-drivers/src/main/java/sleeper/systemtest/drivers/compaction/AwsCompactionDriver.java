@@ -16,11 +16,12 @@
 
 package sleeper.systemtest.drivers.compaction;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
@@ -34,10 +35,9 @@ import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -58,7 +58,8 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
     private final EcsClient ecsClient;
-    private final AmazonAutoScaling asClient;
+    private final AutoScalingClient asClient;
+    private final Ec2Client ec2Client;
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
@@ -67,6 +68,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         this.sqsClient = clients.getSqs();
         this.ecsClient = clients.getEcs();
         this.asClient = clients.getAutoScaling();
+        this.ec2Client = clients.getEc2();
     }
 
     @Override
@@ -92,7 +94,7 @@ public class AwsCompactionDriver implements CompactionDriver {
                         Mode.FORCE_ALL_FILES_AFTER_STRATEGY,
                         AssignJobIdQueueSender.bySqs(sqsClient, instance.getInstanceProperties()));
                 createJobs.createJobs(table);
-            } catch (StateStoreException | IOException | ObjectFactoryException e) {
+            } catch (IOException | ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
             }
         });
@@ -119,7 +121,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     public void forceStartTasks(int numberOfTasks, PollWithRetries poll) {
         CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
         long tasksFinishedBefore = store.getAllTasks().stream().filter(CompactionTaskStatus::isFinished).count();
-        new RunCompactionTasks(instance.getInstanceProperties(), ecsClient, asClient)
+        new RunCompactionTasks(instance.getInstanceProperties(), ecsClient, asClient, ec2Client)
                 .runToMeetTargetTasks(numberOfTasks);
         try {
             poll.pollUntil("tasks are started", () -> {
@@ -135,6 +137,6 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     @Override
     public void scaleToZero() {
-        EC2Scaler.create(instance.getInstanceProperties(), asClient, ecsClient).scaleTo(0);
+        EC2Scaler.create(instance.getInstanceProperties(), asClient, ec2Client).scaleTo(0);
     }
 }

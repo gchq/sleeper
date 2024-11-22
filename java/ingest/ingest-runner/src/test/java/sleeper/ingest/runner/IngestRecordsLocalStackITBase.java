@@ -26,7 +26,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.core.CommonTestConstants;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
@@ -46,7 +45,7 @@ public class IngestRecordsLocalStackITBase extends IngestRecordsTestBase {
         new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
     }
 
-    protected StateStore initialiseStateStore() throws StateStoreException {
+    protected StateStore initialiseStateStore() {
         StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient,
                 getHadoopConfiguration(localStackContainer));
         stateStore.initialise();

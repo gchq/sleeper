@@ -40,8 +40,6 @@ import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
@@ -51,13 +49,13 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +81,7 @@ public class CreateCompactionJobsIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.IAM);
+            LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
 
     private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
@@ -169,11 +167,8 @@ public class CreateCompactionJobsIT {
     }
 
     private CompactionJob readJobMessage(Message message) {
-        try {
-            return CompactionJobSerDe.deserialiseFromString(message.getBody());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return new CompactionJobSerDe().fromJson(message.getBody());
+
     }
 
     private List<CompactionJobIdAssignmentCommitRequest> receiveJobIdAssignmentRequests() {
@@ -217,16 +212,12 @@ public class CreateCompactionJobsIT {
 
     private StateStore createAndInitialiseStateStore(TableProperties tableProperties) {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        try {
-            stateStore.initialise();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStore.initialise();
         return stateStore;
     }
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
-        return new CreateCompactionJobs(new ObjectFactory(instanceProperties, s3, null),
+        return new CreateCompactionJobs(ObjectFactory.noUserJars(),
                 instanceProperties, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqs)::send,
                 CompactionJobStatusStore.NONE, Mode.STRATEGY,

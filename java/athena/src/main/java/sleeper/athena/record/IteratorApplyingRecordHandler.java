@@ -38,8 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.athena.FilterTranslator;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.table.TableProperties;
@@ -51,8 +50,10 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
+import sleeper.query.core.recordretrieval.RecordRetrievalException;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
-import sleeper.query.runner.recordretrieval.RecordRetrievalException;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -101,7 +102,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
 
     private ObjectFactory createObjectFactory(AmazonS3 s3Client) {
         try {
-            return new ObjectFactory(getInstanceProperties(), s3Client, "/tmp");
+            return new S3UserJarsLoader(getInstanceProperties(), s3Client, "/tmp").buildObjectFactory();
         } catch (ObjectFactoryException e) {
             throw new RuntimeException("Failed to initialise Object Factory");
         }

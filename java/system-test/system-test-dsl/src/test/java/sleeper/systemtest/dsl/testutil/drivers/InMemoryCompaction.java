@@ -28,8 +28,6 @@ import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
@@ -42,9 +40,10 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.core.util.PollWithRetries;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -151,7 +150,7 @@ public class InMemoryCompaction {
             instance.streamTableProperties().forEach(table -> {
                 try {
                     jobCreator.createJobs(table);
-                } catch (StateStoreException | IOException | ObjectFactoryException e) {
+                } catch (IOException | ObjectFactoryException e) {
                     throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
                 }
             });
@@ -191,22 +190,13 @@ public class InMemoryCompaction {
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
-        try {
-            CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
     }
 
     private static Partition getPartitionForJob(StateStore stateStore, CompactionJob job) {
-        PartitionTree partitionTree = null;
-        try {
-            partitionTree = new PartitionTree(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        PartitionTree partitionTree = new PartitionTree(stateStore.getAllPartitions());
         return partitionTree.getPartition(job.getPartitionId());
     }
 

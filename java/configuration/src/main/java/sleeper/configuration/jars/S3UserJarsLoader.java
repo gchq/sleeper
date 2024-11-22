@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.CommonProperty;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -49,23 +51,23 @@ public class S3UserJarsLoader {
     }
 
     /**
-     * Builds a class loader to load from either the current classpath, or the specified user jars.
+     * Builds an object factory to load from either the current classpath, or the specified user jars.
      *
-     * @return                        the class loader
+     * @return                        the object factory
      * @throws ObjectFactoryException if we could not build a URL to reference the local file a jar was downloaded to
      */
-    public ClassLoader getClassLoader() throws ObjectFactoryException {
+    public ObjectFactory buildObjectFactory() throws ObjectFactoryException {
+        return new ObjectFactory(getClassLoader());
+    }
+
+    private ClassLoader getClassLoader() throws ObjectFactoryException {
         List<String> userJarsFiles = instanceProperties.getList(CommonProperty.USER_JARS);
-        if (null != userJarsFiles) {
-            try {
-                ClassLoader classLoader = getClassLoader(userJarsFiles);
-                LOGGER.info("Created ClassLoader from jars {}", userJarsFiles);
-                return classLoader;
-            } catch (MalformedURLException e) {
-                throw new ObjectFactoryException("MalformedURLException creating class loader from files " + userJarsFiles, e);
-            }
-        } else {
-            return this.getClass().getClassLoader();
+        try {
+            ClassLoader classLoader = getClassLoader(userJarsFiles);
+            LOGGER.info("Created ClassLoader from jars {}", userJarsFiles);
+            return classLoader;
+        } catch (MalformedURLException e) {
+            throw new ObjectFactoryException("MalformedURLException creating class loader from files " + userJarsFiles, e);
         }
     }
 

@@ -36,8 +36,7 @@ import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
@@ -45,9 +44,10 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
@@ -84,7 +84,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
 
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
 
-        ObjectFactory objectFactory = new ObjectFactory(instanceProperties, s3Client, "/tmp");
+        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory();
 
         AmazonDynamoDB dynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
@@ -114,7 +114,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
                 createJobs.createJobs(tableProperties);
-            } catch (RuntimeException | StateStoreException | IOException | ObjectFactoryException e) {
+            } catch (RuntimeException | IOException | ObjectFactoryException e) {
                 LOGGER.error("Failed creating jobs for table {}", tableId, e);
                 tableMessages.stream()
                         .map(SQSMessage::getMessageId)

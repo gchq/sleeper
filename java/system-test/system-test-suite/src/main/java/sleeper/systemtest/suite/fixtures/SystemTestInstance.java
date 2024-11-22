@@ -42,6 +42,7 @@ import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_GPU_ENABLED;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
@@ -50,6 +51,7 @@ import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCUR
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.core.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
@@ -63,8 +65,10 @@ import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY;
 import static sleeper.core.properties.instance.PersistentEMRProperty.BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.validation.OptionalStack.CompactionStack;
 import static sleeper.core.properties.validation.OptionalStack.EmrBulkImportStack;
 import static sleeper.core.properties.validation.OptionalStack.EmrServerlessBulkImportStack;
+import static sleeper.core.properties.validation.OptionalStack.GarbageCollectorStack;
 import static sleeper.core.properties.validation.OptionalStack.IngestBatcherStack;
 import static sleeper.core.properties.validation.OptionalStack.IngestStack;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.noSourceBucket;
@@ -85,7 +89,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration COMPACTION_ON_EC2 = usingSystemTestDefaults("cptec2", SystemTestInstance::createCompactionOnEC2Configuration);
     public static final SystemTestInstanceConfiguration COMMITTER_THROUGHPUT = usingSystemTestDefaults("cmmitr", SystemTestInstance::createStateStoreCommitterThroughputConfiguration);
     public static final SystemTestInstanceConfiguration REENABLE_OPTIONAL_STACKS = usingSystemTestDefaults("opstck", SystemTestInstance::createReenableOptionalStacksConfiguration);
-    public static final SystemTestInstanceConfiguration INGEST_NO_SOURCE_BUCKET = noSourceBucket("no-src", SystemTestInstance::createNoSourceBucketConfiguration);
+    public static final SystemTestInstanceConfiguration OPTIONAL_FEATURES_DISABLED = noSourceBucket("xf-off", SystemTestInstance::createOptionalFeaturesDisabledConfiguration);
 
     private static final String MAIN_EMR_MASTER_TYPES = "m7i.xlarge,m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
     private static final String MAIN_EMR_EXECUTOR_TYPES = "m7i.4xlarge,m6i.4xlarge,m6a.4xlarge,m5.4xlarge,m5a.4xlarge";
@@ -224,10 +228,13 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createNoSourceBucketConfiguration() {
+    private static DeployInstanceConfiguration createOptionalFeaturesDisabledConfiguration() {
         InstanceProperties properties = createInstanceProperties();
-        properties.setEnumList(OPTIONAL_STACKS, List.of(IngestStack, EmrBulkImportStack, EmrServerlessBulkImportStack, IngestBatcherStack));
-        setSystemTestTags(properties, "noSourceBucket", "Sleeper Maven system test no source bucket");
+        properties.setEnumList(OPTIONAL_STACKS, List.of(IngestStack, CompactionStack, GarbageCollectorStack,
+                EmrBulkImportStack, EmrServerlessBulkImportStack, IngestBatcherStack));
+        properties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
+        properties.set(INGEST_STATUS_STORE_ENABLED, "false");
+        setSystemTestTags(properties, "optionalFeaturesDisabled", "Sleeper Maven system test optional features disabled");
         return createInstanceConfiguration(properties);
     }
 

@@ -17,7 +17,6 @@ package sleeper.systemtest.dsl.gc;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -54,12 +53,8 @@ public class WaitForGC {
     }
 
     private static boolean hasNoUnreferencedFiles(StateStore stateStore) {
-        try {
-            return stateStore.getReadyForGCFilenamesBefore(Instant.now().plus(Duration.ofDays(1)))
-                    .findAny().isEmpty();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return stateStore.getReadyForGCFilenamesBefore(Instant.now().plus(Duration.ofDays(1)))
+                .findAny().isEmpty();
     }
 
 }

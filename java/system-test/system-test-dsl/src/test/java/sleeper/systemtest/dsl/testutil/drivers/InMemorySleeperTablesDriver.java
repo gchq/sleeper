@@ -22,12 +22,10 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 
 import java.time.Instant;
@@ -43,24 +41,10 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
     private final Map<String, TableIndex> tableIndexByInstanceId = new TreeMap<>();
     private final Map<String, TablePropertiesStore> propertiesStoreByInstanceId = new TreeMap<>();
     private final Map<String, Map<String, StateStore>> stateStoresByInstanceId = new TreeMap<>();
-    private final InMemoryDataStore data;
-
-    public InMemorySleeperTablesDriver(InMemoryDataStore data) {
-        this.data = data;
-    }
 
     @Override
     public void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
         deployedInstancePropertiesStore(instanceProperties.get(ID)).save(tableProperties);
-    }
-
-    @Override
-    public void deleteAllTables(InstanceProperties instanceProperties) {
-        String instanceId = instanceProperties.get(ID);
-        TablePropertiesStore tables = deployedInstancePropertiesStore(instanceId);
-        tables.streamAllTableStatuses().forEach(tables::delete);
-        stateStoresByInstanceId.put(instanceId, new TreeMap<>());
-        data.deleteAllFiles();
     }
 
     /**
@@ -73,11 +57,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
         addInstanceIfNotPresent(instanceId);
         deployedInstancePropertiesStore(instanceId).createTable(properties);
         StateStore stateStore = inMemoryStateStoreUninitialised(properties.getSchema());
-        try {
-            stateStore.initialise();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        stateStore.initialise();
         stateStoresByInstanceId.get(instanceId)
                 .put(properties.get(TABLE_NAME), stateStore);
     }

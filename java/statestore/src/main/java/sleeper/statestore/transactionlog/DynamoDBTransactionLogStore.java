@@ -35,6 +35,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.table.TableStatus;
+import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.nio.charset.StandardCharsets;
@@ -157,7 +158,9 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
             String key = transactionsPrefix + entry.getTransactionNumber() + "-" + UUID.randomUUID().toString() + ".json";
             LOGGER.info("Found large transaction, saving to data bucket instead of DynamoDB at {}", key);
             builder.string(BODY_S3_KEY, key);
+            Instant startTime = Instant.now();
             s3.putObject(dataBucket, key, body);
+            LOGGER.info("Saved to S3 in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
         }
     }
 

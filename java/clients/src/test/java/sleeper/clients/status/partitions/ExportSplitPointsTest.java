@@ -26,7 +26,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.StateStoreTestHelper;
 
 import java.util.ArrayList;
@@ -49,7 +48,7 @@ public class ExportSplitPointsTest {
     }
 
     @Test
-    public void shouldExportCorrectSplitPointsIntType() throws StateStoreException {
+    public void shouldExportCorrectSplitPointsIntType() {
         // Given
         Schema schema = schemaWithKeyType(new IntType());
         StateStore stateStore = getStateStore();
@@ -67,7 +66,7 @@ public class ExportSplitPointsTest {
     }
 
     @Test
-    public void shouldExportCorrectSplitPointsLongType() throws StateStoreException {
+    public void shouldExportCorrectSplitPointsLongType() {
         // Given
         Schema schema = schemaWithKeyType(new LongType());
         StateStore stateStore = getStateStore();
@@ -85,7 +84,7 @@ public class ExportSplitPointsTest {
     }
 
     @Test
-    public void shouldExportCorrectSplitPointsStringType() throws StateStoreException {
+    public void shouldExportCorrectSplitPointsStringType() {
         // Given
         Schema schema = schemaWithKeyType(new StringType());
         StateStore stateStore = getStateStore();
@@ -103,7 +102,7 @@ public class ExportSplitPointsTest {
     }
 
     @Test
-    public void shouldExportCorrectSplitPointsByteArrayType() throws StateStoreException {
+    public void shouldExportCorrectSplitPointsByteArrayType() {
         // Given
         Schema schema = schemaWithKeyType(new ByteArrayType());
         StateStore stateStore = getStateStore();

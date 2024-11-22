@@ -16,8 +16,6 @@
 
 package sleeper.systemtest.drivers.util;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScaling;
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
@@ -30,10 +28,12 @@ import org.apache.hadoop.conf.Configuration;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.providers.AwsRegionProvider;
 import software.amazon.awssdk.regions.providers.DefaultAwsRegionProviderChain;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.cloudwatchlogs.CloudWatchLogsClient;
+import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.emr.EmrClient;
@@ -74,8 +74,9 @@ public class SystemTestClients {
     private final EmrServerlessClient emrServerless;
     private final EmrClient emr;
     private final EcsClient ecs;
-    private final AmazonAutoScaling autoScaling;
+    private final AutoScalingClient autoScaling;
     private final EcrClient ecr;
+    private final Ec2Client ec2;
     private final CloudWatchClient cloudWatch;
     private final CloudWatchLogsClient cloudWatchLogs;
     private final CloudWatchEventsClient cloudWatchEvents;
@@ -100,6 +101,7 @@ public class SystemTestClients {
         ecs = builder.ecs;
         autoScaling = builder.autoScaling;
         ecr = builder.ecr;
+        ec2 = builder.ec2;
         cloudWatch = builder.cloudWatch;
         cloudWatchLogs = builder.cloudWatchLogs;
         cloudWatchEvents = builder.cloudWatchEvents;
@@ -128,8 +130,9 @@ public class SystemTestClients {
                 .emrServerless(EmrServerlessClient.create())
                 .emr(EmrClient.create())
                 .ecs(EcsClient.create())
-                .autoScaling(AmazonAutoScalingClientBuilder.defaultClient())
+                .autoScaling(AutoScalingClient.create())
                 .ecr(EcrClient.create())
+                .ec2(Ec2Client.create())
                 .cloudWatch(CloudWatchClient.create())
                 .cloudWatchLogs(CloudWatchLogsClient.create())
                 .cloudWatchEvents(CloudWatchEventsClient.create())
@@ -158,8 +161,9 @@ public class SystemTestClients {
                 .emrServerless(v2.buildClient(EmrServerlessClient.builder()))
                 .emr(v2.buildClient(EmrClient.builder()))
                 .ecs(v2.buildClient(EcsClient.builder()))
-                .autoScaling(v1.buildClient(AmazonAutoScalingClientBuilder.standard()))
+                .autoScaling(v2.buildClient(AutoScalingClient.builder()))
                 .ecr(v2.buildClient(EcrClient.builder()))
+                .ec2(v2.buildClient(Ec2Client.builder()))
                 .cloudWatch(v2.buildClient(CloudWatchClient.builder()))
                 .cloudWatchLogs(v2.buildClient(CloudWatchLogsClient.builder()))
                 .cloudWatchEvents(v2.buildClient(CloudWatchEventsClient.builder()))
@@ -220,12 +224,16 @@ public class SystemTestClients {
         return ecs;
     }
 
-    public AmazonAutoScaling getAutoScaling() {
+    public AutoScalingClient getAutoScaling() {
         return autoScaling;
     }
 
     public EcrClient getEcr() {
         return ecr;
+    }
+
+    public Ec2Client getEc2() {
+        return ec2;
     }
 
     public CloudWatchClient getCloudWatch() {
@@ -276,8 +284,9 @@ public class SystemTestClients {
         private EmrServerlessClient emrServerless;
         private EmrClient emr;
         private EcsClient ecs;
-        private AmazonAutoScaling autoScaling;
+        private AutoScalingClient autoScaling;
         private EcrClient ecr;
+        private Ec2Client ec2;
         private CloudWatchClient cloudWatch;
         private CloudWatchLogsClient cloudWatchLogs;
         private CloudWatchEventsClient cloudWatchEvents;
@@ -358,13 +367,18 @@ public class SystemTestClients {
             return this;
         }
 
-        public Builder autoScaling(AmazonAutoScaling autoScaling) {
+        public Builder autoScaling(AutoScalingClient autoScaling) {
             this.autoScaling = autoScaling;
             return this;
         }
 
         public Builder ecr(EcrClient ecr) {
             this.ecr = ecr;
+            return this;
+        }
+
+        public Builder ec2(Ec2Client ec2) {
+            this.ec2 = ec2;
             return this;
         }
 

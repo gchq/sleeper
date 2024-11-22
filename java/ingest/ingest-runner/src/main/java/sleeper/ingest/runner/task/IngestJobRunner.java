@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.iterator.IteratorCreationException;
@@ -36,6 +35,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;

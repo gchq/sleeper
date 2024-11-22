@@ -38,9 +38,9 @@ import software.amazon.awscdk.services.logs.LogGroup;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.CoreStacks;
-import sleeper.cdk.stack.IngestBatcherStack;
-import sleeper.cdk.stack.IngestStacks;
+import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.ingest.IngestBatcherStack;
+import sleeper.cdk.stack.ingest.IngestStacks;
 import sleeper.cdk.util.Utils;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.InstanceProperties;

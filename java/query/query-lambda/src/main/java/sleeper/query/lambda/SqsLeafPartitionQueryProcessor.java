@@ -22,14 +22,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.QueryException;
@@ -37,11 +38,12 @@ import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.output.ResultsOutput;
 import sleeper.query.core.output.ResultsOutputConstants;
 import sleeper.query.core.output.ResultsOutputInfo;
+import sleeper.query.core.recordretrieval.LeafPartitionQueryExecutor;
 import sleeper.query.runner.output.NoResultsOutput;
 import sleeper.query.runner.output.S3ResultsOutput;
 import sleeper.query.runner.output.SQSResultsOutput;
 import sleeper.query.runner.output.WebSocketResultsOutput;
-import sleeper.query.runner.recordretrieval.LeafPartitionQueryExecutor;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 
@@ -73,7 +75,7 @@ public class SqsLeafPartitionQueryProcessor {
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
-        objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
+        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, "/tmp").buildObjectFactory();
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
     }
 
@@ -91,7 +93,8 @@ public class SqsLeafPartitionQueryProcessor {
             TableProperties tableProperties = query.getTableProperties(tablePropertiesProvider);
             queryTrackers.queryInProgress(leafPartitionQuery);
             Configuration conf = getConfiguration(tableProperties);
-            LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(executorService, objectFactory, conf, tableProperties);
+            LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(
+                    objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf));
             CloseableIterator<Record> results = leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
             publishResults(results, query, tableProperties, queryTrackers);
         } catch (QueryException e) {

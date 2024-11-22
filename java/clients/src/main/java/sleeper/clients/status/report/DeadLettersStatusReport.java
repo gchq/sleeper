@@ -34,7 +34,6 @@ import sleeper.query.core.model.QuerySerDe;
 import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.task.common.QueueMessageCount;
 
-import java.io.IOException;
 import java.util.function.Function;
 
 import static sleeper.clients.util.AwsV2ClientHelper.buildAwsV2Client;
@@ -68,8 +67,8 @@ public class DeadLettersStatusReport {
         System.out.println("\nDead Letters Status Report:\n--------------------------");
         printStats(instanceProperties.get(COMPACTION_JOB_DLQ_URL), "compaction jobs dead-letter", s -> {
             try {
-                return CompactionJobSerDe.deserialiseFromString(s).toString();
-            } catch (IOException e) {
+                return new CompactionJobSerDe().fromJson(s).toString();
+            } catch (RuntimeException e) {
                 return e.getMessage();
             }
         });

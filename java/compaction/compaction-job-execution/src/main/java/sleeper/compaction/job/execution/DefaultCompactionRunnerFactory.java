@@ -19,15 +19,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.GPUCompactionRunner;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.core.job.GPUCompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
 import sleeper.compaction.rust.RustCompactionRunner;
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.CompactionMethod;
+import sleeper.core.util.ObjectFactory;
 
 import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 

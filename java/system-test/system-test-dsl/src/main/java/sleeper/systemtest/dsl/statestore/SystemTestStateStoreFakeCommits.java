@@ -15,9 +15,12 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.LoggedDuration;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
@@ -32,6 +35,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class SystemTestStateStoreFakeCommits {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestStateStoreFakeCommits.class);
 
     private final SystemTestInstanceContext instance;
     private final StateStoreCommitterDriver driver;
@@ -53,11 +57,7 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     public SystemTestStateStoreFakeCommits setupStateStore(StateStoreSetup setup) {
-        try {
-            setup.setup(instance.getStateStore());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        setup.setup(instance.getStateStore());
         return this;
     }
 
@@ -99,11 +99,17 @@ public class SystemTestStateStoreFakeCommits {
     }
 
     private void sendParallelBatches(Stream<StateStoreCommitMessage> messages) {
+        Instant startTime = Instant.now();
         driver.sendCommitMessagesInParallelBatches(countCommits(messages));
+        LOGGER.info("Sent commit messages in parallel batches in {}, total commits by table ID: {}",
+                LoggedDuration.withShortOutput(startTime, Instant.now()), waitForNumCommitsByTableId);
     }
 
     private void sendSequentialBatches(Stream<StateStoreCommitMessage> messages) {
+        Instant startTime = Instant.now();
         driver.sendCommitMessagesInSequentialBatches(countCommits(messages));
+        LOGGER.info("Sent commit messages in sequential batches in {}, total commits by table ID: {}",
+                LoggedDuration.withShortOutput(startTime, Instant.now()), waitForNumCommitsByTableId);
     }
 
     private Stream<StateStoreCommitMessage> forCurrentTable(Stream<StateStoreCommitMessage.Commit> commits) {
@@ -130,6 +136,6 @@ public class SystemTestStateStoreFakeCommits {
     @FunctionalInterface
     public interface StateStoreSetup {
 
-        void setup(StateStore stateStore) throws StateStoreException;
+        void setup(StateStore stateStore);
     }
 }

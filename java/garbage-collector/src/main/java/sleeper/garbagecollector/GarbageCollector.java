@@ -26,10 +26,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -99,7 +99,7 @@ public class GarbageCollector {
         }
     }
 
-    private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) throws StateStoreException {
+    private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) {
         int garbageCollectorBatchSize = instanceProperties.getInt(GARBAGE_COLLECTOR_BATCH_SIZE);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         Iterator<String> readyForGC = getReadyForGCIterator(tableProperties, startTime, stateStore);
@@ -118,7 +118,7 @@ public class GarbageCollector {
     }
 
     private Iterator<String> getReadyForGCIterator(
-            TableProperties tableProperties, Instant startTime, StateStore stateStore) throws StateStoreException {
+            TableProperties tableProperties, Instant startTime, StateStore stateStore) {
         LOGGER.debug("Requesting iterator of files ready for garbage collection from state store");
         int delayBeforeDeletion = tableProperties.getInt(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION);
         Instant deletionTime = startTime.minus(delayBeforeDeletion, ChronoUnit.MINUTES);
@@ -193,11 +193,11 @@ public class GarbageCollector {
         void sendCommit(GarbageCollectionCommitRequest commitRequest);
     }
 
-    public static SendAsyncCommit sendAsyncCommit(InstanceProperties instanceProperties, AmazonSQS sqs) {
+    public static SendAsyncCommit sendAsyncCommit(InstanceProperties instanceProperties, AmazonSQS sqs, StateStoreCommitRequestInS3Uploader s3Uploader) {
         GarbageCollectionCommitRequestSerDe serDe = new GarbageCollectionCommitRequestSerDe();
         return request -> sqs.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMessageBody(serDe.toJson(request))
+                .withMessageBody(s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request)))
                 .withMessageGroupId(request.getTableId())
                 .withMessageDeduplicationId(UUID.randomUUID().toString()));
     }

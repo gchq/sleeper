@@ -15,6 +15,8 @@
  */
 package sleeper.cdk;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.AppProps;
 import software.amazon.awscdk.Environment;
@@ -27,39 +29,10 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.AthenaStack;
-import sleeper.cdk.stack.CompactionStack;
-import sleeper.cdk.stack.CompactionStatusStoreResources;
-import sleeper.cdk.stack.CompactionStatusStoreStack;
-import sleeper.cdk.stack.ConfigBucketStack;
-import sleeper.cdk.stack.CoreStacks;
 import sleeper.cdk.stack.DashboardStack;
-import sleeper.cdk.stack.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
-import sleeper.cdk.stack.IngestBatcherStack;
-import sleeper.cdk.stack.IngestStack;
-import sleeper.cdk.stack.IngestStacks;
-import sleeper.cdk.stack.IngestStatusStoreResources;
-import sleeper.cdk.stack.IngestStatusStoreStack;
-import sleeper.cdk.stack.InstanceRolesStack;
-import sleeper.cdk.stack.KeepLambdaWarmStack;
-import sleeper.cdk.stack.LoggingStack;
-import sleeper.cdk.stack.ManagedPoliciesStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
-import sleeper.cdk.stack.PropertiesStack;
-import sleeper.cdk.stack.QueryQueueStack;
-import sleeper.cdk.stack.QueryStack;
-import sleeper.cdk.stack.S3StateStoreStack;
-import sleeper.cdk.stack.StateStoreCommitterStack;
-import sleeper.cdk.stack.StateStoreStacks;
-import sleeper.cdk.stack.TableDataStack;
-import sleeper.cdk.stack.TableIndexStack;
 import sleeper.cdk.stack.TableMetricsStack;
-import sleeper.cdk.stack.TopicStack;
-import sleeper.cdk.stack.TransactionLogSnapshotStack;
-import sleeper.cdk.stack.TransactionLogStateStoreStack;
-import sleeper.cdk.stack.TransactionLogTransactionStack;
-import sleeper.cdk.stack.VpcStack;
-import sleeper.cdk.stack.WebSocketQueryStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
@@ -67,6 +40,33 @@ import sleeper.cdk.stack.bulkimport.EmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
+import sleeper.cdk.stack.compaction.CompactionStack;
+import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
+import sleeper.cdk.stack.core.ConfigBucketStack;
+import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.DynamoDBStateStoreStack;
+import sleeper.cdk.stack.core.InstanceRolesStack;
+import sleeper.cdk.stack.core.LoggingStack;
+import sleeper.cdk.stack.core.ManagedPoliciesStack;
+import sleeper.cdk.stack.core.PropertiesStack;
+import sleeper.cdk.stack.core.S3StateStoreStack;
+import sleeper.cdk.stack.core.StateStoreCommitterStack;
+import sleeper.cdk.stack.core.StateStoreStacks;
+import sleeper.cdk.stack.core.TableDataStack;
+import sleeper.cdk.stack.core.TableIndexStack;
+import sleeper.cdk.stack.core.TopicStack;
+import sleeper.cdk.stack.core.TransactionLogSnapshotStack;
+import sleeper.cdk.stack.core.TransactionLogStateStoreStack;
+import sleeper.cdk.stack.core.TransactionLogTransactionStack;
+import sleeper.cdk.stack.core.VpcStack;
+import sleeper.cdk.stack.ingest.IngestBatcherStack;
+import sleeper.cdk.stack.ingest.IngestStack;
+import sleeper.cdk.stack.ingest.IngestStacks;
+import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
+import sleeper.cdk.stack.query.KeepLambdaWarmStack;
+import sleeper.cdk.stack.query.QueryQueueStack;
+import sleeper.cdk.stack.query.QueryStack;
+import sleeper.cdk.stack.query.WebSocketQueryStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.validation.OptionalStack;
@@ -80,11 +80,14 @@ import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
+import static sleeper.core.properties.instance.CommonProperty.VPC_ENDPOINT_CHECK;
 
 /**
  * Deploys an instance of Sleeper, including any configured optional stacks.
  */
 public class SleeperCdkApp extends Stack {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperCdkApp.class);
+
     private final InstanceProperties instanceProperties;
     private final BuiltJars jars;
     private final App app;
@@ -121,7 +124,12 @@ public class SleeperCdkApp extends Stack {
         LoggingStack loggingStack = new LoggingStack(this, "Logging", instanceProperties);
 
         // Stack for Checking VPC configuration
-        new VpcStack(this, "Vpc", instanceProperties, jars, loggingStack);
+        if (instanceProperties.getBoolean(VPC_ENDPOINT_CHECK)) {
+            new VpcStack(this, "Vpc", instanceProperties, jars, loggingStack);
+        } else {
+            LOGGER.warn("Skipping VPC check as requested by the user. Be aware that VPCs that don't have an S3 endpoint can result "
+                    + "in very significant NAT charges.");
+        }
 
         // Topic stack
         TopicStack topicStack = new TopicStack(this, "Topic", instanceProperties);
@@ -135,10 +143,10 @@ public class SleeperCdkApp extends Stack {
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
                 transactionLogStateStoreStack, policiesStack);
-        IngestStatusStoreResources ingestStatusStore = new IngestStatusStoreStack(this, "IngestStatusStore",
-                instanceProperties, policiesStack).getResources();
-        CompactionStatusStoreResources compactionStatusStore = new CompactionStatusStoreStack(this, "CompactionStatusStore",
-                instanceProperties, policiesStack).getResources();
+        IngestStatusStoreResources ingestStatusStore = IngestStatusStoreResources.from(
+                this, "IngestStatusStore", instanceProperties, policiesStack);
+        CompactionStatusStoreResources compactionStatusStore = CompactionStatusStoreResources.from(
+                this, "CompactionStatusStore", instanceProperties, policiesStack);
         ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",

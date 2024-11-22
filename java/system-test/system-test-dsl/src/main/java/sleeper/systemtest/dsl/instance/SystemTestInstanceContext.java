@@ -29,9 +29,14 @@ import sleeper.core.table.TableStatus;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
+import sleeper.systemtest.dsl.util.TestContext;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -45,11 +50,13 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class SystemTestInstanceContext {
     private final SystemTestParameters parameters;
     private final DeployedSleeperInstances deployedInstances;
     private final SleeperInstanceDriver instanceDriver;
+    private final TestContext testContext;
     private final Map<String, DeployedSleeperTablesForTest> tablesByInstanceShortName = new HashMap<>();
     private final Map<String, TableProperties> tablesByTestName = new TreeMap<>();
     private final Map<String, String> testNameByTableId = new HashMap<>();
@@ -59,10 +66,11 @@ public class SystemTestInstanceContext {
 
     public SystemTestInstanceContext(
             SystemTestParameters parameters, DeployedSleeperInstances deployedInstances,
-            SleeperInstanceDriver instanceDriver) {
+            SleeperInstanceDriver instanceDriver, TestContext testContext) {
         this.parameters = parameters;
         this.deployedInstances = deployedInstances;
         this.instanceDriver = instanceDriver;
+        this.testContext = testContext;
     }
 
     public void connectTo(SystemTestInstanceConfiguration configuration) {
@@ -84,7 +92,7 @@ public class SystemTestInstanceContext {
                 .map(deployProperties -> {
                     TableProperties properties = TableProperties.copyOf(deployProperties);
                     properties.unset(TABLE_ID);
-                    properties.set(TABLE_NAME, properties.get(TABLE_NAME) + "-" + UUID.randomUUID());
+                    properties.set(TABLE_NAME, buildTableName(properties.get(TABLE_NAME)));
                     return properties;
                 }).collect(toUnmodifiableList()));
     }
@@ -102,7 +110,7 @@ public class SystemTestInstanceContext {
 
     public void createTable(String name, Schema schema, Map<TableProperty, String> setProperties) {
         TableProperties tableProperties = parameters.createTableProperties(getInstanceProperties(), schema);
-        tableProperties.set(TABLE_NAME, name + "-" + UUID.randomUUID());
+        tableProperties.set(TABLE_NAME, buildTableName(name));
         setProperties.forEach(tableProperties::set);
         currentTables().addTablesAndSetCurrent(tablesDriver(), List.of(tableProperties));
         tablesByTestName.put(name, tableProperties);
@@ -218,11 +226,32 @@ public class SystemTestInstanceContext {
                 .orElseGet(() -> tableProperties.get(TABLE_NAME));
     }
 
+    public void takeTestTablesOfflineIfConnected() {
+        if (currentTables == null) {
+            return;
+        }
+        DeployedSleeperInstance instance = currentInstance();
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        SleeperTablesDriver tablesDriver = instance.getInstanceAdminDrivers().tables(parameters);
+        currentTables.streamTableProperties().forEach(table -> {
+            table.set(TABLE_ONLINE, "false");
+            tablesDriver.saveTableProperties(instanceProperties, table);
+        });
+    }
+
     private DeployedSleeperInstance currentInstance() {
         return Optional.ofNullable(currentInstance).orElseThrow(NoInstanceConnectedException::new);
     }
 
     private DeployedSleeperTablesForTest currentTables() {
         return Optional.ofNullable(currentTables).orElseThrow(NoInstanceConnectedException::new);
+    }
+
+    private static final DateTimeFormatter TABLE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd-HHmm", Locale.UK).withZone(ZoneOffset.UTC);
+
+    private String buildTableName(String name) {
+        return TABLE_TIME_FORMATTER.format(Instant.now()) + "-" +
+                testContext.getTestClassAndMethod() + "-" +
+                name + "-" + UUID.randomUUID();
     }
 }

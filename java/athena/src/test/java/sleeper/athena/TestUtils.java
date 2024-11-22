@@ -21,7 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -33,7 +32,7 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -86,12 +85,8 @@ public class TestUtils {
         tableProperties.setEnum(TableProperty.INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
         S3TableProperties.createStore(instance, s3Client, dynamoDB).save(tableProperties);
 
-        try {
-            StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);
-            stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);
+        stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
 
         return tableProperties;
     }
@@ -108,7 +103,7 @@ public class TestUtils {
                     .instanceProperties(instanceProperties)
                     .build();
             factory.ingestFromRecordIterator(table, generateTimeSeriesData().iterator());
-        } catch (IOException | StateStoreException | IteratorCreationException e) {
+        } catch (IOException | IteratorCreationException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         }
     }

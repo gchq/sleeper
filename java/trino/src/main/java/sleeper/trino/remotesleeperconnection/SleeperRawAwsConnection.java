@@ -28,8 +28,7 @@ import org.apache.arrow.memory.RootAllocator;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -41,14 +40,16 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.ingest.BespokeIngestCoordinator;
@@ -143,7 +144,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
         }
 
         // Member variables related to queries via direct statestore/S3
-        this.objectFactory = new ObjectFactory(this.instanceProperties, this.s3Client, sleeperConfig.getLocalWorkingDirectory());
+        this.objectFactory = new S3UserJarsLoader(this.instanceProperties, this.s3Client, sleeperConfig.getLocalWorkingDirectory()).buildObjectFactory();
         this.executorService = Executors.newFixedThreadPool(NO_OF_EXECUTOR_THREADS);
 
         // We store a time-limited cache for the table partition structure, to support transactions.
@@ -158,7 +159,7 @@ public class SleeperRawAwsConnection implements AutoCloseable {
             // The load method is called by the cache whenever it does not already contain the desired value.
             // The key is a pair of (tablename, as-of instant) and the key is the table partition stucture.
             @Override
-            public SleeperTablePartitionStructure load(Pair<String, Instant> keyPair) throws StateStoreException {
+            public SleeperTablePartitionStructure load(Pair<String, Instant> keyPair) {
                 String tableId = keyPair.getLeft();
                 Instant instant = keyPair.getRight();
                 // Check that this transaction is not older than the cache expiry time as this will confuse the cache
@@ -209,19 +210,18 @@ public class SleeperRawAwsConnection implements AutoCloseable {
     /**
      * Retrieve the table partition structure for a single table.
      *
-     * @param  tableName           the name of the table
-     * @param  asOfInstant         this argument is currently ignored because there is no mechanism to retrieve the
-     *                             structure as-of a specified time from the state store
-     * @return                     the partition structure
-     * @throws StateStoreException when an error occurs accessing the state store
+     * @param  tableName   the name of the table
+     * @param  asOfInstant this argument is currently ignored because there is no mechanism to retrieve the
+     *                     structure as-of a specified time from the state store
+     * @return             the partition structure
      */
     public SleeperTablePartitionStructure getSleeperTablePartitionStructure(
-            String tableName, Instant asOfInstant) throws StateStoreException {
+            String tableName, Instant asOfInstant) {
         return getSleeperTablePartitionStructure(tablePropertiesProvider.getByName(tableName), asOfInstant);
     }
 
     public synchronized SleeperTablePartitionStructure getSleeperTablePartitionStructure(
-            TableProperties tableProperties, Instant asOfInstant) throws StateStoreException {
+            TableProperties tableProperties, Instant asOfInstant) {
         // Use of the state store provider is not thread-safe and this requires the use of a synchronized method.
         // The state store which is returned may not be thread-safe either.
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
@@ -279,8 +279,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 objectFactory,
                 tableProperties,
                 null,
-                this.hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
-                executorService);
+                new LeafPartitionRecordRetrieverImpl(executorService,
+                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(),
                 sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.splitIntoLeafPartitionQueries(query);
@@ -307,8 +307,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 this.objectFactory,
                 tableProperties,
                 stateStore,
-                this.hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
-                this.executorService);
+                new LeafPartitionRecordRetrieverImpl(executorService,
+                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(), sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.execute(query);
     }

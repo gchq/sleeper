@@ -42,7 +42,6 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
@@ -135,7 +134,7 @@ public class BulkImportJobDriver {
                         .addFiles(output.fileReferences());
                 LOGGER.info("Added {} files to statestore for job {} in table {}", output.numFiles(), job.getId(), table);
             }
-        } catch (RuntimeException | StateStoreException e) {
+        } catch (RuntimeException e) {
             statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "

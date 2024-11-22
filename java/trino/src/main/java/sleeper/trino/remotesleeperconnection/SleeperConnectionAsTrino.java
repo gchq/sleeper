@@ -30,13 +30,12 @@ import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.VarcharType;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.partition.Partition;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
@@ -194,25 +193,21 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
      */
     public Stream<List<Object>> streamPartitionStatusRows(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
-        try {
-            List<Partition> allPartitions = this.sleeperRawAwsConnection.getSleeperTablePartitionStructure(
-                    schemaTableName.getTableName(),
-                    Instant.now()).getAllPartitions();
-            // Some of the partition methods can return null and so an ImmutableList cannot be used here
-            return allPartitions.stream()
-                    .map(partition -> Arrays.asList(
-                            schemaTableName.getSchemaName(),
-                            schemaTableName.getTableName(),
-                            partition.getId(),
-                            partition.getParentPartitionId(),
-                            partition.getChildPartitionIds(),
-                            partition.getRegion().getRanges().stream().map(sleeper.core.range.Range::getMin).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
-                            partition.getRegion().getRanges().stream().map(sleeper.core.range.Range::getMax).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
-                            partition.getDimension(),
-                            partition.isLeafPartition()));
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        List<Partition> allPartitions = this.sleeperRawAwsConnection.getSleeperTablePartitionStructure(
+                schemaTableName.getTableName(),
+                Instant.now()).getAllPartitions();
+        // Some of the partition methods can return null and so an ImmutableList cannot be used here
+        return allPartitions.stream()
+                .map(partition -> Arrays.asList(
+                        schemaTableName.getSchemaName(),
+                        schemaTableName.getTableName(),
+                        partition.getId(),
+                        partition.getParentPartitionId(),
+                        partition.getChildPartitionIds(),
+                        partition.getRegion().getRanges().stream().map(sleeper.core.range.Range::getMin).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
+                        partition.getRegion().getRanges().stream().map(sleeper.core.range.Range::getMax).map(SleeperConnectionAsTrino::nullOrString).collect(Collectors.toList()),
+                        partition.getDimension(),
+                        partition.isLeafPartition()));
     }
 
     /**
@@ -223,13 +218,9 @@ public class SleeperConnectionAsTrino implements AutoCloseable {
      */
     public Stream<Partition> streamPartitions(SchemaTableName schemaTableName) {
         assert schemaTableName.getSchemaName().equals(DEFAULT_TRINO_SCHEMA_NAME);
-        try {
-            return sleeperRawAwsConnection.getSleeperTablePartitionStructure(
-                    schemaTableName.getTableName(),
-                    Instant.now()).getAllPartitions().stream();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return sleeperRawAwsConnection.getSleeperTablePartitionStructure(
+                schemaTableName.getTableName(),
+                Instant.now()).getAllPartitions().stream();
     }
 
     /**

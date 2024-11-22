@@ -43,8 +43,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -66,6 +64,8 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
@@ -760,7 +760,7 @@ public class SqsQueryProcessorLambdaIT {
                     .hadoopConfiguration(configuration)
                     .build();
             factory.ingestFromRecordIterator(tableProperties, generateTimeSeriesData(minYear, maxYear).iterator());
-        } catch (IOException | StateStoreException | IteratorCreationException e) {
+        } catch (IOException | IteratorCreationException e) {
             throw new RuntimeException("Failed to Ingest data", e);
         }
     }

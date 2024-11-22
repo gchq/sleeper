@@ -26,7 +26,6 @@ import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
 
 import java.util.List;
@@ -37,7 +36,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 public interface AssignJobIdToFiles {
     Logger LOGGER = LoggerFactory.getLogger(AssignJobIdToFiles.class);
 
-    void assignJobIds(List<AssignJobIdRequest> requests, TableStatus tableStatus) throws StateStoreException;
+    void assignJobIds(List<AssignJobIdRequest> requests, TableStatus tableStatus);
 
     static AssignJobIdToFiles synchronous(StateStore stateStore, CompactionJobStatusStore statusStore) {
         return (assignJobIdRequests, tableStatus) -> {

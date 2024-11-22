@@ -1,14 +1,9 @@
 [
   {
     "jobId": "job33333-3333-3333-3333-333333333333",
-    "createdStatus": {
-      "updateTime": "2022-10-12T10:00:00.001Z",
-      "partitionId": "root",
-      "inputFilesCount": 1
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-10-12T10:00:01.001Z"
-    },
+    "partitionId": "root",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-10-12T10:00:00.001Z",
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
@@ -90,14 +85,9 @@
   },
   {
     "jobId": "job22222-2222-2222-2222-222222222222",
-    "createdStatus": {
-      "updateTime": "2022-10-11T10:00:00.001Z",
-      "partitionId": "root",
-      "inputFilesCount": 1
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-10-11T10:00:01.001Z"
-    },
+    "partitionId": "root",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-10-11T10:00:00.001Z",
     "jobRuns": [
       {
         "taskId": "task1111-1111-1111-1111-111111111111",
@@ -137,14 +127,9 @@
   },
   {
     "jobId": "job11111-1111-1111-1111-111111111111",
-    "createdStatus": {
-      "updateTime": "2022-10-10T10:00:00.001Z",
-      "partitionId": "root",
-      "inputFilesCount": 1
-    },
-    "filesAssignedStatus": {
-      "updateTime": "2022-10-10T10:00:01.001Z"
-    },
+    "partitionId": "root",
+    "inputFilesCount": 1,
+    "createUpdateTime": "2022-10-10T10:00:00.001Z",
     "jobRuns": [
       {
         "taskId": "task2222-2222-2222-2222-222222222222",

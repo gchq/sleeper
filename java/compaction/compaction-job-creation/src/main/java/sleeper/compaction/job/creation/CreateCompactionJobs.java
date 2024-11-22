@@ -25,8 +25,6 @@ import sleeper.compaction.core.strategy.CompactionStrategy;
 import sleeper.compaction.core.strategy.CompactionStrategyIndex;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.CompactionProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -34,10 +32,11 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -57,7 +56,6 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSI
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.util.SplitIntoBatches.splitListIntoBatchesOf;
 
 /**
@@ -115,7 +113,7 @@ public class CreateCompactionJobs {
         STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY
     }
 
-    public void createJobs(TableProperties table) throws StateStoreException, IOException, ObjectFactoryException {
+    public void createJobs(TableProperties table) throws IOException, ObjectFactoryException {
         StateStore stateStore = stateStoreProvider.getStateStore(table);
         LOGGER.info("Performing pre-splits on files in table {}", table.getStatus());
         Instant preSplitStartTime = Instant.now();
@@ -125,7 +123,7 @@ public class CreateCompactionJobs {
         LOGGER.info("Overall, pre-splitting files and creating compaction jobs took {}", LoggedDuration.withShortOutput(preSplitStartTime, finishTime));
     }
 
-    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws StateStoreException, IOException, ObjectFactoryException {
+    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws IOException, ObjectFactoryException {
         Instant startTime = Instant.now();
         TableStatus table = tableProperties.getStatus();
         LOGGER.info("Creating jobs for table {}", table);
@@ -207,12 +205,8 @@ public class CreateCompactionJobs {
         return outList;
     }
 
-    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableStatus table, List<CompactionJob> compactionJobs) throws StateStoreException, IOException {
+    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableStatus table, List<CompactionJob> compactionJobs) throws IOException {
         for (CompactionJob compactionJob : compactionJobs) {
-            // Record job was created before we send it to SQS, otherwise this update can conflict with a compaction
-            // task trying to record that the job was started.
-            jobStatusStore.jobCreated(compactionJob);
-
             // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
             // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
             // job can be created for these files.)
@@ -221,7 +215,7 @@ public class CreateCompactionJobs {
         // Update the statuses of these files to record that a compaction job is in progress
         LOGGER.debug("Assigning input files for compaction jobs batch in table {}", table);
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
-                .map(job -> assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles()))
+                .map(CompactionJob::createAssignJobIdRequest)
                 .collect(Collectors.toList()), table);
     }
 

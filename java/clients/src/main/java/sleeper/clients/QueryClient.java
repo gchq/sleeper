@@ -23,8 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.clients.util.console.ConsoleOutput;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -36,14 +35,16 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
 import java.time.Instant;
@@ -71,7 +72,7 @@ public class QueryClient extends QueryCommandLineClient {
     public QueryClient(AmazonS3 s3Client, InstanceProperties instanceProperties, AmazonDynamoDB dynamoDBClient, Configuration conf,
             ConsoleInput in, ConsoleOutput out) throws ObjectFactoryException {
         this(s3Client, instanceProperties, dynamoDBClient, in, out,
-                new ObjectFactory(instanceProperties, s3Client, "/tmp"),
+                new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
                 StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf));
     }
 
@@ -91,7 +92,7 @@ public class QueryClient extends QueryCommandLineClient {
     }
 
     @Override
-    protected void init(TableProperties tableProperties) throws StateStoreException {
+    protected void init(TableProperties tableProperties) {
         String tableName = tableProperties.get(TABLE_NAME);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(getInstanceProperties(), tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
@@ -101,7 +102,7 @@ public class QueryClient extends QueryCommandLineClient {
 
         if (!cachedQueryExecutors.containsKey(tableName)) {
             QueryExecutor queryExecutor = new QueryExecutor(objectFactory, tableProperties, stateStoreProvider.getStateStore(tableProperties),
-                    conf, executorService);
+                    new LeafPartitionRecordRetrieverImpl(executorService, conf));
             queryExecutor.init(partitions, partitionToFileMapping);
             cachedQueryExecutors.put(tableName, queryExecutor);
         }
@@ -135,7 +136,7 @@ public class QueryClient extends QueryCommandLineClient {
         return queryExecutor.execute(query);
     }
 
-    public static void main(String[] args) throws StateStoreException, ObjectFactoryException, InterruptedException {
+    public static void main(String[] args) throws ObjectFactoryException, InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }

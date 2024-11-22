@@ -25,7 +25,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
@@ -36,15 +35,13 @@ public class CompactionJobStatusStatisticsTest {
     @Test
     void shouldComputeStatisticsForDelayBetweenFinishAndCommitWhenCommitted() {
         // Given
-        CompactionJobStatus status1 = jobFilesAssigned(dataHelper.singleFileCompaction(),
+        CompactionJobStatus status1 = jobCreated(dataHelper.singleFileCompaction(),
                 Instant.parse("2024-09-09T10:29:50Z"),
-                Instant.parse("2024-09-09T10:29:51Z"),
                 finishedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:30:00Z"), Instant.parse("2024-09-09T10:31:00Z"), 100, 100),
                         Instant.parse("2024-09-09T10:31:02Z")));
-        CompactionJobStatus status2 = jobFilesAssigned(dataHelper.singleFileCompaction(),
+        CompactionJobStatus status2 = jobCreated(dataHelper.singleFileCompaction(),
                 Instant.parse("2024-09-09T10:31:50Z"),
-                Instant.parse("2024-09-09T10:31:51Z"),
                 finishedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:32:00Z"), Instant.parse("2024-09-09T10:33:00Z"), 100, 100),
                         Instant.parse("2024-09-09T10:33:01Z")));
@@ -57,40 +54,13 @@ public class CompactionJobStatusStatisticsTest {
     @Test
     void shouldComputeStatisticsForDelayBetweenFinishAndCommitWhenNoneCommitted() {
         // Given
-        CompactionJobStatus status = jobFilesAssigned(dataHelper.singleFileCompaction(),
+        CompactionJobStatus status = jobCreated(dataHelper.singleFileCompaction(),
                 Instant.parse("2024-09-09T10:29:50Z"),
-                Instant.parse("2024-09-09T10:29:51Z"),
                 uncommittedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:30:00Z"), Instant.parse("2024-09-09T10:31:00Z"), 100, 100)));
 
         // When / Then
         assertThat(CompactionJobStatus.computeStatisticsOfDelayBetweenFinishAndCommit(List.of(status)))
-                .isEmpty();
-    }
-
-    @Test
-    void shouldComputeStatisticsForDelayBetweenCreationAndAssignmentWhenAssigned() {
-        // Given
-        CompactionJobStatus status1 = jobFilesAssigned(dataHelper.singleFileCompaction(),
-                Instant.parse("2024-09-09T10:29:50Z"),
-                Instant.parse("2024-09-09T10:29:52Z"));
-        CompactionJobStatus status2 = jobFilesAssigned(dataHelper.singleFileCompaction(),
-                Instant.parse("2024-09-09T10:31:50Z"),
-                Instant.parse("2024-09-09T10:31:53Z"));
-
-        // When / Then
-        assertThat(CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List.of(status1, status2)))
-                .get().hasToString("avg: 2.5s, min: 2s, 99%: 3s, 99.9%: 3s, max: 3s, std dev: 0.5s");
-    }
-
-    @Test
-    void shouldComputeStatisticsForDelayBetweenCreationAndAssignmentWhenNotAssigned() {
-        // Given
-        CompactionJobStatus status = jobCreated(dataHelper.singleFileCompaction(),
-                Instant.parse("2024-09-09T10:29:50Z"));
-
-        // When / Then
-        assertThat(CompactionJobStatus.computeStatisticsOfDelayBetweenCreationAndFilesAssignment(List.of(status)))
                 .isEmpty();
     }
 }

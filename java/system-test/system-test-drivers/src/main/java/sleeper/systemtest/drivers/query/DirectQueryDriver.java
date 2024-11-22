@@ -16,16 +16,16 @@
 
 package sleeper.systemtest.drivers.query;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
@@ -73,22 +73,14 @@ public class DirectQueryDriver implements QueryDriver {
     }
 
     private PartitionTree getPartitionTree(StateStore stateStore) {
-        try {
-            return new PartitionTree(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return new PartitionTree(stateStore.getAllPartitions());
     }
 
     private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
-        try {
-            QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties,
-                    stateStore, clients.createHadoopConf(), EXECUTOR_SERVICE);
-            executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
-            return executor;
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
+                new LeafPartitionRecordRetrieverImpl(EXECUTOR_SERVICE, clients.createHadoopConf()));
+        executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
+        return executor;
     }
 
     private static <T> Stream<T> stream(Iterator<T> iterator) {

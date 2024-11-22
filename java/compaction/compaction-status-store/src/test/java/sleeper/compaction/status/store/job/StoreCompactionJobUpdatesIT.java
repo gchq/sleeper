@@ -18,7 +18,6 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.ProcessRunTime;
@@ -37,31 +36,8 @@ import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.com
 import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
-
-    @Test
-    void shouldReportCompactionInputFilesAssigned() {
-        // Given
-        Partition partition = singlePartition();
-        FileReferenceFactory fileFactory = fileFactory(partition);
-        CompactionJob job = jobFactory.createCompactionJob("test-job",
-                List.of(fileFactory.rootFile("test.parquet", 100L)),
-                partition.getId());
-        Instant createdTime = Instant.parse("2024-09-06T09:48:00Z");
-        Instant filesAssignedTime = Instant.parse("2024-09-06T09:48:05Z");
-
-        // When
-        storeWithUpdateTime(createdTime).jobCreated(job);
-        storeWithUpdateTime(filesAssignedTime).jobInputFilesAssigned(tableId, List.of(
-                assignJobOnPartitionToFiles("test-job", "root", List.of("test.parquet"))));
-
-        // Then
-        assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
-                .containsExactly(CompactionJobStatusTestData.jobFilesAssigned(job, createdTime, filesAssignedTime));
-    }
 
     @Test
     public void shouldReportCompactionJobStarted() {
@@ -73,7 +49,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
@@ -92,7 +68,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
@@ -112,7 +88,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
         store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
@@ -134,7 +110,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         List<String> failureReasons = List.of("Something went wrong");
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFailed(compactionJobFailed(job, defaultRunTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 
@@ -163,7 +139,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         RecordsProcessedSummary summary2 = new RecordsProcessedSummary(processed, startTime2, finishTime2);
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, startTime1).taskId(DEFAULT_TASK_ID).build());
         store.jobStarted(compactionJobStarted(job, startTime2).taskId(DEFAULT_TASK_ID_2).build());
         store.jobFinished(compactionJobFinished(job, summary1).taskId(DEFAULT_TASK_ID).build());
@@ -197,7 +173,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
                 startedTime, finishedTime, timeInProcess);
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, summary).taskId(DEFAULT_TASK_ID).build());
         store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
@@ -224,7 +200,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         List<String> failureReasons = List.of("Something went wrong", "More details");
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
         store.jobFailed(compactionJobFailed(job, runTime).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 
