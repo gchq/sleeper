@@ -154,6 +154,10 @@ impl ScalarUDFImpl for SketchUDF {
                             sketch,
                             &array.as_string::<<LargeUtf8Type as arrow::datatypes::ByteArrayType>::Offset>(),
                         ),
+                        DataType::Utf8View => update_sketch(
+                            sketch,
+                            &array.as_string_view(),
+                        ),
                         DataType::Binary => update_sketch(
                             sketch,
                             &array.as_binary::<<BinaryType as arrow::datatypes::ByteArrayType>::Offset>(),
@@ -161,6 +165,10 @@ impl ScalarUDFImpl for SketchUDF {
                         DataType::LargeBinary => update_sketch(
                             sketch,
                             &array.as_binary::<<LargeBinaryType as arrow::datatypes::ByteArrayType>::Offset>(),
+                        ),
+                        DataType::BinaryView => update_sketch(
+                            sketch,
+                            &array.as_binary_view(),
                         ),
                         _ => return internal_err!("Row type {} not supported for Sleeper row key field", array.data_type()),
                     }
