@@ -23,6 +23,7 @@ import software.amazon.awscdk.services.cloudwatch.IMetric;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -91,8 +92,12 @@ public class CompactionJobResources {
 
         Queue pendingQueue = sqsQueueForCompactionJobBatches(coreStacks, topic, errorMetrics);
         compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);
-        lambdaToCreateCompactionJobBatches(coreStacks, topic, errorMetrics, jarsBucket, lambdaCode, pendingQueue, compactionJobsQueue);
-        lambdaToSendCompactionJobBatches(coreStacks, lambdaCode, pendingQueue, compactionJobsQueue);
+        IFunction creationFunction = lambdaToCreateCompactionJobBatches(coreStacks, topic, errorMetrics, jarsBucket, lambdaCode, pendingQueue, compactionJobsQueue);
+        IFunction sendFunction = lambdaToSendCompactionJobBatches(coreStacks, lambdaCode, pendingQueue, compactionJobsQueue);
+
+        grantCreateCompactionJobs(coreStacks, jarsBucket, pendingQueue, creationFunction);
+        grantCreateCompactionJobs(coreStacks, jarsBucket, pendingQueue, coreStacks.getInvokeCompactionPolicyForGrants());
+        grantCreateCompactionJobs(coreStacks, jarsBucket, pendingQueue, sendFunction);
     }
 
     private Queue sqsQueueForCompactionJobs(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
@@ -141,7 +146,7 @@ public class CompactionJobResources {
         return compactionJobQ;
     }
 
-    private void lambdaToCreateCompactionJobBatches(
+    private IFunction lambdaToCreateCompactionJobBatches(
             CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
             IBucket jarsBucket, LambdaCode lambdaCode, Queue pendingQueue, Queue compactionJobsQueue) {
 
@@ -175,19 +180,9 @@ public class CompactionJobResources {
                 .maxConcurrency(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
 
-        // Grant permissions
-        // - Read through tables in trigger, send batches
-        // - Read/write for creating compaction jobs, access to jars bucket for compaction strategies
         jobCreationQueue.grantSendMessages(triggerFunction);
         coreStacks.grantReadTablesStatus(triggerFunction);
-        coreStacks.grantCreateCompactionJobs(handlerFunction);
-        jarsBucket.grantRead(handlerFunction);
-        compactionJobsQueue.grantSendMessages(handlerFunction);
-        pendingQueue.grantSendMessages(handlerFunction);
         coreStacks.grantInvokeScheduled(triggerFunction, jobCreationQueue);
-        coreStacks.grantCreateCompactionJobs(coreStacks.getInvokeCompactionPolicyForGrants());
-        compactionJobsQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicyForGrants());
-        pendingQueue.grantSendMessages(coreStacks.getInvokeCompactionPolicyForGrants());
 
         // Cloudwatch rule to trigger stack lambda
         Rule rule = Rule.Builder
@@ -200,9 +195,18 @@ public class CompactionJobResources {
                 .build();
         instanceProperties.set(COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION, triggerFunction.getFunctionName());
         instanceProperties.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
+
+        return handlerFunction;
     }
 
-    private void lambdaToSendCompactionJobBatches(
+    private void grantCreateCompactionJobs(CoreStacks coreStacks, IBucket jarsBucket, Queue pendingQueue, IGrantable grantee) {
+        coreStacks.grantCreateCompactionJobs(grantee);
+        jarsBucket.grantRead(grantee);
+        compactionJobsQueue.grantSendMessages(grantee);
+        pendingQueue.grantSendMessages(grantee);
+    }
+
+    private IFunction lambdaToSendCompactionJobBatches(
             CoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue, Queue compactionJobsQueue) {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
@@ -221,8 +225,7 @@ public class CompactionJobResources {
                 .batchSize(1)
                 .maxConcurrency(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
-        coreStacks.grantCreateCompactionJobs(function);
-        compactionJobsQueue.grantSendMessages(function);
+        return function;
     }
 
     private Queue sqsQueueForCompactionJobCreation(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
