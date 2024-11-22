@@ -93,7 +93,7 @@ public class CompactionTaskResources {
                 .effect(Effect.ALLOW)
                 .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
                         "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
-                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
+                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups", "ec2:DescribeInstanceTypes"))
                 .resources(List.of("*"))
                 .build());
 
