@@ -48,7 +48,6 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -89,13 +88,7 @@ public class CompactionTaskResources {
         lambdaToCreateCompactionTasks(coreStacks, lambdaCode, compactionJobsQueue);
 
         // Allow running compaction tasks
-        coreStacks.getInvokeCompactionPolicyForGrants().addStatements(PolicyStatement.Builder.create()
-                .effect(Effect.ALLOW)
-                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
-                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
-                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups", "ec2:DescribeInstanceTypes"))
-                .resources(List.of("*"))
-                .build());
+        coreStacks.getInvokeCompactionPolicyForGrants().addStatements(runTasksPolicyStatement());
 
     }
 
@@ -173,15 +166,8 @@ public class CompactionTaskResources {
         coreStacks.grantInvokeScheduled(handler);
 
         // Grant this function permission to query ECS for the number of tasks, etc
-        PolicyStatement policyStatement = PolicyStatement.Builder
-                .create()
-                .resources(Collections.singletonList("*"))
-                .actions(Arrays.asList("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
-                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
-                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups"))
-                .build();
         IRole role = Objects.requireNonNull(handler.getRole());
-        role.addToPrincipalPolicy(policyStatement);
+        role.addToPrincipalPolicy(runTasksPolicyStatement());
         role.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
 
         // Cloudwatch rule to trigger this lambda
@@ -195,5 +181,15 @@ public class CompactionTaskResources {
                 .build();
         instanceProperties.set(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION, handler.getFunctionName());
         instanceProperties.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, rule.getRuleName());
+    }
+
+    private static PolicyStatement runTasksPolicyStatement() {
+        return PolicyStatement.Builder.create()
+                .effect(Effect.ALLOW)
+                .actions(List.of("ecs:DescribeClusters", "ecs:RunTask", "iam:PassRole",
+                        "ecs:DescribeContainerInstances", "ecs:DescribeTasks", "ecs:ListContainerInstances",
+                        "autoscaling:SetDesiredCapacity", "autoscaling:DescribeAutoScalingGroups", "ec2:DescribeInstanceTypes"))
+                .resources(List.of("*"))
+                .build();
     }
 }
