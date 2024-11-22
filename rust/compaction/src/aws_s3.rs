@@ -23,7 +23,6 @@ use std::{
     ops::Range,
     pin::Pin,
     sync::{Arc, Mutex},
-    time::{Duration, Instant},
 };
 
 use aws_config::{BehaviorVersion, Region};
@@ -44,7 +43,6 @@ use object_store::{
 use url::Url;
 
 pub const MULTIPART_BUF_SIZE: usize = 50 * 1024 * 1024;
-const UPDATE_DURATION: Duration = Duration::from_secs(20);
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
@@ -199,9 +197,6 @@ pub async fn default_s3_config() -> color_eyre::Result<AmazonS3Builder> {
 struct LoggingStats {
     get_count: usize,
     total_predicted: Option<usize>,
-    last_get_time: Instant,
-    last_byte_read_count: usize,
-    last_measured_speed: usize,
     get_bytes_read: usize,
     capacity: usize,
 }
@@ -211,9 +206,6 @@ impl LoggingStats {
         Self {
             get_count: 0,
             total_predicted: None,
-            last_get_time: Instant::now(),
-            last_byte_read_count: 0,
-            last_measured_speed: 0,
             get_bytes_read: 0,
             capacity: MULTIPART_BUF_SIZE,
         }
@@ -297,33 +289,20 @@ impl ObjectStore for LoggingObjectStore {
         stats.get_count += 1;
         if let Some(ref get_range) = options.range {
             let range = to_range(get_range);
+            stats.get_bytes_read += range.len();
+            let percent_complete = match stats.total_predicted {
+                Some(total) => (stats.get_bytes_read as f64 / (total as f64)) * 100f64,
+                None => 0f64,
+            };
             info!(
-                "GET request byte range {} to {} = {} bytes",
+                "GET request byte range {} to {} = {} bytes {:.2}%",
                 range.start.to_formatted_string(&Locale::en),
                 range.end.to_formatted_string(&Locale::en),
-                range.len().to_formatted_string(&Locale::en)
+                range.len().to_formatted_string(&Locale::en),
+                percent_complete
             );
-            stats.get_bytes_read += range.len();
         }
-        let now = Instant::now();
-        if now.duration_since(stats.last_get_time) > UPDATE_DURATION {
-            stats.last_measured_speed = (stats.get_bytes_read - stats.last_byte_read_count)
-                / std::cmp::max(
-                    1,
-                    now.duration_since(stats.last_get_time).as_secs() as usize,
-                );
-            stats.last_byte_read_count = stats.get_bytes_read;
-            stats.last_get_time = now;
-        }
-        let percent_complete = match stats.total_predicted {
-            Some(total) => (stats.get_bytes_read as f64 / (total as f64)) * 100f64,
-            None => 0f64,
-        };
-        info!(
-            "Current bytes read speed is {} Bytes/second {:.2}% complete",
-            stats.last_measured_speed.to_formatted_string(&Locale::en),
-            percent_complete
-        );
+
         self.store.get_opts(location, options)
     }
 

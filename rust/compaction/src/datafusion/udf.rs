@@ -19,13 +19,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use std::{
-    any::Any,
-    fmt::Debug,
-    iter::zip,
-    sync::{Mutex, MutexGuard},
-};
-
 use arrow::{
     array::AsArray,
     datatypes::{
@@ -37,13 +30,32 @@ use datafusion::{
     logical_expr::{ColumnarValue, ScalarUDFImpl, Signature, Volatility},
     scalar::ScalarValue,
 };
+use log::info;
+use num_format::{Locale, ToFormattedString};
+
+use std::{
+    any::Any,
+    fmt::Debug,
+    iter::zip,
+    sync::{Mutex, MutexGuard},
+    time::{Duration, Instant},
+};
 
 use super::sketch::{update_sketch, DataSketchVariant, K};
+
+struct BenchStats {
+    start_time: Instant,
+    last_instant_measure: Instant,
+    last_instant_row_speed: u64,
+    rows_since_instant: usize,
+    rows_since_start: usize,
+}
 
 pub(crate) struct SketchUDF {
     signature: Signature,
     invoke_count: Mutex<usize>,
     sketch: Mutex<Vec<DataSketchVariant>>,
+    bench_stats: Mutex<BenchStats>,
 }
 
 impl Debug for SketchUDF {
@@ -57,6 +69,7 @@ impl Debug for SketchUDF {
 }
 
 impl SketchUDF {
+    const BENCH_DURATION: Duration = Duration::from_secs(10);
     /// Create a new sketch function based on the schema of the row key fields.
     ///
     pub fn new(schema: &DFSchema, row_keys: &[String]) -> Self {
@@ -64,6 +77,13 @@ impl SketchUDF {
             signature: Signature::exact(get_row_key_types(schema, row_keys), Volatility::Immutable),
             invoke_count: Mutex::default(),
             sketch: Mutex::new(make_sketches_for_schema(schema, row_keys)),
+            bench_stats: Mutex::new(BenchStats {
+                start_time: Instant::now(),
+                last_instant_measure: Instant::now(),
+                last_instant_row_speed: 0,
+                rows_since_instant: 0,
+                rows_since_start: 0,
+            }),
         }
     }
 
@@ -73,6 +93,35 @@ impl SketchUDF {
 
     pub fn get_invoke_count(&self) -> usize {
         *self.invoke_count.lock().unwrap()
+    }
+
+    fn bench_report(&self, rows: usize) {
+        let mut stats_lock = self.bench_stats.lock().unwrap();
+        stats_lock.rows_since_start += rows;
+        stats_lock.rows_since_instant += rows;
+        let now = Instant::now();
+
+        if now.duration_since(stats_lock.last_instant_measure) > Self::BENCH_DURATION {
+            stats_lock.last_instant_row_speed = stats_lock.rows_since_instant as u64
+                / std::cmp::max(
+                    now.duration_since(stats_lock.last_instant_measure)
+                        .as_secs(),
+                    1,
+                );
+            stats_lock.last_instant_measure = now;
+            stats_lock.rows_since_instant = 0;
+            let rows_speed_from_start = stats_lock.rows_since_start as u64
+                / std::cmp::max(now.duration_since(stats_lock.start_time).as_secs(), 1);
+
+            info!(
+                "Bench speeds: {} rows/sec. ({} second rolling avg.) {} rows/sec. lifetime avg.",
+                stats_lock
+                    .last_instant_row_speed
+                    .to_formatted_string(&Locale::en),
+                Self::BENCH_DURATION.as_secs(),
+                rows_speed_from_start.to_formatted_string(&Locale::en)
+            );
+        }
     }
 }
 
@@ -142,6 +191,7 @@ impl ScalarUDFImpl for SketchUDF {
         for (sketch, col) in zip(sk_lock.iter_mut(), columns) {
             match col {
                 ColumnarValue::Array(array) => {
+                    self.bench_report(array.len());
                     // dynamic dispatch. Match the datatype to the type of sketch to update.
                     match array.data_type() {
                         DataType::Int32 => update_sketch(sketch, &array.as_primitive::<Int32Type>()),
@@ -177,17 +227,21 @@ impl ScalarUDFImpl for SketchUDF {
                 ColumnarValue::Scalar(
                     ScalarValue::Utf8(Some(value)) | ScalarValue::LargeUtf8(Some(value)),
                 ) => {
+                    self.bench_report(1);
                     sketch.update(value);
                 }
                 ColumnarValue::Scalar(
                     ScalarValue::Binary(Some(value)) | ScalarValue::LargeBinary(Some(value)),
                 ) => {
+                    self.bench_report(1);
                     sketch.update(value);
                 }
                 ColumnarValue::Scalar(ScalarValue::Int32(Some(value))) => {
+                    self.bench_report(1);
                     sketch.update(value);
                 }
                 ColumnarValue::Scalar(ScalarValue::Int64(Some(value))) => {
+                    self.bench_report(1);
                     sketch.update(value);
                 }
                 x @ ColumnarValue::Scalar(_) => {
