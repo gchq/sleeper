@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.job;
+package sleeper.compaction.gpu;
 
 import com.google.protobuf.ByteString;
 import io.grpc.Channel;
@@ -25,10 +25,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.core.job.ProtoCompaction.CompactionParams;
-import sleeper.compaction.core.job.ProtoCompaction.CompactionResult;
-import sleeper.compaction.core.job.ProtoCompaction.OptBytes;
-import sleeper.compaction.core.job.ProtoCompaction.ReturnCode;
+import sleeper.compaction.gpu.ProtoCompaction.CompactionParams;
+import sleeper.compaction.gpu.ProtoCompaction.CompactionResult;
+import sleeper.compaction.gpu.ProtoCompaction.OptBytes;
+import sleeper.compaction.gpu.ProtoCompaction.ReturnCode;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;

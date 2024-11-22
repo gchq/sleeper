@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.core.job.GPUCompactionRunner;
 import sleeper.compaction.core.task.CompactionRunnerFactory;
+import sleeper.compaction.gpu.GPUCompactionRunner;
 import sleeper.compaction.rust.RustCompactionRunner;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;

@@ -15,7 +15,7 @@
  */
 syntax = "proto3";
 
-package sleeper.compaction.core.job;
+package sleeper.compaction.gpu;
 
 message Null {}
 
