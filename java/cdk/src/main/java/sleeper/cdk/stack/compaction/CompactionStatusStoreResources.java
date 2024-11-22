@@ -31,9 +31,9 @@ public interface CompactionStatusStoreResources {
     default void grantWriteTaskEvent(IGrantable grantee) {
     }
 
-    static CompactionStatusStoreResources from(Construct scope, InstanceProperties properties, ManagedPoliciesStack policiesStack) {
+    static CompactionStatusStoreResources from(Construct scope, String id, InstanceProperties properties, ManagedPoliciesStack policiesStack) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
-            return new DynamoDBCompactionStatusStoreResources(scope, properties, policiesStack);
+            return new CompactionStatusStoreStack(scope, id, properties, policiesStack);
         } else {
             return none();
         }
