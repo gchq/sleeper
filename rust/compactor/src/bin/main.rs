@@ -63,7 +63,7 @@ struct CmdLineArgs {
 ///
 /// # Panics
 /// If the path can't be made absolute due to not being able to get the current
-/// directory or the path is not valid or contains non UTF-8 characters.
+/// directory or the path is not valid.
 fn path_absolute<T: ?Sized + AsRef<Path>>(path: &T) -> String {
     std::path::absolute(path).unwrap().to_str().unwrap().into()
 }
@@ -162,18 +162,49 @@ async fn main() -> color_eyre::Result<()> {
     Ok(())
 }
 
-#[cdf(test)]
+#[cfg(test)]
 mod path_test {
+    use crate::path_absolute;
+
+    #[cfg(unix)]
+    fn cd_to_tmp() {
+        let _ = std::env::set_current_dir("/tmp").unwrap();
+    }
 
     #[test]
-    fn relative_path_converts() {}
+    #[cfg(unix)]
+    fn relative_path_converts() {
+        cd_to_tmp();
+        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("foo/bar/baz.txt"))
+    }
 
     #[test]
-    fn absolute_path_unchanged() {}
+    #[cfg(unix)]
+    fn relative_path_converts_with_one_dot() {
+        cd_to_tmp();
+        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("./foo/bar/baz.txt"))
+    }
 
     #[test]
-    fn invalid_path_errors() {}
+    #[cfg(unix)]
+    fn relative_path_converts_with_double_dot() {
+        cd_to_tmp();
+        assert_eq!(
+            "/tmp/../foo/bar/baz.txt",
+            path_absolute("../foo/bar/baz.txt")
+        )
+    }
 
     #[test]
-    fn empty_path() {}
+    #[cfg(unix)]
+    fn absolute_path_unchanged() {
+        cd_to_tmp();
+        assert_eq!("/tmp/foo/bar", path_absolute("/tmp/foo/bar"))
+    }
+
+    #[test]
+    #[should_panic]
+    fn empty_path_panic() {
+        let _ = path_absolute("");
+    }
 }
