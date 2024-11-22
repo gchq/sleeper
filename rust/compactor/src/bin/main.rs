@@ -21,7 +21,7 @@ use compaction::{merge_sorted_files, ColRange, CompactionInput};
 use human_panic::setup_panic;
 use log::info;
 use num_format::{Locale, ToFormattedString};
-use std::{collections::HashMap, io::Write};
+use std::{collections::HashMap, io::Write, path::Path};
 use url::Url;
 
 /// Implements a Sleeper compaction algorithm in Rust.
@@ -58,6 +58,16 @@ struct CmdLineArgs {
     region_maxs: Vec<String>,
 }
 
+/// Converts a [`Path`] reference to an absolute path (if not already absolute)
+/// and returns it as a String.
+///
+/// # Panics
+/// If the path can't be made absolute due to not being able to get the current
+/// directory or the path is not valid.
+fn path_absolute<T: ?Sized + AsRef<Path>>(path: &T) -> String {
+    std::path::absolute(path).unwrap().to_str().unwrap().into()
+}
+
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> color_eyre::Result<()> {
     // Install coloured errors
@@ -90,12 +100,14 @@ async fn main() -> color_eyre::Result<()> {
     let input_urls = args
         .input
         .iter()
-        .map(|x| Url::parse(x).or_else(|_e| Url::parse(&("file://".to_owned() + x))))
+        .map(|x| {
+            Url::parse(x).or_else(|_e| Url::parse(&("file://".to_owned() + &path_absolute(x))))
+        })
         .collect::<Result<Vec<_>, _>>()?;
 
     // Convert output URL
     let output_url = Url::parse(&args.output)
-        .or_else(|_e| Url::parse(&("file://".to_owned() + &args.output)))?;
+        .or_else(|_e| Url::parse(&("file://".to_owned() + &path_absolute(&args.output))))?;
 
     assert_eq!(args.row_keys.len(), args.region_maxs.len());
     assert_eq!(args.row_keys.len(), args.region_mins.len());
@@ -148,4 +160,51 @@ async fn main() -> color_eyre::Result<()> {
         }
     };
     Ok(())
+}
+
+#[cfg(test)]
+mod path_test {
+    use crate::path_absolute;
+
+    #[cfg(unix)]
+    fn cd_to_tmp() {
+        let _ = std::env::set_current_dir("/tmp").unwrap();
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn relative_path_converts() {
+        cd_to_tmp();
+        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("foo/bar/baz.txt"))
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn relative_path_converts_with_one_dot() {
+        cd_to_tmp();
+        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("./foo/bar/baz.txt"))
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn relative_path_converts_with_double_dot() {
+        cd_to_tmp();
+        assert_eq!(
+            "/tmp/../foo/bar/baz.txt",
+            path_absolute("../foo/bar/baz.txt")
+        )
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn absolute_path_unchanged() {
+        cd_to_tmp();
+        assert_eq!("/tmp/foo/bar", path_absolute("/tmp/foo/bar"))
+    }
+
+    #[test]
+    #[should_panic]
+    fn empty_path_panic() {
+        let _ = path_absolute("");
+    }
 }
