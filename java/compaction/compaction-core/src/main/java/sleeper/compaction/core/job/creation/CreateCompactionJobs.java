@@ -206,17 +206,19 @@ public class CreateCompactionJobs {
 
     private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableProperties tableProperties, List<CompactionJob> compactionJobs) throws IOException {
         TableStatus tableStatus = tableProperties.getStatus();
+        CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
+                tableProperties, generateBatchId.generate(), timeSupplier.get());
+
         // Send batch of jobs to SQS (NB Send jobs to SQS before updating the job field of the files in the
         // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
         // job can be created for these files)
-        CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
-                tableProperties, generateBatchId.generate(), timeSupplier.get());
         LOGGER.debug("Writing compaction jobs batch for table {} in data bucket at: {}", tableStatus, request.getBatchKey());
         Instant startTime = Instant.now();
         batchJobsWriter.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
         LOGGER.debug("Sending compaction jobs batch, wrote jobs in {}",
                 LoggedDuration.withShortOutput(startTime, Instant.now()));
         batchMessageSender.sendMessage(request);
+
         // Update the statuses of these files to record that a compaction job is in progress
         LOGGER.debug("Assigning input files for compaction jobs batch in table {}", tableStatus);
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
