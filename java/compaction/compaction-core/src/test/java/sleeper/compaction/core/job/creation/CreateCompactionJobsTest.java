@@ -25,7 +25,6 @@ import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.BatchJobsWriter;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.core.job.creation.strategy.impl.SizeRatioCompactionStrategy;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
@@ -101,7 +100,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(fileReferences);
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("test-job"));
+            createJobsWithStrategy(fixJobIds("test-job"));
 
             // Then
             assertThat(jobs).containsExactly(
@@ -123,7 +122,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
+            createJobsWithStrategy(fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).containsExactly(
@@ -151,7 +150,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
+            createJobsWithStrategy(fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).isEmpty();
@@ -175,7 +174,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
+            createJobsWithStrategy(fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).containsExactly(
@@ -203,7 +202,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(leftReference, rightReference));
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
+            createJobsWithStrategy(fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).containsExactly(
@@ -238,7 +237,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3));
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("partition-R-job", "partition-LL-job", "partition-LR-job"), rand);
+            createJobWithForceAllFiles(fixJobIds("partition-R-job", "partition-LL-job", "partition-LR-job"), rand);
 
             // Then
             assertThat(jobs).containsExactly(
@@ -264,7 +263,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+            createJobWithForceAllFiles(fixJobIds("test-job"));
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
             assertThat(jobs).containsExactly(
@@ -287,7 +286,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFile(fileReference1);
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+            createJobWithForceAllFiles(fixJobIds("test-job"));
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
             assertThat(jobs).containsExactly(
@@ -311,7 +310,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileOne, fileTwo));
 
             // When
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+            createJobWithForceAllFiles(fixJobIds("test-job"));
 
             // Then
             CompactionJob expectedJob = compactionFactory().createCompactionJob("test-job", List.of(fileOne, fileTwo), "1");
@@ -335,7 +334,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(leftFile, rightFile));
 
             // When
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
+            createJobWithForceAllFiles(fixJobIds("left-job", "right-job"));
 
             // Then
             CompactionJob leftJob = compactionFactory().createCompactionJob("left-job", List.of(leftFile), "L");
@@ -369,7 +368,7 @@ public class CreateCompactionJobsTest {
             jobStatusStore.setTimeSupplier(Stream.of(createdTime1, createdTime2).iterator()::next);
 
             // When we create compaction jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
+            createJobWithForceAllFiles(fixJobIds("left-job", "right-job"));
 
             // Then the jobs are reported as created in the status store
             CompactionJob leftJob = compactionFactory().createCompactionJob("left-job", List.of(leftFile), "L");
@@ -400,7 +399,7 @@ public class CreateCompactionJobsTest {
             jobStatusStore.setTimeSupplier(Stream.of(createdTime1, createdTime2).iterator()::next);
 
             // When we create compaction jobs
-            createJobs(Mode.STRATEGY, fixJobIds("left-job", "right-job"));
+            createJobsWithStrategy(fixJobIds("left-job", "right-job"));
 
             // Then the jobs are reported as created in the status store
             CompactionJob leftJob = compactionFactory().createCompactionJob("left-job", List.of(leftFile), "L");
@@ -426,7 +425,7 @@ public class CreateCompactionJobsTest {
             jobStatusStore.setTimeSupplier(Stream.of(createdTime).iterator()::next);
 
             // When
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+            createJobWithForceAllFiles(fixJobIds("test-job"));
 
             // Then
             CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file), "root");
@@ -459,7 +458,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(file1, file2, file3));
 
             // When
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY,
+            createJobWithForceAllFiles(
                     fixJobIds("job-1", "job-2", "job-3"),
                     fixBatchIds("batch-1", "batch-2"),
                     timePassesAMinuteAtATimeFrom(Instant.parse("2024-11-25T11:00:00Z")));
@@ -486,16 +485,24 @@ public class CreateCompactionJobsTest {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    private void createJobs(Mode mode, GenerateJobId generateJobId, Random random) throws Exception {
-        mode.createJobs(jobCreator(generateJobId, GenerateBatchId.random(), random, timePassesAMinuteAtATime()), tableProperties);
+    private void createJobsWithStrategy(GenerateJobId generateJobId) throws Exception {
+        jobCreator(generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime())
+                .createJobsWithStrategy(tableProperties);
     }
 
-    private void createJobs(Mode mode, GenerateJobId generateJobId) throws Exception {
-        mode.createJobs(jobCreator(generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime()), tableProperties);
+    private void createJobWithForceAllFiles(GenerateJobId generateJobId, Random random) throws Exception {
+        jobCreator(generateJobId, GenerateBatchId.random(), random, timePassesAMinuteAtATime())
+                .createJobWithForceAllFiles(tableProperties);
     }
 
-    private void createJobs(Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId, Supplier<Instant> timeSupplier) throws Exception {
-        mode.createJobs(jobCreator(generateJobId, generateBatchId, new Random(), timeSupplier), tableProperties);
+    private void createJobWithForceAllFiles(GenerateJobId generateJobId) throws Exception {
+        jobCreator(generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime())
+                .createJobWithForceAllFiles(tableProperties);
+    }
+
+    private void createJobWithForceAllFiles(GenerateJobId generateJobId, GenerateBatchId generateBatchId, Supplier<Instant> timeSupplier) throws Exception {
+        jobCreator(generateJobId, generateBatchId, new Random(), timeSupplier)
+                .createJobWithForceAllFiles(tableProperties);
     }
 
     private CreateCompactionJobs jobCreator(

@@ -23,7 +23,6 @@ import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.core.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
@@ -120,12 +119,26 @@ public class InMemoryCompaction {
 
         @Override
         public void triggerCreateJobs() {
-            createJobs(Mode.STRATEGY);
+            CreateCompactionJobs jobCreator = jobCreator();
+            instance.streamTableProperties().forEach(table -> {
+                try {
+                    jobCreator.createJobsWithStrategy(table);
+                } catch (IOException | ObjectFactoryException e) {
+                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
+                }
+            });
         }
 
         @Override
         public void forceCreateJobs() {
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+            CreateCompactionJobs jobCreator = jobCreator();
+            instance.streamTableProperties().forEach(table -> {
+                try {
+                    jobCreator.createJobWithForceAllFiles(table);
+                } catch (IOException | ObjectFactoryException e) {
+                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
+                }
+            });
         }
 
         @Override
@@ -146,17 +159,6 @@ public class InMemoryCompaction {
         }
 
         public void scaleToZero() {
-        }
-
-        private void createJobs(Mode mode) {
-            CreateCompactionJobs jobCreator = jobCreator();
-            instance.streamTableProperties().forEach(table -> {
-                try {
-                    mode.createJobs(jobCreator, table);
-                } catch (IOException | ObjectFactoryException e) {
-                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
-                }
-            });
         }
 
         private CreateCompactionJobs jobCreator() {

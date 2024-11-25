@@ -107,40 +107,25 @@ public class CreateCompactionJobs {
         this.timeSupplier = timeSupplier;
     }
 
-    public enum Mode {
-        STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY;
-
-        public void createJobs(CreateCompactionJobs createCompactionJobs, TableProperties table) throws IOException, ObjectFactoryException {
-            switch (this) {
-                case STRATEGY:
-                    createCompactionJobs.createJobsWithStrategy(table);
-                    break;
-                case FORCE_ALL_FILES_AFTER_STRATEGY:
-                    createCompactionJobs.createJobWithForceAllFiles(table);
-                    break;
-            }
-        }
-    }
-
     public void createJobsWithStrategy(TableProperties table) throws IOException, ObjectFactoryException {
-        createJobs(table, Mode.STRATEGY);
+        createJobs(table, false);
     }
 
     public void createJobWithForceAllFiles(TableProperties table) throws IOException, ObjectFactoryException {
-        createJobs(table, Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+        createJobs(table, true);
     }
 
-    public void createJobs(TableProperties table, Mode mode) throws IOException, ObjectFactoryException {
+    private void createJobs(TableProperties table, boolean forceAllFiles) throws IOException, ObjectFactoryException {
         StateStore stateStore = stateStoreProvider.getStateStore(table);
         LOGGER.info("Performing pre-splits on files in table {}", table.getStatus());
         Instant preSplitStartTime = Instant.now();
         SplitFileReferences.from(stateStore).split();
         LOGGER.info("Pre-split files in partitions, took {}", LoggedDuration.withShortOutput(preSplitStartTime, Instant.now()));
-        Instant finishTime = createJobsForTable(table, stateStore, mode);
+        Instant finishTime = createJobsForTable(table, stateStore, forceAllFiles);
         LOGGER.info("Overall, pre-splitting files and creating compaction jobs took {}", LoggedDuration.withShortOutput(preSplitStartTime, finishTime));
     }
 
-    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore, Mode mode) throws IOException, ObjectFactoryException {
+    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore, boolean forceAllFiles) throws IOException, ObjectFactoryException {
         Instant startTime = Instant.now();
         TableStatus table = tableProperties.getStatus();
         LOGGER.info("Creating jobs for table {}", table);
@@ -171,7 +156,7 @@ public class CreateCompactionJobs {
         LOGGER.info("Used {} to create {} compaction jobs for table {}", compactionStrategy.getClass().getSimpleName(), compactionJobs.size(), table);
 
         Instant leftoverJobCreationStartTime = Instant.now();
-        if (mode == Mode.FORCE_ALL_FILES_AFTER_STRATEGY) {
+        if (forceAllFiles) {
             createJobsFromLeftoverFiles(tableProperties, jobFactory, fileReferences, allPartitions, compactionJobs);
         }
 
