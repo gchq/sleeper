@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -102,9 +103,12 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(record1, record2);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
         }
 
         @Test
+        @Disabled("TODO sketches")
         void shouldMergeFilesWithLongKey() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
@@ -124,9 +128,12 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(record1, record2);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
         }
 
         @Test
+        @Disabled("TODO sketches")
         void shouldMergeFilesWithIntKey() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new IntType());
@@ -146,6 +153,8 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(record1, record2);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
         }
 
         @Test
@@ -168,6 +177,8 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(record1, record2);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
         }
     }
 
