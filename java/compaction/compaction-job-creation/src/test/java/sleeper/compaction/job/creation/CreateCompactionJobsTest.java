@@ -498,7 +498,7 @@ public class CreateCompactionJobsTest {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                jobs::add, jobStatusStore, mode, jobIdAssignmentCommitRequests::add,
+                jobs::add, null, null, jobStatusStore, mode, jobIdAssignmentCommitRequests::add,
                 generateJobId, generateBatchId, random, timeSupplier);
     }
 

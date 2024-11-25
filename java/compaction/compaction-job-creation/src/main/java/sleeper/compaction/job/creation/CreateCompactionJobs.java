@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.strategy.CompactionStrategy;
 import sleeper.compaction.core.strategy.CompactionStrategyIndex;
 import sleeper.compaction.job.creation.commit.AssignJobIdToFiles;
@@ -71,6 +72,8 @@ public class CreateCompactionJobs {
     private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
     private final JobSender jobSender;
+    private final BatchToS3Writer batchToS3Writer;
+    private final JobBatchSender jobBatchSender;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
@@ -87,14 +90,17 @@ public class CreateCompactionJobs {
             CompactionJobStatusStore jobStatusStore,
             Mode mode,
             AssignJobIdQueueSender assignJobIdQueueSender) {
-        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode,
+        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, null, null, jobStatusStore, mode,
                 assignJobIdQueueSender, GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
+            BatchToS3Writer batchToS3Writer,
+            JobBatchSender jobBatchSender,
             CompactionJobStatusStore jobStatusStore,
             Mode mode,
             AssignJobIdQueueSender assignJobIdQueueSender,
@@ -105,6 +111,8 @@ public class CreateCompactionJobs {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
+        this.batchToS3Writer = batchToS3Writer;
+        this.jobBatchSender = jobBatchSender;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.mode = mode;
@@ -276,6 +284,16 @@ public class CreateCompactionJobs {
     @FunctionalInterface
     public interface JobSender {
         void send(CompactionJob compactionJob) throws IOException;
+    }
+
+    @FunctionalInterface
+    public interface BatchToS3Writer {
+        void writeToS3(String bucketName, String key, List<CompactionJob> compactionJobs);
+    }
+
+    @FunctionalInterface
+    public interface JobBatchSender {
+        void sendMessage(CompactionJobDispatchRequest dispatchRequest);
     }
 
     @FunctionalInterface
