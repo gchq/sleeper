@@ -34,7 +34,7 @@ import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
-import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
+import sleeper.compaction.job.creation.commit.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;

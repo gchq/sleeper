@@ -39,7 +39,7 @@ import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
+import sleeper.compaction.job.creation.commit.AssignJobIdQueueSender;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
