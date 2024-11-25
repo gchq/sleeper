@@ -55,6 +55,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
@@ -80,7 +81,7 @@ public class CreateCompactionJobsTest {
 
     List<CompactionJob> jobs = new ArrayList<>();
     Queue<CompactionJobDispatchRequest> pendingQueue = new LinkedList<>();
-    Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
+    Map<String, List<CompactionJob>> bucketAndKeyToJobs = new HashMap<>();
     List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentCommitRequests = new ArrayList<>();
 
     @Nested
@@ -444,6 +445,8 @@ public class CreateCompactionJobsTest {
         @Test
         void shouldSendMultipleBatches() throws Exception {
             // Given
+            instanceProperties.set(DATA_BUCKET, "test-bucket");
+            tableProperties.set(TABLE_ID, "test-table");
             tableProperties.setNumber(COMPACTION_JOB_SEND_BATCH_SIZE, 2);
             stateStore.initialise(new PartitionsBuilder(schema)
                     .singlePartition("root")
@@ -469,6 +472,9 @@ public class CreateCompactionJobsTest {
             CompactionJobDispatchRequest batch2 = batchRequest("batch-2", Instant.parse("2024-11-25T11:01:00Z"));
             assertThat(jobs).containsExactly(job1, job2, job3);
             assertThat(pendingQueue).containsExactly(batch1, batch2);
+            assertThat(bucketAndKeyToJobs).isEqualTo(Map.of(
+                    "test-bucket/test-table/compactions/batch-1.json", List.of(job1, job2),
+                    "test-bucket/test-table/compactions/batch-2.json", List.of(job3)));
         }
     }
 
@@ -502,11 +508,14 @@ public class CreateCompactionJobsTest {
     }
 
     private CompactionJobDispatchRequest batchRequest(String batchId, Instant createTime) {
-        return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(instanceProperties, tableProperties, batchId, createTime);
+        return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(tableProperties, batchId, createTime);
     }
 
     private JobBatchWriter createBatchWriter() {
-        return (bucketName, key, batch) -> jobs.addAll(batch);
+        return (bucketName, key, batch) -> {
+            jobs.addAll(batch);
+            bucketAndKeyToJobs.put(bucketName + "/" + key, batch);
+        };
     }
 
     private GenerateJobId fixJobIds(String... jobIds) {

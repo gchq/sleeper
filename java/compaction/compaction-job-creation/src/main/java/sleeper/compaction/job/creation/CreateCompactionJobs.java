@@ -229,7 +229,8 @@ public class CreateCompactionJobs {
                 jobSender.send(compactionJob);
             }
         } else {
-            CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(instanceProperties, tableProperties, generateBatchId.generate(), timeSupplier.get());
+            CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
+                    tableProperties, generateBatchId.generate(), timeSupplier.get());
             batchToS3Writer.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
             jobBatchSender.sendMessage(request);
         }
