@@ -4,27 +4,6 @@ Common problems and their solutions
 These instructions will assume you start in the project root directory and Sleeper has been built
 (see [the developer guide](12-dev-guide.md) for how to set that up).
 
-## EOFException when using client classes
-
-An exception of the following form might be due to a change in schema:
-
-```bash
-Caused by: java.io.EOFException
-     at java.io.DataInputStream.readFully(DataInputStream.java:197)
-     at java.io.DataInputStream.readUTF(DataInputStream.java:609)
-     at java.io.DataInputStream.readUTF(DataInputStream.java:564)
-Exception in thread "main" sleeper.core.statestore.StateStoreException: Exception querying DynamoDB
-```
-
-When cdk deploy is used to deploy a table, the state store is initialised. This initialisation writes the initial
-partitions to the partitions part of the state store (if using the default DynamoDB state store then this will be a
-table named `sleeper-<instance-id>-table-<table-name>-partitions`). The partitions are specific to the schema of the
-table (specifically to the row keys specified). Therefore if you deploy a table with a certain schema, and then attempt
-to change the schema by updating the table properties file, any interactions with the partitions table will not be able
-to read the partitions.
-
-If you want to reinitialise a table with a new schema, see the section below on reinitialising a table.
-
 ## Out of memory error from standard ingest tasks
 
 If standard ingest tasks fail with an out of memory error ("Exception in thread main java.lang.OutOfMemoryError: Java
