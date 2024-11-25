@@ -63,8 +63,7 @@ public class AllReferencesToAllFiles {
      * @return the list
      */
     public List<FileReference> listFileReferences() {
-        return getFilesWithReferences().stream()
-                .flatMap(file -> file.getReferences().stream())
+        return streamFileReferences()
                 .collect(toUnmodifiableList());
     }
 
@@ -78,6 +77,35 @@ public class AllReferencesToAllFiles {
                 .collect(toMap(
                         AllReferencesToAFile::getFilename,
                         file -> file.getReferences().stream().mapToLong(FileReference::getNumberOfRecords).sum()));
+    }
+
+    /**
+     * Builds an estimate of the number of records in the table by adding up all records in each file reference.
+     *
+     * @return the number of records
+     */
+    public long estimateRecordsInTable() {
+        return streamFileReferences().mapToLong(FileReference::getNumberOfRecords).sum();
+    }
+
+    /**
+     * Counts the number of file references in the report.
+     *
+     * @return the count
+     */
+    public long countFileReferences() {
+        return getFilesWithReferences().stream()
+                .mapToInt(AllReferencesToAFile::getReferenceCount).sum();
+    }
+
+    /**
+     * Streams through all file references in the report.
+     *
+     * @return the references
+     */
+    private Stream<FileReference> streamFileReferences() {
+        return getFilesWithReferences().stream()
+                .flatMap(file -> file.getReferences().stream());
     }
 
     public boolean isMoreThanMax() {

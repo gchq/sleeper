@@ -17,8 +17,12 @@
 package sleeper.systemtest.dsl.instance;
 
 import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
@@ -27,13 +31,13 @@ public class SystemTestInstanceConfiguration {
     private final String shortName;
     private final Supplier<DeployInstanceConfiguration> deployConfig;
     private final boolean useSystemTestIngestSourceBucket;
-    private final boolean disableTransactionLogSnapshots;
+    private final Set<SleeperScheduleRule> enableSchedules;
 
     private SystemTestInstanceConfiguration(Builder builder) {
         shortName = builder.shortName;
         deployConfig = builder.deployConfig;
         useSystemTestIngestSourceBucket = builder.useSystemTestIngestSourceBucket;
-        disableTransactionLogSnapshots = builder.disableTransactionLogSnapshots;
+        enableSchedules = builder.enableSchedules;
         // Combines with SystemTestParameters.shortTestId and a hyphen to create an instance ID within maximum length
         if (shortName.length() > 6) {
             throw new IllegalArgumentException("Instance shortName must not be longer than 6 characters");
@@ -79,14 +83,14 @@ public class SystemTestInstanceConfiguration {
         return useSystemTestIngestSourceBucket;
     }
 
-    public boolean shouldEnableTransactionLogSnapshots() {
-        return !disableTransactionLogSnapshots;
+    public boolean isEnable(SleeperScheduleRule.InstanceRule rule) {
+        return enableSchedules.contains(rule.getRule());
     }
 
     public static final class Builder {
         private Supplier<DeployInstanceConfiguration> deployConfig;
         private boolean useSystemTestIngestSourceBucket = true;
-        private boolean disableTransactionLogSnapshots = false;
+        private Set<SleeperScheduleRule> enableSchedules = Set.of();
         private String shortName;
 
         private Builder() {
@@ -107,8 +111,8 @@ public class SystemTestInstanceConfiguration {
             return this;
         }
 
-        public Builder disableTransactionLogSnapshots(boolean disableTransactionLogSnapshots) {
-            this.disableTransactionLogSnapshots = disableTransactionLogSnapshots;
+        public Builder enableSchedules(List<SleeperScheduleRule> enableSchedules) {
+            this.enableSchedules = new HashSet<>(enableSchedules);
             return this;
         }
 

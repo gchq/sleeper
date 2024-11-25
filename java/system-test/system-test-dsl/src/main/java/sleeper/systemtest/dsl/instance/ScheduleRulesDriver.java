@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.snapshot;
+package sleeper.systemtest.dsl.instance;
 
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.deploy.SleeperScheduleRule;
 
-import java.util.Optional;
+public interface ScheduleRulesDriver {
 
-public interface SnapshotsDriver {
+    void enableRule(SleeperScheduleRule.InstanceRule rule);
 
-    Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
+    void disableRule(SleeperScheduleRule.InstanceRule rule);
 
-    Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
 }

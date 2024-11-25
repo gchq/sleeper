@@ -27,6 +27,7 @@ import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
@@ -55,11 +56,12 @@ import sleeper.systemtest.dsl.testutil.drivers.InMemoryReports;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySketchesStore;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperInstanceDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySleeperTablesDriver;
-import sleeper.systemtest.dsl.testutil.drivers.InMemorySnapshotsDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySourceFilesDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryStateStoreCommitter;
 import sleeper.systemtest.dsl.testutil.drivers.InMemorySystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.testutil.drivers.InMemoryTableMetrics;
+import sleeper.systemtest.dsl.util.NoScheduleRulesDriver;
+import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.PurgeQueueDriver;
 import sleeper.systemtest.dsl.util.SystemTestDriversBase;
@@ -223,7 +225,12 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public SnapshotsDriver snapshots() {
-        return new InMemorySnapshotsDriver();
+        return new NoSnapshotsDriver();
+    }
+
+    @Override
+    public ScheduleRulesDriver schedules() {
+        return new NoScheduleRulesDriver();
     }
 
     public InMemoryReports reports() {
