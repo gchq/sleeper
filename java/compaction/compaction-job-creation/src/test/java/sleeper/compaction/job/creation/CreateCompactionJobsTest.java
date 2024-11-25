@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
@@ -40,7 +41,11 @@ import sleeper.core.util.ObjectFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -53,6 +58,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSI
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
@@ -61,13 +67,16 @@ import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemorySta
 
 public class CreateCompactionJobsTest {
 
-    private final InstanceProperties instanceProperties = CreateJobsTestUtils.createInstanceProperties();
-    private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-    private final InMemoryCompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
-    private final TableProperties tableProperties = createTable();
-    private final StateStore stateStore = createStateStore(tableProperties);
-    private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentCommitRequests = new ArrayList<>();
-    private final List<CompactionJob> jobs = new ArrayList<>();
+    InstanceProperties instanceProperties = CreateJobsTestUtils.createInstanceProperties();
+    Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+    InMemoryCompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
+    TableProperties tableProperties = createTable();
+    StateStore stateStore = createStateStore(tableProperties);
+
+    List<CompactionJob> jobs = new ArrayList<>();
+    Queue<CompactionJobDispatchRequest> pendingQueue = new LinkedList<>();
+    Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
+    List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentCommitRequests = new ArrayList<>();
 
     @Nested
     @DisplayName("Compact files using strategy")
@@ -417,6 +426,38 @@ public class CreateCompactionJobsTest {
             CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file), "root");
             assertThat(jobs).containsExactly(job);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+            assertThat(jobIdAssignmentCommitRequests).containsExactly(
+                    CompactionJobIdAssignmentCommitRequest.tableRequests(tableProperties.get(TABLE_ID),
+                            List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("test.parquet")))));
+        }
+    }
+
+    @Nested
+    @DisplayName("Send jobs in batches")
+    class SendInBatches {
+
+        @Test
+        void shouldSendMultipleBatches() throws Exception {
+            // Given
+            tableProperties.setNumber(COMPACTION_JOB_SEND_BATCH_SIZE, 2);
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .singlePartition("root")
+                    .splitToNewChildren("root", "L", "R", "m")
+                    .splitToNewChildren("R", "RL", "RR", "s")
+                    .buildList());
+            FileReference file1 = fileFactory().partitionFile("L", 100L);
+            FileReference file2 = fileFactory().partitionFile("RL", 200L);
+            FileReference file3 = fileFactory().partitionFile("RR", 300L);
+            stateStore.addFiles(List.of(file1, file2, file3));
+
+            // When
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("job-1", "job-2", "job-3"));
+
+            // Then
+            CompactionJob job1 = compactionFactory().createCompactionJob("job-1", List.of(file1), "L");
+            CompactionJob job2 = compactionFactory().createCompactionJob("job-2", List.of(file2), "RL");
+            CompactionJob job3 = compactionFactory().createCompactionJob("job-3", List.of(file3), "RR");
+            assertThat(jobs).containsExactly(job1, job2, job3);
         }
     }
 
