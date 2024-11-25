@@ -60,13 +60,6 @@ public final class DeployedSleeperInstance {
 
         InstanceProperties instanceProperties = new InstanceProperties();
         driver.loadInstanceProperties(instanceProperties, instanceId);
-        SleeperScheduleRule.getDeployedRules(instanceProperties).forEach(rule -> {
-            if (configuration.isEnable(rule)) {
-                schedulesDriver.enableRule(rule);
-            } else {
-                schedulesDriver.disableRule(rule);
-            }
-        });
 
         DeployedSleeperInstance instance = new DeployedSleeperInstance(
                 deployConfig, instanceProperties,
@@ -75,6 +68,14 @@ public final class DeployedSleeperInstance {
             instance.redeploy(driver, parameters);
         }
         instance.resetInstanceProperties(driver);
+
+        SleeperScheduleRule.getDeployedRules(instanceProperties).forEach(rule -> {
+            if (configuration.isEnable(rule)) {
+                schedulesDriver.enableRule(rule);
+            } else {
+                schedulesDriver.disableRule(rule);
+            }
+        });
         return instance;
     }
 
