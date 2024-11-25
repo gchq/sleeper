@@ -57,7 +57,8 @@ public class SystemTestTableFiles {
     public SystemTestTableFiles waitForState(Predicate<AllReferencesToAllFiles> stateCheck, PollWithRetries poll) throws InterruptedException {
         poll.pollUntil("files meet expected state", () -> {
             AllReferencesToAllFiles files = all();
-            LOGGER.info("Found {} referenced files, {} unreferenced",
+            LOGGER.info("Found {} file references, {} referenced files, {} unreferenced files",
+                    files.countFileReferences(),
                     files.getFilesWithReferences().size(),
                     files.getFilesWithNoReferences().size());
             return stateCheck.test(files);

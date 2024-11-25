@@ -34,15 +34,13 @@ public class AwsScheduleRulesDriver implements ScheduleRulesDriver {
     }
 
     @Override
-    public void enableRuleIfDeployed(InstanceProperties instanceProperties, SleeperScheduleRule rule) {
-        getRuleNameIfDeployed(instanceProperties, rule)
-                .ifPresent(ruleName -> cw.enableRule(request -> request.name(ruleName)));
+    public void enableRule(SleeperScheduleRule.InstanceRule rule) {
+        cw.enableRule(request -> request.name(rule.getRuleName()));
     }
 
     @Override
-    public void disableRuleIfDeployed(InstanceProperties instanceProperties, SleeperScheduleRule rule) {
-        getRuleNameIfDeployed(instanceProperties, rule)
-                .ifPresent(ruleName -> cw.disableRule(request -> request.name(ruleName)));
+    public void disableRule(SleeperScheduleRule.InstanceRule rule) {
+        cw.disableRule(request -> request.name(rule.getRuleName()));
     }
 
     private Optional<String> getRuleNameIfDeployed(InstanceProperties instanceProperties, SleeperScheduleRule rule) {

@@ -16,12 +16,11 @@
 package sleeper.systemtest.dsl.instance;
 
 import sleeper.core.deploy.SleeperScheduleRule;
-import sleeper.core.properties.instance.InstanceProperties;
 
 public interface ScheduleRulesDriver {
 
-    void enableRuleIfDeployed(InstanceProperties instanceProperties, SleeperScheduleRule rule);
+    void enableRule(SleeperScheduleRule.InstanceRule rule);
 
-    void disableRuleIfDeployed(InstanceProperties instanceProperties, SleeperScheduleRule rule);
+    void disableRule(SleeperScheduleRule.InstanceRule rule);
 
 }

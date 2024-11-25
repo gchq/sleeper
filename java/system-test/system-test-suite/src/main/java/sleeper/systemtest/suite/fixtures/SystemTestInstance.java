@@ -17,6 +17,7 @@
 package sleeper.systemtest.suite.fixtures;
 
 import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
@@ -91,6 +92,7 @@ public class SystemTestInstance {
             .shortName("xf-off")
             .deployConfig(SystemTestInstance::createOptionalFeaturesDisabledConfiguration)
             .useSystemTestIngestSourceBucket(false)
+            .enableSchedules(SleeperScheduleRule.all())
             .build();
 
     private static final String MAIN_EMR_MASTER_TYPES = "m7i.xlarge,m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";

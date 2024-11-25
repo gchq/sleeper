@@ -19,6 +19,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -87,6 +88,15 @@ public class SleeperScheduleRule {
     private SleeperScheduleRule(InstanceProperty property, String nameFormat) {
         this.property = requireNonNull(property, "property must not be null");
         this.nameFormat = requireNonNull(nameFormat, "nameFormat must not be null");
+    }
+
+    /**
+     * Retrieves the list of all rule declarations.
+     *
+     * @return the rules
+     */
+    public static List<SleeperScheduleRule> all() {
+        return Collections.unmodifiableList(RULES);
     }
 
     /**

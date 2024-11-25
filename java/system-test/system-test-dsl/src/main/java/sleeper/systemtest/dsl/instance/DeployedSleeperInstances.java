@@ -17,7 +17,6 @@
 package sleeper.systemtest.dsl.instance;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,18 +28,18 @@ public class DeployedSleeperInstances {
     private final DeployedSystemTestResources systemTest;
     private final SleeperInstanceDriver instanceDriver;
     private final AssumeAdminRoleDriver assumeRoleDriver;
-    private final SnapshotsDriver snapshotsDriver;
+    private final ScheduleRulesDriver schedulesDriver;
     private final Map<String, Exception> failureById = new HashMap<>();
     private final Map<String, DeployedSleeperInstance> instanceByShortName = new HashMap<>();
 
     public DeployedSleeperInstances(
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver instanceDriver, AssumeAdminRoleDriver assumeRoleDriver, SnapshotsDriver snapshotsDriver) {
+            SleeperInstanceDriver instanceDriver, AssumeAdminRoleDriver assumeRoleDriver, ScheduleRulesDriver schedulesDriver) {
         this.parameters = parameters;
         this.systemTest = systemTest;
         this.instanceDriver = instanceDriver;
         this.assumeRoleDriver = assumeRoleDriver;
-        this.snapshotsDriver = snapshotsDriver;
+        this.schedulesDriver = schedulesDriver;
     }
 
     public DeployedSleeperInstance connectToAndReset(SystemTestInstanceConfiguration configuration) {
@@ -67,7 +66,7 @@ public class DeployedSleeperInstances {
 
     private DeployedSleeperInstance loadOrDeployAtFirstConnect(String instanceId, SystemTestInstanceConfiguration configuration) {
         return DeployedSleeperInstance.loadOrDeployAtFirstConnect(
-                instanceId, configuration, parameters, systemTest, instanceDriver, assumeRoleDriver, snapshotsDriver);
+                instanceId, configuration, parameters, systemTest, instanceDriver, assumeRoleDriver, schedulesDriver);
     }
 
     private void takeAllTablesOffline(DeployedSleeperInstance instance) {
