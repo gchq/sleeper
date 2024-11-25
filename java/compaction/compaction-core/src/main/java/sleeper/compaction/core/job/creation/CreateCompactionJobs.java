@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.creation;
+package sleeper.compaction.core.job.creation;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +24,6 @@ import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategy;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
-import sleeper.compaction.job.creation.commit.AssignJobIdQueueSender;
-import sleeper.compaction.job.creation.commit.AssignJobIdToFiles;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.CompactionProperty;
 import sleeper.core.properties.instance.InstanceProperties;

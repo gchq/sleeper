@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.strategy;
+package sleeper.compaction.core.job.creation.strategy;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;

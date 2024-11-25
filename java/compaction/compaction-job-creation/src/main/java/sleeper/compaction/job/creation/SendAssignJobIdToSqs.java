@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
-import sleeper.compaction.job.creation.commit.AssignJobIdQueueSender;
+import sleeper.compaction.core.job.creation.AssignJobIdQueueSender;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.UUID;

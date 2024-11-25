@@ -25,7 +25,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.job.creation.CreateCompactionJobs;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.SendAssignJobIdToSqs;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
@@ -47,8 +47,8 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.FORCE_ALL_FILES_AFTER_STRATEGY;
-import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.STRATEGY;
+import static sleeper.compaction.core.job.creation.CreateCompactionJobs.Mode.FORCE_ALL_FILES_AFTER_STRATEGY;
+import static sleeper.compaction.core.job.creation.CreateCompactionJobs.Mode.STRATEGY;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**

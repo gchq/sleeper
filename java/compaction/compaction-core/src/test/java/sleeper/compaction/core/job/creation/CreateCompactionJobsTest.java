@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.creation;
+package sleeper.compaction.core.job.creation;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,14 +22,14 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.BatchJobsWriter;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.core.job.creation.strategy.impl.SizeRatioCompactionStrategy;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
-import sleeper.compaction.job.creation.CreateCompactionJobs.BatchJobsWriter;
-import sleeper.compaction.job.creation.CreateCompactionJobs.GenerateBatchId;
-import sleeper.compaction.job.creation.CreateCompactionJobs.GenerateJobId;
-import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
