@@ -92,7 +92,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        createJobs = AwsCreateCompactionJobs.create(
+        createJobs = AwsCreateCompactionJobs.from(
                 objectFactory, instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient, Mode.STRATEGY);
     }
 

@@ -85,7 +85,7 @@ public class CreateCompactionJobsClient {
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            CreateCompactionJobs jobCreator = AwsCreateCompactionJobs.create(
+            CreateCompactionJobs jobCreator = AwsCreateCompactionJobs.from(
                     new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
                     instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient, mode);
             for (TableProperties table : tables) {

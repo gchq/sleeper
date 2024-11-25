@@ -222,7 +222,7 @@ public class AwsCreateCompactionJobsIT {
     }
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
-        return AwsCreateCompactionJobs.create(ObjectFactory.noUserJars(),
+        return AwsCreateCompactionJobs.from(ObjectFactory.noUserJars(),
                 instanceProperties, stateStoreProvider, CompactionJobStatusStore.NONE,
                 s3, sqs, Mode.STRATEGY);
     }

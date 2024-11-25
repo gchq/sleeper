@@ -35,7 +35,7 @@ public class AwsCreateCompactionJobs {
     private AwsCreateCompactionJobs() {
     }
 
-    public static CreateCompactionJobs create(
+    public static CreateCompactionJobs from(
             ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,

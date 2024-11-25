@@ -89,7 +89,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     public void forceCreateJobs() {
         instance.streamTableProperties().parallel().forEach(table -> {
             try {
-                CreateCompactionJobs createJobs = AwsCreateCompactionJobs.create(
+                CreateCompactionJobs createJobs = AwsCreateCompactionJobs.from(
                         ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                         new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
                         getJobStatusStore(), s3Client, sqsClient, Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
