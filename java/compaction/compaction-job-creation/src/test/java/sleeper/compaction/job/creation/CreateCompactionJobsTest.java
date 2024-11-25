@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.creation;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,8 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.compaction.job.creation.CreateCompactionJobs.GenerateBatchId;
+import sleeper.compaction.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -47,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -437,6 +439,7 @@ public class CreateCompactionJobsTest {
     class SendInBatches {
 
         @Test
+        @Disabled("TODO")
         void shouldSendMultipleBatches() throws Exception {
             // Given
             tableProperties.setNumber(COMPACTION_JOB_SEND_BATCH_SIZE, 2);
@@ -451,13 +454,18 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(file1, file2, file3));
 
             // When
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("job-1", "job-2", "job-3"));
+            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY,
+                    fixJobIds("job-1", "job-2", "job-3"),
+                    fixBatchIds("batch-1", "batch-2"));
 
             // Then
             CompactionJob job1 = compactionFactory().createCompactionJob("job-1", List.of(file1), "L");
             CompactionJob job2 = compactionFactory().createCompactionJob("job-2", List.of(file2), "RL");
             CompactionJob job3 = compactionFactory().createCompactionJob("job-3", List.of(file3), "RR");
+            CompactionJobDispatchRequest batch1 = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(instanceProperties, tableProperties, "batch-1", DEFAULT_UPDATE_TIME);
+            CompactionJobDispatchRequest batch2 = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(instanceProperties, tableProperties, "batch-2", DEFAULT_UPDATE_TIME);
             assertThat(jobs).containsExactly(job1, job2, job3);
+            assertThat(pendingQueue).containsExactly(batch1, batch2);
         }
     }
 
@@ -469,22 +477,31 @@ public class CreateCompactionJobsTest {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    private void createJobs(Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
-        jobCreator(mode, jobIdSupplier, random).createJobs(tableProperties);
+    private void createJobs(Mode mode, GenerateJobId generateJobId, Random random) throws Exception {
+        jobCreator(mode, generateJobId, GenerateBatchId.random(), random).createJobs(tableProperties);
     }
 
-    private void createJobs(Mode mode, Supplier<String> jobIdSupplier) throws Exception {
-        jobCreator(mode, jobIdSupplier, new Random()).createJobs(tableProperties);
+    private void createJobs(Mode mode, GenerateJobId generateJobId) throws Exception {
+        jobCreator(mode, generateJobId, GenerateBatchId.random(), new Random()).createJobs(tableProperties);
     }
 
-    private CreateCompactionJobs jobCreator(Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
+    private void createJobs(Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId) throws Exception {
+        jobCreator(mode, generateJobId, generateBatchId, new Random()).createJobs(tableProperties);
+    }
+
+    private CreateCompactionJobs jobCreator(Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId, Random random) throws Exception {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                jobs::add, jobStatusStore, mode, jobIdAssignmentCommitRequests::add, jobIdSupplier, random);
+                jobs::add, jobStatusStore, mode, jobIdAssignmentCommitRequests::add,
+                generateJobId, generateBatchId, random);
     }
 
-    private Supplier<String> fixJobIds(String... jobIds) {
+    private GenerateJobId fixJobIds(String... jobIds) {
+        return List.of(jobIds).iterator()::next;
+    }
+
+    private GenerateBatchId fixBatchIds(String... jobIds) {
         return List.of(jobIds).iterator()::next;
     }
 

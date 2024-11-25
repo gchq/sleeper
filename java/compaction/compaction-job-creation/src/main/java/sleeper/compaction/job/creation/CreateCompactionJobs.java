@@ -47,7 +47,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -75,7 +74,8 @@ public class CreateCompactionJobs {
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
     private final AssignJobIdQueueSender assignJobIdQueueSender;
-    private final Supplier<String> jobIdSupplier;
+    private final GenerateJobId generateJobId;
+    private final GenerateBatchId generateBatchId;
     private final Random random;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
@@ -86,7 +86,7 @@ public class CreateCompactionJobs {
             Mode mode,
             AssignJobIdQueueSender assignJobIdQueueSender) {
         this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode,
-                assignJobIdQueueSender, () -> UUID.randomUUID().toString(), new Random());
+                assignJobIdQueueSender, GenerateJobId.random(), GenerateBatchId.random(), new Random());
     }
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
@@ -96,7 +96,8 @@ public class CreateCompactionJobs {
             CompactionJobStatusStore jobStatusStore,
             Mode mode,
             AssignJobIdQueueSender assignJobIdQueueSender,
-            Supplier<String> jobIdSupplier,
+            GenerateJobId generateJobId,
+            GenerateBatchId generateBatchId,
             Random random) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
@@ -104,7 +105,8 @@ public class CreateCompactionJobs {
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.mode = mode;
-        this.jobIdSupplier = jobIdSupplier;
+        this.generateJobId = generateJobId;
+        this.generateBatchId = generateBatchId;
         this.random = random;
         this.assignJobIdQueueSender = assignJobIdQueueSender;
     }
@@ -141,7 +143,7 @@ public class CreateCompactionJobs {
         CompactionStrategy compactionStrategy = objectFactory
                 .getObject(tableProperties.get(COMPACTION_STRATEGY_CLASS), CompactionStrategy.class);
         LOGGER.debug("Created compaction strategy of class {}", tableProperties.get(COMPACTION_STRATEGY_CLASS));
-        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, jobIdSupplier);
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties, generateJobId::generate);
         LOGGER.info("Initialised CompactionFactory with table {}, filename prefix {}",
                 table, jobFactory.getOutputFilePrefix());
 
@@ -270,5 +272,23 @@ public class CreateCompactionJobs {
     @FunctionalInterface
     public interface JobSender {
         void send(CompactionJob compactionJob) throws IOException;
+    }
+
+    @FunctionalInterface
+    public interface GenerateJobId {
+        String generate();
+
+        static GenerateJobId random() {
+            return () -> UUID.randomUUID().toString();
+        }
+    }
+
+    @FunctionalInterface
+    public interface GenerateBatchId {
+        String generate();
+
+        static GenerateBatchId random() {
+            return () -> UUID.randomUUID().toString();
+        }
     }
 }
