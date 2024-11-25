@@ -127,14 +127,14 @@ public class CreateCompactionJobs {
     }
 
     public void createJobsWithStrategy(TableProperties table) throws IOException, ObjectFactoryException {
-        createJobs(table);
+        createJobs(table, Mode.STRATEGY);
     }
 
     public void createJobWithForceAllFiles(TableProperties table) throws IOException, ObjectFactoryException {
-        createJobs(table);
+        createJobs(table, Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
     }
 
-    public void createJobs(TableProperties table) throws IOException, ObjectFactoryException {
+    public void createJobs(TableProperties table, Mode mode) throws IOException, ObjectFactoryException {
         StateStore stateStore = stateStoreProvider.getStateStore(table);
         LOGGER.info("Performing pre-splits on files in table {}", table.getStatus());
         Instant preSplitStartTime = Instant.now();
