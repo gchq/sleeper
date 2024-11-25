@@ -99,8 +99,8 @@ public class PopulateInstanceProperties {
         instanceProperties.setEnum(LAMBDA_DEPLOY_TYPE, LambdaDeployType.CONTAINER);
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(instanceId));
         instanceProperties.set(QUERY_RESULTS_BUCKET, String.format("sleeper-%s-query-results", instanceId));
-        SleeperScheduleRule.getCloudWatchRuleDefaults(instanceId)
-                .forEach(rule -> instanceProperties.set(rule.getProperty(), rule.getPropertyValue()));
+        SleeperScheduleRule.getDefaultRules(instanceId)
+                .forEach(rule -> instanceProperties.set(rule.getProperty(), rule.getRuleName()));
         return instanceProperties;
     }
 
