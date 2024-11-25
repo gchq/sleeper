@@ -112,7 +112,26 @@ public class CreateCompactionJobs {
     }
 
     public enum Mode {
-        STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY
+        STRATEGY, FORCE_ALL_FILES_AFTER_STRATEGY;
+
+        public void createJobs(CreateCompactionJobs createCompactionJobs, TableProperties table) throws IOException, ObjectFactoryException {
+            switch (this) {
+                case STRATEGY:
+                    createCompactionJobs.createJobsWithStrategy(table);
+                    break;
+                case FORCE_ALL_FILES_AFTER_STRATEGY:
+                    createCompactionJobs.createJobWithForceAllFiles(table);
+                    break;
+            }
+        }
+    }
+
+    public void createJobsWithStrategy(TableProperties table) throws IOException, ObjectFactoryException {
+        createJobs(table);
+    }
+
+    public void createJobWithForceAllFiles(TableProperties table) throws IOException, ObjectFactoryException {
+        createJobs(table);
     }
 
     public void createJobs(TableProperties table) throws IOException, ObjectFactoryException {
@@ -121,11 +140,11 @@ public class CreateCompactionJobs {
         Instant preSplitStartTime = Instant.now();
         SplitFileReferences.from(stateStore).split();
         LOGGER.info("Pre-split files in partitions, took {}", LoggedDuration.withShortOutput(preSplitStartTime, Instant.now()));
-        Instant finishTime = createJobsForTable(table, stateStore);
+        Instant finishTime = createJobsForTable(table, stateStore, mode);
         LOGGER.info("Overall, pre-splitting files and creating compaction jobs took {}", LoggedDuration.withShortOutput(preSplitStartTime, finishTime));
     }
 
-    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore) throws IOException, ObjectFactoryException {
+    private Instant createJobsForTable(TableProperties tableProperties, StateStore stateStore, Mode mode) throws IOException, ObjectFactoryException {
         Instant startTime = Instant.now();
         TableStatus table = tableProperties.getStatus();
         LOGGER.info("Creating jobs for table {}", table);

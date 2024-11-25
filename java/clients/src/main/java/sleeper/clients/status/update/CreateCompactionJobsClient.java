@@ -89,7 +89,7 @@ public class CreateCompactionJobsClient {
                     new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
                     instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient, mode);
             for (TableProperties table : tables) {
-                jobCreator.createJobs(table);
+                mode.createJobs(jobCreator, table);
             }
         } finally {
             s3Client.shutdown();

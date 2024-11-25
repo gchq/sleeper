@@ -152,7 +152,7 @@ public class InMemoryCompaction {
             CreateCompactionJobs jobCreator = jobCreator(mode);
             instance.streamTableProperties().forEach(table -> {
                 try {
-                    jobCreator.createJobs(table);
+                    mode.createJobs(jobCreator, table);
                 } catch (IOException | ObjectFactoryException e) {
                     throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
                 }

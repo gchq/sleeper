@@ -110,7 +110,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
             try {
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
-                createJobs.createJobs(tableProperties);
+                createJobs.createJobsWithStrategy(tableProperties);
             } catch (RuntimeException | IOException | ObjectFactoryException e) {
                 LOGGER.error("Failed creating jobs for table {}", tableId, e);
                 tableMessages.stream()

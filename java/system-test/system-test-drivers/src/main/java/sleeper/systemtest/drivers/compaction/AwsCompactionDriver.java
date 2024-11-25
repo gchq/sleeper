@@ -93,7 +93,7 @@ public class AwsCompactionDriver implements CompactionDriver {
                         ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                         new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
                         getJobStatusStore(), s3Client, sqsClient, Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
-                createJobs.createJobs(table);
+                createJobs.createJobWithForceAllFiles(table);
             } catch (IOException | ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
             }

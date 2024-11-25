@@ -218,7 +218,7 @@ public class AwsCreateCompactionJobsIT {
     }
 
     private void createJobs() throws Exception {
-        jobCreator().createJobs(tableProperties);
+        jobCreator().createJobsWithStrategy(tableProperties);
     }
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {

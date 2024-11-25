@@ -487,15 +487,15 @@ public class CreateCompactionJobsTest {
     }
 
     private void createJobs(Mode mode, GenerateJobId generateJobId, Random random) throws Exception {
-        jobCreator(mode, generateJobId, GenerateBatchId.random(), random, timePassesAMinuteAtATime()).createJobs(tableProperties);
+        mode.createJobs(jobCreator(mode, generateJobId, GenerateBatchId.random(), random, timePassesAMinuteAtATime()), tableProperties);
     }
 
     private void createJobs(Mode mode, GenerateJobId generateJobId) throws Exception {
-        jobCreator(mode, generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime()).createJobs(tableProperties);
+        mode.createJobs(jobCreator(mode, generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime()), tableProperties);
     }
 
     private void createJobs(Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId, Supplier<Instant> timeSupplier) throws Exception {
-        jobCreator(mode, generateJobId, generateBatchId, new Random(), timeSupplier).createJobs(tableProperties);
+        mode.createJobs(jobCreator(mode, generateJobId, generateBatchId, new Random(), timeSupplier), tableProperties);
     }
 
     private CreateCompactionJobs jobCreator(
