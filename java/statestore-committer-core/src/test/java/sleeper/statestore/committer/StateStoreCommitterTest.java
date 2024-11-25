@@ -264,8 +264,8 @@ public class StateStoreCommitterTest {
             compactionJobStatusStore.fixUpdateTime(filesAssignedTime);
 
             // When
-            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
-                    assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))), "test-table");
+            CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests("test-table",
+                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))));
             apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
 
             // Then
@@ -283,8 +283,8 @@ public class StateStoreCommitterTest {
             stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
 
             // When
-            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
-                    assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))), "test-table");
+            CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests("test-table",
+                    List.of(assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))));
             apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
 
             // Then
@@ -301,8 +301,8 @@ public class StateStoreCommitterTest {
             StateStore stateStore = createTableGetStateStore("test-table");
 
             // When
-            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
-                    assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))), "test-table");
+            CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests("test-table",
+                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))));
             apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
 
             // Then

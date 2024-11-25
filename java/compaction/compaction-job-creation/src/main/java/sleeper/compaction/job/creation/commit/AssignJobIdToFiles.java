@@ -47,7 +47,7 @@ public interface AssignJobIdToFiles {
 
     static AssignJobIdToFiles byQueue(AssignJobIdQueueSender queueSender) {
         return (assignJobIdRequests, tableStatus) -> queueSender.send(
-                new CompactionJobIdAssignmentCommitRequest(assignJobIdRequests, tableStatus.getTableUniqueId()));
+                CompactionJobIdAssignmentCommitRequest.tableRequests(tableStatus.getTableUniqueId(), assignJobIdRequests));
     }
 
     interface AssignJobIdQueueSender {
