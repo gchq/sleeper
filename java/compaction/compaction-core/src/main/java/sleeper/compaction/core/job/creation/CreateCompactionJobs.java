@@ -75,14 +75,12 @@ public class CreateCompactionJobs {
     private final BatchMessageSender batchMessageSender;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
-    private final Mode mode;
     private final AssignJobIdQueueSender assignJobIdQueueSender;
     private final GenerateJobId generateJobId;
     private final GenerateBatchId generateBatchId;
     private final Random random;
     private final Supplier<Instant> timeSupplier;
 
-    @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
@@ -90,7 +88,6 @@ public class CreateCompactionJobs {
             BatchJobsWriter batchJobsWriter,
             BatchMessageSender batchMessageSender,
             CompactionJobStatusStore jobStatusStore,
-            Mode mode,
             AssignJobIdQueueSender assignJobIdQueueSender,
             GenerateJobId generateJobId,
             GenerateBatchId generateBatchId,
@@ -103,7 +100,6 @@ public class CreateCompactionJobs {
         this.batchMessageSender = batchMessageSender;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
-        this.mode = mode;
         this.assignJobIdQueueSender = assignJobIdQueueSender;
         this.generateJobId = generateJobId;
         this.generateBatchId = generateBatchId;

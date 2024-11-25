@@ -45,7 +45,7 @@ public class AwsCreateCompactionJobs {
             Mode mode) {
         return new CreateCompactionJobs(
                 objectFactory, instanceProperties, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqsClient), null, null, jobStatusStore, mode,
+                new SendCompactionJobToSqs(instanceProperties, sqsClient), null, null, jobStatusStore,
                 new SendAssignJobIdToSqs(sqsClient, instanceProperties),
                 GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
     }

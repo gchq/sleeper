@@ -162,7 +162,7 @@ public class InMemoryCompaction {
         private CreateCompactionJobs jobCreator(Mode mode) {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                     instance.getStateStoreProvider(), jobSender(), null, null,
-                    jobStore, mode, jobIdAssignmentRequests::add,
+                    jobStore, jobIdAssignmentRequests::add,
                     GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
         }
     }
