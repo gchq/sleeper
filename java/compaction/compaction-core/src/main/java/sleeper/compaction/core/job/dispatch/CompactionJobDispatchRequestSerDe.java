@@ -31,12 +31,12 @@ public class CompactionJobDispatchRequestSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJsonPrettyPrint(CompactionJobDispatchRequest job) {
-        return gsonPrettyPrint.toJson(job);
+    public String toJsonPrettyPrint(CompactionJobDispatchRequest request) {
+        return gsonPrettyPrint.toJson(request);
     }
 
-    public String toJson(CompactionJobDispatchRequest job) {
-        return gson.toJson(job);
+    public String toJson(CompactionJobDispatchRequest request) {
+        return gson.toJson(request);
     }
 
     public CompactionJobDispatchRequest fromJson(String json) {

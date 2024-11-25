@@ -510,7 +510,7 @@ public class CreateCompactionJobsTest {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                null, createBatchWriter(), pendingQueue::add, jobStatusStore, jobIdAssignmentCommitRequests::add,
+                jobStatusStore, null, createBatchWriter(), pendingQueue::add, jobIdAssignmentCommitRequests::add,
                 generateJobId, generateBatchId, random, timeSupplier);
     }
 
