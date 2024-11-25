@@ -68,13 +68,6 @@ For a table with an S3 state store:
 java -cp scripts/jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
 ```
 
-## Why is adding a table to an existing Sleeper instance so slow?
-
-Each table stores its data in its own bucket, and has its own state store (by default the DynamoDB-based state store
-is used which uses 3 DynamoDB tables). When a new Sleeper table is created, these resources all need to be created
-and then the various components of Sleeper (lambda, ECS containers, etc) all need to have the permissions of their
-roles updated so that they can interact with these resources. This is done using cdk and it takes several minutes.
-
 ## I created an instance, destroyed it and then recreating it failed
 
 If you create an instance and destroy it then some remnants of the previous instance will still be present. Usually this
