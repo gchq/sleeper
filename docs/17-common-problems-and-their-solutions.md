@@ -19,55 +19,6 @@ If you see an out of memory error, then try reducing `sleeper.ingest.memory.max.
 parameter it is a good idea to also reduce `sleeper.ingest.max.local.records`. To change these parameters, use the
 administration client described in the [system status documentation](06-status.md).
 
-## I need to reinitialise a table
-
-There are two reasons you might want to reinitialise a table: you want to delete the contents of a table and start
-with an empty table with the same schema or you may have got the schema wrong and want to start again with a new one.
-This can be achieved by deleting the table and then creating it again, but the following steps may well be quicker:
-
-You can reinitialise the table quickly by running the following command - note that reinitialising a table will delete
-all data in the table. If you want to change the table schema make sure you change
-the schema in the table properties before running this script:
-
-```bash
-./scripts/utility/reinitialiseTable.sh <instance-id> <table-name> <optional-delete-partitions-true-or-false> <optional-split-points-file-location> <optional-split-points-file-base64-encoded-true-or-false>
-```
-
-e.g.
-
-```bash
-./scripts/utility/reinitialiseTable.sh my-sleeper-config-bucket my-sleeper-table true /tmp/split-points.txt false
-```
-
-Alternatively you can use a more manual approach. This may be better if you want to significantly change the table
-properties.
-
-For a table with a Dynamo DB state store:
-
-- Delete all the files `partition*/*` in the S3 bucket for the table (the bucket will be named
-  `sleeper-<instance-id>-table-<table-name>`). This can be done either in the AWS console or using the CLI.
-- Delete all the entries in the DynamoDB state store tables: `sleeper-<instance-id>-table-<table-name>-active-files`,
-  `sleeper-<instance-id>-table-<table-name>-gc-files`, `sleeper-<instance-id>-table-<table-name>-partitions`.
-- If you want to change the schema of the table, then edit the table properties file in the config bucket in S3.
-- Reinitialise the state store:
-
-```bash
-java -cp scripts/jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
-```
-
-For a table with an S3 state store:
-
-- Delete all the files `partition*/*` in the S3 bucket for the table (the bucket will be named
-  `sleeper-<instance-id>-table-<table-name>`). This can be done either in the AWS console or using the CLI.
-- Delete all the files `statestore/*` in the same S3 bucket for the table.
-- Delete all the entries in the DynamoDB table: `sleeper-<instance-id>-table-<table-name>-revisions`,
-- If you want to change the schema of the table, then edit the table properties file in the config bucket in S3.
-- Reinitialise the state store:
-
-```bash
-java -cp scripts/jars/clients-*-utility.jar sleeper.statestore.InitialiseStateStore <instance-id> <table-name>
-```
-
 ## I created an instance, destroyed it and then recreating it failed
 
 If you create an instance and destroy it then some remnants of the previous instance will still be present. Usually this
