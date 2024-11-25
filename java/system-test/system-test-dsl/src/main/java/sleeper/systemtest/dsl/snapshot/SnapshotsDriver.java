@@ -22,22 +22,9 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 
 import java.util.Optional;
 
-import static sleeper.core.properties.instance.CommonProperty.ID;
-
 public interface SnapshotsDriver {
-    void enableCreation(InstanceProperties instanceProperties);
 
-    void disableCreation(InstanceProperties instanceProperties);
+    Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
 
-    default Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        throw new UnsupportedOperationException(
-                "Requested loading files snapshot for instance " + instanceProperties.get(ID) +
-                        ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
-    }
-
-    default Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        throw new UnsupportedOperationException(
-                "Requested loading partitions snapshot for instance " + instanceProperties.get(ID) +
-                        ", table " + tableProperties.getStatus() + ", not currently implemented for this driver");
-    }
+    Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
 }
