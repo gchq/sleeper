@@ -82,17 +82,6 @@ public class CreateCompactionJobs {
     private final Random random;
     private final Supplier<Instant> timeSupplier;
 
-    public CreateCompactionJobs(ObjectFactory objectFactory,
-            InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider,
-            JobSender jobSender,
-            CompactionJobStatusStore jobStatusStore,
-            Mode mode,
-            AssignJobIdQueueSender assignJobIdQueueSender) {
-        this(objectFactory, instanceProperties, stateStoreProvider, jobSender, null, null, jobStatusStore, mode,
-                assignJobIdQueueSender, GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
-    }
-
     @SuppressWarnings("checkstyle:ParameterNumberCheck")
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,

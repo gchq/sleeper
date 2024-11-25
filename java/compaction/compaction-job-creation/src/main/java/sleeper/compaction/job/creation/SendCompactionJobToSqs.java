@@ -23,13 +23,14 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.io.IOException;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 
-public class SendCompactionJobToSqs {
+public class SendCompactionJobToSqs implements CreateCompactionJobs.JobSender {
     private static final Logger LOGGER = LoggerFactory.getLogger(SendCompactionJobToSqs.class);
 
     private final InstanceProperties instanceProperties;

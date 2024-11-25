@@ -21,6 +21,8 @@ import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobCommitter;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.core.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.core.task.CompactionTaskStatus;
@@ -58,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -158,7 +161,9 @@ public class InMemoryCompaction {
 
         private CreateCompactionJobs jobCreator(Mode mode) {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), jobSender(), jobStore, mode, jobIdAssignmentRequests::add);
+                    instance.getStateStoreProvider(), jobSender(), null, null,
+                    jobStore, mode, jobIdAssignmentRequests::add,
+                    GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
         }
     }
 

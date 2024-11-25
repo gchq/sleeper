@@ -78,7 +78,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSI
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 @Testcontainers
-public class CreateCompactionJobsIT {
+public class AwsCreateCompactionJobsIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
@@ -112,7 +112,7 @@ public class CreateCompactionJobsIT {
         stateStore.addFiles(Arrays.asList(fileReference1, fileReference2, fileReference3, fileReference4));
 
         // When
-        jobCreator().createJobs(tableProperties);
+        createJobs();
 
         // Then
         assertThat(stateStore.getFileReferencesWithNoJobId()).isEmpty();
@@ -138,7 +138,7 @@ public class CreateCompactionJobsIT {
         stateStore.addFiles(files);
 
         // When
-        jobCreator().createJobs(tableProperties);
+        createJobs();
 
         // Then
         assertThat(stateStore.getFileReferencesWithNoJobId())
@@ -217,11 +217,13 @@ public class CreateCompactionJobsIT {
         return stateStore;
     }
 
+    private void createJobs() throws Exception {
+        jobCreator().createJobs(tableProperties);
+    }
+
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
-        return new CreateCompactionJobs(ObjectFactory.noUserJars(),
-                instanceProperties, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqs)::send,
-                CompactionJobStatusStore.NONE, Mode.STRATEGY,
-                new SendAssignJobIdToSqs(sqs, instanceProperties));
+        return AwsCreateCompactionJobs.create(ObjectFactory.noUserJars(),
+                instanceProperties, stateStoreProvider, CompactionJobStatusStore.NONE,
+                s3, sqs, Mode.STRATEGY);
     }
 }
