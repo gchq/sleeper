@@ -23,7 +23,6 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -47,7 +46,6 @@ public class OptionalFeaturesDisabledST {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(OPTIONAL_FEATURES_DISABLED);
-        reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
     @Test
