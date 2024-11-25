@@ -22,7 +22,6 @@ import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.Mode;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
@@ -41,8 +40,7 @@ public class AwsCreateCompactionJobs {
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
             AmazonS3 s3Client,
-            AmazonSQS sqsClient,
-            Mode mode) {
+            AmazonSQS sqsClient) {
         return new CreateCompactionJobs(
                 objectFactory, instanceProperties, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqsClient), null, null, jobStatusStore,

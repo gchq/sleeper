@@ -87,7 +87,7 @@ public class CreateCompactionJobsClient {
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             CreateCompactionJobs jobCreator = AwsCreateCompactionJobs.from(
                     new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
-                    instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient, mode);
+                    instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient);
             for (TableProperties table : tables) {
                 mode.createJobs(jobCreator, table);
             }

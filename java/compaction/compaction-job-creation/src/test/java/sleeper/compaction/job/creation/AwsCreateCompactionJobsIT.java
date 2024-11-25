@@ -39,7 +39,6 @@ import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.core.job.creation.CreateJobsTestUtils;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -224,6 +223,6 @@ public class AwsCreateCompactionJobsIT {
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
         return AwsCreateCompactionJobs.from(ObjectFactory.noUserJars(),
                 instanceProperties, stateStoreProvider, CompactionJobStatusStore.NONE,
-                s3, sqs, Mode.STRATEGY);
+                s3, sqs);
     }
 }

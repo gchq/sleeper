@@ -149,7 +149,7 @@ public class InMemoryCompaction {
         }
 
         private void createJobs(Mode mode) {
-            CreateCompactionJobs jobCreator = jobCreator(mode);
+            CreateCompactionJobs jobCreator = jobCreator();
             instance.streamTableProperties().forEach(table -> {
                 try {
                     mode.createJobs(jobCreator, table);
@@ -159,7 +159,7 @@ public class InMemoryCompaction {
             });
         }
 
-        private CreateCompactionJobs jobCreator(Mode mode) {
+        private CreateCompactionJobs jobCreator() {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                     instance.getStateStoreProvider(), jobSender(), null, null,
                     jobStore, jobIdAssignmentRequests::add,

@@ -29,7 +29,6 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
-import sleeper.compaction.core.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
@@ -92,7 +91,7 @@ public class AwsCompactionDriver implements CompactionDriver {
                 CreateCompactionJobs createJobs = AwsCreateCompactionJobs.from(
                         ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                         new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
-                        getJobStatusStore(), s3Client, sqsClient, Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+                        getJobStatusStore(), s3Client, sqsClient);
                 createJobs.createJobWithForceAllFiles(table);
             } catch (IOException | ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);

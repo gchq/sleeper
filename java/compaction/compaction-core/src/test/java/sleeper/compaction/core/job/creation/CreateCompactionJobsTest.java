@@ -487,19 +487,19 @@ public class CreateCompactionJobsTest {
     }
 
     private void createJobs(Mode mode, GenerateJobId generateJobId, Random random) throws Exception {
-        mode.createJobs(jobCreator(mode, generateJobId, GenerateBatchId.random(), random, timePassesAMinuteAtATime()), tableProperties);
+        mode.createJobs(jobCreator(generateJobId, GenerateBatchId.random(), random, timePassesAMinuteAtATime()), tableProperties);
     }
 
     private void createJobs(Mode mode, GenerateJobId generateJobId) throws Exception {
-        mode.createJobs(jobCreator(mode, generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime()), tableProperties);
+        mode.createJobs(jobCreator(generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime()), tableProperties);
     }
 
     private void createJobs(Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId, Supplier<Instant> timeSupplier) throws Exception {
-        mode.createJobs(jobCreator(mode, generateJobId, generateBatchId, new Random(), timeSupplier), tableProperties);
+        mode.createJobs(jobCreator(generateJobId, generateBatchId, new Random(), timeSupplier), tableProperties);
     }
 
     private CreateCompactionJobs jobCreator(
-            Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId, Random random, Supplier<Instant> timeSupplier) throws Exception {
+            GenerateJobId generateJobId, GenerateBatchId generateBatchId, Random random, Supplier<Instant> timeSupplier) throws Exception {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
