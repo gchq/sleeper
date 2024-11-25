@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -77,6 +78,7 @@ public class CreateCompactionJobs {
     private final GenerateJobId generateJobId;
     private final GenerateBatchId generateBatchId;
     private final Random random;
+    private final Supplier<Instant> timeSupplier;
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
@@ -86,7 +88,7 @@ public class CreateCompactionJobs {
             Mode mode,
             AssignJobIdQueueSender assignJobIdQueueSender) {
         this(objectFactory, instanceProperties, stateStoreProvider, jobSender, jobStatusStore, mode,
-                assignJobIdQueueSender, GenerateJobId.random(), GenerateBatchId.random(), new Random());
+                assignJobIdQueueSender, GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
     }
 
     public CreateCompactionJobs(ObjectFactory objectFactory,
@@ -98,17 +100,19 @@ public class CreateCompactionJobs {
             AssignJobIdQueueSender assignJobIdQueueSender,
             GenerateJobId generateJobId,
             GenerateBatchId generateBatchId,
-            Random random) {
+            Random random,
+            Supplier<Instant> timeSupplier) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.mode = mode;
+        this.assignJobIdQueueSender = assignJobIdQueueSender;
         this.generateJobId = generateJobId;
         this.generateBatchId = generateBatchId;
         this.random = random;
-        this.assignJobIdQueueSender = assignJobIdQueueSender;
+        this.timeSupplier = timeSupplier;
     }
 
     public enum Mode {

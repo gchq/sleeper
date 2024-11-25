@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,6 +67,8 @@ import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreUninitialised;
+import static sleeper.core.testutils.SupplierTestHelper.fixIds;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 
 public class CreateCompactionJobsTest {
 
@@ -456,14 +459,15 @@ public class CreateCompactionJobsTest {
             // When
             createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY,
                     fixJobIds("job-1", "job-2", "job-3"),
-                    fixBatchIds("batch-1", "batch-2"));
+                    fixBatchIds("batch-1", "batch-2"),
+                    timePassesAMinuteAtATimeFrom(Instant.parse("2024-11-25T11:00:00Z")));
 
             // Then
             CompactionJob job1 = compactionFactory().createCompactionJob("job-1", List.of(file1), "L");
             CompactionJob job2 = compactionFactory().createCompactionJob("job-2", List.of(file2), "RL");
             CompactionJob job3 = compactionFactory().createCompactionJob("job-3", List.of(file3), "RR");
-            CompactionJobDispatchRequest batch1 = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(instanceProperties, tableProperties, "batch-1", DEFAULT_UPDATE_TIME);
-            CompactionJobDispatchRequest batch2 = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(instanceProperties, tableProperties, "batch-2", DEFAULT_UPDATE_TIME);
+            CompactionJobDispatchRequest batch1 = batchRequest("batch-1", Instant.parse("2024-11-25T11:00:00Z"));
+            CompactionJobDispatchRequest batch2 = batchRequest("batch-2", Instant.parse("2024-11-25T11:01:00Z"));
             assertThat(jobs).containsExactly(job1, job2, job3);
             assertThat(pendingQueue).containsExactly(batch1, batch2);
         }
@@ -478,31 +482,40 @@ public class CreateCompactionJobsTest {
     }
 
     private void createJobs(Mode mode, GenerateJobId generateJobId, Random random) throws Exception {
-        jobCreator(mode, generateJobId, GenerateBatchId.random(), random).createJobs(tableProperties);
+        jobCreator(mode, generateJobId, GenerateBatchId.random(), random, timePassesAMinuteAtATime()).createJobs(tableProperties);
     }
 
     private void createJobs(Mode mode, GenerateJobId generateJobId) throws Exception {
-        jobCreator(mode, generateJobId, GenerateBatchId.random(), new Random()).createJobs(tableProperties);
+        jobCreator(mode, generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime()).createJobs(tableProperties);
     }
 
-    private void createJobs(Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId) throws Exception {
-        jobCreator(mode, generateJobId, generateBatchId, new Random()).createJobs(tableProperties);
+    private void createJobs(Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId, Supplier<Instant> timeSupplier) throws Exception {
+        jobCreator(mode, generateJobId, generateBatchId, new Random(), timeSupplier).createJobs(tableProperties);
     }
 
-    private CreateCompactionJobs jobCreator(Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId, Random random) throws Exception {
+    private CreateCompactionJobs jobCreator(
+            Mode mode, GenerateJobId generateJobId, GenerateBatchId generateBatchId, Random random, Supplier<Instant> timeSupplier) throws Exception {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 jobs::add, jobStatusStore, mode, jobIdAssignmentCommitRequests::add,
-                generateJobId, generateBatchId, random);
+                generateJobId, generateBatchId, random, timeSupplier);
+    }
+
+    private CompactionJobDispatchRequest batchRequest(String batchId, Instant createTime) {
+        return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(instanceProperties, tableProperties, batchId, createTime);
     }
 
     private GenerateJobId fixJobIds(String... jobIds) {
-        return List.of(jobIds).iterator()::next;
+        return fixIds(jobIds)::get;
     }
 
-    private GenerateBatchId fixBatchIds(String... jobIds) {
-        return List.of(jobIds).iterator()::next;
+    private GenerateBatchId fixBatchIds(String... batchIds) {
+        return fixIds(batchIds)::get;
+    }
+
+    private Supplier<Instant> timePassesAMinuteAtATime() {
+        return timePassesAMinuteAtATimeFrom(Instant.parse("2024-11-25T10:50:00Z"));
     }
 
     private TableProperties createTable() {

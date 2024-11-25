@@ -28,7 +28,8 @@
     "sleeper.core.statestore.inmemory.StateStoreTestHelper.*",
     "sleeper.configuration.properties.InstancePropertiesTestHelper.*",
     "sleeper.configuration.properties.table.TablePropertiesTestHelper.*",
-    "sleeper.core.util.ExponentialBackoffWithJitterTestHelper.*"
+    "sleeper.core.util.ExponentialBackoffWithJitterTestHelper.*",
+    "sleeper.core.testutils.SupplierTestHelper.*"
   ],
   "comment.java.configuration.runtimes": [
     {
