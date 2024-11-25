@@ -33,5 +33,4 @@ public class NoScheduleRulesDriver implements ScheduleRulesDriver {
     public void disableRule(SleeperScheduleRule.InstanceRule rule) {
         LOGGER.info("Requested disabling rule: {}", rule.getRuleName());
     }
-
 }

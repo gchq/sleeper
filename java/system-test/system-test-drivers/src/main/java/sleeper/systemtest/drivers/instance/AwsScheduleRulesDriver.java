@@ -18,12 +18,8 @@ package sleeper.systemtest.drivers.instance;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 
 import sleeper.core.deploy.SleeperScheduleRule;
-import sleeper.core.deploy.SleeperScheduleRule.InstanceRule;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
-
-import java.util.Optional;
 
 public class AwsScheduleRulesDriver implements ScheduleRulesDriver {
 
@@ -42,14 +38,4 @@ public class AwsScheduleRulesDriver implements ScheduleRulesDriver {
     public void disableRule(SleeperScheduleRule.InstanceRule rule) {
         cw.disableRule(request -> request.name(rule.getRuleName()));
     }
-
-    private Optional<String> getRuleNameIfDeployed(InstanceProperties instanceProperties, SleeperScheduleRule rule) {
-        InstanceRule instanceRule = rule.readValue(instanceProperties);
-        if (instanceRule.isDeployed()) {
-            return Optional.of(instanceRule.getRuleName());
-        } else {
-            return Optional.empty();
-        }
-    }
-
 }
