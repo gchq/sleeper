@@ -163,7 +163,7 @@ public class InMemoryCompaction {
 
         private CreateCompactionJobs jobCreator() {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), jobStore, null, batchJobsWriter(),
+                    instance.getStateStoreProvider(), jobStore, batchJobsWriter(),
                     message -> {
                     }, jobIdAssignmentRequests::add,
                     GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);

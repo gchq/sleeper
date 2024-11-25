@@ -70,7 +70,6 @@ public class CreateCompactionJobs {
 
     private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
-    private final JobSender jobSender;
     private final BatchJobsWriter batchJobsWriter;
     private final BatchMessageSender batchMessageSender;
     private final StateStoreProvider stateStoreProvider;
@@ -85,7 +84,6 @@ public class CreateCompactionJobs {
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
             CompactionJobStatusStore jobStatusStore,
-            JobSender jobSender,
             BatchJobsWriter batchJobsWriter,
             BatchMessageSender batchMessageSender,
             AssignJobIdQueueSender assignJobIdQueueSender,
@@ -95,7 +93,6 @@ public class CreateCompactionJobs {
             Supplier<Instant> timeSupplier) {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
-        this.jobSender = jobSender;
         this.batchJobsWriter = batchJobsWriter;
         this.batchMessageSender = batchMessageSender;
         this.stateStoreProvider = stateStoreProvider;
@@ -208,25 +205,24 @@ public class CreateCompactionJobs {
     }
 
     private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableProperties tableProperties, List<CompactionJob> compactionJobs) throws IOException {
-        if (jobSender != null) {
-            for (CompactionJob compactionJob : compactionJobs) {
-                // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
-                // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
-                // job can be created for these files.)
-                jobSender.send(compactionJob);
-            }
-        } else {
-            CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
-                    tableProperties, generateBatchId.generate(), timeSupplier.get());
-            batchJobsWriter.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
-            batchMessageSender.sendMessage(request);
-        }
-        // Update the statuses of these files to record that a compaction job is in progress
         TableStatus tableStatus = tableProperties.getStatus();
+        // Send batch of jobs to SQS (NB Send jobs to SQS before updating the job field of the files in the
+        // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
+        // job can be created for these files)
+        CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
+                tableProperties, generateBatchId.generate(), timeSupplier.get());
+        LOGGER.debug("Writing compaction jobs batch for table {} in data bucket at: {}", tableStatus, request.getBatchKey());
+        Instant startTime = Instant.now();
+        batchJobsWriter.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
+        LOGGER.debug("Sending compaction jobs batch, wrote jobs in {}",
+                LoggedDuration.withShortOutput(startTime, Instant.now()));
+        batchMessageSender.sendMessage(request);
+        // Update the statuses of these files to record that a compaction job is in progress
         LOGGER.debug("Assigning input files for compaction jobs batch in table {}", tableStatus);
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
                 .map(CompactionJob::createAssignJobIdRequest)
                 .collect(Collectors.toList()), tableStatus);
+        LOGGER.debug("Created pending compaction jobs batch for table {} in data bucket at: {}", tableStatus, request.getBatchKey());
     }
 
     private void createJobsFromLeftoverFiles(
@@ -275,11 +271,6 @@ public class CreateCompactionJobs {
         }
         LOGGER.info("Created {} jobs from {} leftover files for table {}",
                 compactionJobs.size() - jobsBefore, leftoverFiles.size(), tableProperties.getStatus());
-    }
-
-    @FunctionalInterface
-    public interface JobSender {
-        void send(CompactionJob compactionJob) throws IOException;
     }
 
     @FunctionalInterface
