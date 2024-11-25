@@ -23,10 +23,10 @@ keywords = ["datasketches", "sketch", "quantile_sketch"]
 license = "Apache-2.0"
 
 [dependencies]
-cxx = { version = "1.0.130" }
+cxx = { version = "1.0.131" }
 
 [build-dependencies]
-cxx-build = { version = "1.0.130" }
+cxx-build = { version = "1.0.131" }
 git2 = { version = "0.19.0" }
 
 [target.'cfg(target_os = "macos")'.build-dependencies]
