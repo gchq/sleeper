@@ -31,8 +31,8 @@ import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
+import sleeper.compaction.job.creation.SendAssignJobIdToSqs;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
-import sleeper.compaction.job.creation.commit.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.core.statestore.StateStoreProvider;
@@ -92,7 +92,7 @@ public class AwsCompactionDriver implements CompactionDriver {
                         new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
                         new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, getJobStatusStore(),
                         Mode.FORCE_ALL_FILES_AFTER_STRATEGY,
-                        AssignJobIdQueueSender.bySqs(sqsClient, instance.getInstanceProperties()));
+                        new SendAssignJobIdToSqs(sqsClient, instance.getInstanceProperties()));
                 createJobs.createJobs(table);
             } catch (IOException | ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);

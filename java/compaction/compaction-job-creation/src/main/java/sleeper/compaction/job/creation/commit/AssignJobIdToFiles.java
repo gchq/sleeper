@@ -15,9 +15,6 @@
  */
 package sleeper.compaction.job.creation.commit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.statestore.AssignJobIdRequest;
@@ -26,8 +23,8 @@ import sleeper.core.table.TableStatus;
 
 import java.util.List;
 
+@FunctionalInterface
 public interface AssignJobIdToFiles {
-    Logger LOGGER = LoggerFactory.getLogger(AssignJobIdToFiles.class);
 
     void assignJobIds(List<AssignJobIdRequest> requests, TableStatus tableStatus);
 

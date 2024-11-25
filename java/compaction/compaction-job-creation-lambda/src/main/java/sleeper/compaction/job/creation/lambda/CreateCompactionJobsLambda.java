@@ -33,8 +33,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
+import sleeper.compaction.job.creation.SendAssignJobIdToSqs;
 import sleeper.compaction.job.creation.SendCompactionJobToSqs;
-import sleeper.compaction.job.creation.commit.AssignJobIdQueueSender;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -96,7 +96,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
         createJobs = new CreateCompactionJobs(
                 objectFactory, instanceProperties, stateStoreProvider,
                 new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY,
-                AssignJobIdQueueSender.bySqs(sqsClient, instanceProperties));
+                new SendAssignJobIdToSqs(sqsClient, instanceProperties));
     }
 
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {

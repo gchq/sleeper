@@ -15,30 +15,9 @@
  */
 package sleeper.compaction.job.creation.commit;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
-
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
-import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.UUID;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-
+@FunctionalInterface
 public interface AssignJobIdQueueSender {
     void send(CompactionJobIdAssignmentCommitRequest commitRequest);
-
-    static AssignJobIdQueueSender bySqs(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
-        CompactionJobIdAssignmentCommitRequestSerDe serDe = new CompactionJobIdAssignmentCommitRequestSerDe();
-        return (request) -> {
-            AssignJobIdToFiles.LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageBody(serDe.toJson(request))
-                    .withMessageGroupId(request.getTableId())
-                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
-            AssignJobIdToFiles.LOGGER.debug("Submitted asynchronous request to assign compaction input files via state store committer queue");
-        };
-    }
 }
