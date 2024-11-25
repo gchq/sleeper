@@ -26,9 +26,9 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
 import sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.compaction.job.creation.CreateCompactionJobs.BatchJobsWriter;
 import sleeper.compaction.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.job.creation.CreateCompactionJobs.GenerateJobId;
-import sleeper.compaction.job.creation.CreateCompactionJobs.JobBatchWriter;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -511,7 +511,7 @@ public class CreateCompactionJobsTest {
         return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(tableProperties, batchId, createTime);
     }
 
-    private JobBatchWriter createBatchWriter() {
+    private BatchJobsWriter createBatchWriter() {
         return (bucketName, key, batch) -> {
             jobs.addAll(batch);
             bucketAndKeyToJobs.put(bucketName + "/" + key, batch);

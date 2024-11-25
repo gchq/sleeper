@@ -73,8 +73,8 @@ public class CreateCompactionJobs {
     private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
     private final JobSender jobSender;
-    private final JobBatchWriter batchToS3Writer;
-    private final JobBatchMessageSender jobBatchSender;
+    private final BatchJobsWriter batchJobsWriter;
+    private final BatchMessageSender batchMessageSender;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
@@ -100,8 +100,8 @@ public class CreateCompactionJobs {
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
-            JobBatchWriter batchToS3Writer,
-            JobBatchMessageSender jobBatchSender,
+            BatchJobsWriter batchJobsWriter,
+            BatchMessageSender batchMessageSender,
             CompactionJobStatusStore jobStatusStore,
             Mode mode,
             AssignJobIdQueueSender assignJobIdQueueSender,
@@ -112,8 +112,8 @@ public class CreateCompactionJobs {
         this.objectFactory = objectFactory;
         this.instanceProperties = instanceProperties;
         this.jobSender = jobSender;
-        this.batchToS3Writer = batchToS3Writer;
-        this.jobBatchSender = jobBatchSender;
+        this.batchJobsWriter = batchJobsWriter;
+        this.batchMessageSender = batchMessageSender;
         this.stateStoreProvider = stateStoreProvider;
         this.jobStatusStore = jobStatusStore;
         this.mode = mode;
@@ -231,8 +231,8 @@ public class CreateCompactionJobs {
         } else {
             CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
                     tableProperties, generateBatchId.generate(), timeSupplier.get());
-            batchToS3Writer.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
-            jobBatchSender.sendMessage(request);
+            batchJobsWriter.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
+            batchMessageSender.sendMessage(request);
         }
         // Update the statuses of these files to record that a compaction job is in progress
         TableStatus tableStatus = tableProperties.getStatus();
@@ -296,12 +296,12 @@ public class CreateCompactionJobs {
     }
 
     @FunctionalInterface
-    public interface JobBatchWriter {
+    public interface BatchJobsWriter {
         void writeJobs(String bucketName, String key, List<CompactionJob> compactionJobs);
     }
 
     @FunctionalInterface
-    public interface JobBatchMessageSender {
+    public interface BatchMessageSender {
         void sendMessage(CompactionJobDispatchRequest dispatchRequest);
     }
 
