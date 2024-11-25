@@ -15,6 +15,9 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -32,6 +35,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RE
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 
 public class CompactionJobDispatcher {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobDispatcher.class);
 
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
@@ -56,24 +60,33 @@ public class CompactionJobDispatcher {
     }
 
     public void dispatch(CompactionJobDispatchRequest request) {
+        TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
+        LOGGER.info("Received compaction batch for table {}, held at: {}",
+                tableProperties.getStatus(), request.getBatchKey());
         List<CompactionJob> batch = readBatch.read(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
-        if (validateBatchIsValidToBeSent(batch, request.getTableId())) {
+        LOGGER.info("Read {} compaction jobs", batch.size());
+        if (validateBatchIsValidToBeSent(batch, tableProperties)) {
+            LOGGER.info("Validated input file assignments, sending {} jobs", batch.size());
             for (CompactionJob job : batch) {
                 sendJob.send(job);
             }
+            LOGGER.info("Sent {} jobs", batch.size());
         } else {
-            TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
+            LOGGER.info("Found file assignments not yet made");
             Instant expiryTime = request.getCreateTime().plus(
                     Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS)));
             if (timeSupplier.get().isAfter(expiryTime)) {
                 throw new CompactionJobBatchExpiredException(request, expiryTime);
             }
-            returnToPendingQueue.sendWithDelay(request, tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS));
+            int delaySeconds = tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS);
+            returnToPendingQueue.sendWithDelay(request, delaySeconds);
+            LOGGER.info("Returned compaction batch to pending queue with a delay of {} seconds, held at: {}",
+                    delaySeconds, request.getBatchKey());
         }
     }
 
-    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, String tableId) {
-        StateStore stateStore = stateStoreProvider.getStateStore(tablePropertiesProvider.getById(tableId));
+    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, TableProperties tableProperties) {
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         return stateStore.isAssigned(batch.stream()
                 .map(CompactionJob::createInputFileAssignmentsCheck)
                 .toList());
