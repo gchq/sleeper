@@ -163,7 +163,8 @@ public class InMemoryCompaction {
 
         private CreateCompactionJobs jobCreator() {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), jobSender(), null, null,
+                    instance.getStateStoreProvider(), null, batchJobsWriter(), message -> {
+                    },
                     jobStore, jobIdAssignmentRequests::add,
                     GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
         }
@@ -232,8 +233,9 @@ public class InMemoryCompaction {
                 .sum());
     }
 
-    private CreateCompactionJobs.JobSender jobSender() {
-        return job -> queuedJobsById.put(job.getId(), job);
+    private CreateCompactionJobs.BatchJobsWriter batchJobsWriter() {
+        return (bucketName, key, jobs) -> jobs.forEach(
+                job -> queuedJobsById.put(job.getId(), job));
     }
 
     private class CountingIterator implements CloseableIterator<Record> {
