@@ -168,21 +168,21 @@ mod path_test {
 
     #[cfg(unix)]
     fn cd_to_tmp() {
-        let _ = std::env::set_current_dir("/tmp").unwrap();
+        std::env::set_current_dir("/tmp").unwrap();
     }
 
     #[test]
     #[cfg(unix)]
     fn relative_path_converts() {
         cd_to_tmp();
-        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("foo/bar/baz.txt"))
+        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("foo/bar/baz.txt"));
     }
 
     #[test]
     #[cfg(unix)]
     fn relative_path_converts_with_one_dot() {
         cd_to_tmp();
-        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("./foo/bar/baz.txt"))
+        assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("./foo/bar/baz.txt"));
     }
 
     #[test]
@@ -192,18 +192,18 @@ mod path_test {
         assert_eq!(
             "/tmp/../foo/bar/baz.txt",
             path_absolute("../foo/bar/baz.txt")
-        )
+        );
     }
 
     #[test]
     #[cfg(unix)]
     fn absolute_path_unchanged() {
         cd_to_tmp();
-        assert_eq!("/tmp/foo/bar", path_absolute("/tmp/foo/bar"))
+        assert_eq!("/tmp/foo/bar", path_absolute("/tmp/foo/bar"));
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "cannot make an empty path absolute")]
     fn empty_path_panic() {
         let _ = path_absolute("");
     }
