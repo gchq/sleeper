@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.job.creation;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,6 +28,7 @@ import sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.job.creation.CreateCompactionJobs.GenerateJobId;
+import sleeper.compaction.job.creation.CreateCompactionJobs.JobBatchWriter;
 import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -442,7 +442,6 @@ public class CreateCompactionJobsTest {
     class SendInBatches {
 
         @Test
-        @Disabled("TODO")
         void shouldSendMultipleBatches() throws Exception {
             // Given
             tableProperties.setNumber(COMPACTION_JOB_SEND_BATCH_SIZE, 2);
@@ -498,12 +497,16 @@ public class CreateCompactionJobsTest {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                jobs::add, null, null, jobStatusStore, mode, jobIdAssignmentCommitRequests::add,
+                null, createBatchWriter(), pendingQueue::add, jobStatusStore, mode, jobIdAssignmentCommitRequests::add,
                 generateJobId, generateBatchId, random, timeSupplier);
     }
 
     private CompactionJobDispatchRequest batchRequest(String batchId, Instant createTime) {
         return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(instanceProperties, tableProperties, batchId, createTime);
+    }
+
+    private JobBatchWriter createBatchWriter() {
+        return (bucketName, key, batch) -> jobs.addAll(batch);
     }
 
     private GenerateJobId fixJobIds(String... jobIds) {

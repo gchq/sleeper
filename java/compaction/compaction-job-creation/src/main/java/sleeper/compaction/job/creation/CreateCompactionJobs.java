@@ -52,6 +52,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
@@ -72,8 +73,8 @@ public class CreateCompactionJobs {
     private final ObjectFactory objectFactory;
     private final InstanceProperties instanceProperties;
     private final JobSender jobSender;
-    private final BatchToS3Writer batchToS3Writer;
-    private final JobBatchSender jobBatchSender;
+    private final JobBatchWriter batchToS3Writer;
+    private final JobBatchMessageSender jobBatchSender;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore jobStatusStore;
     private final Mode mode;
@@ -99,8 +100,8 @@ public class CreateCompactionJobs {
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
             JobSender jobSender,
-            BatchToS3Writer batchToS3Writer,
-            JobBatchSender jobBatchSender,
+            JobBatchWriter batchToS3Writer,
+            JobBatchMessageSender jobBatchSender,
             CompactionJobStatusStore jobStatusStore,
             Mode mode,
             AssignJobIdQueueSender assignJobIdQueueSender,
@@ -187,7 +188,7 @@ public class CreateCompactionJobs {
         }
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
         for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {
-            batchCreateJobs(assignJobIdsToFiles, table, batch);
+            batchCreateJobs(assignJobIdsToFiles, tableProperties, batch);
         }
         Instant finishTime = Instant.now();
 
@@ -219,18 +220,25 @@ public class CreateCompactionJobs {
         return outList;
     }
 
-    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableStatus table, List<CompactionJob> compactionJobs) throws IOException {
-        for (CompactionJob compactionJob : compactionJobs) {
-            // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
-            // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
-            // job can be created for these files.)
-            jobSender.send(compactionJob);
+    private void batchCreateJobs(AssignJobIdToFiles assignJobIdToFiles, TableProperties tableProperties, List<CompactionJob> compactionJobs) throws IOException {
+        if (jobSender != null) {
+            for (CompactionJob compactionJob : compactionJobs) {
+                // Send compaction job to SQS (NB Send compaction job to SQS before updating the job field of the files in the
+                // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
+                // job can be created for these files.)
+                jobSender.send(compactionJob);
+            }
+        } else {
+            CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(instanceProperties, tableProperties, generateBatchId.generate(), timeSupplier.get());
+            batchToS3Writer.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
+            jobBatchSender.sendMessage(request);
         }
         // Update the statuses of these files to record that a compaction job is in progress
-        LOGGER.debug("Assigning input files for compaction jobs batch in table {}", table);
+        TableStatus tableStatus = tableProperties.getStatus();
+        LOGGER.debug("Assigning input files for compaction jobs batch in table {}", tableStatus);
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
                 .map(CompactionJob::createAssignJobIdRequest)
-                .collect(Collectors.toList()), table);
+                .collect(Collectors.toList()), tableStatus);
     }
 
     private void createJobsFromLeftoverFiles(
@@ -287,12 +295,12 @@ public class CreateCompactionJobs {
     }
 
     @FunctionalInterface
-    public interface BatchToS3Writer {
-        void writeToS3(String bucketName, String key, List<CompactionJob> compactionJobs);
+    public interface JobBatchWriter {
+        void writeJobs(String bucketName, String key, List<CompactionJob> compactionJobs);
     }
 
     @FunctionalInterface
-    public interface JobBatchSender {
+    public interface JobBatchMessageSender {
         void sendMessage(CompactionJobDispatchRequest dispatchRequest);
     }
 
