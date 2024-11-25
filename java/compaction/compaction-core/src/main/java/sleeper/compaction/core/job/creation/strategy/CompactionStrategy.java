@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.strategy.impl;
+package sleeper.compaction.core.job.creation.strategy;
 
-import sleeper.compaction.core.strategy.DelegatingCompactionStrategy;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 
-/**
- * A simple compaction strategy to compact all files over the batch size. Uses
- * {@link sleeper.compaction.core.strategy.impl.BasicLeafStrategy}.
- */
-public class BasicCompactionStrategy extends DelegatingCompactionStrategy {
+import java.util.List;
 
-    public BasicCompactionStrategy() {
-        super(new BasicLeafStrategy());
-    }
+public interface CompactionStrategy {
 
+    List<CompactionJob> createCompactionJobs(InstanceProperties instanceProperties, TableProperties tableProperties,
+            CompactionJobFactory factory, CompactionStrategyIndex index);
 }

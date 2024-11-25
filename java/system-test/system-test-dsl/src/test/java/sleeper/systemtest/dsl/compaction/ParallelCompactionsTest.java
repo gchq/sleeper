@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.compaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
+import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.record.Record;

@@ -19,7 +19,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.strategy.CompactionStrategyIndex.FilesInPartition;
+import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex;
+import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
