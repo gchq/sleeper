@@ -46,7 +46,7 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.compaction.job.creation.limit")
             .description("The maximum number of compaction jobs that are to be created as part of single invocation. " +
                     "If this limit is exceeded, the selection of jobs is randomised.")
-            .defaultValue("10000")
+            .defaultValue("100000")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
@@ -267,9 +267,9 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.default.compaction.strategy.class")
             .description("The name of the class that defines how compaction jobs should be created. " +
-                    "This should implement sleeper.compaction.core.strategy.CompactionStrategy. The value of this property is the " +
+                    "This should implement sleeper.compaction.core.job.creation.strategy.CompactionStrategy. The value of this property is the " +
                     "default value which can be overridden on a per-table basis.")
-            .defaultValue("sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy")
+            .defaultValue("sleeper.compaction.core.job.creation.strategy.impl.SizeRatioCompactionStrategy")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_FILES_BATCH_SIZE = Index.propertyBuilder("sleeper.default.compaction.files.batch.size")
             .description("The maximum number of files to read in a compaction job. Note that the state store must " +
@@ -293,7 +293,7 @@ public interface CompactionProperty {
                     "For each batch, we send all compaction jobs to the SQS queue, then update the state store to " +
                     "assign job IDs to the input files.\n" +
                     "This can be overridden on a per-table basis.")
-            .defaultValue("10")
+            .defaultValue("1000")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS = Index.propertyBuilder("sleeper.default.table.compaction.job.send.timeout.seconds")

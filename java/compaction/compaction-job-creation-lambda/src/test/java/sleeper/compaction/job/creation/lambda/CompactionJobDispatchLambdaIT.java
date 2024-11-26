@@ -176,7 +176,7 @@ public class CompactionJobDispatchLambdaIT {
 
     private CompactionJobDispatchRequest generateBatchRequestAtTime(String batchId, Instant timeNow) {
         return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
-                instanceProperties, tableProperties, batchId, timeNow);
+                tableProperties, batchId, timeNow);
     }
 
     private void putCompactionJobBatch(CompactionJobDispatchRequest request, List<CompactionJob> jobs) {

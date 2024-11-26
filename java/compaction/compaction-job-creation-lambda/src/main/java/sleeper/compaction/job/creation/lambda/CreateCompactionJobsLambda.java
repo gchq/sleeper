@@ -31,10 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.job.creation.CreateCompactionJobs;
-import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.compaction.job.creation.SendCompactionJobToSqs;
-import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs;
+import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -93,10 +91,8 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
-        createJobs = new CreateCompactionJobs(
-                objectFactory, instanceProperties, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, Mode.STRATEGY,
-                AssignJobIdQueueSender.bySqs(sqsClient, instanceProperties));
+        createJobs = AwsCreateCompactionJobs.from(
+                objectFactory, instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient);
     }
 
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
@@ -113,7 +109,7 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
             try {
                 TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
                 LOGGER.info("Received {} messages for table {}", tableMessages.size(), tableProperties.getStatus());
-                createJobs.createJobs(tableProperties);
+                createJobs.createJobsWithStrategy(tableProperties);
             } catch (RuntimeException | IOException | ObjectFactoryException e) {
                 LOGGER.error("Failed creating jobs for table {}", tableId, e);
                 tableMessages.stream()

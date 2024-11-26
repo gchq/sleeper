@@ -17,6 +17,7 @@
 package sleeper.systemtest.drivers.compaction;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,12 +28,10 @@ import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
-import sleeper.compaction.job.creation.CreateCompactionJobs;
-import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.compaction.job.creation.SendCompactionJobToSqs;
-import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
+import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.core.statestore.StateStoreProvider;
@@ -56,6 +55,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final SystemTestInstanceContext instance;
     private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDBClient;
+    private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
     private final EcsClient ecsClient;
     private final AutoScalingClient asClient;
@@ -65,6 +65,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         this.instance = instance;
         this.lambdaClient = clients.getLambda();
         this.dynamoDBClient = clients.getDynamoDB();
+        this.s3Client = clients.getS3();
         this.sqsClient = clients.getSqs();
         this.ecsClient = clients.getEcs();
         this.asClient = clients.getAutoScaling();
@@ -87,13 +88,11 @@ public class AwsCompactionDriver implements CompactionDriver {
     public void forceCreateJobs() {
         instance.streamTableProperties().parallel().forEach(table -> {
             try {
-                CreateCompactionJobs createJobs = new CreateCompactionJobs(
+                CreateCompactionJobs createJobs = AwsCreateCompactionJobs.from(
                         ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                         new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
-                        new SendCompactionJobToSqs(instance.getInstanceProperties(), sqsClient)::send, getJobStatusStore(),
-                        Mode.FORCE_ALL_FILES_AFTER_STRATEGY,
-                        AssignJobIdQueueSender.bySqs(sqsClient, instance.getInstanceProperties()));
-                createJobs.createJobs(table);
+                        getJobStatusStore(), s3Client, sqsClient);
+                createJobs.createJobWithForceAllFiles(table);
             } catch (IOException | ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
             }
