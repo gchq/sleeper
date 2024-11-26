@@ -39,17 +39,8 @@ public class AutoDeleteS3Objects {
             IBucket bucket, String bucketName,
             ILogGroup logGroup,
             ILogGroup providerLogGroup) {
+
         String functionName = bucketName + "-autodelete";
-        autoDeleteForBucket(scope, instanceProperties, lambdaCode, bucket, bucketName, functionName, logGroup, providerLogGroup);
-    }
-
-    private static void autoDeleteForBucket(
-            Construct scope, InstanceProperties instanceProperties, LambdaCode lambdaCode,
-            IBucket bucket, String bucketName,
-            String functionName,
-            ILogGroup logGroup,
-            ILogGroup providerLogGroup) {
-
         String id = bucket.getNode().getId() + "-AutoDelete";
 
         IFunction lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
