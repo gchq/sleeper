@@ -59,6 +59,16 @@ public class TableFilePaths {
     }
 
     /**
+     * Creates an instance of this class to generate object keys within the data bucket.
+     *
+     * @param  tableProperties the table properties
+     * @return                 an instance of this class
+     */
+    public static TableFilePaths buildObjectKeyInDataBucket(TableProperties tableProperties) {
+        return new TableFilePaths(tableProperties.get(TABLE_ID));
+    }
+
+    /**
      * Generates a path to a data file in the given partition. Will have `.parquet` appended at the end. The filename
      * must match the filename used for the corresponding sketches file.
      *

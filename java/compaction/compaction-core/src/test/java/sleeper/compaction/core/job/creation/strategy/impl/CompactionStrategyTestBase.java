@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.strategy.impl;
+package sleeper.compaction.core.job.creation.strategy.impl;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.strategy.CompactionStrategy;
-import sleeper.compaction.core.strategy.CompactionStrategyIndex;
+import sleeper.compaction.core.job.creation.strategy.CompactionStrategy;
+import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;

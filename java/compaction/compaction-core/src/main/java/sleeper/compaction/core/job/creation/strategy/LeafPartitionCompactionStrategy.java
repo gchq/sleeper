@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.strategy;
+package sleeper.compaction.core.job.creation.strategy;
 
-import sleeper.compaction.core.strategy.CompactionStrategyIndex.FilesInPartition;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 
-public interface ShouldCreateJobsStrategy {
+import java.util.List;
 
-    default void init(InstanceProperties instanceProperties, TableProperties tableProperties) {
-    }
+public interface LeafPartitionCompactionStrategy {
 
-    long maxCompactionJobsToCreate(FilesInPartition filesInPartition);
+    void init(InstanceProperties instanceProperties, TableProperties tableProperties, CompactionJobFactory factory);
 
-    static ShouldCreateJobsStrategy yes() {
-        return (filesInPartition) -> Long.MAX_VALUE;
-    }
+    List<CompactionJob> createJobsForLeafPartition(FilesInPartition filesInPartition);
 }

@@ -38,8 +38,10 @@ import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
-import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
-import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs;
+import sleeper.compaction.core.job.creation.CreateJobsTestUtils;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.CommonTestConstants;
@@ -64,11 +66,12 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.createInstanceProperties;
-import static sleeper.compaction.job.creation.CreateJobsTestUtils.createTableProperties;
+import static sleeper.compaction.core.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
+import static sleeper.compaction.core.job.creation.CreateJobsTestUtils.createInstanceProperties;
+import static sleeper.compaction.core.job.creation.CreateJobsTestUtils.createTableProperties;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
@@ -77,7 +80,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSI
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 @Testcontainers
-public class CreateCompactionJobsIT {
+public class AwsCreateCompactionJobsIT {
 
     @Container
     public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
@@ -111,16 +114,17 @@ public class CreateCompactionJobsIT {
         stateStore.addFiles(Arrays.asList(fileReference1, fileReference2, fileReference3, fileReference4));
 
         // When
-        jobCreator().createJobs(tableProperties);
+        createJobs();
 
         // Then
         assertThat(stateStore.getFileReferencesWithNoJobId()).isEmpty();
         String jobId = assertAllReferencesHaveJobId(stateStore.getFileReferences());
-        List<CompactionJob> jobs = receiveJobs();
-        assertThat(jobs).singleElement().satisfies(job -> {
-            assertThat(job.getId()).isEqualTo(jobId);
-            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
-            assertThat(job.getPartitionId()).isEqualTo("root");
+        assertThat(receivePendingBatches()).singleElement().satisfies(batch -> {
+            assertThat(loadBatchJobs(batch)).singleElement().satisfies(job -> {
+                assertThat(job.getId()).isEqualTo(jobId);
+                assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
+                assertThat(job.getPartitionId()).isEqualTo("root");
+            });
         });
     }
 
@@ -137,38 +141,37 @@ public class CreateCompactionJobsIT {
         stateStore.addFiles(files);
 
         // When
-        jobCreator().createJobs(tableProperties);
+        createJobs();
 
         // Then
         assertThat(stateStore.getFileReferencesWithNoJobId())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files);
-        List<CompactionJob> jobs = receiveJobs();
+        List<CompactionJobDispatchRequest> batches = receivePendingBatches();
         List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = receiveJobIdAssignmentRequests();
-        assertThat(jobs).singleElement().satisfies(job -> {
-            assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
-            assertThat(job.getPartitionId()).isEqualTo("root");
-            assertThat(jobIdAssignmentRequests).containsExactly(
-                    requestToAssignFilesToJobs(List.of(job), tableProperties.get(TABLE_ID)));
+        assertThat(batches).singleElement().satisfies(batch -> {
+            assertThat(loadBatchJobs(batch)).singleElement().satisfies(job -> {
+                assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
+                assertThat(job.getPartitionId()).isEqualTo("root");
+                assertThat(jobIdAssignmentRequests).containsExactly(
+                        requestToAssignFilesToJobs(List.of(job), tableProperties.get(TABLE_ID)));
+            });
         });
     }
 
-    private List<CompactionJob> receiveJobs() {
-        return receiveJobQueueMessage().getMessages().stream()
-                .map(this::readJobMessage)
-                .collect(Collectors.toList());
+    private List<CompactionJobDispatchRequest> receivePendingBatches() {
+        ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
+                .withMaxNumberOfMessages(10));
+        return result.getMessages().stream()
+                .map(Message::getBody)
+                .map(new CompactionJobDispatchRequestSerDe()::fromJson)
+                .toList();
     }
 
-    private ReceiveMessageResult receiveJobQueueMessage() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        return sqs.receiveMessage(receiveMessageRequest);
-    }
-
-    private CompactionJob readJobMessage(Message message) {
-        return new CompactionJobSerDe().fromJson(message.getBody());
-
+    private List<CompactionJob> loadBatchJobs(CompactionJobDispatchRequest batch) {
+        String json = s3.getObjectAsString(instanceProperties.get(DATA_BUCKET), batch.getBatchKey());
+        return new CompactionJobSerDe().batchFromJson(json);
     }
 
     private List<CompactionJobIdAssignmentCommitRequest> receiveJobIdAssignmentRequests() {
@@ -198,6 +201,8 @@ public class CreateCompactionJobsIT {
 
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
+        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL,
+                sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         S3InstanceProperties.saveToS3(s3, instanceProperties);
 
         return instanceProperties;
@@ -216,11 +221,13 @@ public class CreateCompactionJobsIT {
         return stateStore;
     }
 
+    private void createJobs() throws Exception {
+        jobCreator().createJobsWithStrategy(tableProperties);
+    }
+
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
-        return new CreateCompactionJobs(ObjectFactory.noUserJars(),
-                instanceProperties, stateStoreProvider,
-                new SendCompactionJobToSqs(instanceProperties, sqs)::send,
-                CompactionJobStatusStore.NONE, Mode.STRATEGY,
-                AssignJobIdQueueSender.bySqs(sqs, instanceProperties));
+        return AwsCreateCompactionJobs.from(ObjectFactory.noUserJars(),
+                instanceProperties, stateStoreProvider, CompactionJobStatusStore.NONE,
+                s3, sqs);
     }
 }

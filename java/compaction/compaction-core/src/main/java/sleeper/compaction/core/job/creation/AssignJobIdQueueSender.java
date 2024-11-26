@@ -13,18 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.snapshot;
+package sleeper.compaction.core.job.creation;
 
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 
-import java.util.Optional;
-
-public interface SnapshotsDriver {
-
-    Optional<AllReferencesToAllFiles> loadLatestFilesSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
-
-    Optional<PartitionTree> loadLatestPartitionsSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties);
+@FunctionalInterface
+public interface AssignJobIdQueueSender {
+    void send(CompactionJobIdAssignmentCommitRequest commitRequest);
 }

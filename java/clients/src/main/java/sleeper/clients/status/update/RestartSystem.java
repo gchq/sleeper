@@ -24,8 +24,6 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.List;
-
 public class RestartSystem {
 
     private RestartSystem() {
@@ -39,26 +37,17 @@ public class RestartSystem {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         try (CloudWatchEventsClient cwClient = CloudWatchEventsClient.create()) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-            SleeperScheduleRule.getCloudWatchRules(instanceProperties)
-                    .forEach(rules -> enableRule(cwClient, rules));
+            SleeperScheduleRule.getDeployedRules(instanceProperties)
+                    .forEach(rule -> enableRule(cwClient, rule.getRuleName()));
         } finally {
             s3Client.shutdown();
-        }
-    }
-
-    private static void enableRule(CloudWatchEventsClient cwClient, SleeperScheduleRule.Value rules) {
-        List<String> ruleNames = rules.getRuleNames();
-        if (ruleNames.isEmpty()) {
-            System.out.println("No rule found for property " + rules.getProperty() + ", not enabling");
-        } else {
-            ruleNames.forEach(ruleName -> enableRule(cwClient, ruleName));
         }
     }
 
     private static void enableRule(CloudWatchEventsClient cwClient, String ruleName) {
         try {
             cwClient.enableRule(request -> request.name(ruleName));
-            System.out.println("Enabled rule " + ruleName);
+            System.out.println("Enabled rule: " + ruleName);
         } catch (ResourceNotFoundException e) {
             System.out.println("Rule not found: " + ruleName);
         }

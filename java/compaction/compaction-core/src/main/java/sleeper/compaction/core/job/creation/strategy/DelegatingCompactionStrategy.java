@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.strategy;
+package sleeper.compaction.core.job.creation.strategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.strategy.CompactionStrategyIndex.FilesInPartition;
+import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex.FilesInPartition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 

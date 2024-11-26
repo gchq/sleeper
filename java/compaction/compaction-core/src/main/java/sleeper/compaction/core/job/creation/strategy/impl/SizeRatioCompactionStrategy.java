@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.strategy.impl;
+package sleeper.compaction.core.job.creation.strategy.impl;
 
-import sleeper.compaction.core.strategy.DelegatingCompactionStrategy;
+import sleeper.compaction.core.job.creation.strategy.DelegatingCompactionStrategy;
 
 /**
  * A compaction strategy that is similar to the strategy used in Accumulo.
