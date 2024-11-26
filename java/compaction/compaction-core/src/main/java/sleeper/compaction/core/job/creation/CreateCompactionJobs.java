@@ -25,9 +25,9 @@ import sleeper.compaction.core.job.creation.strategy.CompactionStrategy;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.partition.Partition;
-import sleeper.core.properties.instance.CompactionProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
@@ -158,7 +158,7 @@ public class CreateCompactionJobs {
         }
 
         Instant limitJobsStartTime = Instant.now();
-        int creationLimit = instanceProperties.getInt(CompactionProperty.COMPACTION_JOB_CREATION_LIMIT);
+        int creationLimit = tableProperties.getInt(TableProperty.COMPACTION_JOB_CREATION_LIMIT);
         if (compactionJobs.size() > creationLimit) {
             compactionJobs = reduceCompactionJobsDownToCreationLimit(compactionJobs, creationLimit);
         }

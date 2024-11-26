@@ -55,8 +55,8 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
@@ -224,7 +224,7 @@ public class CreateCompactionJobsTest {
 
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
-            instanceProperties.set(COMPACTION_JOB_CREATION_LIMIT, "2");
+            tableProperties.set(COMPACTION_JOB_CREATION_LIMIT, "2");
             stateStore.initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "bbb")

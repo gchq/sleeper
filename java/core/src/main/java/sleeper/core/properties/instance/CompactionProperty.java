@@ -43,13 +43,6 @@ public interface CompactionProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
-    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.compaction.job.creation.limit")
-            .description("The maximum number of compaction jobs that are to be created as part of single invocation. " +
-                    "If this limit is exceeded, the selection of jobs is randomised.")
-            .defaultValue("100000")
-            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
             .defaultValue("900")
@@ -314,6 +307,12 @@ public interface CompactionProperty {
                     "The batch will be sent if all input files have been successfully assigned to the jobs, otherwise " +
                     "the batch will be retried after a delay.")
             .defaultValue("30")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.default.table.compaction.job.creation.limit")
+            .description("The default limit on the number of compactation jobs that can be created within a single invocation." +
+                    "Exceeding this limit, results in the selection being randomised.")
+            .defaultValue("100000")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")
