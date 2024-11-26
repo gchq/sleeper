@@ -263,7 +263,8 @@ public class BulkImportJobDriver {
     public static AddFilesAsynchronously submitFilesToCommitQueue(
             AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, Supplier<String> s3FilenameSupplier) {
         IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
-        StateStoreCommitRequestInS3Uploader s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject);
+        StateStoreCommitRequestInS3Uploader s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject,
+                StateStoreCommitRequestInS3Uploader.MAX_JSON_LENGTH, s3FilenameSupplier);
         return request -> {
             String json = s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request));
             sqsClient.sendMessage(new SendMessageRequest()
