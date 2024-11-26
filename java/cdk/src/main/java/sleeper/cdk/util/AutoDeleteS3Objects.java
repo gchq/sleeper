@@ -26,7 +26,6 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -36,12 +35,6 @@ import java.util.function.Function;
 public class AutoDeleteS3Objects {
 
     private AutoDeleteS3Objects() {
-    }
-
-    public static void autoDeleteForBucket(
-            Construct scope, InstanceProperties instanceProperties, CoreStacks coreStacks, LambdaCode customResourcesJar,
-            IBucket bucket, String bucketName) {
-        autoDeleteForBucket(scope, instanceProperties, customResourcesJar, bucket, bucketName, coreStacks::getLogGroupByFunctionName, coreStacks::getProviderLogGroupByFunctionName);
     }
 
     public static void autoDeleteForBucket(
