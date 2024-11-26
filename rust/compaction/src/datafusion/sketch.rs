@@ -18,7 +18,7 @@
 use crate::aws_s3::ObjectStoreFactory;
 use arrow::array::ArrayAccessor;
 use arrow::datatypes::DataType;
-use bytes::{Buf, BufMut, Bytes};
+use bytes::{Buf, BufMut};
 use color_eyre::eyre::eyre;
 use cxx::{Exception, UniquePtr};
 use datafusion::parquet::data_type::AsBytes;
