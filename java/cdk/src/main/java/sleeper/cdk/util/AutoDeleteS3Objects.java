@@ -20,41 +20,18 @@ import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.customresources.Provider;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
-import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Map;
-import java.util.function.Function;
 
 public class AutoDeleteS3Objects {
 
     private AutoDeleteS3Objects() {
-    }
-
-    public static void autoDeleteForBucket(
-            Construct scope, InstanceProperties instanceProperties, BuiltJars jars, IBucket bucket, String bucketName,
-            Function<String, ILogGroup> getLogGroupByFunctionName,
-            Function<String, ILogGroup> getProviderLogGroupByFunctionName) {
-        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", jars.bucketName());
-        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
-        autoDeleteForBucket(scope, instanceProperties, lambdaCode, bucket, bucketName, getLogGroupByFunctionName, getProviderLogGroupByFunctionName);
-    }
-
-    private static void autoDeleteForBucket(
-            Construct scope, InstanceProperties instanceProperties, LambdaCode lambdaCode,
-            IBucket bucket, String bucketName,
-            Function<String, ILogGroup> getLogGroupByFunctionName,
-            Function<String, ILogGroup> getProviderLogGroupByFunctionName) {
-        String functionName = bucketName + "-autodelete";
-        autoDeleteForBucket(scope, instanceProperties, lambdaCode, bucket, bucketName, functionName,
-                getLogGroupByFunctionName.apply(functionName),
-                getProviderLogGroupByFunctionName.apply(functionName));
     }
 
     public static void autoDeleteForBucket(
