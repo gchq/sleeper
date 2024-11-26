@@ -56,26 +56,56 @@ public class BulkExportLeafPartitionQuery {
                 .build();
     }
 
+    /**
+     * Builder class for BulkExportLeafPartitionQuery.
+     *
+     * @return a Builder object
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Gets the table Id.
+     *
+     * @return tableId
+     */
     public String getTableId() {
         return tableId;
     }
 
+    /**
+     * Gets the parents export id.
+     *
+     * @return exportId
+     */
     public String getExportId() {
         return exportId;
     }
 
+    /**
+     * Gets the id for this export.
+     *
+     * @return subExportId
+     */
     public String getSubExportId() {
         return subExportId;
     }
 
+    /**
+     * Gets the leaf partition id.
+     *
+     * @return leafPartitionId
+     */
     public String getLeafPartitionId() {
         return leafPartitionId;
     }
 
+    /**
+     * Gets the files that will be exported.
+     *
+     * @return a list of files
+     */
     public List<String> getFiles() {
         return files;
     }

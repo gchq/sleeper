@@ -53,18 +53,38 @@ public class BulkExportQuery {
                 .build();
     }
 
+    /**
+     * Builder class for BulkExportQuery.
+     *
+     * @return a Builder object
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Gets the table Id.
+     *
+     * @return tableId
+     */
     public String getTableId() {
         return tableId;
     }
 
+    /**
+     * Gets the table name.
+     *
+     * @return tableName
+     */
     public String getTableName() {
         return tableName;
     }
 
+    /**
+     * Gets the parents export id.
+     *
+     * @return exportId
+     */
     public String getExportId() {
         return exportId;
     }
