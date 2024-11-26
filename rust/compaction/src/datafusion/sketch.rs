@@ -18,8 +18,9 @@
 use crate::aws_s3::ObjectStoreFactory;
 use arrow::array::ArrayAccessor;
 use arrow::datatypes::DataType;
-use bytes::BufMut;
+use bytes::{Buf, BufMut};
 use cxx::{Exception, UniquePtr};
+use futures::FutureExt;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use rust_sketch::quantiles::byte::{byte_sketch_t, new_byte_sketch};
@@ -342,6 +343,24 @@ pub fn serialise_sketches(
         path
     );
     Ok(())
+}
+
+pub fn deserialise_sketches(
+    store_factory: &ObjectStoreFactory,
+    path: &Url,
+) -> color_eyre::Result<Vec<DataSketchVariant>> {
+    let store_path = object_store::path::Path::from(path.path());
+    let store = store_factory.get_object_store(path)?;
+    let result = futures::executor::block_on(store.get(&store_path))?;
+    read_sketches_from_result(result)
+}
+
+fn read_sketches_from_result(
+    result: object_store::GetResult,
+) -> color_eyre::Result<Vec<DataSketchVariant>> {
+    let mut bytes = futures::executor::block_on(result.bytes())?;
+    bytes.advance(1);
+    Ok(vec![])
 }
 
 /// Update the given sketch from an array.
