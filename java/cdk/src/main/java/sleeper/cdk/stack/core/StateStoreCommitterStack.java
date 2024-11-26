@@ -36,6 +36,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -131,7 +132,7 @@ public class StateStoreCommitterStack extends NestedStack {
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "statestore-committer");
-        ILogGroup logGroup = loggingStack.getLogGroupByFunctionName(functionName);
+        ILogGroup logGroup = loggingStack.getLogGroup(LogGroupRef.STATESTORE_COMMITTER);
         instanceProperties.set(STATESTORE_COMMITTER_LOG_GROUP, logGroup.getLogGroupName());
 
         IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.STATESTORE_COMMITTER, "StateStoreCommitter", builder -> builder

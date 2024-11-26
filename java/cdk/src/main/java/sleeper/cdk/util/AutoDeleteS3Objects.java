@@ -27,7 +27,6 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
-import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -37,24 +36,6 @@ import java.util.function.Function;
 public class AutoDeleteS3Objects {
 
     private AutoDeleteS3Objects() {
-    }
-
-    public static void autoDeleteForBucket(
-            Construct scope, InstanceProperties instanceProperties, CoreStacks coreStacks, BuiltJars jars,
-            IBucket bucket, String bucketName) {
-        autoDeleteForBucket(scope, instanceProperties, jars, bucket, bucketName, coreStacks::getLogGroupByFunctionName, coreStacks::getProviderLogGroupByFunctionName);
-    }
-
-    public static void autoDeleteForBucket(
-            Construct scope, InstanceProperties instanceProperties, LoggingStack logging, BuiltJars jars,
-            IBucket bucket, String bucketName) {
-        autoDeleteForBucket(scope, instanceProperties, jars, bucket, bucketName, logging::getLogGroupByFunctionName, logging::getProviderLogGroupByFunctionName);
-    }
-
-    public static void autoDeleteForBucket(
-            Construct scope, InstanceProperties instanceProperties, LoggingStack logging, LambdaCode customResourcesJar,
-            IBucket bucket, String bucketName) {
-        autoDeleteForBucket(scope, instanceProperties, customResourcesJar, bucket, bucketName, logging::getLogGroupByFunctionName, logging::getProviderLogGroupByFunctionName);
     }
 
     public static void autoDeleteForBucket(
@@ -72,21 +53,41 @@ public class AutoDeleteS3Objects {
         autoDeleteForBucket(scope, instanceProperties, lambdaCode, bucket, bucketName, getLogGroupByFunctionName, getProviderLogGroupByFunctionName);
     }
 
-    public static void autoDeleteForBucket(
+    private static void autoDeleteForBucket(
             Construct scope, InstanceProperties instanceProperties, LambdaCode lambdaCode,
             IBucket bucket, String bucketName,
             Function<String, ILogGroup> getLogGroupByFunctionName,
             Function<String, ILogGroup> getProviderLogGroupByFunctionName) {
+        String functionName = bucketName + "-autodelete";
+        autoDeleteForBucket(scope, instanceProperties, lambdaCode, bucket, bucketName, functionName,
+                getLogGroupByFunctionName.apply(functionName),
+                getProviderLogGroupByFunctionName.apply(functionName));
+    }
+
+    public static void autoDeleteForBucket(
+            Construct scope, InstanceProperties instanceProperties, LambdaCode lambdaCode,
+            IBucket bucket, String bucketName,
+            ILogGroup logGroup,
+            ILogGroup providerLogGroup) {
+        String functionName = bucketName + "-autodelete";
+        autoDeleteForBucket(scope, instanceProperties, lambdaCode, bucket, bucketName, functionName, logGroup, providerLogGroup);
+    }
+
+    private static void autoDeleteForBucket(
+            Construct scope, InstanceProperties instanceProperties, LambdaCode lambdaCode,
+            IBucket bucket, String bucketName,
+            String functionName,
+            ILogGroup logGroup,
+            ILogGroup providerLogGroup) {
 
         String id = bucket.getNode().getId() + "-AutoDelete";
-        String functionName = bucketName + "-autodelete";
 
         IFunction lambda = lambdaCode.buildFunction(scope, LambdaHandler.AUTO_DELETE_S3_OBJECTS, id + "Lambda", builder -> builder
                 .functionName(functionName)
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironmentNoConfigBucket(instanceProperties))
                 .description("Lambda for auto-deleting S3 objects")
-                .logGroup(getLogGroupByFunctionName.apply(functionName))
+                .logGroup(logGroup)
                 .timeout(Duration.minutes(10)));
 
         bucket.grantRead(lambda);
@@ -94,7 +95,7 @@ public class AutoDeleteS3Objects {
 
         Provider propertiesWriterProvider = Provider.Builder.create(scope, id + "Provider")
                 .onEventHandler(lambda)
-                .logGroup(getProviderLogGroupByFunctionName.apply(functionName))
+                .logGroup(providerLogGroup)
                 .build();
 
         CustomResource.Builder.create(scope, id)

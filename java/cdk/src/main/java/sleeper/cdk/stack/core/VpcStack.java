@@ -31,6 +31,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -57,7 +58,7 @@ public class VpcStack extends NestedStack {
                 .functionName(functionName)
                 .memorySize(2048)
                 .description("Lambda for checking the VPC has an associated S3 endpoint")
-                .logGroup(logging.getLogGroupByFunctionName(functionName)));
+                .logGroup(logging.getLogGroup(LogGroupRef.VPC_CHECK)));
 
         vpcCheckLambda.addToRolePolicy(new PolicyStatement(new PolicyStatementProps.Builder()
                 .actions(Lists.newArrayList("ec2:DescribeVpcEndpoints"))
@@ -69,7 +70,7 @@ public class VpcStack extends NestedStack {
         Provider provider = new Provider(this, "VpcCustomResourceProvider",
                 ProviderProps.builder()
                         .onEventHandler(vpcCheckLambda)
-                        .logGroup(logging.getProviderLogGroupByFunctionName(functionName))
+                        .logGroup(logging.getLogGroup(LogGroupRef.VPC_CHECK_PROVIDER))
                         .build());
 
         // Custom resource to check whether VPC is valid

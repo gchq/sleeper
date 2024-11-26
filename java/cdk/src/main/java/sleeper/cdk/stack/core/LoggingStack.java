@@ -43,6 +43,10 @@ public class LoggingStack extends NestedStack {
         }
     }
 
+    public ILogGroup getLogGroup(LogGroupRef ref) {
+        return getLogGroupByNameWithPrefixes(addNamePrefixes(ref));
+    }
+
     public ILogGroup getLogGroupByFunctionName(String functionName) {
         return getLogGroupByNameWithPrefixes(functionName);
     }
