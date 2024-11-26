@@ -18,15 +18,16 @@
 use crate::aws_s3::ObjectStoreFactory;
 use arrow::array::ArrayAccessor;
 use arrow::datatypes::DataType;
-use bytes::{Buf, BufMut};
+use bytes::{Buf, BufMut, Bytes};
+use color_eyre::eyre::eyre;
 use cxx::{Exception, UniquePtr};
-use futures::FutureExt;
+use datafusion::parquet::data_type::AsBytes;
 use log::info;
 use num_format::{Locale, ToFormattedString};
-use rust_sketch::quantiles::byte::{byte_sketch_t, new_byte_sketch};
-use rust_sketch::quantiles::i32::{i32_sketch_t, new_i32_sketch};
-use rust_sketch::quantiles::i64::{i64_sketch_t, new_i64_sketch};
-use rust_sketch::quantiles::str::{new_str_sketch, string_sketch_t};
+use rust_sketch::quantiles::byte::{byte_deserialize, byte_sketch_t, new_byte_sketch};
+use rust_sketch::quantiles::i32::{i32_deserialize, i32_sketch_t, new_i32_sketch};
+use rust_sketch::quantiles::i64::{i64_deserialize, i64_sketch_t, new_i64_sketch};
+use rust_sketch::quantiles::str::{new_str_sketch, str_deserialize, string_sketch_t};
 use std::fmt::Debug;
 use std::io::Write;
 use std::mem::size_of;
@@ -346,21 +347,51 @@ pub fn serialise_sketches(
 }
 
 pub fn deserialise_sketches(
+    path: &Url,
+    key_types: Vec<DataType>,
+) -> color_eyre::Result<Vec<DataSketchVariant>> {
+    let factory = ObjectStoreFactory::new(None);
+    deserialise_sketches_with_factory(&factory, path, key_types)
+}
+
+fn deserialise_sketches_with_factory(
     store_factory: &ObjectStoreFactory,
     path: &Url,
+    key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
     let store_path = object_store::path::Path::from(path.path());
     let store = store_factory.get_object_store(path)?;
     let result = futures::executor::block_on(store.get(&store_path))?;
-    read_sketches_from_result(result)
+    read_sketches_from_result(result, key_types)
 }
 
 fn read_sketches_from_result(
     result: object_store::GetResult,
+    key_types: Vec<DataType>,
 ) -> color_eyre::Result<Vec<DataSketchVariant>> {
     let mut bytes = futures::executor::block_on(result.bytes())?;
-    bytes.advance(1);
-    Ok(vec![])
+    let mut sketches: Vec<DataSketchVariant> = vec![];
+    for key_type in key_types {
+        let length = bytes.get_u32() as usize;
+        let sketch_bytes = bytes.split_to(length);
+        sketches.push(read_sketch(sketch_bytes, key_type)?);
+    }
+    Ok(sketches)
+}
+
+fn read_sketch(bytes: Bytes, key_type: DataType) -> color_eyre::Result<DataSketchVariant> {
+    let slice = bytes.as_bytes();
+    match key_type {
+        DataType::Int32 => Ok(DataSketchVariant::I32(i32_deserialize(slice)?)),
+        DataType::Int64 => Ok(DataSketchVariant::I64(i64_deserialize(slice)?)),
+        t @ (DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View) => {
+            Ok(DataSketchVariant::Str(t.clone(), str_deserialize(slice)?))
+        }
+        t @ (DataType::Binary | DataType::LargeBinary | DataType::BinaryView) => Ok(
+            DataSketchVariant::Bytes(t.clone(), byte_deserialize(slice)?),
+        ),
+        _ => Err(eyre!("DataType not supported {key_type}")),
+    }
 }
 
 /// Update the given sketch from an array.
