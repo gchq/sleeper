@@ -30,7 +30,6 @@
             <groupId>sleeper</groupId>  
             <artifactId>core</artifactId>
             <version>${project.parent.version}</version>   
-            <scope>compile</scope>
         </dependency>
         <!-- Test dependencies -->
         <dependency>
