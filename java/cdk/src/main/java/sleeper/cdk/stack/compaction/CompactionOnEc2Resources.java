@@ -54,6 +54,7 @@ import software.constructs.IDependable;
 
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.ContainerConstants;
@@ -214,7 +215,7 @@ public class CompactionOnEc2Resources {
                 .functionName(functionName)
                 .description("Custom termination policy for ECS auto scaling group. Only terminate empty instances.")
                 .environment(environmentVariables)
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_CUSTOM_TERMINATION))
                 .memorySize(512)
                 .timeout(Duration.seconds(10)));
 

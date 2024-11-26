@@ -132,6 +132,7 @@ public class LoggingStack extends NestedStack {
         COMPACTION_TASKS_EC2("EC2CompactionTasks"),
         COMPACTION_JOB_CREATION_TRIGGER("compaction-job-creation-trigger"),
         COMPACTION_JOB_CREATION_HANDLER("compaction-job-creation-handler"),
+        COMPACTION_JOB_DISPATCHER("compaction-job-dispatcher"),
         COMPACTION_TASKS_CREATOR("compaction-tasks-creator"),
         COMPACTION_CUSTOM_TERMINATION("compaction-custom-termination"),
         GARBAGE_COLLECTOR_TRIGGER("garbage-collector-trigger"),
