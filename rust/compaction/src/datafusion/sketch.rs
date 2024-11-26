@@ -187,6 +187,7 @@ impl DataSketchVariant {
     /// Gets the 'k' parameter of the quantile sketch.
     ///
     /// Please see Apache data sketch C++ documentation for full explanation.
+    #[must_use]
     pub fn get_k(&self) -> u16 {
         match self {
             DataSketchVariant::I32(s) => s.get_k(),
@@ -202,6 +203,7 @@ impl DataSketchVariant {
     /// is retained by the sketch. Please see [`get_num_retained`].
     ///
     /// Please see Apache data sketch C++ documentation for full explanation.
+    #[must_use]
     pub fn get_n(&self) -> u64 {
         match self {
             DataSketchVariant::I32(s) => s.get_n(),
@@ -214,6 +216,7 @@ impl DataSketchVariant {
     /// Gets the number of individual items retained by the sketch.
     ///
     /// Please see Apache data sketch C++ documentation for full explanation.
+    #[must_use]
     pub fn get_num_retained(&self) -> u32 {
         match self {
             DataSketchVariant::I32(s) => s.get_num_retained(),
@@ -346,6 +349,7 @@ pub fn serialise_sketches(
     Ok(())
 }
 
+#[allow(clippy::missing_errors_doc)]
 pub fn deserialise_sketches(
     path: &Url,
     key_types: Vec<DataType>,
@@ -374,21 +378,20 @@ fn read_sketches_from_result(
     for key_type in key_types {
         let length = bytes.get_u32() as usize;
         let sketch_bytes = bytes.split_to(length);
-        sketches.push(read_sketch(sketch_bytes, key_type)?);
+        sketches.push(read_sketch(sketch_bytes.as_bytes(), key_type)?);
     }
     Ok(sketches)
 }
 
-fn read_sketch(bytes: Bytes, key_type: DataType) -> color_eyre::Result<DataSketchVariant> {
-    let slice = bytes.as_bytes();
+fn read_sketch(bytes: &[u8], key_type: DataType) -> color_eyre::Result<DataSketchVariant> {
     match key_type {
-        DataType::Int32 => Ok(DataSketchVariant::I32(i32_deserialize(slice)?)),
-        DataType::Int64 => Ok(DataSketchVariant::I64(i64_deserialize(slice)?)),
+        DataType::Int32 => Ok(DataSketchVariant::I32(i32_deserialize(bytes)?)),
+        DataType::Int64 => Ok(DataSketchVariant::I64(i64_deserialize(bytes)?)),
         t @ (DataType::Utf8 | DataType::LargeUtf8 | DataType::Utf8View) => {
-            Ok(DataSketchVariant::Str(t.clone(), str_deserialize(slice)?))
+            Ok(DataSketchVariant::Str(t.clone(), str_deserialize(bytes)?))
         }
         t @ (DataType::Binary | DataType::LargeBinary | DataType::BinaryView) => Ok(
-            DataSketchVariant::Bytes(t.clone(), byte_deserialize(slice)?),
+            DataSketchVariant::Bytes(t.clone(), byte_deserialize(bytes)?),
         ),
         _ => Err(eyre!("DataType not supported {key_type}")),
     }
