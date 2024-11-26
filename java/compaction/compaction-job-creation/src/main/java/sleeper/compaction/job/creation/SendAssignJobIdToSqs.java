@@ -34,15 +34,15 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 public class SendAssignJobIdToSqs implements AssignJobIdQueueSender {
     public static final Logger LOGGER = LoggerFactory.getLogger(SendAssignJobIdToSqs.class);
 
-    private final AmazonSQS sqsClient;
     private final InstanceProperties instanceProperties;
+    private final AmazonSQS sqsClient;
     private final StateStoreCommitRequestInS3Uploader s3Uploader;
     private final CompactionJobIdAssignmentCommitRequestSerDe serDe = new CompactionJobIdAssignmentCommitRequestSerDe();
 
     public SendAssignJobIdToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client) {
-        this.sqsClient = sqsClient;
         this.instanceProperties = instanceProperties;
-        s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject);
+        this.sqsClient = sqsClient;
+        this.s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject);
     }
 
     @Override
