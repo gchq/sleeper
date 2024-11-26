@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - 'rust/**/Cargo.toml'
+      - 'rust/**/Cargo.lock'
       - '.github/workflows/rust-audit.yaml'
 
 env:
