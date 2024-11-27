@@ -58,7 +58,7 @@ public class TableDataStack extends NestedStack {
                 .build();
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", jars.bucketName());
+            IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
             LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
             AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode, dataBucket, bucketName,
                     loggingStack.getLogGroup(LogGroupRef.TABLE_DATA_AUTODELETE),

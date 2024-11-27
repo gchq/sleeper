@@ -57,7 +57,7 @@ public class ConfigBucketStack extends NestedStack {
 
         instanceProperties.set(CONFIG_BUCKET, configBucket.getBucketName());
 
-        IBucket jarsBucket = Bucket.fromBucketName(scope, "JarsBucket", jars.bucketName());
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
         AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode, configBucket, bucketName,
                 loggingStack.getLogGroup(LogGroupRef.CONFIG_AUTODELETE),
