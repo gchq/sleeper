@@ -29,6 +29,7 @@ import sleeper.core.schema.type.Type;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class Sketches {
 
@@ -72,12 +73,13 @@ public class Sketches {
         }
     }
 
-    public Map<String, ItemsSketch> getQuantilesSketches() {
-        return keyFieldToQuantilesSketch;
-    }
-
     public <T> ItemsSketch<T> getQuantilesSketch(String keyFieldName) {
         return (ItemsSketch<T>) keyFieldToQuantilesSketch.get(keyFieldName);
+    }
+
+    public Stream<FieldSketch> fieldSketches() {
+        return keyFieldToQuantilesSketch.entrySet().stream()
+                .map(entry -> new FieldSketch(schema.getField(entry.getKey()).orElseThrow(), entry.getValue()));
     }
 
     public void update(Record record) {
@@ -90,11 +92,9 @@ public class Sketches {
         sketch.update(convertValueForSketch(record, field));
     }
 
-    public static Object readValueFromSketch(Object value, Field field) {
+    public static Object readValueFromSketchWithWrappedBytes(Object value, Field field) {
         if (value == null) {
             return null;
-        } else if (field.getType() instanceof ByteArrayType) {
-            return ((ByteArray) value).getArray();
         } else {
             return value;
         }
@@ -108,6 +108,24 @@ public class Sketches {
             return ByteArray.wrap((byte[]) value);
         } else {
             return record.get(field.getName());
+        }
+    }
+
+    public static class FieldSketch {
+        private final Field field;
+        private final ItemsSketch sketch;
+
+        private FieldSketch(Field field, ItemsSketch sketch) {
+            this.field = field;
+            this.sketch = sketch;
+        }
+
+        public Field getField() {
+            return field;
+        }
+
+        public <T> ItemsSketch<T> getSketch() {
+            return sketch;
         }
     }
 }

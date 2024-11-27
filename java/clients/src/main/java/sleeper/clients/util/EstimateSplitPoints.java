@@ -73,7 +73,10 @@ public class EstimateSplitPoints {
         }
 
         // Remove any duplicate values (which means the number of split points returned may be less than that requested.
-        SortedSet<Object> sortedSet = new TreeSet<>(Stream.of(splitPoints).filter(Objects::nonNull).collect(toList()));
+        SortedSet<Object> sortedSet = new TreeSet<>(Stream.of(splitPoints)
+                .filter(Objects::nonNull)
+                .map(value -> Sketches.readValueFromSketchWithWrappedBytes(value, rowKey1))
+                .collect(toList()));
 
         if (rowKey1.getType() instanceof ByteArrayType) {
             return sortedSet.stream().map(b -> (ByteArray) b).map(ByteArray::getArray).collect(toList());
