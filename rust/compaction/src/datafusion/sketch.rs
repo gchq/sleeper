@@ -73,6 +73,7 @@ impl Item for i32 {
 }
 
 impl Item for i64 {
+    #[allow(clippy::cast_possible_truncation)]
     fn to_i32(&self) -> Option<i32> {
         Some(*self as i32)
     }
