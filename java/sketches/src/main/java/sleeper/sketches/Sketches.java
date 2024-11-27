@@ -107,7 +107,7 @@ public class Sketches {
         } else if (field.getType() instanceof ByteArrayType) {
             return ByteArray.wrap((byte[]) value);
         } else {
-            return record.get(field.getName());
+            return value;
         }
     }
 
