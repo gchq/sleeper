@@ -33,7 +33,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 cxx = { version = "1.0.131" } # Exception handling for Rust
-libc = { version = "0.2.164" } # FFI type support
+libc = { version = "0.2.166" } # FFI type support
 log = { version = "0.4.22" } # Logging support
 arrow = { version = "53.3.0" } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
