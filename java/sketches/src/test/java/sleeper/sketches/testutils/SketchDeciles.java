@@ -18,10 +18,6 @@ package sleeper.sketches.testutils;
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
-import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
-import sleeper.sketches.Sketches;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -51,14 +47,6 @@ public class SketchDeciles {
             return empty();
         }
         return new SketchDeciles(sketch.getMinValue(), sketch.getMaxValue(), readDecilesByRank(sketch));
-    }
-
-    public static SketchDeciles from(Field field, List<Record> records) {
-        ItemsSketch sketch = Sketches.createSketch(field.getType(), 1024);
-        for (Record record : records) {
-            sketch.update(record.get(field.getName()));
-        }
-        return from(sketch);
     }
 
     public static int compare(SketchDeciles deciles1, SketchDeciles deciles2, Comparator<Object> comparator) {
