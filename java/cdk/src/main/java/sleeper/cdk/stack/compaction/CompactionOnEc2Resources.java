@@ -120,7 +120,7 @@ public class CompactionOnEc2Resources {
                 .environment(environment)
                 .cpu(requirements.getCpu())
                 .memoryLimitMiB(requirements.getMemoryLimitMiB())
-                .logging(Utils.createECSContainerLogDriver(coreStacks, "EC2CompactionTasks"))
+                .logging(Utils.createECSContainerLogDriver(coreStacks.getLogGroup(LogGroupRef.COMPACTION_TASKS_EC2)))
                 .build();
     }
 
