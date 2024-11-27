@@ -136,7 +136,7 @@ public class QueryStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.QUERY_EXECUTOR)));
     }
 
     private IFunction setupQueryExecutorLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode lambdaCode,
