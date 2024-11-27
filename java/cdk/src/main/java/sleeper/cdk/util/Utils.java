@@ -43,6 +43,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -138,7 +139,7 @@ public class Utils {
     }
 
     public static LogDriver createECSContainerLogDriver(CoreStacks coreStacks, String id) {
-        ILogGroup logGroup = coreStacks.getLogGroupByECSLogDriverId(id);
+        ILogGroup logGroup = coreStacks.getLogGroup(LogGroupRef.findByShortName(id));
         return LogDriver.awsLogs(AwsLogDriverProps.builder()
                 .streamPrefix(logGroup.getLogGroupName())
                 .logGroup(logGroup)
