@@ -51,10 +51,6 @@ public class LoggingStack extends NestedStack {
         return getLogGroupByNameWithPrefixes(functionName);
     }
 
-    public ILogGroup getProviderLogGroupByFunctionName(String functionName) {
-        return getLogGroupByNameWithPrefixes(functionName + "-provider");
-    }
-
     public ILogGroup getLogGroupByECSLogDriverId(String id) {
         return getLogGroupByNameWithPrefixes(addNamePrefixes(id));
     }

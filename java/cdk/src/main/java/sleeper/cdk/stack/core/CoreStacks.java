@@ -68,10 +68,6 @@ public class CoreStacks {
         return loggingStack.getLogGroupByFunctionName(functionName);
     }
 
-    public ILogGroup getProviderLogGroupByFunctionName(String functionName) {
-        return loggingStack.getProviderLogGroupByFunctionName(functionName);
-    }
-
     public ILogGroup getLogGroupByECSLogDriverId(String id) {
         return loggingStack.getLogGroupByECSLogDriverId(id);
     }
