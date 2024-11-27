@@ -140,38 +140,33 @@ public class AthenaStack extends NestedStack {
         spillBucket.grantReadWrite(athenaCompositeHandler);
         spillMasterKey.grant(athenaCompositeHandler, "kms:GenerateDataKey", "kms:DescribeKey");
 
-        Policy listAllBucketsPolicy = Policy.Builder.create(this, "ListAllBucketsPolicy")
+        IRole role = Objects.requireNonNull(athenaCompositeHandler.getRole());
+
+        // Required for when spill bucket changes
+        role.attachInlinePolicy(Policy.Builder.create(this, "ListAllBucketsPolicy")
                 .statements(Lists.newArrayList(PolicyStatement.Builder.create()
                         .resources(Lists.newArrayList("*"))
                         .actions(Lists.newArrayList("S3:ListAllMyBuckets"))
                         .build()))
-                .build();
+                .build());
 
-        Policy keyGenerationPolicy = Policy.Builder.create(this, "KeyGenerationPolicy")
+        // Required for when creating a encryption data key
+        role.attachInlinePolicy(Policy.Builder.create(this, "KeyGenerationPolicy")
                 .statements(Lists.newArrayList(PolicyStatement.Builder.create()
                         .resources(Lists.newArrayList("*"))
                         .actions(Lists.newArrayList("kms:GenerateRandom"))
                         .build()))
-                .build();
+                .build());
 
-        Policy getAthenaQueryStatusPolicy = Policy.Builder.create(this, "GetAthenaQueryStatusPolicy")
+        // Allow our function to get the status of the query. Allowed to query all workgroups within this account
+        // and region
+        role.attachInlinePolicy(Policy.Builder.create(this, "GetAthenaQueryStatusPolicy")
                 .statements(Lists.newArrayList(PolicyStatement.Builder.create()
                         .resources(Lists.newArrayList("arn:aws:athena:" + instanceProperties.get(REGION) + ":"
                                 + instanceProperties.get(ACCOUNT) + ":workgroup/*"))
                         .actions(Lists.newArrayList("athena:getQueryExecution"))
                         .build()))
-                .build();
-
-        IRole role = Objects.requireNonNull(athenaCompositeHandler.getRole());
-        // Required for when spill bucket changes
-        role.attachInlinePolicy(listAllBucketsPolicy);
-
-        // Required for when creating a encryption data key
-        role.attachInlinePolicy(keyGenerationPolicy);
-
-        // Allow our function to get the status of the query. Allowed to query all workgroups within this account
-        // and region
-        role.attachInlinePolicy(getAthenaQueryStatusPolicy);
+                .build());
     }
 
     private static String getSimpleClassName(String className) {
