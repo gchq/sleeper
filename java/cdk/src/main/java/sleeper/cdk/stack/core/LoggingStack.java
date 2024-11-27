@@ -31,7 +31,7 @@ import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_D
 
 public class LoggingStack extends NestedStack {
 
-    private final Map<LogGroupRef, ILogGroup> logGroupByName = new HashMap<>();
+    private final Map<LogGroupRef, ILogGroup> logGroupByRef = new HashMap<>();
     private final InstanceProperties instanceProperties;
 
     public LoggingStack(Construct scope, String id, InstanceProperties instanceProperties) {
@@ -44,11 +44,11 @@ public class LoggingStack extends NestedStack {
     }
 
     public ILogGroup getLogGroup(LogGroupRef ref) {
-        return Objects.requireNonNull(logGroupByName.get(ref), "No log group found: " + ref);
+        return Objects.requireNonNull(logGroupByRef.get(ref), "No log group found: " + ref);
     }
 
     private void createLogGroup(LogGroupRef ref) {
-        logGroupByName.put(ref, LogGroup.Builder.create(this, ref.shortName)
+        logGroupByRef.put(ref, LogGroup.Builder.create(this, ref.shortName)
                 .logGroupName(ref.prefix + String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), ref.shortName))
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build());
