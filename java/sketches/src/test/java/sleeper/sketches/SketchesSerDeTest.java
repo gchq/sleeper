@@ -35,7 +35,7 @@ import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SketchSerialiserTest {
+public class SketchesSerDeTest {
 
     @Test
     public void shouldSerDe() throws IOException {
@@ -62,7 +62,7 @@ public class SketchSerialiserTest {
         for (byte i = 0; i < 100; i++) {
             sketch4.update(ByteArray.wrap(new byte[]{i, (byte) (i + 1)}));
         }
-        SketchSerialiser sketchSerialiser = new SketchSerialiser(schema);
+        SketchesSerDe sketchSerialiser = new SketchesSerDe(schema);
 
         // When
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

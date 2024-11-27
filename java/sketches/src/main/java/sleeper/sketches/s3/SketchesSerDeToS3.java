@@ -24,8 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.schema.Schema;
-import sleeper.sketches.SketchSerialiser;
 import sleeper.sketches.Sketches;
+import sleeper.sketches.SketchesSerDe;
 
 import java.io.IOException;
 
@@ -44,7 +44,7 @@ public class SketchesSerDeToS3 {
 
     public void saveToHadoopFS(Path path, Sketches sketches, Configuration conf) throws IOException {
         try (FSDataOutputStream dataOutputStream = path.getFileSystem(conf).create(path)) {
-            new SketchSerialiser(schema).serialise(sketches, dataOutputStream);
+            new SketchesSerDe(schema).serialise(sketches, dataOutputStream);
             LOGGER.info("Wrote sketches to {}", path);
         }
     }
@@ -57,7 +57,7 @@ public class SketchesSerDeToS3 {
     public Sketches loadFromHadoopFS(Path path, Configuration conf) throws IOException {
         Sketches sketches;
         try (FSDataInputStream dataInputStream = path.getFileSystem(conf).open(path)) {
-            sketches = new SketchSerialiser(schema).deserialise(dataInputStream);
+            sketches = new SketchesSerDe(schema).deserialise(dataInputStream);
         }
         LOGGER.info("Loaded sketches from {}", path);
         return sketches;

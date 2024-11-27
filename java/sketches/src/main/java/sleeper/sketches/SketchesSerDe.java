@@ -39,10 +39,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SketchSerialiser {
+public class SketchesSerDe {
     private final Schema schema;
 
-    public SketchSerialiser(Schema schema) {
+    public SketchesSerDe(Schema schema) {
         this.schema = schema;
     }
 
