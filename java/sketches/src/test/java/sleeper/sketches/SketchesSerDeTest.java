@@ -172,6 +172,30 @@ public class SketchesSerDeTest {
                 .build());
     }
 
+    @Test
+    void shouldSerDeNulls() throws Exception {
+        Schema schema = Schema.builder().rowKeyFields(
+                new Field("key1", new IntType()),
+                new Field("key2", new LongType()),
+                new Field("key3", new StringType()),
+                new Field("key4", new ByteArrayType()))
+                .build();
+        Sketches sketches = Sketches.from(schema);
+        sketches.update(schema, new Record());
+
+        // When
+        byte[] bytes = serialise(sketches, schema);
+        Sketches deserialised = deserialise(bytes, schema);
+
+        // Then
+        assertThat(SketchesDeciles.from(deserialised)).isEqualTo(SketchesDeciles.builder()
+                .fieldEmpty("key1")
+                .fieldEmpty("key2")
+                .fieldEmpty("key3")
+                .fieldEmpty("key4")
+                .build());
+    }
+
     private static byte[] serialise(Sketches sketches, Schema schema) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);

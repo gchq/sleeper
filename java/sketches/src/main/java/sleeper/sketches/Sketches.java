@@ -23,9 +23,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
 
 import java.util.Comparator;
@@ -48,13 +46,7 @@ public class Sketches {
     }
 
     public static <T> ItemsSketch<T> createSketch(Type type, int k) {
-        if (type instanceof IntType) {
-            return (ItemsSketch<T>) ItemsSketch.getInstance(k, Comparator.comparing(Number::intValue));
-        } else if (type instanceof LongType) {
-            return (ItemsSketch<T>) ItemsSketch.getInstance(k, Comparator.comparing(Number::longValue));
-        } else if (type instanceof StringType) {
-            return (ItemsSketch<T>) ItemsSketch.getInstance(k, Comparator.naturalOrder());
-        } else if (type instanceof ByteArrayType) {
+        if (type instanceof PrimitiveType) {
             return (ItemsSketch<T>) ItemsSketch.getInstance(k, Comparator.naturalOrder());
         } else {
             throw new IllegalArgumentException("Unknown key type of " + type);
@@ -62,13 +54,7 @@ public class Sketches {
     }
 
     public static <T> ItemsUnion<T> createUnion(Type type, int maxK) {
-        if (type instanceof IntType) {
-            return (ItemsUnion<T>) ItemsUnion.getInstance(maxK, Comparator.comparing(Number::intValue));
-        } else if (type instanceof LongType) {
-            return (ItemsUnion<T>) ItemsUnion.getInstance(maxK, Comparator.comparing(Number::longValue));
-        } else if (type instanceof StringType) {
-            return (ItemsUnion<T>) ItemsUnion.getInstance(maxK, Comparator.naturalOrder());
-        } else if (type instanceof ByteArrayType) {
+        if (type instanceof PrimitiveType) {
             return (ItemsUnion<T>) ItemsUnion.getInstance(maxK, Comparator.naturalOrder());
         } else {
             throw new IllegalArgumentException("Unknown key type of " + type);
@@ -76,13 +62,7 @@ public class Sketches {
     }
 
     public static <T> Comparator<T> createComparator(Type type) {
-        if (type instanceof IntType) {
-            return (Comparator<T>) Comparator.comparing(Number::intValue);
-        } else if (type instanceof LongType) {
-            return (Comparator<T>) Comparator.comparing(Number::longValue);
-        } else if (type instanceof StringType) {
-            return (Comparator<T>) Comparator.naturalOrder();
-        } else if (type instanceof ByteArrayType) {
+        if (type instanceof PrimitiveType) {
             return (Comparator<T>) Comparator.naturalOrder();
         } else {
             throw new IllegalArgumentException("Unknown key type of " + type);
@@ -107,10 +87,22 @@ public class Sketches {
         sketch.update(convertValue(record, field));
     }
 
+    public static Object readValueFromSketch(Object value, Field field) {
+        if (value == null) {
+            return null;
+        } else if (field.getType() instanceof ByteArrayType) {
+            return ((ByteArray) value).getArray();
+        } else {
+            return value;
+        }
+    }
+
     private static Object convertValue(Record record, Field field) {
-        if (field.getType() instanceof ByteArrayType) {
-            byte[] value = (byte[]) record.get(field.getName());
-            return ByteArray.wrap(value);
+        Object value = record.get(field.getName());
+        if (value == null) {
+            return null;
+        } else if (field.getType() instanceof ByteArrayType) {
+            return ByteArray.wrap((byte[]) value);
         } else {
             return record.get(field.getName());
         }
