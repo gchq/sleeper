@@ -23,6 +23,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
+import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.Type;
 
@@ -50,19 +51,11 @@ public class Sketches {
     }
 
     public static <T> ItemsSketch<T> createSketch(Type type, int k) {
-        if (type instanceof PrimitiveType) {
-            return (ItemsSketch<T>) ItemsSketch.getInstance(k, Comparator.naturalOrder());
-        } else {
-            throw new IllegalArgumentException("Unknown key type of " + type);
-        }
+        return (ItemsSketch<T>) ItemsSketch.getInstance(k, createComparator(type));
     }
 
     public static <T> ItemsUnion<T> createUnion(Type type, int maxK) {
-        if (type instanceof PrimitiveType) {
-            return (ItemsUnion<T>) ItemsUnion.getInstance(maxK, Comparator.naturalOrder());
-        } else {
-            throw new IllegalArgumentException("Unknown key type of " + type);
-        }
+        return (ItemsUnion<T>) ItemsUnion.getInstance(maxK, createComparator(type));
     }
 
     public static <T> Comparator<T> createComparator(Type type) {
@@ -95,6 +88,8 @@ public class Sketches {
     public static Object readValueFromSketchWithWrappedBytes(Object value, Field field) {
         if (value == null) {
             return null;
+        } else if (field.getType() instanceof IntType) {
+            return ((Long) value).intValue();
         } else {
             return value;
         }
@@ -104,6 +99,8 @@ public class Sketches {
         Object value = record.get(field.getName());
         if (value == null) {
             return null;
+        } else if (field.getType() instanceof IntType) {
+            return ((Integer) value).longValue();
         } else if (field.getType() instanceof ByteArrayType) {
             return ByteArray.wrap((byte[]) value);
         } else {

@@ -17,7 +17,7 @@ package sleeper.sketches;
 
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.ArrayOfItemsSerDe;
-import org.apache.datasketches.ArrayOfNumbersSerDe;
+import org.apache.datasketches.ArrayOfLongsSerDe;
 import org.apache.datasketches.ArrayOfStringsSerDe;
 import org.apache.datasketches.Util;
 import org.apache.datasketches.memory.Memory;
@@ -35,7 +35,6 @@ import sleeper.core.schema.type.Type;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,8 +48,8 @@ public class SketchesSerDe {
     public void serialise(Sketches sketches, DataOutputStream dos) throws IOException {
         for (Field field : schema.getRowKeyFields()) {
             if (field.getType() instanceof IntType || field.getType() instanceof LongType) {
-                ItemsSketch<Number> sketch = sketches.getQuantilesSketch(field.getName());
-                byte[] b = sketch.toByteArray(new ArrayOfNumbersSerDe());
+                ItemsSketch<Long> sketch = sketches.getQuantilesSketch(field.getName());
+                byte[] b = sketch.toByteArray(new ArrayOfLongsSerDe());
                 dos.writeInt(b.length);
                 dos.write(b);
             } else if (field.getType() instanceof StringType) {
@@ -81,16 +80,18 @@ public class SketchesSerDe {
         int length = dis.readInt();
         byte[] b = new byte[length];
         dis.readFully(b);
-        if (type instanceof IntType) {
-            return ItemsSketch.getInstance(Memory.wrap(b), Comparator.comparing(Number::intValue), new ArrayOfNumbersSerDe());
-        } else if (type instanceof LongType) {
-            return ItemsSketch.getInstance(Memory.wrap(b), Comparator.comparing(Number::longValue), new ArrayOfNumbersSerDe());
+        return ItemsSketch.getInstance(Memory.wrap(b), Sketches.createComparator(type), getItemsSerDe(type));
+    }
+
+    private static <T> ArrayOfItemsSerDe<T> getItemsSerDe(Type type) {
+        if (type instanceof IntType || type instanceof LongType) {
+            return (ArrayOfItemsSerDe<T>) new ArrayOfLongsSerDe();
         } else if (type instanceof StringType) {
-            return ItemsSketch.getInstance(Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfStringsSerDe());
+            return (ArrayOfItemsSerDe<T>) new ArrayOfStringsSerDe();
         } else if (type instanceof ByteArrayType) {
-            return ItemsSketch.getInstance(Memory.wrap(b), Comparator.naturalOrder(), new ArrayOfByteArraysSerSe());
+            return (ArrayOfItemsSerDe<T>) new ArrayOfByteArraysSerSe();
         } else {
-            throw new IOException("Unknown key type of " + type);
+            throw new IllegalArgumentException("Unknown key type of " + type);
         }
     }
 
