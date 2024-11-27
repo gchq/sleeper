@@ -99,12 +99,15 @@ public class Sketches {
 
     public void update(Schema schema, Record record) {
         for (Field rowKeyField : schema.getRowKeyFields()) {
-            getQuantilesSketch(rowKeyField.getName())
-                    .update(convertValue(record, rowKeyField));
+            update(getQuantilesSketch(rowKeyField.getName()), record, rowKeyField);
         }
     }
 
-    private Object convertValue(Record record, Field field) {
+    public static void update(ItemsSketch sketch, Record record, Field field) {
+        sketch.update(convertValue(record, field));
+    }
+
+    private static Object convertValue(Record record, Field field) {
         if (field.getType() instanceof ByteArrayType) {
             byte[] value = (byte[]) record.get(field.getName());
             return ByteArray.wrap(value);
