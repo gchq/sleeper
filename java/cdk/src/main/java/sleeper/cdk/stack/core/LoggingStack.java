@@ -135,9 +135,5 @@ public class LoggingStack extends NestedStack {
             this.shortName = shortName;
             this.prefix = prefix;
         }
-
-        public static LogGroupRef findByShortName(String shortName) {
-            return LogGroupRef.valueOf(shortName);
-        }
     }
 }
