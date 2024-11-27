@@ -20,7 +20,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -108,7 +107,6 @@ public class RustCompactionRunnerIT {
         }
 
         @Test
-        @Disabled("TODO sketches")
         void shouldMergeFilesWithLongKey() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
@@ -133,7 +131,6 @@ public class RustCompactionRunnerIT {
         }
 
         @Test
-        @Disabled("TODO sketches")
         void shouldMergeFilesWithIntKey() throws Exception {
             // Given
             Schema schema = schemaWithKey("key", new IntType());
