@@ -73,21 +73,23 @@ pub fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error
     Ok(data)
 }
 
+#[allow(clippy::missing_panics_doc)]
 #[allow(clippy::missing_errors_doc)]
-pub fn read_sketch_of_ints(path: &Url) -> Result<DataSketchVariant, Error> {
+pub fn read_sketch_min_max_ints(path: &Url) -> Result<[i32; 2], Error> {
+    Ok(min_max_ints(&read_sketch_of_ints(path)?))
+}
+
+fn read_sketch_of_ints(path: &Url) -> Result<DataSketchVariant, Error> {
     let mut sketches = deserialise_sketches(path, vec![DataType::Int32])?;
     sketches.pop().ok_or_eyre("Expected one sketch, found 0")
 }
 
-pub fn min_max_ints(sketch: DataSketchVariant) -> [i32; 2] {
+#[must_use]
+fn min_max_ints(sketch: &DataSketchVariant) -> [i32; 2] {
     [
         sketch.get_min_item().unwrap().to_i32().unwrap(),
         sketch.get_max_item().unwrap().to_i32().unwrap(),
     ]
-}
-
-pub fn read_sketch_min_max_ints(path: &Url) -> Result<[i32; 2], Error> {
-    Ok(min_max_ints(read_sketch_of_ints(path)?))
 }
 
 #[allow(clippy::missing_errors_doc)]
