@@ -31,9 +31,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Sketches {
+
+    private final Schema schema;
     private final Map<String, ItemsSketch> keyFieldToQuantilesSketch;
 
-    public Sketches(Map<String, ItemsSketch> keyFieldToQuantilesSketch) {
+    public Sketches(Schema schema, Map<String, ItemsSketch> keyFieldToQuantilesSketch) {
+        this.schema = schema;
         this.keyFieldToQuantilesSketch = keyFieldToQuantilesSketch;
     }
 
@@ -42,7 +45,7 @@ public class Sketches {
         for (Field rowKeyField : schema.getRowKeyFields()) {
             keyFieldToSketch.put(rowKeyField.getName(), createSketch(rowKeyField.getType(), 1024));
         }
-        return new Sketches(keyFieldToSketch);
+        return new Sketches(schema, keyFieldToSketch);
     }
 
     public static <T> ItemsSketch<T> createSketch(Type type, int k) {
@@ -77,7 +80,7 @@ public class Sketches {
         return (ItemsSketch<T>) keyFieldToQuantilesSketch.get(keyFieldName);
     }
 
-    public void update(Schema schema, Record record) {
+    public void update(Record record) {
         for (Field rowKeyField : schema.getRowKeyFields()) {
             update(getQuantilesSketch(rowKeyField.getName()), record, rowKeyField);
         }

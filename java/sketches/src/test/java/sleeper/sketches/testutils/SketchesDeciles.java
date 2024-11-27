@@ -55,7 +55,7 @@ public class SketchesDeciles {
     public static SketchesDeciles from(Schema schema, List<Record> records) {
         Sketches sketches = Sketches.from(schema);
         for (Record record : records) {
-            sketches.update(schema, record);
+            sketches.update(record);
         }
         return from(sketches);
     }
@@ -86,7 +86,7 @@ public class SketchesDeciles {
                 union.update(sketches.getQuantilesSketch(field.getName()));
             }
         }
-        Sketches sketches = new Sketches(unionByField.entrySet().stream()
+        Sketches sketches = new Sketches(schema, unionByField.entrySet().stream()
                 .collect(toMap(Entry::getKey, entry -> entry.getValue().getResult())));
         return from(sketches);
     }

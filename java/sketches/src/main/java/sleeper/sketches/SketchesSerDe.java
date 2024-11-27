@@ -74,7 +74,7 @@ public class SketchesSerDe {
         for (Field field : schema.getRowKeyFields()) {
             keyFieldToQuantilesSketch.put(field.getName(), deserialise(dis, field.getType()));
         }
-        return new Sketches(keyFieldToQuantilesSketch);
+        return new Sketches(schema, keyFieldToQuantilesSketch);
     }
 
     private static ItemsSketch<?> deserialise(DataInputStream dis, Type type) throws IOException {

@@ -42,7 +42,7 @@ public class SketchesSerDeTest {
         Schema schema = schemaWithKey("key", new IntType());
         Sketches sketches = Sketches.from(schema);
         for (int i = 0; i < 100; i++) {
-            sketches.update(schema, new Record(Map.of("key", i)));
+            sketches.update(new Record(Map.of("key", i)));
         }
 
         // When
@@ -64,7 +64,7 @@ public class SketchesSerDeTest {
         Schema schema = schemaWithKey("key", new LongType());
         Sketches sketches = Sketches.from(schema);
         for (long i = 0; i < 100; i++) {
-            sketches.update(schema, new Record(Map.of("key", i)));
+            sketches.update(new Record(Map.of("key", i)));
         }
 
         // When
@@ -86,7 +86,7 @@ public class SketchesSerDeTest {
         Schema schema = schemaWithKey("key", new StringType());
         Sketches sketches = Sketches.from(schema);
         for (int i = 0; i < 100; i++) {
-            sketches.update(schema, new Record(Map.of("key", "" + i)));
+            sketches.update(new Record(Map.of("key", "" + i)));
         }
 
         // When
@@ -108,7 +108,7 @@ public class SketchesSerDeTest {
         Schema schema = schemaWithKey("key", new ByteArrayType());
         Sketches sketches = Sketches.from(schema);
         for (byte i = 0; i < 100; i++) {
-            sketches.update(schema, new Record(Map.of("key", new byte[]{i, (byte) (i + 1)})));
+            sketches.update(new Record(Map.of("key", new byte[]{i, (byte) (i + 1)})));
         }
 
         // When
@@ -136,7 +136,7 @@ public class SketchesSerDeTest {
                 .build();
         Sketches sketches = Sketches.from(schema);
         for (int i = 0; i < 100; i++) {
-            sketches.update(schema, new Record(Map.of(
+            sketches.update(new Record(Map.of(
                     "key1", i,
                     "key2", i + 1_000_000L,
                     "key3", "" + (i + 1_000_000L),
@@ -181,7 +181,7 @@ public class SketchesSerDeTest {
                 new Field("key4", new ByteArrayType()))
                 .build();
         Sketches sketches = Sketches.from(schema);
-        sketches.update(schema, new Record());
+        sketches.update(new Record());
 
         // When
         byte[] bytes = serialise(sketches, schema);
