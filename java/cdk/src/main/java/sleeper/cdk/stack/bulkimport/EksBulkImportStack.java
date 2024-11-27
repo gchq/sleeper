@@ -183,7 +183,7 @@ public final class EksBulkImportStack extends NestedStack {
                         .namespace(uniqueBulkImportId)
                         .build()))
                 .build());
-        addFluentBitLogging(bulkImportCluster, fargateProfile, instanceProperties, coreStacks.getLogGroupByEksClusterName(uniqueBulkImportId));
+        addFluentBitLogging(bulkImportCluster, fargateProfile, instanceProperties, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
 
         ServiceAccount sparkSubmitServiceAccount = bulkImportCluster.addServiceAccount("SparkSubmitServiceAccount", ServiceAccountOptions.builder()
                 .namespace(uniqueBulkImportId)

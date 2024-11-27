@@ -51,10 +51,6 @@ public class LoggingStack extends NestedStack {
         return getLogGroupByNameWithPrefixes(functionName);
     }
 
-    public ILogGroup getLogGroupByEksClusterName(String clusterName) {
-        return getLogGroupByNameWithPrefixes(clusterName);
-    }
-
     private ILogGroup getLogGroupByNameWithPrefixes(String nameWithPrefixes) {
         return Objects.requireNonNull(logGroupByName.get(nameWithPrefixes), "No log group found: " + nameWithPrefixes);
     }
