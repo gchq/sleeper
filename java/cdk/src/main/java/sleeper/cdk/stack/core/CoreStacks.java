@@ -64,10 +64,6 @@ public class CoreStacks {
         return loggingStack.getLogGroup(logGroupRef);
     }
 
-    public ILogGroup getLogGroupByFunctionName(String functionName) {
-        return loggingStack.getLogGroupByFunctionName(functionName);
-    }
-
     public void grantReadInstanceConfig(IGrantable grantee) {
         configBucketStack.grantRead(grantee);
     }

@@ -33,6 +33,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -101,14 +102,14 @@ public class CommonEmrBulkImportHelper {
     }
 
     public IFunction createJobStarterFunction(
-            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
+            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket, LogGroupRef logGroupRef,
             CommonEmrBulkImportStack commonEmrStack) {
-        return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket,
+        return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket, logGroupRef,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
     }
 
     public IFunction createJobStarterFunction(
-            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
+            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket, LogGroupRef logGroupRef,
             List<IRole> passRoles) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
@@ -124,7 +125,7 @@ public class CommonEmrBulkImportHelper {
                 .memorySize(1024)
                 .timeout(Duration.minutes(2))
                 .environment(env)
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
+                .logGroup(coreStacks.getLogGroup(logGroupRef))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
         coreStacks.grantValidateBulkImport(function.getRole());
