@@ -31,7 +31,7 @@ import static sleeper.core.properties.instance.CommonProperty.LOG_RETENTION_IN_D
 
 public class LoggingStack extends NestedStack {
 
-    private final Map<String, ILogGroup> logGroupByName = new HashMap<>();
+    private final Map<LogGroupRef, ILogGroup> logGroupByName = new HashMap<>();
     private final InstanceProperties instanceProperties;
 
     public LoggingStack(Construct scope, String id, InstanceProperties instanceProperties) {
@@ -44,27 +44,14 @@ public class LoggingStack extends NestedStack {
     }
 
     public ILogGroup getLogGroup(LogGroupRef ref) {
-        return getLogGroupByNameWithPrefixes(addNamePrefixes(ref));
-    }
-
-    private ILogGroup getLogGroupByNameWithPrefixes(String nameWithPrefixes) {
-        return Objects.requireNonNull(logGroupByName.get(nameWithPrefixes), "No log group found: " + nameWithPrefixes);
+        return Objects.requireNonNull(logGroupByName.get(ref), "No log group found: " + ref);
     }
 
     private void createLogGroup(LogGroupRef ref) {
-        String nameWithPrefixes = addNamePrefixes(ref);
-        logGroupByName.put(nameWithPrefixes, LogGroup.Builder.create(this, ref.shortName)
-                .logGroupName(nameWithPrefixes)
+        logGroupByName.put(ref, LogGroup.Builder.create(this, ref.shortName)
+                .logGroupName(ref.prefix + String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), ref.shortName))
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build());
-    }
-
-    private String addNamePrefixes(String shortName) {
-        return String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), shortName);
-    }
-
-    private String addNamePrefixes(LogGroupRef ref) {
-        return ref.prefix + addNamePrefixes(ref.shortName);
     }
 
     public enum LogGroupRef {
