@@ -87,7 +87,7 @@ public class Sketches {
     }
 
     public static void update(ItemsSketch sketch, Record record, Field field) {
-        sketch.update(convertValue(record, field));
+        sketch.update(convertValueForSketch(record, field));
     }
 
     public static Object readValueFromSketch(Object value, Field field) {
@@ -100,7 +100,7 @@ public class Sketches {
         }
     }
 
-    private static Object convertValue(Record record, Field field) {
+    private static Object convertValueForSketch(Record record, Field field) {
         Object value = record.get(field.getName());
         if (value == null) {
             return null;
