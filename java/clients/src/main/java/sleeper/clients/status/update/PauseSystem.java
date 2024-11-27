@@ -24,8 +24,6 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.List;
-
 public class PauseSystem {
 
     private PauseSystem() {
@@ -48,23 +46,14 @@ public class PauseSystem {
 
     public static void pause(CloudWatchEventsClient cwClient, InstanceProperties instanceProperties) {
 
-        SleeperScheduleRule.getCloudWatchRules(instanceProperties)
-                .forEach(rules -> disableRule(cwClient, rules));
-    }
-
-    private static void disableRule(CloudWatchEventsClient cwClient, SleeperScheduleRule.Value rules) {
-        List<String> ruleNames = rules.getRuleNames();
-        if (ruleNames.isEmpty()) {
-            System.out.println("No rule found for property " + rules.getProperty() + ", not disabling");
-        } else {
-            ruleNames.forEach(ruleName -> disableRule(cwClient, ruleName));
-        }
+        SleeperScheduleRule.getDeployedRules(instanceProperties)
+                .forEach(rule -> disableRule(cwClient, rule.getRuleName()));
     }
 
     private static void disableRule(CloudWatchEventsClient cwClient, String ruleName) {
         try {
             cwClient.disableRule(request -> request.name(ruleName));
-            System.out.println("Disabled rule " + ruleName);
+            System.out.println("Disabled rule: " + ruleName);
         } catch (ResourceNotFoundException e) {
             System.out.println("Rule not found: " + ruleName);
         }

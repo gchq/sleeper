@@ -74,12 +74,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-job-creation</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>compaction-job-execution</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>

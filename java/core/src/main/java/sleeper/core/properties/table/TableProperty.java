@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS;
@@ -246,6 +247,12 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "Also note that this many files may need to be open simultaneously. The value of " +
                     "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
                     "for the output file.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.table.compaction.job.creation.limit")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_CREATION_LIMIT)
+            .description("The number of compaction jobs that are to be created as a limit during a single invocation. " +
+                    "If this limit is exceeded, the selection of jobs is randomised.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_SEND_BATCH_SIZE = Index.propertyBuilder("sleeper.table.compaction.job.send.batch.size")

@@ -42,7 +42,7 @@ public class CompactionJobDispatchRequestSerDeTest {
         instanceProperties.set(DATA_BUCKET, "test-bucket");
         tableProperties.set(TABLE_ID, "test-table");
         CompactionJobDispatchRequest request = CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
-                instanceProperties, tableProperties, "test-batch", Instant.parse("2024-11-18T12:01:00Z"));
+                tableProperties, "test-batch", Instant.parse("2024-11-18T12:01:00Z"));
 
         // When
         String json = serDe.toJsonPrettyPrint(request);

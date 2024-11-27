@@ -31,6 +31,7 @@ import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
+import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
@@ -71,7 +72,7 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
 
     @Override
     public SnapshotsDriver snapshots() {
-        return new LocalStackSnapshotsDriver();
+        return new NoSnapshotsDriver();
     }
 
     @Override

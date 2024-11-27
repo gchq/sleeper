@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.job.creation;
+package sleeper.compaction.core.job.creation;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,10 +22,13 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
-import sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.BatchJobsWriter;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
+import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
+import sleeper.compaction.core.job.creation.strategy.impl.SizeRatioCompactionStrategy;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
-import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -40,34 +43,45 @@ import sleeper.core.util.ObjectFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LIMIT;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreUninitialised;
+import static sleeper.core.testutils.SupplierTestHelper.fixIds;
+import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 
 public class CreateCompactionJobsTest {
 
-    private final InstanceProperties instanceProperties = CreateJobsTestUtils.createInstanceProperties();
-    private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-    private final InMemoryCompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
-    private final TableProperties tableProperties = createTable();
-    private final StateStore stateStore = createStateStore(tableProperties);
-    private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentCommitRequests = new ArrayList<>();
-    private final List<CompactionJob> jobs = new ArrayList<>();
+    InstanceProperties instanceProperties = CreateJobsTestUtils.createInstanceProperties();
+    Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
+    InMemoryCompactionJobStatusStore jobStatusStore = new InMemoryCompactionJobStatusStore();
+    TableProperties tableProperties = createTable();
+    StateStore stateStore = createStateStore(tableProperties);
+
+    List<CompactionJob> jobs = new ArrayList<>();
+    Queue<CompactionJobDispatchRequest> pendingQueue = new LinkedList<>();
+    Map<String, List<CompactionJob>> bucketAndKeyToJobs = new HashMap<>();
+    List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentCommitRequests = new ArrayList<>();
 
     @Nested
     @DisplayName("Compact files using strategy")
@@ -86,7 +100,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(fileReferences);
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("test-job"));
+            createJobsWithStrategy(fixJobIds("test-job"));
 
             // Then
             assertThat(jobs).containsExactly(
@@ -108,7 +122,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3, fileReference4));
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
+            createJobsWithStrategy(fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).containsExactly(
@@ -136,7 +150,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
+            createJobsWithStrategy(fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).isEmpty();
@@ -160,7 +174,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
+            createJobsWithStrategy(fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).containsExactly(
@@ -188,7 +202,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(leftReference, rightReference));
 
             // When
-            createJobs(Mode.STRATEGY, fixJobIds("partition-b-job", "partition-c-job"));
+            createJobsWithStrategy(fixJobIds("partition-b-job", "partition-c-job"));
 
             // Then
             assertThat(jobs).containsExactly(
@@ -210,7 +224,7 @@ public class CreateCompactionJobsTest {
 
             tableProperties.set(COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName());
             tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "3");
-            instanceProperties.set(COMPACTION_JOB_CREATION_LIMIT, "2");
+            tableProperties.set(COMPACTION_JOB_CREATION_LIMIT, "2");
             stateStore.initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "bbb")
@@ -223,7 +237,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3));
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("partition-R-job", "partition-LL-job", "partition-LR-job"), rand);
+            createJobWithForceAllFiles(fixJobIds("partition-R-job", "partition-LL-job", "partition-LR-job"), rand);
 
             // Then
             assertThat(jobs).containsExactly(
@@ -249,7 +263,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2));
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+            createJobWithForceAllFiles(fixJobIds("test-job"));
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
             assertThat(jobs).containsExactly(
@@ -272,7 +286,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFile(fileReference1);
 
             // When we force create jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+            createJobWithForceAllFiles(fixJobIds("test-job"));
 
             // Then a compaction job will be created for the files skipped by the BasicCompactionStrategy
             assertThat(jobs).containsExactly(
@@ -296,7 +310,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileOne, fileTwo));
 
             // When
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+            createJobWithForceAllFiles(fixJobIds("test-job"));
 
             // Then
             CompactionJob expectedJob = compactionFactory().createCompactionJob("test-job", List.of(fileOne, fileTwo), "1");
@@ -320,7 +334,7 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(leftFile, rightFile));
 
             // When
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
+            createJobWithForceAllFiles(fixJobIds("left-job", "right-job"));
 
             // Then
             CompactionJob leftJob = compactionFactory().createCompactionJob("left-job", List.of(leftFile), "L");
@@ -354,7 +368,7 @@ public class CreateCompactionJobsTest {
             jobStatusStore.setTimeSupplier(Stream.of(createdTime1, createdTime2).iterator()::next);
 
             // When we create compaction jobs
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("left-job", "right-job"));
+            createJobWithForceAllFiles(fixJobIds("left-job", "right-job"));
 
             // Then the jobs are reported as created in the status store
             CompactionJob leftJob = compactionFactory().createCompactionJob("left-job", List.of(leftFile), "L");
@@ -385,7 +399,7 @@ public class CreateCompactionJobsTest {
             jobStatusStore.setTimeSupplier(Stream.of(createdTime1, createdTime2).iterator()::next);
 
             // When we create compaction jobs
-            createJobs(Mode.STRATEGY, fixJobIds("left-job", "right-job"));
+            createJobsWithStrategy(fixJobIds("left-job", "right-job"));
 
             // Then the jobs are reported as created in the status store
             CompactionJob leftJob = compactionFactory().createCompactionJob("left-job", List.of(leftFile), "L");
@@ -411,12 +425,55 @@ public class CreateCompactionJobsTest {
             jobStatusStore.setTimeSupplier(Stream.of(createdTime).iterator()::next);
 
             // When
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY, fixJobIds("test-job"));
+            createJobWithForceAllFiles(fixJobIds("test-job"));
 
             // Then
             CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file), "root");
             assertThat(jobs).containsExactly(job);
             assertThat(jobStatusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+            assertThat(jobIdAssignmentCommitRequests).containsExactly(
+                    CompactionJobIdAssignmentCommitRequest.tableRequests(tableProperties.get(TABLE_ID),
+                            List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("test.parquet")))));
+        }
+    }
+
+    @Nested
+    @DisplayName("Send jobs in batches")
+    class SendInBatches {
+
+        @Test
+        void shouldSendMultipleBatches() throws Exception {
+            // Given
+            instanceProperties.set(DATA_BUCKET, "test-bucket");
+            tableProperties.set(TABLE_ID, "test-table");
+            tableProperties.setNumber(COMPACTION_JOB_SEND_BATCH_SIZE, 2);
+            stateStore.initialise(new PartitionsBuilder(schema)
+                    .singlePartition("root")
+                    .splitToNewChildren("root", "L", "R", "m")
+                    .splitToNewChildren("R", "RL", "RR", "s")
+                    .buildList());
+            FileReference file1 = fileFactory().partitionFile("L", 100L);
+            FileReference file2 = fileFactory().partitionFile("RL", 200L);
+            FileReference file3 = fileFactory().partitionFile("RR", 300L);
+            stateStore.addFiles(List.of(file1, file2, file3));
+
+            // When
+            createJobWithForceAllFiles(
+                    fixJobIds("job-1", "job-2", "job-3"),
+                    fixBatchIds("batch-1", "batch-2"),
+                    timePassesAMinuteAtATimeFrom(Instant.parse("2024-11-25T11:00:00Z")));
+
+            // Then
+            CompactionJob job1 = compactionFactory().createCompactionJob("job-1", List.of(file1), "L");
+            CompactionJob job2 = compactionFactory().createCompactionJob("job-2", List.of(file2), "RL");
+            CompactionJob job3 = compactionFactory().createCompactionJob("job-3", List.of(file3), "RR");
+            CompactionJobDispatchRequest batch1 = batchRequest("batch-1", Instant.parse("2024-11-25T11:00:00Z"));
+            CompactionJobDispatchRequest batch2 = batchRequest("batch-2", Instant.parse("2024-11-25T11:01:00Z"));
+            assertThat(jobs).containsExactly(job1, job2, job3);
+            assertThat(pendingQueue).containsExactly(batch1, batch2);
+            assertThat(bucketAndKeyToJobs).isEqualTo(Map.of(
+                    "test-bucket/test-table/compactions/batch-1.json", List.of(job1, job2),
+                    "test-bucket/test-table/compactions/batch-2.json", List.of(job3)));
         }
     }
 
@@ -428,23 +485,56 @@ public class CreateCompactionJobsTest {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    private void createJobs(Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
-        jobCreator(mode, jobIdSupplier, random).createJobs(tableProperties);
+    private void createJobsWithStrategy(GenerateJobId generateJobId) throws Exception {
+        jobCreator(generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime())
+                .createJobsWithStrategy(tableProperties);
     }
 
-    private void createJobs(Mode mode, Supplier<String> jobIdSupplier) throws Exception {
-        jobCreator(mode, jobIdSupplier, new Random()).createJobs(tableProperties);
+    private void createJobWithForceAllFiles(GenerateJobId generateJobId, Random random) throws Exception {
+        jobCreator(generateJobId, GenerateBatchId.random(), random, timePassesAMinuteAtATime())
+                .createJobWithForceAllFiles(tableProperties);
     }
 
-    private CreateCompactionJobs jobCreator(Mode mode, Supplier<String> jobIdSupplier, Random random) throws Exception {
+    private void createJobWithForceAllFiles(GenerateJobId generateJobId) throws Exception {
+        jobCreator(generateJobId, GenerateBatchId.random(), new Random(), timePassesAMinuteAtATime())
+                .createJobWithForceAllFiles(tableProperties);
+    }
+
+    private void createJobWithForceAllFiles(GenerateJobId generateJobId, GenerateBatchId generateBatchId, Supplier<Instant> timeSupplier) throws Exception {
+        jobCreator(generateJobId, generateBatchId, new Random(), timeSupplier)
+                .createJobWithForceAllFiles(tableProperties);
+    }
+
+    private CreateCompactionJobs jobCreator(
+            GenerateJobId generateJobId, GenerateBatchId generateBatchId, Random random, Supplier<Instant> timeSupplier) throws Exception {
         return new CreateCompactionJobs(
                 ObjectFactory.noUserJars(), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                jobs::add, jobStatusStore, mode, jobIdAssignmentCommitRequests::add, jobIdSupplier, random);
+                jobStatusStore, createBatchWriter(), pendingQueue::add, jobIdAssignmentCommitRequests::add,
+                generateJobId, generateBatchId, random, timeSupplier);
     }
 
-    private Supplier<String> fixJobIds(String... jobIds) {
-        return List.of(jobIds).iterator()::next;
+    private CompactionJobDispatchRequest batchRequest(String batchId, Instant createTime) {
+        return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(tableProperties, batchId, createTime);
+    }
+
+    private BatchJobsWriter createBatchWriter() {
+        return (bucketName, key, batch) -> {
+            jobs.addAll(batch);
+            bucketAndKeyToJobs.put(bucketName + "/" + key, batch);
+        };
+    }
+
+    private GenerateJobId fixJobIds(String... jobIds) {
+        return fixIds(jobIds)::get;
+    }
+
+    private GenerateBatchId fixBatchIds(String... batchIds) {
+        return fixIds(batchIds)::get;
+    }
+
+    private Supplier<Instant> timePassesAMinuteAtATime() {
+        return timePassesAMinuteAtATimeFrom(Instant.parse("2024-11-25T10:50:00Z"));
     }
 
     private TableProperties createTable() {
