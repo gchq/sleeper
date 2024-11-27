@@ -8,16 +8,18 @@ These instructions will assume you start in the project root directory and Sleep
 
 If standard ingest tasks fail with an out of memory error ("Exception in thread main java.lang.OutOfMemoryError: Java
 heap space") then this is likely due to the tasks not being able to store the specified number of records in memory.
-Standard ingest works by reading a certain number of records (given by `sleeper.ingest.memory.max.batch.size`) into
+Standard ingest works by reading a certain number of records (given by `sleeper.ingest.arrow.working.buffer.bytes`) into
 memory. These are sorted and then written to a local file. This process is repeated a certain number of times until a
-certain number of records in total (given by `sleeper.ingest.max.local.records`) have been written to local disk.
-Sensible values for the parameters `sleeper.ingest.memory.max.batch.size` and `sleeper.ingest.max.local.records`
+certain number of records in total (given by `sleeper.ingest.arrow.max.single.write.to.file.records`) have been written to local disk.
+Sensible values for the parameters `sleeper.ingest.arrow.max.local.store.bytes` and `sleeper.ingest.arrow.batch.buffer.bytes`
 obviously depend on the data - the more fields the schema has and the bigger those fields are, the more space will be
 used and the fewer records will fit into memory / on disk.
 
-If you see an out of memory error, then try reducing `sleeper.ingest.memory.max.batch.size`. When reducing this
-parameter it is a good idea to also reduce `sleeper.ingest.max.local.records`. To change these parameters, use the
+If you see an out of memory error, then try reducing `sleeper.ingest.arrow.max.local.store.bytes`. When reducing this
+parameter it is a good idea to also reduce `sleeper.ingest.arrow.batch.buffer.bytes`. To change these parameters, use the
 administration client described in the [system status documentation](06-status.md).
+
+(Presently the implemenation is based on arrow ingest whereas previously it was based on an arraylist.)
 
 ## I created an instance, destroyed it and then recreating it failed
 
