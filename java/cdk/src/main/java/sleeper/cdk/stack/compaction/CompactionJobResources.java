@@ -33,6 +33,7 @@ import software.amazon.awscdk.services.sqs.Queue;
 
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -162,7 +163,7 @@ public class CompactionJobResources {
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_JOB_CREATION_TRIGGER)));
 
         IFunction handlerFunction = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_JOB_CREATOR, "CompactionJobsCreationHandler", builder -> builder
                 .functionName(functionName)
@@ -171,7 +172,7 @@ public class CompactionJobResources {
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED))
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_JOB_CREATION_HANDLER)));
 
         // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation(coreStacks, topic, errorMetrics);
@@ -219,7 +220,7 @@ public class CompactionJobResources {
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_RESERVED))
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_JOB_DISPATCHER)));
 
         function.addEventSource(SqsEventSource.Builder.create(pendingQueue)
                 .batchSize(1)

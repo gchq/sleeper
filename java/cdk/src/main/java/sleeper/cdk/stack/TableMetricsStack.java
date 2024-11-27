@@ -36,6 +36,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -77,7 +78,7 @@ public class TableMetricsStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
-                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.METRICS_TRIGGER)));
         IFunction tableMetricsPublisher = lambdaCode.buildFunction(this, LambdaHandler.METRICS, "MetricsPublisher", builder -> builder
                 .functionName(publishFunctionName)
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
@@ -85,7 +86,7 @@ public class TableMetricsStack extends NestedStack {
                 .reservedConcurrentExecutions(instanceProperties.getInt(METRICS_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
-                .logGroup(coreStacks.getLogGroupByFunctionName(publishFunctionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.METRICS_PUBLISHER)));
 
         instanceProperties.set(TABLE_METRICS_LAMBDA_FUNCTION, tableMetricsTrigger.getFunctionName());
 

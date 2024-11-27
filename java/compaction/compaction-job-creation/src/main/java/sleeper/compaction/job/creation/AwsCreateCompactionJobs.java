@@ -45,7 +45,7 @@ public class AwsCreateCompactionJobs {
                 objectFactory, instanceProperties, stateStoreProvider, jobStatusStore,
                 new CompactionBatchJobsWriterToS3(s3Client),
                 new CompactionBatchMessageSenderToSqs(instanceProperties, sqsClient),
-                new SendAssignJobIdToSqs(sqsClient, instanceProperties),
+                new SendAssignJobIdToSqs(instanceProperties, sqsClient, s3Client),
                 GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
     }
 }

@@ -33,6 +33,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -89,7 +90,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .reservedConcurrentExecutions(1)
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
-                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.GARBAGE_COLLECTOR_TRIGGER)));
         IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.GARBAGE_COLLECTOR, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)
                 .description("Scan the state store looking for files that need deleting and delete them")
@@ -97,7 +98,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .timeout(handlerTimeout)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.GARBAGE_COLLECTOR)));
         instanceProperties.set(GARBAGE_COLLECTOR_LAMBDA_FUNCTION, triggerFunction.getFunctionName());
 
         // Grant this function permission delete files from the data bucket and

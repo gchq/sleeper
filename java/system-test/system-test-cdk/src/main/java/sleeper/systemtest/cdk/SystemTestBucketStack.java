@@ -27,6 +27,7 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -73,13 +74,15 @@ public class SystemTestBucketStack extends NestedStack {
                 .blockPublicAccess(BlockPublicAccess.BLOCK_ALL)
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
-        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, jars, bucket, bucketName,
-                functionName -> LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
-                        .logGroupName(functionName)
+
+        LambdaCode lambdaCode = jars.lambdaCode(Bucket.fromBucketName(this, "JarsBucket", jars.bucketName()));
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode, bucket, bucketName,
+                LogGroup.Builder.create(this, id + "-AutoDeleteLambdaLogGroup")
+                        .logGroupName(bucketName + "-autodelete")
                         .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
                         .build(),
-                functionName -> LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
-                        .logGroupName(functionName + "-provider")
+                LogGroup.Builder.create(this, id + "-AutoDeleteProviderLogGroup")
+                        .logGroupName(bucketName + "-autodelete-provider")
                         .retention(Utils.getRetentionDays(properties.getInt(SYSTEM_TEST_LOG_RETENTION_DAYS)))
                         .build());
         return bucket;

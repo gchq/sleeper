@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.job.creation;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.core.job.creation.AssignJobIdQueueSender;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 
 import java.util.UUID;
 
@@ -32,21 +34,24 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 public class SendAssignJobIdToSqs implements AssignJobIdQueueSender {
     public static final Logger LOGGER = LoggerFactory.getLogger(SendAssignJobIdToSqs.class);
 
-    private final AmazonSQS sqsClient;
     private final InstanceProperties instanceProperties;
+    private final AmazonSQS sqsClient;
+    private final StateStoreCommitRequestInS3Uploader s3Uploader;
     private final CompactionJobIdAssignmentCommitRequestSerDe serDe = new CompactionJobIdAssignmentCommitRequestSerDe();
 
-    public SendAssignJobIdToSqs(AmazonSQS sqsClient, InstanceProperties instanceProperties) {
-        this.sqsClient = sqsClient;
+    public SendAssignJobIdToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client) {
         this.instanceProperties = instanceProperties;
+        this.sqsClient = sqsClient;
+        this.s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject);
     }
 
     @Override
     public void send(CompactionJobIdAssignmentCommitRequest request) {
         LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
+        String json = s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request));
         sqsClient.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMessageBody(serDe.toJson(request))
+                .withMessageBody(json)
                 .withMessageGroupId(request.getTableId())
                 .withMessageDeduplicationId(UUID.randomUUID().toString()));
         LOGGER.debug("Submitted asynchronous request to assign compaction input files via state store committer queue");
