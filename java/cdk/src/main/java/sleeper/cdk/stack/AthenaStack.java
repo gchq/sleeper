@@ -43,7 +43,6 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -82,13 +81,64 @@ public class AthenaStack extends NestedStack {
 
         IKey spillMasterKey = createSpillMasterKey(this, instanceProperties);
 
+        createConnector("sleeper.athena.composite.SimpleCompositeHandler",
+                LambdaHandler.ATHENA_SIMPLE_COMPOSITE, LogGroupRef.SIMPLE_ATHENA_HANDLER,
+                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey);
+        createConnector("sleeper.athena.composite.IteratorApplyingCompositeHandler",
+                LambdaHandler.ATHENA_ITERATORS_COMPOSITE, LogGroupRef.ITERATOR_APPLYING_ATHENA_HANDLER,
+                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey);
+
+        Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    private static IKey createSpillMasterKey(Construct scope, InstanceProperties instanceProperties) {
+        String spillKeyArn = instanceProperties.get(ATHENA_SPILL_MASTER_KEY_ARN);
+        if (spillKeyArn == null) {
+            return Key.Builder.create(scope, "SpillMasterKey")
+                    .description("Key used to encrypt data in the Athena spill bucket for Sleeper.")
+                    .enableKeyRotation(true)
+                    .removalPolicy(RemovalPolicy.DESTROY)
+                    .pendingWindow(Duration.days(7))
+                    .build();
+        } else {
+            return Key.fromKeyArn(scope, "SpillMasterKey", spillKeyArn);
+        }
+    }
+
+    private void createConnector(
+            String className, LambdaHandler handler, LogGroupRef logGroupRef, InstanceProperties instanceProperties, CoreStacks coreStacks,
+            LambdaCode lambdaCode, IBucket jarsBucket, IBucket spillBucket, IKey spillMasterKey) {
+        if (!instanceProperties.getList(ATHENA_COMPOSITE_HANDLER_CLASSES).contains(className)) {
+            return;
+        }
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String simpleClassName = getSimpleClassName(className);
+
+        String functionName = String.join("-", "sleeper", instanceId, simpleClassName, "athena-handler");
+
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("spill_bucket", spillBucket.getBucketName());
         env.put("kms_key_id", spillMasterKey.getKeyId());
 
-        Integer memory = instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_MEMORY);
-        Integer timeout = instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS);
-        List<String> handlerClasses = instanceProperties.getList(ATHENA_COMPOSITE_HANDLER_CLASSES);
+        IFunction athenaCompositeHandler = lambdaCode.buildFunction(this, handler, simpleClassName + "AthenaCompositeHandler", builder -> builder
+                .functionName(functionName)
+                .memorySize(instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_MEMORY))
+                .timeout(Duration.seconds(instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS)))
+                .logGroup(coreStacks.getLogGroup(logGroupRef))
+                .environment(env));
+
+        CfnDataCatalog.Builder.create(this, simpleClassName + "AthenaDataCatalog")
+                .name(instanceId + simpleClassName + "SleeperConnector")
+                .description("Athena Connector for Sleeper")
+                .type("LAMBDA")
+                .parameters(Map.of("function", athenaCompositeHandler.getFunctionArn()))
+                .build();
+
+        jarsBucket.grantRead(athenaCompositeHandler);
+
+        coreStacks.grantReadTablesAndData(athenaCompositeHandler);
+        spillBucket.grantReadWrite(athenaCompositeHandler);
+        spillMasterKey.grant(athenaCompositeHandler, "kms:GenerateDataKey", "kms:DescribeKey");
 
         Policy listAllBucketsPolicy = Policy.Builder.create(this, "ListAllBucketsPolicy")
                 .statements(Lists.newArrayList(PolicyStatement.Builder.create()
@@ -112,69 +162,16 @@ public class AthenaStack extends NestedStack {
                         .build()))
                 .build();
 
-        for (String className : handlerClasses) {
-            IFunction handler = createConnector(className, instanceProperties, coreStacks, lambdaCode, env, memory, timeout);
+        IRole role = Objects.requireNonNull(athenaCompositeHandler.getRole());
+        // Required for when spill bucket changes
+        role.attachInlinePolicy(listAllBucketsPolicy);
 
-            jarsBucket.grantRead(handler);
+        // Required for when creating a encryption data key
+        role.attachInlinePolicy(keyGenerationPolicy);
 
-            coreStacks.grantReadTablesAndData(handler);
-            spillBucket.grantReadWrite(handler);
-            spillMasterKey.grant(handler, "kms:GenerateDataKey", "kms:DescribeKey");
-
-            IRole role = Objects.requireNonNull(handler.getRole());
-            // Required for when spill bucket changes
-            role.attachInlinePolicy(listAllBucketsPolicy);
-
-            // Required for when creating a encryption data key
-            role.attachInlinePolicy(keyGenerationPolicy);
-
-            // Allow our function to get the status of the query. Allowed to query all workgroups within this account
-            // and region
-            role.attachInlinePolicy(getAthenaQueryStatusPolicy);
-
-        }
-
-        Utils.addStackTagIfSet(this, instanceProperties);
-    }
-
-    private static IKey createSpillMasterKey(Construct scope, InstanceProperties instanceProperties) {
-        String spillKeyArn = instanceProperties.get(ATHENA_SPILL_MASTER_KEY_ARN);
-        if (spillKeyArn == null) {
-            return Key.Builder.create(scope, "SpillMasterKey")
-                    .description("Key used to encrypt data in the Athena spill bucket for Sleeper.")
-                    .enableKeyRotation(true)
-                    .removalPolicy(RemovalPolicy.DESTROY)
-                    .pendingWindow(Duration.days(7))
-                    .build();
-        } else {
-            return Key.fromKeyArn(scope, "SpillMasterKey", spillKeyArn);
-        }
-    }
-
-    private IFunction createConnector(
-            String className, InstanceProperties instanceProperties, CoreStacks coreStacks,
-            LambdaCode lambdaCode, Map<String, String> env, Integer memory, Integer timeout) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
-        String simpleClassName = getSimpleClassName(className);
-
-        String functionName = String.join("-", "sleeper", instanceId, simpleClassName, "athena-handler");
-        LambdaHandler handler = LambdaHandler.athenaHandlerForClass(className);
-
-        IFunction athenaCompositeHandler = lambdaCode.buildFunction(this, handler, simpleClassName + "AthenaCompositeHandler", builder -> builder
-                .functionName(functionName)
-                .memorySize(memory)
-                .timeout(Duration.seconds(timeout))
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
-                .environment(env));
-
-        CfnDataCatalog.Builder.create(this, simpleClassName + "AthenaDataCatalog")
-                .name(instanceId + simpleClassName + "SleeperConnector")
-                .description("Athena Connector for Sleeper")
-                .type("LAMBDA")
-                .parameters(Map.of("function", athenaCompositeHandler.getFunctionArn()))
-                .build();
-
-        return athenaCompositeHandler;
+        // Allow our function to get the status of the query. Allowed to query all workgroups within this account
+        // and region
+        role.attachInlinePolicy(getAthenaQueryStatusPolicy);
     }
 
     private static String getSimpleClassName(String className) {
