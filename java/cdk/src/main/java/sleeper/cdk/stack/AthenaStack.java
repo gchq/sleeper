@@ -43,6 +43,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -56,6 +57,7 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
+
     public AthenaStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks) {
         super(scope, id);
@@ -80,34 +82,21 @@ public class AthenaStack extends NestedStack {
                 coreStacks.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE), coreStacks.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE_PROVIDER));
 
         IKey spillMasterKey = createSpillMasterKey(this, instanceProperties);
+        List<Policy> connectorPolicies = createConnectorPolicies(this, instanceProperties);
 
         createConnector("sleeper.athena.composite.SimpleCompositeHandler",
                 LambdaHandler.ATHENA_SIMPLE_COMPOSITE, LogGroupRef.SIMPLE_ATHENA_HANDLER,
-                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey);
+                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey, connectorPolicies);
         createConnector("sleeper.athena.composite.IteratorApplyingCompositeHandler",
                 LambdaHandler.ATHENA_ITERATORS_COMPOSITE, LogGroupRef.ITERATOR_APPLYING_ATHENA_HANDLER,
-                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey);
+                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey, connectorPolicies);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private static IKey createSpillMasterKey(Construct scope, InstanceProperties instanceProperties) {
-        String spillKeyArn = instanceProperties.get(ATHENA_SPILL_MASTER_KEY_ARN);
-        if (spillKeyArn == null) {
-            return Key.Builder.create(scope, "SpillMasterKey")
-                    .description("Key used to encrypt data in the Athena spill bucket for Sleeper.")
-                    .enableKeyRotation(true)
-                    .removalPolicy(RemovalPolicy.DESTROY)
-                    .pendingWindow(Duration.days(7))
-                    .build();
-        } else {
-            return Key.fromKeyArn(scope, "SpillMasterKey", spillKeyArn);
-        }
-    }
-
     private void createConnector(
             String className, LambdaHandler handler, LogGroupRef logGroupRef, InstanceProperties instanceProperties, CoreStacks coreStacks,
-            LambdaCode lambdaCode, IBucket jarsBucket, IBucket spillBucket, IKey spillMasterKey) {
+            LambdaCode lambdaCode, IBucket jarsBucket, IBucket spillBucket, IKey spillMasterKey, List<Policy> connectorPolicies) {
         if (!instanceProperties.getList(ATHENA_COMPOSITE_HANDLER_CLASSES).contains(className)) {
             return;
         }
@@ -141,32 +130,48 @@ public class AthenaStack extends NestedStack {
         spillMasterKey.grant(athenaCompositeHandler, "kms:GenerateDataKey", "kms:DescribeKey");
 
         IRole role = Objects.requireNonNull(athenaCompositeHandler.getRole());
+        connectorPolicies.forEach(role::attachInlinePolicy);
+    }
 
-        // Required for when spill bucket changes
-        role.attachInlinePolicy(Policy.Builder.create(this, "ListAllBucketsPolicy")
-                .statements(Lists.newArrayList(PolicyStatement.Builder.create()
-                        .resources(Lists.newArrayList("*"))
-                        .actions(Lists.newArrayList("S3:ListAllMyBuckets"))
-                        .build()))
-                .build());
+    private static List<Policy> createConnectorPolicies(Construct scope, InstanceProperties instanceProperties) {
+        return List.of(
+                // Required when spill bucket changes
+                Policy.Builder.create(scope, "ListAllBucketsPolicy")
+                        .statements(Lists.newArrayList(PolicyStatement.Builder.create()
+                                .resources(Lists.newArrayList("*"))
+                                .actions(Lists.newArrayList("S3:ListAllMyBuckets"))
+                                .build()))
+                        .build(),
+                // Required for creating an encryption data key
+                Policy.Builder.create(scope, "KeyGenerationPolicy")
+                        .statements(Lists.newArrayList(PolicyStatement.Builder.create()
+                                .resources(Lists.newArrayList("*"))
+                                .actions(Lists.newArrayList("kms:GenerateRandom"))
+                                .build()))
+                        .build(),
+                // Allow connectors to get the status of the query. Allowed to query all workgroups within this account
+                // and region
+                Policy.Builder.create(scope, "GetAthenaQueryStatusPolicy")
+                        .statements(Lists.newArrayList(PolicyStatement.Builder.create()
+                                .resources(Lists.newArrayList("arn:aws:athena:" + instanceProperties.get(REGION) + ":"
+                                        + instanceProperties.get(ACCOUNT) + ":workgroup/*"))
+                                .actions(Lists.newArrayList("athena:getQueryExecution"))
+                                .build()))
+                        .build());
+    }
 
-        // Required for when creating a encryption data key
-        role.attachInlinePolicy(Policy.Builder.create(this, "KeyGenerationPolicy")
-                .statements(Lists.newArrayList(PolicyStatement.Builder.create()
-                        .resources(Lists.newArrayList("*"))
-                        .actions(Lists.newArrayList("kms:GenerateRandom"))
-                        .build()))
-                .build());
-
-        // Allow our function to get the status of the query. Allowed to query all workgroups within this account
-        // and region
-        role.attachInlinePolicy(Policy.Builder.create(this, "GetAthenaQueryStatusPolicy")
-                .statements(Lists.newArrayList(PolicyStatement.Builder.create()
-                        .resources(Lists.newArrayList("arn:aws:athena:" + instanceProperties.get(REGION) + ":"
-                                + instanceProperties.get(ACCOUNT) + ":workgroup/*"))
-                        .actions(Lists.newArrayList("athena:getQueryExecution"))
-                        .build()))
-                .build());
+    private static IKey createSpillMasterKey(Construct scope, InstanceProperties instanceProperties) {
+        String spillKeyArn = instanceProperties.get(ATHENA_SPILL_MASTER_KEY_ARN);
+        if (spillKeyArn == null) {
+            return Key.Builder.create(scope, "SpillMasterKey")
+                    .description("Key used to encrypt data in the Athena spill bucket for Sleeper.")
+                    .enableKeyRotation(true)
+                    .removalPolicy(RemovalPolicy.DESTROY)
+                    .pendingWindow(Duration.days(7))
+                    .build();
+        } else {
+            return Key.fromKeyArn(scope, "SpillMasterKey", spillKeyArn);
+        }
     }
 
     private static String getSimpleClassName(String className) {
