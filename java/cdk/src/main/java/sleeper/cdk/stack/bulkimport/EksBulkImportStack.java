@@ -269,7 +269,7 @@ public final class EksBulkImportStack extends NestedStack {
                                                                 .stateJson(deleteJobState).build()))
                                         .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
                                                 .create(this, "FailedJobState").cause("Spark job failed").build())))))
-                .logs(createStateMachineLogOptions(coreStacks, "EksBulkImportStateMachine"))
+                .logs(createStateMachineLogOptions(coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS_STATE_MACHINE)))
                 .build();
     }
 

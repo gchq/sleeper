@@ -68,10 +68,6 @@ public class CoreStacks {
         return loggingStack.getLogGroupByFunctionName(functionName);
     }
 
-    public ILogGroup getLogGroupByStateMachineId(String id) {
-        return loggingStack.getLogGroupByStateMachineId(id);
-    }
-
     public ILogGroup getLogGroupByEksClusterName(String clusterName) {
         return loggingStack.getLogGroupByEksClusterName(clusterName);
     }

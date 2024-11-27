@@ -51,10 +51,6 @@ public class LoggingStack extends NestedStack {
         return getLogGroupByNameWithPrefixes(functionName);
     }
 
-    public ILogGroup getLogGroupByStateMachineId(String id) {
-        return getLogGroupByNameWithPrefixes(addStateMachineNamePrefixes(id));
-    }
-
     public ILogGroup getLogGroupByEksClusterName(String clusterName) {
         return getLogGroupByNameWithPrefixes(clusterName);
     }
@@ -69,10 +65,6 @@ public class LoggingStack extends NestedStack {
                 .logGroupName(nameWithPrefixes)
                 .retention(Utils.getRetentionDays(instanceProperties.getInt(LOG_RETENTION_IN_DAYS)))
                 .build());
-    }
-
-    private String addStateMachineNamePrefixes(String shortName) {
-        return "/aws/vendedlogs/states/" + addNamePrefixes(shortName);
     }
 
     private String addNamePrefixes(String shortName) {

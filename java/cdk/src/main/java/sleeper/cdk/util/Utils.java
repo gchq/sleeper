@@ -42,7 +42,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -144,9 +143,9 @@ public class Utils {
                 .build());
     }
 
-    public static LogOptions createStateMachineLogOptions(CoreStacks coreStacks, String id) {
+    public static LogOptions createStateMachineLogOptions(ILogGroup logGroup) {
         return LogOptions.builder()
-                .destination(coreStacks.getLogGroupByStateMachineId(id))
+                .destination(logGroup)
                 .level(LogLevel.ALL)
                 .includeExecutionData(true)
                 .build();
