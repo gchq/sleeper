@@ -215,7 +215,7 @@ public class InMemoryCompaction {
         List<Record> records = new ArrayList<>();
         mergingIterator.forEachRemaining(record -> {
             records.add(record);
-            sketches.update(schema, record);
+            sketches.update(record);
         });
         dataStore.addFile(job.getOutputFile(), records);
         sketchesStore.addSketchForFile(job.getOutputFile(), sketches);
