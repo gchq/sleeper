@@ -91,14 +91,24 @@ public class SleeperScheduleRule {
     }
 
     /**
+     * Retrieves the list of all rule declarations.
+     *
+     * @return the rules
+     */
+    public static List<SleeperScheduleRule> all() {
+        return Collections.unmodifiableList(RULES);
+    }
+
+    /**
      * Streams through all CloudWatch rules for a given Sleeper instance.
      *
      * @param  properties the instance properties
      * @return            values for each CloudWatch rule property, containing rule names
      */
-    public static Stream<Value> getCloudWatchRules(InstanceProperties properties) {
+    public static Stream<InstanceRule> getDeployedRules(InstanceProperties properties) {
         return RULES.stream()
-                .map(rule -> rule.readValue(properties));
+                .map(rule -> rule.readValue(properties))
+                .filter(InstanceRule::isDeployed);
     }
 
     /**
@@ -107,7 +117,7 @@ public class SleeperScheduleRule {
      * @param  instanceId the instance ID
      * @return            default values for each CloudWatch rule property, with rule names derived from the instance ID
      */
-    public static Stream<Value> getCloudWatchRuleDefaults(String instanceId) {
+    public static Stream<InstanceRule> getDefaultRules(String instanceId) {
         return RULES.stream()
                 .map(rule -> rule.getDefault(instanceId));
     }
@@ -118,8 +128,8 @@ public class SleeperScheduleRule {
      * @param  properties the instance properties
      * @return            the value, containing rule names
      */
-    public Value readValue(InstanceProperties properties) {
-        return new Value(properties.get(property));
+    public InstanceRule readValue(InstanceProperties properties) {
+        return new InstanceRule(properties.get(property));
     }
 
     /**
@@ -138,8 +148,8 @@ public class SleeperScheduleRule {
      * @param  instanceId the instance ID
      * @return            the default value, containing rule names
      */
-    public Value getDefault(String instanceId) {
-        return new Value(buildRuleName(instanceId));
+    public InstanceRule getDefault(String instanceId) {
+        return new InstanceRule(buildRuleName(instanceId));
     }
 
     /**
@@ -162,34 +172,29 @@ public class SleeperScheduleRule {
     }
 
     /**
-     * A wrapper for the instance property value for this CloudWatch rule name.
+     * A wrapper for the instance property value for this CloudWatch rule.
      */
-    public class Value {
-        private final String propertyValue;
+    public class InstanceRule {
+        private final String ruleName;
 
-        private Value(String propertyValue) {
-            this.propertyValue = propertyValue;
+        private InstanceRule(String ruleName) {
+            this.ruleName = ruleName;
         }
 
-        /**
-         * Lists the CloudWatch rule names held in this property value.
-         *
-         * @return the rule names
-         */
-        public List<String> getRuleNames() {
-            if (propertyValue == null || propertyValue.isBlank()) {
-                return Collections.emptyList();
-            } else {
-                return List.of(propertyValue.split(","));
-            }
+        public boolean isDeployed() {
+            return ruleName != null && !ruleName.isBlank();
         }
 
-        public String getPropertyValue() {
-            return propertyValue;
+        public String getRuleName() {
+            return ruleName;
         }
 
         public InstanceProperty getProperty() {
             return property;
+        }
+
+        public SleeperScheduleRule getRule() {
+            return SleeperScheduleRule.this;
         }
     }
 

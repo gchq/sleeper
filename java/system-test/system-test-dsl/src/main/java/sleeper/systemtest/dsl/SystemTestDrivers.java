@@ -27,6 +27,7 @@ import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
+import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
@@ -130,4 +131,6 @@ public interface SystemTestDrivers {
     PurgeQueueDriver purgeQueues(SystemTestContext context);
 
     SnapshotsDriver snapshots();
+
+    ScheduleRulesDriver schedules();
 }

@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableFilePaths;
 
@@ -37,8 +36,8 @@ public class CompactionJobDispatchRequest {
     }
 
     public static CompactionJobDispatchRequest forTableWithBatchIdAtTime(
-            InstanceProperties instanceProperties, TableProperties tableProperties, String batchId, Instant timeNow) {
-        String batchKey = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)
+            TableProperties tableProperties, String batchId, Instant timeNow) {
+        String batchKey = TableFilePaths.buildObjectKeyInDataBucket(tableProperties)
                 .constructCompactionJobBatchPath(batchId);
         return new CompactionJobDispatchRequest(tableProperties.get(TABLE_ID), batchKey, timeNow);
     }

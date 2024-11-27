@@ -170,7 +170,7 @@ public class CompactionJobDispatcherTest {
 
     private CompactionJobDispatchRequest generateBatchRequestAtTime(String batchId, Instant timeNow) {
         return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
-                instanceProperties, tableProperties, batchId, timeNow);
+                tableProperties, batchId, timeNow);
     }
 
     private record BatchRequestMessage(CompactionJobDispatchRequest request, int delaySeconds) {

@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.testutil.drivers;
+package sleeper.systemtest.dsl.util;
 
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class InMemorySnapshotsDriver implements SnapshotsDriver {
-    public InMemorySnapshotsDriver() {
+import sleeper.core.deploy.SleeperScheduleRule;
+import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
+
+public class NoScheduleRulesDriver implements ScheduleRulesDriver {
+    public static final Logger LOGGER = LoggerFactory.getLogger(NoScheduleRulesDriver.class);
+
+    @Override
+    public void enableRule(SleeperScheduleRule.InstanceRule rule) {
+        LOGGER.info("Requested enabling rule: {}", rule.getRuleName());
     }
 
     @Override
-    public void enableCreation(InstanceProperties instanceProperties) {
-    }
-
-    @Override
-    public void disableCreation(InstanceProperties instanceProperties) {
+    public void disableRule(SleeperScheduleRule.InstanceRule rule) {
+        LOGGER.info("Requested disabling rule: {}", rule.getRuleName());
     }
 }

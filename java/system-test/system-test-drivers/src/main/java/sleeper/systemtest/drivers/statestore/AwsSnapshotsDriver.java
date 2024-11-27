@@ -32,7 +32,6 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import java.util.Optional;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_SNAPSHOT_CREATION_RULE;
 
 public class AwsSnapshotsDriver implements SnapshotsDriver {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsSnapshotsDriver.class);
@@ -40,20 +39,6 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
 
     public AwsSnapshotsDriver(SystemTestClients clients) {
         this.clients = clients;
-    }
-
-    @Override
-    public void enableCreation(InstanceProperties instanceProperties) {
-        LOGGER.info("Enabling transaction log snapshot creation");
-        clients.getCloudWatchEvents().enableRule(request -> request
-                .name(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));
-    }
-
-    @Override
-    public void disableCreation(InstanceProperties instanceProperties) {
-        LOGGER.info("Disabling transaction log snapshot creation");
-        clients.getCloudWatchEvents().disableRule(request -> request
-                .name(instanceProperties.get(TRANSACTION_LOG_SNAPSHOT_CREATION_RULE)));
     }
 
     @Override
