@@ -25,9 +25,8 @@ public class CompactionJobIdAssignmentCommitRequestTestHelper {
     }
 
     public static CompactionJobIdAssignmentCommitRequest requestToAssignFilesToJobs(List<CompactionJob> jobs, String tableId) {
-        return new CompactionJobIdAssignmentCommitRequest(jobs.stream()
+        return CompactionJobIdAssignmentCommitRequest.tableRequests(tableId, jobs.stream()
                 .map(job -> job.createAssignJobIdRequest())
-                .collect(Collectors.toList()),
-                tableId);
+                .collect(Collectors.toList()));
     }
 }

@@ -72,6 +72,10 @@ public class LambdaHandler {
             .jar(LambdaJar.COMPACTION_JOB_CREATOR)
             .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
             .optionalStack(OptionalStack.CompactionStack).add();
+    public static final LambdaHandler COMPACTION_JOB_DISPATCHER = builder()
+            .jar(LambdaJar.COMPACTION_JOB_CREATOR)
+            .handler("sleeper.compaction.job.creation.lambda.CompactionJobDispatchLambda::handleRequest")
+            .optionalStack(OptionalStack.CompactionStack).add();
     public static final LambdaHandler COMPACTION_TASK_CREATOR = builder()
             .jar(LambdaJar.COMPACTION_TASK_CREATOR)
             .handler("sleeper.compaction.task.creation.RunCompactionTasksLambda::eventHandler")

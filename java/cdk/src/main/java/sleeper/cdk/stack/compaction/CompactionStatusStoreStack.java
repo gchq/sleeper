@@ -16,21 +16,96 @@
 package sleeper.cdk.stack.compaction;
 
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.RemovalPolicy;
+import software.amazon.awscdk.services.dynamodb.Attribute;
+import software.amazon.awscdk.services.dynamodb.AttributeType;
+import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.Table;
+import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 
-public class CompactionStatusStoreStack extends NestedStack {
-    private final CompactionStatusStoreResources resources;
+import static sleeper.cdk.util.Utils.removalPolicy;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+
+public class CompactionStatusStoreStack extends NestedStack implements CompactionStatusStoreResources {
+    private final Table updatesTable;
+    private final Table jobsTable;
+    private final Table tasksTable;
 
     public CompactionStatusStoreStack(
             Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
-        resources = CompactionStatusStoreResources.from(this, instanceProperties, policiesStack);
+        String instanceId = instanceProperties.get(ID);
+
+        RemovalPolicy removalPolicy = removalPolicy(instanceProperties);
+
+        updatesTable = Table.Builder
+                .create(this, "DynamoDBCompactionJobUpdatesTable")
+                .tableName(DynamoDBCompactionJobStatusStore.jobUpdatesTableName(instanceId))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBCompactionJobStatusStore.TABLE_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBCompactionJobStatusStore.JOB_ID_AND_UPDATE)
+                        .type(AttributeType.STRING)
+                        .build())
+                .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
+                .pointInTimeRecovery(false)
+                .build();
+
+        jobsTable = Table.Builder
+                .create(this, "DynamoDBCompactionJobLookupTable")
+                .tableName(DynamoDBCompactionJobStatusStore.jobLookupTableName(instanceId))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBCompactionJobStatusStore.JOB_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
+                .pointInTimeRecovery(false)
+                .build();
+
+        tasksTable = Table.Builder
+                .create(this, "DynamoDBCompactionTaskStatusTable")
+                .tableName(DynamoDBCompactionTaskStatusStore.taskStatusTableName(instanceId))
+                .removalPolicy(removalPolicy)
+                .billingMode(BillingMode.PAY_PER_REQUEST)
+                .partitionKey(Attribute.builder()
+                        .name(DynamoDBCompactionTaskStatusFormat.TASK_ID)
+                        .type(AttributeType.STRING)
+                        .build())
+                .sortKey(Attribute.builder()
+                        .name(DynamoDBCompactionTaskStatusFormat.UPDATE_TIME)
+                        .type(AttributeType.NUMBER)
+                        .build())
+                .timeToLiveAttribute(DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE)
+                .pointInTimeRecovery(false)
+                .build();
+
+        grantWriteJobEvent(policiesStack.getInvokeCompactionPolicyForGrants());
+        updatesTable.grantReadData(policiesStack.getReportingPolicyForGrants());
+        jobsTable.grantReadData(policiesStack.getReportingPolicyForGrants());
+        tasksTable.grantReadData(policiesStack.getReportingPolicyForGrants());
     }
 
-    public CompactionStatusStoreResources getResources() {
-        return resources;
+    @Override
+    public void grantWriteJobEvent(IGrantable grantee) {
+        updatesTable.grantWriteData(grantee);
+        jobsTable.grantWriteData(grantee);
+    }
+
+    @Override
+    public void grantWriteTaskEvent(IGrantable grantee) {
+        tasksTable.grantWriteData(grantee);
     }
 }

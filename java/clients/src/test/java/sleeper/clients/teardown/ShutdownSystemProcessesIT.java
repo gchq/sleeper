@@ -144,7 +144,7 @@ class ShutdownSystemProcessesIT {
             properties.set(PARTITION_SPLITTING_CLOUDWATCH_RULE, "test-partition-splitting-rule");
             properties.set(GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "test-garbage-collector-rule");
             properties.set(INGEST_CLOUDWATCH_RULE, "test-ingest-task-creation-rule");
-            properties.set(TABLE_METRICS_RULE, "test-table-metrics-rule-1,test-table-metrics-rule-2");
+            properties.set(TABLE_METRICS_RULE, "test-table-metrics-rule");
 
             stubFor(disableRuleRequest()
                     .willReturn(aResponse().withStatus(200)));
@@ -153,14 +153,13 @@ class ShutdownSystemProcessesIT {
             shutdown();
 
             // Then
-            verify(7, anyRequestedForCloudWatchEvents());
+            verify(6, anyRequestedForCloudWatchEvents());
             verify(1, disableRuleRequestedFor("test-compaction-job-creation-rule"));
             verify(1, disableRuleRequestedFor("test-compaction-task-creation-rule"));
             verify(1, disableRuleRequestedFor("test-partition-splitting-rule"));
             verify(1, disableRuleRequestedFor("test-garbage-collector-rule"));
             verify(1, disableRuleRequestedFor("test-ingest-task-creation-rule"));
-            verify(1, disableRuleRequestedFor("test-table-metrics-rule-1"));
-            verify(1, disableRuleRequestedFor("test-table-metrics-rule-2"));
+            verify(1, disableRuleRequestedFor("test-table-metrics-rule"));
         }
     }
 
