@@ -61,12 +61,21 @@ public class SplitPointsTestHelperTest {
     }
 
     private PartitionTree createPartitionTreeWithRecordsPerPartition(int recordsPerPartition, List<Record> records, Schema schema) {
+        return createPartitionTreeWithRecordsPerPartition(recordsPerPartition, records::get, records.size(), schema);
+    }
+
+    public PartitionTree createPartitionTreeWithRecordsPerPartition(int recordsPerPartition, NthRecordGenerator nthRecordGenerator, int totalRecords, Schema schema) {
         List<Object> splitPoints = new ArrayList<>();
         Field splitField = schema.getRowKeyFields().get(0);
-        for (int i = recordsPerPartition; i < records.size(); i += recordsPerPartition) {
-            splitPoints.add(records.get(i).get(splitField.getName()));
+
+        for (int i = recordsPerPartition; i < totalRecords; i += recordsPerPartition) {
+            splitPoints.add(nthRecordGenerator.getNthRecord(i).get(splitField.getName()));
         }
         return PartitionsFromSplitPoints.treeFrom(schema, splitPoints);
     }
 
+    @FunctionalInterface
+    public interface NthRecordGenerator {
+        Record getNthRecord(int n);
+    }
 }
