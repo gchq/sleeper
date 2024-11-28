@@ -102,6 +102,8 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(record1, record2);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
         }
 
         @Test
@@ -124,6 +126,8 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(record1, record2);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
         }
 
         @Test
@@ -146,6 +150,8 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(record1, record2);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
         }
 
         @Test
@@ -168,6 +174,8 @@ public class RustCompactionRunnerIT {
             assertThat(summary.getRecordsWritten()).isEqualTo(2);
             assertThat(readDataFile(schema, job.getOutputFile()))
                     .containsExactly(record1, record2);
+            assertThat(SketchesDeciles.from(readSketches(schema, job.getOutputFile())))
+                    .isEqualTo(SketchesDeciles.from(schema, List.of(record1, record2)));
         }
     }
 
@@ -257,7 +265,7 @@ public class RustCompactionRunnerIT {
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema)) {
             for (Record record : records) {
                 writer.write(record);
-                sketches.update(schema, record);
+                sketches.update(record);
             }
         }
         org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(dataFile);

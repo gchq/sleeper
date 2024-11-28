@@ -68,12 +68,12 @@ public class FindPartitionSplitPoint {
         }
     }
 
-    private <T> Optional<T> splitPointForField(Field field, int dimension) {
-        ItemsSketch<T> sketch = unionSketches(field);
-        Comparator<T> comparator = Sketches.createComparator(field.getType());
-        T min = sketch.getMinValue();
-        T median = sketch.getQuantile(0.5D);
-        T max = sketch.getMaxValue();
+    private Optional<Object> splitPointForField(Field field, int dimension) {
+        ItemsSketch sketch = unionSketches(field);
+        Comparator comparator = Sketches.createComparator(field.getType());
+        Object min = Sketches.readValueFromSketchWithWrappedBytes(sketch.getMinValue(), field);
+        Object median = Sketches.readValueFromSketchWithWrappedBytes(sketch.getQuantile(0.5D), field);
+        Object max = Sketches.readValueFromSketchWithWrappedBytes(sketch.getMaxValue(), field);
         LOGGER.debug("Min = {}, median = {}, max = {}", min, median, max);
         if (comparator.compare(min, max) > 0) {
             throw new IllegalStateException("Min > max");
