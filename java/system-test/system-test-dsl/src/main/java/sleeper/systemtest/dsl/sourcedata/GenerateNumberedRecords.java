@@ -20,6 +20,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,8 +53,12 @@ public class GenerateNumberedRecords {
         return numbers.mapToObj(this::generateRecord);
     }
 
+    public Iterator<Record> iteratorFrom(LongStream numbers) {
+        return streamFrom(numbers).iterator();
+    }
+
     public Iterable<Record> iterableFrom(LongStream numbers) {
-        return () -> streamFrom(numbers).iterator();
+        return () -> iteratorFrom(numbers);
     }
 
     public Record generateRecord(long number) {
