@@ -52,6 +52,10 @@ public class GenerateNumberedRecords {
         return numbers.mapToObj(this::numberedRecord);
     }
 
+    public Iterable<Record> iterableOf(LongStream numbers) {
+        return () -> generate(numbers).iterator();
+    }
+
     public Record numberedRecord(long number) {
         return new Record(mapForNumber(number));
     }
