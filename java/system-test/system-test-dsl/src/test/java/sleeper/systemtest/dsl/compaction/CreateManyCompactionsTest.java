@@ -18,13 +18,17 @@ package sleeper.systemtest.dsl.compaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
 
@@ -39,6 +43,9 @@ public class CreateManyCompactionsTest {
     @Test
     void shouldCreateLargeQuanitiesOfCompactionJobsAtOnce(SleeperSystemTest sleeper) throws Exception {
         // Given
+        sleeper.updateTableProperties(Map.of(
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2"));
         sleeper.partitioning().setPartitions(
                 createPartitionTreeWithRecordsPerPartitionAndTotal(10, 10240, sleeper));
         sleeper.sourceFiles().inDataBucket().writeSketches()
@@ -50,7 +57,7 @@ public class CreateManyCompactionsTest {
 
         // When
         sleeper.compaction()
-                .forceCreateJobs(1024)
+                .createJobs(1024)
                 .invokeTasks(1).waitForJobs();
 
         // Then
