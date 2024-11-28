@@ -30,9 +30,11 @@ public class BulkExportQuery {
         exportId = builder.exportId != null ? builder.exportId : UUID.randomUUID().toString();
 
         if (builder.tableId == null && builder.tableName == null) {
-            throw new BulkExportQueryValidationException(exportId, "tableId or tableName field must be provided");
+            throw new BulkExportQueryValidationException(
+                    builder.exportId, "tableId or tableName field must be provided");
         } else if (builder.tableId != null && builder.tableName != null) {
-            throw new BulkExportQueryValidationException(exportId,
+            throw new BulkExportQueryValidationException(
+                    builder.exportId,
                     "tableId or tableName field must be provided, not both");
         } else {
             tableId = builder.tableId;
