@@ -161,11 +161,11 @@ public class SleeperSystemTest {
     }
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {
-        return context.instance().numberedRecords().iterableOf(numbers);
+        return context.instance().numberedRecords().iterableFrom(numbers);
     }
 
     public Iterable<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return context.instance().numberedRecords(schema).iterableOf(numbers);
+        return context.instance().numberedRecords(schema).iterableFrom(numbers);
     }
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {

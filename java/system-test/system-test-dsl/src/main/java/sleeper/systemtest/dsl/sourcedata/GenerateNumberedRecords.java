@@ -52,7 +52,7 @@ public class GenerateNumberedRecords {
         return numbers.mapToObj(this::numberedRecord);
     }
 
-    public Iterable<Record> iterableOf(LongStream numbers) {
+    public Iterable<Record> iterableFrom(LongStream numbers) {
         return () -> generate(numbers).iterator();
     }
 
