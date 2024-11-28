@@ -47,11 +47,11 @@ public class SplitPointsTestHelperTest {
         // Then
         assertThat(PartitionsPrinter.printPartitions(schema, tree))
                 .isEqualTo("""
-                        Partition at LL:
+                        Leaf partition at LL:
                         {"key":{"min":-2147483648,"minInclusive":true,"max":20,"maxInclusive":false},"stringsBase64Encoded":true}
-                        Partition at LR:
+                        Leaf partition at LR:
                         {"key":{"min":20,"minInclusive":true,"max":30,"maxInclusive":false},"stringsBase64Encoded":true}
-                        Partition at R:
+                        Leaf partition at R:
                         {"key":{"min":30,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
                         Partition at L:
                         {"key":{"min":-2147483648,"minInclusive":true,"max":30,"maxInclusive":false},"stringsBase64Encoded":true}
