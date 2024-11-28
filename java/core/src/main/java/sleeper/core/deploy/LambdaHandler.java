@@ -180,17 +180,6 @@ public class LambdaHandler {
         return Collections.unmodifiableList(ALL);
     }
 
-    /**
-     * Returns the Athena lambda handler with the given class name.
-     *
-     * @param  className the class name
-     * @return           the definition
-     */
-    public static LambdaHandler athenaHandlerForClass(String className) {
-        return Objects.requireNonNull(ATHENA_HANDLER_BY_CLASSNAME.get(className),
-                "No lambda handler found for Athena with the given class name");
-    }
-
     public static Builder builder() {
         return new Builder();
     }

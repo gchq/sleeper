@@ -25,6 +25,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -57,13 +58,13 @@ public class PropertiesStack extends NestedStack {
                 .memorySize(2048)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .description("Lambda for writing instance properties to S3 upon initialisation and teardown")
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.PROPERTIES_WRITER)));
 
         coreStacks.grantWriteInstanceConfig(propertiesWriterLambda);
 
         Provider propertiesWriterProvider = Provider.Builder.create(this, "PropertiesWriterProvider")
                 .onEventHandler(propertiesWriterLambda)
-                .logGroup(coreStacks.getProviderLogGroupByFunctionName(functionName))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.PROPERTIES_WRITER_PROVIDER))
                 .build();
 
         CustomResource.Builder.create(this, "InstanceProperties")

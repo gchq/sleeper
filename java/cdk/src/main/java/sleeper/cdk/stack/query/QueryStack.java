@@ -52,6 +52,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -126,24 +127,17 @@ public class QueryStack extends NestedStack {
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
-    private IFunction createFunction(
-            String id, CoreStacks coreStacks, InstanceProperties instanceProperties, LambdaCode lambdaCode, LambdaHandler handler,
-            String functionName, String description) {
-        return lambdaCode.buildFunction(this, handler, id, builder -> builder
-                .functionName(functionName)
-                .description(description)
-                .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
-    }
-
     private IFunction setupQueryExecutorLambda(CoreStacks coreStacks, QueryQueueStack queryQueueStack, InstanceProperties instanceProperties, LambdaCode lambdaCode,
             IBucket jarsBucket, ITable queryTrackingTable) {
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-executor");
-        IFunction lambda = createFunction("QueryExecutorLambda", coreStacks, instanceProperties, lambdaCode, LambdaHandler.QUERY_EXECUTOR, functionName,
-                "When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries");
+        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.QUERY_EXECUTOR, "QueryExecutorLambda", builder -> builder
+                .functionName(functionName)
+                .description("When a query arrives on the query SQS queue, this lambda is invoked to look for leaf partition queries")
+                .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.QUERY_EXECUTOR)));
 
         attachPolicy(lambda, "Query");
 
@@ -180,8 +174,13 @@ public class QueryStack extends NestedStack {
         IBucket queryResultsBucket = setupResultsBucket(instanceProperties, coreStacks, lambdaCode);
         String leafQueryFunctionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "query-leaf-partition");
-        IFunction lambda = createFunction("QueryLeafPartitionExecutorLambda", coreStacks, instanceProperties, lambdaCode, LambdaHandler.QUERY_LEAF_PARTITION, leafQueryFunctionName,
-                "When a query arrives on the query SQS queue, this lambda is invoked to execute the query");
+        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.QUERY_LEAF_PARTITION, "QueryLeafPartitionExecutorLambda", builder -> builder
+                .functionName(leafQueryFunctionName)
+                .description("When a query arrives on the query SQS queue, this lambda is invoked to execute the query")
+                .memorySize(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.QUERY_LEAF_PARTITION)));
 
         attachPolicy(lambda, "LeafPartition");
         setPermissionsForLambda(coreStacks, jarsBucket, lambda, queryTrackingTable, leafPartitionQueryQueue, queryResultsQueue, queryResultsBucket);
@@ -320,7 +319,8 @@ public class QueryStack extends NestedStack {
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET, resultsBucket.getBucketName());
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, lambdaCode, resultsBucket, bucketName);
+            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode, resultsBucket, bucketName,
+                    coreStacks.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE), coreStacks.getLogGroup(LogGroupRef.QUERY_RESULTS_AUTODELETE_PROVIDER));
         }
 
         return resultsBucket;

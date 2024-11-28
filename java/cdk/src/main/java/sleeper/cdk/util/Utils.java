@@ -42,7 +42,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -137,17 +136,16 @@ public class Utils {
                 .replace(".", "-");
     }
 
-    public static LogDriver createECSContainerLogDriver(CoreStacks coreStacks, String id) {
-        ILogGroup logGroup = coreStacks.getLogGroupByECSLogDriverId(id);
+    public static LogDriver createECSContainerLogDriver(ILogGroup logGroup) {
         return LogDriver.awsLogs(AwsLogDriverProps.builder()
                 .streamPrefix(logGroup.getLogGroupName())
                 .logGroup(logGroup)
                 .build());
     }
 
-    public static LogOptions createStateMachineLogOptions(CoreStacks coreStacks, String id) {
+    public static LogOptions createStateMachineLogOptions(ILogGroup logGroup) {
         return LogOptions.builder()
-                .destination(coreStacks.getLogGroupByStateMachineId(id))
+                .destination(logGroup)
                 .level(LogLevel.ALL)
                 .includeExecutionData(true)
                 .build();

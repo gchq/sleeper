@@ -25,6 +25,7 @@ import software.amazon.awscdk.services.ecs.OperatingSystemFamily;
 import software.amazon.awscdk.services.ecs.RuntimePlatform;
 
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.configuration.CompactionTaskRequirements;
 import sleeper.core.ContainerConstants;
@@ -81,7 +82,7 @@ public class CompactionOnFargateResources {
                 .environment(environment)
                 .cpu(requirements.getCpu())
                 .memoryLimitMiB(requirements.getMemoryLimitMiB())
-                .logging(Utils.createECSContainerLogDriver(coreStacks, "FargateCompactionTasks"))
+                .logging(Utils.createECSContainerLogDriver(coreStacks.getLogGroup(LogGroupRef.COMPACTION_TASKS_FARGATE)))
                 .build();
     }
 }
