@@ -1,18 +1,18 @@
-Partition at LLL:
+Leaf partition at LLL:
 {"key":{"min":-9223372036854775808,"minInclusive":true,"max":12,"maxInclusive":false},"stringsBase64Encoded":true}
-Partition at LLR:
+Leaf partition at LLR:
 {"key":{"min":12,"minInclusive":true,"max":25,"maxInclusive":false},"stringsBase64Encoded":true}
-Partition at LRL:
+Leaf partition at LRL:
 {"key":{"min":25,"minInclusive":true,"max":37,"maxInclusive":false},"stringsBase64Encoded":true}
-Partition at LRR:
+Leaf partition at LRR:
 {"key":{"min":37,"minInclusive":true,"max":50,"maxInclusive":false},"stringsBase64Encoded":true}
-Partition at RLL:
+Leaf partition at RLL:
 {"key":{"min":50,"minInclusive":true,"max":62,"maxInclusive":false},"stringsBase64Encoded":true}
-Partition at RLR:
+Leaf partition at RLR:
 {"key":{"min":62,"minInclusive":true,"max":75,"maxInclusive":false},"stringsBase64Encoded":true}
-Partition at RRL:
+Leaf partition at RRL:
 {"key":{"min":75,"minInclusive":true,"max":87,"maxInclusive":false},"stringsBase64Encoded":true}
-Partition at RRR:
+Leaf partition at RRR:
 {"key":{"min":87,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
 Partition at LL:
 {"key":{"min":-9223372036854775808,"minInclusive":true,"max":25,"maxInclusive":false},"stringsBase64Encoded":true}
