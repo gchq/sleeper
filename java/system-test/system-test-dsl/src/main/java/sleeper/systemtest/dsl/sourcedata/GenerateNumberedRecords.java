@@ -35,6 +35,10 @@ public class GenerateNumberedRecords {
         this.schema = schema;
     }
 
+    public static GenerateNumberedRecords from(Schema schema, GenerateNumberedValueOverrides overrides) {
+        return new GenerateNumberedRecords(configureOverrides(overrides), schema);
+    }
+
     public static Stream<Record> from(Schema schema, GenerateNumberedValueOverrides overrides, LongStream numbers) {
         return new GenerateNumberedRecords(configureOverrides(overrides), schema).generate(numbers);
     }
@@ -48,11 +52,11 @@ public class GenerateNumberedRecords {
                 .orElseGet(() -> GenerateNumberedValue.forField(keyType, field));
     }
 
-    private Stream<Record> generate(LongStream numbers) {
+    public Stream<Record> generate(LongStream numbers) {
         return numbers.mapToObj(this::numberedRecord);
     }
 
-    private Record numberedRecord(long number) {
+    public Record numberedRecord(long number) {
         return new Record(mapForNumber(number));
     }
 

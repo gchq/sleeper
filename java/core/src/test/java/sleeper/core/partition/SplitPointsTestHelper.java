@@ -43,10 +43,10 @@ public class SplitPointsTestHelper {
      * @param  schema              the schema
      * @return                     the partition tree
      */
-    public static PartitionTree createPartitionTreeWithRecordsPerPartitionAndTotal(int recordsPerPartition, int totalRecords, NthRecordGenerator generator, Schema schema) {
+    public static PartitionTree createPartitionTreeWithRecordsPerPartitionAndTotal(int recordsPerPartition, long totalRecords, NthRecordGenerator generator, Schema schema) {
         List<Object> splitPoints = new ArrayList<>();
         Field splitField = schema.getRowKeyFields().get(0);
-        for (int i = recordsPerPartition; i < totalRecords; i += recordsPerPartition) {
+        for (long i = recordsPerPartition; i < totalRecords; i += recordsPerPartition) {
             splitPoints.add(generator.getNthRecord(i).get(splitField.getName()));
         }
         return PartitionsFromSplitPoints.treeFrom(schema, splitPoints);
@@ -65,6 +65,6 @@ public class SplitPointsTestHelper {
          * @param  n the index of the record, starting from 0
          * @return   the record
          */
-        Record getNthRecord(int n);
+        Record getNthRecord(long n);
     }
 }

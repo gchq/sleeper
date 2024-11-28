@@ -35,6 +35,7 @@ import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
@@ -153,6 +154,10 @@ public class SleeperSystemTest {
 
     public void setGeneratorOverrides(GenerateNumberedValueOverrides overrides) {
         context.instance().setGeneratorOverrides(overrides);
+    }
+
+    public GenerateNumberedRecords generateNumberedRecords() {
+        return context.instance().generateNumberedRecords();
     }
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {

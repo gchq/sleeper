@@ -170,6 +170,10 @@ public class SystemTestInstanceContext {
         return currentTables().getStateStoreProvider();
     }
 
+    public GenerateNumberedRecords generateNumberedRecords() {
+        return GenerateNumberedRecords.from(currentTables().getSchema(), generatorOverrides);
+    }
+
     public Stream<Record> generateNumberedRecords(LongStream numbers) {
         return generateNumberedRecords(currentTables().getSchema(), numbers);
     }

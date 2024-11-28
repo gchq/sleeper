@@ -60,6 +60,8 @@ public class SplitPointsTestHelperTest {
     }
 
     private PartitionTree createPartitionTreeWithRecordsPerPartition(int recordsPerPartition, List<Record> records, Schema schema) {
-        return createPartitionTreeWithRecordsPerPartitionAndTotal(recordsPerPartition, records.size(), records::get, schema);
+        return createPartitionTreeWithRecordsPerPartitionAndTotal(recordsPerPartition, records.size(),
+                index -> records.get((int) index),
+                schema);
     }
 }
