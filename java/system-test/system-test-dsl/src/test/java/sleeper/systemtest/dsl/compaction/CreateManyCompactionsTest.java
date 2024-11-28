@@ -41,7 +41,7 @@ public class CreateManyCompactionsTest {
     }
 
     @Test
-    void shouldCreateLargeQuanitiesOfCompactionJobsAtOnce(SleeperSystemTest sleeper) throws Exception {
+    void shouldCreateLargeQuantitiesOfCompactionJobsAtOnce(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
