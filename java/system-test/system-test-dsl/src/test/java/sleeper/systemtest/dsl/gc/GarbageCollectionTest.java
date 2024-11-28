@@ -49,7 +49,7 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStri
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
-import static sleeper.systemtest.dsl.testutil.PartitionsTestHelper.partitionsBuilder;
+import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.partitionsBuilder;
 
 @InMemoryDslTest
 public class GarbageCollectionTest {

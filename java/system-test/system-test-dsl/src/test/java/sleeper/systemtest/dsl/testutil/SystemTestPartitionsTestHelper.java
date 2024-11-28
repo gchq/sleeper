@@ -29,9 +29,9 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 
-public class PartitionsTestHelper {
+public class SystemTestPartitionsTestHelper {
 
-    private PartitionsTestHelper() {
+    private SystemTestPartitionsTestHelper() {
     }
 
     public static PartitionTree create2StringPartitions(SleeperSystemTest sleeper) {

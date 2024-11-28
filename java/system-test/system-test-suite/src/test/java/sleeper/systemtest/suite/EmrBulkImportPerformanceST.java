@@ -34,7 +34,7 @@ import static sleeper.systemtest.configuration.SystemTestIngestMode.GENERATE_ONL
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
-import static sleeper.systemtest.dsl.testutil.PartitionsTestHelper.create512StringPartitions;
+import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.create512StringPartitions;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERFORMANCE;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
 
