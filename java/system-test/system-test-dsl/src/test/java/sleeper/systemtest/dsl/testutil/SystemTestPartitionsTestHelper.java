@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.testutil;
 
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionTreeTestHelper;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
@@ -59,6 +60,13 @@ public class SystemTestPartitionsTestHelper {
 
     private static PartitionTree createPartitionsFromSplitPoints(Schema schema, List<Object> splitPoints) {
         return new PartitionTree(new PartitionsFromSplitPoints(schema, splitPoints).construct());
+    }
+
+    public static PartitionTree createPartitionTreeWithRecordsPerPartitionAndTotal(int recordsPerPartition, int totalRecords, SleeperSystemTest sleeper) {
+        return PartitionTreeTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal(
+                recordsPerPartition, totalRecords,
+                sleeper.generateNumberedRecords()::numberedRecord,
+                sleeper.tableProperties().getSchema());
     }
 
     private static List<Object> readStringSplitPoints(Path file) {

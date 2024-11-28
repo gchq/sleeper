@@ -24,13 +24,14 @@
     "org.mockito.Mockito.*",
     "org.mockito.ArgumentMatchers.*",
     "org.mockito.Answers.*",
-    "sleeper.core.partition.SplitPointsTestHelper.*",
+    "sleeper.core.partition.PartitionTreeTestHelper.*",
     "sleeper.core.schema.SchemaTestHelper.*",
     "sleeper.core.statestore.inmemory.StateStoreTestHelper.*",
     "sleeper.configuration.properties.InstancePropertiesTestHelper.*",
     "sleeper.configuration.properties.table.TablePropertiesTestHelper.*",
     "sleeper.core.util.ExponentialBackoffWithJitterTestHelper.*",
-    "sleeper.core.testutils.SupplierTestHelper.*"
+    "sleeper.core.testutils.SupplierTestHelper.*",
+    "sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.*"
   ],
   "comment.java.configuration.runtimes": [
     {
