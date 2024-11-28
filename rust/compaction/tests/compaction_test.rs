@@ -15,6 +15,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     let file_1 = file(&dir, "file1.parquet");
     let file_2 = file(&dir, "file2.parquet");
     let output = file(&dir, "output.parquet");
+    let sketches = file(&dir, "output.sketches");
     write_file_of_ints(&file_1, "key", vec![1, 3])?;
     write_file_of_ints(&file_2, "key", vec![2, 4])?;
 
@@ -32,6 +33,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 3, 4]);
     assert_eq!([result.rows_read, result.rows_written], [4, 4]);
+    assert_eq!(read_sketch_min_max_ints(&sketches)?, [1, 4]);
     Ok(())
 }
 
@@ -42,6 +44,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     let file_1 = file(&dir, "file1.parquet");
     let file_2 = file(&dir, "file2.parquet");
     let output = file(&dir, "output.parquet");
+    let sketches = file(&dir, "output.sketches");
     write_file_of_ints(&file_1, "key", vec![1, 2])?;
     write_file_of_ints(&file_2, "key", vec![2, 3])?;
 
@@ -59,6 +62,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![1, 2, 2, 3]);
     assert_eq!([result.rows_read, result.rows_written], [4, 4]);
+    assert_eq!(read_sketch_min_max_ints(&sketches)?, [1, 3]);
     Ok(())
 }
 
@@ -69,6 +73,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     let file_1 = file(&dir, "file1.parquet");
     let file_2 = file(&dir, "file2.parquet");
     let output = file(&dir, "output.parquet");
+    let sketches = file(&dir, "output.sketches");
     write_file_of_ints(&file_1, "key", vec![1, 2])?;
     write_file_of_ints(&file_2, "key", vec![3, 4])?;
 
@@ -86,6 +91,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     // Then
     assert_eq!(read_file_of_ints(&output, "key")?, vec![2, 3]);
     assert_eq!([result.rows_read, result.rows_written], [2, 2]);
+    assert_eq!(read_sketch_min_max_ints(&sketches)?, [2, 3]);
     Ok(())
 }
 
@@ -96,6 +102,7 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
     let file_1 = file(&dir, "file1.parquet");
     let file_2 = file(&dir, "file2.parquet");
     let output = file(&dir, "output.parquet");
+    let sketches = file(&dir, "output.sketches");
     let schema = Arc::new(Schema::new(vec![
         Field::new("key1", DataType::Int32, false),
         Field::new("key2", DataType::Int32, false),
@@ -125,5 +132,6 @@ async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Erro
         vec![[2, 22], [3, 13]]
     );
     assert_eq!([result.rows_read, result.rows_written], [2, 2]);
+    assert_eq!(read_sketch_min_max_ints(&sketches)?, [2, 3]);
     Ok(())
 }

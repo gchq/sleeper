@@ -136,7 +136,7 @@ public class RustCompactionRunnerLocalStackIT {
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, configuration)) {
             for (Record record : records) {
                 writer.write(record);
-                sketches.update(schema, record);
+                sketches.update(record);
             }
         }
         org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(dataFile);
