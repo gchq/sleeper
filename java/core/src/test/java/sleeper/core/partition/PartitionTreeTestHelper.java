@@ -25,9 +25,9 @@ import java.util.List;
 /**
  * A test helper for creating partitions based on split points.
  */
-public class SplitPointsTestHelper {
+public class PartitionTreeTestHelper {
 
-    private SplitPointsTestHelper() {
+    private PartitionTreeTestHelper() {
     }
 
     /**

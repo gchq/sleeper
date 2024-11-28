@@ -26,10 +26,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.partition.SplitPointsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
+import static sleeper.core.partition.PartitionTreeTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class SplitPointsTestHelperTest {
+public class PartitionTreeTestHelperTest {
 
     @Test
     void shouldCreateSplitPointsFromRecordRangeAndRecordsPerPartition() {

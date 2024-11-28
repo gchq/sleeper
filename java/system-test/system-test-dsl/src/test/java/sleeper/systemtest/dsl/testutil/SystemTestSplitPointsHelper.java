@@ -16,7 +16,7 @@
 package sleeper.systemtest.dsl.testutil;
 
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.partition.SplitPointsTestHelper;
+import sleeper.core.partition.PartitionTreeTestHelper;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 
 public class SystemTestSplitPointsHelper {
@@ -25,7 +25,7 @@ public class SystemTestSplitPointsHelper {
     }
 
     public static PartitionTree createPartitionTreeWithRecordsPerPartitionAndTotal(SleeperSystemTest sleeper, int recordsPerPartition, int totalRecords) {
-        return SplitPointsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal(recordsPerPartition, totalRecords, sleeper.generateNumberedRecords()::numberedRecord,
+        return PartitionTreeTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal(recordsPerPartition, totalRecords, sleeper.generateNumberedRecords()::numberedRecord,
                 sleeper.tableProperties().getSchema());
     }
 
