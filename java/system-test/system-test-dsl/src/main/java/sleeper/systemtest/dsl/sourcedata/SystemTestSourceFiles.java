@@ -49,11 +49,11 @@ public class SystemTestSourceFiles {
     }
 
     public SystemTestSourceFiles createWithNumberedRecords(String filename, LongStream numbers) {
-        return create(filename, instance.numberedRecords().generate(numbers));
+        return create(filename, instance.numberedRecords().streamFrom(numbers));
     }
 
     public SystemTestSourceFiles createWithNumberedRecords(Schema schema, String filename, LongStream numbers) {
-        return create(schema, filename, instance.numberedRecords(schema).generate(numbers));
+        return create(schema, filename, instance.numberedRecords(schema).streamFrom(numbers));
     }
 
     public SystemTestSourceFiles create(String filename, Record... records) {

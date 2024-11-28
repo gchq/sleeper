@@ -48,15 +48,15 @@ public class GenerateNumberedRecords {
                 .orElseGet(() -> GenerateNumberedValue.forField(keyType, field));
     }
 
-    public Stream<Record> generate(LongStream numbers) {
-        return numbers.mapToObj(this::numberedRecord);
+    public Stream<Record> streamFrom(LongStream numbers) {
+        return numbers.mapToObj(this::generateRecord);
     }
 
     public Iterable<Record> iterableFrom(LongStream numbers) {
-        return () -> generate(numbers).iterator();
+        return () -> streamFrom(numbers).iterator();
     }
 
-    public Record numberedRecord(long number) {
+    public Record generateRecord(long number) {
         return new Record(mapForNumber(number));
     }
 
