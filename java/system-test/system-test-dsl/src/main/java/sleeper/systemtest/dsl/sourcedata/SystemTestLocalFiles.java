@@ -36,6 +36,6 @@ public class SystemTestLocalFiles {
         driver.writeFile(
                 instance.getTableProperties(),
                 tempDir.resolve(file),
-                instance.generateNumberedRecords(numbers).iterator());
+                instance.numberedRecords().generate(numbers).iterator());
     }
 }

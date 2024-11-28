@@ -156,16 +156,16 @@ public class SleeperSystemTest {
         context.instance().setGeneratorOverrides(overrides);
     }
 
-    public GenerateNumberedRecords generateNumberedRecords() {
-        return context.instance().generateNumberedRecords();
+    public GenerateNumberedRecords numberedRecords() {
+        return context.instance().numberedRecords();
     }
 
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {
-        return () -> context.instance().generateNumberedRecords(numbers).iterator();
+        return () -> context.instance().numberedRecords().generate(numbers).iterator();
     }
 
     public Iterable<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return () -> context.instance().generateNumberedRecords(schema, numbers).iterator();
+        return () -> context.instance().numberedRecords(schema).generate(numbers).iterator();
     }
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {

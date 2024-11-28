@@ -36,7 +36,7 @@ public class SystemTestDirectIngest {
     }
 
     public SystemTestDirectIngest numberedRecords(LongStream numbers) {
-        driver.ingest(tempDir, instance.generateNumberedRecords(numbers).iterator());
+        driver.ingest(tempDir, instance.numberedRecords().generate(numbers).iterator());
         return this;
     }
 

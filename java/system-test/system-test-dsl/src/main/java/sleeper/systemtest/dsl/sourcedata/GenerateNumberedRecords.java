@@ -39,12 +39,8 @@ public class GenerateNumberedRecords {
         return new GenerateNumberedRecords(configureOverrides(overrides), schema);
     }
 
-    public static Stream<Record> from(Schema schema, GenerateNumberedValueOverrides overrides, LongStream numbers) {
-        return new GenerateNumberedRecords(configureOverrides(overrides), schema).generate(numbers);
-    }
-
-    public static Stream<Record> from(Schema schema, LongStream numbers) {
-        return new GenerateNumberedRecords(GenerateNumberedValue::forField, schema).generate(numbers);
+    public static GenerateNumberedRecords from(Schema schema) {
+        return new GenerateNumberedRecords(GenerateNumberedValue::forField, schema);
     }
 
     private static Configuration configureOverrides(GenerateNumberedValueOverrides overrides) {
