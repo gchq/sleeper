@@ -24,6 +24,7 @@
     "org.mockito.Mockito.*",
     "org.mockito.ArgumentMatchers.*",
     "org.mockito.Answers.*",
+    "sleeper.core.partition.SplitPointsTestHelper.*",
     "sleeper.core.schema.SchemaTestHelper.*",
     "sleeper.core.statestore.inmemory.StateStoreTestHelper.*",
     "sleeper.configuration.properties.InstancePropertiesTestHelper.*",

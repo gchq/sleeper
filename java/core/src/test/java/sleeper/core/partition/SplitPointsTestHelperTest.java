@@ -18,16 +18,15 @@ package sleeper.core.partition;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.testutils.printers.PartitionsPrinter;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.partition.SplitPointsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class SplitPointsTestHelperTest {
@@ -62,19 +61,5 @@ public class SplitPointsTestHelperTest {
 
     private PartitionTree createPartitionTreeWithRecordsPerPartition(int recordsPerPartition, List<Record> records, Schema schema) {
         return createPartitionTreeWithRecordsPerPartitionAndTotal(recordsPerPartition, records.size(), records::get, schema);
-    }
-
-    public static PartitionTree createPartitionTreeWithRecordsPerPartitionAndTotal(int recordsPerPartition, int totalRecords, NthRecordGenerator generator, Schema schema) {
-        List<Object> splitPoints = new ArrayList<>();
-        Field splitField = schema.getRowKeyFields().get(0);
-        for (int i = recordsPerPartition; i < totalRecords; i += recordsPerPartition) {
-            splitPoints.add(generator.getNthRecord(i).get(splitField.getName()));
-        }
-        return PartitionsFromSplitPoints.treeFrom(schema, splitPoints);
-    }
-
-    @FunctionalInterface
-    public interface NthRecordGenerator {
-        Record getNthRecord(int n);
     }
 }
