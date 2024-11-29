@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCommittedStatus;
+import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
@@ -74,7 +75,7 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String FAILURE_REASONS = "FailureReasons";
     private static final String JOB_RUN_ID = "JobRunId";
     private static final String TASK_ID = "TaskId";
-    private static final String UPDATE_TYPE_INPUT_FILES_ASSIGNED = "inputFilesAssigned";
+    private static final String UPDATE_TYPE_CREATED = "created";
     private static final String UPDATE_TYPE_STARTED = "started";
     private static final String UPDATE_TYPE_FINISHED = "finished";
     private static final String UPDATE_TYPE_COMMITTED = "committed";
@@ -87,9 +88,16 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createFilesAssignedUpdate(
             AssignJobIdRequest request, DynamoDBRecordBuilder builder) {
-        builder.string(UPDATE_TYPE, UPDATE_TYPE_INPUT_FILES_ASSIGNED)
+        builder.string(UPDATE_TYPE, UPDATE_TYPE_CREATED)
                 .string(PARTITION_ID, request.getPartitionId())
                 .number(INPUT_FILES_COUNT, request.getFilenames().size());
+        return builder.build();
+    }
+
+    public static Map<String, AttributeValue> createJobCreated(CompactionJobCreatedEvent event, DynamoDBRecordBuilder builder) {
+        builder.string(UPDATE_TYPE, UPDATE_TYPE_CREATED)
+                .string(PARTITION_ID, event.getPartitionId())
+                .number(INPUT_FILES_COUNT, event.getInputFilesCount());
         return builder.build();
     }
 
@@ -176,7 +184,7 @@ class DynamoDBCompactionJobStatusFormat {
 
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
-            case UPDATE_TYPE_INPUT_FILES_ASSIGNED:
+            case UPDATE_TYPE_CREATED:
                 return CompactionJobInputFilesAssignedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .partitionId(getStringAttribute(item, PARTITION_ID))
