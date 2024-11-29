@@ -43,11 +43,11 @@ public class SystemTestCompaction {
 
     public SystemTestCompaction createJobs(int expectedJobs) {
         return createJobs(expectedJobs,
-                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
     }
 
     public SystemTestCompaction createJobs(int expectedJobs, PollWithRetries poll) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, poll, driver::triggerCreateJobs);
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll), driver::triggerCreateJobs);
         return this;
     }
 

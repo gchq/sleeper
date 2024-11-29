@@ -20,9 +20,11 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -57,7 +59,7 @@ public class CreateManyCompactionsST {
 
         // When
         sleeper.compaction()
-                .createJobs(65536)
+                .createJobs(65536, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .invokeTasks(1).waitForJobs();
 
         // Then
