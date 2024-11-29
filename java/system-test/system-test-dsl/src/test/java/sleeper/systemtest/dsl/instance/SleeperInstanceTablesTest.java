@@ -44,10 +44,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TABLE;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TABLE_NO_NAME;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @InMemoryDslTest
 public class SleeperInstanceTablesTest {

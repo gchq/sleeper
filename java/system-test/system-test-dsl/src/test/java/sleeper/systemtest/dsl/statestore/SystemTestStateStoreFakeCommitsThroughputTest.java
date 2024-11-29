@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @InMemoryDslTest
 public class SystemTestStateStoreFakeCommitsThroughputTest {

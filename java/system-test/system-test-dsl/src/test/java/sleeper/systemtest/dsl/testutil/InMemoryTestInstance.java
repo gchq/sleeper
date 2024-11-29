@@ -19,10 +19,6 @@ package sleeper.systemtest.dsl.testutil;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
@@ -35,19 +31,11 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration.usingSystemTestDefaults;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 public class InMemoryTestInstance {
     private InMemoryTestInstance() {
     }
-
-    public static final String ROW_KEY_FIELD_NAME = "key";
-    public static final String SORT_KEY_FIELD_NAME = "timestamp";
-    public static final String VALUE_FIELD_NAME = "value";
-    public static final Schema DEFAULT_SCHEMA = Schema.builder()
-            .rowKeyFields(new Field(ROW_KEY_FIELD_NAME, new StringType()))
-            .sortKeyFields(new Field(SORT_KEY_FIELD_NAME, new LongType()))
-            .valueFields(new Field(VALUE_FIELD_NAME, new StringType()))
-            .build();
 
     public static final SystemTestInstanceConfiguration MAIN = withDefaultProperties("main");
     public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdtbl", () -> {
