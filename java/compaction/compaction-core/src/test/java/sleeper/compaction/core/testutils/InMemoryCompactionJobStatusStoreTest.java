@@ -162,7 +162,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
             RecordsProcessedSummary summary = summary(startedTime, finishTime, 100L, 100L);
             CompactionJob job = dataHelper.singleFileCompaction();
-            store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()), createdTime);
+            store.jobCreated(compactionJobCreated(job), createdTime);
             store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
             store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
 
@@ -364,7 +364,7 @@ class InMemoryCompactionJobStatusStoreTest {
             String taskId1 = "test-task-1";
             String taskId2 = "test-task-2";
             CompactionJob job = dataHelper.singleFileCompaction();
-            store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()), createdTime);
+            store.jobCreated(compactionJobCreated(job), createdTime);
             store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId1).build());
             store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId2).build());
             store.jobFinished(compactionJobFinished(job, summary2).taskId(taskId2).build());
@@ -473,7 +473,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
             // When
             CompactionJob job = dataHelper.singleFileCompaction();
-            store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()), createdTime);
+            store.jobCreated(compactionJobCreated(job), createdTime);
             store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId).jobRunId(runId1).build());
             store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId).jobRunId(runId1).build());
             store.jobCommitted(compactionJobCommitted(job, committedTime1).taskId(taskId).jobRunId(runId1).build());

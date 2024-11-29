@@ -72,7 +72,12 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
 
     @Override
     public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
-        jobInputFilesAssigned(tableId, requests, getUpdateTimeOrDefault(Instant::now));
+        for (AssignJobIdRequest request : requests) {
+            add(tableId, ProcessStatusUpdateRecord.builder()
+                    .jobId(request.getJobId())
+                    .statusUpdate(CompactionJobInputFilesAssignedStatus.from(request, getUpdateTimeOrDefault(Instant::now)))
+                    .build());
+        }
     }
 
     public void jobCreated(CompactionJobCreatedEvent event, Instant assignedTime) {
@@ -80,15 +85,6 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
                 .jobId(event.getJobId())
                 .statusUpdate(CompactionJobInputFilesAssignedStatus.from(event, assignedTime))
                 .build());
-    }
-
-    public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests, Instant assignedTime) {
-        for (AssignJobIdRequest request : requests) {
-            add(tableId, ProcessStatusUpdateRecord.builder()
-                    .jobId(request.getJobId())
-                    .statusUpdate(CompactionJobInputFilesAssignedStatus.from(request, assignedTime))
-                    .build());
-        }
     }
 
     @Override
