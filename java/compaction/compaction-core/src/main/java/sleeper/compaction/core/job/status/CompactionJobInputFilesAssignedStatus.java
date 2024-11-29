@@ -38,6 +38,14 @@ public class CompactionJobInputFilesAssignedStatus implements ProcessStatusUpdat
         return new Builder();
     }
 
+    public static CompactionJobInputFilesAssignedStatus from(CompactionJobCreatedEvent event, Instant updateTime) {
+        return builder()
+                .updateTime(updateTime)
+                .partitionId(event.getPartitionId())
+                .inputFilesCount(event.getInputFilesCount())
+                .build();
+    }
+
     public static CompactionJobInputFilesAssignedStatus from(CompactionJob job, Instant updateTime) {
         return builder()
                 .updateTime(updateTime)
