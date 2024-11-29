@@ -23,6 +23,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
 import sleeper.core.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceConfiguration;
+import sleeper.systemtest.dsl.util.SystemTestSchema;
 
 import java.util.HashMap;
 import java.util.List;
