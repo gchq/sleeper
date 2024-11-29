@@ -27,8 +27,9 @@
     <dependencies>
         <!-- Sleeper dependencies -->
         <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
 </project>
