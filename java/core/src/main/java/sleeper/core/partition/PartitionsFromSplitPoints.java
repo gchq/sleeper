@@ -95,7 +95,7 @@ public class PartitionsFromSplitPoints {
         List<Partition> partitionsInLayer = List.of(tree.getRootPartition());
         while (!partitionsInLayer.isEmpty()) {
             LOGGER.debug("Layer {}", layer++);
-            partitionsInLayer.forEach(partition -> LOGGER.debug(partition.toString()));
+            partitionsInLayer.forEach(partition -> LOGGER.debug("{}", partition));
             partitionsInLayer = partitionsInLayer.stream()
                     .map(partition -> partition.getChildPartitionIds())
                     .flatMap(List::stream)
