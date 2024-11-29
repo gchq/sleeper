@@ -60,7 +60,10 @@ public class CreateManyCompactionsST {
         // When
         sleeper.compaction()
                 .createJobs(65536, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(15)))
-                .invokeTasks(1).waitForJobs();
+                .invokeTasks(1);
+        // Poll the state store because the status store is too slow to load all the jobs
+        sleeper.tableFiles().waitForState(files -> files.countFileReferences() <= 65536,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(20)));
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();
