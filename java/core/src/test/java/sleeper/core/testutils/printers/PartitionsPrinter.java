@@ -59,7 +59,11 @@ public class PartitionsPrinter {
         RegionSerDe regionSerDe = new RegionSerDe(schema);
         partitionTree.traverseLeavesFirst().forEach(partition -> {
             String locationName = buildPartitionLocationName(partition, partitionTree);
-            out.println("Partition at " + locationName + ":");
+            if (partition.isLeafPartition()) {
+                out.println("Leaf partition at " + locationName + ":");
+            } else {
+                out.println("Partition at " + locationName + ":");
+            }
             out.println(regionSerDe.toJson(partition.getRegion()));
         });
         return printer.toString();

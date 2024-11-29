@@ -119,7 +119,7 @@ public class SingleFileWritingIterator implements Iterator<Row> {
         if (numRecords % 1_000_000L == 0) {
             LOGGER.info("Wrote {} records", numRecords);
         }
-        sketches.update(schema, record);
+        sketches.update(record);
     }
 
     private void initialiseState(String partitionId) throws IOException {
