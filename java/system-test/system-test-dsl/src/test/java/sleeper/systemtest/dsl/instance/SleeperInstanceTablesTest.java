@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TABLE;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.PREDEFINED_TABLE_NO_NAME;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
@@ -57,7 +57,7 @@ public class SleeperInstanceTablesTest {
     class DefineNamedTables {
         @BeforeEach
         void setUp(SleeperSystemTest sleeper) {
-            sleeper.connectToInstanceNoTables(MAIN);
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
         }
 
         @Test
@@ -112,7 +112,7 @@ public class SleeperInstanceTablesTest {
     class InspectAllTables {
         @BeforeEach
         void setUp(SleeperSystemTest sleeper) {
-            sleeper.connectToInstanceNoTables(MAIN);
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
         }
 
         @Test
@@ -181,7 +181,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldGenerateNameForTableDefinedInTest(SleeperSystemTest sleeper) {
             // Given
-            sleeper.connectToInstanceNoTables(MAIN);
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
 
             // When
             sleeper.tables().create("A", DEFAULT_SCHEMA);
@@ -223,7 +223,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldFailToIngestWhenNoTableChosen(SleeperSystemTest sleeper) {
             // Given
-            sleeper.connectToInstanceNoTables(MAIN);
+            sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
             var ingest = sleeper.ingest().direct(null);
 
             // When / Then

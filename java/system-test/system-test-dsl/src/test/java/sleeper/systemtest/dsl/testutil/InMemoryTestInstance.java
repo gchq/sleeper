@@ -37,7 +37,7 @@ public class InMemoryTestInstance {
     private InMemoryTestInstance() {
     }
 
-    public static final SystemTestInstanceConfiguration MAIN = withDefaultProperties("main");
+    public static final SystemTestInstanceConfiguration IN_MEMORY_MAIN = withDefaultProperties("main");
     public static final SystemTestInstanceConfiguration PREDEFINED_TABLE = usingSystemTestDefaults("prdtbl", () -> {
         InstanceProperties instanceProperties = createDslInstanceProperties();
         TableProperties tableProperties = createDslTableProperties(instanceProperties);
