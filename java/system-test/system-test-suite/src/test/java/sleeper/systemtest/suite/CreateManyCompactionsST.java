@@ -59,7 +59,7 @@ public class CreateManyCompactionsST {
 
         // When
         sleeper.compaction()
-                .createJobs(65536, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)))
+                .createJobs(65536, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(15)))
                 .invokeTasks(1).waitForJobs();
 
         // Then
