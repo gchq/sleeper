@@ -82,7 +82,6 @@ public class CompactionJobDispatcherTest {
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
                 "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
         putCompactionJobBatch(request, List.of(job1, job2));
-
         statusStore.setTimeSupplier(List.of(
                 Instant.parse("2024-11-15T10:30:10Z"),
                 Instant.parse("2024-11-15T10:30:11Z")).iterator()::next);
@@ -159,15 +158,14 @@ public class CompactionJobDispatcherTest {
         CompactionJob job3 = compactionFactory.createCompactionJob("test-job-3", List.of(file3), "root");
         stateStore.addFiles(List.of(file1, file2, file3));
         assignJobIds(List.of(job1, job2, job3));
+        RuntimeException sendFailure = new RuntimeException("Failed sending job");
+        sendFailureByJobId.put("test-job-2", sendFailure);
 
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
                 "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
         putCompactionJobBatch(request, List.of(job1, job2, job3));
-
         statusStore.setTimeSupplier(List.of(
                 Instant.parse("2024-11-15T10:30:10Z")).iterator()::next);
-        RuntimeException sendFailure = new RuntimeException("Failed sending job");
-        sendFailureByJobId.put("test-job-2", sendFailure);
 
         // When / Then
         assertThatThrownBy(() -> dispatchWithNoRetry(request))
