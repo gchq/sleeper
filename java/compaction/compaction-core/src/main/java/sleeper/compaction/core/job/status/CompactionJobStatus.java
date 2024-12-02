@@ -85,7 +85,7 @@ public class CompactionJobStatus {
     private static CompactionJobStatus from(JobStatusUpdates updates) {
         return builder()
                 .jobId(updates.getJobId())
-                .filesAssignedStatus(updates.getFirstStatusUpdateOfType(CompactionJobInputFilesAssignedStatus.class).orElse(null))
+                .filesAssignedStatus(updates.getFirstStatusUpdateOfType(CompactionJobCreatedStatus.class).orElse(null))
                 .jobRuns(updates.getRuns())
                 .expiryDate(updates.getFirstRecord().getExpiryDate())
                 .build();
@@ -205,7 +205,7 @@ public class CompactionJobStatus {
 
     public static final class Builder {
         private String jobId;
-        private CompactionJobInputFilesAssignedStatus filesAssignedStatus;
+        private CompactionJobCreatedStatus filesAssignedStatus;
         private ProcessRuns jobRuns;
         private Instant expiryDate;
 
@@ -217,7 +217,7 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder filesAssignedStatus(CompactionJobInputFilesAssignedStatus filesAssignedStatus) {
+        public Builder filesAssignedStatus(CompactionJobCreatedStatus filesAssignedStatus) {
             this.filesAssignedStatus = filesAssignedStatus;
             return this;
         }

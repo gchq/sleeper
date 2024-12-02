@@ -23,10 +23,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCommittedStatus;
 import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
+import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
@@ -185,7 +185,7 @@ class DynamoDBCompactionJobStatusFormat {
     private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case UPDATE_TYPE_CREATED:
-                return CompactionJobInputFilesAssignedStatus.builder()
+                return CompactionJobCreatedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .partitionId(getStringAttribute(item, PARTITION_ID))
                         .inputFilesCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))

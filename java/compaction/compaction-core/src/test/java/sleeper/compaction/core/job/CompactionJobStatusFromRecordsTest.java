@@ -17,8 +17,8 @@ package sleeper.compaction.core.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
@@ -41,14 +41,14 @@ class CompactionJobStatusFromRecordsTest {
     @Test
     void shouldBuildCompactionJobStatusFromIndividualUpdates() {
         // Given
-        CompactionJobInputFilesAssignedStatus created1 = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus created1 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started1 = compactionStartedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         CompactionJobFinishedStatus finished1 = compactionFinishedStatus(summary(started1, Duration.ofSeconds(30), 200L, 100L));
-        CompactionJobInputFilesAssignedStatus created2 = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus created2 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-24T09:23:00.012Z"))
                 .partitionId("partition2")
                 .inputFilesCount(12)
@@ -91,7 +91,7 @@ class CompactionJobStatusFromRecordsTest {
     @Test
     void shouldBuildJobStatusWhenCreatedUpdateStoredAfterStartedUpdate() {
         // Given
-        CompactionJobInputFilesAssignedStatus created = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
