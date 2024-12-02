@@ -150,6 +150,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).containsExactly(
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
         assertThat(pendingDeadLetterQueue).isEmpty();
@@ -179,6 +180,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).containsExactly(request);
     }
@@ -205,6 +207,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).containsExactly(request);
     }
