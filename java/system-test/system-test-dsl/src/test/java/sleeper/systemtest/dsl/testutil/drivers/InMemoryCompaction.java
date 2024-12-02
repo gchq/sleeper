@@ -65,6 +65,7 @@ import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
@@ -163,7 +164,7 @@ public class InMemoryCompaction {
 
         private CreateCompactionJobs jobCreator() {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), jobStore, batchJobsWriter(),
+                    instance.getStateStoreProvider(), batchJobsWriter(),
                     message -> {
                     }, jobIdAssignmentRequests::add,
                     GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
@@ -235,7 +236,10 @@ public class InMemoryCompaction {
 
     private CreateCompactionJobs.BatchJobsWriter batchJobsWriter() {
         return (bucketName, key, jobs) -> jobs.forEach(
-                job -> queuedJobsById.put(job.getId(), job));
+                job -> {
+                    queuedJobsById.put(job.getId(), job);
+                    jobStore.jobCreated(compactionJobCreated(job));
+                });
     }
 
     private class CountingIterator implements CloseableIterator<Record> {
