@@ -63,10 +63,10 @@ class CompactionJobStatusFromRecordsTest {
 
         // Then
         assertThat(statuses).containsExactly(
-                CompactionJobStatus.builder().jobId("job2").filesAssignedStatus(created2)
+                CompactionJobStatus.builder().jobId("job2").createdStatus(created2)
                         .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started2, finished2))
                         .expiryDate(DEFAULT_EXPIRY).build(),
-                CompactionJobStatus.builder().jobId("job1").filesAssignedStatus(created1)
+                CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
                         .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started1, finished1))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }
@@ -105,7 +105,7 @@ class CompactionJobStatusFromRecordsTest {
 
         // Then
         assertThat(statuses).containsExactly(
-                CompactionJobStatus.builder().jobId("test-job").filesAssignedStatus(created)
+                CompactionJobStatus.builder().jobId("test-job").createdStatus(created)
                         .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started, finished))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }

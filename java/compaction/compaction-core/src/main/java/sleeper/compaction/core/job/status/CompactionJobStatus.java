@@ -53,10 +53,10 @@ public class CompactionJobStatus {
 
     private CompactionJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        if (builder.filesAssignedStatus != null) {
-            partitionId = builder.filesAssignedStatus.getPartitionId();
-            inputFilesCount = builder.filesAssignedStatus.getInputFilesCount();
-            createUpdateTime = builder.filesAssignedStatus.getUpdateTime();
+        if (builder.createdStatus != null) {
+            partitionId = builder.createdStatus.getPartitionId();
+            inputFilesCount = builder.createdStatus.getInputFilesCount();
+            createUpdateTime = builder.createdStatus.getUpdateTime();
         } else {
             partitionId = null;
             inputFilesCount = null;
@@ -85,7 +85,7 @@ public class CompactionJobStatus {
     private static CompactionJobStatus from(JobStatusUpdates updates) {
         return builder()
                 .jobId(updates.getJobId())
-                .filesAssignedStatus(updates.getFirstStatusUpdateOfType(CompactionJobCreatedStatus.class).orElse(null))
+                .createdStatus(updates.getFirstStatusUpdateOfType(CompactionJobCreatedStatus.class).orElse(null))
                 .jobRuns(updates.getRuns())
                 .expiryDate(updates.getFirstRecord().getExpiryDate())
                 .build();
@@ -205,7 +205,7 @@ public class CompactionJobStatus {
 
     public static final class Builder {
         private String jobId;
-        private CompactionJobCreatedStatus filesAssignedStatus;
+        private CompactionJobCreatedStatus createdStatus;
         private ProcessRuns jobRuns;
         private Instant expiryDate;
 
@@ -217,8 +217,8 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder filesAssignedStatus(CompactionJobCreatedStatus filesAssignedStatus) {
-            this.filesAssignedStatus = filesAssignedStatus;
+        public Builder createdStatus(CompactionJobCreatedStatus createdStatus) {
+            this.createdStatus = createdStatus;
             return this;
         }
 

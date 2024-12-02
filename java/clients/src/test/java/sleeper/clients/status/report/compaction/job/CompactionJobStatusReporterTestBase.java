@@ -165,7 +165,7 @@ public abstract class CompactionJobStatusReporterTestBase {
     protected List<CompactionJobStatus> jobWithMultipleInputFiles() {
         Instant creationTime = Instant.parse("2022-10-13T12:00:00.001Z");
         return List.of(CompactionJobStatus.builder().jobId("test-job")
-                .filesAssignedStatus(CompactionJobCreatedStatus.builder()
+                .createdStatus(CompactionJobCreatedStatus.builder()
                         .inputFilesCount(5)
                         .updateTime(creationTime)
                         .partitionId("test-partition")

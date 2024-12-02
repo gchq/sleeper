@@ -71,7 +71,7 @@ public class CompactionJobStatusTaskIdAssignedTest {
 
     private CompactionJobStatus.Builder statusBuilder() {
         return CompactionJobStatus.builder().jobId(job.getId())
-                .filesAssignedStatus(CompactionJobCreatedStatus.from(job,
+                .createdStatus(CompactionJobCreatedStatus.from(job,
                         Instant.parse("2022-10-12T11:29:00.000Z")));
     }
 

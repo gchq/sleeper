@@ -43,7 +43,7 @@ public class CompactionJobStatusTestData {
     public static CompactionJobStatus jobCreated(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
         return CompactionJobStatus.builder()
                 .jobId(job.getId())
-                .filesAssignedStatus(CompactionJobCreatedStatus.from(job, createdTime))
+                .createdStatus(CompactionJobCreatedStatus.from(job, createdTime))
                 .jobRunsLatestFirst(Arrays.asList(runsLatestFirst))
                 .build();
     }
