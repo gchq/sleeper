@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -40,9 +41,11 @@ import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -56,6 +59,7 @@ public class CompactionJobDispatcherTest {
 
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
+    InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
 
@@ -78,11 +82,18 @@ public class CompactionJobDispatcherTest {
                 "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
         putCompactionJobBatch(request, List.of(job1, job2));
 
+        statusStore.setTimeSupplier(List.of(
+                Instant.parse("2024-11-15T10:30:10Z"),
+                Instant.parse("2024-11-15T10:30:11Z")).iterator()::next);
+
         // When
         dispatchWithNoRetry(request);
 
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                jobCreated(job2, Instant.parse("2024-11-15T10:30:11Z")),
+                jobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
         assertThat(delayedPendingQueue).isEmpty();
     }
 
@@ -108,6 +119,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).containsExactly(
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
     }
@@ -132,6 +144,7 @@ public class CompactionJobDispatcherTest {
         assertThatThrownBy(() -> dispatchWithTimeAtRetryCheck(request, retryTime))
                 .isInstanceOf(CompactionJobBatchExpiredException.class);
         assertThat(compactionQueue).isEmpty();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).isEmpty();
     }
 
@@ -149,7 +162,7 @@ public class CompactionJobDispatcherTest {
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore), readBatch(),
+                new FixedStateStoreProvider(tableProperties, stateStore), statusStore, readBatch(),
                 compactionQueue::add, returnRequest(), times.iterator()::next);
     }
 

@@ -19,8 +19,8 @@ package sleeper.compaction.core.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.status.CompactionJobCommittedStatus;
+import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
@@ -43,7 +43,7 @@ public class CompactionJobRunTest {
     @Test
     public void shouldReportNoRunsWhenJobNotStarted() {
         // Given
-        CompactionJobInputFilesAssignedStatus createdStatus = CompactionJobInputFilesAssignedStatus.from(CompactionJob.builder()
+        CompactionJobCreatedStatus createdStatus = CompactionJobCreatedStatus.from(CompactionJob.builder()
                 .tableId("test-table").jobId("test-job").partitionId("test-partition")
                 .inputFiles(List.of("file1", "file2")).outputFile("output")
                 .build(), Instant.parse("2022-09-23T09:23:00.012Z"));

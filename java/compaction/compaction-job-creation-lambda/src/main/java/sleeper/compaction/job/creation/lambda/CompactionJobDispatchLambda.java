@@ -33,6 +33,7 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReadBatch;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReturnRequestToPendingQueue;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJob;
+import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -79,6 +80,7 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
         return new CompactionJobDispatcher(instanceProperties,
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
+                CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 readBatch(s3, compactionJobSerDe),
                 sendJob(instanceProperties, sqs, compactionJobSerDe),
                 returnToQueue(instanceProperties, sqs), timeSupplier);

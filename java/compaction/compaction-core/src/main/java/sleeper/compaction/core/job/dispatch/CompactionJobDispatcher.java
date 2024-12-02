@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -30,6 +31,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
@@ -40,6 +42,7 @@ public class CompactionJobDispatcher {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final CompactionJobStatusStore statusStore;
     private final ReadBatch readBatch;
     private final SendJob sendJob;
     private final ReturnRequestToPendingQueue returnToPendingQueue;
@@ -47,12 +50,13 @@ public class CompactionJobDispatcher {
 
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, ReadBatch readBatch,
+            StateStoreProvider stateStoreProvider, CompactionJobStatusStore statusStore, ReadBatch readBatch,
             SendJob sendJob, ReturnRequestToPendingQueue returnToPendingQueue,
             Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
+        this.statusStore = statusStore;
         this.readBatch = readBatch;
         this.sendJob = sendJob;
         this.returnToPendingQueue = returnToPendingQueue;
@@ -69,6 +73,7 @@ public class CompactionJobDispatcher {
             LOGGER.info("Validated input file assignments, sending {} jobs", batch.size());
             for (CompactionJob job : batch) {
                 sendJob.send(job);
+                statusStore.jobCreated(compactionJobCreated(job));
             }
             LOGGER.info("Sent {} jobs", batch.size());
         } else {

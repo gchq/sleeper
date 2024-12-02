@@ -173,7 +173,6 @@ public class StateStoreCommitter {
     void assignCompactionInputFiles(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStore(request.getTableId());
         stateStore.assignJobIds(request.getAssignJobIdRequests());
-        compactionJobStatusStore.jobInputFilesAssigned(request.getTableId(), request.getAssignJobIdRequests());
     }
 
     void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
