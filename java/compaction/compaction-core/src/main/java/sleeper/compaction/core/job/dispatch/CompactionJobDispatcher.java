@@ -45,14 +45,15 @@ public class CompactionJobDispatcher {
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore statusStore;
     private final ReadBatch readBatch;
-    private final SendJob sendJob;
+    private final SendJobs sendJob;
     private final ReturnRequestToPendingQueue returnToPendingQueue;
+    private final int sendBatchSize;
     private final Supplier<Instant> timeSupplier;
 
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, CompactionJobStatusStore statusStore, ReadBatch readBatch,
-            SendJob sendJob, ReturnRequestToPendingQueue returnToPendingQueue,
+            SendJobs sendJob, ReturnRequestToPendingQueue returnToPendingQueue, int sendBatchSize,
             Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -61,6 +62,7 @@ public class CompactionJobDispatcher {
         this.readBatch = readBatch;
         this.sendJob = sendJob;
         this.returnToPendingQueue = returnToPendingQueue;
+        this.sendBatchSize = sendBatchSize;
         this.timeSupplier = timeSupplier;
     }
 
@@ -72,7 +74,7 @@ public class CompactionJobDispatcher {
         LOGGER.info("Read {} compaction jobs", batch.size());
         if (validateBatchIsValidToBeSent(batch, tableProperties)) {
             LOGGER.info("Validated input file assignments, sending {} jobs", batch.size());
-            for (List<CompactionJob> toSend : SplitIntoBatches.splitListIntoBatchesOf(10, batch)) {
+            for (List<CompactionJob> toSend : SplitIntoBatches.splitListIntoBatchesOf(sendBatchSize, batch)) {
                 sendJob.send(toSend);
                 toSend.forEach(job -> statusStore.jobCreated(compactionJobCreated(job)));
             }
@@ -105,7 +107,7 @@ public class CompactionJobDispatcher {
     }
 
     @FunctionalInterface
-    public interface SendJob {
+    public interface SendJobs {
 
         void send(List<CompactionJob> jobs);
     }

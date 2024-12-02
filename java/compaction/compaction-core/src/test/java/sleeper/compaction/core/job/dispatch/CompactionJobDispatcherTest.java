@@ -66,9 +66,10 @@ public class CompactionJobDispatcherTest {
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
     Queue<CompactionJob> compactionQueue = new LinkedList<>();
     Queue<BatchRequestMessage> delayedPendingQueue = new LinkedList<>();
+    Map<String, RuntimeException> sendFailureByJobId = new HashMap<>();
 
     @Test
-    void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() throws Exception {
+    void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() {
 
         // Given
         FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
@@ -98,7 +99,7 @@ public class CompactionJobDispatcherTest {
     }
 
     @Test
-    void shouldReturnBatchToTheQueueIfTheFilesForTheBatchAreUnassigned() throws Exception {
+    void shouldReturnBatchToTheQueueIfTheFilesForTheBatchAreUnassigned() {
 
         // Given
         FileReference file1 = fileFactory.rootFile("test3.parquet", 1234);
@@ -124,7 +125,7 @@ public class CompactionJobDispatcherTest {
     }
 
     @Test
-    void shouldFailIfTheFilesAreUnassignedAndTimeoutExpired() throws Exception {
+    void shouldFailIfTheFilesAreUnassignedAndTimeoutExpired() {
 
         // Given
         FileReference file1 = fileFactory.rootFile("test5.parquet", 1234);
@@ -146,26 +147,70 @@ public class CompactionJobDispatcherTest {
         assertThat(delayedPendingQueue).isEmpty();
     }
 
+    @Test
+    void shouldFailWhenOneJobFailedToSend() {
+
+        // Given
+        FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
+        FileReference file3 = fileFactory.rootFile("test3.parquet", 9000);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
+        CompactionJob job3 = compactionFactory.createCompactionJob("test-job-3", List.of(file3), "root");
+        stateStore.addFiles(List.of(file1, file2, file3));
+        assignJobIds(List.of(job1, job2, job3));
+
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
+        putCompactionJobBatch(request, List.of(job1, job2, job3));
+
+        statusStore.setTimeSupplier(List.of(
+                Instant.parse("2024-11-15T10:30:10Z")).iterator()::next);
+        RuntimeException sendFailure = new RuntimeException("Failed sending job");
+        sendFailureByJobId.put("test-job-2", sendFailure);
+
+        // When / Then
+        assertThatThrownBy(() -> dispatchWithNoRetry(request))
+                .isSameAs(sendFailure);
+        assertThat(compactionQueue).containsExactly(job1);
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                jobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
+        assertThat(delayedPendingQueue).isEmpty();
+    }
+
     private void putCompactionJobBatch(CompactionJobDispatchRequest request, List<CompactionJob> jobs) {
         s3PathToCompactionJobBatch.put(instanceProperties.get(DATA_BUCKET) + "/" + request.getBatchKey(), jobs);
     }
 
-    private void dispatchWithNoRetry(CompactionJobDispatchRequest request) throws Exception {
+    private void dispatchWithNoRetry(CompactionJobDispatchRequest request) {
         dispatcher(List.of()).dispatch(request);
     }
 
-    private void dispatchWithTimeAtRetryCheck(CompactionJobDispatchRequest request, Instant time) throws Exception {
+    private void dispatchWithTimeAtRetryCheck(CompactionJobDispatchRequest request, Instant time) {
         dispatcher(List.of(time)).dispatch(request);
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore), statusStore, readBatch(),
-                compactionQueue::addAll, returnRequest(), times.iterator()::next);
+                sendJobs(), returnRequest(), 1, times.iterator()::next);
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {
         return (bucketName, key) -> s3PathToCompactionJobBatch.get(bucketName + "/" + key);
+    }
+
+    private CompactionJobDispatcher.SendJobs sendJobs() {
+        return jobs -> {
+            for (CompactionJob job : jobs) {
+                RuntimeException sendFailure = sendFailureByJobId.get(job.getId());
+                if (sendFailure != null) {
+                    throw sendFailure;
+                } else {
+                    compactionQueue.add(job);
+                }
+            }
+        };
     }
 
     private CompactionJobDispatcher.ReturnRequestToPendingQueue returnRequest() {
@@ -173,7 +218,7 @@ public class CompactionJobDispatcherTest {
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(delaySeconds)));
     }
 
-    private void assignJobIds(List<CompactionJob> jobs) throws Exception {
+    private void assignJobIds(List<CompactionJob> jobs) {
         for (CompactionJob job : jobs) {
             stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
         }

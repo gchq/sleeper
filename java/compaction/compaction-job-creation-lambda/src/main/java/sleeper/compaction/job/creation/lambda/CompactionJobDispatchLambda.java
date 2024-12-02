@@ -37,7 +37,7 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReadBatch;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReturnRequestToPendingQueue;
-import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJob;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -88,11 +88,11 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 readBatch(s3, compactionJobSerDe),
-                sendJob(instanceProperties, sqs, compactionJobSerDe),
-                returnToQueue(instanceProperties, sqs), timeSupplier);
+                sendJobs(instanceProperties, sqs, compactionJobSerDe),
+                returnToQueue(instanceProperties, sqs), 10, timeSupplier);
     }
 
-    private static SendJob sendJob(InstanceProperties instanceProperties, AmazonSQS sqs, CompactionJobSerDe compactionJobSerDe) {
+    private static SendJobs sendJobs(InstanceProperties instanceProperties, AmazonSQS sqs, CompactionJobSerDe compactionJobSerDe) {
         return jobs -> {
             SendMessageBatchResult result = sqs.sendMessageBatch(new SendMessageBatchRequest()
                     .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
@@ -101,7 +101,7 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
                             .toList()));
             if (!result.getFailed().isEmpty()) {
                 LOGGER.error("Found failures sending jobs: {}", result.getFailed());
-                throw new RuntimeException("Could not send all compaction jobs");
+                throw new RuntimeException("Failed sending halfway through batch");
             }
         };
     }
