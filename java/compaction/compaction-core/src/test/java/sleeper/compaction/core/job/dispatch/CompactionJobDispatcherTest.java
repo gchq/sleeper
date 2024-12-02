@@ -119,6 +119,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).containsExactly(
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
     }
@@ -143,6 +144,7 @@ public class CompactionJobDispatcherTest {
         assertThatThrownBy(() -> dispatchWithTimeAtRetryCheck(request, retryTime))
                 .isInstanceOf(CompactionJobBatchExpiredException.class);
         assertThat(compactionQueue).isEmpty();
+        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).isEmpty();
     }
 
