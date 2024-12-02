@@ -113,9 +113,9 @@ public class WaitForJobsStatusTest {
         // Then
         assertThat(status).hasToString("{\n" +
                 "  \"countByFurthestStatus\": {\n" +
+                "    \"CREATED\": 1,\n" +
                 "    \"FINISHED\": 1,\n" +
                 "    \"IN_PROGRESS\": 1,\n" +
-                "    \"PENDING\": 1,\n" +
                 "    \"UNCOMMITTED\": 1\n" +
                 "  },\n" +
                 "  \"numUnstarted\": 1,\n" +

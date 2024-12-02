@@ -25,7 +25,7 @@ import java.util.Collection;
  * any failed runs will be ignored for computing the status of the job.
  */
 public enum CompactionJobStatusType {
-    PENDING(1),
+    CREATED(1),
     FAILED(2),
     IN_PROGRESS(3),
     UNCOMMITTED(4),
@@ -45,7 +45,7 @@ public enum CompactionJobStatusType {
      */
     public static CompactionJobStatusType furthestStatusTypeOfJob(
             Collection<CompactionJobStatusType> runStatusTypes) {
-        FurthestStatusTracker furthestStatus = new FurthestStatusTracker(PENDING);
+        FurthestStatusTracker furthestStatus = new FurthestStatusTracker(CREATED);
         for (CompactionJobStatusType runStatusType : runStatusTypes) {
             furthestStatus.setIfFurther(runStatusType);
         }
