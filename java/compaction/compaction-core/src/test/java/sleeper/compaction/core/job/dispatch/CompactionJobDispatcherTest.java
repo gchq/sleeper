@@ -155,7 +155,7 @@ public class CompactionJobDispatcherTest {
     }
 
     @Test
-    void shouldSendBatchToDLQIfOneFileIsAssignedToAnotherJob() {
+    void shouldSendBatchToDeadLetterQueueIfOneFileIsAssignedToAnotherJob() {
 
         // Given
         FileReference unassignedFile = fileFactory.rootFile("unassigned.parquet", 1234);
@@ -183,7 +183,7 @@ public class CompactionJobDispatcherTest {
     }
 
     @Test
-    void shouldSendBatchToDLQIfOneFileHasBeenDeleted() {
+    void shouldSendBatchToDeadLetterQueueIfOneFileHasBeenDeleted() {
 
         // Given
         FileReference unassignedFile = fileFactory.rootFile("unassigned.parquet", 1234);
