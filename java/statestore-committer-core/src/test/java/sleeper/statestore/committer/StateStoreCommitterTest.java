@@ -259,8 +259,6 @@ public class StateStoreCommitterTest {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
             stateStore.addFile(fileFactory.rootFile("input.parquet", 123L));
-            CompactionJob job = compactionFactoryForTable("test-table")
-                    .createCompactionJobWithFilenames("test-job", List.of("input.parquet"), "root");
             Instant filesAssignedTime = Instant.parse("2024-09-06T11:44:00Z");
             compactionJobStatusStore.fixUpdateTime(filesAssignedTime);
 
@@ -272,8 +270,7 @@ public class StateStoreCommitterTest {
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
                     withJobId("test-job", fileFactory.rootFile("input.parquet", 123L)));
-            assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    jobCreated(job, filesAssignedTime));
+            assertThat(compactionJobStatusStore.getAllJobs("test-table")).isEmpty();
         }
 
         @Test
