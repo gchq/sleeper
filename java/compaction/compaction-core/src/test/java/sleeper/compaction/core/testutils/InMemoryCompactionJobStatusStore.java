@@ -31,7 +31,6 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.statestore.AssignJobIdRequest;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -68,16 +67,6 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     @Override
     public void jobCreated(CompactionJobCreatedEvent event) {
         jobCreated(event, getUpdateTimeOrDefault(Instant::now));
-    }
-
-    @Override
-    public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
-        for (AssignJobIdRequest request : requests) {
-            add(tableId, ProcessStatusUpdateRecord.builder()
-                    .jobId(request.getJobId())
-                    .statusUpdate(CompactionJobCreatedStatus.from(request, getUpdateTimeOrDefault(Instant::now)))
-                    .build());
-        }
     }
 
     public void jobCreated(CompactionJobCreatedEvent event, Instant assignedTime) {

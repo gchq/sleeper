@@ -36,20 +36,17 @@ import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createFilesAssignedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCommittedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCreated;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFailedUpdate;
@@ -110,17 +107,6 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
 
     public static String jobLookupTableName(String instanceId) {
         return instanceTableName(instanceId, "compaction-job-lookup");
-    }
-
-    @Override
-    public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
-        for (AssignJobIdRequest request : requests) {
-            try {
-                save(createFilesAssignedUpdate(request, jobUpdateBuilder(tableId, request.getJobId())));
-            } catch (RuntimeException e) {
-                throw new CompactionStatusStoreException("Failed saving input files assigned event for job " + request.getJobId(), e);
-            }
-        }
     }
 
     @Override
