@@ -25,6 +25,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.util.SplitIntoBatches;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -71,9 +72,9 @@ public class CompactionJobDispatcher {
         LOGGER.info("Read {} compaction jobs", batch.size());
         if (validateBatchIsValidToBeSent(batch, tableProperties)) {
             LOGGER.info("Validated input file assignments, sending {} jobs", batch.size());
-            for (CompactionJob job : batch) {
-                sendJob.send(job);
-                statusStore.jobCreated(compactionJobCreated(job));
+            for (List<CompactionJob> toSend : SplitIntoBatches.splitListIntoBatchesOf(10, batch)) {
+                sendJob.send(toSend);
+                toSend.forEach(job -> statusStore.jobCreated(compactionJobCreated(job)));
             }
             LOGGER.info("Sent {} jobs", batch.size());
         } else {
@@ -106,7 +107,7 @@ public class CompactionJobDispatcher {
     @FunctionalInterface
     public interface SendJob {
 
-        void send(CompactionJob job);
+        void send(List<CompactionJob> jobs);
     }
 
     @FunctionalInterface

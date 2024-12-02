@@ -24,8 +24,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
@@ -54,6 +59,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
  * when that is done asynchronously. Runs batches with {@link CompactionJobDispatcher}.
  */
 public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Void> {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobDispatchLambda.class);
 
     private final CompactionJobDispatcher dispatcher;
     private final CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
@@ -87,9 +93,17 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
     }
 
     private static SendJob sendJob(InstanceProperties instanceProperties, AmazonSQS sqs, CompactionJobSerDe compactionJobSerDe) {
-        return compactionJob -> sqs.sendMessage(
-                instanceProperties.get(COMPACTION_JOB_QUEUE_URL),
-                compactionJobSerDe.toJson(compactionJob));
+        return jobs -> {
+            SendMessageBatchResult result = sqs.sendMessageBatch(new SendMessageBatchRequest()
+                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                    .withEntries(jobs.stream()
+                            .map(job -> new SendMessageBatchRequestEntry(job.getId(), compactionJobSerDe.toJson(job)))
+                            .toList()));
+            if (!result.getFailed().isEmpty()) {
+                LOGGER.error("Found failures sending jobs: {}", result.getFailed());
+                throw new RuntimeException("Could not send all compaction jobs");
+            }
+        };
     }
 
     private static ReadBatch readBatch(AmazonS3 s3, CompactionJobSerDe compactionJobSerDe) {

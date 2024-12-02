@@ -161,7 +161,7 @@ public class CompactionJobDispatcherTest {
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore), statusStore, readBatch(),
-                compactionQueue::add, returnRequest(), times.iterator()::next);
+                compactionQueue::addAll, returnRequest(), times.iterator()::next);
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {
