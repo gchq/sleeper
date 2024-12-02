@@ -78,7 +78,7 @@ public class CompactionJobDispatcher {
         List<CompactionJob> batch = readBatch.read(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         LOGGER.info("Read {} compaction jobs", batch.size());
         try {
-            if (batchIsReadyToBeSent(batch, tableProperties)) {
+            if (batchIsReadyToBeSent(tableProperties, batch)) {
                 send(batch);
             } else {
                 returnToQueueWithDelay(tableProperties, request);
@@ -89,7 +89,7 @@ public class CompactionJobDispatcher {
         }
     }
 
-    private boolean batchIsReadyToBeSent(List<CompactionJob> batch, TableProperties tableProperties) {
+    private boolean batchIsReadyToBeSent(TableProperties tableProperties, List<CompactionJob> batch) {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         return stateStore.isAssigned(batch.stream()
                 .map(CompactionJob::createInputFileAssignmentsCheck)
