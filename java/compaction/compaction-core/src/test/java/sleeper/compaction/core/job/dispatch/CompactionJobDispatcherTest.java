@@ -66,6 +66,7 @@ public class CompactionJobDispatcherTest {
     Map<String, List<CompactionJob>> s3PathToCompactionJobBatch = new HashMap<>();
     Queue<CompactionJob> compactionQueue = new LinkedList<>();
     Queue<BatchRequestMessage> delayedPendingQueue = new LinkedList<>();
+    Queue<CompactionJobDispatchRequest> pendingDeadLetterQueue = new LinkedList<>();
     Map<String, RuntimeException> sendFailureByJobId = new HashMap<>();
 
     @Test
@@ -95,16 +96,17 @@ public class CompactionJobDispatcherTest {
                 jobCreated(job2, Instant.parse("2024-11-15T10:30:11Z")),
                 jobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
         assertThat(delayedPendingQueue).isEmpty();
+        assertThat(pendingDeadLetterQueue).isEmpty();
     }
 
     @Test
     void shouldReturnBatchToTheQueueIfTheFilesForTheBatchAreUnassigned() {
 
         // Given
-        FileReference file1 = fileFactory.rootFile("test3.parquet", 1234);
-        FileReference file2 = fileFactory.rootFile("test4.parquet", 5678);
-        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
-        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
+        FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
         stateStore.addFiles(List.of(file1, file2));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
@@ -121,10 +123,93 @@ public class CompactionJobDispatcherTest {
         assertThat(compactionQueue).isEmpty();
         assertThat(delayedPendingQueue).containsExactly(
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
+        assertThat(pendingDeadLetterQueue).isEmpty();
     }
 
     @Test
-    void shouldFailIfTheFilesAreUnassignedAndTimeoutExpired() {
+    void shouldReturnBatchToTheQueueIfOneFileForTheBatchIsUnassigned() {
+
+        // Given
+        FileReference file1 = fileFactory.rootFile("file1.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("file2.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
+        stateStore.addFiles(List.of(file1, file2));
+        assignJobIds(List.of(job1));
+
+        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
+        tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 12);
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                "test-batch", Instant.parse("2024-11-15T10:20:00Z"));
+        Instant retryTime = Instant.parse("2024-11-15T10:22:00Z");
+        putCompactionJobBatch(request, List.of(job1, job2));
+
+        // When
+        dispatchWithTimeAtRetryCheck(request, retryTime);
+
+        // Then
+        assertThat(compactionQueue).isEmpty();
+        assertThat(delayedPendingQueue).containsExactly(
+                BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
+        assertThat(pendingDeadLetterQueue).isEmpty();
+    }
+
+    @Test
+    void shouldSendBatchToDLQIfOneFileIsAssignedToAnotherJob() {
+
+        // Given
+        FileReference unassignedFile = fileFactory.rootFile("unassigned.parquet", 1234);
+        FileReference assignedFile = fileFactory.rootFile("assigned-to-other-job.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(unassignedFile), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(assignedFile), "root");
+        CompactionJob tookFileJob = compactionFactory.createCompactionJob("took-file-job", List.of(assignedFile), "root");
+        stateStore.addFiles(List.of(unassignedFile, assignedFile));
+        assignJobIds(List.of(tookFileJob));
+
+        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
+        tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 12);
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                "test-batch", Instant.parse("2024-11-15T10:20:00Z"));
+        Instant retryTime = Instant.parse("2024-11-15T10:22:00Z");
+        putCompactionJobBatch(request, List.of(job1, job2));
+
+        // When
+        dispatchWithTimeAtRetryCheck(request, retryTime);
+
+        // Then
+        assertThat(compactionQueue).isEmpty();
+        assertThat(delayedPendingQueue).isEmpty();
+        assertThat(pendingDeadLetterQueue).containsExactly(request);
+    }
+
+    @Test
+    void shouldSendBatchToDLQIfOneFileHasBeenDeleted() {
+
+        // Given
+        FileReference unassignedFile = fileFactory.rootFile("unassigned.parquet", 1234);
+        FileReference deletedFile = fileFactory.rootFile("deleted.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(unassignedFile), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(deletedFile), "root");
+        stateStore.addFiles(List.of(unassignedFile));
+
+        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
+        tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 12);
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                "test-batch", Instant.parse("2024-11-15T10:20:00Z"));
+        Instant retryTime = Instant.parse("2024-11-15T10:22:00Z");
+        putCompactionJobBatch(request, List.of(job1, job2));
+
+        // When
+        dispatchWithTimeAtRetryCheck(request, retryTime);
+
+        // Then
+        assertThat(compactionQueue).isEmpty();
+        assertThat(delayedPendingQueue).isEmpty();
+        assertThat(pendingDeadLetterQueue).containsExactly(request);
+    }
+
+    @Test
+    void shouldSendToDeadLetterQueueIfTheFilesAreUnassignedAndTimeoutExpired() {
 
         // Given
         FileReference file1 = fileFactory.rootFile("test5.parquet", 1234);
@@ -139,15 +224,17 @@ public class CompactionJobDispatcherTest {
         Instant retryTime = Instant.parse("2024-11-15T10:33:00Z");
         putCompactionJobBatch(request, List.of(job1, job2));
 
-        // When / Then
-        assertThatThrownBy(() -> dispatchWithTimeAtRetryCheck(request, retryTime))
-                .isInstanceOf(CompactionJobBatchExpiredException.class);
+        // When
+        dispatchWithTimeAtRetryCheck(request, retryTime);
+
+        // Then
         assertThat(compactionQueue).isEmpty();
         assertThat(delayedPendingQueue).isEmpty();
+        assertThat(pendingDeadLetterQueue).containsExactly(request);
     }
 
     @Test
-    void shouldFailWhenOneJobFailedToSend() {
+    void shouldFailForRetryWhenOneJobFailedToSend() {
 
         // Given
         FileReference file1 = fileFactory.rootFile("test1.parquet", 1234);
@@ -174,6 +261,7 @@ public class CompactionJobDispatcherTest {
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                 jobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
         assertThat(delayedPendingQueue).isEmpty();
+        assertThat(pendingDeadLetterQueue).isEmpty();
     }
 
     private void putCompactionJobBatch(CompactionJobDispatchRequest request, List<CompactionJob> jobs) {
@@ -190,8 +278,9 @@ public class CompactionJobDispatcherTest {
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore), statusStore, readBatch(),
-                sendJobs(), returnRequest(), 1, times.iterator()::next);
+                new FixedStateStoreProvider(tableProperties, stateStore), statusStore,
+                readBatch(), sendJobs(), 1,
+                returnRequest(), pendingDeadLetterQueue::add, times.iterator()::next);
     }
 
     private CompactionJobDispatcher.ReadBatch readBatch() {

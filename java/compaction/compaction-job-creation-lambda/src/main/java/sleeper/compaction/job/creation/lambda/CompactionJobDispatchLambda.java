@@ -37,6 +37,7 @@ import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReadBatch;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReturnRequestToPendingQueue;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendDeadLetter;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -49,6 +50,7 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -87,9 +89,8 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
-                readBatch(s3, compactionJobSerDe),
-                sendJobs(instanceProperties, sqs, compactionJobSerDe),
-                returnToQueue(instanceProperties, sqs), 10, timeSupplier);
+                readBatch(s3, compactionJobSerDe), sendJobs(instanceProperties, sqs, compactionJobSerDe), 10,
+                returnToQueue(instanceProperties, sqs), sendDeadLetter(instanceProperties, sqs), timeSupplier);
     }
 
     private static SendJobs sendJobs(InstanceProperties instanceProperties, AmazonSQS sqs, CompactionJobSerDe compactionJobSerDe) {
@@ -116,5 +117,12 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
                 .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
                 .withMessageBody(serDe.toJson(request))
                 .withDelaySeconds(delaySeconds));
+    }
+
+    private static SendDeadLetter sendDeadLetter(InstanceProperties instanceProperties, AmazonSQS sqs) {
+        CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
+        return request -> sqs.sendMessage(new SendMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_DLQ_URL))
+                .withMessageBody(serDe.toJson(request)));
     }
 }
