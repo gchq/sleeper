@@ -29,11 +29,10 @@ import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
@@ -92,7 +91,7 @@ public class WaitForJobsStatusTest {
         CompactionJob uncommittedJob = compactionJob("uncommitted-job", "alpha.parquet", "beta.parquet");
         CompactionJob finishedJob = compactionJob("finished-job", "first.parquet", "second.parquet");
         store.fixUpdateTime(Instant.parse("2023-09-18T14:47:00Z"));
-        jobInputFilesAssigned(createdJob, startedJob, uncommittedJob, finishedJob);
+        jobsCreated(createdJob, startedJob, uncommittedJob, finishedJob);
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:03Z"));
         store.jobStarted(compactionJobStarted(startedJob, Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").build());
         store.jobStarted(compactionJobStarted(uncommittedJob, Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").build());
@@ -114,9 +113,9 @@ public class WaitForJobsStatusTest {
         // Then
         assertThat(status).hasToString("{\n" +
                 "  \"countByFurthestStatus\": {\n" +
+                "    \"CREATED\": 1,\n" +
                 "    \"FINISHED\": 1,\n" +
                 "    \"IN_PROGRESS\": 1,\n" +
-                "    \"PENDING\": 1,\n" +
                 "    \"UNCOMMITTED\": 1\n" +
                 "  },\n" +
                 "  \"numUnstarted\": 1,\n" +
@@ -248,14 +247,13 @@ public class WaitForJobsStatusTest {
 
     private void addCreatedJob(CompactionJob job, Instant createdTime) {
         store.fixUpdateTime(defaultUpdateTime(createdTime));
-        store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
+        store.jobCreated(compactionJobCreated(job));
     }
 
-    private void jobInputFilesAssigned(CompactionJob... jobs) {
-        store.jobInputFilesAssigned(table.getTableUniqueId(),
-                Stream.of(jobs)
-                        .map(CompactionJob::createAssignJobIdRequest)
-                        .collect(toUnmodifiableList()));
+    private void jobsCreated(CompactionJob... jobs) {
+        for (CompactionJob job : jobs) {
+            store.jobCreated(compactionJobCreated(job));
+        }
     }
 
     private void addUnfinishedRun(CompactionJob job, Instant startTime, String taskId) {

@@ -17,8 +17,8 @@ package sleeper.compaction.core.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
@@ -41,14 +41,14 @@ class CompactionJobStatusFromRecordsTest {
     @Test
     void shouldBuildCompactionJobStatusFromIndividualUpdates() {
         // Given
-        CompactionJobInputFilesAssignedStatus created1 = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus created1 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
                 .build();
         CompactionJobStartedStatus started1 = compactionStartedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         CompactionJobFinishedStatus finished1 = compactionFinishedStatus(summary(started1, Duration.ofSeconds(30), 200L, 100L));
-        CompactionJobInputFilesAssignedStatus created2 = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus created2 = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2022-09-24T09:23:00.012Z"))
                 .partitionId("partition2")
                 .inputFilesCount(12)
@@ -63,10 +63,10 @@ class CompactionJobStatusFromRecordsTest {
 
         // Then
         assertThat(statuses).containsExactly(
-                CompactionJobStatus.builder().jobId("job2").filesAssignedStatus(created2)
+                CompactionJobStatus.builder().jobId("job2").createdStatus(created2)
                         .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started2, finished2))
                         .expiryDate(DEFAULT_EXPIRY).build(),
-                CompactionJobStatus.builder().jobId("job1").filesAssignedStatus(created1)
+                CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
                         .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started1, finished1))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }
@@ -91,7 +91,7 @@ class CompactionJobStatusFromRecordsTest {
     @Test
     void shouldBuildJobStatusWhenCreatedUpdateStoredAfterStartedUpdate() {
         // Given
-        CompactionJobInputFilesAssignedStatus created = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
@@ -105,7 +105,7 @@ class CompactionJobStatusFromRecordsTest {
 
         // Then
         assertThat(statuses).containsExactly(
-                CompactionJobStatus.builder().jobId("test-job").filesAssignedStatus(created)
+                CompactionJobStatus.builder().jobId("test-job").createdStatus(created)
                         .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started, finished))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }

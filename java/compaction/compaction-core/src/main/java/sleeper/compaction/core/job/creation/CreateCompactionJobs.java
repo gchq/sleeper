@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategy;
 import sleeper.compaction.core.job.creation.strategy.CompactionStrategyIndex;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
@@ -73,7 +72,6 @@ public class CreateCompactionJobs {
     private final BatchJobsWriter batchJobsWriter;
     private final BatchMessageSender batchMessageSender;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore jobStatusStore;
     private final AssignJobIdQueueSender assignJobIdQueueSender;
     private final GenerateJobId generateJobId;
     private final GenerateBatchId generateBatchId;
@@ -83,7 +81,6 @@ public class CreateCompactionJobs {
     public CreateCompactionJobs(ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore jobStatusStore,
             BatchJobsWriter batchJobsWriter,
             BatchMessageSender batchMessageSender,
             AssignJobIdQueueSender assignJobIdQueueSender,
@@ -96,7 +93,6 @@ public class CreateCompactionJobs {
         this.batchJobsWriter = batchJobsWriter;
         this.batchMessageSender = batchMessageSender;
         this.stateStoreProvider = stateStoreProvider;
-        this.jobStatusStore = jobStatusStore;
         this.assignJobIdQueueSender = assignJobIdQueueSender;
         this.generateJobId = generateJobId;
         this.generateBatchId = generateBatchId;
@@ -168,7 +164,7 @@ public class CreateCompactionJobs {
         if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
             assignJobIdsToFiles = AssignJobIdToFiles.byQueue(assignJobIdQueueSender);
         } else {
-            assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore, jobStatusStore);
+            assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore);
         }
         int sendBatchSize = tableProperties.getInt(COMPACTION_JOB_SEND_BATCH_SIZE);
         for (List<CompactionJob> batch : splitListIntoBatchesOf(sendBatchSize, compactionJobs)) {

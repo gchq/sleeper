@@ -22,13 +22,13 @@ import sleeper.core.statestore.AssignJobIdRequest;
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobInputFilesAssignedStatus implements ProcessStatusUpdate {
+public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
 
     private final Instant updateTime;
     private final String partitionId;
     private final int inputFilesCount;
 
-    public CompactionJobInputFilesAssignedStatus(Builder builder) {
+    public CompactionJobCreatedStatus(Builder builder) {
         updateTime = builder.updateTime;
         partitionId = builder.partitionId;
         inputFilesCount = builder.inputFilesCount;
@@ -38,7 +38,15 @@ public class CompactionJobInputFilesAssignedStatus implements ProcessStatusUpdat
         return new Builder();
     }
 
-    public static CompactionJobInputFilesAssignedStatus from(CompactionJob job, Instant updateTime) {
+    public static CompactionJobCreatedStatus from(CompactionJobCreatedEvent event, Instant updateTime) {
+        return builder()
+                .updateTime(updateTime)
+                .partitionId(event.getPartitionId())
+                .inputFilesCount(event.getInputFilesCount())
+                .build();
+    }
+
+    public static CompactionJobCreatedStatus from(CompactionJob job, Instant updateTime) {
         return builder()
                 .updateTime(updateTime)
                 .partitionId(job.getPartitionId())
@@ -46,7 +54,7 @@ public class CompactionJobInputFilesAssignedStatus implements ProcessStatusUpdat
                 .build();
     }
 
-    public static CompactionJobInputFilesAssignedStatus from(AssignJobIdRequest request, Instant updateTime) {
+    public static CompactionJobCreatedStatus from(AssignJobIdRequest request, Instant updateTime) {
         return builder()
                 .updateTime(updateTime)
                 .partitionId(request.getPartitionId())
@@ -77,16 +85,16 @@ public class CompactionJobInputFilesAssignedStatus implements ProcessStatusUpdat
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof CompactionJobInputFilesAssignedStatus)) {
+        if (!(obj instanceof CompactionJobCreatedStatus)) {
             return false;
         }
-        CompactionJobInputFilesAssignedStatus other = (CompactionJobInputFilesAssignedStatus) obj;
+        CompactionJobCreatedStatus other = (CompactionJobCreatedStatus) obj;
         return Objects.equals(updateTime, other.updateTime) && Objects.equals(partitionId, other.partitionId) && inputFilesCount == other.inputFilesCount;
     }
 
     @Override
     public String toString() {
-        return "CompactionJobInputFilesAssignedStatus{updateTime=" + updateTime + ", partitionId=" + partitionId + ", inputFilesCount=" + inputFilesCount + "}";
+        return "CompactionJobCreatedStatus{updateTime=" + updateTime + ", partitionId=" + partitionId + ", inputFilesCount=" + inputFilesCount + "}";
     }
 
     public static final class Builder {
@@ -112,8 +120,8 @@ public class CompactionJobInputFilesAssignedStatus implements ProcessStatusUpdat
             return this;
         }
 
-        public CompactionJobInputFilesAssignedStatus build() {
-            return new CompactionJobInputFilesAssignedStatus(this);
+        public CompactionJobCreatedStatus build() {
+            return new CompactionJobCreatedStatus(this);
         }
     }
 }
