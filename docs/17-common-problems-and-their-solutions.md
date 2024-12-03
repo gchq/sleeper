@@ -19,7 +19,8 @@ If you see an out of memory error, then try reducing `sleeper.ingest.arrow.max.l
 parameter it is a good idea to also reduce `sleeper.ingest.arrow.batch.buffer.bytes`. To change these parameters, use the
 administration client described in the [system status documentation](06-status.md).
 
-(Presently the implemenation is based on arrow ingest whereas previously it was based on an arraylist.)
+Presently the implemenation is based on arrow ingest, whereas previously it was an arraylist based implementation and
+as such will work differently if that is used.
 
 ## I created an instance, destroyed it and then recreating it failed
 
