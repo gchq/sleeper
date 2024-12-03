@@ -37,9 +37,6 @@ import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapsho
 import java.io.IOException;
 import java.util.Optional;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
-
 /**
  * Creates a snapshot of the current state of a state store if it has changed since the previous snapshot.
  */
@@ -64,11 +61,9 @@ public class DynamoDBTransactionLogSnapshotCreator {
     public static DynamoDBTransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
-        TransactionLogStore fileTransactionStore = new DynamoDBTransactionLogStore(
-                instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
+        TransactionLogStore fileTransactionStore = DynamoDBTransactionLogStore.forFiles(
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
-        TransactionLogStore partitionTransactionStore = new DynamoDBTransactionLogStore(
-                instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
+        TransactionLogStore partitionTransactionStore = DynamoDBTransactionLogStore.forPartitions(
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
                 instanceProperties, tableProperties, dynamoDBClient);
