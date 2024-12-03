@@ -89,7 +89,7 @@ public class JavaCompactionRunner implements CompactionRunner {
         long recordsWritten = 0L;
         while (mergingIterator.hasNext()) {
             Record record = mergingIterator.next();
-            sketches.update(schema, record);
+            sketches.update(record);
             // Write out
             writer.write(record);
             recordsWritten++;

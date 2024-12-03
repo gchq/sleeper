@@ -550,7 +550,7 @@ public class SplitPartitionTest {
         AtomicLong recordCount = new AtomicLong();
 
         recordsStream.forEach(rec -> {
-            sketches.update(schema, rec);
+            sketches.update(rec);
             recordCount.incrementAndGet();
         });
 

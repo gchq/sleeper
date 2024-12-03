@@ -55,7 +55,7 @@ public class SketchesDeciles {
     public static SketchesDeciles from(Schema schema, List<Record> records) {
         Sketches sketches = Sketches.from(schema);
         for (Record record : records) {
-            sketches.update(schema, record);
+            sketches.update(record);
         }
         return from(sketches);
     }
@@ -81,12 +81,12 @@ public class SketchesDeciles {
                 .collect(toMap(Field::getName, field -> Sketches.createUnion(field.getType(), 1024)));
         for (String file : files) {
             Sketches sketches = getSketches(schema, file, conf);
-            for (Field field : schema.getRowKeyFields()) {
-                ItemsUnion union = unionByField.get(field.getName());
-                union.update(sketches.getQuantilesSketch(field.getName()));
-            }
+            sketches.fieldSketches().forEach(fieldSketch -> {
+                ItemsUnion union = unionByField.get(fieldSketch.getField().getName());
+                union.update(fieldSketch.getSketch());
+            });
         }
-        Sketches sketches = new Sketches(unionByField.entrySet().stream()
+        Sketches sketches = new Sketches(schema, unionByField.entrySet().stream()
                 .collect(toMap(Entry::getKey, entry -> entry.getValue().getResult())));
         return from(sketches);
     }
@@ -106,8 +106,8 @@ public class SketchesDeciles {
 
     private static Map<String, SketchDeciles> createDecilesByField(Sketches sketches) {
         Map<String, SketchDeciles> decilesByField = new TreeMap<>();
-        sketches.getQuantilesSketches().forEach((field, sketch) -> {
-            decilesByField.put(field, SketchDeciles.from(sketch));
+        sketches.fieldSketches().forEach(fieldSketch -> {
+            decilesByField.put(fieldSketch.getField().getName(), SketchDeciles.from(fieldSketch));
         });
         return decilesByField;
     }
