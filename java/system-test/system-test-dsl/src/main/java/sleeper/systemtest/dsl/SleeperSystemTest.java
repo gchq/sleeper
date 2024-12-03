@@ -125,7 +125,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCompaction compaction() {
-        return new SystemTestCompaction(context);
+        return new SystemTestCompaction(context, baseDrivers);
     }
 
     public SystemTestGarbageCollection garbageCollection() {

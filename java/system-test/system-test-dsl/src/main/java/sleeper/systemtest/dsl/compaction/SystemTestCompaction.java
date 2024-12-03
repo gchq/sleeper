@@ -29,17 +29,20 @@ import java.util.List;
 public class SystemTestCompaction {
 
     private final CompactionDriver driver;
+    private final CompactionDriver baseDriver;
     private final PollWithRetriesDriver pollDriver;
     private final WaitForCompactionJobCreation waitForJobCreation;
     private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
 
-    public SystemTestCompaction(SystemTestContext context) {
+    public SystemTestCompaction(SystemTestContext context, SystemTestDrivers baseDrivers) {
         SystemTestDrivers drivers = context.instance().adminDrivers();
         driver = drivers.compaction(context);
         pollDriver = drivers.pollWithRetries();
         waitForJobCreation = new WaitForCompactionJobCreation(context.instance(), driver);
         waitForJobs = drivers.waitForCompaction(context);
+        // Use base driver to drain compaction queue as admin role does not have permission to do this
+        baseDriver = baseDrivers.compaction(context);
     }
 
     public SystemTestCompaction createJobs(int expectedJobs) {
@@ -93,7 +96,7 @@ public class SystemTestCompaction {
     }
 
     public List<CompactionJob> drainJobsQueueForWholeInstance() {
-        return driver.drainJobsQueueForWholeInstance();
+        return baseDriver.drainJobsQueueForWholeInstance();
     }
 
     public void scaleToZero() {
