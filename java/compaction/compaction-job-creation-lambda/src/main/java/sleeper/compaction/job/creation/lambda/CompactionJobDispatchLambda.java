@@ -24,15 +24,21 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequest;
+import com.amazonaws.services.sqs.model.SendMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.SendMessageBatchResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReadBatch;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.ReturnRequestToPendingQueue;
-import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJob;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendDeadLetter;
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher.SendJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -44,6 +50,7 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -54,6 +61,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
  * when that is done asynchronously. Runs batches with {@link CompactionJobDispatcher}.
  */
 public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Void> {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionJobDispatchLambda.class);
 
     private final CompactionJobDispatcher dispatcher;
     private final CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
@@ -81,15 +89,22 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
                 CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
-                readBatch(s3, compactionJobSerDe),
-                sendJob(instanceProperties, sqs, compactionJobSerDe),
-                returnToQueue(instanceProperties, sqs), timeSupplier);
+                readBatch(s3, compactionJobSerDe), sendJobs(instanceProperties, sqs, compactionJobSerDe), 10,
+                returnToQueue(instanceProperties, sqs), sendDeadLetter(instanceProperties, sqs), timeSupplier);
     }
 
-    private static SendJob sendJob(InstanceProperties instanceProperties, AmazonSQS sqs, CompactionJobSerDe compactionJobSerDe) {
-        return compactionJob -> sqs.sendMessage(
-                instanceProperties.get(COMPACTION_JOB_QUEUE_URL),
-                compactionJobSerDe.toJson(compactionJob));
+    private static SendJobs sendJobs(InstanceProperties instanceProperties, AmazonSQS sqs, CompactionJobSerDe compactionJobSerDe) {
+        return jobs -> {
+            SendMessageBatchResult result = sqs.sendMessageBatch(new SendMessageBatchRequest()
+                    .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                    .withEntries(jobs.stream()
+                            .map(job -> new SendMessageBatchRequestEntry(job.getId(), compactionJobSerDe.toJson(job)))
+                            .toList()));
+            if (!result.getFailed().isEmpty()) {
+                LOGGER.error("Found failures sending jobs: {}", result.getFailed());
+                throw new RuntimeException("Failed sending halfway through batch");
+            }
+        };
     }
 
     private static ReadBatch readBatch(AmazonS3 s3, CompactionJobSerDe compactionJobSerDe) {
@@ -102,5 +117,12 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
                 .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
                 .withMessageBody(serDe.toJson(request))
                 .withDelaySeconds(delaySeconds));
+    }
+
+    private static SendDeadLetter sendDeadLetter(InstanceProperties instanceProperties, AmazonSQS sqs) {
+        CompactionJobDispatchRequestSerDe serDe = new CompactionJobDispatchRequestSerDe();
+        return request -> sqs.sendMessage(new SendMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_DLQ_URL))
+                .withMessageBody(serDe.toJson(request)));
     }
 }

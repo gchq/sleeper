@@ -25,6 +25,9 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.util.SplitIntoBatches;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -44,22 +47,27 @@ public class CompactionJobDispatcher {
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobStatusStore statusStore;
     private final ReadBatch readBatch;
-    private final SendJob sendJob;
+    private final SendJobs sendJobs;
+    private final int sendBatchSize;
     private final ReturnRequestToPendingQueue returnToPendingQueue;
+    private final SendDeadLetter sendDeadLetter;
     private final Supplier<Instant> timeSupplier;
 
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider, CompactionJobStatusStore statusStore, ReadBatch readBatch,
-            SendJob sendJob, ReturnRequestToPendingQueue returnToPendingQueue,
+            SendJobs sendJobs, int sendBatchSize,
+            ReturnRequestToPendingQueue returnToPendingQueue, SendDeadLetter sendDeadLetter,
             Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;
         this.readBatch = readBatch;
-        this.sendJob = sendJob;
+        this.sendJobs = sendJobs;
+        this.sendBatchSize = sendBatchSize;
         this.returnToPendingQueue = returnToPendingQueue;
+        this.sendDeadLetter = sendDeadLetter;
         this.timeSupplier = timeSupplier;
     }
 
@@ -69,32 +77,47 @@ public class CompactionJobDispatcher {
                 tableProperties.getStatus(), request.getBatchKey());
         List<CompactionJob> batch = readBatch.read(instanceProperties.get(DATA_BUCKET), request.getBatchKey());
         LOGGER.info("Read {} compaction jobs", batch.size());
-        if (validateBatchIsValidToBeSent(batch, tableProperties)) {
-            LOGGER.info("Validated input file assignments, sending {} jobs", batch.size());
-            for (CompactionJob job : batch) {
-                sendJob.send(job);
-                statusStore.jobCreated(compactionJobCreated(job));
+        try {
+            if (batchIsReadyToBeSent(tableProperties, batch)) {
+                send(batch);
+            } else {
+                returnToQueueWithDelay(tableProperties, request);
             }
-            LOGGER.info("Sent {} jobs", batch.size());
-        } else {
-            LOGGER.info("Found file assignments not yet made");
-            Instant expiryTime = request.getCreateTime().plus(
-                    Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS)));
-            if (timeSupplier.get().isAfter(expiryTime)) {
-                throw new CompactionJobBatchExpiredException(request, expiryTime);
-            }
-            int delaySeconds = tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS);
-            returnToPendingQueue.sendWithDelay(request, delaySeconds);
-            LOGGER.info("Returned compaction batch to pending queue with a delay of {} seconds, held at: {}",
-                    delaySeconds, request.getBatchKey());
+        } catch (FileReferenceAssignedToJobException | FileReferenceNotFoundException e) {
+            LOGGER.error("Unexpected state found in state store, sending batch to dead letter queue", e);
+            sendDeadLetter.send(request);
         }
     }
 
-    private boolean validateBatchIsValidToBeSent(List<CompactionJob> batch, TableProperties tableProperties) {
+    private boolean batchIsReadyToBeSent(TableProperties tableProperties, List<CompactionJob> batch) {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         return stateStore.isAssigned(batch.stream()
                 .map(CompactionJob::createInputFileAssignmentsCheck)
                 .toList());
+    }
+
+    private void send(List<CompactionJob> batch) {
+        LOGGER.info("Validated input file assignments, sending {} jobs", batch.size());
+        for (List<CompactionJob> toSend : SplitIntoBatches.splitListIntoBatchesOf(sendBatchSize, batch)) {
+            sendJobs.send(toSend);
+            toSend.forEach(job -> statusStore.jobCreated(compactionJobCreated(job)));
+        }
+        LOGGER.info("Sent {} jobs", batch.size());
+    }
+
+    private void returnToQueueWithDelay(TableProperties tableProperties, CompactionJobDispatchRequest request) {
+        LOGGER.info("Found file assignments not yet made");
+        Instant expiryTime = request.getCreateTime().plus(
+                Duration.ofSeconds(tableProperties.getInt(COMPACTION_JOB_SEND_TIMEOUT_SECS)));
+        if (timeSupplier.get().isAfter(expiryTime)) {
+            LOGGER.error("Found batch expired, sending to dead letter queue");
+            sendDeadLetter.send(request);
+            return;
+        }
+        int delaySeconds = tableProperties.getInt(COMPACTION_JOB_SEND_RETRY_DELAY_SECS);
+        returnToPendingQueue.sendWithDelay(request, delaySeconds);
+        LOGGER.info("Returned compaction batch to pending queue with a delay of {} seconds, held at: {}",
+                delaySeconds, request.getBatchKey());
     }
 
     @FunctionalInterface
@@ -104,14 +127,19 @@ public class CompactionJobDispatcher {
     }
 
     @FunctionalInterface
-    public interface SendJob {
+    public interface SendJobs {
 
-        void send(CompactionJob job);
+        void send(List<CompactionJob> jobs);
     }
 
     @FunctionalInterface
     public interface ReturnRequestToPendingQueue {
         void sendWithDelay(CompactionJobDispatchRequest request, int delaySeconds);
+    }
+
+    @FunctionalInterface
+    public interface SendDeadLetter {
+        void send(CompactionJobDispatchRequest request);
     }
 
 }
