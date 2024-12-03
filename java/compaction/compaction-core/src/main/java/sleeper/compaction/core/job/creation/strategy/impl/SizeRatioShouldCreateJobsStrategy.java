@@ -42,12 +42,12 @@ public class SizeRatioShouldCreateJobsStrategy implements ShouldCreateJobsStrate
     public long maxCompactionJobsToCreate(FilesInPartition filesInPartition) {
         long numConcurrentCompactionJobs = getNumberOfCurrentCompactionJobs(filesInPartition.getFilesWithJobId());
         if (numConcurrentCompactionJobs >= maxConcurrentCompactionJobsPerPartition) {
-            LOGGER.info("Not creating compaction jobs for partition {} as there are already {} running compaction jobs",
+            LOGGER.debug("Not creating compaction jobs for partition {} as there are already {} running compaction jobs",
                     filesInPartition.getPartitionId(), numConcurrentCompactionJobs);
             return 0;
         }
         long maxNumberOfJobsToCreate = maxConcurrentCompactionJobsPerPartition - numConcurrentCompactionJobs;
-        LOGGER.info("Max jobs to create = {}", maxNumberOfJobsToCreate);
+        LOGGER.debug("Max jobs to create = {}", maxNumberOfJobsToCreate);
         return maxNumberOfJobsToCreate;
     }
 
