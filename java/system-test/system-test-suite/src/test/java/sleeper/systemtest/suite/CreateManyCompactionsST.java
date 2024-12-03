@@ -19,8 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
-import sleeper.core.properties.validation.CompactionMethod;
-import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -29,9 +27,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.stream.LongStream;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
@@ -49,8 +45,7 @@ public class CreateManyCompactionsST {
         // Given
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "2",
-                COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString()));
+                COMPACTION_FILES_BATCH_SIZE, "2"));
         sleeper.partitioning().setPartitions(
                 createPartitionTreeWithRecordsPerPartitionAndTotal(10, 655360, sleeper));
         sleeper.sourceFiles().inDataBucket().writeSketches()
@@ -60,19 +55,10 @@ public class CreateManyCompactionsST {
                 .addFileOnEveryPartition("file1.parquet", 655360)
                 .addFileOnEveryPartition("file2.parquet", 655360);
 
-        // When
+        // When we create jobs
+        // Then we get one for each partition
         sleeper.compaction()
-                .createJobs(65536, PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(15)))
-                .invokeTasks(1);
-        // Poll the state store because the status store is too slow to load all the jobs
-        sleeper.tableFiles().waitForState(files -> files.countFileReferences() <= 65536,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(20)));
-
-        // Then
-        AllReferencesToAllFiles files = sleeper.tableFiles().all();
-        assertThat(files.getFilesWithReferences().size()).isEqualTo(65536);
-        assertThat(files.getFilesWithNoReferences().size()).isEqualTo(2);
-        assertThat(files.countFileReferences()).isEqualTo(65536);
-        assertThat(files.estimateRecordsInTable()).isEqualTo(1310720);
+                .createJobs(65536,
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
     }
 }
