@@ -205,14 +205,22 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_FIXED_OVERHEAD = Index.propertyBuilder("sleeper.compaction.task.scaling.overhead.fixed")
-            .description("")
+            .description("Used when scaling EC2 instances to support an expected number of compaction tasks. " +
+                    "This is the amount of memory in MB that we expect ECS to reserve on an EC2 instance before " +
+                    "making memory available for compaction tasks.\n" +
+                    "If this is unset, it will be computed as a percentage of the memory on the EC2 instead, see " +
+                    "`sleeper.compaction.task.scaling.overhead.percentage`.")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeIntegerOrNull)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_PERCENTAGE_OVERHEAD = Index.propertyBuilder("sleeper.compaction.task.scaling.overhead.percentage")
-            .description("")
+            .description("Used when scaling EC2 instances to support an expected number of compaction tasks. " +
+                    "This is the percentage of memory in an EC2 instance that we expect ECS to reserve before " +
+                    "making memory available for compaction tasks.\n" +
+                    "Defaults to 10%, so we expect 90% of the memory on an EC2 instance to be used for compaction " +
+                    "tasks.")
             .defaultValue("10")
-            .validationPredicate(val -> SleeperPropertyValueUtils.isNonNegativeIntLtEqValue(val, 95))
+            .validationPredicate(val -> SleeperPropertyValueUtils.isNonNegativeIntLtEqValue(val, 99))
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")

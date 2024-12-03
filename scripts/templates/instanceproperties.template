@@ -1047,11 +1047,18 @@ sleeper.compaction.task.x86.cpu=1024
 # options.
 sleeper.compaction.task.x86.memory=4096
 
-# 
+# Used when scaling EC2 instances to support an expected number of compaction tasks. This is the
+# amount of memory in MB that we expect ECS to reserve on an EC2 instance before making memory
+# available for compaction tasks.
+# If this is unset, it will be computed as a percentage of the memory on the EC2 instead, see
+# `sleeper.compaction.task.scaling.overhead.percentage`.
 # sleeper.compaction.task.scaling.overhead.fixed=
 
-# 
-sleeper.compaction.task.scaling.overhead.percentage=90
+# Used when scaling EC2 instances to support an expected number of compaction tasks. This is the
+# percentage of memory in an EC2 instance that we expect ECS to reserve before making memory available
+# for compaction tasks.
+# Defaults to 10%, so we expect 90% of the memory on an EC2 instance to be used for compaction tasks.
+sleeper.compaction.task.scaling.overhead.percentage=10
 
 # What launch type should compaction containers use? Valid options: FARGATE, EC2.
 sleeper.compaction.ecs.launch.type=FARGATE
