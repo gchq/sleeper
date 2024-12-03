@@ -16,6 +16,7 @@
 package sleeper.task.common;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_FIXED_OVERHEAD;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
@@ -310,6 +312,27 @@ public class RunCompactionTasksTest {
             // Then
             assertThat(scaleToHostsRequests).containsExactly(2);
             assertThat(launchTasksRequests).containsExactly(6);
+        }
+
+        @Test
+        @Disabled
+        void shouldScaleToSetScalingLimitBasedOnPropertySet() {
+            //Given
+
+            instanceProperties.set(COMPACTION_EC2_TYPE, "test-type");
+            instanceTypes.put("test-type", new InstanceType(4, 4096));
+            instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+            instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_FIXED_OVERHEAD, 512);
+
+            // When
+            runTasks(jobsOnQueue(6), noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(2);
+            //assertThat(launchTasksRequests).containsExactly(6);
+
         }
 
         @Test

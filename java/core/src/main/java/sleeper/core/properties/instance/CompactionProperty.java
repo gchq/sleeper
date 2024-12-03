@@ -204,6 +204,17 @@ public interface CompactionProperty {
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_FIXED_OVERHEAD = Index.propertyBuilder("sleeper.compaction.task.scaling.overhead.fixed")
+            .description("")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeIntegerOrNull)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_PERCENTAGE_OVERHEAD = Index.propertyBuilder("sleeper.compaction.task.scaling.overhead.percentage")
+            .description("")
+            .defaultValue("90")
+            .validationPredicate(val -> SleeperPropertyValueUtils.isNonNegativeIntLtEqValue(val, 95))
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
             .description("What launch type should compaction containers use? Valid options: FARGATE, EC2.")
             .defaultValue("FARGATE")

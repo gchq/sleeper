@@ -1047,6 +1047,12 @@ sleeper.compaction.task.x86.cpu=1024
 # options.
 sleeper.compaction.task.x86.memory=4096
 
+# 
+# sleeper.compaction.task.scaling.overhead.fixed=
+
+# 
+sleeper.compaction.task.scaling.overhead.percentage=90
+
 # What launch type should compaction containers use? Valid options: FARGATE, EC2.
 sleeper.compaction.ecs.launch.type=FARGATE
 
