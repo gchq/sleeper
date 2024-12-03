@@ -25,6 +25,7 @@ import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.sqs.IQueue;
 
 import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
 
 import javax.annotation.Nullable;
@@ -59,24 +60,8 @@ public class CoreStacks {
         this.compactionStatusStore = compactionStatusStore;
     }
 
-    public ILogGroup getLogGroupByFunctionName(String functionName) {
-        return loggingStack.getLogGroupByFunctionName(functionName);
-    }
-
-    public ILogGroup getProviderLogGroupByFunctionName(String functionName) {
-        return loggingStack.getProviderLogGroupByFunctionName(functionName);
-    }
-
-    public ILogGroup getLogGroupByECSLogDriverId(String id) {
-        return loggingStack.getLogGroupByECSLogDriverId(id);
-    }
-
-    public ILogGroup getLogGroupByStateMachineId(String id) {
-        return loggingStack.getLogGroupByStateMachineId(id);
-    }
-
-    public ILogGroup getLogGroupByEksClusterName(String clusterName) {
-        return loggingStack.getLogGroupByEksClusterName(clusterName);
+    public ILogGroup getLogGroup(LogGroupRef logGroupRef) {
+        return loggingStack.getLogGroup(logGroupRef);
     }
 
     public void grantReadInstanceConfig(IGrantable grantee) {

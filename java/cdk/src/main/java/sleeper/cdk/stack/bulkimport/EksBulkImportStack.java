@@ -65,6 +65,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -145,7 +146,7 @@ public final class EksBulkImportStack extends NestedStack {
                 .memorySize(1024)
                 .timeout(Duration.minutes(2))
                 .environment(env)
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS_STARTER))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(bulkImportJobQueue).batchSize(1).build())));
         configureJobStarterFunction(bulkImportJobStarter);
 
@@ -182,7 +183,7 @@ public final class EksBulkImportStack extends NestedStack {
                         .namespace(uniqueBulkImportId)
                         .build()))
                 .build());
-        addFluentBitLogging(bulkImportCluster, fargateProfile, instanceProperties, coreStacks.getLogGroupByEksClusterName(uniqueBulkImportId));
+        addFluentBitLogging(bulkImportCluster, fargateProfile, instanceProperties, coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS));
 
         ServiceAccount sparkSubmitServiceAccount = bulkImportCluster.addServiceAccount("SparkSubmitServiceAccount", ServiceAccountOptions.builder()
                 .namespace(uniqueBulkImportId)
@@ -268,7 +269,7 @@ public final class EksBulkImportStack extends NestedStack {
                                                                 .stateJson(deleteJobState).build()))
                                         .otherwise(createErrorMessage.next(publishError).next(Fail.Builder
                                                 .create(this, "FailedJobState").cause("Spark job failed").build())))))
-                .logs(createStateMachineLogOptions(coreStacks, "EksBulkImportStateMachine"))
+                .logs(createStateMachineLogOptions(coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS_STATE_MACHINE)))
                 .build();
     }
 

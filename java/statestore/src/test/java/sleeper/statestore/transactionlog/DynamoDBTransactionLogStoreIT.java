@@ -53,7 +53,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -273,15 +272,11 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private TransactionLogStore fileLogStore() {
-        return new DynamoDBTransactionLogStore(
-                instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
-                instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoDBClient, s3Client);
     }
 
     private TransactionLogStore partitionLogStore() {
-        return new DynamoDBTransactionLogStore(
-                instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
-                instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoDBClient, s3Client);
     }
 
     private Stream<String> streamFilesInDataBucket() {

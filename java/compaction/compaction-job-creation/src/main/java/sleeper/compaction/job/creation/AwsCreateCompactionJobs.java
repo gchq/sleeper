@@ -42,10 +42,10 @@ public class AwsCreateCompactionJobs {
             AmazonS3 s3Client,
             AmazonSQS sqsClient) {
         return new CreateCompactionJobs(
-                objectFactory, instanceProperties, stateStoreProvider, jobStatusStore,
+                objectFactory, instanceProperties, stateStoreProvider,
                 new CompactionBatchJobsWriterToS3(s3Client),
                 new CompactionBatchMessageSenderToSqs(instanceProperties, sqsClient),
-                new SendAssignJobIdToSqs(sqsClient, instanceProperties),
+                new SendAssignJobIdToSqs(instanceProperties, sqsClient, s3Client),
                 GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
     }
 }

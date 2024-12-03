@@ -93,7 +93,7 @@ public class DirectPartitionFileWriter implements PartitionFileWriter {
     @Override
     public void append(Record record) throws IOException {
         parquetWriter.write(record);
-        sketches.update(sleeperSchema, record);
+        sketches.update(record);
         recordsWrittenToCurrentPartition++;
         if (recordsWrittenToCurrentPartition % 1000000 == 0) {
             LOGGER.info("Written {} rows to partition {}", recordsWrittenToCurrentPartition, partition.getId());

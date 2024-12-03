@@ -27,6 +27,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -62,7 +63,8 @@ public class EmrBulkImportStack extends NestedStack {
                 BULK_IMPORT_EMR_JOB_QUEUE_URL, BULK_IMPORT_EMR_JOB_QUEUE_ARN,
                 errorsTopic);
         IFunction jobStarter = commonHelper.createJobStarterFunction(
-                "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(), commonEmrStack);
+                "NonPersistentEMR", bulkImportJobQueue, jars, importBucketStack.getImportBucket(),
+                LogGroupRef.BULK_IMPORT_EMR_NON_PERSISTENT_START, commonEmrStack);
 
         configureJobStarterFunction(instanceProperties, jobStarter);
         Utils.addStackTagIfSet(this, instanceProperties);

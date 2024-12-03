@@ -1,15 +1,15 @@
 Different for one table
-Partition at L:
+Leaf partition at L:
 {"key":{"min":-9223372036854775808,"minInclusive":true,"max":20,"maxInclusive":false},"stringsBase64Encoded":true}
-Partition at R:
+Leaf partition at R:
 {"key":{"min":20,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
 Partition at root:
 {"key":{"min":-9223372036854775808,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
 
 Same for 2 tables
-Partition at L:
+Leaf partition at L:
 {"key":{"min":-9223372036854775808,"minInclusive":true,"max":10,"maxInclusive":false},"stringsBase64Encoded":true}
-Partition at R:
+Leaf partition at R:
 {"key":{"min":10,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
 Partition at root:
 {"key":{"min":-9223372036854775808,"minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}

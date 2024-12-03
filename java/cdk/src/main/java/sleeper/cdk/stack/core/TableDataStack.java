@@ -26,6 +26,8 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -56,7 +58,11 @@ public class TableDataStack extends NestedStack {
                 .build();
 
         if (removalPolicy == RemovalPolicy.DESTROY) {
-            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, loggingStack, jars, dataBucket, bucketName);
+            IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+            LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+            AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode, dataBucket, bucketName,
+                    loggingStack.getLogGroup(LogGroupRef.TABLE_DATA_AUTODELETE),
+                    loggingStack.getLogGroup(LogGroupRef.TABLE_DATA_AUTODELETE_PROVIDER));
         }
 
         instanceProperties.set(DATA_BUCKET, dataBucket.getBucketName());

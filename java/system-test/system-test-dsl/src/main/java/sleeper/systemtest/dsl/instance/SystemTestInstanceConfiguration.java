@@ -25,6 +25,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static sleeper.core.deploy.SleeperScheduleRule.QUERY_WARM_LAMBDA;
+import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION;
+import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_DELETION;
+import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_TRANSACTION_DELETION;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class SystemTestInstanceConfiguration {
@@ -90,7 +94,11 @@ public class SystemTestInstanceConfiguration {
     public static final class Builder {
         private Supplier<DeployInstanceConfiguration> deployConfig;
         private boolean useSystemTestIngestSourceBucket = true;
-        private Set<SleeperScheduleRule> enableSchedules = Set.of();
+        private Set<SleeperScheduleRule> enableSchedules = Set.of(
+                QUERY_WARM_LAMBDA,
+                TRANSACTION_LOG_SNAPSHOT_CREATION,
+                TRANSACTION_LOG_SNAPSHOT_DELETION,
+                TRANSACTION_LOG_TRANSACTION_DELETION);
         private String shortName;
 
         private Builder() {

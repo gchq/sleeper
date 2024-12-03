@@ -47,8 +47,8 @@ RUN $CARGO_HOME/bin/rustup component add rust-std-x86_64-unknown-linux-gnu rust-
 RUN $CARGO_HOME/bin/cargo install cross
 RUN $CARGO_HOME/bin/cargo install cargo-audit --features=fix
 USER root
-RUN chmod -R g+rw $RUSTUP_HOME
-RUN chmod -R g+rw $CARGO_HOME
+RUN chmod -R a+rw $RUSTUP_HOME
+RUN chmod -R a+rw $CARGO_HOME
 
 COPY entrypoint.sh /entrypoint.sh
 
