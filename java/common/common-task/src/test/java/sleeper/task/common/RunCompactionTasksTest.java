@@ -16,7 +16,6 @@
 package sleeper.task.common;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,6 +41,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_FIXED_OVERHEAD;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_PERCENTAGE_OVERHEAD;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_CPU;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_X86_MEMORY;
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
@@ -288,6 +288,7 @@ public class RunCompactionTasksTest {
             instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
             instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 1024);
             instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_PERCENTAGE_OVERHEAD, 10);
 
             // When
             runTasks(jobsOnQueue(3), noExistingTasks());
@@ -305,6 +306,7 @@ public class RunCompactionTasksTest {
             instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
             instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 1024);
             instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_PERCENTAGE_OVERHEAD, 10);
 
             // When
             runTasks(jobsOnQueue(6), noExistingTasks());
@@ -315,24 +317,39 @@ public class RunCompactionTasksTest {
         }
 
         @Test
-        @Disabled
-        void shouldScaleToSetScalingLimitBasedOnPropertySet() {
+        void shouldScaleToExactMemoryFitWhenOverheadFixedAtZero() {
             //Given
-
             instanceProperties.set(COMPACTION_EC2_TYPE, "test-type");
             instanceTypes.put("test-type", new InstanceType(4, 4096));
             instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
             instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 1024);
             instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
-            instanceProperties.setNumber(COMPACTION_TASK_FIXED_OVERHEAD, 512);
+            instanceProperties.setNumber(COMPACTION_TASK_FIXED_OVERHEAD, 0);
 
             // When
-            runTasks(jobsOnQueue(6), noExistingTasks());
+            runTasks(jobsOnQueue(8), noExistingTasks());
 
             // Then
             assertThat(scaleToHostsRequests).containsExactly(2);
-            //assertThat(launchTasksRequests).containsExactly(6);
+            assertThat(launchTasksRequests).containsExactly(8);
+        }
 
+        @Test
+        void shouldScaleToHalfMemoryFitWhenOverheadSetToHalf() {
+            //Given
+            instanceProperties.set(COMPACTION_EC2_TYPE, "test-type");
+            instanceTypes.put("test-type", new InstanceType(4, 4096));
+            instanceProperties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
+            instanceProperties.setNumber(COMPACTION_TASK_X86_CPU, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_X86_MEMORY, 1024);
+            instanceProperties.setNumber(COMPACTION_TASK_PERCENTAGE_OVERHEAD, 50);
+
+            // When
+            runTasks(jobsOnQueue(8), noExistingTasks());
+
+            // Then
+            assertThat(scaleToHostsRequests).containsExactly(4);
+            assertThat(launchTasksRequests).containsExactly(8);
         }
 
         @Test
@@ -361,7 +378,7 @@ public class RunCompactionTasksTest {
             assertThatThrownBy(() -> runTasks(jobsOnQueue(5), noExistingTasks()))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Instance type does not fit a single compaction task with the configured requirements. " +
-                            "CPU required 1024, found 1024. Memory MiB required 1024, found 921.");
+                            "CPU required 1024, found 1024. Memory MiB required 1024, found 922.");
             assertThat(scaleToHostsRequests).isEmpty();
             assertThat(launchTasksRequests).isEmpty();
         }

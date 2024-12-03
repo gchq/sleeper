@@ -211,7 +211,7 @@ public interface CompactionProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TASK_PERCENTAGE_OVERHEAD = Index.propertyBuilder("sleeper.compaction.task.scaling.overhead.percentage")
             .description("")
-            .defaultValue("90")
+            .defaultValue("10")
             .validationPredicate(val -> SleeperPropertyValueUtils.isNonNegativeIntLtEqValue(val, 95))
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();

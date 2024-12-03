@@ -30,6 +30,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_EC2_TYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CPU_ARCHITECTURE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_FIXED_OVERHEAD;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_PERCENTAGE_OVERHEAD;
 
 /**
  * Autoscaler to scale EC2 instances for the desired number of compaction tasks. This makes decisions on how many
@@ -96,12 +98,7 @@ public class CompactionTaskHostScaler {
     private int computeContainersPerInstance(InstanceType instanceType) {
         // ECS CPU reservation is done on scale of 1024 units = 100% of vCPU
         int cpuAvailable = instanceType.defaultVCpus() * 1024;
-        // ECS can't use 100% of the memory on an EC2 for containers, and we also don't want to use the maximum
-        // available capacity on an instance to avoid overloading them. Therefore, we reduce the available memory
-        // advertised by an EC2 instance to accommodate this. This ensures we will create enough instances to hold
-        // the desired number of containers. ECS will then be able to avoid allocating too many containers on to a
-        // single instance.
-        long memoryMiB = (long) (instanceType.memoryMiB() * 0.9);
+        long memoryMiB = getAvailableMemoryMiBWithoutOverhead(instanceType);
         LOGGER.debug("Computed availability per instance: {} CPU, {} memory MiB", cpuAvailable, memoryMiB);
 
         CompactionTaskRequirements requirements = getTaskRequirements();
@@ -118,6 +115,25 @@ public class CompactionTaskHostScaler {
                     "Memory MiB required " + requirements.getMemoryLimitMiB() + ", found " + memoryMiB + ".");
         }
         return tasksPerInstance;
+    }
+
+    private long getAvailableMemoryMiBWithoutOverhead(InstanceType instanceType) {
+        // ECS can't use 100% of the memory on an EC2 for containers, and we also don't want to use the maximum
+        // available capacity on an instance to avoid overloading them. Therefore, we reduce the available memory
+        // advertised by an EC2 instance to accommodate this. This ensures we will create enough instances to hold
+        // the desired number of containers. ECS will then be able to avoid allocating too many containers on to a
+        // single instance.
+        return instanceType.memoryMiB() - getMemoryOverheadMiB(instanceType);
+    }
+
+    private long getMemoryOverheadMiB(InstanceType instanceType) {
+        Long fixedOverhead = instanceProperties.getNullableLong(COMPACTION_TASK_FIXED_OVERHEAD);
+        if (fixedOverhead != null) {
+            return fixedOverhead;
+        } else {
+            double overheadPercent = instanceProperties.getLong(COMPACTION_TASK_PERCENTAGE_OVERHEAD) / 100.0;
+            return (long) (instanceType.memoryMiB() * overheadPercent);
+        }
     }
 
     private CompactionTaskRequirements getTaskRequirements() {

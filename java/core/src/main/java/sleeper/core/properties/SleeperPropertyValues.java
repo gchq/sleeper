@@ -82,6 +82,22 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
     }
 
     /**
+     * Retrieves the value of a nullable long integer property. Please call the getter relevant to the type of the
+     * property, see other methods on this class.
+     *
+     * @param  property the property
+     * @return          the value of the property
+     */
+    default Long getNullableLong(T property) {
+        String val = get(property);
+        if (val != null) {
+            return Long.parseLong(val);
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Retrieves the value of a double precision floating point property. Please call the getter relevant to the type of
      * the property, see other methods on this class.
      *
