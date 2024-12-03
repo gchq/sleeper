@@ -221,14 +221,14 @@ public class PartitionSplittingStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
-                .reservedConcurrentExecutions(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.PARTITION_SPLITTING_FIND_TO_SPLIT)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
         partitionSplittingJobQueue.grantSendMessages(findPartitionsToSplitLambda);
         findPartitionsToSplitLambda.addEventSource(SqsEventSource.Builder.create(findPartitionsToSplitQueue)
                 .batchSize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM))
+                .maxConcurrency(instanceProperties.getIntOrNull(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
     }
 
@@ -238,7 +238,7 @@ public class PartitionSplittingStack extends NestedStack {
 
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)
-        int concurrency = instanceProperties.getInt(SPLIT_PARTITIONS_RESERVED_CONCURRENCY);
+        Integer concurrency = instanceProperties.getIntOrNull(SPLIT_PARTITIONS_RESERVED_CONCURRENCY);
         IFunction splitPartitionLambda = lambdaCode.buildFunction(this, LambdaHandler.SPLIT_PARTITION, "SplitPartitionLambda", builder -> builder
                 .functionName(splitFunctionName)
                 .description("Triggered by an SQS event that contains a partition to split")

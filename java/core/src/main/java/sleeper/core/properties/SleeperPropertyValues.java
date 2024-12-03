@@ -71,6 +71,23 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
     }
 
     /**
+     * Retrieves the value of a nullable integer property. Please call the getter relevant to the type of the property,
+     * see
+     * other methods on this class.
+     *
+     * @param  property the property
+     * @return          the value of the property
+     */
+    default Integer getIntOrNull(T property) {
+        String val = get(property);
+        if (val != null) {
+            return Integer.parseInt(val);
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Retrieves the value of a long integer property. Please call the getter relevant to the type of the property, see
      * other methods on this class.
      *
@@ -88,7 +105,7 @@ public interface SleeperPropertyValues<T extends SleeperProperty> {
      * @param  property the property
      * @return          the value of the property
      */
-    default Long getNullableLong(T property) {
+    default Long getLongOrNull(T property) {
         String val = get(property);
         if (val != null) {
             return Long.parseLong(val);
