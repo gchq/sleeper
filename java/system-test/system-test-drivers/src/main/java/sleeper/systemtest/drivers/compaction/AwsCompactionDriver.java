@@ -19,6 +19,9 @@ package sleeper.systemtest.drivers.compaction;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.Message;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
@@ -27,6 +30,8 @@ import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
 
 import sleeper.clients.deploy.InvokeLambda;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.task.CompactionTaskStatus;
@@ -34,6 +39,7 @@ import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -45,8 +51,12 @@ import sleeper.task.common.EC2Scaler;
 import sleeper.task.common.RunCompactionTasks;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Stream;
 
+import static java.util.function.Predicate.not;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class AwsCompactionDriver implements CompactionDriver {
@@ -60,6 +70,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final EcsClient ecsClient;
     private final AutoScalingClient asClient;
     private final Ec2Client ec2Client;
+    private final CompactionJobSerDe serDe = new CompactionJobSerDe();
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
@@ -137,5 +148,26 @@ public class AwsCompactionDriver implements CompactionDriver {
     @Override
     public void scaleToZero() {
         EC2Scaler.create(instance.getInstanceProperties(), asClient, ec2Client).scaleTo(0);
+    }
+
+    @Override
+    public List<CompactionJob> drainJobsQueueForWholeInstance() {
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        LOGGER.info("Draining compaction jobs queue");
+        List<CompactionJob> jobs = Stream.iterate(
+                receiveJobs(instanceProperties), not(List::isEmpty), lastJobs -> receiveJobs(instanceProperties))
+                .flatMap(List::stream).toList();
+        LOGGER.info("Found {} compaction jobs", jobs.size());
+        return jobs;
+    }
+
+    private List<CompactionJob> receiveJobs(InstanceProperties instanceProperties) {
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                .withMaxNumberOfMessages(10));
+        return result.getMessages().stream()
+                .map(Message::getBody)
+                .map(serDe::fromJson)
+                .toList();
     }
 }

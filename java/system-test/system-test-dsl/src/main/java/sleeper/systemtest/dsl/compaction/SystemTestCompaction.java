@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.compaction;
 
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -89,6 +90,10 @@ public class SystemTestCompaction {
             PollWithRetries pollUntilFinished, PollWithRetries pollUntilCommitted) {
         waitForJobs.waitForJobs(lastJobIds, pollUntilFinished, pollUntilCommitted);
         return this;
+    }
+
+    public List<CompactionJob> drainJobsQueueForWholeInstance() {
+        return driver.drainJobsQueueForWholeInstance();
     }
 
     public void scaleToZero() {

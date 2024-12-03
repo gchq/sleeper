@@ -18,26 +18,29 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_CREATION;
 
 @SystemTest
 public class CreateManyCompactionsST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(COMPACTION_CREATION);
     }
 
     @Test
@@ -55,10 +58,13 @@ public class CreateManyCompactionsST {
                 .addFileOnEveryPartition("file1.parquet", 655360)
                 .addFileOnEveryPartition("file2.parquet", 655360);
 
-        // When we create jobs
-        // Then we get one for each partition
-        sleeper.compaction()
+        // When
+        List<CompactionJob> jobs = sleeper.compaction()
                 .createJobs(65536,
-                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)))
+                .drainJobsQueueForWholeInstance();
+
+        // Then
+        assertThat(jobs).hasSize(65536);
     }
 }

@@ -82,6 +82,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::createIngestPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("cptprf", SystemTestInstance::createCompactionPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_ON_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionOnDataFusionConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_CREATION = usingSystemTestDefaults("cpt-cr", SystemTestInstance::createCompactionCreationConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::createBulkImportPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERSISTENT_EMR = usingSystemTestDefaults("emrpst", SystemTestInstance::createBulkImportOnPersistentEmrConfiguration);
@@ -176,6 +177,13 @@ public class SystemTestInstance {
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
         properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
         setSystemTestTags(properties, "compactionOnDataFusion", "Sleeper Maven system test compaction performance on DataFusion");
+        return createInstanceConfiguration(properties);
+    }
+
+    private static DeployInstanceConfiguration createCompactionCreationConfiguration() {
+        InstanceProperties properties = createInstanceProperties();
+        properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
+        setSystemTestTags(properties, "compactionCreation", "Sleeper Maven system test compaction creation");
         return createInstanceConfiguration(properties);
     }
 

@@ -16,8 +16,11 @@
 
 package sleeper.systemtest.dsl.compaction;
 
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.util.PollWithRetries;
+
+import java.util.List;
 
 public interface CompactionDriver {
 
@@ -32,4 +35,6 @@ public interface CompactionDriver {
     void forceStartTasks(int numberOfTasks, PollWithRetries poll);
 
     void scaleToZero();
+
+    List<CompactionJob> drainJobsQueueForWholeInstance();
 }
