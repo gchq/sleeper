@@ -38,11 +38,10 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DRAIN_COMPACTIONS;
 
 @LocalStackDslTest
-public class AwsCompactionDriverIT {
+public class AwsCompactionDriverDrainCompactionsIT {
 
     SqsClient sqs;
     CompactionDriver driver;
@@ -50,11 +49,10 @@ public class AwsCompactionDriverIT {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(DRAIN_COMPACTIONS);
         sqs = drivers.clients().getSqsV2();
         driver = drivers.compaction(context);
         instance = context.instance();
-        createCompactionQueue();
     }
 
     @Test
@@ -86,13 +84,6 @@ public class AwsCompactionDriverIT {
                                     .build())
                             .toList()));
         }
-    }
-
-    private void createCompactionQueue() {
-        InstanceProperties instanceProperties = instance.getInstanceProperties();
-        String queueName = String.join("-", "sleeper", instanceProperties.get(ID), "CompactionJobQ");
-        String queueUrl = sqs.createQueue(request -> request.queueName(queueName)).queueUrl();
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, queueUrl);
     }
 
 }
