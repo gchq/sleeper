@@ -56,7 +56,7 @@ public class AwsIngestSourceFilesDriver implements IngestSourceFilesDriver {
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
                 new Path(path), tableProperties, conf)) {
             for (Record record : (Iterable<Record>) () -> records) {
-                sketches.update(schema, record);
+                sketches.update(record);
                 writer.write(record);
             }
         } catch (IOException e) {

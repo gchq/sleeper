@@ -49,7 +49,7 @@ use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, iter::once, sync::Arc};
 use url::Url;
 
-mod sketch;
+pub mod sketch;
 mod udf;
 
 /// Starts a Sleeper compaction.

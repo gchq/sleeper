@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.creation;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.StateStore;
@@ -28,10 +27,9 @@ public interface AssignJobIdToFiles {
 
     void assignJobIds(List<AssignJobIdRequest> requests, TableStatus tableStatus);
 
-    static AssignJobIdToFiles synchronous(StateStore stateStore, CompactionJobStatusStore statusStore) {
+    static AssignJobIdToFiles synchronous(StateStore stateStore) {
         return (assignJobIdRequests, tableStatus) -> {
             stateStore.assignJobIds(assignJobIdRequests);
-            statusStore.jobInputFilesAssigned(tableStatus.getTableUniqueId(), assignJobIdRequests);
         };
     }
 

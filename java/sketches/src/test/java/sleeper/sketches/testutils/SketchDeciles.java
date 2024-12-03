@@ -18,7 +18,6 @@ package sleeper.sketches.testutils;
 import com.facebook.collections.ByteArray;
 import org.apache.datasketches.quantiles.ItemsSketch;
 
-import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.sketches.Sketches;
 
@@ -46,19 +45,15 @@ public class SketchDeciles {
         this.decileByRank = decileByRank;
     }
 
-    public static SketchDeciles from(ItemsSketch<?> sketch) {
+    public static SketchDeciles from(Sketches.FieldSketch fieldSketch) {
+        Field field = fieldSketch.getField();
+        ItemsSketch sketch = fieldSketch.getSketch();
         if (sketch.isEmpty()) {
             return empty();
         }
-        return new SketchDeciles(sketch.getMinValue(), sketch.getMaxValue(), readDecilesByRank(sketch));
-    }
-
-    public static SketchDeciles from(Field field, List<Record> records) {
-        ItemsSketch sketch = Sketches.createSketch(field.getType(), 1024);
-        for (Record record : records) {
-            sketch.update(record.get(field.getName()));
-        }
-        return from(sketch);
+        Object min = Sketches.readValueFromSketchWithWrappedBytes(sketch.getMinValue(), field);
+        Object max = Sketches.readValueFromSketchWithWrappedBytes(sketch.getMaxValue(), field);
+        return new SketchDeciles(min, max, readDecilesByRank(sketch, field));
     }
 
     public static int compare(SketchDeciles deciles1, SketchDeciles deciles2, Comparator<Object> comparator) {
@@ -87,14 +82,14 @@ public class SketchDeciles {
         return builder().build();
     }
 
-    private static Map<Double, Object> readDecilesByRank(ItemsSketch<?> sketch) {
+    private static Map<Double, Object> readDecilesByRank(ItemsSketch<?> sketch, Field field) {
         Object[] values = sketch.getQuantiles(DECILES_QUANTILE_BOUNDARIES);
         if (values == null) {
             return Map.of();
         }
         Map<Double, Object> decilesByRank = new LinkedHashMap<>();
         for (int i = 0; i <= 10; i++) {
-            decilesByRank.put(DECILES_QUANTILE_BOUNDARIES[i], values[i]);
+            decilesByRank.put(DECILES_QUANTILE_BOUNDARIES[i], Sketches.readValueFromSketchWithWrappedBytes(values[i], field));
         }
         return decilesByRank;
     }

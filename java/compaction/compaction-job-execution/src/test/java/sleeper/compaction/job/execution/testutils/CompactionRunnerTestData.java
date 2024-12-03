@@ -158,7 +158,7 @@ public class CompactionRunnerTestData {
         try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new Path(filename), schema)) {
             for (Record record : records) {
                 writer.write(record);
-                sketches.update(schema, record);
+                sketches.update(record);
             }
         }
         Path sketchesPath = sketchesPathForDataFile(filename);

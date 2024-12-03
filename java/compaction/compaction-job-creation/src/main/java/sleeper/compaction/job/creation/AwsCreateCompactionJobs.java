@@ -42,7 +42,7 @@ public class AwsCreateCompactionJobs {
             AmazonS3 s3Client,
             AmazonSQS sqsClient) {
         return new CreateCompactionJobs(
-                objectFactory, instanceProperties, stateStoreProvider, jobStatusStore,
+                objectFactory, instanceProperties, stateStoreProvider,
                 new CompactionBatchJobsWriterToS3(s3Client),
                 new CompactionBatchMessageSenderToSqs(instanceProperties, sqsClient),
                 new SendAssignJobIdToSqs(instanceProperties, sqsClient, s3Client),
