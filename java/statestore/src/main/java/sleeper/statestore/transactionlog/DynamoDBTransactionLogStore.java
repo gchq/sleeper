@@ -77,7 +77,15 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private final AmazonS3 s3;
     private final TransactionSerDe serDe;
 
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    /**
+     * Creates an instance of this class to store file transactions for a given Sleeper table.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  tableProperties    the table properties
+     * @param  dynamo             the DynamoDB client
+     * @param  s3                 the S3 client
+     * @return                    the store
+     */
     public static DynamoDBTransactionLogStore forFiles(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamo, AmazonS3 s3) {
@@ -86,7 +94,15 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
                 instanceProperties, tableProperties, dynamo, s3);
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    /**
+     * Creates an instance of this class to store partition transactions for a given Sleeper table.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  tableProperties    the table properties
+     * @param  dynamo             the DynamoDB client
+     * @param  s3                 the S3 client
+     * @return                    the store
+     */
     public static DynamoDBTransactionLogStore forPartitions(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonDynamoDB dynamo, AmazonS3 s3) {
