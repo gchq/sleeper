@@ -18,14 +18,14 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.compaction.FoundCompactionJobs;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
@@ -49,8 +49,8 @@ public class CreateManyCompactionsST {
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
-        sleeper.partitioning().setPartitions(
-                createPartitionTreeWithRecordsPerPartitionAndTotal(10, 655360, sleeper));
+        PartitionTree partitions = createPartitionTreeWithRecordsPerPartitionAndTotal(10, 655360, sleeper);
+        sleeper.partitioning().setPartitions(partitions);
         sleeper.sourceFiles().inDataBucket().writeSketches()
                 .createWithNumberedRecords("file1.parquet", LongStream.range(0, 655360))
                 .createWithNumberedRecords("file2.parquet", LongStream.range(0, 655360));
@@ -59,12 +59,14 @@ public class CreateManyCompactionsST {
                 .addFileOnEveryPartition("file2.parquet", 655360);
 
         // When
-        List<CompactionJob> jobs = sleeper.compaction()
+        FoundCompactionJobs jobs = sleeper.compaction()
                 .createJobs(65536,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .drainJobsQueueForWholeInstance();
 
         // Then
-        assertThat(jobs).hasSize(65536);
+        assertThat(jobs.checkFullCompactionWithPartitionsAndInputFiles(
+                partitions, "file1.parquet", "file2.parquet"))
+                .isEqualTo(FoundCompactionJobs.expectedFullCompactionCheckWithJobs(65536));
     }
 }

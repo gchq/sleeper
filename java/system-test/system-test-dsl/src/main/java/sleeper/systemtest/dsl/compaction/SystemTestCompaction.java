@@ -16,10 +16,11 @@
 
 package sleeper.systemtest.dsl.compaction;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -28,6 +29,8 @@ import java.util.List;
 
 public class SystemTestCompaction {
 
+    private final SystemTestInstanceContext instance;
+    private final IngestSourceFilesContext sourceFiles;
     private final CompactionDriver driver;
     private final CompactionDriver baseDriver;
     private final PollWithRetriesDriver pollDriver;
@@ -36,6 +39,8 @@ public class SystemTestCompaction {
     private List<String> lastJobIds;
 
     public SystemTestCompaction(SystemTestContext context, SystemTestDrivers baseDrivers) {
+        this.instance = context.instance();
+        this.sourceFiles = context.sourceFiles();
         SystemTestDrivers drivers = context.instance().adminDrivers();
         driver = drivers.compaction(context);
         pollDriver = drivers.pollWithRetries();
@@ -95,8 +100,8 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public List<CompactionJob> drainJobsQueueForWholeInstance() {
-        return baseDriver.drainJobsQueueForWholeInstance();
+    public FoundCompactionJobs drainJobsQueueForWholeInstance() {
+        return FoundCompactionJobs.from(sourceFiles, baseDriver.drainJobsQueueForWholeInstance());
     }
 
     public void scaleToZero() {
