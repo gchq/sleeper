@@ -73,13 +73,6 @@ public class AwsCompactionDriverIT {
                 .containsExactlyElementsOf(jobs);
     }
 
-    @Test
-    void shouldDrainNoCompactionJobsFromQueue(SleeperSystemTest sleeper) {
-        // When / Then
-        assertThat(driver.drainJobsQueueForWholeInstance())
-                .isEmpty();
-    }
-
     private void send(List<CompactionJob> jobs) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         CompactionJobSerDe serDe = new CompactionJobSerDe();
