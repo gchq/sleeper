@@ -19,6 +19,9 @@ package sleeper.systemtest.drivers.compaction;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.model.DeleteMessageBatchRequest;
+import com.amazonaws.services.sqs.model.DeleteMessageBatchRequestEntry;
+import com.amazonaws.services.sqs.model.DeleteMessageBatchResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
@@ -162,10 +165,21 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     private List<CompactionJob> receiveJobs(InstanceProperties instanceProperties) {
-        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+        String queueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
+        ReceiveMessageResult receiveResult = sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(10));
-        return result.getMessages().stream()
+        DeleteMessageBatchResult deleteResult = sqsClient.deleteMessageBatch(new DeleteMessageBatchRequest()
+                .withQueueUrl(queueUrl)
+                .withEntries(receiveResult.getMessages().stream()
+                        .map(message -> new DeleteMessageBatchRequestEntry()
+                                .withId(message.getMessageId())
+                                .withReceiptHandle(message.getReceiptHandle()))
+                        .toList()));
+        if (!deleteResult.getFailed().isEmpty()) {
+            throw new RuntimeException("Failed deleting compaction job messages: " + deleteResult.getFailed());
+        }
+        return receiveResult.getMessages().stream()
                 .map(Message::getBody)
                 .map(serDe::fromJson)
                 .toList();
