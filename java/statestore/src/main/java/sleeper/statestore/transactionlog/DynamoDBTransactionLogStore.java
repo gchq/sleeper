@@ -30,6 +30,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.TransactionLogDeletionTracker;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
@@ -145,9 +146,9 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public void deleteTransactionsAtOrBefore(long transactionNumber) {
+    public void deleteTransactionsAtOrBefore(long maxTransactionNumber) {
         LOGGER.info("Deleting {} transactions from Sleeper table {}", transactionDescription, sleeperTable);
-        DeletedLogger deletedLogger = new DeletedLogger();
+        TransactionLogDeletionTracker deletionTracker = new TransactionLogDeletionTracker(transactionDescription);
         streamPagedItems(dynamo, new QueryRequest()
                 .withTableName(logTableName)
                 .withConsistentRead(true)
@@ -155,19 +156,20 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
                 .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id", sleeperTable.getTableUniqueId())
-                        .number(":number", transactionNumber)
+                        .number(":number", maxTransactionNumber)
                         .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
                 .forEach(item -> {
-                    long itemTransactionNumber = getLongAttribute(item, TRANSACTION_NUMBER, 0L);
+                    long transactionNumber = getLongAttribute(item, TRANSACTION_NUMBER, 0L);
                     boolean deleteFromS3 = item.get(BODY_S3_KEY) != null;
                     if (deleteFromS3) {
                         s3.deleteObject(new DeleteObjectRequest(dataBucket, item.get(BODY_S3_KEY).getS()));
+                        deletionTracker.deletedLargeTransactionBody(transactionNumber);
                     }
                     dynamo.deleteItem(logTableName, getKey(item));
-                    deletedLogger.deletedTransaction(itemTransactionNumber, deleteFromS3);
+                    deletionTracker.deletedFromLog(transactionNumber);
                 });
-        deletedLogger.finish();
+        LOGGER.info("Finished deletion. {}", deletionTracker.summary());
     }
 
     private void setBodyDirectlyOrInS3IfTooBig(DynamoDBRecordBuilder builder, TransactionLogEntry entry, String body) {
@@ -217,33 +219,5 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
         return Map.of(TABLE_ID, item.get(TABLE_ID),
                 TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER));
-    }
-
-    /**
-     * Tracks and logs which transactions have been deleted.
-     */
-    private static class DeletedLogger {
-        private long minTransactionNumber = Long.MAX_VALUE;
-        private long maxTransactionNumber = -1;
-        private int numDeletedFromDynamo;
-        private int numDeletedFromS3;
-
-        public void deletedTransaction(long itemTransactionNumber, boolean deletedFromS3) {
-            minTransactionNumber = Math.min(minTransactionNumber, itemTransactionNumber);
-            maxTransactionNumber = Math.max(maxTransactionNumber, itemTransactionNumber);
-            numDeletedFromDynamo++;
-            if (deletedFromS3) {
-                numDeletedFromS3++;
-            }
-            if (numDeletedFromDynamo % 100 == 0) {
-                LOGGER.info("Deleted {} transactions from Dynamo, {} from S3, numbers between {} and {} inclusive",
-                        numDeletedFromDynamo, numDeletedFromS3, minTransactionNumber, maxTransactionNumber);
-            }
-        }
-
-        public void finish() {
-            LOGGER.info("Finished deletion. Deleted {} transactions from Dynamo, {} from S3, numbers between {} and {} inclusive",
-                    numDeletedFromDynamo, numDeletedFromS3, minTransactionNumber, maxTransactionNumber);
-        }
     }
 }
