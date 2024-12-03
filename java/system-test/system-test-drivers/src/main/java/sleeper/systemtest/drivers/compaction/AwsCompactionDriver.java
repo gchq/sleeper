@@ -170,9 +170,13 @@ public class AwsCompactionDriver implements CompactionDriver {
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(10)
                 .withWaitTimeSeconds(5));
+        List<Message> messages = receiveResult.getMessages();
+        if (messages.isEmpty()) {
+            return List.of();
+        }
         DeleteMessageBatchResult deleteResult = sqsClient.deleteMessageBatch(new DeleteMessageBatchRequest()
                 .withQueueUrl(queueUrl)
-                .withEntries(receiveResult.getMessages().stream()
+                .withEntries(messages.stream()
                         .map(message -> new DeleteMessageBatchRequestEntry()
                                 .withId(message.getMessageId())
                                 .withReceiptHandle(message.getReceiptHandle()))
@@ -180,7 +184,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         if (!deleteResult.getFailed().isEmpty()) {
             throw new RuntimeException("Failed deleting compaction job messages: " + deleteResult.getFailed());
         }
-        return receiveResult.getMessages().stream()
+        return messages.stream()
                 .map(Message::getBody)
                 .map(serDe::fromJson)
                 .toList();
