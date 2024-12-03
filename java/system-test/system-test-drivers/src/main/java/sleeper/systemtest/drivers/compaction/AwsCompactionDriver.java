@@ -168,7 +168,8 @@ public class AwsCompactionDriver implements CompactionDriver {
         String queueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
         ReceiveMessageResult receiveResult = sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(queueUrl)
-                .withMaxNumberOfMessages(10));
+                .withMaxNumberOfMessages(10)
+                .withWaitTimeSeconds(5));
         DeleteMessageBatchResult deleteResult = sqsClient.deleteMessageBatch(new DeleteMessageBatchRequest()
                 .withQueueUrl(queueUrl)
                 .withEntries(receiveResult.getMessages().stream()
