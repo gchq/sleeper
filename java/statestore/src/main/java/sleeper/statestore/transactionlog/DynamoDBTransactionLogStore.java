@@ -45,6 +45,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getNumberAttribute;
@@ -72,6 +74,24 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private final AmazonDynamoDB dynamo;
     private final AmazonS3 s3;
     private final TransactionSerDe serDe;
+
+    public DynamoDBTransactionLogStore(
+            String description, String logTableName, InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonDynamoDB dynamo, AmazonS3 s3) {
+        this(logTableName, instanceProperties, tableProperties, dynamo, s3);
+    }
+
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    public static DynamoDBTransactionLogStore forFiles(InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonDynamoDB dynamo, AmazonS3 s3) {
+        return new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME), instanceProperties, tableProperties, dynamo, s3);
+    }
+
+    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    public static DynamoDBTransactionLogStore forPartitions(InstanceProperties instanceProperties, TableProperties tableProperties,
+            AmazonDynamoDB dynamo, AmazonS3 s3) {
+        return new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME), instanceProperties, tableProperties, dynamo, s3);
+    }
 
     public DynamoDBTransactionLogStore(
             String logTableName, InstanceProperties instanceProperties, TableProperties tableProperties,
