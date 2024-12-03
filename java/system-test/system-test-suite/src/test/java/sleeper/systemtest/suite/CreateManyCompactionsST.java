@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
+import sleeper.core.properties.validation.CompactionMethod;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -30,6 +31,7 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
@@ -47,7 +49,8 @@ public class CreateManyCompactionsST {
         // Given
         sleeper.updateTableProperties(Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "2"));
+                COMPACTION_FILES_BATCH_SIZE, "2",
+                COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString()));
         sleeper.partitioning().setPartitions(
                 createPartitionTreeWithRecordsPerPartitionAndTotal(10, 655360, sleeper));
         sleeper.sourceFiles().inDataBucket().writeSketches()
