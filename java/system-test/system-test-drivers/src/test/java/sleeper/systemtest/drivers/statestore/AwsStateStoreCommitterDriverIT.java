@@ -47,8 +47,8 @@ import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DEFAULT_SCHEMA;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @LocalStackDslTest
 public class AwsStateStoreCommitterDriverIT {
@@ -59,7 +59,7 @@ public class AwsStateStoreCommitterDriverIT {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(LOCALSTACK_MAIN);
         sqs = drivers.clients().getSqsV2();
         s3 = drivers.clients().getS3();
         instance = context.instance();
