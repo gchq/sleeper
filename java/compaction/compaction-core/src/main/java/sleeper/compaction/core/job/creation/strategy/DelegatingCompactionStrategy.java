@@ -73,7 +73,7 @@ public class DelegatingCompactionStrategy implements CompactionStrategy {
         while (jobs.size() > maxNumberOfJobsToCreate) {
             jobs.remove(jobs.size() - 1);
         }
-        LOGGER.debug("Created {} compaction job{} for partition {}, table {}",
+        LOGGER.info("Created {} compaction job{} for partition {}, table {}",
                 jobs.size(), 1 == jobs.size() ? "" : "s", filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
         return jobs;
     }
