@@ -17,13 +17,14 @@ package sleeper.systemtest.drivers.compaction;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.util.SplitIntoBatches;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
@@ -42,6 +43,7 @@ import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DRAIN_C
 
 @LocalStackDslTest
 public class AwsCompactionDriverDrainCompactionsIT {
+    public static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriverDrainCompactionsIT.class);
 
     SqsClient sqs;
     CompactionDriver driver;
@@ -72,11 +74,12 @@ public class AwsCompactionDriverDrainCompactionsIT {
     }
 
     private void send(List<CompactionJob> jobs) {
-        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_QUEUE_URL);
+        LOGGER.info("Sending to compaction jobs queue: {}", queueUrl);
         CompactionJobSerDe serDe = new CompactionJobSerDe();
         for (List<CompactionJob> batch : SplitIntoBatches.splitListIntoBatchesOf(10, jobs)) {
             sqs.sendMessageBatch(request -> request
-                    .queueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
+                    .queueUrl(queueUrl)
                     .entries(batch.stream()
                             .map(job -> SendMessageBatchRequestEntry.builder()
                                     .messageBody(serDe.toJson(job))

@@ -42,7 +42,6 @@ import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -155,17 +154,16 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     @Override
     public List<CompactionJob> drainJobsQueueForWholeInstance() {
-        InstanceProperties instanceProperties = instance.getInstanceProperties();
-        LOGGER.info("Draining compaction jobs queue");
+        String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_QUEUE_URL);
+        LOGGER.info("Draining compaction jobs queue: {}", queueUrl);
         List<CompactionJob> jobs = Stream.iterate(
-                receiveJobs(instanceProperties), not(List::isEmpty), lastJobs -> receiveJobs(instanceProperties))
+                receiveJobs(queueUrl), not(List::isEmpty), lastJobs -> receiveJobs(queueUrl))
                 .flatMap(List::stream).toList();
         LOGGER.info("Found {} compaction jobs", jobs.size());
         return jobs;
     }
 
-    private List<CompactionJob> receiveJobs(InstanceProperties instanceProperties) {
-        String queueUrl = instanceProperties.get(COMPACTION_JOB_QUEUE_URL);
+    private List<CompactionJob> receiveJobs(String queueUrl) {
         ReceiveMessageResult receiveResult = sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(10)
