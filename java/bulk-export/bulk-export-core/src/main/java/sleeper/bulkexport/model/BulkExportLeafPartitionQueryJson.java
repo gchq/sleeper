@@ -24,6 +24,10 @@ import sleeper.core.range.RegionSerDe;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * This class is used by the serialisation and deserialisation of a a
+ * BulkExportLeafPartitionQuery to and from Json.
+ */
 class BulkExportLeafPartitionQueryJson {
     private final String tableId;
     private final String exportId;
@@ -114,6 +118,9 @@ class BulkExportLeafPartitionQueryJson {
                 .collect(Collectors.toUnmodifiableList());
     }
 
+    /**
+     * Builder class for BulkExportLeafPartitionQueryJson.
+     */
     private static final class Builder {
         private String tableId;
         private String exportId;

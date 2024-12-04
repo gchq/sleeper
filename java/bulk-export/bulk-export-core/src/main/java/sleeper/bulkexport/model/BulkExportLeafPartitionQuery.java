@@ -119,7 +119,7 @@ public class BulkExportLeafPartitionQuery {
     }
 
     /**
-     * Gets the partition region
+     * Gets the partition region.
      *
      * @return partitionRegion
      */
@@ -231,9 +231,9 @@ public class BulkExportLeafPartitionQuery {
         }
 
         /**
-         * Provide the regions
+         * Provide the regions.
          *
-         * @param regions a list of regions
+         * @param regions a list of regions.
          *
          * @return the builder object.
          */
@@ -255,9 +255,9 @@ public class BulkExportLeafPartitionQuery {
         }
 
         /**
-         * Provide the partition regions
+         * Provide the partition regions.
          *
-         * @param regions a partition regions
+         * @param partitionRegion a partition regions.
          *
          * @return the builder object.
          */
@@ -269,7 +269,7 @@ public class BulkExportLeafPartitionQuery {
         /**
          * Provide the leaf partition files.
          *
-         * @param files the files to be exported
+         * @param files the files to be exported.
          *
          * @return the builder object.
          */

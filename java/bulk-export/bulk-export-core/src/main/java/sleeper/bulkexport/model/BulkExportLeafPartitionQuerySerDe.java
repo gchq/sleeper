@@ -88,10 +88,23 @@ public class BulkExportLeafPartitionQuerySerDe {
         return query.to(schemaLoader);
     }
 
+    /**
+     * Interface for the SchemaLoader.
+     */
     public interface SchemaLoader {
+        /**
+         * Get a schema by using the table id.
+         *
+         * @param tableId The id of the table to get the schema for.
+         *
+         * @return a Schema.
+         */
         Optional<Schema> getSchemaByTableId(String tableId);
     }
 
+    /**
+     * Implements a SchemaLoader interface from a TablePropertiesProvider.
+     */
     private static class SchemaLoaderFromTableProvider implements SchemaLoader {
 
         private final TablePropertiesProvider provider;
@@ -115,6 +128,9 @@ public class BulkExportLeafPartitionQuerySerDe {
         }
     }
 
+    /**
+     * Implements a SchemaLoader interface but uses a fixed schema.
+     */
     private static class FixedSchemaLoader implements SchemaLoader {
         private final Schema schema;
 
