@@ -16,6 +16,8 @@
 
 package sleeper.bulkexport.model;
 
+import sleeper.core.range.Region;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -30,14 +32,18 @@ public class BulkExportLeafPartitionQuery {
     private final String tableId;
     private final String exportId;
     private final String subExportId;
+    private final List<Region> regions;
     private final String leafPartitionId;
+    private final Region partitionRegion;
     private final List<String> files;
 
     private BulkExportLeafPartitionQuery(Builder builder) {
         tableId = requireNonNull(builder.tableId, builder, "tableId field must be provided");
         exportId = requireNonNull(builder.exportId, builder, "exportId field must be provided");
         subExportId = requireNonNull(builder.subExportId, builder, "subExportId field must be provided");
+        regions = Objects.requireNonNull(builder.regions, "regions must not be null");
         leafPartitionId = requireNonNull(builder.leafPartitionId, builder, "leafPartitionId field must be provided");
+        partitionRegion = Objects.requireNonNull(builder.partitionRegion, "partitionRegion must not be null");
         files = requireNonNull(builder.files, builder, "files field must be provided");
     }
 
@@ -51,7 +57,9 @@ public class BulkExportLeafPartitionQuery {
                 .tableId(tableId)
                 .exportId(exportId)
                 .subExportId(subExportId)
+                .regions(regions)
                 .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
                 .files(files)
                 .build();
     }
@@ -93,12 +101,30 @@ public class BulkExportLeafPartitionQuery {
     }
 
     /**
+     * Gets a list of regions.
+     *
+     * @return regions
+     */
+    public List<Region> getRegions() {
+        return regions;
+    }
+
+    /**
      * Gets the leaf partition id.
      *
      * @return leafPartitionId
      */
     public String getLeafPartitionId() {
         return leafPartitionId;
+    }
+
+    /**
+     * Gets the partition region
+     *
+     * @return partitionRegion
+     */
+    public Region getPartitionRegion() {
+        return partitionRegion;
     }
 
     /**
@@ -122,13 +148,15 @@ public class BulkExportLeafPartitionQuery {
         return Objects.equals(tableId, that.tableId)
                 && Objects.equals(exportId, that.exportId)
                 && Objects.equals(subExportId, that.subExportId)
+                && Objects.equals(regions, that.regions)
                 && Objects.equals(leafPartitionId, that.leafPartitionId)
+                && Objects.equals(partitionRegion, that.partitionRegion)
                 && Objects.equals(files, that.files);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(tableId, exportId, subExportId, leafPartitionId, files);
+        return Objects.hash(tableId, exportId, subExportId, regions, leafPartitionId, partitionRegion, files);
     }
 
     @Override
@@ -137,7 +165,9 @@ public class BulkExportLeafPartitionQuery {
                 "tableId='" + tableId + '\'' +
                 ", exportId='" + exportId + '\'' +
                 ", subExportId='" + subExportId + '\'' +
+                ", regions=" + regions +
                 ", leafPartitionId='" + leafPartitionId + '\'' +
+                ", partitionRegion=" + partitionRegion +
                 ", files=" + files +
                 '}';
     }
@@ -156,7 +186,9 @@ public class BulkExportLeafPartitionQuery {
         private String tableId;
         private String exportId;
         private String subExportId;
+        private List<Region> regions;
         private String leafPartitionId;
+        private Region partitionRegion;
         private List<String> files;
 
         private Builder() {
@@ -199,6 +231,18 @@ public class BulkExportLeafPartitionQuery {
         }
 
         /**
+         * Provide the regions
+         *
+         * @param regions a list of regions
+         *
+         * @return the builder object.
+         */
+        public Builder regions(List<Region> regions) {
+            this.regions = regions;
+            return this;
+        }
+
+        /**
          * Provide the leafPartitionId.
          *
          * @param leafPartitionId the id for the leaf partition.
@@ -207,6 +251,18 @@ public class BulkExportLeafPartitionQuery {
          */
         public Builder leafPartitionId(String leafPartitionId) {
             this.leafPartitionId = leafPartitionId;
+            return this;
+        }
+
+        /**
+         * Provide the partition regions
+         *
+         * @param regions a partition regions
+         *
+         * @return the builder object.
+         */
+        public Builder partitionRegion(Region partitionRegion) {
+            this.partitionRegion = partitionRegion;
             return this;
         }
 
