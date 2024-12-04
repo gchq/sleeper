@@ -97,7 +97,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(handlerTimeout)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.GARBAGE_COLLECTOR)));
         instanceProperties.set(GARBAGE_COLLECTOR_LAMBDA_FUNCTION, triggerFunction.getFunctionName());
 
@@ -143,7 +143,7 @@ public class GarbageCollectorStack extends NestedStack {
         queue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM))
+                .maxConcurrency(instanceProperties.getIntOrNull(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
         coreStacks.grantInvokeScheduled(triggerFunction, queue);
 

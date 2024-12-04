@@ -127,7 +127,7 @@ public class CompactionTaskHostScaler {
     }
 
     private long getMemoryOverheadMiB(InstanceType instanceType) {
-        Long fixedOverhead = instanceProperties.getNullableLong(COMPACTION_TASK_FIXED_OVERHEAD);
+        Long fixedOverhead = instanceProperties.getLongOrNull(COMPACTION_TASK_FIXED_OVERHEAD);
         if (fixedOverhead != null) {
             return fixedOverhead;
         } else {
