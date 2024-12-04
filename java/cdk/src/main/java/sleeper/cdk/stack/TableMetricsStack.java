@@ -83,7 +83,7 @@ public class TableMetricsStack extends NestedStack {
                 .functionName(publishFunctionName)
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(instanceProperties.getInt(METRICS_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(METRICS_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.METRICS_PUBLISHER)));
@@ -122,7 +122,9 @@ public class TableMetricsStack extends NestedStack {
                 deadLetterQueue, topic);
         errorMetrics.add(Utils.createErrorMetric("Table Metrics Errors", deadLetterQueue, instanceProperties));
         tableMetricsPublisher.addEventSource(SqsEventSource.Builder.create(queue)
-                .batchSize(instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE)).maxConcurrency(instanceProperties.getInt(METRICS_LAMBDA_CONCURRENCY_MAXIMUM)).build());
+                .batchSize(instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getIntOrNull(METRICS_LAMBDA_CONCURRENCY_MAXIMUM))
+                .build());
 
         coreStacks.grantReadTablesStatus(tableMetricsTrigger);
         coreStacks.grantReadTablesMetadata(tableMetricsPublisher);

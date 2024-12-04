@@ -106,7 +106,7 @@ class SleeperPropertiesTest {
             TestSleeperProperties testSleeperProperties = new TestSleeperProperties();
 
             // When // Then
-            assertThat(testSleeperProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM)).isNull();
+            assertThat(testSleeperProperties.getIntOrNull(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM)).isNull();
         }
 
         @Test
@@ -117,7 +117,7 @@ class SleeperPropertiesTest {
             testSleeperProperties.set(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED, "Forty Two");
 
             // Then
-            assertThatThrownBy(() -> testSleeperProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
+            assertThatThrownBy(() -> testSleeperProperties.getIntOrNull(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
                     .isInstanceOf(NumberFormatException.class)
                     .hasMessageContaining("Forty Two");
         }
