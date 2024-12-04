@@ -20,11 +20,8 @@ import com.google.gson.GsonBuilder;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.range.RegionSerDe;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableNotFoundException;
-
-import javax.management.Query;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -60,7 +57,7 @@ public class BulkExportLeafPartitionQuerySerDe {
      * @return a JSON string of the query
      */
     public String toJson(BulkExportLeafPartitionQuery query) {
-        return gson.toJson(query);
+        return gson.toJson(BulkExportLeafPartitionQueryJson.from(query, schemaLoader));
     }
 
     /**

@@ -29,6 +29,7 @@ import sleeper.core.schema.type.StringType;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,35 +46,64 @@ public class BulkExportLeafPartitionQuerySerDeTest {
             .build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    private final String tableId = tableProperties.get(TABLE_ID);
+    private final String exportId = UUID.randomUUID().toString();
+    private final String subExportId = UUID.randomUUID().toString();
+    private final String leafPartitionId = UUID.randomUUID().toString();
 
     @Test
     public void shouldSerDeBulkExportLeafPartitionQuery() {
         // Given
-        Field field = new Field("key", new IntType());
         RangeFactory rangeFactory = new RangeFactory(schema);
         Region region1 = new Region(rangeFactory.createRange(field, 1, true, 10, true));
         Region partitionRegion = new Region(rangeFactory.createRange(field, 0, 1000));
         BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery = BulkExportLeafPartitionQuery.builder()
-                .tableId(tableProperties.get(TABLE_ID))
-                .exportId("e1")
-                .subExportId("se1")
+                .tableId(tableId)
+                .exportId(exportId)
+                .subExportId(subExportId)
                 .regions(List.of(region1))
-                .leafPartitionId("lp1")
-                .partitionRegion(
-                        partitionRegion)
+                .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
                 .files(Collections.singletonList("/test/file.parquet"))
                 .build();
 
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe("my-table", schema, true);
 
         // When
-        String json = querySerDe.toJson(bulkExportLeafPartitionQuery);
+        String json = querySerDe.toJson(bulkExportLeafPartitionQuery, true);
 
         BulkExportLeafPartitionQuery deserialisedQuery = querySerDe.fromJson(json);
 
         // Then
-        String expectedJson = "{\"tableId\":\"t1\",\"exportId\":\"e1\",\"subExportId\":\"se1\"," +
-                "\"leafPartitionId\":\"lp1\",\"files\":[\"/test/file.parquet\"]}";
+        String expectedJson = "{\n" +
+                "  \"tableId\": \"" + tableId + "\",\n" +
+                "  \"exportId\": \"" + exportId + "\",\n" +
+                "  \"subExportId\": \"" + subExportId + "\",\n" +
+                "  \"regions\": [\n" +
+                "    {\n" +
+                "      \"key\": {\n" +
+                "        \"min\": 1,\n" +
+                "        \"minInclusive\": true,\n" +
+                "        \"max\": 10,\n" +
+                "        \"maxInclusive\": true\n" +
+                "      },\n" +
+                "      \"stringsBase64Encoded\": true\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"leafPartitionId\": \"" + leafPartitionId + "\",\n" +
+                "  \"partitionRegion\": {\n" +
+                "    \"key\": {\n" +
+                "      \"min\": 0,\n" +
+                "      \"minInclusive\": true,\n" +
+                "      \"max\": 1000,\n" +
+                "      \"maxInclusive\": false\n" +
+                "    },\n" +
+                "    \"stringsBase64Encoded\": true\n" +
+                "  },\n" +
+                "  \"files\": [\n" +
+                "    \"/test/file.parquet\"\n" +
+                "  ]\n" +
+                "}";
         assertThat(bulkExportLeafPartitionQuery).isEqualTo(deserialisedQuery);
         assertThat(json).isEqualTo(expectedJson);
     }
@@ -102,12 +132,31 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe("my-table", schema, true);
 
         String queryJson = "{\n" +
-                "  \"tableId\": \"id2\",\n" +
-                "  \"subExportId\": \"se1\",\n" +
-                "  \"leafPartitionId\": \"p1\",\n" +
-                "  \"regions\": [],\n" +
-                "  \"files\": []\n" +
-                "}\n";
+                "    \"tableId\":\"" + tableId + "\",\n" +
+                "    \"subExportId\":\"" + subExportId + "\",\n" +
+                "    \"regions\":[\n" +
+                "        {\n" +
+                "            \"key\":{\n" +
+                "                \"min\":1,\n" +
+                "                \"minInclusive\":true,\n" +
+                "                \"max\":10,\n" +
+                "                \"maxInclusive\":true\n" +
+                "            },\n" +
+                "            \"stringsBase64Encoded\":true\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"leafPartitionId\":\"" + leafPartitionId + "\",\n" +
+                "    \"partitionRegion\":{\n" +
+                "        \"key\":{\n" +
+                "            \"min\":0,\n" +
+                "            \"minInclusive\":true,\n" +
+                "            \"max\":1000,\n" +
+                "            \"maxInclusive\":false\n" +
+                "        },\n" +
+                "        \"stringsBase64Encoded\":true\n" +
+                "    },\n" +
+                "    \"files\":[\"/test/file.parquet\"]\n" +
+                "}";
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
@@ -122,18 +171,38 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe("my-table", schema, true);
 
         String queryJson = "{\n" +
-                "  \"tableId\": \"id2\",\n" +
-                "  \"exportId\": \"id\",\n" +
-                "  \"leafPartitionId\": \"p1\",\n" +
-                "  \"regions\": [],\n" +
-                "  \"files\": []\n" +
-                "}\n";
+                "    \"tableId\":\"" + tableId + "\",\n" +
+                "    \"exportId\":\"" + exportId + "\",\n" +
+                "    \"regions\":[\n" +
+                "        {\n" +
+                "            \"key\":{\n" +
+                "                \"min\":1,\n" +
+                "                \"minInclusive\":true,\n" +
+                "                \"max\":10,\n" +
+                "                \"maxInclusive\":true\n" +
+                "            },\n" +
+                "            \"stringsBase64Encoded\":true\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"leafPartitionId\":\"" + leafPartitionId + "\",\n" +
+                "    \"partitionRegion\":{\n" +
+                "        \"key\":{\n" +
+                "            \"min\":0,\n" +
+                "            \"minInclusive\":true,\n" +
+                "            \"max\":1000,\n" +
+                "            \"maxInclusive\":false\n" +
+                "        },\n" +
+                "        \"stringsBase64Encoded\":true\n" +
+                "    },\n" +
+                "    \"files\":[\"/test/file.parquet\"]\n" +
+                "}";
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
                 .isInstanceOf(
                         BulkExportQueryValidationException.class)
-                .hasMessage("Query validation failed for export \"id\": subExportId field must be provided");
+                .hasMessage(
+                        "Query validation failed for export \"" + exportId + "\": subExportId field must be provided");
     }
 
     @Test
@@ -142,18 +211,38 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe("my-table", schema, true);
 
         String queryJson = "{\n" +
-                "  \"tableId\": \"id2\",\n" +
-                "  \"exportId\": \"id\",\n" +
-                "  \"subExportId\": \"se1\",\n" +
-                "  \"regions\": [],\n" +
-                "  \"files\": []\n" +
-                "}\n";
+                "    \"tableId\":\"" + tableId + "\",\n" +
+                "    \"exportId\":\"" + exportId + "\",\n" +
+                "    \"subExportId\":\"" + subExportId + "\",\n" +
+                "    \"regions\":[\n" +
+                "        {\n" +
+                "            \"key\":{\n" +
+                "                \"min\":1,\n" +
+                "                \"minInclusive\":true,\n" +
+                "                \"max\":10,\n" +
+                "                \"maxInclusive\":true\n" +
+                "            },\n" +
+                "            \"stringsBase64Encoded\":true\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"partitionRegion\":{\n" +
+                "        \"key\":{\n" +
+                "            \"min\":0,\n" +
+                "            \"minInclusive\":true,\n" +
+                "            \"max\":1000,\n" +
+                "            \"maxInclusive\":false\n" +
+                "        },\n" +
+                "        \"stringsBase64Encoded\":true\n" +
+                "    },\n" +
+                "    \"files\":[\"/test/file.parquet\"]\n" +
+                "}";
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
                 .isInstanceOf(
                         BulkExportQueryValidationException.class)
-                .hasMessage("Query validation failed for export \"id\": leafPartitionId field must be provided");
+                .hasMessage("Query validation failed for export \"" + exportId
+                        + "\": leafPartitionId field must be provided");
     }
 
     @Test
@@ -161,32 +250,36 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         // Given
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe("my-table", schema, true);
         String queryJson = "{\n" +
-                "  \"tableId\": \"id2\",\n" +
-                "  \"exportId\": \"id\",\n" +
-                "  \"subExportId\": \"se1\",\n" +
-                "  \"leafPartitionId\": \"p1\",\n" +
-                // " \"partitionRegion\":{\"rowKeyFieldNameToRange\":{\"key\":" +
-                // " {\"field\":{\"name\":\"key\",\"type\":{}}, " +
-                // "
-                // \"min\":-9223372036854775808,\"minInclusive\":true,\"max\":50,\"maxInclusive\":false}}}\n"
-                // +
-                "  \"regions\": [\n" +
-                "    {\n" +
-                "      \"key\": {\n" +
-                "        \"min\": 1,\n" +
-                "        \"minInclusive\": true,\n" +
-                "        \"max\": 2,\n" +
-                "        \"maxInclusive\": true\n" +
-                "      },\n" +
-                "      \"stringsBase64Encoded\": true\n" +
+                "    \"tableId\":\"" + tableId + "\",\n" +
+                "    \"exportId\":\"" + exportId + "\",\n" +
+                "    \"subExportId\":\"" + subExportId + "\",\n" +
+                "    \"regions\":[\n" +
+                "        {\n" +
+                "            \"key\":{\n" +
+                "                \"min\":1,\n" +
+                "                \"minInclusive\":true,\n" +
+                "                \"max\":10,\n" +
+                "                \"maxInclusive\":true\n" +
+                "            },\n" +
+                "            \"stringsBase64Encoded\":true\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"leafPartitionId\":\"" + leafPartitionId + "\",\n" +
+                "    \"partitionRegion\":{\n" +
+                "        \"key\":{\n" +
+                "            \"min\":0,\n" +
+                "            \"minInclusive\":true,\n" +
+                "            \"max\":1000,\n" +
+                "            \"maxInclusive\":false\n" +
+                "        },\n" +
+                "        \"stringsBase64Encoded\":true\n" +
                 "    }\n" +
-                "  ]\n" +
-                "}\n";
+                "}";
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
                 .isInstanceOf(
                         BulkExportQueryValidationException.class)
-                .hasMessage("Query validation failed for export \"id\": files field must be provided");
+                .hasMessage("Query validation failed for export \"" + exportId + "\": files field must be provided");
     }
 
     private BulkExportLeafPartitionQuerySerDe generateQuerySerDe(String tableName, Schema schema,
