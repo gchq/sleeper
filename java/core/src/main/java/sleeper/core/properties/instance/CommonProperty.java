@@ -356,9 +356,12 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.committer.concurrency.reserved")
-            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the state store committer lambda.\n" +
+                    "Presently this value defaults to 10 to align with expectations around table efficiency.\n" +
+                    "This is to ensure that state store operations can still be applied to at least 10 tables, " +
+                    "even when concurrency is used up in the account.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .defaultValue("10")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.committer.concurrency.max")
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)

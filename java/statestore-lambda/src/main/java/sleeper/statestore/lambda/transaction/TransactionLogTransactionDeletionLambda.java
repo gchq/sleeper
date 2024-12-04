@@ -32,7 +32,6 @@ import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
@@ -49,8 +48,6 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 
 /**
  * A lambda that receives batches of tables from an SQS queue and deletes old transaction log transactions for them.
@@ -95,8 +92,8 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
         for (TableProperties table : tables) {
             LOGGER.info("Deleting old transactions for table {}", table.getStatus());
             try {
-                TransactionLogStore filesLogStore = getLogStore(table, TRANSACTION_LOG_FILES_TABLENAME);
-                TransactionLogStore partitionsLogStore = getLogStore(table, TRANSACTION_LOG_PARTITIONS_TABLENAME);
+                TransactionLogStore filesLogStore = getLogStoreForFiles(table);
+                TransactionLogStore partitionsLogStore = getLogStoreForPartitions(table);
                 DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoClient);
                 new TransactionLogTransactionDeleter(table, metadataStore::getLatestSnapshotsBefore, filesLogStore, partitionsLogStore, Instant::now)
                         .deleteOldTransactions();
@@ -110,9 +107,12 @@ public class TransactionLogTransactionDeletionLambda implements RequestHandler<S
         }
     }
 
-    private TransactionLogStore getLogStore(TableProperties tableProperties, InstanceProperty logStoreTableNameProperty) {
-        return new DynamoDBTransactionLogStore(
-                instanceProperties.get(logStoreTableNameProperty), instanceProperties, tableProperties, dynamoClient, s3Client);
+    private TransactionLogStore getLogStoreForFiles(TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
+    }
+
+    private TransactionLogStore getLogStoreForPartitions(TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
     }
 
     private List<TableProperties> loadTables(

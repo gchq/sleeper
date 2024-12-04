@@ -17,6 +17,14 @@ package sleeper.bulkexport.model;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -28,29 +36,48 @@ public class BulkExportLeafPartitionQueryTest {
     @Test
     public void testEqualsAndHashcode() {
         // Given
+        Field field = new Field("key", new LongType());
+        Schema schema = Schema.builder().rowKeyFields(field).build();
+        PartitionTree partitions = new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 100L)
+                .splitToNewChildren("L", "LL", "LR", 50L)
+                .buildTree();
+        Region regionLL = partitions.getPartition("LL").getRegion();
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Region region1 = new Region(rangeFactory.createRange(field, 1L, true, 10L, true));
         String tableId = UUID.randomUUID().toString();
-        String leafPartitionId = UUID.randomUUID().toString();
+        String leafPartitionId = partitions.getPartition("LL").getId();
         String subExportId = UUID.randomUUID().toString();
         List<String> files = Collections.singletonList("/test/file.parquet");
         BulkExportLeafPartitionQuery query1 = BulkExportLeafPartitionQuery.builder()
                 .tableId(tableId)
                 .exportId("A")
+                .regions(List.of(
+                        region1))
                 .leafPartitionId(leafPartitionId)
                 .subExportId(subExportId)
+                .partitionRegion(regionLL)
                 .files(files)
                 .build();
         BulkExportLeafPartitionQuery query2 = BulkExportLeafPartitionQuery.builder()
                 .tableId(tableId)
                 .exportId("A")
+                .regions(List.of(
+                        region1))
                 .leafPartitionId(leafPartitionId)
                 .subExportId(subExportId)
+                .partitionRegion(regionLL)
                 .files(files)
                 .build();
         BulkExportLeafPartitionQuery query3 = BulkExportLeafPartitionQuery.builder()
                 .tableId(tableId)
                 .exportId("B")
+                .regions(List.of(
+                        region1))
                 .leafPartitionId(leafPartitionId)
                 .subExportId(subExportId)
+                .partitionRegion(regionLL)
                 .files(files)
                 .build();
 

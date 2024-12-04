@@ -29,27 +29,26 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
+import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.UPDATE_TIME;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createFilesAssignedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCommittedUpdate;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobCreated;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFailedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobFinishedUpdate;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusFormat.createJobStartedUpdate;
@@ -111,13 +110,11 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
-        for (AssignJobIdRequest request : requests) {
-            try {
-                save(createFilesAssignedUpdate(request, jobUpdateBuilder(tableId, request.getJobId())));
-            } catch (RuntimeException e) {
-                throw new CompactionStatusStoreException("Failed saving input files assigned event for job " + request.getJobId(), e);
-            }
+    public void jobCreated(CompactionJobCreatedEvent event) {
+        try {
+            save(createJobCreated(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
+        } catch (RuntimeException e) {
+            throw new CompactionStatusStoreException("Failed saving created event for job " + event.getJobId(), e);
         }
     }
 

@@ -54,6 +54,7 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedComp
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -133,15 +134,15 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected void storeJobCreated(CompactionJob job) {
-        store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
+        store.jobCreated(compactionJobCreated(job));
     }
 
     protected void storeJobCreated(CompactionJobStatusStore store, CompactionJob job) {
-        store.jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
+        store.jobCreated(compactionJobCreated(job));
     }
 
     protected void storeJobCreatedAtTime(Instant updateTime, CompactionJob job) {
-        storeWithUpdateTime(updateTime).jobInputFilesAssigned(job.getTableId(), List.of(job.createAssignJobIdRequest()));
+        storeWithUpdateTime(updateTime).jobCreated(compactionJobCreated(job));
     }
 
     protected static Instant ignoredUpdateTime() {

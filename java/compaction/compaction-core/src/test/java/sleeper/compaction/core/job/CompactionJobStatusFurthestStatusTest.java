@@ -18,8 +18,8 @@ package sleeper.compaction.core.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.status.CompactionJobCommittedStatus;
+import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessFailedStatus;
@@ -33,10 +33,10 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobStatusFromUpdates;
+import static sleeper.compaction.core.job.status.CompactionJobStatusType.CREATED;
 import static sleeper.compaction.core.job.status.CompactionJobStatusType.FAILED;
 import static sleeper.compaction.core.job.status.CompactionJobStatusType.FINISHED;
 import static sleeper.compaction.core.job.status.CompactionJobStatusType.IN_PROGRESS;
-import static sleeper.compaction.core.job.status.CompactionJobStatusType.PENDING;
 import static sleeper.compaction.core.job.status.CompactionJobStatusType.UNCOMMITTED;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
@@ -46,7 +46,7 @@ public class CompactionJobStatusFurthestStatusTest {
     @Test
     void shouldReportJobAssignedToInputFiles() {
         // Given
-        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus filesAssigned = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
@@ -56,13 +56,13 @@ public class CompactionJobStatusFurthestStatusTest {
         CompactionJobStatus status = jobStatusFromUpdates(filesAssigned);
 
         // Then
-        assertThat(status.getFurthestStatusType()).isEqualTo(PENDING);
+        assertThat(status.getFurthestStatusType()).isEqualTo(CREATED);
     }
 
     @Test
     void shouldReportJobStarted() {
         // Given
-        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus filesAssigned = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
@@ -80,7 +80,7 @@ public class CompactionJobStatusFurthestStatusTest {
     @Test
     void shouldReportJobUncommitted() {
         // Given
-        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus filesAssigned = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
@@ -100,7 +100,7 @@ public class CompactionJobStatusFurthestStatusTest {
     @Test
     void shouldReportJobCommitted() {
         // Given
-        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus filesAssigned = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
@@ -122,7 +122,7 @@ public class CompactionJobStatusFurthestStatusTest {
     @Test
     void shouldReportJobFailed() {
         // Given
-        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus filesAssigned = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
@@ -141,7 +141,7 @@ public class CompactionJobStatusFurthestStatusTest {
     @Test
     void shouldReportJobSucceededWhenFollowedByAFailedRun() {
         // Given
-        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus filesAssigned = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
@@ -166,7 +166,7 @@ public class CompactionJobStatusFurthestStatusTest {
     @Test
     void shouldReportJobInProgressWhenRetryingAfterFailure() {
         // Given
-        CompactionJobInputFilesAssignedStatus filesAssigned = CompactionJobInputFilesAssignedStatus.builder()
+        CompactionJobCreatedStatus filesAssigned = CompactionJobCreatedStatus.builder()
                 .updateTime(Instant.parse("2023-03-22T15:36:02Z"))
                 .partitionId("partition1")
                 .inputFilesCount(11)
