@@ -29,6 +29,7 @@ public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
     public static final LocalStackContainer CONTAINER = startContainer();
     private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
             SystemTestParametersTestHelper.parametersBuilder()
+                    .shortTestId("localstack")
                     .region(CONTAINER.getRegion())
                     .build(),
             LocalStackSystemTestDrivers.fromContainer(CONTAINER));
