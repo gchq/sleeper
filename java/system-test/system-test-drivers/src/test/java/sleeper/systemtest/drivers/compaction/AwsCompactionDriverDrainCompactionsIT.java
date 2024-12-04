@@ -56,7 +56,7 @@ public class AwsCompactionDriverDrainCompactionsIT {
     }
 
     @Test
-    void shouldDrainCompactionJobsFromQueue(SleeperSystemTest sleeper) {
+    void shouldDrainCompactionJobsFromQueue() {
         // Given
         FileReferenceFactory fileFactory = FileReferenceFactory.from(instance.getStateStore());
         CompactionJobFactory jobFactory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());

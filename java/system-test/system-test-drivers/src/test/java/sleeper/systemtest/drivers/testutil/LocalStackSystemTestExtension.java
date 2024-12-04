@@ -26,7 +26,7 @@ import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
 
 public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
-    private static final LocalStackContainer CONTAINER = startContainer();
+    public static final LocalStackContainer CONTAINER = startContainer();
     private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
             SystemTestParametersTestHelper.parametersBuilder()
                     .region(CONTAINER.getRegion())
