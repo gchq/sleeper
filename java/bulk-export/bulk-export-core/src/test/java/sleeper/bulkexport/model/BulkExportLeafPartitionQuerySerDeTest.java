@@ -206,6 +206,36 @@ public class BulkExportLeafPartitionQuerySerDeTest {
     }
 
     @Test
+    public void shouldThrowExceptionNoRegions() {
+        // Given
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe("my-table", schema, true);
+
+        String queryJson = "{\n" +
+                "    \"tableId\":\"" + tableId + "\",\n" +
+                "    \"exportId\":\"" + exportId + "\",\n" +
+                "    \"subExportId\":\"" + subExportId + "\",\n" +
+                "    \"leafPartitionId\":\"" + leafPartitionId + "\",\n" +
+                "    \"partitionRegion\":{\n" +
+                "        \"key\":{\n" +
+                "            \"min\":0,\n" +
+                "            \"minInclusive\":true,\n" +
+                "            \"max\":1000,\n" +
+                "            \"maxInclusive\":false\n" +
+                "        },\n" +
+                "        \"stringsBase64Encoded\":true\n" +
+                "    },\n" +
+                "    \"files\":[\"/test/file.parquet\"]\n" +
+                "}";
+
+        // When & Then
+        assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
+                .isInstanceOf(
+                        BulkExportQueryValidationException.class)
+                .hasMessage("Query validation failed for export \"" + exportId
+                        + "\": regions field must be provided");
+    }
+
+    @Test
     public void shouldThrowExceptionNoLeafPartitionId() {
         // Given
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe("my-table", schema, true);
@@ -243,6 +273,38 @@ public class BulkExportLeafPartitionQuerySerDeTest {
                         BulkExportQueryValidationException.class)
                 .hasMessage("Query validation failed for export \"" + exportId
                         + "\": leafPartitionId field must be provided");
+    }
+
+    @Test
+    public void shouldThrowExceptionNoPartitionRegion() {
+        // Given
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe("my-table", schema, true);
+
+        String queryJson = "{\n" +
+                "    \"tableId\":\"" + tableId + "\",\n" +
+                "    \"exportId\":\"" + exportId + "\",\n" +
+                "    \"subExportId\":\"" + subExportId + "\",\n" +
+                "    \"regions\":[\n" +
+                "        {\n" +
+                "            \"key\":{\n" +
+                "                \"min\":1,\n" +
+                "                \"minInclusive\":true,\n" +
+                "                \"max\":10,\n" +
+                "                \"maxInclusive\":true\n" +
+                "            },\n" +
+                "            \"stringsBase64Encoded\":true\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"leafPartitionId\":\"" + leafPartitionId + "\",\n" +
+                "    \"files\":[\"/test/file.parquet\"]\n" +
+                "}";
+
+        // When & Then
+        assertThatThrownBy(() -> querySerDe.fromJson(queryJson))
+                .isInstanceOf(
+                        BulkExportQueryValidationException.class)
+                .hasMessage("Query validation failed for export \"" + exportId
+                        + "\": partitionRegion field must be provided");
     }
 
     @Test

@@ -41,9 +41,9 @@ public class BulkExportLeafPartitionQuery {
         tableId = requireNonNull(builder.tableId, builder, "tableId field must be provided");
         exportId = requireNonNull(builder.exportId, builder, "exportId field must be provided");
         subExportId = requireNonNull(builder.subExportId, builder, "subExportId field must be provided");
-        regions = Objects.requireNonNull(builder.regions, "regions must not be null");
+        regions = requireNonNull(builder.regions, builder, "regions field must be provided");
         leafPartitionId = requireNonNull(builder.leafPartitionId, builder, "leafPartitionId field must be provided");
-        partitionRegion = Objects.requireNonNull(builder.partitionRegion, "partitionRegion must not be null");
+        partitionRegion = requireNonNull(builder.partitionRegion, builder, "partitionRegion field must be provided");
         files = requireNonNull(builder.files, builder, "files field must be provided");
     }
 
