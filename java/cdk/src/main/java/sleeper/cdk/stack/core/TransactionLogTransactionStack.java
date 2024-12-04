@@ -86,7 +86,7 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .functionName(deletionFunctionName)
                 .description("Deletes old transaction log transactions for tables")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_TRANSACTION_DELETION)));
@@ -127,7 +127,7 @@ public class TransactionLogTransactionStack extends NestedStack {
 
         transactionDeletionLambda.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getInt(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM)).build());
+                .maxConcurrency(instanceProperties.getIntOrNull(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM)).build());
 
         coreStacks.grantReadTablesStatus(transactionDeletionTrigger);
         coreStacks.grantInvokeScheduled(transactionDeletionTrigger, queue);

@@ -66,7 +66,7 @@
         -->
         <spark.version>3.5.1</spark.version>
         <hadoop.version>3.3.6</hadoop.version>
-        <parquet-hadoop.version>1.14.1</parquet-hadoop.version>
+        <parquet-hadoop.version>1.15.0</parquet-hadoop.version>
         <joom.spark.platform.version>0.4.7</joom.spark.platform.version>
         <!-- The version of Arrow should match the version used by Spark -->
         <arrow.version>12.0.1</arrow.version>
@@ -124,8 +124,8 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.12</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.29.23</aws-java-sdk-v2.version>
-        <aws-crt.version>0.33.3</aws-crt.version>
+        <aws-java-sdk-v2.version>2.29.26</aws-java-sdk-v2.version>
+        <aws-crt.version>0.33.5</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
@@ -186,8 +186,8 @@
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
         <approvaltests.version>24.9.0</approvaltests.version>
-        <jsonunit.version>4.0.0</jsonunit.version>
-        <checkstyle.version>10.20.1</checkstyle.version>
+        <jsonunit.version>4.1.0</jsonunit.version>
+        <checkstyle.version>10.20.2</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
