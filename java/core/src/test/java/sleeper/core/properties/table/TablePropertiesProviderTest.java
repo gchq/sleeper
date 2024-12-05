@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.TableStateProperty;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
@@ -32,6 +31,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -212,7 +212,7 @@ public class TablePropertiesProviderTest {
             // Given
             tableProperties.setNumber(ROW_GROUP_SIZE, 123L);
             store.save(tableProperties);
-            instanceProperties.setNumber(TableStateProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
+            instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
             TablePropertiesProvider provider = providerWithTimes(
                     Instant.parse("2023-10-09T17:11:00Z"),
                     Instant.parse("2023-10-09T17:15:00Z"));
@@ -232,7 +232,7 @@ public class TablePropertiesProviderTest {
             // Given
             tableProperties.setNumber(ROW_GROUP_SIZE, 123L);
             store.save(tableProperties);
-            instanceProperties.setNumber(TableStateProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
+            instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
             TablePropertiesProvider provider = providerWithTimes(
                     Instant.parse("2023-10-09T17:11:00Z"),
                     Instant.parse("2023-10-09T17:12:00Z"));
@@ -252,7 +252,7 @@ public class TablePropertiesProviderTest {
             // Given
             tableProperties.setNumber(ROW_GROUP_SIZE, 123);
             store.save(tableProperties);
-            instanceProperties.setNumber(TableStateProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
+            instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
             TablePropertiesProvider provider = providerWithTimes(
                     Instant.parse("2023-10-09T17:10:00Z"),
                     Instant.parse("2023-10-09T17:12:00Z"),
@@ -279,7 +279,7 @@ public class TablePropertiesProviderTest {
             tableProperties2.setNumber(ROW_GROUP_SIZE, 123L);
             store.save(tableProperties1);
             store.save(tableProperties2);
-            instanceProperties.setNumber(TableStateProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
+            instanceProperties.setNumber(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS, 3);
             TablePropertiesProvider provider = providerWithTimes(
                     Instant.parse("2023-10-09T17:11:00Z"),
                     Instant.parse("2023-10-09T17:14:00Z"),

@@ -26,7 +26,6 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.TableStateProperty;
 import sleeper.statestore.s3.S3StateStore;
 
 import java.util.Locale;
@@ -34,6 +33,7 @@ import java.util.Locale;
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.TableStateProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;
@@ -62,7 +62,7 @@ public class S3StateStoreStack extends NestedStack {
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyRevisionTable)
                 .sortKey(sortKeyRevisionTable)
-                .pointInTimeRecovery(instanceProperties.getBoolean(TableStateProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecovery(instanceProperties.getBoolean(S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(REVISION_TABLENAME, this.revisionTable.getTableName());
     }

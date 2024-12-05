@@ -26,7 +26,6 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.TableStateProperty;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
@@ -34,6 +33,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.TableStateProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 
 public class DynamoDBStateStoreStack extends NestedStack {
     private final Table activeFilesTable;
@@ -63,7 +63,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyActiveFileReferenceTable)
                 .sortKey(sortKeyActiveFileReferenceTable)
-                .pointInTimeRecovery(instanceProperties.getBoolean(TableStateProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(ACTIVE_FILES_TABLENAME, activeFilesTable.getTableName());
 
@@ -83,7 +83,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyFileReferenceCountTable)
                 .sortKey(sortKeyFileReferenceCountTable)
-                .pointInTimeRecovery(instanceProperties.getBoolean(TableStateProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, fileReferenceCountTable.getTableName());
 
@@ -103,7 +103,7 @@ public class DynamoDBStateStoreStack extends NestedStack {
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(partitionKeyPartitionTable)
                 .sortKey(sortKeyPartitionTable)
-                .pointInTimeRecovery(instanceProperties.getBoolean(TableStateProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecovery(instanceProperties.getBoolean(DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY))
                 .build();
 
         instanceProperties.set(PARTITION_TABLENAME, partitionTable.getTableName());

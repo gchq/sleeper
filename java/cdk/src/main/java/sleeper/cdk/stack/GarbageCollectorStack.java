@@ -38,7 +38,6 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.TableStateProperty;
 
 import java.util.List;
 
@@ -57,6 +56,8 @@ import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
 /**
  * Deploys resources to perform garbage collection. This will find and delete files which have been marked as being
@@ -87,8 +88,8 @@ public class GarbageCollectorStack extends NestedStack {
                 .description("Creates batches of Sleeper tables to perform garbage collection for and puts them on a queue to be processed")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .memorySize(instanceProperties.getInt(TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
+                .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.GARBAGE_COLLECTOR_TRIGGER)));
         IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.GARBAGE_COLLECTOR, "GarbageCollectorLambda", builder -> builder
                 .functionName(functionName)

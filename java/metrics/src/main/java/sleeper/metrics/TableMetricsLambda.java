@@ -39,7 +39,6 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.MetricsProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
@@ -58,6 +57,7 @@ import java.util.Map.Entry;
 import static java.util.stream.Collectors.groupingBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
 public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
@@ -100,7 +100,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
             List<TableProperties> tables,
             Map<String, List<SQSMessage>> messagesByTableId,
             List<SQSBatchResponse.BatchItemFailure> batchItemFailures) {
-        String metricsNamespace = instanceProperties.get(MetricsProperty.METRICS_NAMESPACE);
+        String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
         LOGGER.info("Generating metrics for namespace {}", metricsNamespace);
         MetricsLogger metricsLogger = MetricsUtils.metricsLogger();
         metricsLogger.setNamespace(metricsNamespace);

@@ -53,7 +53,6 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.MetricsProperty;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -80,6 +79,7 @@ import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CPU;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class IngestStack extends NestedStack {
@@ -223,7 +223,7 @@ public class IngestStack extends NestedStack {
                 .effect(Effect.ALLOW)
                 .actions(Collections.singletonList("cloudwatch:PutMetricData"))
                 .resources(Collections.singletonList("*"))
-                .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(MetricsProperty.METRICS_NAMESPACE))))
+                .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(METRICS_NAMESPACE))))
                 .build());
 
         CfnOutputProps ingestClusterProps = new CfnOutputProps.Builder()

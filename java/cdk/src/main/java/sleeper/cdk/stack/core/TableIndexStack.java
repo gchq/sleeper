@@ -28,13 +28,13 @@ import software.constructs.Construct;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.TableStateProperty;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 public final class TableIndexStack extends NestedStack {
 
@@ -57,7 +57,7 @@ public final class TableIndexStack extends NestedStack {
                         .name(DynamoDBTableIndex.TABLE_NAME_FIELD)
                         .type(AttributeType.STRING)
                         .build())
-                .pointInTimeRecovery(instanceProperties.getBoolean(TableStateProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(TABLE_NAME_INDEX_DYNAMO_TABLENAME, indexByNameDynamoTable.getTableName());
 
@@ -70,7 +70,7 @@ public final class TableIndexStack extends NestedStack {
                         .name(DynamoDBTableIndex.TABLE_ID_FIELD)
                         .type(AttributeType.STRING)
                         .build())
-                .pointInTimeRecovery(instanceProperties.getBoolean(TableStateProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, indexByIdDynamoTable.getTableName());
 
@@ -87,7 +87,7 @@ public final class TableIndexStack extends NestedStack {
                         .name(DynamoDBTableIndex.TABLE_NAME_FIELD)
                         .type(AttributeType.STRING)
                         .build())
-                .pointInTimeRecovery(instanceProperties.getBoolean(TableStateProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
+                .pointInTimeRecovery(instanceProperties.getBoolean(TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY))
                 .build();
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, indexByOnlineDynamoTable.getTableName());
 

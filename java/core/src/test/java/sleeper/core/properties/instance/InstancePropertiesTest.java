@@ -48,6 +48,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.CommonProperty.EMAIL_ADDRESS_FOR_ERROR_NOTIFICATION;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -233,7 +234,7 @@ class InstancePropertiesTest {
     void shouldGetTheDefaultPropertyWhenPropertyHasNotBeenSet() {
         // Given
         InstanceProperties properties = new InstanceProperties();
-        properties.set(CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED, "10");
+        properties.set(DEFAULT_LAMBDA_CONCURRENCY_RESERVED, "10");
 
         // When / Then
         assertThat(properties.get(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED)).isEqualTo("10");
