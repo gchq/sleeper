@@ -159,7 +159,15 @@ public class InMemoryCompaction {
             invokeTasks(numberOfTasks, poll);
         }
 
+        @Override
         public void scaleToZero() {
+        }
+
+        @Override
+        public List<CompactionJob> drainJobsQueueForWholeInstance() {
+            List<CompactionJob> jobs = queuedJobsById.values().stream().toList();
+            queuedJobsById.clear();
+            return jobs;
         }
 
         private CreateCompactionJobs jobCreator() {

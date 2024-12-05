@@ -54,7 +54,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
         List<FileReference> filesThatMeetCriteria = getListOfFilesThatMeetsCriteria(
                 filesInPartition.getFilesWithNoJobIdInAscendingOrder());
         if (null == filesThatMeetCriteria || filesThatMeetCriteria.isEmpty()) {
-            LOGGER.info("For partition {} there is no list of files that meet the criteria", filesInPartition.getPartitionId());
+            LOGGER.debug("For partition {} there is no list of files that meet the criteria", filesInPartition.getPartitionId());
             return List.of();
         }
         LOGGER.debug("For partition {} there is a list of {} files that meet the criteria", filesInPartition.getPartitionId(), filesThatMeetCriteria.size());
@@ -63,7 +63,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
         // and creating a job for each group as long as it meets the criteria.
         List<CompactionJob> compactionJobs = new ArrayList<>();
         if (filesThatMeetCriteria.size() <= compactionFilesBatchSize) {
-            LOGGER.info("Creating a job to compact all {} files meeting criteria in partition {}",
+            LOGGER.debug("Creating a job to compact all {} files meeting criteria in partition {}",
                     filesThatMeetCriteria.size(), filesInPartition.getPartitionId());
             compactionJobs.add(factory.createCompactionJob(filesThatMeetCriteria, filesInPartition.getPartitionId()));
         } else {
@@ -78,7 +78,7 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
                 // Create job for these files if they meet criteria
                 List<Long> fileSizes = filesForJob.stream().map(FileReference::getNumberOfRecords).collect(Collectors.toList());
                 if (meetsCriteria(fileSizes)) {
-                    LOGGER.info("Creating a job to compact {} files in partition {}",
+                    LOGGER.debug("Creating a job to compact {} files in partition {}",
                             filesForJob.size(), filesInPartition.getPartitionId());
                     compactionJobs.add(factory.createCompactionJob(filesForJob, filesInPartition.getPartitionId()));
                     filesForJob.clear();
@@ -111,13 +111,13 @@ public class SizeRatioLeafStrategy implements LeafPartitionCompactionStrategy {
             return false;
         }
         long largestFileSize = fileSizesInAscendingOrder.get(fileSizesInAscendingOrder.size() - 1);
-        LOGGER.info("Largest file size is {}", largestFileSize);
+        LOGGER.debug("Largest file size is {}", largestFileSize);
         long sumOfOtherFileSizes = 0L;
         for (int i = 0; i < fileSizesInAscendingOrder.size() - 1; i++) {
             sumOfOtherFileSizes += fileSizesInAscendingOrder.get(i);
         }
-        LOGGER.info("Sum of other file sizes is {}", sumOfOtherFileSizes);
-        LOGGER.info("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
+        LOGGER.debug("Sum of other file sizes is {}", sumOfOtherFileSizes);
+        LOGGER.debug("Ratio * largestFileSize <= sumOfOtherFileSizes {}", (ratio * largestFileSize <= sumOfOtherFileSizes));
         return ratio * largestFileSize <= sumOfOtherFileSizes;
     }
 }

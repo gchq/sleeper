@@ -28,7 +28,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
 
 @LocalStackDslTest
 public class SetupInstanceLocalIT {
@@ -37,7 +37,7 @@ public class SetupInstanceLocalIT {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(LOCALSTACK_MAIN);
     }
 
     @Test

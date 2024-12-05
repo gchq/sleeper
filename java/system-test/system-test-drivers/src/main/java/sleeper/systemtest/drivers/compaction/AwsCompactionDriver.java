@@ -25,8 +25,15 @@ import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.lambda.LambdaClient;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequestEntry;
+import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchResponse;
+import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import sleeper.clients.deploy.InvokeLambda;
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.task.CompactionTaskStatus;
@@ -45,8 +52,12 @@ import sleeper.task.common.EC2Scaler;
 import sleeper.task.common.RunCompactionTasks;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Stream;
 
+import static java.util.function.Predicate.not;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class AwsCompactionDriver implements CompactionDriver {
@@ -57,9 +68,11 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
+    private final SqsClient sqsClientV2;
     private final EcsClient ecsClient;
     private final AutoScalingClient asClient;
     private final Ec2Client ec2Client;
+    private final CompactionJobSerDe serDe = new CompactionJobSerDe();
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
@@ -67,6 +80,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         this.dynamoDBClient = clients.getDynamoDB();
         this.s3Client = clients.getS3();
         this.sqsClient = clients.getSqs();
+        this.sqsClientV2 = clients.getSqsV2();
         this.ecsClient = clients.getEcs();
         this.asClient = clients.getAutoScaling();
         this.ec2Client = clients.getEc2();
@@ -137,5 +151,42 @@ public class AwsCompactionDriver implements CompactionDriver {
     @Override
     public void scaleToZero() {
         EC2Scaler.create(instance.getInstanceProperties(), asClient, ec2Client).scaleTo(0);
+    }
+
+    @Override
+    public List<CompactionJob> drainJobsQueueForWholeInstance() {
+        String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_QUEUE_URL);
+        LOGGER.info("Draining compaction jobs queue: {}", queueUrl);
+        List<CompactionJob> jobs = Stream.iterate(
+                receiveJobs(queueUrl), not(List::isEmpty), lastJobs -> receiveJobs(queueUrl))
+                .flatMap(List::stream).toList();
+        LOGGER.info("Found {} compaction jobs", jobs.size());
+        return jobs;
+    }
+
+    private List<CompactionJob> receiveJobs(String queueUrl) {
+        ReceiveMessageResponse receiveResult = sqsClientV2.receiveMessage(request -> request
+                .queueUrl(queueUrl)
+                .maxNumberOfMessages(10)
+                .waitTimeSeconds(5));
+        List<Message> messages = receiveResult.messages();
+        if (messages.isEmpty()) {
+            return List.of();
+        }
+        DeleteMessageBatchResponse deleteResult = sqsClientV2.deleteMessageBatch(request -> request
+                .queueUrl(queueUrl)
+                .entries(messages.stream()
+                        .map(message -> DeleteMessageBatchRequestEntry.builder()
+                                .id(message.messageId())
+                                .receiptHandle(message.receiptHandle())
+                                .build())
+                        .toList()));
+        if (!deleteResult.failed().isEmpty()) {
+            throw new RuntimeException("Failed deleting compaction job messages: " + deleteResult.failed());
+        }
+        return messages.stream()
+                .map(Message::body)
+                .map(serDe::fromJson)
+                .toList();
     }
 }
