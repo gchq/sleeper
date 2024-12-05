@@ -73,7 +73,40 @@ public class BulkExportLeafPartitionQuerySerDeTest {
                 .files(Collections.singletonList("/test/file.parquet"))
                 .build();
 
-        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe(schema, true);
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
+
+        // When
+        String json = querySerDe.toJson(bulkExportLeafPartitionQuery, true);
+        BulkExportLeafPartitionQuery deserialisedQuery = querySerDe.fromJson(json);
+
+        // Then
+        assertThat(bulkExportLeafPartitionQuery).isEqualTo(deserialisedQuery);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
+    }
+
+    @Test
+    public void shouldSerDeBulkExportLeafPartitionQueryUsingSchema() {
+        // Given
+        String tableId = "t-id";
+        tableProperties.set(TABLE_ID, tableId);
+
+        String exportId = "e-id";
+        String subExportId = "se-id";
+        String leafPartitionId = "lp-id";
+        RangeFactory rangeFactory = new RangeFactory(schema);
+        Region region1 = new Region(rangeFactory.createRange(field, 1, true, 10, true));
+        Region partitionRegion = new Region(rangeFactory.createRange(field, 0, 1000));
+        BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery = BulkExportLeafPartitionQuery.builder()
+                .tableId(tableId)
+                .exportId(exportId)
+                .subExportId(subExportId)
+                .regions(List.of(region1))
+                .leafPartitionId(leafPartitionId)
+                .partitionRegion(partitionRegion)
+                .files(Collections.singletonList("/test/file.parquet"))
+                .build();
+
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromSchema(schema);
 
         // When
         String json = querySerDe.toJson(bulkExportLeafPartitionQuery, true);
@@ -93,7 +126,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         String exportId = "e-id";
         String subExportId = "se-id";
         String leafPartitionId = "lp-id";
-        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe(schema, true);
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         // When / Then
         assertThatThrownBy(() -> querySerDe.toJson(BulkExportLeafPartitionQuery.builder()
@@ -113,7 +146,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         // Given
         String tableId = "t-id";
         tableProperties.set(TABLE_ID, tableId);
-        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe(schema, true);
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
                 "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoExportId.approved.json");
@@ -131,7 +164,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         // Given
         String tableId = "t-id";
         tableProperties.set(TABLE_ID, tableId);
-        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe(schema, true);
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
                 "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoSubExportId.approved.json");
@@ -151,7 +184,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         // Given
         String tableId = "t-id";
         tableProperties.set(TABLE_ID, tableId);
-        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe(schema, true);
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
                 "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoRegions.approved.json");
@@ -169,7 +202,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         // Given
         String tableId = "t-id";
         tableProperties.set(TABLE_ID, tableId);
-        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe(schema, true);
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
                 "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoLeafPartitionId.approved.json");
@@ -187,7 +220,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         // Given
         String tableId = "t-id";
         tableProperties.set(TABLE_ID, tableId);
-        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe(schema, true);
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
                 "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoPartitionRegion.approved.json");
@@ -205,7 +238,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         // Given
         String tableId = "t-id";
         tableProperties.set(TABLE_ID, tableId);
-        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDe(schema, true);
+        BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
                 "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoFiles.approved.json");
@@ -218,12 +251,12 @@ public class BulkExportLeafPartitionQuerySerDeTest {
                 .hasMessage("Query validation failed for export \"e-id\": files field must be provided");
     }
 
-    private BulkExportLeafPartitionQuerySerDe generateQuerySerDe(Schema schema,
-            boolean useTablePropertiesProvider) {
-        if (useTablePropertiesProvider) {
-            tableProperties.setSchema(schema);
-            return new BulkExportLeafPartitionQuerySerDe(new FixedTablePropertiesProvider(tableProperties));
-        }
+    private BulkExportLeafPartitionQuerySerDe generateQuerySerDeFromTableProperties(Schema schema) {
+        tableProperties.setSchema(schema);
+        return new BulkExportLeafPartitionQuerySerDe(new FixedTablePropertiesProvider(tableProperties));
+    }
+
+    private BulkExportLeafPartitionQuerySerDe generateQuerySerDeFromSchema(Schema schema) {
         return new BulkExportLeafPartitionQuerySerDe(schema);
     }
 
