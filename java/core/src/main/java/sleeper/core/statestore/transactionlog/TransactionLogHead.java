@@ -192,7 +192,7 @@ class TransactionLogHead<T> {
                     state.getClass().getSimpleName(), sleeperTable, nextSnapshotCheckTime);
             return startTime;
         }
-        long minTransactionNumberToLoadSnapshot = lastTransactionNumber + minTransactionsAheadToLoadSnapshot;
+        long minTransactionNumberToLoadSnapshot = minTransactionNumberToLoadSnapshot();
         Optional<TransactionLogSnapshot> snapshotOpt = snapshotLoader
                 .loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot);
         Instant finishTime = stateUpdateClock.get();
@@ -209,6 +209,14 @@ class TransactionLogHead<T> {
                     LoggedDuration.withShortOutput(startTime, finishTime));
         });
         return finishTime;
+    }
+
+    private long minTransactionNumberToLoadSnapshot() {
+        if (lastTransactionNumber < 1) { // Always load snapshot when no transactions have been read yet
+            return 1;
+        } else {
+            return lastTransactionNumber + minTransactionsAheadToLoadSnapshot;
+        }
     }
 
     private void updateFromLog(Instant startTime) {
