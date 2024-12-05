@@ -81,6 +81,7 @@ import java.util.function.Function;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.createStateMachineLogOptions;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ACCOUNT;
@@ -143,7 +144,7 @@ public final class EksBulkImportStack extends NestedStack {
         IFunction bulkImportJobStarter = lambdaCode.buildFunction(this, LambdaHandler.BULK_IMPORT_STARTER, "BulkImportEKSJobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start EKS bulk import jobs")
-                .memorySize(1024)
+                .memorySize(instanceProperties.getInt(BULK_IMPORT_STARTER_LAMBDA_MEMORY))
                 .timeout(Duration.minutes(2))
                 .environment(env)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_EKS_STARTER))

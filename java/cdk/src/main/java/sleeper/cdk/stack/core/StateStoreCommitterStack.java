@@ -41,7 +41,6 @@ import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.TableStateProperty;
 
 import java.util.List;
 import java.util.Map;
@@ -53,6 +52,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
 
 public class StateStoreCommitterStack extends NestedStack {
     private final InstanceProperties instanceProperties;
@@ -103,7 +107,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 .fifoThroughputLimit(FifoThroughputLimit.PER_MESSAGE_GROUP_ID)
                 .deduplicationScope(DeduplicationScope.MESSAGE_GROUP)
                 .visibilityTimeout(
-                        Duration.seconds(instanceProperties.getInt(TableStateProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                        Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_ARN, queue.getQueueArn());
@@ -134,15 +138,15 @@ public class StateStoreCommitterStack extends NestedStack {
         IFunction handlerFunction = lambdaCode.buildFunction(this, LambdaHandler.STATESTORE_COMMITTER, "StateStoreCommitter", builder -> builder
                 .functionName(functionName)
                 .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
-                .memorySize(instanceProperties.getInt(TableStateProperty.STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(TableStateProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
-                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(logGroup));
 
         SqsEventSource eventSource = SqsEventSource.Builder.create(commitQueue)
-                .batchSize(instanceProperties.getInt(TableStateProperty.STATESTORE_COMMITTER_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getIntOrNull(TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM))
+                .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getIntOrNull(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build();
         handlerFunction.addEventSource(eventSource);
         instanceProperties.set(STATESTORE_COMMITTER_EVENT_SOURCE_ID, eventSource.getEventSourceMappingId());
