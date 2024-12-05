@@ -16,6 +16,7 @@
 package sleeper.core.statestore;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.TableStateProperty;
 import sleeper.core.properties.table.TableProperties;
 
 import java.util.HashMap;
@@ -23,7 +24,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-import static sleeper.core.properties.instance.CommonProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
@@ -38,7 +38,7 @@ public class StateStoreProvider {
     private final Queue<String> tableIds = new LinkedList<>();
 
     public StateStoreProvider(InstanceProperties instanceProperties, Factory stateStoreFactory) {
-        this(instanceProperties.getInt(STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
+        this(instanceProperties.getInt(TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE), stateStoreFactory);
     }
 
     public StateStoreProvider(int cacheSize, Factory stateStoreFactory) {

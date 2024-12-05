@@ -38,6 +38,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.TableStateProperty;
 
 import java.util.List;
 import java.util.Map;
@@ -58,8 +59,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED;
@@ -159,8 +158,8 @@ public class CompactionJobResources {
         IFunction triggerFunction = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_JOB_CREATOR_TRIGGER, "CompactionJobsCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Create batches of tables and send requests to create compaction jobs for those batches")
-                .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
+                .memorySize(instanceProperties.getInt(TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_JOB_CREATION_TRIGGER)));

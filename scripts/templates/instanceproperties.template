@@ -161,6 +161,16 @@ sleeper.properties.force.reload=false
 # the ability to use this in the CDK in the future.
 # sleeper.ecr.repository.prefix=
 
+# A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
+# sleeper.ecs.security.groups=
+
+
+## The following properties relate to handling the state of Sleeper tables.
+
+# The timeout in minutes for when the table properties provider cache should be cleared, forcing table
+# properties to be reloaded from S3.
+sleeper.cache.table.properties.provider.timeout.minutes=60
+
 # The maximum size of state store providers. If a state store is needed and the cache is full, the
 # oldest state store in the cache will be removed to make space.
 sleeper.statestore.statestore.provider.cache.size=10
@@ -181,7 +191,7 @@ sleeper.statestore.transactionlog.snapshot.creation.batch.size=1
 sleeper.statestore.transactionlog.snapshot.creation.lambda.period.seconds=60
 
 # The timeout in seconds after which to terminate the transaction log snapshot creation lambda.
-sleeper.statestore.transactionlog.snapshot.creation.lambda.timeout.seconds=180
+sleeper.statestore.transactionlog.snapshot.creation.lambda.timeout.seconds=900
 
 # The amount of memory in MB for the transaction log snapshot creation lambda.
 sleeper.statestore.transactionlog.snapshot.creation.memory.mb=4096
@@ -238,10 +248,6 @@ sleeper.tables.index.dynamo.pointintimerecovery=false
 # consistent.
 sleeper.tables.index.dynamo.consistent.reads=true
 
-# The timeout in minutes for when the table properties provider cache should be cleared, forcing table
-# properties to be reloaded from S3.
-sleeper.cache.table.properties.provider.timeout.minutes=60
-
 # The amount of memory in MB for lambdas that create batches of tables to run some operation against,
 # eg. create compaction jobs, run garbage collection, perform partition splitting.
 sleeper.batch.table.lambdas.memory.mb=1024
@@ -272,9 +278,6 @@ sleeper.statestore.committer.concurrency.reserved=10
 # See maximum concurrency overview at:
 # https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
 sleeper.statestore.committer.concurrency.max=10
-
-# A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
-# sleeper.ecs.security.groups=
 
 
 ## The following properties relate to standard ingest.

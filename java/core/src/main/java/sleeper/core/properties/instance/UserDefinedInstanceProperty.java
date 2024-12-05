@@ -46,6 +46,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
         private static SleeperPropertyIndex<UserDefinedInstanceProperty> createInstance() {
             SleeperPropertyIndex<UserDefinedInstanceProperty> index = new SleeperPropertyIndex<>();
             index.addAll(CommonProperty.getAll());
+            index.addAll(TableStateProperty.getAll());
             index.addAll(IngestProperty.getAll());
             index.addAll(ArrayListIngestProperty.getAll());
             index.addAll(ArrowIngestProperty.getAll());

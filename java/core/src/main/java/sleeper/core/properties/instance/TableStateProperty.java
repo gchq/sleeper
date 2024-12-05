@@ -1,0 +1,243 @@
+/*
+ * Copyright 2022-2024 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.core.properties.instance;
+
+import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
+
+import java.util.List;
+
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
+
+/**
+ * Definitions of instance properties relating to handling the state of Sleeper tables.
+ */
+public interface TableStateProperty {
+
+    static List<UserDefinedInstanceProperty> getAll() {
+        return Index.INSTANCE.getAll();
+    }
+
+    /**
+     * An index of property definitions in this file.
+     */
+    class Index {
+        private Index() {
+        }
+
+        private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
+
+        private static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
+            return UserDefinedInstancePropertyImpl.named(propertyName)
+                    .addToIndex(INSTANCE::add);
+        }
+    }
+
+    UserDefinedInstanceProperty TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS = Index
+            .propertyBuilder("sleeper.cache.table.properties.provider.timeout.minutes")
+            .description("The timeout in minutes for when the table properties provider cache should be cleared, " +
+                    "forcing table properties to be reloaded from S3.")
+            .defaultValue("60")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty STATESTORE_PROVIDER_CACHE_SIZE = Index
+            .propertyBuilder("sleeper.statestore.statestore.provider.cache.size")
+            .description("The maximum size of state store providers. If a state store is needed and the cache is full, the oldest state store in the cache will be removed to make space.")
+            .defaultValue("10")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY = Index
+            .propertyBuilder("sleeper.statestore.dynamo.pointintimerecovery")
+            .description("This specifies whether point in time recovery is enabled for the DynamoDB state store. " +
+                    "This is set on the DynamoDB tables.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY = Index
+            .propertyBuilder("sleeper.statestore.s3.dynamo.pointintimerecovery")
+            .description("This specifies whether point in time recovery is enabled for the S3 state store. " +
+                    "This is set on the revision DynamoDB table.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_BATCH_SIZE = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.batch.size")
+            .description("The number of tables to create transaction log snapshots for in a single invocation. This will be the batch size" +
+                    " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_SECONDS = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.lambda.period.seconds")
+            .description("The frequency in seconds with which the transaction log snapshot creation lambda is run.")
+            .defaultValue("60")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.lambda.timeout.seconds")
+            .description("The timeout in seconds after which to terminate the transaction log snapshot creation lambda.")
+            .defaultValue("900")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_MEMORY = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.memory.mb")
+            .description("The amount of memory in MB for the transaction log snapshot creation lambda.")
+            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_RESERVED = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.concurrency.reserved")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .description("The reserved concurrency for the snapshot creation lambda.\n" +
+                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_CREATION_LAMBDA_CONCURRENCY_MAXIMUM = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.creation.concurrency.max")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .description("The maximum given concurrency allowed for the snapshot creation lambda.\n" +
+                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_BATCH_SIZE = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.batch.size")
+            .description("The number of tables to delete old transaction log snapshots for in a single invocation. This will be the batch size" +
+                    " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.lambda.period.minutes")
+            .description("The frequency in minutes with which the transaction log snapshot deletion lambda is run.")
+            .defaultValue("60")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_RESERVED = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.concurrency.reserved")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .description("The reserved concurrency for the snapshot deletion lambda.\n" +
+                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_SNAPSHOT_DELETION_LAMBDA_CONCURRENCY_MAXIMUM = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.concurrency.max")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .description("The maximum given concurrency allowed for the snapshot deletion lambda.\n" +
+                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_BATCH_SIZE = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.batch.size")
+            .description("The number of tables to delete old transaction log transactions for in a single invocation. This will be the batch size" +
+                    " for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("1")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.lambda.period.minutes")
+            .description("The frequency in minutes with which the transaction log transaction deletion lambda is run.")
+            .defaultValue("60")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.concurrency.reserved")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .description("The reserved concurrency for the transaction deletion lambda.\n" +
+                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM = Index
+            .propertyBuilder("sleeper.statestore.transactionlog.transaction.deletion.concurrency.max")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .description("The maximum given concurrency allowed for the transaction deletion lambda.\n" +
+                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index
+            .propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")
+            .description("This specifies whether point in time recovery is enabled for the Sleeper table index. " +
+                    "This is set on the DynamoDB tables.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_STRONGLY_CONSISTENT_READS = Index
+            .propertyBuilder("sleeper.tables.index.dynamo.consistent.reads")
+            .description("This specifies whether queries and scans against the table index DynamoDB tables " +
+                    "are strongly consistent.")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB = Index
+            .propertyBuilder("sleeper.batch.table.lambdas.memory.mb")
+            .description("The amount of memory in MB for lambdas that create batches of tables to run some operation against, " +
+                    "eg. create compaction jobs, run garbage collection, perform partition splitting.")
+            .defaultValue("1024")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS = Index
+            .propertyBuilder("sleeper.batch.table.lambdas.timeout.seconds")
+            .description("The timeout in seconds for lambdas that create batches of tables to run some operation against, " +
+                    "eg. create compaction jobs, run garbage collection, perform partition splitting.")
+            .defaultValue("60")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB = Index
+            .propertyBuilder("sleeper.statestore.committer.lambda.memory.mb")
+            .description("The amount of memory in MB for the lambda that commits state store updates.")
+            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS = Index
+            .propertyBuilder("sleeper.statestore.committer.lambda.timeout.seconds")
+            .description("The timeout for the lambda that commits state store updates in seconds.")
+            .defaultValue("900")
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_BATCH_SIZE = Index
+            .propertyBuilder("sleeper.statestore.committer.batch.size")
+            .description("The number of state store updates to be sent to the state store committer lambda in one invocation. " +
+                    "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
+            .defaultValue("10")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED = Index
+            .propertyBuilder("sleeper.statestore.committer.concurrency.reserved")
+            .description("The reserved concurrency for the state store committer lambda.\n" +
+                    "Presently this value defaults to 10 to align with expectations around table efficiency.\n" +
+                    "This is to ensure that state store operations can still be applied to at least 10 tables, " +
+                    "even when concurrency is used up in the account.\n" +
+                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .defaultValue("10")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM = Index
+            .propertyBuilder("sleeper.statestore.committer.concurrency.max")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .description("The maximum given concurrency allowed for the state store committer lambda.\n" +
+                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+}

@@ -41,6 +41,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.TableStateProperty;
 
 import java.util.List;
 import java.util.Map;
@@ -57,8 +58,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTIT
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED;
@@ -190,8 +189,8 @@ public class PartitionSplittingStack extends NestedStack {
         IFunction triggerFunction = lambdaCode.buildFunction(this, LambdaHandler.FIND_PARTITIONS_TO_SPLIT_TRIGGER, "FindPartitionsToSplitTriggerLambda", builder -> builder
                 .functionName(triggerFunctionName)
                 .description("Creates batches of Sleeper tables to perform partition splitting for and puts them on a queue to be processed")
-                .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
+                .memorySize(instanceProperties.getInt(TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.PARTITION_SPLITTING_TRIGGER)));

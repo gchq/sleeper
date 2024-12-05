@@ -35,6 +35,9 @@ public class InstancePropertyGroup {
     public static final PropertyGroup COMMON = instanceGroup("Common")
             .description("The following properties are commonly used throughout Sleeper.")
             .build();
+    public static final PropertyGroup TABLE_STATE = instanceGroup("Table State")
+            .description("The following properties relate to handling the state of Sleeper tables.")
+            .build();
     public static final PropertyGroup INGEST = instanceGroup("Ingest")
             .description("The following properties relate to standard ingest.")
             .build();

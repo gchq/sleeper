@@ -18,6 +18,7 @@ package sleeper.core.statestore;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.TableStateProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.testutils.StateStoreTestHelper;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.CommonProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -63,7 +63,7 @@ public class StateStoreProviderTest {
     @Test
     void shouldRemoveOldestCacheEntryWhenLimitHasBeenReached() {
         // Given
-        instanceProperties.setNumber(STATESTORE_PROVIDER_CACHE_SIZE, 2);
+        instanceProperties.setNumber(TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE, 2);
         TableProperties table1 = createTable("table-id-1", "test-table-1");
         StateStore store1 = createStateStore(table1);
         TableProperties table2 = createTable("table-id-2", "test-table-2");

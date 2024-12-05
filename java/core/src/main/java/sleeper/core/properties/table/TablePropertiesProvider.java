@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.TableStateProperty;
 import sleeper.core.table.TableStatus;
 
 import java.time.Duration;
@@ -28,7 +29,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
@@ -49,7 +49,7 @@ public class TablePropertiesProvider {
     }
 
     public TablePropertiesProvider(InstanceProperties instanceProperties, TablePropertiesStore propertiesStore, Supplier<Instant> timeSupplier) {
-        this(propertiesStore, Duration.ofMinutes(instanceProperties.getInt(TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS)), timeSupplier);
+        this(propertiesStore, Duration.ofMinutes(instanceProperties.getInt(TableStateProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS)), timeSupplier);
     }
 
     protected TablePropertiesProvider(

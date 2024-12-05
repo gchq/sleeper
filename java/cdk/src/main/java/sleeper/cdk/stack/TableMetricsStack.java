@@ -41,6 +41,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.TableStateProperty;
 
 import java.util.Collections;
 import java.util.List;
@@ -57,8 +58,6 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.METRICS_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.CommonProperty.METRICS_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(
@@ -76,8 +75,8 @@ public class TableMetricsStack extends NestedStack {
                 .description("Creates batches of Sleeper tables to calculate metrics for and puts them on a queue to be published")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
-                .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
+                .memorySize(instanceProperties.getInt(TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.METRICS_TRIGGER)));
         IFunction tableMetricsPublisher = lambdaCode.buildFunction(this, LambdaHandler.METRICS, "MetricsPublisher", builder -> builder
                 .functionName(publishFunctionName)
