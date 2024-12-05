@@ -43,7 +43,8 @@ All status reports can be run using the scripts in the `utility` directory, [her
 your Sleeper instance id. Some of the reports also require a table name. Some offer a standard option and a verbose
 option.
 
-The available reports are as follows, with the corresponding commands to run them:
+The available reports are as follows. They can be accessed through the admin client
+with `./scripts/utility/adminClient.sh ${INSTANCE_ID}`, or with the commands below:
 
 | Report Name                   | Description                                       | Command                                                                                                                                                             | Defaults                                                           |
 |-------------------------------|---------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------|
@@ -73,69 +74,4 @@ Here's an example:
 # Retry up to 1000 messages on the ingest dead letter queue
 java -cp scripts/jars/clients-*-utility.jar \
   sleeper.clients.status.report.RetryMessages ${INSTANCE_ID} ingest 1000
-```
-
-## Pausing and Restarting the System
-
-If there is no ingest in progress, and all compactions have completed, then Sleeper will go to sleep, i.e. the only
-significant ongoing charges are for data storage. However, there are several lambda functions that are scheduled to
-run periodically using EventBridge rules. These lambda functions look for work to do, such as compactions to run.
-The execution of these should have very small cost, but it is best practice to pause the system,
-i.e. turn these rules off, if you will not be using it for a while. Note that the system can still be queried when
-it is paused.
-
-```bash
-# Pause the System
-./scripts/utility/pauseSystem.sh ${INSTANCE_ID}
-
-# Restart the System
-./scripts/utility/restartSystem.sh ${INSTANCE_ID}
-```
-
-## Reinitialise a Table
-
-Reinitialising a table means deleting all its contents. This can sometimes be useful when you are experimenting
-with Sleeper or if you created a table with the wrong schema.
-
-You can reinitialise the table quickly by running the following command:
-
-```bash
-./scripts/utility/reinitialiseTable.sh <instance-id> <table-name> <optional-delete-partitions-true-or-false> <optional-split-points-file-location> <optional-split-points-file-base64-encoded-true-or-false>
-```
-
-For example
-
-```bash
-./scripts/utility/reinitialiseTable.sh sleeper-my-sleeper-config my-sleeper-table true /tmp/split-points.txt false
-```
-
-If you want to change the table schema make sure you change the schema in the table properties file in the S3
-config bucket.
-
-## Sleeper Administration Client
-
-We have provided a command line client that will enable you to:
-
-1) List Sleeper instance properties
-2) List Sleeper table names
-3) List Sleeper table properties
-4) Change an instance/table property
-
-This client will prompt you for things like your instance id as mentioned above and/or
-the name of the table you want to look at, the name of the property you want to update and its new value.
-
-To run this client you can run the following command:
-
-```bash
-./scripts/utility/adminClient.sh ${INSTANCE_ID}
-```
-
-## Compact all files
-
-If you want to fully compact all files in leaf partitions, but the compaction strategy is not compacting files in a
-partition, you can run the following script to force compactions to be created for files in leaf partitions that were
-skipped by the compaction strategy:
-
-```bash
-./scripts/utility/compactAllFiles.sh ${NSTANCE_ID}
 ```
