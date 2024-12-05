@@ -354,6 +354,14 @@ public interface DefaultProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerOrNull)
             .defaultValue("10")
             .propertyGroup(InstancePropertyGroup.DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_TABLE_STATE_LAMBDA_MEMORY = Index.propertyBuilder("sleeper.default.table.state.lambda.memory.mb")
+            .description("Default value for amount of memory in MB for each lambda that holds the state of Sleeper " +
+                    "tables in memory. These use a state store provider which caches a number of tables at " +
+                    "once, set in `sleeper.statestore.statestore.provider.cache.size`. Not all lambdas are covered " +
+                    "by this, e.g. see `sleeper.batch.table.lambdas.memory.mb`.")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .defaultValue("4096")
+            .propertyGroup(InstancePropertyGroup.DEFAULT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

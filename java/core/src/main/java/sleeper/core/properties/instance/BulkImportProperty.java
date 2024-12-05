@@ -21,6 +21,8 @@ import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
+import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
+
 /**
  * Definitions of instance properties relating to bulk import.
  */
@@ -47,6 +49,11 @@ public interface BulkImportProperty {
             .description("Fraction of tasks which must be complete before speculation is enabled for a particular stage. Used to set spark.speculation.quantile.\n" +
                     "See https://spark.apache.org/docs/latest/configuration.html.")
             .defaultValue("0.75")
+            .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_IMPORT_STARTER_LAMBDA_MEMORY = Index.propertyBuilder("sleeper.bulk.import.starter.memory.mb")
+            .description("The amount of memory in MB for lambda functions that start bulk import jobs.")
+            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
 
