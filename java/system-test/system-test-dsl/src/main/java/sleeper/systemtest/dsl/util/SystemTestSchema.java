@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.suite.fixtures;
+package sleeper.systemtest.dsl.util;
 
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;

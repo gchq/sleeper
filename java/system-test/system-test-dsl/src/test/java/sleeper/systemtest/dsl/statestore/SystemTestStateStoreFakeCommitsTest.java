@@ -28,7 +28,7 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
 public class SystemTestStateStoreFakeCommitsTest {
@@ -37,7 +37,7 @@ public class SystemTestStateStoreFakeCommitsTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(IN_MEMORY_MAIN);
         committer = drivers.stateStoreCommitter();
     }
 

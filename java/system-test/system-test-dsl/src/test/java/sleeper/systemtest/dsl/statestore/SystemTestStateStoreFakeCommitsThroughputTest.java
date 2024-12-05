@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @InMemoryDslTest
 public class SystemTestStateStoreFakeCommitsThroughputTest {
@@ -43,7 +43,7 @@ public class SystemTestStateStoreFakeCommitsThroughputTest {
     @Test
     void shouldAssertOnCommitsPerSecond(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(IN_MEMORY_MAIN);
         committer.setFakeCommitsPerSecond(sleeper, 10.0);
 
         // When / Then
@@ -54,7 +54,7 @@ public class SystemTestStateStoreFakeCommitsThroughputTest {
     @Test
     void shouldAssertOnCommitsPerSecondForMultipleTables(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstanceNoTables(MAIN);
+        sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
         sleeper.tables().create(List.of("A", "B"), DEFAULT_SCHEMA);
         committer.setFakeCommitsPerSecond(sleeper.table("A"), 10.0);
         committer.setFakeCommitsPerSecond(sleeper.table("B"), 20.0);

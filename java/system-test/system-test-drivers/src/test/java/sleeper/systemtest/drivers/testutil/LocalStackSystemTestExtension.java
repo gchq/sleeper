@@ -22,15 +22,20 @@ import org.testcontainers.utility.DockerImageName;
 import sleeper.core.CommonTestConstants;
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
 import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
 
 public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
-    private static final LocalStackContainer CONTAINER = startContainer();
+    public static final LocalStackContainer CONTAINER = startContainer();
+    private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
+            SystemTestParametersTestHelper.parametersBuilder()
+                    .shortTestId("localstack")
+                    .region(CONTAINER.getRegion())
+                    .build(),
+            LocalStackSystemTestDrivers.fromContainer(CONTAINER));
 
     private LocalStackSystemTestExtension() {
-        super(setupContext(CONTAINER));
+        super(CONTEXT);
     }
 
     @SuppressWarnings("resource") // Will be cleaned up by Ryuk
@@ -39,14 +44,6 @@ public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
                 .withServices(Service.S3, Service.DYNAMODB, Service.SQS);
         container.start();
         return container;
-    }
-
-    private static SystemTestDeploymentContext setupContext(LocalStackContainer container) {
-        SystemTestParameters parameters = SystemTestParametersTestHelper.parametersBuilder()
-                .region(container.getRegion())
-                .build();
-        return new SystemTestDeploymentContext(
-                parameters, LocalStackSystemTestDrivers.fromContainer(container));
     }
 
 }

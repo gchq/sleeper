@@ -24,11 +24,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.systemtest.drivers.testutil.LocalStackSystemTestExtension;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -45,12 +42,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.systemtest.drivers.nightly.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
-@Testcontainers
 class NightlyTestOutputS3IT {
-
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
 
     private final AmazonS3 s3Client = createS3Client();
     private final String bucketName = UUID.randomUUID().toString();
@@ -63,7 +55,7 @@ class NightlyTestOutputS3IT {
     }
 
     private AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+        return buildAwsV1Client(LocalStackSystemTestExtension.CONTAINER, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     @Test
