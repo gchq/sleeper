@@ -38,7 +38,7 @@ public interface MetricsProperty {
             .propertyGroup(InstancePropertyGroup.METRICS).build();
     UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.metrics.concurrency.max")
             .defaultProperty(CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
-            .description("The maximum given concurrency allowed for the table metrics lambda.\n" +
+            .description("The maximum concurrency allowed for the table metrics lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .propertyGroup(InstancePropertyGroup.METRICS).build();
     UserDefinedInstanceProperty METRICS_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.metrics.batch.size")
