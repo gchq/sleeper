@@ -23,9 +23,6 @@ import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
 import static sleeper.core.properties.validation.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
@@ -118,7 +115,7 @@ public interface CompactionProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.creation.memory.mb")
             .description("The amount of memory in MB for the lambda that creates compaction jobs.")
-            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
+            .defaultProperty(TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.creation.timeout.seconds")
@@ -128,18 +125,18 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.reserved")
-            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .defaultProperty(CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the lambda used to create compaction jobs.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.max")
-            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .defaultProperty(CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the lambda used to create compaction jobs.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.dispatch.memory.mb")
             .description("The amount of memory in MB for the lambda that sends batches of compaction jobs.")
-            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
+            .defaultProperty(TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.dispatch.timeout.seconds")
@@ -149,12 +146,12 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.job.dispatch.concurrency.reserved")
-            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .defaultProperty(CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
             .description("The reserved concurrency for the lambda that sends batches of compaction jobs.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.job.dispatch.concurrency.max")
-            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .defaultProperty(CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum concurrency allowed for the lambda that sends batches of compaction jobs.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();

@@ -65,7 +65,7 @@ public interface UserDefinedInstanceProperty extends InstanceProperty {
             index.addAll(MetricsProperty.getAll());
             index.addAll(LoggingLevelsProperty.getAll());
             index.addAll(AthenaProperty.getAll());
-            index.addAll(DefaultProperty.getAll());
+            index.addAll(TableDefaultProperty.getAll());
 
             return index;
         }

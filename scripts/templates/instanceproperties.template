@@ -144,8 +144,37 @@ sleeper.properties.force.reload=false
 # A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
 # sleeper.ecs.security.groups=
 
+# Default value for the reserved concurrency for each lambda within the Sleeper instance. By default
+# no concurrency is reserved for the lambdas. Each lambda also has its own property that overrides the
+# value found here.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.default.lambda.concurrency.reserved=
+
+# Default value for the maximum concurrency for each lambda within the Sleeper instance. By default
+# the maximum concurrency is set to 10, which is enough for 10 online tables. If there are more online
+# tables, this number may need to be increased. Each lambda also has its own property that overrides
+# the value found here.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+sleeper.default.lambda.concurrency.max=10
+
 
 ## The following properties relate to handling the state of Sleeper tables.
+
+# Default value for amount of memory in MB for each lambda that holds the state of Sleeper tables in
+# memory. These use a state store provider which caches a number of tables at once, set in
+# `sleeper.statestore.statestore.provider.cache.size`. Not all lambdas are covered by this, e.g. see
+# `sleeper.batch.table.lambdas.memory.mb`.
+sleeper.default.table.state.lambda.memory.mb=4096
+
+# The amount of memory in MB for lambdas that create batches of tables to run some operation against,
+# eg. create compaction jobs, run garbage collection, perform partition splitting.
+sleeper.batch.table.lambdas.memory.mb=1024
+
+# The timeout in seconds for lambdas that create batches of tables to run some operation against, eg.
+# create compaction jobs, run garbage collection, perform partition splitting.
+sleeper.batch.table.lambdas.timeout.seconds=60
 
 # The timeout in minutes for when the table properties provider cache should be cleared, forcing table
 # properties to be reloaded from S3.
@@ -227,14 +256,6 @@ sleeper.tables.index.dynamo.pointintimerecovery=false
 # This specifies whether queries and scans against the table index DynamoDB tables are strongly
 # consistent.
 sleeper.tables.index.dynamo.consistent.reads=true
-
-# The amount of memory in MB for lambdas that create batches of tables to run some operation against,
-# eg. create compaction jobs, run garbage collection, perform partition splitting.
-sleeper.batch.table.lambdas.memory.mb=1024
-
-# The timeout in seconds for lambdas that create batches of tables to run some operation against, eg.
-# create compaction jobs, run garbage collection, perform partition splitting.
-sleeper.batch.table.lambdas.timeout.seconds=60
 
 # The amount of memory in MB for the lambda that commits state store updates.
 sleeper.statestore.committer.lambda.memory.mb=4096
@@ -1477,24 +1498,3 @@ sleeper.default.statestore.committer.update.every.commit=false
 # When using the transaction log state store, this sets whether to update from the transaction log
 # before adding a batch of transactions in the asynchronous state store committer.
 sleeper.default.statestore.committer.update.every.batch=true
-
-# Default value for the reserved concurrency for each lambda within the Sleeper instance. By default
-# no concurrency is reserved for the lambdas. Each lambda also has its own property that overrides the
-# value found here.
-# See reserved concurrency overview at:
-# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
-# sleeper.default.lambda.concurrency.reserved=
-
-# Default value for the maximum concurrency for each lambda within the Sleeper instance. By default
-# the maximum concurrency is set to 10, which is enough for 10 online tables. If there are more online
-# tables, this number may need to be increased. Each lambda also has its own property that overrides
-# the value found here.
-# See maximum concurrency overview at:
-# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
-sleeper.default.lambda.concurrency.max=10
-
-# Default value for amount of memory in MB for each lambda that holds the state of Sleeper tables in
-# memory. These use a state store provider which caches a number of tables at once, set in
-# `sleeper.statestore.statestore.provider.cache.size`. Not all lambdas are covered by this, e.g. see
-# `sleeper.batch.table.lambdas.memory.mb`.
-sleeper.default.table.state.lambda.memory.mb=4096

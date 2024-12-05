@@ -21,8 +21,6 @@ import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
-
 /**
  * Definitions of instance properties relating to bulk import.
  */
@@ -53,7 +51,7 @@ public interface BulkImportProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_IMPORT_STARTER_LAMBDA_MEMORY = Index.propertyBuilder("sleeper.bulk.import.starter.memory.mb")
             .description("The amount of memory in MB for lambda functions that start bulk import jobs.")
-            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
+            .defaultProperty(TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT)
             .runCdkDeployWhenChanged(true).build();
 
