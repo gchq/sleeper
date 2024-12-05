@@ -63,7 +63,7 @@ public class SqsQueues {
     private SqsQueues() {
     }
 
-    public static final List<InstanceProperty> QUEUE_PROPERTIES = List.of(
+    public static final List<InstanceProperty> QUEUE_URL_PROPERTIES = List.of(
             TRANSACTION_LOG_SNAPSHOT_CREATION_QUEUE_URL,
             TRANSACTION_LOG_SNAPSHOT_DELETION_QUEUE_URL,
             TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL,
@@ -85,7 +85,7 @@ public class SqsQueues {
             BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL,
             BULK_IMPORT_EKS_JOB_QUEUE_URL);
 
-    public static final List<InstanceProperty> DEAD_LETTER_QUEUE_PROPERTIES = List.of(
+    public static final List<InstanceProperty> DEAD_LETTER_QUEUE_URL_PROPERTIES = List.of(
             TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL,
             TRANSACTION_LOG_SNAPSHOT_DELETION_DLQ_URL,
             TRANSACTION_LOG_TRANSACTION_DELETION_DLQ_URL,

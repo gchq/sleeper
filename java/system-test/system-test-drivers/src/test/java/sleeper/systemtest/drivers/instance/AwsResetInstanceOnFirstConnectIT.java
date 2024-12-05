@@ -17,18 +17,24 @@ package sleeper.systemtest.drivers.instance;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.systemtest.drivers.testutil.AwsSendCompactionJobsTestHelper;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
+import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
@@ -36,18 +42,22 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 @LocalStackDslTest
 public class AwsResetInstanceOnFirstConnectIT {
 
+    SystemTestInstanceContext instance;
     InstanceProperties instanceProperties;
     SleeperInstanceDriver instanceDriver;
     SleeperTablesDriver tablesDriver;
     AwsResetInstanceOnFirstConnect onFirstConnect;
+    SqsClient sqs;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, LocalStackSystemTestDrivers drivers, SystemTestParameters parameters) {
+    void setUp(SleeperSystemTest sleeper, LocalStackSystemTestDrivers drivers, SystemTestContext context, SystemTestParameters parameters) {
         sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
+        instance = context.instance();
         instanceProperties = sleeper.instanceProperties();
         instanceDriver = drivers.instance(parameters);
         tablesDriver = drivers.tables(parameters);
         onFirstConnect = new AwsResetInstanceOnFirstConnect(drivers.clients());
+        sqs = drivers.clients().getSqsV2();
     }
 
     @Test
@@ -55,6 +65,21 @@ public class AwsResetInstanceOnFirstConnectIT {
         sleeper.tables().create("A", DEFAULT_SCHEMA);
         onFirstConnect.reset(instanceProperties);
         assertThat(tablesDriver.tableIndex(instanceProperties).streamAllTables())
+                .isEmpty();
+    }
+
+    @Test
+    void shouldDrainQueues(SleeperSystemTest sleeper) {
+        // Given
+        sleeper.tables().create("A", DEFAULT_SCHEMA);
+        AwsSendCompactionJobsTestHelper.sendNCompactionJobs(20,
+                sleeper.instanceProperties(), sleeper.tableProperties(), instance.getStateStore(), sqs);
+
+        // When
+        onFirstConnect.reset(instanceProperties);
+
+        // Then
+        assertThat(AwsDrainSqsQueue.drainQueueForWholeInstance(sqs, instanceProperties.get(COMPACTION_JOB_QUEUE_URL)))
                 .isEmpty();
     }
 

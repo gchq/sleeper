@@ -25,15 +25,19 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
+import sleeper.core.deploy.SqsQueues;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 
 import java.time.Duration;
@@ -62,17 +66,20 @@ public class AwsResetInstanceOnFirstConnect {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsResetInstanceOnFirstConnect.class);
     private final S3Client s3;
     private final AmazonDynamoDB dynamoDB;
+    private final SqsClient sqs;
 
     public AwsResetInstanceOnFirstConnect(SystemTestClients clients) {
         this.s3 = clients.getS3V2();
         this.dynamoDB = clients.getDynamoDB();
+        this.sqs = clients.getSqsV2();
     }
 
     public void reset(InstanceProperties instanceProperties) {
         deleteAllTables(instanceProperties);
+        drainAllQueues(instanceProperties);
     }
 
-    public void deleteAllTables(InstanceProperties instanceProperties) {
+    private void deleteAllTables(InstanceProperties instanceProperties) {
         clearBucket(instanceProperties.get(DATA_BUCKET));
         clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE.equals(key));
         clearTable(instanceProperties.get(ACTIVE_FILES_TABLENAME), DynamoDBStateStore.TABLE_ID, DynamoDBStateStore.PARTITION_ID_AND_FILENAME);
@@ -94,6 +101,18 @@ public class AwsResetInstanceOnFirstConnect {
                 instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME),
                 instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME),
                 instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME));
+    }
+
+    private void drainAllQueues(InstanceProperties instanceProperties) {
+        drainQueues(instanceProperties, SqsQueues.QUEUE_URL_PROPERTIES);
+        drainQueues(instanceProperties, SqsQueues.DEAD_LETTER_QUEUE_URL_PROPERTIES);
+    }
+
+    private void drainQueues(InstanceProperties instanceProperties, List<InstanceProperty> queueUrlProperties) {
+        queueUrlProperties.stream()
+                .map(instanceProperties::get)
+                .filter(queueUrl -> queueUrl != null)
+                .parallel().forEach(queueUrl -> AwsDrainSqsQueue.emptyQueueForWholeInstance(sqs, queueUrl));
     }
 
     private void clearBucket(String bucketName) {
