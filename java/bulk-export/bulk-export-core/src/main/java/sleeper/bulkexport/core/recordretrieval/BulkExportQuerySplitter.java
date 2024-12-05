@@ -20,8 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.bulkexport.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.model.BulkExportQuery;
-import sleeper.core.iterator.CloseableIterator;
-import sleeper.core.iterator.ConcatenatingIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
@@ -39,7 +37,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
@@ -144,6 +141,7 @@ public class BulkExportQuerySplitter {
 
         List<BulkExportLeafPartitionQuery> leafPartitionQueriesList = new ArrayList<>();
         for (Partition partition : leafPartitions) {
+            List<Region> regions = List.of(partition.getRegion());
             List<String> files = getFiles(partition);
 
             if (files.isEmpty()) {
@@ -157,7 +155,9 @@ public class BulkExportQuerySplitter {
                     .exportId(bulkExportQuery.getExportId())
                     .tableId(tableProperties.get(TABLE_ID))
                     .subExportId((UUID.randomUUID().toString()))
+                    .regions(regions)
                     .leafPartitionId(partition.getId())
+                    .partitionRegion(partition.getRegion())
                     .files(files)
                     .build();
             LOGGER.debug("Created {}", bulkExportLeafPartitionQuery);
@@ -165,6 +165,30 @@ public class BulkExportQuerySplitter {
         }
 
         return leafPartitionQueriesList;
+    }
+
+    /**
+     * Gets the leaf partitions which are relevant to a query. This method is
+     * called by the default implementation of {@code getPartitionFiles()} If
+     * you overwrite getPartitionFiles() then you may make this method a no-op.
+     *
+     * @param query the query
+     * @return the relevant leaf partitions
+     */
+    private Map<Partition, List<Region>> getRelevantLeafPartitions(BulkExportQuery bulkExportQuery) {
+        Map<Partition, List<Region>> leafPartitionToOverlappingRegions = new HashMap<>();
+        leafPartitions.forEach(partition -> {
+            leafPartitionToOverlappingRegions.put(partition, new ArrayList<>());
+            for (Region region : bulkExportQuery.getRegions()) {
+                if (partition.doesRegionOverlapPartition(region)) {
+                    leafPartitionToOverlappingRegions.get(partition).add(region);
+                }
+            }
+            if (leafPartitionToOverlappingRegions.get(partition).isEmpty()) {
+                leafPartitionToOverlappingRegions.remove(partition);
+            }
+        });
+        return leafPartitionToOverlappingRegions;
     }
 
     protected List<String> getFiles(Partition partition) {
