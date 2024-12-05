@@ -220,7 +220,7 @@ public class CreateCompactionJobs {
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
                 .map(CompactionJob::createAssignJobIdRequest)
                 .collect(Collectors.toList()), tableStatus);
-        LOGGER.debug("Created pending compaction jobs batch for table {} in data bucket at: {}", tableStatus, request.getBatchKey());
+        LOGGER.debug("Created pending compaction jobs batch for table {} of size {}, in data bucket at: {}", tableStatus, compactionJobs.size(), request.getBatchKey());
     }
 
     private void createJobsFromLeftoverFiles(
