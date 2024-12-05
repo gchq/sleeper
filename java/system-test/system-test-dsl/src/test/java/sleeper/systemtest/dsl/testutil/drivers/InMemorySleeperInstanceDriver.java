@@ -68,6 +68,6 @@ public class InMemorySleeperInstanceDriver implements SleeperInstanceDriver {
     }
 
     @Override
-    public void resetAfterFirstConnect(InstanceProperties instanceProperties) {
+    public void resetOnFirstConnect(InstanceProperties instanceProperties) {
     }
 }

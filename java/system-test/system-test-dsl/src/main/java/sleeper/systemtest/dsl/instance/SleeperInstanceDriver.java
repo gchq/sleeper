@@ -32,5 +32,5 @@ public interface SleeperInstanceDriver {
 
     void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties);
 
-    void resetAfterFirstConnect(InstanceProperties instanceProperties);
+    void resetOnFirstConnect(InstanceProperties instanceProperties);
 }

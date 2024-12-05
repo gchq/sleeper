@@ -147,7 +147,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     }
 
     @Override
-    public void resetAfterFirstConnect(InstanceProperties instanceProperties) {
+    public void resetOnFirstConnect(InstanceProperties instanceProperties) {
         resetInstance.reset(instanceProperties);
     }
 }
