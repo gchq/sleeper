@@ -75,7 +75,7 @@ public final class WebSocketQueryStack extends NestedStack {
                 .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
                 .environment(env)
-                .memorySize(256)
+                .memorySize(1024)
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.QUERY_WEBSOCKET_HANDLER))
                 .timeout(Duration.seconds(29)));
 

@@ -34,7 +34,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 public final class TableIndexStack extends NestedStack {
 

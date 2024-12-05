@@ -54,11 +54,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_LAMBDA_CONCURRENCY_MAXIMUM;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_LAMBDA_CONCURRENCY_RESERVED;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_TABLE_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(

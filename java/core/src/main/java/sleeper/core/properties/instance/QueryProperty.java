@@ -21,6 +21,8 @@ import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
+import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
+
 /**
  * Definitions of instance properties relating to queries.
  */
@@ -31,9 +33,9 @@ public interface QueryProperty {
             .defaultValue("1024")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY).build();
-    UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.query.processor.memory")
+    UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.query.processor.memory.mb")
             .description("The amount of memory in MB for the lambda that executes queries.")
-            .defaultValue("2048")
+            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
             .propertyGroup(InstancePropertyGroup.QUERY)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.query.processor.timeout.seconds")
@@ -104,7 +106,7 @@ public interface QueryProperty {
 
         private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
 
-        static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
+        private static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
             return UserDefinedInstancePropertyImpl.named(propertyName)
                     .addToIndex(INSTANCE::add);
         }
