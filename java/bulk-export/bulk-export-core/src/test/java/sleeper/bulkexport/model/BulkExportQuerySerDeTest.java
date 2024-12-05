@@ -25,7 +25,7 @@ public class BulkExportQuerySerDeTest {
     private final BulkExportQuerySerDe querySerDe = new BulkExportQuerySerDe();
 
     @Test
-    public void shouldSerDeBulkExportQuery() {
+    public void shouldSerDeBulkExportQueryWithTableName() {
         // Given
         BulkExportQuery bulkExportQuery = BulkExportQuery.builder()
                 .tableName("test-table")
@@ -39,6 +39,25 @@ public class BulkExportQuerySerDeTest {
 
         // Then
         String expectedJson = "{\"exportId\":\"e1\",\"tableName\":\"test-table\"}";
+        assertThat(bulkExportQuery).isEqualTo(deserialisedQuery);
+        assertThat(json).isEqualTo(expectedJson);
+    }
+
+    @Test
+    public void shouldSerDeBulkExportQueryWithTableId() {
+        // Given
+        BulkExportQuery bulkExportQuery = BulkExportQuery.builder()
+                .tableId("t1")
+                .exportId("e1")
+                .build();
+
+        // When
+        String json = querySerDe.toJson(bulkExportQuery);
+
+        BulkExportQuery deserialisedQuery = querySerDe.fromJson(json);
+
+        // Then
+        String expectedJson = "{\"exportId\":\"e1\",\"tableId\":\"t1\"}";
         assertThat(bulkExportQuery).isEqualTo(deserialisedQuery);
         assertThat(json).isEqualTo(expectedJson);
     }
