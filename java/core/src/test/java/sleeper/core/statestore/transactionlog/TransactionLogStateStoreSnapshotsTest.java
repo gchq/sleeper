@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -50,7 +51,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     class FirstLoad {
 
         @Test
-        void shouldLoadFilesFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
+        void shouldLoadSnapshotOnFirstQueryForFiles() throws Exception {
             // Given
             FileReference file = fileFactory().rootFile(123);
 
@@ -64,7 +65,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         }
 
         @Test
-        void shouldLoadPartitionsFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
+        void shouldLoadSnapshotOnFirstQueryForPartitions() throws Exception {
             // Given
             partitions.splitToNewChildren("root", "L", "R", "abc");
 
@@ -76,6 +77,22 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
             // Then
             assertThat(stateStore().getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(partitions.buildList());
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldLoadSnapshotOnFirstQueryWhenEarlierThanMinTransactionsAhead() throws Exception {
+            // Given
+            FileReference file = fileFactory().rootFile(123);
+
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
+                stateStore.addFile(file);
+            });
+            StateStore stateStore = stateStore(builder -> builder.minTransactionsAheadToLoadSnapshot(5));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(file);
         }
     }
 
