@@ -208,7 +208,7 @@ public class CreateCompactionJobs {
         // Send batch of jobs to SQS (NB Send jobs to SQS before updating the job field of the files in the
         // StateStore so that if the send to SQS fails then the StateStore will not be updated and later another
         // job can be created for these files)
-        LOGGER.debug("Writing compaction jobs batch for table {} in data bucket at: {}", tableStatus, request.getBatchKey());
+        LOGGER.debug("Writing batch of {} compaction jobs for table {} in data bucket at: {}", compactionJobs.size(), tableStatus, request.getBatchKey());
         Instant startTime = Instant.now();
         batchJobsWriter.writeJobs(instanceProperties.get(DATA_BUCKET), request.getBatchKey(), compactionJobs);
         LOGGER.debug("Sending compaction jobs batch, wrote jobs in {}",
@@ -220,7 +220,7 @@ public class CreateCompactionJobs {
         assignJobIdToFiles.assignJobIds(compactionJobs.stream()
                 .map(CompactionJob::createAssignJobIdRequest)
                 .collect(Collectors.toList()), tableStatus);
-        LOGGER.debug("Created pending compaction jobs batch for table {} of size {}, in data bucket at: {}", tableStatus, compactionJobs.size(), request.getBatchKey());
+        LOGGER.info("Created pending batch of {} compaction jobs for table {} in data bucket at: {}", compactionJobs.size(), tableStatus, request.getBatchKey());
     }
 
     private void createJobsFromLeftoverFiles(

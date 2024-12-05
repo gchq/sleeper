@@ -38,10 +38,10 @@ import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartit
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.ROW_KEY_FIELD_NAME;
 
 @InMemoryDslTest
 public class MultipleTablesTest {
@@ -50,7 +50,7 @@ public class MultipleTablesTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstanceNoTables(MAIN);
+        sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
     }
 
     @Test

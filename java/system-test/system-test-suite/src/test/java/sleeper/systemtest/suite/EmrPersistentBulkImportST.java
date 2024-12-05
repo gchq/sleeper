@@ -24,7 +24,7 @@ import sleeper.core.properties.validation.OptionalStack;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.suite.fixtures.SystemTestSchema;
+import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -37,7 +37,7 @@ import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_MIN_LEAF_P
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.dsl.testutil.PartitionsTestHelper.partitionsBuilder;
+import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.partitionsBuilder;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.BULK_IMPORT_PERSISTENT_EMR;
 
 @SystemTest

@@ -50,14 +50,14 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAG
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
 /**
  * Deploys resources to perform garbage collection. This will find and delete files which have been marked as being
@@ -97,7 +97,7 @@ public class GarbageCollectorStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB))
                 .timeout(handlerTimeout)
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.GARBAGE_COLLECTOR)));
         instanceProperties.set(GARBAGE_COLLECTOR_LAMBDA_FUNCTION, triggerFunction.getFunctionName());
 
@@ -143,7 +143,7 @@ public class GarbageCollectorStack extends NestedStack {
         queue.grantSendMessages(triggerFunction);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(queue)
                 .batchSize(instanceProperties.getInt(GARBAGE_COLLECTOR_TABLE_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM))
+                .maxConcurrency(instanceProperties.getIntOrNull(GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
         coreStacks.grantInvokeScheduled(triggerFunction, queue);
 

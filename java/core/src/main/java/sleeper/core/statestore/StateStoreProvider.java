@@ -23,7 +23,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-import static sleeper.core.properties.instance.CommonProperty.STATESTORE_PROVIDER_CACHE_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_PROVIDER_CACHE_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**

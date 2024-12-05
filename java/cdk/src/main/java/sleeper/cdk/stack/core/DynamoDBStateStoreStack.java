@@ -32,8 +32,8 @@ import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.core.properties.instance.CommonProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.TableStateProperty.DYNAMO_STATE_STORE_POINT_IN_TIME_RECOVERY;
 
 public class DynamoDBStateStoreStack extends NestedStack {
     private final Table activeFilesTable;

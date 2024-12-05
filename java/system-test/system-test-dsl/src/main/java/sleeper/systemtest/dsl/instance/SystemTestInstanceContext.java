@@ -20,7 +20,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
@@ -43,7 +42,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
@@ -170,12 +168,12 @@ public class SystemTestInstanceContext {
         return currentTables().getStateStoreProvider();
     }
 
-    public Stream<Record> generateNumberedRecords(LongStream numbers) {
-        return generateNumberedRecords(currentTables().getSchema(), numbers);
+    public GenerateNumberedRecords numberedRecords() {
+        return numberedRecords(currentTables().getSchema());
     }
 
-    public Stream<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return GenerateNumberedRecords.from(schema, generatorOverrides, numbers);
+    public GenerateNumberedRecords numberedRecords(Schema schema) {
+        return GenerateNumberedRecords.from(schema, generatorOverrides);
     }
 
     public StateStore getStateStore() {

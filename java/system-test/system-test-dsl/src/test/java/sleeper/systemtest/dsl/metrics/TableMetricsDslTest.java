@@ -31,10 +31,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.ROW_KEY_FIELD_NAME;
 
 @InMemoryDslTest
 public class TableMetricsDslTest {
@@ -50,7 +50,7 @@ public class TableMetricsDslTest {
     @Test
     void shouldReportTableMetrics(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(IN_MEMORY_MAIN);
         sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
@@ -73,7 +73,7 @@ public class TableMetricsDslTest {
     @Test
     void shouldReportTableMetricsForMoreTablesThanBatchSize(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstanceNoTables(MAIN);
+        sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
         sleeper.tables().create(List.of("A", "B", "C"), DEFAULT_SCHEMA).forEach(() -> {
             sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
                     .rootFirst("root")

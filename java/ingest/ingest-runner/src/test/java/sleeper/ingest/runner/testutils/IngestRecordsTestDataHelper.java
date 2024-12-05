@@ -43,9 +43,9 @@ import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_ME
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;

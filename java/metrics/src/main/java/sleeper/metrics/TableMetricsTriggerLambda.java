@@ -40,7 +40,7 @@ import java.time.Instant;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_FOR_OFFLINE_TABLES;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_FOR_OFFLINE_TABLES;
 
 public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsTriggerLambda.class);

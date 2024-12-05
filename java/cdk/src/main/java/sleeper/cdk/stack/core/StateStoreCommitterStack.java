@@ -52,11 +52,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_LOG_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_BATCH_SIZE;
-import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM;
-import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED;
-import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.CommonProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_BATCH_SIZE;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.TableStateProperty.STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS;
 
 public class StateStoreCommitterStack extends NestedStack {
     private final InstanceProperties instanceProperties;
@@ -141,12 +141,12 @@ public class StateStoreCommitterStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
-                .reservedConcurrentExecutions(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(logGroup));
 
         SqsEventSource eventSource = SqsEventSource.Builder.create(commitQueue)
                 .batchSize(instanceProperties.getInt(STATESTORE_COMMITTER_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM))
+                .maxConcurrency(instanceProperties.getIntOrNull(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build();
         handlerFunction.addEventSource(eventSource);
         instanceProperties.set(STATESTORE_COMMITTER_EVENT_SOURCE_ID, eventSource.getEventSourceMappingId());

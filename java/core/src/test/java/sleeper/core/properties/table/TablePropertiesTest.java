@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 

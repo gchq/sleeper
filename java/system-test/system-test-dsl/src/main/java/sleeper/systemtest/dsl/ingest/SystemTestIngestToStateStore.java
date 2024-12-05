@@ -16,10 +16,13 @@
 
 package sleeper.systemtest.dsl.ingest;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.FileReference;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -33,7 +36,7 @@ public class SystemTestIngestToStateStore {
         this.ingestSource = ingestSource;
     }
 
-    public void addFileOnPartition(
+    public SystemTestIngestToStateStore addFileOnPartition(
             String name, String partitionId, long numberOfRecords) throws Exception {
         String path = ingestSource.getFilePath(name);
         instance.getStateStore().addFile(FileReference.builder()
@@ -43,9 +46,10 @@ public class SystemTestIngestToStateStore {
                 .onlyContainsDataForThisPartition(true)
                 .numberOfRecords(numberOfRecords)
                 .build());
+        return this;
     }
 
-    public void addFileWithRecordEstimatesOnPartitions(
+    public SystemTestIngestToStateStore addFileWithRecordEstimatesOnPartitions(
             String name, Map<String, Long> recordsByPartition) throws Exception {
         String path = ingestSource.getFilePath(name);
         boolean singlePartition = recordsByPartition.size() == 1;
@@ -58,5 +62,23 @@ public class SystemTestIngestToStateStore {
                         .numberOfRecords(entry.getValue())
                         .build())
                 .collect(Collectors.toUnmodifiableList()));
+        return this;
+    }
+
+    public SystemTestIngestToStateStore addFileOnEveryPartition(String name, long numberOfRecords) throws Exception {
+        String path = ingestSource.getFilePath(name);
+        PartitionTree partitionTree = new PartitionTree(instance.getStateStore().getAllPartitions());
+        List<Partition> leafPartitions = partitionTree.getLeafPartitions();
+        long recordsPerPartition = numberOfRecords / leafPartitions.size();
+        instance.getStateStore().addFiles(leafPartitions.stream()
+                .map(partition -> FileReference.builder()
+                        .filename(path)
+                        .partitionId(partition.getId())
+                        .countApproximate(true)
+                        .onlyContainsDataForThisPartition(false)
+                        .numberOfRecords(recordsPerPartition)
+                        .build())
+                .collect(Collectors.toUnmodifiableList()));
+        return this;
     }
 }

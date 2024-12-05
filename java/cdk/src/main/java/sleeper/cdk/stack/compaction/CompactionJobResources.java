@@ -58,8 +58,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED;
@@ -72,6 +70,8 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_DISPATCH_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_MAX_RETRIES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
 public class CompactionJobResources {
     private static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
@@ -171,14 +171,14 @@ public class CompactionJobResources {
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
-                .reservedConcurrentExecutions(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_JOB_CREATION_HANDLER)));
 
         // Send messages from the trigger function to the handler function
         Queue jobCreationQueue = sqsQueueForCompactionJobCreation(coreStacks, topic, errorMetrics);
         handlerFunction.addEventSource(SqsEventSource.Builder.create(jobCreationQueue)
                 .batchSize(instanceProperties.getInt(COMPACTION_JOB_CREATION_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM))
+                .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
 
         jobCreationQueue.grantSendMessages(triggerFunction);
@@ -219,12 +219,12 @@ public class CompactionJobResources {
                 .memorySize(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_JOB_DISPATCHER)));
 
         function.addEventSource(SqsEventSource.Builder.create(pendingQueue)
                 .batchSize(1)
-                .maxConcurrency(instanceProperties.getInt(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM))
+                .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
         return function;
     }
