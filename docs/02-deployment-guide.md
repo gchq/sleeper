@@ -485,10 +485,10 @@ We have provided a command line client that will enable you to:
 4) Change an instance/table property
 5) Get status reports (also see [checking the status of the system](06-status.md))
 
-This client will prompt you for things like your instance id as mentioned above and/or
-the name of the table you want to look at, the name of the property you want to update and its new value.
+This client will prompt you for things like your instance ID as mentioned above and/or the name of the table you want to
+look at. To adjust property values it will open a text editor for a temporary file.
 
-To run this client you can run the following command:
+You can run this client with the following command:
 
 ```bash
 ./scripts/utility/adminClient.sh ${INSTANCE_ID}
