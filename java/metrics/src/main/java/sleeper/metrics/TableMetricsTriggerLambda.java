@@ -32,6 +32,7 @@ import sleeper.configuration.properties.S3PropertiesReloader;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.MetricsProperty;
 import sleeper.core.table.TableIndex;
 import sleeper.core.util.LoggedDuration;
 import sleeper.invoke.tables.InvokeForTables;
@@ -40,7 +41,6 @@ import java.time.Instant;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_FOR_OFFLINE_TABLES;
 
 public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent, Void> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsTriggerLambda.class);
@@ -65,7 +65,7 @@ public class TableMetricsTriggerLambda implements RequestHandler<ScheduledEvent,
 
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         String queueUrl = instanceProperties.get(TABLE_METRICS_QUEUE_URL);
-        boolean offlineEnabled = instanceProperties.getBoolean(METRICS_FOR_OFFLINE_TABLES);
+        boolean offlineEnabled = instanceProperties.getBoolean(MetricsProperty.METRICS_FOR_OFFLINE_TABLES);
         InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl,
                 offlineEnabled ? tableIndex.streamAllTables() : tableIndex.streamOnlineTables());
 

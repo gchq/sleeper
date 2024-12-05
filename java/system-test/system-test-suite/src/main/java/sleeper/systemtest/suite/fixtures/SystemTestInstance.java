@@ -19,6 +19,7 @@ package sleeper.systemtest.suite.fixtures;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.MetricsProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
 import sleeper.core.properties.validation.OptionalStack;
@@ -38,7 +39,6 @@ import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterPro
 import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -118,7 +118,7 @@ public class SystemTestInstance {
         properties.set(BULK_IMPORT_PERSISTENT_EMR_USE_MANAGED_SCALING, "false");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MIN_CAPACITY, "1");
         properties.set(BULK_IMPORT_PERSISTENT_EMR_MAX_CAPACITY, "1");
-        properties.set(METRICS_TABLE_BATCH_SIZE, "2");
+        properties.set(MetricsProperty.METRICS_TABLE_BATCH_SIZE, "2");
         properties.setTags(Map.of(
                 "Environment", "DEV",
                 "Product", "Sleeper",

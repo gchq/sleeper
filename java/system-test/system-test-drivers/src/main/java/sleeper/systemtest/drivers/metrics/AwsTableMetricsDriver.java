@@ -36,6 +36,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.MetricsProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
@@ -55,7 +56,6 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
 
 public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsTableMetricsDriver.class);
@@ -174,7 +174,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
 
         private Dimensions(InstanceProperties instanceProperties, TableProperties tableProperties) {
             instanceId = instanceProperties.get(ID);
-            namespace = instanceProperties.get(METRICS_NAMESPACE);
+            namespace = instanceProperties.get(MetricsProperty.METRICS_NAMESPACE);
             table = tableProperties.getStatus();
         }
 

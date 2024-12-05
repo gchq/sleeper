@@ -53,6 +53,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.MetricsProperty;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,7 +72,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
 import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -223,7 +223,7 @@ public class IngestStack extends NestedStack {
                 .effect(Effect.ALLOW)
                 .actions(Collections.singletonList("cloudwatch:PutMetricData"))
                 .resources(Collections.singletonList("*"))
-                .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(METRICS_NAMESPACE))))
+                .conditions(Collections.singletonMap("StringEquals", Collections.singletonMap("cloudwatch:namespace", instanceProperties.get(MetricsProperty.METRICS_NAMESPACE))))
                 .build());
 
         CfnOutputProps ingestClusterProps = new CfnOutputProps.Builder()

@@ -41,6 +41,7 @@ import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.MetricsProperty;
 import sleeper.core.properties.instance.TableStateProperty;
 
 import java.util.Collections;
@@ -55,9 +56,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_RULE;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_LAMBDA_CONCURRENCY_MAXIMUM;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_LAMBDA_CONCURRENCY_RESERVED;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_TABLE_BATCH_SIZE;
 
 public class TableMetricsStack extends NestedStack {
     public TableMetricsStack(
@@ -82,7 +80,7 @@ public class TableMetricsStack extends NestedStack {
                 .functionName(publishFunctionName)
                 .description("Generates metrics for a Sleeper table based on info in its state store, and publishes them to CloudWatch")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(METRICS_LAMBDA_CONCURRENCY_RESERVED))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(MetricsProperty.METRICS_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
                 .timeout(Duration.minutes(1))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.METRICS_PUBLISHER)));
@@ -121,8 +119,8 @@ public class TableMetricsStack extends NestedStack {
                 deadLetterQueue, topic);
         errorMetrics.add(Utils.createErrorMetric("Table Metrics Errors", deadLetterQueue, instanceProperties));
         tableMetricsPublisher.addEventSource(SqsEventSource.Builder.create(queue)
-                .batchSize(instanceProperties.getInt(METRICS_TABLE_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getIntOrNull(METRICS_LAMBDA_CONCURRENCY_MAXIMUM))
+                .batchSize(instanceProperties.getInt(MetricsProperty.METRICS_TABLE_BATCH_SIZE))
+                .maxConcurrency(instanceProperties.getIntOrNull(MetricsProperty.METRICS_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
 
         coreStacks.grantReadTablesStatus(tableMetricsTrigger);

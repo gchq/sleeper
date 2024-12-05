@@ -65,12 +65,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
-import static sleeper.core.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 /**
  * Collection of utility methods related to the CDK deployment.

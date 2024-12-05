@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
-
 /**
  * Definitions of instance properties commonly set for any instance.
  */
@@ -167,33 +164,6 @@ public interface CommonProperty {
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty METRICS_NAMESPACE = Index.propertyBuilder("sleeper.metrics.namespace")
-            .description("The namespaces for the metrics used in the metrics stack.")
-            .defaultValue("Sleeper")
-            .validationPredicate(SleeperPropertyValueUtils::isNonNullNonEmptyString)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.metrics.concurrency.reserved")
-            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
-            .description("The reserved concurrency for the table metrics lambda.\n" +
-                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
-    UserDefinedInstanceProperty METRICS_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.metrics.concurrency.max")
-            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
-            .description("The maximum given concurrency allowed for the table metrics lambda.\n" +
-                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
-    UserDefinedInstanceProperty METRICS_TABLE_BATCH_SIZE = Index.propertyBuilder("sleeper.metrics.batch.size")
-            .description("The number of tables to calculate metrics for in a single invocation. " +
-                    "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
-            .defaultValue("1")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
-    UserDefinedInstanceProperty METRICS_FOR_OFFLINE_TABLES = Index.propertyBuilder("sleeper.metrics.offline.enabled")
-            .description("Whether to calculate table metrics for offline tables.")
-            .defaultValue("false")
-            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
-            .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty FORCE_RELOAD_PROPERTIES = Index.propertyBuilder("sleeper.properties.force.reload")
             .description("If true, properties will be reloaded every time a long running job is started or a lambda is run. " +
                     "This will mainly be used in test scenarios to ensure properties are up to date.")
@@ -227,7 +197,7 @@ public interface CommonProperty {
 
         private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
 
-        static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
+        private static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
             return UserDefinedInstancePropertyImpl.named(propertyName)
                     .addToIndex(INSTANCE::add);
         }

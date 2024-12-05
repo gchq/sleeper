@@ -72,8 +72,8 @@ public class InstancePropertyGroup {
     public static final PropertyGroup QUERY = instanceGroup("Query")
             .description("The following properties relate to queries.")
             .build();
-    public static final PropertyGroup DASHBOARD = instanceGroup("Dashboard")
-            .description("The following properties relate to the dashboard.")
+    public static final PropertyGroup METRICS = instanceGroup("Metrics")
+            .description("The following properties relate to metrics.")
             .build();
     public static final PropertyGroup LOGGING = instanceGroup("Logging")
             .description("The following properties relate to logging.")

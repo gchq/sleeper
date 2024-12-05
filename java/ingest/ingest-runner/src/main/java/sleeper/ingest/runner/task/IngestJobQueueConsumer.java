@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.MetricsProperty;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.table.TableIndex;
 import sleeper.ingest.core.job.IngestJob;
@@ -46,7 +47,6 @@ import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
 import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
@@ -146,7 +146,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
                 throw new RuntimeException(e);
             }
             // Update metrics
-            String metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
+            String metricsNamespace = instanceProperties.get(MetricsProperty.METRICS_NAMESPACE);
             String instanceId = instanceProperties.get(ID);
             cloudWatchClient.putMetricData(new PutMetricDataRequest()
                     .withNamespace(metricsNamespace)

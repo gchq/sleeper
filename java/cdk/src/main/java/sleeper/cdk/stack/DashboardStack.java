@@ -35,6 +35,7 @@ import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.ingest.IngestStack;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.instance.MetricsProperty;
 import sleeper.core.properties.table.TableProperty;
 
 import java.util.ArrayList;
@@ -47,9 +48,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
 import static sleeper.core.properties.instance.CommonProperty.REGION;
-import static sleeper.core.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
+import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 public class DashboardStack extends NestedStack {
     private final String instanceId;
@@ -82,7 +82,7 @@ public class DashboardStack extends NestedStack {
                 // There's a limit of 500 widgets in a dashboard, including the widgets not associated with a table
                 .limit(50)
                 .collect(Collectors.toList());
-        metricsNamespace = instanceProperties.get(METRICS_NAMESPACE);
+        metricsNamespace = instanceProperties.get(MetricsProperty.METRICS_NAMESPACE);
         int timeWindowInMinutes = instanceProperties.getInt(DASHBOARD_TIME_WINDOW_MINUTES);
         window = Duration.minutes(timeWindowInMinutes);
         dashboard = Dashboard.Builder.create(this, "dashboard")
