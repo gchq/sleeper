@@ -33,7 +33,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
@@ -61,15 +60,7 @@ public class AwsResetInstanceOnFirstConnectIT {
     }
 
     @Test
-    void shouldDeleteOneTable(SleeperSystemTest sleeper) {
-        sleeper.tables().create("A", DEFAULT_SCHEMA);
-        onFirstConnect.reset(instanceProperties);
-        assertThat(tablesDriver.tableIndex(instanceProperties).streamAllTables())
-                .isEmpty();
-    }
-
-    @Test
-    void shouldDrainQueues(SleeperSystemTest sleeper) {
+    void shouldDeleteOneTableAndDrainQueues(SleeperSystemTest sleeper) {
         // Given
         sleeper.tables().create("A", DEFAULT_SCHEMA);
         AwsSendCompactionJobsTestHelper.sendNCompactionJobs(20,
@@ -79,21 +70,21 @@ public class AwsResetInstanceOnFirstConnectIT {
         onFirstConnect.reset(instanceProperties);
 
         // Then
+        assertThat(tablesDriver.tableIndex(instanceProperties).streamAllTables())
+                .isEmpty();
         assertThat(AwsDrainSqsQueue.drainQueueForWholeInstance(sqs, instanceProperties.get(COMPACTION_JOB_QUEUE_URL)))
                 .isEmpty();
     }
 
     @Test
-    void shouldDeleteNothingWhenNoTablesArePresent() {
-        assertThatCode(() -> onFirstConnect.reset(instanceProperties))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
     void shouldDeleteNothingWhenNoTablesArePresentAndInstancePropertiesAreSavedInConfigBucket(SystemTestDrivers drivers) {
+        // Given
         instanceDriver.saveInstanceProperties(instanceProperties);
+
+        // When
         onFirstConnect.reset(instanceProperties);
 
+        // Then
         InstanceProperties loaded = new InstanceProperties();
         instanceDriver.loadInstanceProperties(loaded, instanceProperties.get(ID));
         assertThat(loaded).isEqualTo(instanceProperties);

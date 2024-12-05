@@ -31,7 +31,6 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.deploy.SqsQueues;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.s3.S3StateStore;
@@ -104,12 +103,7 @@ public class AwsResetInstanceOnFirstConnect {
     }
 
     private void drainAllQueues(InstanceProperties instanceProperties) {
-        drainQueues(instanceProperties, SqsQueues.QUEUE_URL_PROPERTIES);
-        drainQueues(instanceProperties, SqsQueues.DEAD_LETTER_QUEUE_URL_PROPERTIES);
-    }
-
-    private void drainQueues(InstanceProperties instanceProperties, List<InstanceProperty> queueUrlProperties) {
-        queueUrlProperties.stream()
+        SqsQueues.ALL_QUEUE_URL_PROPERTIES.stream()
                 .map(instanceProperties::get)
                 .filter(queueUrl -> queueUrl != null)
                 .parallel().forEach(queueUrl -> AwsDrainSqsQueue.emptyQueueForWholeInstance(sqs, queueUrl));
