@@ -45,6 +45,7 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.DeleteProcesState;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
 
 import java.io.IOException;
@@ -145,14 +146,14 @@ public class TransactionLogSnapshotTestBase {
                 .createSnapshot();
     }
 
-    protected void deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
-        new TransactionLogSnapshotDeleter(
+    protected DeleteProcesState deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
+        return new TransactionLogSnapshotDeleter(
                 instanceProperties, table, dynamoDBClient, configuration)
                 .deleteSnapshots(deletionTime);
     }
 
-    protected void deleteSnapshotsAt(TableProperties table, Instant deletionTime, SnapshotFileDeleter fileDeleter) {
-        new TransactionLogSnapshotDeleter(
+    protected DeleteProcesState deleteSnapshotsAt(TableProperties table, Instant deletionTime, SnapshotFileDeleter fileDeleter) {
+        return new TransactionLogSnapshotDeleter(
                 instanceProperties, table, dynamoDBClient, fileDeleter)
                 .deleteSnapshots(deletionTime);
     }
