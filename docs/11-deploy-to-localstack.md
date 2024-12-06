@@ -95,6 +95,9 @@ Note: If you do not provide a number of records in the data generation scripts, 
 
 ## Compaction
 
+**There's currently a known problem preventing compaction from running against LocalStack.** See the following
+issue: https://github.com/gchq/sleeper/issues/3856
+
 To create compaction jobs for files that you have ingested, you can run the following command:
 ```shell
 ./scripts/deploy/localstack/createCompactionJobs.sh <instance-id> <optional-compact-all-flag>
