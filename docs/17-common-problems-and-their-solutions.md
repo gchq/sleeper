@@ -6,7 +6,7 @@ These instructions will assume you start in the project root directory and Sleep
 
 ## Out of memory error from standard ingest tasks
 
-Presently the implemenation is based on arrow ingest, whereas previously it was an arraylist based implementation and
+Presently the implementation is based on arrow ingest, whereas previously it was an arraylist based implementation and
 as such will work differently if that is used.
 For further details on this see the documentation on [Arrow Implementation](19-arrow-implementation.md)
 
