@@ -45,3 +45,44 @@ is better tested, and is likely to be the best option if you have a large
 number of processes inserting data in parallel, however there is a 
 potential issue in that it may see an outdated view of the files in a table. 
 The `S3StateStore` does not have this problem.
+
+## Add/edit a table
+
+Scripts can be used to add, rename and delete tables in a Sleeper instance.
+
+The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
+schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
+client. We will add support for declarative deployment in the future.
+
+```bash
+cd scripts
+editor templates/tableproperties.template
+editor templates/schema.template
+./utility/addTable.sh <instance-id> <table-name>
+./utility/renameTable.sh <instance-id> <old-table-name> <new-table-name>
+./utility/deleteTable.sh <instance-id> <table-name>
+```
+
+You can also pass `--force` as an additional argument to deleteTable.sh to skip the prompt to confirm you wish to delete
+all the data. This will permanently delete all data held in the table, as well as metadata.
+
+## Reinitialise a table
+
+Reinitialising a table means deleting all its contents. This can sometimes be useful when you are experimenting
+with Sleeper or if you created a table with the wrong schema.
+
+You can reinitialise the table quickly by running the following command:
+
+```bash
+./scripts/utility/reinitialiseTable.sh <instance-id> <table-name> <optional-delete-partitions-true-or-false> <optional-split-points-file-location> <optional-split-points-file-base64-encoded-true-or-false>
+```
+
+For example
+
+```bash
+./scripts/utility/reinitialiseTable.sh sleeper-my-sleeper-config my-sleeper-table true /tmp/split-points.txt false
+```
+
+If you want to change the table schema you'll need to change it directly in the table properties file in the S3 config
+bucket, and then reinitialise the table. An alternative is to delete the table and create a new table with the same
+name.
