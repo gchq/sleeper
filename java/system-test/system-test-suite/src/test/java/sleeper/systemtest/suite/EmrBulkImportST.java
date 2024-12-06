@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.Record;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
@@ -37,9 +36,8 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 public class EmrBulkImportST {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
+    void setUp(SleeperSystemTest sleeper) {
         sleeper.connectToInstance(MAIN);
-        purgeQueues.purgeIfTestFailed(BULK_IMPORT_EMR_JOB_QUEUE_URL);
     }
 
     @Test
