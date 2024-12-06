@@ -15,10 +15,11 @@ The batches are held in memory one at a time when attempting to write them to th
 A record batch is created by copying from the batch buffer to the working buffer following the sort order present within
 the vector of indexes. The working buffer memory is shared between the record batch and the sort indexes.
 
-When attempted to read the record batches from the local file, the allocator for the buffer is passed into the 
-ArrowStreamReader. This in turn interacts with the RecordIteratorFromArrowStreamReader which will receive the Arrow 
-batches from the reader. During this, it will convert the Arrow batches in Sleeper records objects, so that the can then
-be written to S3 via Parquet.
+An ingest will gather files until the store is filled or until all the remaining records are in the local store.
+The size of the store is defined by the property: 'sleeper.ingest.arrow.max.local.store.bytes'.
+Once done, it will merge them all together and will pass the sorted records through to the Sleeper table. This opens all
+the files and reads one record batch for each file. Then it will hold one record batch for each file within memory at a 
+time as it scans through the data in all the files.
 
 ## Possible failure states:
 
