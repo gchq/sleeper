@@ -66,4 +66,8 @@ public class InMemorySleeperInstanceDriver implements SleeperInstanceDriver {
     public void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties) {
         saveInstanceProperties(instanceProperties);
     }
+
+    @Override
+    public void resetOnFirstConnect(InstanceProperties instanceProperties) {
+    }
 }

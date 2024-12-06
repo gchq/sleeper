@@ -67,6 +67,7 @@ public final class DeployedSleeperInstance {
         if (!newInstance && instance.isRedeployNeeded(parameters, systemTest)) {
             instance.redeploy(driver, parameters);
         }
+        driver.resetOnFirstConnect(instanceProperties);
         instance.resetInstanceProperties(driver);
 
         SleeperScheduleRule.getDeployedRules(instanceProperties).forEach(rule -> {
