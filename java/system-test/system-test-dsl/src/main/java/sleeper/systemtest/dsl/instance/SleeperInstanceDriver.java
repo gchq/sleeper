@@ -31,4 +31,6 @@ public interface SleeperInstanceDriver {
     boolean deployInstanceIfNotPresent(String instanceId, DeployInstanceConfiguration deployConfig);
 
     void redeploy(InstanceProperties instanceProperties, List<TableProperties> tableProperties);
+
+    void resetOnFirstConnect(InstanceProperties instanceProperties);
 }

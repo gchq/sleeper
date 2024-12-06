@@ -21,8 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.SystemTestDrivers;
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
@@ -32,7 +30,7 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 public class AwsSleeperTablesDriverIT {
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, SystemTestDrivers drivers, SystemTestParameters parameters) {
+    void setUp(SleeperSystemTest sleeper) {
         sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
     }
 

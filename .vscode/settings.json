@@ -20,6 +20,7 @@
   ],
   "java.completion.favoriteStaticMembers": [
     "java.util.stream.Collectors.*",
+    "java.util.function.Predicate.*",
     "org.assertj.core.api.Assertions.*",
     "org.mockito.Mockito.*",
     "org.mockito.ArgumentMatchers.*",
