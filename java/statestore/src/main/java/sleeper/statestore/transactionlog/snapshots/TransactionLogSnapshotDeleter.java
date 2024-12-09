@@ -59,21 +59,26 @@ public class TransactionLogSnapshotDeleter {
      * Searches for snapshots that have expired based on the current time, then deletes the snapshot file in addition to
      * the snapshot metadata in the metadata store.
      *
-     * @param currentTime the current time
+     * @param  currentTime the current time
+     * @return             the total number of snapshots attempted to be deleted
      */
-    public void deleteSnapshots(Instant currentTime) {
+    public DeleteProcesState deleteSnapshots(Instant currentTime) {
         Instant expiryDate = currentTime.minus(expiryInDays);
+        DeleteProcesState deletedSnapshotCount = new DeleteProcesState();
         metadataStore.getExpiredSnapshots(expiryDate)
                 .forEach(snapshot -> {
                     LOGGER.info("Deleting snapshot {}", snapshot);
                     try {
                         snapshotFileDeleter.delete(snapshot.getPath());
+                        deletedSnapshotCount.deleteSuccess(snapshot.getTransactionNumber());
                     } catch (IOException e) {
                         LOGGER.error("Failed to delete snapshot file: {}", snapshot.getPath(), e);
                         throw new UncheckedIOException(e);
                     }
                     metadataStore.deleteSnapshot(snapshot);
                 });
+
+        return deletedSnapshotCount;
     }
 
     private static SnapshotFileDeleter hadoopFileDeleter(Configuration configuration) {
@@ -99,5 +104,25 @@ public class TransactionLogSnapshotDeleter {
          * @throws IOException if the file fails to delete
          */
         void delete(String path) throws IOException;
+    }
+
+    /**
+     * ADD Stuff here.
+     */
+    public class DeleteProcesState {
+        Integer storeVal = Integer.MIN_VALUE;
+        long lastTransactionNumber = Long.MIN_VALUE;
+
+        /**
+         * Store key details on the success of a deletion process. Increments the count of the deletion and stores
+         * the transaction number for the last instacen for use in logging.
+         *
+         * @param transactionNumber most recent transaction number deleted, done so as to save the last one for logging
+         */
+        public void deleteSuccess(long transactionNumber) {
+            this.lastTransactionNumber = transactionNumber;
+            storeVal++;
+        }
+
     }
 }

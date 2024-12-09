@@ -38,6 +38,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.DeleteProcesState;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -92,8 +93,9 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
         for (TableProperties table : tables) {
             LOGGER.info("Deleting old snapshots for table {}", table.getStatus());
             try {
-                new TransactionLogSnapshotDeleter(instanceProperties, table, dynamoClient, configuration)
-                        .deleteSnapshots(Instant.now());
+                DeleteProcesState deleteProcessState = new TransactionLogSnapshotDeleter(instanceProperties, table,
+                        dynamoClient, configuration).deleteSnapshots(Instant.now());
+                //LOGGER.info("null", deleteProcessState.getCount(), deleteProccesState.getLastTransactionId());
             } catch (RuntimeException e) {
                 LOGGER.error("Failed deleting old snapshots for table {}", table.getStatus(), e);
                 messagesByTableId.get(table.getStatus().getTableUniqueId()).stream()
