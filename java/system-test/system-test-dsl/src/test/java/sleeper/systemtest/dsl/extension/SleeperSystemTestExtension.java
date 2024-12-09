@@ -43,7 +43,7 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
 
     public static final Logger LOGGER = LoggerFactory.getLogger(SleeperSystemTestExtension.class);
     private static final Set<Class<?>> SUPPORTED_PARAMETER_TYPES = Set.of(
-            SleeperSystemTest.class, AfterTestReports.class, AfterTestPurgeQueues.class,
+            SleeperSystemTest.class, AfterTestReports.class,
             SystemTestParameters.class, SystemTestDrivers.class,
             DeployedSystemTestResources.class, DeployedSleeperInstances.class,
             SystemTestContext.class);
@@ -55,7 +55,6 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
     private SystemTestContext systemTestContext = null;
     private SleeperSystemTest dsl = null;
     private AfterTestReports reporting = null;
-    private AfterTestPurgeQueues queuePurging = null;
     private Instant testStartTime = null;
 
     protected SleeperSystemTestExtension(SystemTestDeploymentContext context) {
@@ -79,8 +78,6 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
             return dsl;
         } else if (type == AfterTestReports.class) {
             return reporting;
-        } else if (type == AfterTestPurgeQueues.class) {
-            return queuePurging;
         } else if (type == SystemTestParameters.class) {
             return parameters;
         } else if (type.isAssignableFrom(drivers.getClass())) {
@@ -111,7 +108,6 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
         systemTestContext = new SystemTestContext(parameters, drivers, deployedResources, deployedInstances, testContext);
         dsl = new SleeperSystemTest(parameters, drivers, systemTestContext);
         reporting = new AfterTestReports(systemTestContext);
-        queuePurging = new AfterTestPurgeQueues(systemTestContext);
     }
 
     @Override
@@ -120,13 +116,11 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
         TestContext testContext = TestContextFactory.testContext(context);
         context.getExecutionException().ifPresentOrElse(failure -> {
             reporting.afterTestFailed(testContext);
-            queuePurging.testFailed();
             LOGGER.error("Failed system test in {}: {}",
                     LoggedDuration.withShortOutput(testStartTime, Instant.now()),
                     testContext.getTestClassAndMethod(), failure);
         }, () -> {
             reporting.afterTestPassed(testContext);
-            queuePurging.testPassed();
             LOGGER.info("Passed system test in {}: {}",
                     LoggedDuration.withShortOutput(testStartTime, Instant.now()),
                     testContext.getTestClassAndMethod());
@@ -134,6 +128,5 @@ public class SleeperSystemTestExtension implements ParameterResolver, BeforeAllC
         testStartTime = null;
         dsl = null;
         reporting = null;
-        queuePurging = null;
     }
 }

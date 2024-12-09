@@ -22,8 +22,6 @@ import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrateg
 import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
-import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.ingest.SystemTestDirectIngest;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
@@ -56,7 +54,7 @@ public class GarbageCollectionTest {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
+    void setUp(SleeperSystemTest sleeper) {
         sleeper.connectToInstance(IN_MEMORY_MAIN);
     }
 
