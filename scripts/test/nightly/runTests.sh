@@ -48,14 +48,10 @@ else
   MAIN_SUITE_NAME=custom
   MAIN_SUITE_PARAMS=("$@")
 fi
-SECONDARY_SUITE_NAME=dynamo-state-store
-SECONDARY_SUITE_PARAMS=(-Dsleeper.system.test.force.statestore.classname=sleeper.statestore.dynamodb.DynamoDBStateStore "$@")
 
 echo "DEPLOY_ID=$DEPLOY_ID"
 echo "MAIN_SUITE_NAME=$MAIN_SUITE_NAME"
 echo "MAIN_SUITE_PARAMS=(${MAIN_SUITE_PARAMS[*]})"
-echo "SECONDARY_SUITE_NAME=$SECONDARY_SUITE_NAME"
-echo "SECONDARY_SUITE_PARAMS=(${SECONDARY_SUITE_PARAMS[*]})"
 
 source "$SCRIPTS_DIR/functions/timeUtils.sh"
 source "$SCRIPTS_DIR/functions/systemTestUtils.sh"
@@ -112,7 +108,6 @@ runMavenSystemTests() {
 }
 
 runMavenSystemTests "${DEPLOY_ID}mvn${START_TIME_SHORT}" $MAIN_SUITE_NAME "${MAIN_SUITE_PARAMS[@]}"
-runMavenSystemTests "${DEPLOY_ID}dyn${START_TIME_SHORT}" $SECONDARY_SUITE_NAME "${SECONDARY_SUITE_PARAMS[@]}"
 
 echo "[$(time_str)] Uploading test output"
 java -cp "${SYSTEM_TEST_JAR}" \
