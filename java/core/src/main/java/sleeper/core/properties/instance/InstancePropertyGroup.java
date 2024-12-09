@@ -35,6 +35,9 @@ public class InstancePropertyGroup {
     public static final PropertyGroup COMMON = instanceGroup("Common")
             .description("The following properties are commonly used throughout Sleeper.")
             .build();
+    public static final PropertyGroup TABLE_STATE = instanceGroup("Table State")
+            .description("The following properties relate to handling the state of Sleeper tables.")
+            .build();
     public static final PropertyGroup INGEST = instanceGroup("Ingest")
             .description("The following properties relate to standard ingest.")
             .build();
@@ -69,8 +72,8 @@ public class InstancePropertyGroup {
     public static final PropertyGroup QUERY = instanceGroup("Query")
             .description("The following properties relate to queries.")
             .build();
-    public static final PropertyGroup DASHBOARD = instanceGroup("Dashboard")
-            .description("The following properties relate to the dashboard.")
+    public static final PropertyGroup METRICS = instanceGroup("Metrics")
+            .description("The following properties relate to metrics.")
             .build();
     public static final PropertyGroup LOGGING = instanceGroup("Logging")
             .description("The following properties relate to logging.")
@@ -78,7 +81,7 @@ public class InstancePropertyGroup {
     public static final PropertyGroup ATHENA = instanceGroup("Athena")
             .description("The following properties relate to the integration with Athena.")
             .build();
-    public static final PropertyGroup DEFAULT = instanceGroup("Default")
+    public static final PropertyGroup TABLE_PROPERTY_DEFAULT = instanceGroup("Table Property Default")
             .description("The following properties relate to default values used by table properties.")
             .build();
 

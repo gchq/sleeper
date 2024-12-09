@@ -47,7 +47,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCF
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THROUGHPUT;
 
 @SystemTest

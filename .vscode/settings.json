@@ -20,15 +20,19 @@
   ],
   "java.completion.favoriteStaticMembers": [
     "java.util.stream.Collectors.*",
+    "java.util.function.Predicate.*",
     "org.assertj.core.api.Assertions.*",
     "org.mockito.Mockito.*",
     "org.mockito.ArgumentMatchers.*",
     "org.mockito.Answers.*",
+    "sleeper.core.partition.PartitionTreeTestHelper.*",
     "sleeper.core.schema.SchemaTestHelper.*",
     "sleeper.core.statestore.inmemory.StateStoreTestHelper.*",
     "sleeper.configuration.properties.InstancePropertiesTestHelper.*",
     "sleeper.configuration.properties.table.TablePropertiesTestHelper.*",
-    "sleeper.core.util.ExponentialBackoffWithJitterTestHelper.*"
+    "sleeper.core.util.ExponentialBackoffWithJitterTestHelper.*",
+    "sleeper.core.testutils.SupplierTestHelper.*",
+    "sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.*"
   ],
   "comment.java.configuration.runtimes": [
     {

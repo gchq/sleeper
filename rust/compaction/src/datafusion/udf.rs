@@ -225,13 +225,17 @@ impl ScalarUDFImpl for SketchUDF {
                 }
 
                 ColumnarValue::Scalar(
-                    ScalarValue::Utf8(Some(value)) | ScalarValue::LargeUtf8(Some(value)),
+                    ScalarValue::Utf8(Some(value))
+                    | ScalarValue::LargeUtf8(Some(value))
+                    | ScalarValue::Utf8View(Some(value)),
                 ) => {
                     self.bench_report(1);
                     sketch.update(value);
                 }
                 ColumnarValue::Scalar(
-                    ScalarValue::Binary(Some(value)) | ScalarValue::LargeBinary(Some(value)),
+                    ScalarValue::Binary(Some(value))
+                    | ScalarValue::LargeBinary(Some(value))
+                    | ScalarValue::BinaryView(Some(value)),
                 ) => {
                     self.bench_report(1);
                     sketch.update(value);

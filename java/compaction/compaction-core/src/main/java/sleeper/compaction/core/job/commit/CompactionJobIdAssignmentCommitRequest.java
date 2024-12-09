@@ -24,9 +24,13 @@ public class CompactionJobIdAssignmentCommitRequest {
     private final String tableId;
     private final List<AssignJobIdRequest> assignJobIdRequests;
 
-    public CompactionJobIdAssignmentCommitRequest(List<AssignJobIdRequest> assignJobIdRequests, String tableId) {
+    private CompactionJobIdAssignmentCommitRequest(String tableId, List<AssignJobIdRequest> assignJobIdRequests) {
         this.tableId = tableId;
         this.assignJobIdRequests = assignJobIdRequests;
+    }
+
+    public static CompactionJobIdAssignmentCommitRequest tableRequests(String tableId, List<AssignJobIdRequest> requests) {
+        return new CompactionJobIdAssignmentCommitRequest(tableId, requests);
     }
 
     public String getTableId() {

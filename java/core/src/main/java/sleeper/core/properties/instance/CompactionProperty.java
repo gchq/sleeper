@@ -23,8 +23,9 @@ import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
 import static sleeper.core.properties.validation.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
@@ -46,13 +47,6 @@ public interface CompactionProperty {
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-
-    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.compaction.job.creation.limit")
-            .description("The maximum number of compaction jobs that are to be created as part of single invocation. " +
-                    "If this limit is exceeded, the selection of jobs is randomised.")
-            .defaultValue("10000")
-            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
 
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
@@ -127,9 +121,9 @@ public interface CompactionProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.creation.memory")
+    UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.creation.memory.mb")
             .description("The amount of memory in MB for the lambda that creates compaction jobs.")
-            .defaultValue("1024")
+            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.creation.timeout.seconds")
@@ -146,6 +140,27 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.job.creation.concurrency.max")
             .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
             .description("The maximum given concurrency allowed for the lambda used to create compaction jobs.\n" +
+                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.job.dispatch.memory.mb")
+            .description("The amount of memory in MB for the lambda that sends batches of compaction jobs.")
+            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.dispatch.timeout.seconds")
+            .description("The timeout for the lambda that sends batches of compaction jobs in seconds.")
+            .defaultValue("900")
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.job.dispatch.concurrency.reserved")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .description("The reserved concurrency for the lambda that sends batches of compaction jobs.\n" +
+                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.job.dispatch.concurrency.max")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .description("The maximum concurrency allowed for the lambda that sends batches of compaction jobs.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = Index.propertyBuilder("sleeper.compaction.max.concurrent.tasks")
@@ -177,8 +192,8 @@ public interface CompactionProperty {
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_TASK_ARM_MEMORY = Index.propertyBuilder("sleeper.compaction.task.arm.memory")
-            .description("The amount of memory in MiB for a compaction task using an ARM64 architecture.\n" +
+    UserDefinedInstanceProperty COMPACTION_TASK_ARM_MEMORY = Index.propertyBuilder("sleeper.compaction.task.arm.memory.mb")
+            .description("The amount of memory in MB for a compaction task using an ARM64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
@@ -189,8 +204,8 @@ public interface CompactionProperty {
             .defaultValue("1024")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_TASK_X86_MEMORY = Index.propertyBuilder("sleeper.compaction.task.x86.memory")
-            .description("The amount of memory in MiB for a compaction task using an x86_64 architecture.\n" +
+    UserDefinedInstanceProperty COMPACTION_TASK_X86_MEMORY = Index.propertyBuilder("sleeper.compaction.task.x86.memory.mb")
+            .description("The amount of memory in MB for a compaction task using an x86_64 architecture.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
@@ -213,6 +228,25 @@ public interface CompactionProperty {
             .description("Should a GPU compaction docker image be deployed with compactions? If yes, then GPU compactions " +
                     "can be used. This is enabled on a per table basis with sleeper.table.compaction.method")
             .defaultValue("false")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_FIXED_OVERHEAD = Index.propertyBuilder("sleeper.compaction.task.scaling.overhead.fixed")
+            .description("Used when scaling EC2 instances to support an expected number of compaction tasks. " +
+                    "This is the amount of memory in MB that we expect ECS to reserve on an EC2 instance before " +
+                    "making memory available for compaction tasks.\n" +
+                    "If this is unset, it will be computed as a percentage of the memory on the EC2 instead, see " +
+                    "`sleeper.compaction.task.scaling.overhead.percentage`.")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeIntegerOrNull)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TASK_PERCENTAGE_OVERHEAD = Index.propertyBuilder("sleeper.compaction.task.scaling.overhead.percentage")
+            .description("Used when scaling EC2 instances to support an expected number of compaction tasks. " +
+                    "This is the percentage of memory in an EC2 instance that we expect ECS to reserve before " +
+                    "making memory available for compaction tasks.\n" +
+                    "Defaults to 10%, so we expect 90% of the memory on an EC2 instance to be used for compaction " +
+                    "tasks.")
+            .defaultValue("10")
+            .validationPredicate(val -> SleeperPropertyValueUtils.isNonNegativeIntLtEqValue(val, 99))
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_ECS_LAUNCHTYPE = Index.propertyBuilder("sleeper.compaction.ecs.launch.type")
@@ -271,9 +305,9 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_STRATEGY_CLASS = Index.propertyBuilder("sleeper.default.compaction.strategy.class")
             .description("The name of the class that defines how compaction jobs should be created. " +
-                    "This should implement sleeper.compaction.core.strategy.CompactionStrategy. The value of this property is the " +
+                    "This should implement sleeper.compaction.core.job.creation.strategy.CompactionStrategy. The value of this property is the " +
                     "default value which can be overridden on a per-table basis.")
-            .defaultValue("sleeper.compaction.core.strategy.impl.SizeRatioCompactionStrategy")
+            .defaultValue("sleeper.compaction.core.job.creation.strategy.impl.SizeRatioCompactionStrategy")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_FILES_BATCH_SIZE = Index.propertyBuilder("sleeper.default.compaction.files.batch.size")
             .description("The maximum number of files to read in a compaction job. Note that the state store must " +
@@ -297,7 +331,7 @@ public interface CompactionProperty {
                     "For each batch, we send all compaction jobs to the SQS queue, then update the state store to " +
                     "assign job IDs to the input files.\n" +
                     "This can be overridden on a per-table basis.")
-            .defaultValue("10")
+            .defaultValue("1000")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS = Index.propertyBuilder("sleeper.default.table.compaction.job.send.timeout.seconds")
@@ -318,6 +352,12 @@ public interface CompactionProperty {
                     "The batch will be sent if all input files have been successfully assigned to the jobs, otherwise " +
                     "the batch will be retried after a delay.")
             .defaultValue("30")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.default.table.compaction.job.creation.limit")
+            .description("The default limit on the number of compactation jobs that can be created within a single invocation." +
+                    "Exceeding this limit, results in the selection being randomised.")
+            .defaultValue("100000")
             .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.default.table.compaction.strategy.sizeratio.ratio")
@@ -355,7 +395,7 @@ public interface CompactionProperty {
 
         private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
 
-        static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
+        private static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
             return UserDefinedInstancePropertyImpl.named(propertyName)
                     .addToIndex(INSTANCE::add);
         }

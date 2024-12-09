@@ -33,7 +33,7 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 
 @InMemoryDslTest
 public class SystemTestReportingTest {
@@ -43,7 +43,7 @@ public class SystemTestReportingTest {
     @Test
     void shouldReportFinishedIngestJob(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(IN_MEMORY_MAIN);
         sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.of(1, 2, 3));
         sleeper.ingest().byQueue().sendSourceFiles("test.parquet").invokeTask().waitForJobs();
 
@@ -56,7 +56,7 @@ public class SystemTestReportingTest {
     @Test
     void shouldReportFinishedCompactionJob(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(IN_MEMORY_MAIN);
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.of(1, 2, 3));
         sleeper.compaction().forceCreateJobs(1).invokeTasks(1).waitForJobs();
 
@@ -75,7 +75,7 @@ public class SystemTestReportingTest {
         afterTestReports.reportAlways(builder -> builder.compactionTasksAndJobs());
 
         // When
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(IN_MEMORY_MAIN);
         afterTestReports.afterTestPassed(TestContextFactory.testContext(info));
 
         // Then

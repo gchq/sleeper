@@ -48,6 +48,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -70,7 +71,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
 import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
@@ -79,6 +79,7 @@ import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CPU;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class IngestStack extends NestedStack {
@@ -210,7 +211,7 @@ public class IngestStack extends NestedStack {
 
         ContainerDefinitionOptions containerDefinitionOptions = ContainerDefinitionOptions.builder()
                 .image(containerImage)
-                .logging(Utils.createECSContainerLogDriver(coreStacks, "IngestTasks"))
+                .logging(Utils.createECSContainerLogDriver(coreStacks.getLogGroup(LogGroupRef.INGEST_TASKS)))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .build();
         taskDefinition.addContainer("IngestContainer", containerDefinitionOptions);
@@ -252,7 +253,7 @@ public class IngestStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(1)
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.INGEST_CREATE_TASKS)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

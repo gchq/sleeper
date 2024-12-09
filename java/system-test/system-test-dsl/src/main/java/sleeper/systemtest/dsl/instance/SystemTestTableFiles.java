@@ -16,19 +16,25 @@
 
 package sleeper.systemtest.dsl.instance;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.util.PollWithRetries;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestTableFiles {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestTableFiles.class);
 
     private final SystemTestInstanceContext instance;
 
@@ -46,6 +52,18 @@ public class SystemTestTableFiles {
 
     public Map<String, Long> recordsByFilename() {
         return all().recordsByFilename();
+    }
+
+    public SystemTestTableFiles waitForState(Predicate<AllReferencesToAllFiles> stateCheck, PollWithRetries poll) throws InterruptedException {
+        poll.pollUntil("files meet expected state", () -> {
+            AllReferencesToAllFiles files = all();
+            LOGGER.info("Found {} file references, {} referenced files, {} unreferenced files",
+                    files.countFileReferences(),
+                    files.getFilesWithReferences().size(),
+                    files.getFilesWithNoReferences().size());
+            return stateCheck.test(files);
+        });
+        return this;
     }
 
     public Map<String, AllReferencesToAllFiles> filesByTable() {

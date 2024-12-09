@@ -95,4 +95,8 @@ public class LocalStackSleeperInstanceDriver implements SleeperInstanceDriver {
         throw new UnsupportedOperationException("Unimplemented method 'redeploy'");
     }
 
+    @Override
+    public void resetOnFirstConnect(InstanceProperties instanceProperties) {
+    }
+
 }

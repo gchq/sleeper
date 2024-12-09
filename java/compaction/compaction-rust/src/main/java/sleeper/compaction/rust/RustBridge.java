@@ -74,7 +74,7 @@ public class RustBridge {
             return nativeLib;
 
         } catch (UnsatisfiedLinkError err) {
-            throw (IOException) new IOException().initCause(err);
+            throw (IOException) new IOException("Could not initialise Rust bridge", err);
         }
     }
 

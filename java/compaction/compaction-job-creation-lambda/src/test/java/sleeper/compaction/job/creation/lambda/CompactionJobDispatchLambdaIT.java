@@ -37,6 +37,7 @@ import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatcher;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -61,6 +62,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -139,13 +141,42 @@ public class CompactionJobDispatchLambdaIT {
         assertThat(recievePendingBatches()).containsExactly(request);
     }
 
+    @Test
+    void shouldSendBatchToDeadLetterQueueIfExpiredAndTheFilesForTheBatchAreUnassigned() throws Exception {
+
+        // Given
+        FileReference file1 = fileFactory.rootFile("test3.parquet", 1234);
+        FileReference file2 = fileFactory.rootFile("test4.parquet", 5678);
+        CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
+        CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
+        stateStore.addFiles(List.of(file1, file2));
+
+        tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
+        tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 0);
+        saveTableProperties();
+
+        CompactionJobDispatchRequest request = generateBatchRequestAtTime(
+                "test-batch", Instant.parse("2024-11-21T10:20:00Z"));
+        Instant retryTime = Instant.parse("2024-11-21T10:23:00Z");
+        putCompactionJobBatch(request, List.of(job1, job2));
+
+        // When
+        dispatchWithTimeAtRetryCheck(request, retryTime);
+
+        // Then
+        assertThat(recievePendingBatches()).isEmpty();
+        assertThat(receiveDeadLetters()).containsExactly(request);
+    }
+
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(COMPACTION_PENDING_DLQ_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
 
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
+        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
 
         s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3.createBucket(instanceProperties.get(DATA_BUCKET));
@@ -176,7 +207,7 @@ public class CompactionJobDispatchLambdaIT {
 
     private CompactionJobDispatchRequest generateBatchRequestAtTime(String batchId, Instant timeNow) {
         return CompactionJobDispatchRequest.forTableWithBatchIdAtTime(
-                instanceProperties, tableProperties, batchId, timeNow);
+                tableProperties, batchId, timeNow);
     }
 
     private void putCompactionJobBatch(CompactionJobDispatchRequest request, List<CompactionJob> jobs) {
@@ -210,6 +241,15 @@ public class CompactionJobDispatchLambdaIT {
     private List<CompactionJobDispatchRequest> recievePendingBatches() {
         ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
+                .withMaxNumberOfMessages(10));
+        return result.getMessages().stream()
+                .map(Message::getBody)
+                .map(new CompactionJobDispatchRequestSerDe()::fromJson).toList();
+    }
+
+    private List<CompactionJobDispatchRequest> receiveDeadLetters() {
+        ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_DLQ_URL))
                 .withMaxNumberOfMessages(10));
         return result.getMessages().stream()
                 .map(Message::getBody)

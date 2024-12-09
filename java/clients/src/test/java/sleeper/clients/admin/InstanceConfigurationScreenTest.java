@@ -57,9 +57,9 @@ import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTION
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;

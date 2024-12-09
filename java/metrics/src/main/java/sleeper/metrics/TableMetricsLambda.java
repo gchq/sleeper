@@ -57,7 +57,7 @@ import java.util.Map.Entry;
 import static java.util.stream.Collectors.groupingBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
 public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);

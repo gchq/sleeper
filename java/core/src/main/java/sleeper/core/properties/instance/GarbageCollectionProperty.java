@@ -21,8 +21,9 @@ import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.core.properties.instance.CommonProperty.DEFAULT_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
 
 /**
  * Definitions of instance properties relating to garbage collection.
@@ -39,9 +40,9 @@ public interface GarbageCollectionProperty {
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq15)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.gc.memory")
+    UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.gc.memory.mb")
             .description("The amount of memory in MB for the lambda function used to perform garbage collection.")
-            .defaultValue("1024")
+            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.gc.concurrency.reserved")
@@ -90,7 +91,7 @@ public interface GarbageCollectionProperty {
 
         private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
 
-        static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
+        private static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
             return UserDefinedInstancePropertyImpl.named(propertyName)
                     .addToIndex(INSTANCE::add);
         }

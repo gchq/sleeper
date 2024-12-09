@@ -22,7 +22,7 @@ import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertyComputeValue;
 
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ASYNC_COMMIT_BEHAVIOUR;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 

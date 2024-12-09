@@ -72,6 +72,10 @@ public class LambdaHandler {
             .jar(LambdaJar.COMPACTION_JOB_CREATOR)
             .handler("sleeper.compaction.job.creation.lambda.CreateCompactionJobsLambda::handleRequest")
             .optionalStack(OptionalStack.CompactionStack).add();
+    public static final LambdaHandler COMPACTION_JOB_DISPATCHER = builder()
+            .jar(LambdaJar.COMPACTION_JOB_CREATOR)
+            .handler("sleeper.compaction.job.creation.lambda.CompactionJobDispatchLambda::handleRequest")
+            .optionalStack(OptionalStack.CompactionStack).add();
     public static final LambdaHandler COMPACTION_TASK_CREATOR = builder()
             .jar(LambdaJar.COMPACTION_TASK_CREATOR)
             .handler("sleeper.compaction.task.creation.RunCompactionTasksLambda::eventHandler")
@@ -174,17 +178,6 @@ public class LambdaHandler {
      */
     public static List<LambdaHandler> all() {
         return Collections.unmodifiableList(ALL);
-    }
-
-    /**
-     * Returns the Athena lambda handler with the given class name.
-     *
-     * @param  className the class name
-     * @return           the definition
-     */
-    public static LambdaHandler athenaHandlerForClass(String className) {
-        return Objects.requireNonNull(ATHENA_HANDLER_BY_CLASSNAME.get(className),
-                "No lambda handler found for Athena with the given class name");
     }
 
     public static Builder builder() {

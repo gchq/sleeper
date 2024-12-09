@@ -41,6 +41,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -74,8 +75,8 @@ public final class WebSocketQueryStack extends NestedStack {
                 .functionName(functionName)
                 .description("Prepares queries received via the WebSocket API and queues them for processing")
                 .environment(env)
-                .memorySize(256)
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
+                .memorySize(1024)
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.QUERY_WEBSOCKET_HANDLER))
                 .timeout(Duration.seconds(29)));
 
         queryQueueStack.grantSendMessages(webSocketApiHandler);

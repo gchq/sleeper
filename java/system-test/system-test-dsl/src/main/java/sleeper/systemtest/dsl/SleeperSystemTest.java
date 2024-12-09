@@ -35,6 +35,7 @@ import sleeper.systemtest.dsl.partitioning.SystemTestPartitioning;
 import sleeper.systemtest.dsl.python.SystemTestPythonApi;
 import sleeper.systemtest.dsl.query.SystemTestQuery;
 import sleeper.systemtest.dsl.reporting.SystemTestReporting;
+import sleeper.systemtest.dsl.sourcedata.GenerateNumberedRecords;
 import sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.dsl.sourcedata.SystemTestCluster;
@@ -124,7 +125,7 @@ public class SleeperSystemTest {
     }
 
     public SystemTestCompaction compaction() {
-        return new SystemTestCompaction(context);
+        return new SystemTestCompaction(context, baseDrivers);
     }
 
     public SystemTestGarbageCollection garbageCollection() {
@@ -155,12 +156,16 @@ public class SleeperSystemTest {
         context.instance().setGeneratorOverrides(overrides);
     }
 
+    public GenerateNumberedRecords numberedRecords() {
+        return context.instance().numberedRecords();
+    }
+
     public Iterable<Record> generateNumberedRecords(LongStream numbers) {
-        return () -> context.instance().generateNumberedRecords(numbers).iterator();
+        return context.instance().numberedRecords().iterableFrom(numbers);
     }
 
     public Iterable<Record> generateNumberedRecords(Schema schema, LongStream numbers) {
-        return () -> context.instance().generateNumberedRecords(schema, numbers).iterator();
+        return context.instance().numberedRecords(schema).iterableFrom(numbers);
     }
 
     public RecordNumbers scrambleNumberedRecords(LongStream longStream) {

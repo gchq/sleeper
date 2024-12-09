@@ -23,7 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.core.metrics.TableMetrics;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.suite.fixtures.SystemTestSchema;
+import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -35,8 +35,8 @@ import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.dsl.testutil.SystemTestTableMetricsHelper.tableMetrics;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
-import static sleeper.systemtest.suite.fixtures.SystemTestSchema.DEFAULT_SCHEMA;
 
 @SystemTest
 public class TableMetricsST {

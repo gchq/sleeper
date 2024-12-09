@@ -24,7 +24,9 @@ import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -47,7 +49,11 @@ public class BulkImportBucketStack extends NestedStack {
                 .build();
         importBucket.grantWrite(coreStacks.getIngestByQueuePolicyForGrants());
         instanceProperties.set(BULK_IMPORT_BUCKET, importBucket.getBucketName());
-        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, jars, importBucket, bucketName);
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode, importBucket, bucketName,
+                coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE),
+                coreStacks.getLogGroup(LogGroupRef.BULK_IMPORT_AUTODELETE_PROVIDER));
     }
 
     public IBucket getImportBucket() {

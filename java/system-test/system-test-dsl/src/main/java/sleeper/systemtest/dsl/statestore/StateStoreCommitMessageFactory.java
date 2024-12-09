@@ -73,8 +73,8 @@ public class StateStoreCommitMessageFactory {
     }
 
     public StateStoreCommitMessage assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
-        CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(
-                List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)), tableId());
+        CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests(tableId(),
+                List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
         return StateStoreCommitMessage.tableIdAndBody(tableId(),
                 new CompactionJobIdAssignmentCommitRequestSerDe().toJson(request));
     }

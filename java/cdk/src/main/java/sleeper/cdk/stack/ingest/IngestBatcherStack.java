@@ -39,6 +39,7 @@ import software.constructs.Construct;
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -142,7 +143,7 @@ public class IngestBatcherStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
-                .logGroup(coreStacks.getLogGroupByFunctionName(submitterName))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.INGEST_BATCHER_SUBMIT_FILES))
                 .events(List.of(new SqsEventSource(submitQueue))));
         instanceProperties.set(INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION, submitterLambda.getFunctionName());
 
@@ -158,7 +159,7 @@ public class IngestBatcherStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(coreStacks.getLogGroupByFunctionName(jobCreatorName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.INGEST_BATCHER_CREATE_JOBS)));
         instanceProperties.set(INGEST_BATCHER_JOB_CREATION_FUNCTION, jobCreatorLambda.getFunctionName());
 
         ingestRequestsTable.grantReadWriteData(jobCreatorLambda);

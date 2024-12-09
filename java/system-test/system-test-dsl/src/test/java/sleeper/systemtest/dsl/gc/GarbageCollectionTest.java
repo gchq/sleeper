@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.gc;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.strategy.impl.BasicCompactionStrategy;
+import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -47,9 +47,9 @@ import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_ST
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.MAIN;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.ROW_KEY_FIELD_NAME;
-import static sleeper.systemtest.dsl.testutil.PartitionsTestHelper.partitionsBuilder;
+import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
+import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.partitionsBuilder;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.ROW_KEY_FIELD_NAME;
 
 @InMemoryDslTest
 public class GarbageCollectionTest {
@@ -57,7 +57,7 @@ public class GarbageCollectionTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstance(IN_MEMORY_MAIN);
     }
 
     @Test

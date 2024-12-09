@@ -26,7 +26,7 @@
 //!
 //! ## Serialized compatibility
 //! The serialized format of sketches in this crate should be binary compatible with the equivalent
-//! Java sketches ([`ArrayOfNumbersSerDe`](https://github.com/apache/datasketches-java/blob/master/src/main/java/org/apache/datasketches/common/ArrayOfNumbersSerDe.java)
+//! Java sketches ([`ArrayOfLongsSerDe`](https://github.com/apache/datasketches-java/blob/master/src/main/java/org/apache/datasketches/common/ArrayOfLongsSerDe.java)
 //! for i32 and i64 and [`ArrayOfStringsSerDe`](https://github.com/apache/datasketches-java/blob/master/src/main/java/org/apache/datasketches/common/ArrayOfStringsSerDe.java)
 //! for String sketches). We have also implemented a byte array serializer in C++ which is used by [`quantiles::byte::byte_sketch_t`]. This
 //! is directly modelled after the String serializer.

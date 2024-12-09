@@ -80,6 +80,7 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
@@ -258,21 +259,18 @@ public class StateStoreCommitterTest {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
             stateStore.addFile(fileFactory.rootFile("input.parquet", 123L));
-            CompactionJob job = compactionFactoryForTable("test-table")
-                    .createCompactionJobWithFilenames("test-job", List.of("input.parquet"), "root");
             Instant filesAssignedTime = Instant.parse("2024-09-06T11:44:00Z");
             compactionJobStatusStore.fixUpdateTime(filesAssignedTime);
 
             // When
-            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
-                    assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))), "test-table");
+            CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests("test-table",
+                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))));
             apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
                     withJobId("test-job", fileFactory.rootFile("input.parquet", 123L)));
-            assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    jobCreated(job, filesAssignedTime));
+            assertThat(compactionJobStatusStore.getAllJobs("test-table")).isEmpty();
         }
 
         @Test
@@ -283,8 +281,8 @@ public class StateStoreCommitterTest {
             stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
 
             // When
-            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
-                    assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))), "test-table");
+            CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests("test-table",
+                    List.of(assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))));
             apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
 
             // Then
@@ -301,8 +299,8 @@ public class StateStoreCommitterTest {
             StateStore stateStore = createTableGetStateStore("test-table");
 
             // When
-            CompactionJobIdAssignmentCommitRequest request = new CompactionJobIdAssignmentCommitRequest(List.of(
-                    assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))), "test-table");
+            CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests("test-table",
+                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))));
             apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
 
             // Then
@@ -692,7 +690,7 @@ public class StateStoreCommitterTest {
         List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
                 job.getId(), job.getPartitionId(), job.getInputFiles()));
         stateStore(job.getTableId()).assignJobIds(assignIdRequests);
-        compactionJobStatusStore.jobInputFilesAssigned(job.getTableId(), assignIdRequests, createTime);
+        compactionJobStatusStore.jobCreated(compactionJobCreated(job), createTime);
         compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime)
                 .taskId("test-task").jobRunId("test-job-run").build());
         compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary)
