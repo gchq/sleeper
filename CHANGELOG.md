@@ -4,6 +4,50 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/13-system-tests.md#performance-benchmarks)
 
+## Version 0.27.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.27.0*
+
+This includes batching to allow for much larger numbers of compaction jobs.
+
+Upgrades:
+- Upgraded Apache DataFusion to 43.0.0
+
+Compaction:
+- Parallelised sending compaction jobs in batches across instances of a new lambda
+  - Creation of batches is now separate from creation of individual jobs to be run on tasks
+  - Can now create over 100,000 compaction jobs per scheduled invocation
+- Reduced duplication of unnecessary compaction runs by pre-validating jobs before sending
+- Added configuration of a limit per Sleeper table for the number of compaction jobs created per scheduled invocation
+- Improved estimates when scaling EC2 instances to run compaction tasks
+  - Determines available CPU and memory based on EC2 instance type
+  - Added a configurable overhead to avoid slowdown due to overprovisioning
+
+Deployment:
+- Improved handling of cases where AWS account concurrency limit may be approached
+  - Defaulted most lambdas to a maximum concurrency of 10 instances
+  - Defaulted reserved concurrency for state store committer lambda to 10 instances
+- Increased default memory requirement for lambdas that work with Sleeper table state
+
+Reporting:
+- Compaction jobs only show as created once they've been sent from a batch
+
+Documentation:
+- Reorganised documentation of scripts & clients
+- Documented issue with compaction on LocalStack
+
+System tests:
+- Removed DynamoDB state store implementation from nightly system test suite
+- Some improvements to test isolation and preparation for concurrent execution
+- Enabled some scheduled rules in system tests that are normally enabled in a real system
+
+Bugfixes:
+- Fixed connecting to an existing deployment with `sleeper environment add`, removed use of old CDK output format
+- Fixed deployment with reporting status stores disabled
+- Fixed compaction with DataFusion generating invalid sketches for integer and long type row keys
+
+
 ## Version 0.26.0
 
 This includes upgrades to Java, EMR, Spark and the AWS SDK, and improvements to the deployment process.
