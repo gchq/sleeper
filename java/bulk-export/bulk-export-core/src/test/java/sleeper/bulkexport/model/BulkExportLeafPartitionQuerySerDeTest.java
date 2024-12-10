@@ -149,10 +149,9 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoExportId.approved.json");
+                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoExportId.json");
 
         // When & Then
-        Approvals.verify(json, new Options().forFile().withExtension(".json"));
         assertThatThrownBy(() -> querySerDe.fromJson(json))
                 .isInstanceOf(
                         BulkExportQueryValidationException.class)
@@ -167,10 +166,9 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoSubExportId.approved.json");
+                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoSubExportId.json");
 
         // When & Then
-        Approvals.verify(json, new Options().forFile().withExtension(".json"));
         assertThatThrownBy(() -> querySerDe.fromJson(
                 json))
                 .isInstanceOf(
@@ -187,10 +185,9 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoRegions.approved.json");
+                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoRegions.json");
 
         // When & Then
-        Approvals.verify(json, new Options().forFile().withExtension(".json"));
         assertThatThrownBy(() -> querySerDe.fromJson(json))
                 .isInstanceOf(
                         BulkExportQueryValidationException.class)
@@ -205,10 +202,9 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoLeafPartitionId.approved.json");
+                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoLeafPartitionId.json");
 
         // When & Then
-        Approvals.verify(json, new Options().forFile().withExtension(".json"));
         assertThatThrownBy(() -> querySerDe.fromJson(json))
                 .isInstanceOf(
                         BulkExportQueryValidationException.class)
@@ -223,10 +219,9 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoPartitionRegion.approved.json");
+                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoPartitionRegion.json");
 
         // When & Then
-        Approvals.verify(json, new Options().forFile().withExtension(".json"));
         assertThatThrownBy(() -> querySerDe.fromJson(json))
                 .isInstanceOf(
                         BulkExportQueryValidationException.class)
@@ -241,10 +236,9 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/java/sleeper/bulkexport/model/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoFiles.approved.json");
+                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoFiles.json");
 
         // When & Then
-        Approvals.verify(json, new Options().forFile().withExtension(".json"));
         assertThatThrownBy(() -> querySerDe.fromJson(json))
                 .isInstanceOf(
                         BulkExportQueryValidationException.class)
