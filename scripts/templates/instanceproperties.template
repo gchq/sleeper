@@ -159,6 +159,9 @@ sleeper.properties.force.reload=false
 # https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
 sleeper.default.lambda.concurrency.max=10
 
+# The maximum timeout for the trnasaction deletion lambda within minutes
+sleeper.default.deletion.lambda.timeout.minutes=15
+
 
 ## The following properties relate to handling the state of Sleeper tables.
 

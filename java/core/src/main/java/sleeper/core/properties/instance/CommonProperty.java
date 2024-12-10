@@ -201,6 +201,13 @@ public interface CommonProperty {
             .defaultValue("10")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
 
+    UserDefinedInstanceProperty TRANSACTION_DELETION_LAMBDA_TIMEOUT = Index.propertyBuilder("sleeper.default.deletion.lambda.timeout.minutes")
+            .description("The maximum timeout for the trnasaction deletion lambda within minutes")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq15)
+            .defaultValue("15")
+            .propertyGroup(InstancePropertyGroup.COMMON)
+            .build();
+
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();
     }
