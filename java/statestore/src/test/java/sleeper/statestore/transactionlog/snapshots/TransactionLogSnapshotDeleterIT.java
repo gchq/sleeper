@@ -21,7 +21,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.DeleteProcesState;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
 
 import java.io.IOException;

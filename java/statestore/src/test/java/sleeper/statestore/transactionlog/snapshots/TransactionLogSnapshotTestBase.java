@@ -45,7 +45,6 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
-import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.DeleteProcesState;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
 
 import java.io.IOException;
