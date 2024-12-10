@@ -21,6 +21,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.DeleteProcesState;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
 
 import java.io.IOException;
@@ -52,7 +53,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         createSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // When
-        deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
+        DeleteProcesState deleteResult = deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -67,6 +68,8 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactlyInAnyOrder(
                         filesSnapshotPath(table, 3),
                         partitionsSnapshotPath(table, 2));
+        assertThat(deleteResult.getLastTransactionNumber()).isEqualTo(1);
+        assertThat(deleteResult.getDeletedCount()).isEqualTo(2);
     }
 
     @Test
@@ -88,7 +91,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         createSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // When
-        deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:25:00Z"));
+        DeleteProcesState deleteResult = deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:25:00Z"));
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -109,6 +112,8 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                         filesSnapshotPath(table, 1),
                         partitionsSnapshotPath(table, 2),
                         partitionsSnapshotPath(table, 1));
+        assertThat(deleteResult.getLastTransactionNumber()).isNull();
+        assertThat(deleteResult.getDeletedCount()).isEqualTo(0);
     }
 
     @Test
@@ -123,7 +128,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
 
         // When
-        deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
+        DeleteProcesState deleteResult = deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -138,6 +143,9 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactlyInAnyOrder(
                         filesSnapshotPath(table, 1),
                         partitionsSnapshotPath(table, 1));
+
+        assertThat(deleteResult.getLastTransactionNumber()).isNull();
+        assertThat(deleteResult.getDeletedCount()).isEqualTo(0);
     }
 
     @Test
@@ -180,6 +188,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                         filesSnapshotPath(table, 1),
                         partitionsSnapshotPath(table, 2),
                         partitionsSnapshotPath(table, 1));
+
     }
 
     @Test
@@ -203,7 +212,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         deletePartitionsSnapshotFile(table, 1);
 
         // When
-        deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
+        DeleteProcesState deleteResult = deleteSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // Then
         assertThat(snapshotStore(table).getLatestSnapshots())
@@ -218,6 +227,9 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
                 .containsExactlyInAnyOrder(
                         filesSnapshotPath(table, 3),
                         partitionsSnapshotPath(table, 2));
+
+        assertThat(deleteResult.getLastTransactionNumber()).isEqualTo(1);
+        assertThat(deleteResult.getDeletedCount()).isEqualTo(2);
     }
 
     private SnapshotFileDeleter failedDeletion(IOException e) {

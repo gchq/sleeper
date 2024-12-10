@@ -110,8 +110,8 @@ public class TransactionLogSnapshotDeleter {
      * ADD Stuff here.
      */
     public class DeleteProcesState {
-        Integer storeVal = Integer.MIN_VALUE;
-        long lastTransactionNumber = Long.MIN_VALUE;
+        Integer deletedCount = 0;
+        Long lastTransactionNumber = Long.MIN_VALUE;
 
         /**
          * Store key details on the success of a deletion process. Increments the count of the deletion and stores
@@ -121,7 +121,25 @@ public class TransactionLogSnapshotDeleter {
          */
         public void deleteSuccess(long transactionNumber) {
             this.lastTransactionNumber = transactionNumber;
-            storeVal++;
+            deletedCount++;
+        }
+
+        public Integer getDeletedCount() {
+            return deletedCount;
+        }
+
+        /**
+         * Method for returning the number of the last transaction deleted, is overwritten on ever call as only
+         * latest value needed.
+         *
+         * @return if a trnasaction has been deleted then the id of the transaction, if none have it returns null
+         */
+        public Long getLastTransactionNumber() {
+            if (lastTransactionNumber != Long.MIN_VALUE) {
+                return lastTransactionNumber;
+            } else {
+                return null;
+            }
         }
 
     }

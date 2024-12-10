@@ -95,7 +95,7 @@ public class TransactionLogSnapshotDeletionLambda implements RequestHandler<SQSE
             try {
                 DeleteProcesState deleteProcessState = new TransactionLogSnapshotDeleter(instanceProperties, table,
                         dynamoClient, configuration).deleteSnapshots(Instant.now());
-                //LOGGER.info("null", deleteProcessState.getCount(), deleteProccesState.getLastTransactionId());
+                LOGGER.info("Total entries for snapshot deleted {}, last deleted transaction number: {}", deleteProcessState.getDeletedCount(), deleteProcessState.getLastTransactionNumber());
             } catch (RuntimeException e) {
                 LOGGER.error("Failed deleting old snapshots for table {}", table.getStatus(), e);
                 messagesByTableId.get(table.getStatus().getTableUniqueId()).stream()
