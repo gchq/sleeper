@@ -25,7 +25,6 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
@@ -36,8 +35,6 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
@@ -52,10 +49,9 @@ public class PartitionSplittingST {
     private Path tempDir;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting, AfterTestPurgeQueues purgeQueues) {
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(MAIN);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::partitionStatus);
-        purgeQueues.purgeIfTestFailed(PARTITION_SPLITTING_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test
