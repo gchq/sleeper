@@ -31,7 +31,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;

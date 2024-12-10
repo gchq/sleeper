@@ -23,7 +23,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.clients.util.CommandFailedException;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -31,7 +30,6 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_QUEUE_URL;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
@@ -40,8 +38,7 @@ public class PythonQueryST {
     private Path tempDir;
 
     @BeforeEach
-    void setup(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
-        purgeQueues.purgeIfTestFailed(QUERY_QUEUE_URL);
+    void setup(SleeperSystemTest sleeper) {
         sleeper.connectToInstance(MAIN);
     }
 

@@ -62,7 +62,7 @@ public interface IngestProperty {
             .defaultValue("2048")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty INGEST_TASK_MEMORY = Index.propertyBuilder("sleeper.ingest.task.memory")
+    UserDefinedInstanceProperty INGEST_TASK_MEMORY = Index.propertyBuilder("sleeper.ingest.task.memory.mb")
             .description("The amount of memory in MB used by Fargate tasks that perform ingest jobs.\n" +
                     "Note that only certain combinations of CPU and memory are valid.\n" +
                     "See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid options.")
@@ -120,7 +120,7 @@ public interface IngestProperty {
 
         private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
 
-        static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
+        private static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
             return UserDefinedInstancePropertyImpl.named(propertyName)
                     .addToIndex(INSTANCE::add);
         }

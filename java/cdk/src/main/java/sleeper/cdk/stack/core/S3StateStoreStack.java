@@ -33,7 +33,7 @@ import java.util.Locale;
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
+import static sleeper.core.properties.instance.TableStateProperty.S3_STATE_STORE_DYNAMO_POINT_IN_TIME_RECOVERY;
 
 public class S3StateStoreStack extends NestedStack {
     private final Table revisionTable;

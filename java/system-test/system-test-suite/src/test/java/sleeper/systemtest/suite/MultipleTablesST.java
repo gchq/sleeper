@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.schema.Schema;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.extension.AfterTestPurgeQueues;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -32,9 +31,6 @@ import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -54,9 +50,8 @@ public class MultipleTablesST {
     private static final int NUMBER_OF_TABLES = 200;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, AfterTestPurgeQueues purgeQueues) {
+    void setUp(SleeperSystemTest sleeper) {
         sleeper.connectToInstanceNoTables(MAIN);
-        purgeQueues.purgeIfTestFailed(INGEST_JOB_QUEUE_URL, PARTITION_SPLITTING_JOB_QUEUE_URL, COMPACTION_JOB_QUEUE_URL);
     }
 
     @Test

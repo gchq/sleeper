@@ -20,13 +20,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.util.SplitIntoBatches;
+import sleeper.systemtest.drivers.testutil.AwsSendCompactionJobsTestHelper;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -35,10 +31,8 @@ import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DRAIN_COMPACTIONS;
 
 @LocalStackDslTest
@@ -60,33 +54,13 @@ public class AwsCompactionDriverDrainCompactionsIT {
     @Test
     void shouldDrainCompactionJobsFromQueue() {
         // Given
-        FileReferenceFactory fileFactory = FileReferenceFactory.from(instance.getStateStore());
-        CompactionJobFactory jobFactory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());
-        List<CompactionJob> jobs = IntStream.rangeClosed(1, 20)
-                .mapToObj(i -> jobFactory.createCompactionJob(
-                        List.of(fileFactory.rootFile("file" + i + ".parquet", i)), "root"))
-                .toList();
-        send(jobs);
+        List<CompactionJob> jobs = AwsSendCompactionJobsTestHelper.sendNCompactionJobs(20,
+                instance.getInstanceProperties(), instance.getTableProperties(), instance.getStateStore(), sqs);
 
         // When / Then
         assertThat(driver.drainJobsQueueForWholeInstance())
                 .containsExactlyElementsOf(jobs);
-    }
-
-    private void send(List<CompactionJob> jobs) {
-        String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_QUEUE_URL);
-        LOGGER.info("Sending to compaction jobs queue: {}", queueUrl);
-        CompactionJobSerDe serDe = new CompactionJobSerDe();
-        for (List<CompactionJob> batch : SplitIntoBatches.splitListIntoBatchesOf(10, jobs)) {
-            sqs.sendMessageBatch(request -> request
-                    .queueUrl(queueUrl)
-                    .entries(batch.stream()
-                            .map(job -> SendMessageBatchRequestEntry.builder()
-                                    .messageBody(serDe.toJson(job))
-                                    .id(job.getId())
-                                    .build())
-                            .toList()));
-        }
+        assertThat(driver.drainJobsQueueForWholeInstance()).isEmpty();
     }
 
 }
