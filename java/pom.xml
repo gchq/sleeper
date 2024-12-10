@@ -125,7 +125,7 @@
         <logback.version>1.5.12</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.29.29</aws-java-sdk-v2.version>
-        <aws-crt.version>0.33.5</aws-crt.version>
+        <aws-crt.version>0.33.6</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
@@ -145,7 +145,7 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.3.1-jre</guava.version>
-        <cdk.version>2.171.1</cdk.version>
+        <cdk.version>2.172.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.4.2</constructs.version>
         <gson.version>2.11.0</gson.version>
@@ -185,7 +185,7 @@
         <testcontainers.version>1.20.4</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
-        <approvaltests.version>24.9.0</approvaltests.version>
+        <approvaltests.version>24.11.0</approvaltests.version>
         <jsonunit.version>4.1.0</jsonunit.version>
         <checkstyle.version>10.20.2</checkstyle.version>
         <sleeper.system.test.short.id/>
