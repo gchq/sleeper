@@ -440,6 +440,36 @@
                 <artifactId>datasketches-java</artifactId>
                 <version>${datasketches.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-vector</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-core</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-unsafe</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-memory-netty</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-algorithm</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.arrow</groupId>
+                <artifactId>arrow-format</artifactId>
+                <version>${arrow.version}</version>
+            </dependency>
             <!-- Shared dependencies -->
             <dependency>
                 <groupId>org.scala-lang</groupId>
@@ -814,36 +844,6 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>${logback.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.arrow</groupId>
-                <artifactId>arrow-vector</artifactId>
-                <version>${arrow.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.arrow</groupId>
-                <artifactId>arrow-memory-core</artifactId>
-                <version>${arrow.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.arrow</groupId>
-                <artifactId>arrow-memory-unsafe</artifactId>
-                <version>${arrow.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.arrow</groupId>
-                <artifactId>arrow-memory-netty</artifactId>
-                <version>${arrow.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.arrow</groupId>
-                <artifactId>arrow-algorithm</artifactId>
-                <version>${arrow.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.arrow</groupId>
-                <artifactId>arrow-format</artifactId>
-                <version>${arrow.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.tomnelson</groupId>
