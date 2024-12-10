@@ -51,7 +51,7 @@ bytes = { version = "1.9.0" } # Byte buffer for S3 uploading
 num-format = { version = "0.4.4" } # Nicely formatted numbers
 tokio-test = { version = "0.4.2" } # Doc tests
 env_logger = { version = "0.11.5" }
-chrono = { version = "0.4.26" } # Log helper
+chrono = { version = "0.4.39" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
 
 [dev-dependencies]
