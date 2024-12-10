@@ -66,7 +66,7 @@
         -->
         <spark.version>3.5.1</spark.version>
         <hadoop.version>3.3.6</hadoop.version>
-        <parquet-hadoop.version>1.15.0</parquet-hadoop.version>
+        <parquet.version>1.15.0</parquet.version>
         <joom.spark.platform.version>0.4.7</joom.spark.platform.version>
         <!-- The version of Arrow should match the version used by Spark -->
         <arrow.version>12.0.1</arrow.version>
@@ -351,6 +351,94 @@
                 <groupId>software.amazon.awssdk.crt</groupId>
                 <artifactId>aws-crt</artifactId>
                 <version>${aws-crt.version}</version>
+            </dependency>
+            <!-- Data processing -->
+            <dependency>
+                <groupId>com.joom.spark</groupId>
+                <artifactId>spark-platform_${scala.version}</artifactId>
+                <version>${joom.spark.platform.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.spark</groupId>
+                <artifactId>spark-sql_${scala.version}</artifactId>
+                <version>${spark.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j2-impl</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.orc</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.arrow</groupId>
+                        <artifactId>arrow-memory-netty</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.spark</groupId>
+                <artifactId>spark-kubernetes_${scala.version}</artifactId>
+                <version>${spark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client</artifactId>
+                <version>${hadoop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-aws</artifactId>
+                <version>${hadoop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.amazonaws</groupId>
+                        <artifactId>aws-java-sdk-bundle</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-hadoop</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-column</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-encoding</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-format-structures</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-jackson</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.datasketches</groupId>
+                <artifactId>datasketches-java</artifactId>
+                <version>${datasketches.version}</version>
             </dependency>
             <!-- Shared dependencies -->
             <dependency>
