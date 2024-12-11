@@ -1,10 +1,6 @@
 Sleeper is mainly written in Java and this is built using Maven. This process will automatically
 pull in dependencies. We list Sleeper's dependencies, and their licenses below.
 
-AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2023.*)
-
-- Apache License, Version 2.0
-
 AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.*)
 
 - Apache License, Version 2.0
@@ -22,6 +18,14 @@ AWS Lambda Java Core SDK (com.amazonaws:aws-lambda-java-core:1.*)
 - Apache License, Version 2.0
 
 AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.*)
+
+- Apache License, Version 2.0
+
+AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2023.*)
+
+- Apache License, Version 2.0
+
+Trino (io.trino:trino-*:390)
 
 - Apache License, Version 2.0
 
@@ -307,6 +311,12 @@ Dependency Check Maven Plugin (org.owasp:dependency-check-maven:11.*)
 SpotBugs Maven Plugin (com.github.spotbugs:spotbugs-*:4.*)
 
 - GNU Lesser General Public License, version 3
+
+Checkstyle (com.puppycrawl.tools:checkstyle:10.*)
+
+- GNU Lesser General Public License, version 2.1
+
+Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
 
 
 The file java/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
