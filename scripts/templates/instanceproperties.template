@@ -250,7 +250,7 @@ sleeper.statestore.transactionlog.transaction.deletion.lambda.period.minutes=60
 sleeper.statestore.transactionlog.transaction.deletion.concurrency.max=10
 
 # The maximum timeout for the transaction deletion lambda in seconds
-sleeper.deletion.lambda.timeout.seconds=900
+sleeper.statestore.transactionlog.snapshot.deletion.lambda.timeout.seconds=900
 
 # This specifies whether point in time recovery is enabled for the Sleeper table index. This is set on
 # the DynamoDB tables.
