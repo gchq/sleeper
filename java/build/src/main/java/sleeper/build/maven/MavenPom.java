@@ -23,11 +23,13 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MavenPom {
@@ -55,19 +57,39 @@ public class MavenPom {
         this.dependencies = dependencies == null ? Collections.emptyList() : dependencies;
     }
 
-    public static MavenPom from(ObjectMapper mapper, Path path) throws IOException {
+    public static MavenPom from(ObjectMapper mapper, Path path) {
         try (Reader reader = Files.newBufferedReader(path)) {
             return from(mapper, reader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
-    public static MavenPom from(Reader reader) throws IOException {
+    public static MavenPom from(Reader reader) {
         ObjectMapper mapper = new XmlMapper();
         return from(mapper, reader);
     }
 
-    private static MavenPom from(ObjectMapper mapper, Reader reader) throws IOException {
-        return mapper.readValue(reader, MavenPom.class);
+    private static MavenPom from(ObjectMapper mapper, Reader reader) {
+        try {
+            return mapper.readValue(reader, MavenPom.class);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public Stream<ChildModule> readChildModules(ObjectMapper mapper, Path thisModulePath) {
+        return modules.stream()
+                .map(moduleRef -> ChildModule.fromParent(mapper, thisModulePath, moduleRef));
+    }
+
+    public record ChildModule(String moduleRef, Path path, MavenPom pom) {
+
+        public static ChildModule fromParent(ObjectMapper mapper, Path parentPath, String moduleRef) {
+            Path path = parentPath.resolve(moduleRef);
+            MavenPom pom = MavenPom.from(mapper, path.resolve("pom.xml"));
+            return new ChildModule(moduleRef, path, pom);
+        }
     }
 
     public String getArtifactId() {
