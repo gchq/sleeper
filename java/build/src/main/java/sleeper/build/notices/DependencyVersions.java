@@ -152,9 +152,11 @@ public class DependencyVersions {
         }
 
         private void index(MavenPom.Plugin plugin) {
-            dependency(plugin.getGroupId(),
-                    resolveProperties(plugin.getArtifactId()),
-                    resolveProperties(plugin.getVersion()));
+            if (plugin.getVersion() != null) {
+                dependency(plugin.getGroupId(),
+                        resolveProperties(plugin.getArtifactId()),
+                        resolveProperties(plugin.getVersion()));
+            }
             plugin.getDependencies().forEach(this::index);
         }
 
