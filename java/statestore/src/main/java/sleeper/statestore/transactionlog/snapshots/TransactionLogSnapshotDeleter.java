@@ -60,7 +60,7 @@ public class TransactionLogSnapshotDeleter {
      * the snapshot metadata in the metadata store.
      *
      * @param  currentTime the current time
-     * @return             the total number of snapshots attempted to be deleted
+     * @return             the total number of snapshots deleted
      */
     public SnapshotDeletionTracker deleteSnapshots(Instant currentTime) {
         Instant expiryDate = currentTime.minus(expiryInDays);

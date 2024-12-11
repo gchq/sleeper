@@ -16,16 +16,15 @@
 package sleeper.statestore.transactionlog.snapshots;
 
 /**
- * Class used to store the key details of the ongoing deletion process. Details are only adjusted on succesful deletions
- * to reflect the correct completed state.
+ * Tracks and logs deletion of snapshots. Used in TransactionLogSnapshotDeleter implementation when deleting snapshots.
  */
 public class SnapshotDeletionTracker {
-    Integer deletedCount = 0;
-    Long lastTransactionNumber = Long.MIN_VALUE;
+    private Integer deletedCount = 0;
+    private Long lastTransactionNumber = Long.MIN_VALUE;
 
     /**
-     * Store key details on the success of a deletion process. Increments the count of the deletion and stores
-     * the transaction number for the last instacen for use in logging.
+     * Stores key details on the success of a deletion process. Increments the count of the deletion and stores
+     * the transaction number for the last instance for use in logging.
      *
      * @param transactionNumber most recent transaction number deleted, done so as to save the last one for logging
      */
@@ -39,10 +38,9 @@ public class SnapshotDeletionTracker {
     }
 
     /**
-     * Method for returning the number of the last transaction deleted, is overwritten on ever call as only
-     * latest value needed.
+     * Returns the number of the last transaction deleted, overwritten as only the latest value is required.
      *
-     * @return if a trnasaction has been deleted then the id of the transaction, if none have it returns null
+     * @return if a transaction has been deleted then the id of the transaction, otherwise null
      */
     public Long getLastTransactionNumber() {
         if (lastTransactionNumber != Long.MIN_VALUE) {
