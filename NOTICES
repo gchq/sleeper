@@ -322,6 +322,8 @@ Checkstyle (com.puppycrawl.tools:checkstyle:10.*)
 
 Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
 
+- Apache License, Version 2.0
+
 
 The file java/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
 on ArrayOfStringsSerDe from the Apache DataSketches library, licensed under the Apache License, Version 2.0.
