@@ -40,7 +40,7 @@ public class CheckNotices {
         Path noticesFile;
         if (args.length != 2) {
             mavenBase = findJavaDir();
-            noticesFile = mavenBase.getParent().resolve("NOTICES");
+            noticesFile = getParentOrFail(mavenBase).resolve("NOTICES");
         } else {
             noticesFile = Paths.get(args[0]);
             mavenBase = Paths.get(args[1]);
@@ -112,6 +112,15 @@ public class CheckNotices {
             }
         }
         return currentPath.resolve("java");
+    }
+
+    private static Path getParentOrFail(Path path) {
+        Path parent = path.getParent();
+        if (parent == null) {
+            throw new IllegalArgumentException("No parent of path " + path);
+        } else {
+            return parent;
+        }
     }
 
     public record NoticeDeclarationPattern(Pattern groupId, Pattern artifactId, Pattern version) {
