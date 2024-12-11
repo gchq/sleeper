@@ -19,7 +19,7 @@ package sleeper.statestore.transactionlog.snapshots;
  * Class used to store the key details of the ongoing deletion process. Details are only adjusted on succesful deletions
  * to reflect the correct completed state.
  */
-public class DeleteProcesState {
+public class SnapshotDeletionTracker {
     Integer deletedCount = 0;
     Long lastTransactionNumber = Long.MIN_VALUE;
 

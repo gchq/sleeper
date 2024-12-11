@@ -62,15 +62,15 @@ public class TransactionLogSnapshotDeleter {
      * @param  currentTime the current time
      * @return             the total number of snapshots attempted to be deleted
      */
-    public DeleteProcesState deleteSnapshots(Instant currentTime) {
+    public SnapshotDeletionTracker deleteSnapshots(Instant currentTime) {
         Instant expiryDate = currentTime.minus(expiryInDays);
-        DeleteProcesState deletedSnapshotCount = new DeleteProcesState();
+        SnapshotDeletionTracker deletedSnapshotTracker = new SnapshotDeletionTracker();
         metadataStore.getExpiredSnapshots(expiryDate)
                 .forEach(snapshot -> {
                     LOGGER.info("Deleting snapshot {}", snapshot);
                     try {
                         snapshotFileDeleter.delete(snapshot.getPath());
-                        deletedSnapshotCount.deleteSuccess(snapshot.getTransactionNumber());
+                        deletedSnapshotTracker.deleteSuccess(snapshot.getTransactionNumber());
                     } catch (IOException e) {
                         LOGGER.error("Failed to delete snapshot file: {}", snapshot.getPath(), e);
                         throw new UncheckedIOException(e);
@@ -78,7 +78,7 @@ public class TransactionLogSnapshotDeleter {
                     metadataStore.deleteSnapshot(snapshot);
                 });
 
-        return deletedSnapshotCount;
+        return deletedSnapshotTracker;
     }
 
     private static SnapshotFileDeleter hadoopFileDeleter(Configuration configuration) {

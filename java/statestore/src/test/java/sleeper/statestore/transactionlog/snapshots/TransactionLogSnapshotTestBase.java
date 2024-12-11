@@ -145,13 +145,13 @@ public class TransactionLogSnapshotTestBase {
                 .createSnapshot();
     }
 
-    protected DeleteProcesState deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
+    protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         return new TransactionLogSnapshotDeleter(
                 instanceProperties, table, dynamoDBClient, configuration)
                 .deleteSnapshots(deletionTime);
     }
 
-    protected DeleteProcesState deleteSnapshotsAt(TableProperties table, Instant deletionTime, SnapshotFileDeleter fileDeleter) {
+    protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime, SnapshotFileDeleter fileDeleter) {
         return new TransactionLogSnapshotDeleter(
                 instanceProperties, table, dynamoDBClient, fileDeleter)
                 .deleteSnapshots(deletionTime);
