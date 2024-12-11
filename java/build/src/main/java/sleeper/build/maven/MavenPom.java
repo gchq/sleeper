@@ -42,6 +42,7 @@ public class MavenPom {
     private final Map<String, String> properties;
     private final List<Dependency> dependencies;
     private final DependencyManagement dependencyManagement;
+    private final Build build;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public MavenPom(
@@ -52,7 +53,8 @@ public class MavenPom {
             @JsonProperty("modules") List<String> modules,
             @JsonProperty("properties") Map<String, String> properties,
             @JsonProperty("dependencies") List<Dependency> dependencies,
-            @JsonProperty("dependencyManagement") DependencyManagement dependencyManagement) {
+            @JsonProperty("dependencyManagement") DependencyManagement dependencyManagement,
+            @JsonProperty("build") Build build) {
         this.artifactId = artifactId;
         this.groupId = groupId;
         this.parent = parent;
@@ -61,6 +63,7 @@ public class MavenPom {
         this.properties = properties == null ? Collections.emptyMap() : properties;
         this.dependencies = dependencies == null ? Collections.emptyList() : dependencies;
         this.dependencyManagement = dependencyManagement == null ? new DependencyManagement(Collections.emptyList()) : dependencyManagement;
+        this.build = build == null ? new Build(Collections.emptyList(), new PluginManagement(Collections.emptyList())) : build;
     }
 
     public static MavenPom from(ObjectMapper mapper, Path path) {
@@ -139,6 +142,10 @@ public class MavenPom {
         return dependencyManagement;
     }
 
+    public Build getBuild() {
+        return build;
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ParentRef {
         private final String groupId;
@@ -162,6 +169,43 @@ public class MavenPom {
 
         public List<Dependency> getDependencies() {
             return dependencies;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Build {
+        private final List<Plugin> plugins;
+        private final PluginManagement pluginManagement;
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public Build(
+                @JsonProperty("plugins") List<Plugin> plugins,
+                @JsonProperty("pluginManagement") PluginManagement pluginManagement) {
+            this.plugins = plugins == null ? Collections.emptyList() : plugins;
+            this.pluginManagement = pluginManagement == null ? new PluginManagement(Collections.emptyList()) : pluginManagement;
+        }
+
+        public List<Plugin> getPlugins() {
+            return plugins;
+        }
+
+        public PluginManagement getPluginManagement() {
+            return pluginManagement;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class PluginManagement {
+        private final List<Plugin> plugins;
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public PluginManagement(
+                @JsonProperty("plugins") List<Plugin> plugins) {
+            this.plugins = plugins == null ? Collections.emptyList() : plugins;
+        }
+
+        public List<Plugin> getPlugins() {
+            return plugins;
         }
     }
 
@@ -205,6 +249,42 @@ public class MavenPom {
 
         public String getScope() {
             return scope;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Plugin {
+        private final String artifactId;
+        private final String groupId;
+        private final String version;
+        private final List<Dependency> dependencies;
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public Plugin(
+                @JsonProperty("artifactId") String artifactId,
+                @JsonProperty("groupId") String groupId,
+                @JsonProperty("version") String version,
+                @JsonProperty("dependencies") List<Dependency> dependencies) {
+            this.artifactId = artifactId;
+            this.groupId = groupId;
+            this.version = version;
+            this.dependencies = dependencies == null ? Collections.emptyList() : dependencies;
+        }
+
+        public String getArtifactId() {
+            return artifactId;
+        }
+
+        public String getGroupId() {
+            return groupId;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public List<Dependency> getDependencies() {
+            return dependencies;
         }
     }
 }

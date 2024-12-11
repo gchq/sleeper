@@ -147,6 +147,15 @@ public class DependencyVersions {
             properties.putAll(pom.getProperties());
             pom.getDependencyManagement().getDependencies().forEach(this::index);
             pom.getDependencies().forEach(this::index);
+            pom.getBuild().getPluginManagement().getPlugins().forEach(this::index);
+            pom.getBuild().getPlugins().forEach(this::index);
+        }
+
+        private void index(MavenPom.Plugin plugin) {
+            dependency(plugin.getGroupId(),
+                    resolveProperties(plugin.getArtifactId()),
+                    resolveProperties(plugin.getVersion()));
+            plugin.getDependencies().forEach(this::index);
         }
 
         private void index(MavenPom.Dependency dependency) {

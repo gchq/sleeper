@@ -34,6 +34,9 @@ public class DependencyVersionsTest {
                         .dependency("com.joom.spark", "spark-platform_2.12", "0.4.7")
                         .dependency("org.apache.datasketches", "datasketches-java", "1.2.3")
                         .dependency("org.apache.datasketches", "datasketches-java", "3.3.0")
+                        .dependency("org.apache.maven.plugins", "maven-checkstyle-plugin", "3.6.0")
+                        .dependency("com.puppycrawl.tools", "checkstyle", "10.20.2")
+                        .dependency("org.apache.maven.plugins", "maven-shade-plugin", "3.6.0")
                         .build());
     }
 
