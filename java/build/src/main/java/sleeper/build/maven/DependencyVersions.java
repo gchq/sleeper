@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import static java.util.stream.Collectors.joining;
+
 public class DependencyVersions {
 
     private final List<Dependency> dependencies;
@@ -58,7 +60,7 @@ public class DependencyVersions {
     }
 
     public record Dependency(DependencyId id, List<Version> versions) {
-        private static Dependency from(DependencyId id, Set<String> versions) {
+        public static Dependency from(DependencyId id, Set<String> versions) {
             return new Dependency(id, versions.stream()
                     .map(Version::parse)
                     .sorted(Comparator.comparing(Version::version))
@@ -67,6 +69,26 @@ public class DependencyVersions {
 
         public String groupIdAndArtifactId() {
             return id.groupId() + ":" + id.artifactId();
+        }
+
+        public String groupId() {
+            return id.groupId();
+        }
+
+        public String artifactId() {
+            return id.artifactId();
+        }
+
+        public List<Integer> majorVersions() {
+            return versions.stream().map(Version::major).filter(Objects::nonNull).toList();
+        }
+
+        public String describeVersions() {
+            if (versions.size() == 1) {
+                return versions.get(0).version();
+            } else {
+                return versions.stream().map(Version::version).collect(joining(", "));
+            }
         }
     }
 
