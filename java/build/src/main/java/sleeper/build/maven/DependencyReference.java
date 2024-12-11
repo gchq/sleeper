@@ -22,19 +22,29 @@ public class DependencyReference {
     private final String artifactId;
     private final String groupId;
     private final String type;
-    private final String scope;
     private final boolean exported;
 
     private DependencyReference(Builder builder) {
         artifactId = Objects.requireNonNull(builder.artifactId, "artifactId must not be null");
         groupId = Objects.requireNonNull(builder.groupId, "groupId must not be null");
         type = builder.type;
-        scope = builder.scope;
         exported = builder.exported;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static DependencyReference from(MavenPom.Dependency dependency) {
+        String scope = dependency.getScope();
+        boolean exported = scope == null
+                || scope.equals("compile")
+                || scope.equals("runtime");
+        return builder()
+                .groupId(dependency.getGroupId()).artifactId(dependency.getArtifactId())
+                .type(dependency.getType())
+                .exported(exported)
+                .build();
     }
 
     public ArtifactReference artifactReference() {
@@ -58,12 +68,12 @@ public class DependencyReference {
             return false;
         }
         DependencyReference that = (DependencyReference) o;
-        return exported == that.exported && artifactId.equals(that.artifactId) && groupId.equals(that.groupId) && Objects.equals(type, that.type) && Objects.equals(scope, that.scope);
+        return exported == that.exported && artifactId.equals(that.artifactId) && groupId.equals(that.groupId) && Objects.equals(type, that.type);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(artifactId, groupId, type, scope, exported);
+        return Objects.hash(artifactId, groupId, type, exported);
     }
 
     @Override
@@ -72,7 +82,6 @@ public class DependencyReference {
                 "artifactId='" + artifactId + '\'' +
                 ", groupId='" + groupId + '\'' +
                 ", type='" + type + '\'' +
-                ", scope='" + scope + '\'' +
                 ", exported=" + exported +
                 '}';
     }
@@ -81,7 +90,6 @@ public class DependencyReference {
         private String artifactId;
         private String groupId;
         private String type;
-        private String scope;
         private boolean exported;
 
         private Builder() {
@@ -103,11 +111,6 @@ public class DependencyReference {
 
         public Builder type(String type) {
             this.type = type;
-            return this;
-        }
-
-        public Builder scope(String scope) {
-            this.scope = scope;
             return this;
         }
 

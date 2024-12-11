@@ -153,12 +153,12 @@ public class InternalModuleIndexTest {
     }
 
     @Test
-    public void shouldIncludeDependencyWithExplicitlyDeclaredScopeWhenExcludingUnexportedTransitives() {
+    public void shouldIncludeExportedDependencyWhenExcludingUnexportedTransitives() {
         // Given
         InternalModuleIndex index = TestMavenModuleStructure.rootBuilder().modulesArray(
                 sourceModuleBuilder("a").build(),
                 sourceModuleBuilder("b").dependenciesArray(
-                        dependencyBuilder("sleeper:a").scope("something").exported(true).build()).build())
+                        dependencyBuilder("sleeper:a").exported(true).build()).build())
                 .build().indexInternalModules();
 
         // When / Then

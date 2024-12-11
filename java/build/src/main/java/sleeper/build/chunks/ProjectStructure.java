@@ -61,7 +61,7 @@ public class ProjectStructure {
         return Paths.get(path).startsWith(mavenPath);
     }
 
-    public MavenModuleStructure loadMavenStructure() throws IOException {
+    public MavenModuleStructure loadMavenStructure() {
         return MavenModuleStructure.fromProjectBase(mavenProjectAbsolute);
     }
 

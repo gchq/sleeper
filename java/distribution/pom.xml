@@ -144,5 +144,10 @@
             <artifactId>splitter-lambda</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore-lambda</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
     </dependencies>
 </project>

@@ -28,26 +28,26 @@ public class TestMavenModuleStructure {
                 sourceModuleBuilder("configuration").dependenciesArray(
                         dependency("org.apache.datasketches:datasketches-java"),
                         dependency("sleeper:core"),
-                        dependencyBuilder("org.junit.jupiter:junit-jupiter-api").scope("test").exported(false).build(),
-                        dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()).build(),
+                        dependencyBuilder("org.junit.jupiter:junit-jupiter-api").exported(false).build(),
+                        dependencyBuilder("sleeper:core").type("test-jar").exported(false).build()).build(),
                 sourceModuleBuilder("ingest").dependenciesArray(
                         dependency("org.apache.commons:commons-lang3"),
                         dependency("sleeper:configuration"),
-                        dependencyBuilder("org.testcontainers:testcontainers").scope("test").exported(false).build(),
-                        dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build(),
-                        dependencyBuilder("sleeper:configuration").type("test-jar").scope("test").exported(false).build()).build(),
+                        dependencyBuilder("org.testcontainers:testcontainers").exported(false).build(),
+                        dependencyBuilder("sleeper:core").type("test-jar").exported(false).build(),
+                        dependencyBuilder("sleeper:configuration").type("test-jar").exported(false).build()).build(),
                 midParentBuilder("bulk-import").modulesArray(
                         sourceModuleBuilder("bulk-import-core").dependenciesArray(
                                 dependency("sleeper:configuration"),
-                                dependencyBuilder("net.javacrumbs.json-unit:json-unit-assertj").scope("test").exported(false).build()).build(),
+                                dependencyBuilder("net.javacrumbs.json-unit:json-unit-assertj").exported(false).build()).build(),
                         sourceModuleBuilder("bulk-import-runner").dependenciesArray(
                                 dependency("sleeper:bulk-import-core"),
                                 dependency("sleeper:ingest"),
                                 dependency("sleeper:configuration"),
-                                dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()).build(),
+                                dependencyBuilder("sleeper:core").type("test-jar").exported(false).build()).build(),
                         sourceModuleBuilder("bulk-import-starter").dependenciesArray(
                                 dependency("sleeper:bulk-import-core"),
-                                dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build()).build())
+                                dependencyBuilder("sleeper:core").type("test-jar").exported(false).build()).build())
                         .build(),
                 resourcesModuleBuilder("distribution").build()).build();
     }

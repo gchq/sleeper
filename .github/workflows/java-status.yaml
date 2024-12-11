@@ -37,6 +37,14 @@ jobs:
           mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.chunks.ValidateProjectChunks \
             -Dmaven.repo.local=${{ runner.temp }}/.m2/repository \
             -Dexec.args="$CHUNKS_YAML $MAVEN_PROJECT"
+      - name: Check notices file
+        working-directory: ./java/build
+        run: |
+          NOTICES_FILE=${{ github.workspace }}/NOTICES
+          MAVEN_PROJECT=${{ github.workspace }}/java
+          mvn compile exec:java -q -e -Dexec.mainClass=sleeper.build.notices.CheckNotices \
+            -Dmaven.repo.local=${{ runner.temp }}/.m2/repository \
+            -Dexec.args="$NOTICES_FILE $MAVEN_PROJECT"
       - name: Validate properties templates are up to date
         working-directory: ./java
         run: |
