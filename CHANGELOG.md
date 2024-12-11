@@ -37,6 +37,9 @@ Documentation:
 - Reorganised documentation of scripts & clients
 - Documented issue with compaction on LocalStack
 
+Build:
+- Automated checking Maven dependencies are included in the NOTICES file
+
 System tests:
 - Removed DynamoDB state store implementation from nightly system test suite
 - Some improvements to test isolation and preparation for concurrent execution
@@ -46,6 +49,7 @@ Bugfixes:
 - Fixed connecting to an existing deployment with `sleeper environment add`, removed use of old CDK output format
 - Fixed deployment with reporting status stores disabled
 - Fixed compaction with DataFusion generating invalid sketches for integer and long type row keys
+- Fixed bulk import on EKS incorrectly using Netty Arrow implementation
 
 
 ## Version 0.26.0
