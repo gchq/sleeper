@@ -23,7 +23,6 @@ import sleeper.build.maven.DependencyVersions.Dependency;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
 
 public class CheckNoticesTest {
 
@@ -34,12 +33,9 @@ public class CheckNoticesTest {
                 .dependency("org.apache.datasketches", "datasketches-java", "3.3.0")
                 .build();
         assertThatThrownBy(() -> CheckNotices.check(notices, versions))
-                .hasMessage("Found a missing notice declaration")
-                .isInstanceOfSatisfying(MissingNoticeException.class, e -> {
-                    assertThat(e.getDependencies())
-                            .extracting(Dependency::groupIdAndArtifactId, Dependency::describeVersions)
-                            .containsExactly(tuple("org.apache.datasketches:datasketches-java", "3.3.0"));
-                });
+                .isInstanceOfSatisfying(MissingNoticeException.class,
+                        e -> assertThat(e.getDependencies()).extracting(Dependency::describe)
+                                .containsExactly("org.apache.datasketches:datasketches-java:3.3.0"));
     }
 
     @Test
@@ -50,14 +46,11 @@ public class CheckNoticesTest {
                 .dependency("org.apache.datasketches", "datasketches-java", "3.3.0")
                 .build();
         assertThatThrownBy(() -> CheckNotices.check(notices, versions))
-                .hasMessage("Found a missing notice declaration")
-                .isInstanceOfSatisfying(MissingNoticeException.class, e -> {
-                    assertThat(e.getDependencies())
-                            .extracting(Dependency::groupIdAndArtifactId, Dependency::describeVersions)
-                            .containsExactly(
-                                    tuple("com.joom.spark:spark-platform_2.12", "0.4.7"),
-                                    tuple("org.apache.datasketches:datasketches-java", "3.3.0"));
-                });
+                .isInstanceOfSatisfying(MissingNoticeException.class,
+                        e -> assertThat(e.getDependencies()).extracting(Dependency::describe)
+                                .containsExactly(
+                                        "com.joom.spark:spark-platform_2.12:0.4.7",
+                                        "org.apache.datasketches:datasketches-java:3.3.0"));
     }
 
     @Test
@@ -91,4 +84,29 @@ public class CheckNoticesTest {
         assertThatCode(() -> CheckNotices.check(notices, versions))
                 .doesNotThrowAnyException();
     }
+
+    @Test
+    void shouldFindNoticeIsForWrongArtifact() {
+        String notices = "AWS Java SDK v2 (software.amazon.awssdk:dynamodb:2.*)";
+        DependencyVersions versions = DependencyVersions.builder()
+                .dependency("software.amazon.awssdk", "s3", "2.29.31")
+                .build();
+        assertThatThrownBy(() -> CheckNotices.check(notices, versions))
+                .isInstanceOfSatisfying(MissingNoticeException.class,
+                        e -> assertThat(e.getDependencies()).extracting(Dependency::describe)
+                                .containsExactly("software.amazon.awssdk:s3:2.29.31"));
+    }
+
+    @Test
+    void shouldFindArtifactIdDoesNotMatchNoticeWildcard() {
+        String notices = "JUnit (org.junit.jupiter:junit-jupiter-*:5.*)";
+        DependencyVersions versions = DependencyVersions.builder()
+                .dependency("org.junit.jupiter", "junit-other", "5.11.3")
+                .build();
+        assertThatThrownBy(() -> CheckNotices.check(notices, versions))
+                .isInstanceOfSatisfying(MissingNoticeException.class,
+                        e -> assertThat(e.getDependencies()).extracting(Dependency::describe)
+                                .containsExactly("org.junit.jupiter:junit-other:5.11.3"));
+    }
+
 }

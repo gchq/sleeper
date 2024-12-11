@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class CheckNotices {
@@ -38,15 +39,28 @@ public class CheckNotices {
         Path mavenBase = Paths.get(args[1]);
         String notices = Files.readString(noticesFile);
         DependencyVersions versions = DependencyVersions.fromProjectBase(mavenBase);
-        check(notices, versions);
+        try {
+            check(notices, versions);
+        } catch (MissingNoticeException e) {
+            System.err.println("Found dependencies missing notice declarations:");
+            for (DependencyVersions.Dependency dependency : e.getDependencies()) {
+                System.err.println(dependency.describe());
+            }
+        }
     }
 
     public static void check(String notices, DependencyVersions versions) {
         List<DependencyVersions.Dependency> failed = new ArrayList<>();
         for (DependencyVersions.Dependency dependency : versions.getDependencies()) {
             for (DependencyVersions.Version version : dependency.versions()) {
-                Pattern pattern = Pattern.compile(dependency.groupId() + ":.+:" + version.major() + "\\.\\*");
-                if (!pattern.matcher(notices).find()) {
+                Pattern pattern = Pattern.compile(dependency.groupId() + ":(.+):" + version.major() + "\\.\\*");
+                Matcher matcher = pattern.matcher(notices);
+                if (!matcher.find()) {
+                    failed.add(dependency);
+                    break;
+                }
+                Pattern artifactIdPattern = Pattern.compile(matcher.group(1).replace("*", ".+"));
+                if (!artifactIdPattern.matcher(dependency.artifactId()).matches()) {
                     failed.add(dependency);
                     break;
                 }

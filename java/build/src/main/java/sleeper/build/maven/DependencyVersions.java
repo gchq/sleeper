@@ -79,16 +79,12 @@ public class DependencyVersions {
             return id.artifactId();
         }
 
-        public List<Integer> majorVersions() {
-            return versions.stream().map(Version::major).filter(Objects::nonNull).toList();
+        public String describe() {
+            return id.groupId() + ":" + id.artifactId() + ":" + describeVersions();
         }
 
-        public String describeVersions() {
-            if (versions.size() == 1) {
-                return versions.get(0).version();
-            } else {
-                return versions.stream().map(Version::version).collect(joining(", "));
-            }
+        private String describeVersions() {
+            return versions.stream().map(Version::version).collect(joining(","));
         }
     }
 
