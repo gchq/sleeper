@@ -21,7 +21,7 @@ import java.util.List;
 
 public class MissingNoticeException extends RuntimeException {
 
-    private final List<DependencyVersions.Dependency> dependencies;
+    private final transient List<DependencyVersions.Dependency> dependencies;
 
     public MissingNoticeException(List<DependencyVersions.Dependency> dependencies) {
         super("Found a missing notice declaration");
