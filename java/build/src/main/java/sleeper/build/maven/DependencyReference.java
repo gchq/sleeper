@@ -36,10 +36,14 @@ public class DependencyReference {
     }
 
     public static DependencyReference from(MavenPom.Dependency dependency) {
+        String scope = dependency.getScope();
+        boolean exported = scope == null
+                || scope.equals("compile")
+                || scope.equals("runtime");
         return builder()
                 .groupId(dependency.getGroupId()).artifactId(dependency.getArtifactId())
                 .type(dependency.getType())
-                .exported(dependency.isExported())
+                .exported(exported)
                 .build();
     }
 

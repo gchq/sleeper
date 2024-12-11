@@ -150,12 +150,6 @@ public class MavenPom {
             this.scope = scope;
         }
 
-        public boolean isExported() {
-            return scope == null
-                    || scope.equals("compile")
-                    || scope.equals("runtime");
-        }
-
         public String getArtifactId() {
             return artifactId;
         }
