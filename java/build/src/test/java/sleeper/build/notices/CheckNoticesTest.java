@@ -15,7 +15,6 @@
  */
 package sleeper.build.notices;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -88,7 +87,6 @@ public class CheckNoticesTest {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldMatchWildcardInGroupId() {
         String notices = "Fasterxml Jackson (com.fasterxml.jackson.*:*:2.*)";
         DependencyVersions versions = DependencyVersions.builder()

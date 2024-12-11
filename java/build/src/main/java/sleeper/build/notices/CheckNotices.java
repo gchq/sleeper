@@ -16,13 +16,17 @@
 package sleeper.build.notices;
 
 import sleeper.build.notices.DependencyVersions.Dependency;
+import sleeper.build.notices.DependencyVersions.Version;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,27 +56,47 @@ public class CheckNotices {
     }
 
     public static List<String> findMissingNotices(String notices, DependencyVersions versions) {
+        List<NoticeDeclarationPattern> declarations = findNoticeDeclarations(notices);
         return versions.getDependencies().stream()
-                .flatMap(dependency -> findMissingNotice(notices, dependency).stream())
+                .flatMap(dependency -> getMessageIfMissing(dependency, declarations).stream())
                 .toList();
     }
 
-    private static Optional<String> findMissingNotice(String notices, Dependency dependency) {
-        Pattern pattern = Pattern.compile(dependency.groupId() + ":([^:]+):([^:]+)\\.\\*");
+    private static List<NoticeDeclarationPattern> findNoticeDeclarations(String notices) {
+        Pattern pattern = Pattern.compile("([^:(), ]+):([^:(), ]+):([^:(), ]+)");
+        List<NoticeDeclarationPattern> matches = new ArrayList<>();
         Matcher matcher = pattern.matcher(notices);
-        boolean foundDependency = false;
         while (matcher.find()) {
-            String artifactIdFound = matcher.group(1);
-            Pattern artifactIdPattern = Pattern.compile(artifactIdFound.replace("*", ".+"));
-            if (artifactIdPattern.matcher(dependency.artifactId()).matches()) {
-                return Optional.empty();
-            }
-            foundDependency = true;
+            matches.add(NoticeDeclarationPattern.fromParts(matcher.group(1), matcher.group(2), matcher.group(3)));
         }
-        if (foundDependency) {
-            return Optional.of("Dependency artifact ID not matched: " + dependency.describe());
-        } else {
+        return matches;
+    }
+
+    private static Optional<String> getMessageIfMissing(Dependency dependency, List<NoticeDeclarationPattern> declarations) {
+        boolean groupMatched = false;
+        boolean artifactMatched = false;
+        Set<String> versionsMatched = new TreeSet<>();
+        for (NoticeDeclarationPattern declaration : declarations) {
+            if (!declaration.groupId().matcher(dependency.groupId()).matches()) {
+                continue;
+            }
+            groupMatched = true;
+            if (!declaration.artifactId().matcher(dependency.artifactId()).matches()) {
+                continue;
+            }
+            artifactMatched = true;
+            dependency.versions().stream().map(Version::version)
+                    .filter(version -> declaration.version().matcher(version).matches())
+                    .forEach(versionsMatched::add);
+        }
+        if (!groupMatched) {
             return Optional.of("Dependency not found: " + dependency.describe());
+        } else if (!artifactMatched) {
+            return Optional.of("Dependency artifact ID not matched: " + dependency.describe());
+        } else if (!versionsMatched.containsAll(dependency.versions().stream().map(Version::version).toList())) {
+            return Optional.of("Dependency versions did not match: " + dependency.describe());
+        } else {
+            return Optional.empty();
         }
     }
 
@@ -88,5 +112,15 @@ public class CheckNotices {
             }
         }
         return currentPath.resolve("java");
+    }
+
+    public record NoticeDeclarationPattern(Pattern groupId, Pattern artifactId, Pattern version) {
+        public static NoticeDeclarationPattern fromParts(String groupId, String artifactId, String version) {
+            return new NoticeDeclarationPattern(pattern(groupId), pattern(artifactId), pattern(version));
+        }
+
+        private static Pattern pattern(String string) {
+            return Pattern.compile(string.replace("*", ".+"));
+        }
     }
 }

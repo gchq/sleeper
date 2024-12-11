@@ -73,7 +73,7 @@ XZ (org.tukaani:xz:1.*)
 
 - BSD Zero Clause License
 
-OkHttp (com.squareup.okhttp3:okhttp:4.*)
+OkHttp (com.squareup.okhttp3:*:4.*)
 
 - Apache License, Version 2.0
 
@@ -99,7 +99,7 @@ Guava: Google Core Libraries For Java (com.google.guava:guava:33.*)
 
 - Apache License, Version 2.0
 
-Fasterxml Jackson (com.fasterxml.jackson.core:*:2.*, com.fasterxml.jackson.module:*:2.*)
+Fasterxml Jackson (com.fasterxml.jackson.*:*:2.*)
 
 - Apache License, Version 2.0
 
@@ -270,7 +270,7 @@ JJWT (io.jsonwebtoken:*:0.*)
 
 - Apache License, Version 2.0
 
-Jungrapht Visualization (jungrapht) (com.github.tomnelson:jungrapht-visualization:1.*)
+Jungrapht Visualization (jungrapht) (com.github.tomnelson:jungrapht-*:1.*)
 
 - The 3-Clause BSD License
 
@@ -303,6 +303,10 @@ Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.*)
 Dependency Check Maven Plugin (org.owasp:dependency-check-maven:11.*)
 
 - Apache License, Version 2.0
+
+SpotBugs Annotations (com.github.spotbugs:spotbugs-annotations:4.*)
+
+- GNU Lesser General Public License, version 3
 
 
 The file java/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
