@@ -34,8 +34,8 @@ public class DependencyReferenceTest {
             assertThat(pom.getDependencies().stream().map(DependencyReference::from)).containsExactly(
                     dependency("org.apache.datasketches:datasketches-java"),
                     dependency("sleeper:core"),
-                    dependencyBuilder("org.junit.jupiter:junit-jupiter-api").scope("test").exported(false).build(),
-                    dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build());
+                    dependencyBuilder("org.junit.jupiter:junit-jupiter-api").exported(false).build(),
+                    dependencyBuilder("sleeper:core").type("test-jar").exported(false).build());
         }
     }
 }
