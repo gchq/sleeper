@@ -21,18 +21,23 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import sleeper.build.maven.MavenPom.ChildModule;
 
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 public class DependencyVersions {
 
-    private final Map<Dependency, Set<String>> dependencyToVersions;
+    private final List<Dependency> dependencies;
 
     private DependencyVersions(Builder builder) {
-        this.dependencyToVersions = builder.dependencyToVersions;
+        this.dependencies = builder.dependencyToVersions.entrySet().stream()
+                .map(entry -> Dependency.from(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparing(Dependency::groupIdAndArtifactId))
+                .toList();
     }
 
     public static DependencyVersions fromProjectBase(Path path) {
@@ -48,12 +53,44 @@ public class DependencyVersions {
         return new Builder();
     }
 
-    public record Dependency(String groupId, String artifactId) {
+    public List<Dependency> getDependencies() {
+        return dependencies;
+    }
+
+    public record Dependency(DependencyId id, List<Version> versions) {
+        private static Dependency from(DependencyId id, Set<String> versions) {
+            return new Dependency(id, versions.stream()
+                    .map(Version::parse)
+                    .sorted(Comparator.comparing(Version::version))
+                    .toList());
+        }
+
+        public String groupIdAndArtifactId() {
+            return id.groupId() + ":" + id.artifactId();
+        }
+    }
+
+    public record DependencyId(String groupId, String artifactId) {
+    }
+
+    public record Version(String version, Integer major) {
+
+        public static Version parse(String version) {
+            return new Version(version, parseMajor(version));
+        }
+
+        private static Integer parseMajor(String version) {
+            try {
+                return Integer.parseInt(version.split("\\.")[0]);
+            } catch (Exception e) {
+                return null;
+            }
+        }
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(dependencyToVersions);
+        return Objects.hash(dependencies);
     }
 
     @Override
@@ -65,23 +102,23 @@ public class DependencyVersions {
             return false;
         }
         DependencyVersions other = (DependencyVersions) obj;
-        return Objects.equals(dependencyToVersions, other.dependencyToVersions);
+        return Objects.equals(dependencies, other.dependencies);
     }
 
     @Override
     public String toString() {
-        return "DependencyVersions{dependencyToVersions=" + dependencyToVersions + "}";
+        return "DependencyVersions{dependencies=" + dependencies + "}";
     }
 
     public static class Builder {
         private Map<String, String> properties = new HashMap<>();
-        private Map<Dependency, Set<String>> dependencyToVersions = new HashMap<>();
+        private Map<DependencyId, Set<String>> dependencyToVersions = new HashMap<>();
 
         private Builder() {
         }
 
         public Builder dependency(String groupId, String artifactId, String version) {
-            Dependency dependency = new Dependency(groupId, artifactId);
+            DependencyId dependency = new DependencyId(groupId, artifactId);
             dependencyToVersions.computeIfAbsent(dependency, d -> new HashSet<>()).add(version);
             return this;
         }

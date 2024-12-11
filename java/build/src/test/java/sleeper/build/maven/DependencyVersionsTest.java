@@ -17,7 +17,11 @@ package sleeper.build.maven;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.build.maven.DependencyVersions.Dependency;
+import sleeper.build.maven.DependencyVersions.Version;
 import sleeper.build.testutil.TestProjectStructure;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,5 +35,18 @@ public class DependencyVersionsTest {
                         .dependency("org.apache.datasketches", "datasketches-java", "1.2.3")
                         .dependency("org.apache.datasketches", "datasketches-java", "3.3.0")
                         .build());
+    }
+
+    @Test
+    void shouldReadVersionParts() {
+        DependencyVersions versions = DependencyVersions.builder()
+                .dependency("org.apache.datasketches", "datasketches-java", "3.3.0")
+                .dependency("org.jboss.xnio", "xnio-api", "3.8.16.Final")
+                .build();
+        assertThat(versions.getDependencies())
+                .extracting(Dependency::versions)
+                .containsExactly(
+                        List.of(new Version("3.3.0", 3)),
+                        List.of(new Version("3.8.16.Final", 3)));
     }
 }
