@@ -35,4 +35,13 @@ public class MavenPropertiesTest {
                 .isEqualTo("library_1.2.3");
     }
 
+    @Test
+    void shouldResolvePropertyReferencingAnotherProperty() {
+        assertThat(MavenProperties.resolve("${failsafe.plugin.version}",
+                Map.of(
+                        "failsafe.plugin.version", "${surefire.plugin.version}",
+                        "surefire.plugin.version", "3.5.2")))
+                .isEqualTo("3.5.2");
+    }
+
 }

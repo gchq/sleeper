@@ -16,18 +16,28 @@
 package sleeper.build.maven;
 
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MavenProperties {
 
     private MavenProperties() {
     }
 
+    private static final Pattern REFERENCE = Pattern.compile("\\$\\{([^}]+)\\}");
+
     public static String resolve(String string, Map<String, String> properties) {
-        for (Entry<String, String> entry : properties.entrySet()) {
-            string = string.replace("${" + entry.getKey() + "}", entry.getValue());
+        Matcher matcher = REFERENCE.matcher(string);
+        StringBuffer resolved = new StringBuffer();
+        int index = 0;
+        while (matcher.find()) {
+            resolved.append(string.substring(index, matcher.start()));
+            String propertyName = matcher.group(1);
+            resolved.append(resolve(properties.get(propertyName), properties));
+            index = matcher.end();
         }
-        return string;
+        resolved.append(string.substring(index, string.length()));
+        return resolved.toString();
     }
 
 }
