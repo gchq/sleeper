@@ -17,8 +17,7 @@ package sleeper.build.notices;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.build.maven.DependencyVersions;
-import sleeper.build.maven.DependencyVersions.Dependency;
+import sleeper.build.notices.DependencyVersions.Dependency;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

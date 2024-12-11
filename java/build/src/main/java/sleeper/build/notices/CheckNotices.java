@@ -15,8 +15,6 @@
  */
 package sleeper.build.notices;
 
-import sleeper.build.maven.DependencyVersions;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

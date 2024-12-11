@@ -17,7 +17,6 @@ package sleeper.build.chunks;
 
 import sleeper.build.github.actions.GitHubActionsChunkWorkflow;
 import sleeper.build.github.actions.GitHubActionsChunkWorkflowYaml;
-import sleeper.build.maven.DependencyVersions;
 import sleeper.build.maven.MavenModuleStructure;
 import sleeper.build.util.PathUtils;
 
@@ -64,10 +63,6 @@ public class ProjectStructure {
 
     public MavenModuleStructure loadMavenStructure() {
         return MavenModuleStructure.fromProjectBase(mavenProjectAbsolute);
-    }
-
-    public DependencyVersions loadDependencyVersions() {
-        return DependencyVersions.fromProjectBase(mavenProjectAbsolute);
     }
 
     public GitHubActionsChunkWorkflow loadWorkflow(ProjectChunk chunk) throws IOException {

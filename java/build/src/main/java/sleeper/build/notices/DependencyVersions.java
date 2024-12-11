@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.maven;
+package sleeper.build.notices;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
+import sleeper.build.maven.MavenPom;
 import sleeper.build.maven.MavenPom.ChildModule;
+import sleeper.build.maven.MavenProperties;
 
 import java.nio.file.Path;
 import java.util.Comparator;

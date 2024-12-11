@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.build.maven;
+package sleeper.build.notices;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.build.maven.DependencyVersions.Dependency;
-import sleeper.build.maven.DependencyVersions.Version;
+import sleeper.build.notices.DependencyVersions.Dependency;
+import sleeper.build.notices.DependencyVersions.Version;
 import sleeper.build.testutil.TestProjectStructure;
 
 import java.util.List;
@@ -29,7 +29,7 @@ public class DependencyVersionsTest {
 
     @Test
     void shouldReadDependencyVersions() {
-        assertThat(TestProjectStructure.example().loadDependencyVersions())
+        assertThat(DependencyVersions.fromProjectBase(TestProjectStructure.mavenPath()))
                 .isEqualTo(DependencyVersions.builder()
                         .dependency("com.joom.spark", "spark-platform_2.12", "0.4.7")
                         .dependency("org.apache.datasketches", "datasketches-java", "1.2.3")
