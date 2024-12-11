@@ -59,21 +59,26 @@ public class TransactionLogSnapshotDeleter {
      * Searches for snapshots that have expired based on the current time, then deletes the snapshot file in addition to
      * the snapshot metadata in the metadata store.
      *
-     * @param currentTime the current time
+     * @param  currentTime the current time
+     * @return             the total number of snapshots deleted
      */
-    public void deleteSnapshots(Instant currentTime) {
+    public SnapshotDeletionTracker deleteSnapshots(Instant currentTime) {
         Instant expiryDate = currentTime.minus(expiryInDays);
+        SnapshotDeletionTracker deletedSnapshotTracker = new SnapshotDeletionTracker();
         metadataStore.getExpiredSnapshots(expiryDate)
                 .forEach(snapshot -> {
                     LOGGER.info("Deleting snapshot {}", snapshot);
                     try {
                         snapshotFileDeleter.delete(snapshot.getPath());
+                        deletedSnapshotTracker.deleteSuccess(snapshot.getTransactionNumber());
                     } catch (IOException e) {
                         LOGGER.error("Failed to delete snapshot file: {}", snapshot.getPath(), e);
                         throw new UncheckedIOException(e);
                     }
                     metadataStore.deleteSnapshot(snapshot);
                 });
+
+        return deletedSnapshotTracker;
     }
 
     private static SnapshotFileDeleter hadoopFileDeleter(Configuration configuration) {
