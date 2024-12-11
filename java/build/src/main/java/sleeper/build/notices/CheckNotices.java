@@ -39,18 +39,17 @@ public class CheckNotices {
         Path mavenBase = Paths.get(args[1]);
         String notices = Files.readString(noticesFile);
         DependencyVersions versions = DependencyVersions.fromProjectBase(mavenBase);
-        try {
-            check(notices, versions);
-        } catch (MissingNoticeException e) {
+        List<DependencyVersions.Dependency> dependencies = findDependenciesMissingNotices(notices, versions);
+        if (!dependencies.isEmpty()) {
             System.err.println("Found dependencies missing notice declarations:");
-            for (DependencyVersions.Dependency dependency : e.getDependencies()) {
+            for (DependencyVersions.Dependency dependency : dependencies) {
                 System.err.println(dependency.describe());
             }
             System.exit(1);
         }
     }
 
-    public static void check(String notices, DependencyVersions versions) {
+    public static List<DependencyVersions.Dependency> findDependenciesMissingNotices(String notices, DependencyVersions versions) {
         List<DependencyVersions.Dependency> failed = new ArrayList<>();
         for (DependencyVersions.Dependency dependency : versions.getDependencies()) {
             for (DependencyVersions.Version version : dependency.versions()) {
@@ -67,9 +66,7 @@ public class CheckNotices {
                 }
             }
         }
-        if (!failed.isEmpty()) {
-            throw new MissingNoticeException(failed);
-        }
+        return failed;
     }
 
 }
