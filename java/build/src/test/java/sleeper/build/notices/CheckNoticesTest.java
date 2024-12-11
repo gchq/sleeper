@@ -15,9 +15,8 @@
  */
 package sleeper.build.notices;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import sleeper.build.notices.DependencyVersions.Dependency;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,9 +28,8 @@ public class CheckNoticesTest {
         DependencyVersions versions = DependencyVersions.builder()
                 .dependency("org.apache.datasketches", "datasketches-java", "3.3.0")
                 .build();
-        assertThat(CheckNotices.findDependenciesMissingNotices(notices, versions))
-                .extracting(Dependency::describe)
-                .containsExactly("org.apache.datasketches:datasketches-java:3.3.0");
+        assertThat(CheckNotices.findMissingNotices(notices, versions))
+                .containsExactly("Dependency not found: org.apache.datasketches:datasketches-java:3.3.0");
     }
 
     @Test
@@ -41,11 +39,10 @@ public class CheckNoticesTest {
                 .dependency("com.joom.spark", "spark-platform_2.12", "0.4.7")
                 .dependency("org.apache.datasketches", "datasketches-java", "3.3.0")
                 .build();
-        assertThat(CheckNotices.findDependenciesMissingNotices(notices, versions))
-                .extracting(Dependency::describe)
+        assertThat(CheckNotices.findMissingNotices(notices, versions))
                 .containsExactly(
-                        "com.joom.spark:spark-platform_2.12:0.4.7",
-                        "org.apache.datasketches:datasketches-java:3.3.0");
+                        "Dependency not found: com.joom.spark:spark-platform_2.12:0.4.7",
+                        "Dependency not found: org.apache.datasketches:datasketches-java:3.3.0");
     }
 
     @Test
@@ -54,7 +51,7 @@ public class CheckNoticesTest {
         DependencyVersions versions = DependencyVersions.builder()
                 .dependency("org.apache.datasketches", "datasketches-java", "3.3.0")
                 .build();
-        assertThat(CheckNotices.findDependenciesMissingNotices(notices, versions))
+        assertThat(CheckNotices.findMissingNotices(notices, versions))
                 .isEmpty();
     }
 
@@ -65,7 +62,7 @@ public class CheckNoticesTest {
                 .dependency("org.junit.jupiter", "junit-jupiter-api", "5.11.3")
                 .dependency("org.junit.platform", "junit-platform-suite", "1.11.3")
                 .build();
-        assertThat(CheckNotices.findDependenciesMissingNotices(notices, versions))
+        assertThat(CheckNotices.findMissingNotices(notices, versions))
                 .isEmpty();
     }
 
@@ -76,7 +73,28 @@ public class CheckNoticesTest {
                 .dependency("software.amazon.awssdk", "s3", "2.29.31")
                 .dependency("software.amazon.awssdk", "dynamodb", "2.29.31")
                 .build();
-        assertThat(CheckNotices.findDependenciesMissingNotices(notices, versions))
+        assertThat(CheckNotices.findMissingNotices(notices, versions))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldFindAwsLambdaNoticeIsPresent() {
+        String notices = "AWS Lambda Java Core SDK (com.amazonaws:aws-lambda-java-core:1.*)";
+        DependencyVersions versions = DependencyVersions.builder()
+                .dependency("com.amazonaws", "aws-lambda-java-core", "1.2.3")
+                .build();
+        assertThat(CheckNotices.findMissingNotices(notices, versions))
+                .isEmpty();
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldMatchWildcardInGroupId() {
+        String notices = "Fasterxml Jackson (com.fasterxml.jackson.*:*:2.*)";
+        DependencyVersions versions = DependencyVersions.builder()
+                .dependency("com.fasterxml.jackson.datatype", "jackson-datatype-jsr310", "2.18.2")
+                .build();
+        assertThat(CheckNotices.findMissingNotices(notices, versions))
                 .isEmpty();
     }
 
@@ -86,9 +104,8 @@ public class CheckNoticesTest {
         DependencyVersions versions = DependencyVersions.builder()
                 .dependency("software.amazon.awssdk", "s3", "2.29.31")
                 .build();
-        assertThat(CheckNotices.findDependenciesMissingNotices(notices, versions))
-                .extracting(Dependency::describe)
-                .containsExactly("software.amazon.awssdk:s3:2.29.31");
+        assertThat(CheckNotices.findMissingNotices(notices, versions))
+                .containsExactly("Dependency artifact ID not matched: software.amazon.awssdk:s3:2.29.31");
     }
 
     @Test
@@ -97,9 +114,8 @@ public class CheckNoticesTest {
         DependencyVersions versions = DependencyVersions.builder()
                 .dependency("org.junit.jupiter", "junit-other", "5.11.3")
                 .build();
-        assertThat(CheckNotices.findDependenciesMissingNotices(notices, versions))
-                .extracting(Dependency::describe)
-                .containsExactly("org.junit.jupiter:junit-other:5.11.3");
+        assertThat(CheckNotices.findMissingNotices(notices, versions))
+                .containsExactly("Dependency artifact ID not matched: org.junit.jupiter:junit-other:5.11.3");
     }
 
 }

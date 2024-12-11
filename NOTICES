@@ -1,7 +1,7 @@
 Sleeper is mainly written in Java and this is built using Maven. This process will automatically
 pull in dependencies. We list Sleeper's dependencies, and their licenses below.
 
-AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:*)
+AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2023.*)
 
 - Apache License, Version 2.0
 
@@ -85,13 +85,13 @@ Kotlin Stdlib (org.jetbrains.kotlin:*:2.*)
 
 - Apache License, Version 2.0
 
-Logback (ch.qos.logback:logback-core:1.*)
+Logback (ch.qos.logback:logback-*:1.*)
 
 - Dual license (https://logback.qos.ch/license.html)
 - Eclipse Public License 1.0
 - GNU Lesser General Public License, version 2.1
 
-Facebook Jcommon collections (com.facebook.jcommon:collections::0.*)
+Facebook Jcommon collections (com.facebook.jcommon:collections:0.*)
 
 - Apache License, Version 2.0
 

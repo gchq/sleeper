@@ -15,12 +15,14 @@
  */
 package sleeper.build.notices;
 
+import sleeper.build.notices.DependencyVersions.Dependency;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,41 +32,61 @@ public class CheckNotices {
     }
 
     public static void main(String[] args) throws IOException {
+        Path mavenBase;
+        Path noticesFile;
         if (args.length != 2) {
-            throw new IllegalArgumentException("Expected 2 arguments: <path-to-notices-file> <path-to-maven-project-base>");
+            mavenBase = findJavaDir();
+            noticesFile = mavenBase.getParent().resolve("NOTICES");
+        } else {
+            noticesFile = Paths.get(args[0]);
+            mavenBase = Paths.get(args[1]);
         }
-        Path noticesFile = Paths.get(args[0]);
-        Path mavenBase = Paths.get(args[1]);
         String notices = Files.readString(noticesFile);
         DependencyVersions versions = DependencyVersions.fromProjectBase(mavenBase);
-        List<DependencyVersions.Dependency> dependencies = findDependenciesMissingNotices(notices, versions);
-        if (!dependencies.isEmpty()) {
-            System.err.println("Found dependencies missing notice declarations:");
-            for (DependencyVersions.Dependency dependency : dependencies) {
-                System.err.println(dependency.describe());
-            }
+        List<String> messages = findMissingNotices(notices, versions);
+        if (!messages.isEmpty()) {
+            System.err.println("Found missing notice declarations:");
+            messages.forEach(System.err::println);
             System.exit(1);
         }
     }
 
-    public static List<DependencyVersions.Dependency> findDependenciesMissingNotices(String notices, DependencyVersions versions) {
-        List<DependencyVersions.Dependency> failed = new ArrayList<>();
-        for (DependencyVersions.Dependency dependency : versions.getDependencies()) {
-            for (DependencyVersions.Version version : dependency.versions()) {
-                Pattern pattern = Pattern.compile(dependency.groupId() + ":(.+):" + version.major() + "\\.\\*");
-                Matcher matcher = pattern.matcher(notices);
-                if (!matcher.find()) {
-                    failed.add(dependency);
-                    break;
-                }
-                Pattern artifactIdPattern = Pattern.compile(matcher.group(1).replace("*", ".+"));
-                if (!artifactIdPattern.matcher(dependency.artifactId()).matches()) {
-                    failed.add(dependency);
-                    break;
-                }
-            }
-        }
-        return failed;
+    public static List<String> findMissingNotices(String notices, DependencyVersions versions) {
+        return versions.getDependencies().stream()
+                .flatMap(dependency -> findMissingNotice(notices, dependency).stream())
+                .toList();
     }
 
+    private static Optional<String> findMissingNotice(String notices, Dependency dependency) {
+        Pattern pattern = Pattern.compile(dependency.groupId() + ":([^:]+):([^:]+)\\.\\*");
+        Matcher matcher = pattern.matcher(notices);
+        boolean foundDependency = false;
+        while (matcher.find()) {
+            String artifactIdFound = matcher.group(1);
+            Pattern artifactIdPattern = Pattern.compile(artifactIdFound.replace("*", ".+"));
+            if (artifactIdPattern.matcher(dependency.artifactId()).matches()) {
+                return Optional.empty();
+            }
+            foundDependency = true;
+        }
+        if (foundDependency) {
+            return Optional.of("Dependency artifact ID not matched: " + dependency.describe());
+        } else {
+            return Optional.of("Dependency not found: " + dependency.describe());
+        }
+    }
+
+    private static Path findJavaDir() {
+        return findJavaDir(Path.of(".").toAbsolutePath());
+    }
+
+    private static Path findJavaDir(Path currentPath) {
+        for (int i = 0; i < currentPath.getNameCount(); i++) {
+            Path part = currentPath.getName(i);
+            if ("java".equals(String.valueOf(part))) {
+                return currentPath.subpath(0, i);
+            }
+        }
+        return currentPath.resolve("java");
+    }
 }
