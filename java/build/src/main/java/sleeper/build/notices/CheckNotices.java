@@ -46,6 +46,7 @@ public class CheckNotices {
             for (DependencyVersions.Dependency dependency : e.getDependencies()) {
                 System.err.println(dependency.describe());
             }
+            System.exit(1);
         }
     }
 
