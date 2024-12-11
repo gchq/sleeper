@@ -27,8 +27,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class CheckNotices {
 
@@ -47,7 +48,7 @@ public class CheckNotices {
         }
         String notices = Files.readString(noticesFile);
         DependencyVersions versions = DependencyVersions.fromProjectBase(mavenBase);
-        List<String> messages = findMissingNotices(notices, versions);
+        List<String> messages = findProblemsInNotices(notices, versions);
         if (!messages.isEmpty()) {
             System.err.println("Found missing notice declarations:");
             messages.forEach(System.err::println);
@@ -55,28 +56,30 @@ public class CheckNotices {
         }
     }
 
-    public static List<String> findMissingNotices(String notices, DependencyVersions versions) {
-        List<NoticeDeclarationPattern> declarations = findNoticeDeclarations(notices);
-        return versions.getDependencies().stream()
-                .flatMap(dependency -> getMessageIfMissing(dependency, declarations).stream())
+    public static List<String> findProblemsInNotices(String notices, DependencyVersions versions) {
+        List<NoticeDeclaration> declarations = NoticeDeclaration.findDeclarations(notices);
+        List<DependencyMatch> matches = versions.getDependencies().stream()
+                .map(dependency -> match(dependency, declarations))
+                .toList();
+        Set<Integer> matchedDeclarations = matches.stream()
+                .flatMap(match -> match.declarationsMatched().stream())
+                .map(NoticeDeclaration::number)
+                .collect(toUnmodifiableSet());
+        return Stream.concat(
+                matches.stream()
+                        .flatMap(match -> match.buildMessage().stream()),
+                declarations.stream()
+                        .filter(declaration -> !matchedDeclarations.contains(declaration.number()))
+                        .map(NoticeDeclaration::unmatchedMessage))
                 .toList();
     }
 
-    private static List<NoticeDeclarationPattern> findNoticeDeclarations(String notices) {
-        Pattern pattern = Pattern.compile("([^:(), ]+):([^:(), ]+):([^:(), ]+)");
-        List<NoticeDeclarationPattern> matches = new ArrayList<>();
-        Matcher matcher = pattern.matcher(notices);
-        while (matcher.find()) {
-            matches.add(NoticeDeclarationPattern.fromParts(matcher.group(1), matcher.group(2), matcher.group(3)));
-        }
-        return matches;
-    }
-
-    private static Optional<String> getMessageIfMissing(Dependency dependency, List<NoticeDeclarationPattern> declarations) {
+    private static DependencyMatch match(Dependency dependency, List<NoticeDeclaration> declarations) {
         boolean groupMatched = false;
         boolean artifactMatched = false;
         Set<String> versionsMatched = new TreeSet<>();
-        for (NoticeDeclarationPattern declaration : declarations) {
+        List<NoticeDeclaration> declarationsMatched = new ArrayList<>();
+        for (NoticeDeclaration declaration : declarations) {
             if (!declaration.groupId().matcher(dependency.groupId()).matches()) {
                 continue;
             }
@@ -88,15 +91,23 @@ public class CheckNotices {
             dependency.versions().stream().map(Version::version)
                     .filter(version -> declaration.version().matcher(version).matches())
                     .forEach(versionsMatched::add);
+            declarationsMatched.add(declaration);
         }
-        if (!groupMatched) {
-            return Optional.of("Dependency not found: " + dependency.describe());
-        } else if (!artifactMatched) {
-            return Optional.of("Dependency artifact ID not matched: " + dependency.describe());
-        } else if (!versionsMatched.containsAll(dependency.versions().stream().map(Version::version).toList())) {
-            return Optional.of("Dependency versions did not match: " + dependency.describe());
-        } else {
-            return Optional.empty();
+        return new DependencyMatch(dependency, groupMatched, artifactMatched, versionsMatched, declarationsMatched);
+    }
+
+    public record DependencyMatch(Dependency dependency, boolean groupMatched, boolean artifactMatched, Set<String> versionsMatched, List<NoticeDeclaration> declarationsMatched) {
+
+        public Optional<String> buildMessage() {
+            if (!groupMatched) {
+                return Optional.of("Dependency not found: " + dependency.describe());
+            } else if (!artifactMatched) {
+                return Optional.of("Dependency artifact ID not matched: " + dependency.describe());
+            } else if (!versionsMatched.containsAll(dependency.versions().stream().map(Version::version).toList())) {
+                return Optional.of("Dependency versions did not match: " + dependency.describe());
+            } else {
+                return Optional.empty();
+            }
         }
     }
 
@@ -120,16 +131,6 @@ public class CheckNotices {
             throw new IllegalArgumentException("No parent of path " + path);
         } else {
             return parent;
-        }
-    }
-
-    public record NoticeDeclarationPattern(Pattern groupId, Pattern artifactId, Pattern version) {
-        public static NoticeDeclarationPattern fromParts(String groupId, String artifactId, String version) {
-            return new NoticeDeclarationPattern(pattern(groupId), pattern(artifactId), pattern(version));
-        }
-
-        private static Pattern pattern(String string) {
-            return Pattern.compile(string.replace("*", ".+"));
         }
     }
 }
