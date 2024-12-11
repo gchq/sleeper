@@ -139,7 +139,11 @@ Apache Commons Net (commons-net:commons-net:3.*)
 
 - Apache License, Version 2.0
 
-Apache Commons Lang (org.apache.commons:commons-lang3:3.*)
+Apache Commons Lang (org.apache.commons:commons-lang3:3.*, commons-lang:commons-lang:2.*)
+
+- Apache License, Version 2.0
+
+Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.*)
 
 - Apache License, Version 2.0
 
@@ -151,15 +155,15 @@ Apache Datasketches (org.apache.datasketches:datasketches-java:3.*)
 
 - Apache License, Version 2.0
 
-Apache Hadoop (org.apache.hadoop:hadoop-aws:3.*, org.apache.hadoop:hadoop-client:3.*)
+Apache Hadoop (org.apache.hadoop:hadoop-*:3.*)
 
 - Apache License, Version 2.0
 
-Apache Parquet (org.apache.parquet:parquet-hadoop:1.*)
+Apache Parquet (org.apache.parquet:parquet-*:1.*)
 
 - Apache License, Version 2.0
 
-Apache Spark (org.apache.spark:spark-sql_2.12:3.*)
+Apache Spark (org.apache.spark:spark-*_2.*:3.*)
 
 - Apache License, Version 2.0
 
@@ -179,7 +183,7 @@ Java Websocket (org.java-websocket:Java-WebSocket:1.*)
 
 - MIT License
 
-JUnit (org.junit.jupiter:junit-jupiter-*:5.*, org.junit.platform:junit-platform-suite:1.*)
+JUnit (org.junit.jupiter:junit-jupiter-*:5.*, org.junit.platform:junit-platform-suite:1.*, org.junit.vintage:junit-vintage-engine:5.* - Trino needs the vintage engine)
 
 - Eclipse Public License 1.0
 
@@ -195,7 +199,7 @@ AssertJ (org.assertj:assertj-core:3.*)
 
 - Apache License, Version 2.0
 
-JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:3.*)
+JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:4.*)
 
 - Apache License, Version 2.0
 
@@ -231,7 +235,7 @@ AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.*)
 
 - MIT License (https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE)
 
-Jersey Client (org.glassfish.jersey.core:jersey-client:2.*)
+Jersey Client (org.glassfish.jersey.core:jersey-client:2.*, org.glassfish.jersey.inject:jersey-hk2:2.*, org.glassfish.jersey.media:jersey-media-json-jackson:2.*)
 
 - Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
@@ -244,7 +248,7 @@ Netty (io.netty:*:4.*)
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:*:9.*)
+Eclipse Jetty (org.eclipse.jetty:*:9.*, org.eclipse.jetty.http2:*:9.*, org.eclipse.jetty.websocket:*:9.*)
 
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
@@ -278,7 +282,7 @@ Jungrapht Visualization (jungrapht) (com.github.tomnelson:jungrapht-*:1.*)
 
 - The 3-Clause BSD License
 
-JGraphT (org.jgrapht:*:1.*)
+JGraphT (org.jgrapht:*:1.*, org.jgrapht:jgrapht-core:0.* - Trino uses an older version)
 
 - May be used under either of two licenses (https://github.com/jgrapht/jgrapht)
 - GNU Lesser General Public License (LGPL) 2.1
