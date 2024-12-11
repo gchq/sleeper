@@ -30,4 +30,31 @@
         <module>bulk-import</module>
         <module>distribution</module>
     </modules>
+
+    <properties>
+        <scala.version>2.12</scala.version>
+        <joom.spark.platform.version>0.4.7</joom.spark.platform.version>
+        <datasketches.version>3.3.0</datasketches.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.datasketches</groupId>
+                <artifactId>datasketches-java</artifactId>
+                <version>${datasketches.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.joom.spark</groupId>
+                <artifactId>spark-platform_${scala.version}</artifactId>
+                <version>${joom.spark.platform.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>

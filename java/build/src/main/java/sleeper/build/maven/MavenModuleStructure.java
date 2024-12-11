@@ -21,7 +21,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 import sleeper.build.maven.MavenPom.ChildModule;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -56,7 +55,7 @@ public class MavenModuleStructure {
         return new Builder();
     }
 
-    public static MavenModuleStructure fromProjectBase(Path path) throws IOException {
+    public static MavenModuleStructure fromProjectBase(Path path) {
         ObjectMapper mapper = new XmlMapper();
         MavenPom pom = MavenPom.from(mapper, path.resolve("pom.xml"));
         return builderFromPom(mapper, path, pom).build();

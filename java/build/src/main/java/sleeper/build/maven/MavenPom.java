@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -38,7 +39,9 @@ public class MavenPom {
     private final ParentRef parent;
     private final String packaging;
     private final List<String> modules;
+    private final Map<String, String> properties;
     private final List<Dependency> dependencies;
+    private final DependencyManagement dependencyManagement;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
     public MavenPom(
@@ -47,13 +50,17 @@ public class MavenPom {
             @JsonProperty("parent") ParentRef parent,
             @JsonProperty("packaging") String packaging,
             @JsonProperty("modules") List<String> modules,
-            @JsonProperty("dependencies") List<Dependency> dependencies) {
+            @JsonProperty("properties") Map<String, String> properties,
+            @JsonProperty("dependencies") List<Dependency> dependencies,
+            @JsonProperty("dependencyManagement") DependencyManagement dependencyManagement) {
         this.artifactId = artifactId;
         this.groupId = groupId;
         this.parent = parent;
         this.packaging = packaging;
         this.modules = modules == null ? Collections.emptyList() : modules;
+        this.properties = properties == null ? Collections.emptyMap() : properties;
         this.dependencies = dependencies == null ? Collections.emptyList() : dependencies;
+        this.dependencyManagement = dependencyManagement == null ? new DependencyManagement(Collections.emptyList()) : dependencyManagement;
     }
 
     public static MavenPom from(ObjectMapper mapper, Path path) {
@@ -80,6 +87,13 @@ public class MavenPom {
     public Stream<ChildModule> readChildModules(ObjectMapper mapper, Path thisModulePath) {
         return modules.stream()
                 .map(moduleRef -> ChildModule.fromParent(mapper, thisModulePath, moduleRef));
+    }
+
+    public Stream<ChildModule> readDescendentModules(ObjectMapper mapper, Path thisModulePath) {
+        return readChildModules(mapper, thisModulePath)
+                .flatMap(module -> Stream.concat(
+                        Stream.of(module),
+                        module.pom().readDescendentModules(mapper, module.path())));
     }
 
     public record ChildModule(String moduleRef, Path path, MavenPom pom) {
@@ -113,8 +127,16 @@ public class MavenPom {
         return modules;
     }
 
+    public Map<String, String> getProperties() {
+        return properties;
+    }
+
     public List<Dependency> getDependencies() {
         return dependencies;
+    }
+
+    public DependencyManagement getDependencyManagement() {
+        return dependencyManagement;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -125,6 +147,21 @@ public class MavenPom {
         public ParentRef(
                 @JsonProperty("groupId") String groupId) {
             this.groupId = groupId;
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class DependencyManagement {
+        private final List<Dependency> dependencies;
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public DependencyManagement(
+                @JsonProperty("dependencies") List<Dependency> dependencies) {
+            this.dependencies = dependencies == null ? Collections.emptyList() : dependencies;
+        }
+
+        public List<Dependency> getDependencies() {
+            return dependencies;
         }
     }
 
