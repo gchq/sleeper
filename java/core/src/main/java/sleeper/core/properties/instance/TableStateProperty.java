@@ -176,8 +176,8 @@ public interface TableStateProperty {
             .description("The maximum given concurrency allowed for the transaction deletion lambda.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
-    UserDefinedInstanceProperty TRANSACTION_SNAPSHOT_DELETION_LAMBDA_TIMEOUT = Index.propertyBuilder("sleeper.statestore.transactionlog.snapshot.deletion.lambda.timeout.seconds")
-            .description("The maximum timeout for the transaction deletion lambda in seconds")
+    UserDefinedInstanceProperty TRANSACTION_DELETION_LAMBDA_TIMEOUT = Index.propertyBuilder("sleeper.statestore.transactionlog.deletion.lambda.timeout.seconds")
+            .description("The maximum timeout for the transaction deletion lambda in seconds.")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();

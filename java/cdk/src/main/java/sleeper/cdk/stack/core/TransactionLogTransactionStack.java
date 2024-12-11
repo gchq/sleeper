@@ -50,11 +50,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_TIMEOUT;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_LOG_TRANSACTION_DELETION_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES;
-import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_SNAPSHOT_DELETION_LAMBDA_TIMEOUT;
 
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
@@ -89,7 +89,7 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getIntOrNull(TRANSACTION_LOG_TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
-                .timeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_SNAPSHOT_DELETION_LAMBDA_TIMEOUT)))
+                .timeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_DELETION_LAMBDA_TIMEOUT)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_TRANSACTION_DELETION)));
 
         Rule rule = Rule.Builder.create(this, "TransactionLogTransactionDeletionSchedule")
