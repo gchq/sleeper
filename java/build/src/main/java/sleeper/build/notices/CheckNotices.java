@@ -17,6 +17,10 @@ package sleeper.build.notices;
 
 import sleeper.build.maven.DependencyVersions;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -24,6 +28,17 @@ import java.util.regex.Pattern;
 public class CheckNotices {
 
     private CheckNotices() {
+    }
+
+    public static void main(String[] args) throws IOException {
+        if (args.length != 2) {
+            throw new IllegalArgumentException("Expected 2 arguments: <path-to-notices-file> <path-to-maven-project-base>");
+        }
+        Path noticesFile = Paths.get(args[0]);
+        Path mavenBase = Paths.get(args[1]);
+        String notices = Files.readString(noticesFile);
+        DependencyVersions versions = DependencyVersions.fromProjectBase(mavenBase);
+        check(notices, versions);
     }
 
     public static void check(String notices, DependencyVersions versions) {
