@@ -37,6 +37,14 @@ public class DependencyReference {
         return new Builder();
     }
 
+    public static DependencyReference from(MavenPom.Dependency dependency) {
+        return builder()
+                .groupId(dependency.getGroupId()).artifactId(dependency.getArtifactId())
+                .type(dependency.getType()).scope(dependency.getScope())
+                .exported(dependency.isExported())
+                .build();
+    }
+
     public ArtifactReference artifactReference() {
         return ArtifactReference.groupAndArtifact(groupId, artifactId);
     }

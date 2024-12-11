@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -114,10 +113,8 @@ public class MavenPom {
         return modules;
     }
 
-    public List<DependencyReference> getDependencies() {
-        return dependencies.stream()
-                .map(Dependency::toReference)
-                .collect(Collectors.toList());
+    public List<Dependency> getDependencies() {
+        return dependencies;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -135,6 +132,7 @@ public class MavenPom {
     public static class Dependency {
         private final String artifactId;
         private final String groupId;
+        private final String version;
         private final String type;
         private final String scope;
 
@@ -142,26 +140,40 @@ public class MavenPom {
         public Dependency(
                 @JsonProperty("artifactId") String artifactId,
                 @JsonProperty("groupId") String groupId,
+                @JsonProperty("version") String version,
                 @JsonProperty("type") String type,
                 @JsonProperty("scope") String scope) {
             this.artifactId = artifactId;
             this.groupId = groupId;
+            this.version = version;
             this.type = type;
             this.scope = scope;
         }
 
-        public DependencyReference toReference() {
-            return DependencyReference.builder()
-                    .groupId(groupId).artifactId(artifactId)
-                    .type(type).scope(scope)
-                    .exported(isExported())
-                    .build();
-        }
-
-        private boolean isExported() {
+        public boolean isExported() {
             return scope == null
                     || scope.equals("compile")
                     || scope.equals("runtime");
+        }
+
+        public String getArtifactId() {
+            return artifactId;
+        }
+
+        public String getGroupId() {
+            return groupId;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public String getScope() {
+            return scope;
         }
     }
 }

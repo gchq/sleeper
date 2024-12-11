@@ -110,7 +110,7 @@ public class MavenModuleStructure {
         return builder()
                 .artifactId(pom.getArtifactId()).groupId(pom.getGroupId()).packaging(pom.getPackaging())
                 .hasSrcMainJavaFolder(Files.isDirectory(path.resolve("src/main/java")))
-                .dependencies(pom.getDependencies())
+                .dependencies(pom.getDependencies().stream().map(DependencyReference::from).toList())
                 .modules(pom.readChildModules(mapper, path)
                         .map(module -> childModule(mapper, module))
                         .toList());
