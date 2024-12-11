@@ -103,7 +103,7 @@ Guava: Google Core Libraries For Java (com.google.guava:guava:33.*)
 
 - Apache License, Version 2.0
 
-Fasterxml Jackson (com.fasterxml.jackson.*:*:2.*)
+Fasterxml Jackson (com.fasterxml.jackson.*:jackson-*:2.*)
 
 - Apache License, Version 2.0
 
