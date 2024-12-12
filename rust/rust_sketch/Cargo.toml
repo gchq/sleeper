@@ -23,7 +23,7 @@ keywords = ["datasketches", "sketch", "quantile_sketch"]
 license = "Apache-2.0"
 
 [dependencies]
-cxx = { version = "1.0.133" }
+cxx = { version = "1.0.134" }
 
 [build-dependencies]
 cxx-build = { version = "1.0.133" }
