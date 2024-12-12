@@ -1,5 +1,141 @@
 package sleeper.bulkexport.core.recordretrieval;
 
+import org.junit.jupiter.api.Test;
+
+import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
+import sleeper.bulkexport.core.model.BulkExportQuery;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.range.Range;
+import sleeper.core.range.Region;
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.util.ObjectFactory;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import sleeper.core.record.Record;
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+
 public class BulkExportQuerySplitterTest {
+
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final Schema schema = schemaWithKey("key");
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
+
+    @Test
+    public void shouldExportWholeTree() throws Exception {
+        // Given
+        BulkExportQuery bulkExportQuery = query();
+        stateStore.initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 5L)
+                .splitToNewChildren("L", "LL", "LR", 15L)
+                .buildList());
+        addRootFile("root.parquet", List.of(new Record(Map.of("key", 123L))));
+        addPartitionFile("R", "right.parquet", List.of(
+                new Record(Map.of("key", 1L)),
+                new Record(Map.of("key", 4L))));
+        addPartitionFile("L", "left.parquet", List.of(
+                new Record(Map.of("key", 8L)),
+                new Record(Map.of("key", 13L))));
+        addPartitionFile("LL", "leftleft.parquet", List.of(
+                new Record(Map.of("key", 8L)),
+                new Record(Map.of("key", 13L))));
+        addPartitionFile("LR", "leftright.parquet", List.of(
+                new Record(Map.of("key", 15)),
+                new Record(Map.of("key", 20L))));
+        BulkExportQuerySplitter bulkExportQuerySplitter = executor();
+
+        // When
+        List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter.execute(bulkExportQuery);
+
+        // That
+        assertThat(leafPartitionQueries).hasSize(3);
+    }
+
+    @Test
+    public void shouldProduceTwoBulkExportLeafPartitionQueries() throws Exception {
+        // Given
+        BulkExportQuery bulkExportQuery = query();
+        stateStore.initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 5L)
+                .buildList());
+        addPartitionFile("R", "right.parquet", List.of(
+                new Record(Map.of("key", 2L)),
+                new Record(Map.of("key", 7L))));
+        addPartitionFile("L", "left.parquet", List.of(
+                new Record(Map.of("key", 8L)),
+                new Record(Map.of("key", 13L))));
+        BulkExportQuerySplitter bulkExportQuerySplitter = executor();
+
+        // When
+        List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter.execute(bulkExportQuery);
+
+        // That
+        assertThat(leafPartitionQueries).hasSize(2);
+    }
+
+    private BulkExportQuerySplitter executor() throws Exception {
+        return executorAtTime(Instant.now());
+    }
+
+    private BulkExportQuerySplitter executorAtTime(Instant time) throws Exception {
+        BulkExportQuerySplitter executor = uninitialisedExecutorAtTime(time);
+        executor.init(time);
+        return executor;
+    }
+
+    private BulkExportQuerySplitter uninitialisedExecutorAtTime(Instant time) {
+        return new BulkExportQuerySplitter(ObjectFactory.noUserJars(), stateStore, tableProperties, time);
+    }
+
+    private void addRootFile(String filename, List<Record> records) {
+        addFile(fileReferenceFactory().rootFile(filename, records.size()), records);
+    }
+
+    private void addPartitionFile(String partitionId, String filename, List<Record> records) {
+        addFile(fileReferenceFactory().partitionFile(partitionId, filename, records.size()), records);
+    }
+
+    private void addFile(FileReference fileReference, List<Record> records) {
+        addFileMetadata(fileReference);
+    }
+
+    private void addFileMetadata(FileReference fileReference) {
+        stateStore.addFile(fileReference);
+    }
+
+    private BulkExportQuery query() {
+        return BulkExportQuery.builder().exportId(UUID.randomUUID().toString())
+                .tableName(tableProperties.get(TABLE_NAME)).build();
+    }
+
+    private Region range(Object min, Object max) {
+        Field field = tableProperties.getSchema().getField("key").orElseThrow();
+        return new Region(new Range(field, min, max));
+    }
+
+    private PartitionTree partitionTree() {
+        return new PartitionTree(stateStore.getAllPartitions());
+    }
+
+    private FileReferenceFactory fileReferenceFactory() {
+        return FileReferenceFactory.from(stateStore);
+    }
 
 }
