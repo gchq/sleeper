@@ -455,11 +455,14 @@ sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
 
 Note that the system test stacks do not need to be specified. They will be included if you use the system test CDK app.
 
-### Utility Scripts
+## Administration clients
 
-There are scripts in the `scripts/deploy` directory that can be used to manage an existing instance.
+There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to work with an
+existing instance.
 
-#### Update Existing Instance
+Also see the [tables documentation](04-tables.md#addedit-a-table) for scripts to add/edit Sleeper tables.
+
+### Update Existing Instance
 
 The `deployExisting.sh` script can be used to bring an existing instance up to date. This will upload any jars
 that have changed, update all the docker images, and perform a `cdk deploy`.
@@ -472,27 +475,53 @@ We are planning to add support to this script for declarative deployment, so tha
 tables configuration in a folder structure and pass it to this script to apply any changes. Currently such changes must
 be done with the admin client.
 
-#### Tables
+### Sleeper Administration Client
 
-Scripts can be used to add, rename and delete tables in a Sleeper instance.
+We have provided a command line client that will enable you to:
 
-The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
-schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
-client. We will add support for declarative deployment in the future.
+1) List Sleeper instance properties
+2) List Sleeper table names
+3) List Sleeper table properties
+4) Change an instance/table property
+5) Get status reports (also see [checking the status of the system](06-status.md))
+
+This client will prompt you for things like your instance ID as mentioned above and/or the name of the table you want to
+look at. To adjust property values it will open a text editor for a temporary file.
+
+You can run this client with the following command:
 
 ```bash
-cd scripts
-editor templates/tableproperties.template
-editor templates/schema.template
-./utility/addTable.sh <instance-id> <table-name>
-./utility/renameTable.sh <instance-id> <old-table-name> <new-table-name>
-./utility/deleteTable.sh <instance-id> <table-name>
+./scripts/utility/adminClient.sh ${INSTANCE_ID}
 ```
 
-You can also pass `--force` as an additional argument to deleteTable.sh to skip the prompt to confirm you wish to delete
-all the data. This will permanently delete all data held in the table, as well as metadata.
+### Pausing and Restarting the System
 
-## Tear Down
+If there is no ingest in progress, and all compactions have completed, then Sleeper will go to sleep, i.e. the only
+significant ongoing charges are for data storage. However, there are several lambda functions that are scheduled to
+run periodically using EventBridge rules. These lambda functions look for work to do, such as compactions to run.
+The execution of these should have very small cost, but it is best practice to pause the system,
+i.e. turn these rules off, if you will not be using it for a while. Note that the system can still be queried when
+it is paused.
+
+```bash
+# Pause the System
+./scripts/utility/pauseSystem.sh ${INSTANCE_ID}
+
+# Restart the System
+./scripts/utility/restartSystem.sh ${INSTANCE_ID}
+```
+
+### Compact all files
+
+If you want to fully compact all files in leaf partitions, but the compaction strategy is not compacting files in a
+partition, you can run the following script to force compactions to be created for files in leaf partitions that were
+skipped by the compaction strategy:
+
+```bash
+./scripts/utility/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
+```
+
+### Tear Down
 
 Once your finished with your Sleeper instance, you can delete it, i.e. remove all the resources
 associated with it.

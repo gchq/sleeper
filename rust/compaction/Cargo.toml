@@ -33,7 +33,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 cxx = { version = "1.0.133" } # Exception handling for Rust
-libc = { version = "0.2.167" } # FFI type support
+libc = { version = "0.2.168" } # FFI type support
 log = { version = "0.4.22" } # Logging support
 arrow = { version = "53.3.0" } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
@@ -51,7 +51,7 @@ bytes = { version = "1.9.0" } # Byte buffer for S3 uploading
 num-format = { version = "0.4.4" } # Nicely formatted numbers
 tokio-test = { version = "0.4.2" } # Doc tests
 env_logger = { version = "0.11.5" }
-chrono = { version = "0.4.26" } # Log helper
+chrono = { version = "0.4.39" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
 
 [dev-dependencies]

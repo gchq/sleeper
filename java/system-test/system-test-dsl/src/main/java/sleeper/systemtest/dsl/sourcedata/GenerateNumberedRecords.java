@@ -20,6 +20,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -35,12 +36,12 @@ public class GenerateNumberedRecords {
         this.schema = schema;
     }
 
-    public static Stream<Record> from(Schema schema, GenerateNumberedValueOverrides overrides, LongStream numbers) {
-        return new GenerateNumberedRecords(configureOverrides(overrides), schema).generate(numbers);
+    public static GenerateNumberedRecords from(Schema schema, GenerateNumberedValueOverrides overrides) {
+        return new GenerateNumberedRecords(configureOverrides(overrides), schema);
     }
 
-    public static Stream<Record> from(Schema schema, LongStream numbers) {
-        return new GenerateNumberedRecords(GenerateNumberedValue::forField, schema).generate(numbers);
+    public static GenerateNumberedRecords from(Schema schema) {
+        return new GenerateNumberedRecords(GenerateNumberedValue::forField, schema);
     }
 
     private static Configuration configureOverrides(GenerateNumberedValueOverrides overrides) {
@@ -48,11 +49,19 @@ public class GenerateNumberedRecords {
                 .orElseGet(() -> GenerateNumberedValue.forField(keyType, field));
     }
 
-    private Stream<Record> generate(LongStream numbers) {
-        return numbers.mapToObj(this::numberedRecord);
+    public Stream<Record> streamFrom(LongStream numbers) {
+        return numbers.mapToObj(this::generateRecord);
     }
 
-    private Record numberedRecord(long number) {
+    public Iterator<Record> iteratorFrom(LongStream numbers) {
+        return streamFrom(numbers).iterator();
+    }
+
+    public Iterable<Record> iterableFrom(LongStream numbers) {
+        return () -> iteratorFrom(numbers);
+    }
+
+    public Record generateRecord(long number) {
         return new Record(mapForNumber(number));
     }
 

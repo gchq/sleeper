@@ -59,14 +59,14 @@ public class BasicLeafStrategy implements LeafPartitionCompactionStrategy {
             filesForJob.add(fileReference);
             if (filesForJob.size() >= compactionFilesBatchSize) {
                 // Create job for these files
-                LOGGER.info("Creating a job to compact {} files in partition {} in table {}",
+                LOGGER.debug("Creating a job to compact {} files in partition {} in table {}",
                         filesForJob.size(), filesInPartition.getPartitionId(), filesInPartition.getTableStatus());
                 compactionJobs.add(factory.createCompactionJob(filesForJob, filesInPartition.getPartitionId()));
                 filesForJob.clear();
             }
         }
         if (compactionJobs.isEmpty()) {
-            LOGGER.info("Not enough unassigned files in partition {} in table {} to create a batch of size {}",
+            LOGGER.debug("Not enough unassigned files in partition {} in table {} to create a batch of size {}",
                     filesInPartition.getPartitionId(), filesInPartition.getTableStatus(),
                     compactionFilesBatchSize);
         }
