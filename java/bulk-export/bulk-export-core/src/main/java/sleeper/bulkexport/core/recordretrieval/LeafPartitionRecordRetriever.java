@@ -15,9 +15,9 @@
  */
 package sleeper.bulkexport.core.recordretrieval;
 
+import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
-import sleeper.bulkexport.model.BulkExportLeafPartitionQuery;
 
 @FunctionalInterface
 public interface LeafPartitionRecordRetriever {

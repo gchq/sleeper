@@ -18,8 +18,8 @@ package sleeper.bulkexport.core.recordretrieval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.bulkexport.model.BulkExportLeafPartitionQuery;
-import sleeper.bulkexport.model.BulkExportQuery;
+import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
+import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
@@ -28,12 +28,9 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.ObjectFactory;
 
-import javax.management.Query;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -45,28 +42,22 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class BulkExportQuerySplitter {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkExportQuerySplitter.class);
 
-    private final ObjectFactory objectFactory;
     private final StateStore stateStore;
     private final TableProperties tableProperties;
-    private final LeafPartitionRecordRetriever recordRetriever;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
     private Instant nextInitialiseTime;
 
     public BulkExportQuerySplitter(
-            ObjectFactory objectFactory, TableProperties tableProperties, StateStore stateStore,
-            LeafPartitionRecordRetriever recordRetriever) {
-        this(objectFactory, stateStore, tableProperties, recordRetriever, Instant.now());
+            ObjectFactory objectFactory, TableProperties tableProperties, StateStore stateStore) {
+        this(objectFactory, stateStore, tableProperties, Instant.now());
     }
 
     public BulkExportQuerySplitter(
-            ObjectFactory objectFactory, StateStore stateStore, TableProperties tableProperties,
-            LeafPartitionRecordRetriever recordRetriever, Instant timeNow) {
-        this.objectFactory = objectFactory;
+            ObjectFactory objectFactory, StateStore stateStore, TableProperties tableProperties, Instant timeNow) {
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
-        this.recordRetriever = recordRetriever;
         this.nextInitialiseTime = timeNow;
     }
 
@@ -99,7 +90,6 @@ public class BulkExportQuerySplitter {
     public void init(Instant now) throws StateStoreException {
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
-
         init(partitions, partitionToFileMapping, now);
     }
 
@@ -165,30 +155,6 @@ public class BulkExportQuerySplitter {
         }
 
         return leafPartitionQueriesList;
-    }
-
-    /**
-     * Gets the leaf partitions which are relevant to a query. This method is
-     * called by the default implementation of {@code getPartitionFiles()} If
-     * you overwrite getPartitionFiles() then you may make this method a no-op.
-     *
-     * @param query the query
-     * @return the relevant leaf partitions
-     */
-    private Map<Partition, List<Region>> getRelevantLeafPartitions(BulkExportQuery bulkExportQuery) {
-        Map<Partition, List<Region>> leafPartitionToOverlappingRegions = new HashMap<>();
-        leafPartitions.forEach(partition -> {
-            leafPartitionToOverlappingRegions.put(partition, new ArrayList<>());
-            for (Region region : bulkExportQuery.getRegions()) {
-                if (partition.doesRegionOverlapPartition(region)) {
-                    leafPartitionToOverlappingRegions.get(partition).add(region);
-                }
-            }
-            if (leafPartitionToOverlappingRegions.get(partition).isEmpty()) {
-                leafPartitionToOverlappingRegions.remove(partition);
-            }
-        });
-        return leafPartitionToOverlappingRegions;
     }
 
     protected List<String> getFiles(Partition partition) {
