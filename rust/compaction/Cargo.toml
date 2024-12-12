@@ -32,7 +32,7 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cxx = { version = "1.0.133" } # Exception handling for Rust
+cxx = { version = "1.0.134" } # Exception handling for Rust
 libc = { version = "0.2.168" } # FFI type support
 log = { version = "0.4.22" } # Logging support
 arrow = { version = "53.3.0" } # Batch of reading from Parquet files

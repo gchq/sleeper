@@ -19,10 +19,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
-import java.io.IOException;
+import sleeper.build.maven.MavenPom.ChildModule;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -55,9 +55,10 @@ public class MavenModuleStructure {
         return new Builder();
     }
 
-    public static MavenModuleStructure fromProjectBase(Path path) throws IOException {
+    public static MavenModuleStructure fromProjectBase(Path path) {
         ObjectMapper mapper = new XmlMapper();
-        return builderFromPath(mapper, path).build();
+        MavenPom pom = MavenPom.from(mapper, path.resolve("pom.xml"));
+        return builderFromPom(mapper, path, pom).build();
     }
 
     public Stream<MavenModuleAndPath> allJavaModules() {
@@ -104,22 +105,18 @@ public class MavenModuleStructure {
         return dependencies.stream();
     }
 
-    private static Builder builderFromPath(ObjectMapper mapper, Path path) throws IOException {
-        MavenPom pom = MavenPom.from(mapper, path.resolve("pom.xml"));
+    private static Builder builderFromPom(ObjectMapper mapper, Path path, MavenPom pom) {
         return builder()
                 .artifactId(pom.getArtifactId()).groupId(pom.getGroupId()).packaging(pom.getPackaging())
                 .hasSrcMainJavaFolder(Files.isDirectory(path.resolve("src/main/java")))
-                .dependencies(pom.getDependencies())
-                .modules(readChildModules(mapper, path, pom));
+                .dependencies(pom.getDependencies().stream().map(DependencyReference::from).toList())
+                .modules(pom.readChildModules(mapper, path)
+                        .map(module -> childModule(mapper, module))
+                        .toList());
     }
 
-    private static List<MavenModuleStructure> readChildModules(ObjectMapper mapper, Path path, MavenPom parent) throws IOException {
-        List<MavenModuleStructure> modules = new ArrayList<>(parent.getModules().size());
-        for (String moduleRef : parent.getModules()) {
-            modules.add(builderFromPath(mapper, path.resolve(moduleRef))
-                    .moduleRef(moduleRef).build());
-        }
-        return modules;
+    private static MavenModuleStructure childModule(ObjectMapper mapper, ChildModule module) {
+        return builderFromPom(mapper, module.path(), module.pom()).moduleRef(module.moduleRef()).build();
     }
 
     public boolean isPomPackage() {

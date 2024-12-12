@@ -25,17 +25,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.build.maven.TestMavenModuleStructure.dependency;
 import static sleeper.build.maven.TestMavenModuleStructure.dependencyBuilder;
 
-public class MavenPomTest {
+public class DependencyReferenceTest {
 
     @Test
     public void canReadDependencies() throws Exception {
         try (Reader reader = TestResources.exampleReader("examples/maven/configuration/pom.xml")) {
             MavenPom pom = MavenPom.from(reader);
-            assertThat(pom.getDependencies()).containsExactly(
+            assertThat(pom.getDependencies().stream().map(DependencyReference::from)).containsExactly(
                     dependency("org.apache.datasketches:datasketches-java"),
                     dependency("sleeper:core"),
-                    dependencyBuilder("org.junit.jupiter:junit-jupiter-api").scope("test").exported(false).build(),
-                    dependencyBuilder("sleeper:core").type("test-jar").scope("test").exported(false).build());
+                    dependencyBuilder("org.junit.jupiter:junit-jupiter-api").exported(false).build(),
+                    dependencyBuilder("sleeper:core").type("test-jar").exported(false).build());
         }
     }
 }
