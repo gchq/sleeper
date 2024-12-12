@@ -54,7 +54,7 @@ import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DE
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES;
-import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_TIMEOUT;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS;
 
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
@@ -89,7 +89,7 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getIntOrNull(TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED))
                 .memorySize(1024)
-                .timeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_DELETION_LAMBDA_TIMEOUT)))
+                .timeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_TRANSACTION_DELETION)));
 
         Rule rule = Rule.Builder.create(this, "TransactionLogTransactionDeletionSchedule")
@@ -114,7 +114,7 @@ public class TransactionLogTransactionStack extends NestedStack {
                         .queue(deadLetterQueue)
                         .build())
                 .fifo(true)
-                .visibilityTimeout(Duration.seconds(70))
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS)))
                 .build();
         instanceProperties.set(TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_URL, queue.getQueueUrl());
         instanceProperties.set(TRANSACTION_LOG_TRANSACTION_DELETION_QUEUE_ARN, queue.getQueueArn());
