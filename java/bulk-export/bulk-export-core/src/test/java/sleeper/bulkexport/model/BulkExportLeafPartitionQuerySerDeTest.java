@@ -15,6 +15,7 @@
  */
 package sleeper.bulkexport.model;
 
+import com.google.common.io.CharStreams;
 import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
@@ -30,9 +31,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.StringType;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Collections;
 import java.util.List;
 
@@ -149,7 +149,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoExportId.json");
+                "BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoExportId.json");
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(json))
@@ -166,7 +166,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoSubExportId.json");
+                "BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoSubExportId.json");
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(
@@ -185,7 +185,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoRegions.json");
+                "BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoRegions.json");
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(json))
@@ -202,7 +202,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoLeafPartitionId.json");
+                "BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoLeafPartitionId.json");
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(json))
@@ -219,7 +219,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoPartitionRegion.json");
+                "BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoPartitionRegion.json");
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(json))
@@ -236,7 +236,7 @@ public class BulkExportLeafPartitionQuerySerDeTest {
         BulkExportLeafPartitionQuerySerDe querySerDe = generateQuerySerDeFromTableProperties(schema);
 
         String json = readFileToString(
-                "src/test/resources/BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoFiles.json");
+                "BulkExportLeafPartitionQuerySerDeTest.shouldThrowExceptionNoFiles.json");
 
         // When & Then
         assertThatThrownBy(() -> querySerDe.fromJson(json))
@@ -255,7 +255,9 @@ public class BulkExportLeafPartitionQuerySerDeTest {
     }
 
     private String readFileToString(String path) throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
-        return new String(encoded, StandardCharsets.UTF_8);
+        try (Reader reader = new InputStreamReader(
+                BulkExportLeafPartitionQuerySerDeTest.class.getClassLoader().getResourceAsStream(path))) {
+            return CharStreams.toString(reader);
+        }
     }
 }
