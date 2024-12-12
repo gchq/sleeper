@@ -50,7 +50,7 @@ public interface TableStateProperty {
     UserDefinedInstanceProperty DEFAULT_TABLE_STATE_LAMBDA_MEMORY = Index.propertyBuilder("sleeper.default.table.state.lambda.memory.mb")
             .description("Default value for amount of memory in MB for each lambda that holds the state of Sleeper " +
                     "tables in memory. These use a state store provider which caches a number of tables at " +
-                    "once, set in `sleeper.statestore.statestore.provider.cache.size`. Not all lambdas are covered " +
+                    "once, set in `sleeper.statestore.provider.cache.size`. Not all lambdas are covered " +
                     "by this, e.g. see `sleeper.batch.table.lambdas.memory.mb`.")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .defaultValue("4096")
@@ -76,7 +76,7 @@ public interface TableStateProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
-    UserDefinedInstanceProperty STATESTORE_PROVIDER_CACHE_SIZE = Index.propertyBuilder("sleeper.statestore.statestore.provider.cache.size")
+    UserDefinedInstanceProperty STATESTORE_PROVIDER_CACHE_SIZE = Index.propertyBuilder("sleeper.statestore.provider.cache.size")
             .description("The maximum size of state store providers. If a state store is needed and the cache is full, the oldest state store in the cache will be removed to make space.")
             .defaultValue("10")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)

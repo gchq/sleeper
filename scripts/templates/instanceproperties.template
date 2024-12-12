@@ -164,7 +164,7 @@ sleeper.default.lambda.concurrency.max=10
 
 # Default value for amount of memory in MB for each lambda that holds the state of Sleeper tables in
 # memory. These use a state store provider which caches a number of tables at once, set in
-# `sleeper.statestore.statestore.provider.cache.size`. Not all lambdas are covered by this, e.g. see
+# `sleeper.statestore.provider.cache.size`. Not all lambdas are covered by this, e.g. see
 # `sleeper.batch.table.lambdas.memory.mb`.
 sleeper.default.table.state.lambda.memory.mb=4096
 
@@ -182,7 +182,7 @@ sleeper.cache.table.properties.provider.timeout.minutes=60
 
 # The maximum size of state store providers. If a state store is needed and the cache is full, the
 # oldest state store in the cache will be removed to make space.
-sleeper.statestore.statestore.provider.cache.size=10
+sleeper.statestore.provider.cache.size=10
 
 # This specifies whether point in time recovery is enabled for the DynamoDB state store. This is set
 # on the DynamoDB tables.
