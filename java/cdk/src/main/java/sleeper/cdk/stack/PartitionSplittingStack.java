@@ -199,7 +199,7 @@ public class PartitionSplittingStack extends NestedStack {
         Rule rule = Rule.Builder
                 .create(this, "FindPartitionsToSplitPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.PARTITION_SPLITTING.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the lambda to look for partitions to split")
+                .description(SleeperScheduleRule.PARTITION_SPLITTING.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(PARTITION_SPLITTING_TRIGGER_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(triggerFunction)))

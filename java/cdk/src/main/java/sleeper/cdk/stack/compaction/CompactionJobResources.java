@@ -189,7 +189,7 @@ public class CompactionJobResources {
         Rule rule = Rule.Builder
                 .create(stack, "CompactionJobCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_JOB_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the compaction job creation lambda")
+                .description(SleeperScheduleRule.COMPACTION_JOB_CREATION.getDescription())
                 .enabled(!shouldDeployPaused(stack))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(triggerFunction)))
