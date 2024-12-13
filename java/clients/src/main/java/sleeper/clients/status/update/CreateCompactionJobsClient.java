@@ -25,19 +25,17 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.job.creation.CreateCompactionJobs;
-import sleeper.compaction.job.creation.SendCompactionJobToSqs;
-import sleeper.compaction.job.creation.commit.AssignJobIdToFiles.AssignJobIdQueueSender;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs;
+import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
@@ -48,8 +46,6 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.FORCE_ALL_FILES_AFTER_STRATEGY;
-import static sleeper.compaction.job.creation.CreateCompactionJobs.Mode.STRATEGY;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
@@ -59,16 +55,21 @@ public class CreateCompactionJobsClient {
     private CreateCompactionJobsClient() {
     }
 
-    private static final Map<String, CreateCompactionJobs.Mode> ARG_TO_MODE = Map.of(
-            "default", STRATEGY,
-            "all", FORCE_ALL_FILES_AFTER_STRATEGY);
+    private static final Map<String, CreateJobsMode> ARG_TO_MODE = Map.of(
+            "default", CreateCompactionJobs::createJobsWithStrategy,
+            "all", CreateCompactionJobs::createJobWithForceAllFiles);
 
-    public static void main(String[] args) throws ObjectFactoryException, StateStoreException, IOException {
+    @FunctionalInterface
+    public interface CreateJobsMode {
+        void createJobs(CreateCompactionJobs creator, TableProperties table) throws ObjectFactoryException, IOException;
+    }
+
+    public static void main(String[] args) throws ObjectFactoryException, IOException {
         if (args.length < 2) {
             System.out.println("Usage: <mode-all-or-default> <instance-id> <table-names-as-args>");
             return;
         }
-        CreateCompactionJobs.Mode mode = ARG_TO_MODE.get(args[0].toLowerCase(Locale.ROOT));
+        CreateJobsMode mode = ARG_TO_MODE.get(args[0].toLowerCase(Locale.ROOT));
         if (mode == null) {
             System.out.println("Supported modes for job creation are ALL or DEFAULT");
             return;
@@ -87,13 +88,11 @@ public class CreateCompactionJobsClient {
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
             CompactionJobStatusStore jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            CreateCompactionJobs jobCreator = new CreateCompactionJobs(
-                    new ObjectFactory(instanceProperties, s3Client, "/tmp"),
-                    instanceProperties, stateStoreProvider,
-                    new SendCompactionJobToSqs(instanceProperties, sqsClient)::send, jobStatusStore, mode,
-                    AssignJobIdQueueSender.bySqs(sqsClient, instanceProperties));
+            CreateCompactionJobs jobCreator = AwsCreateCompactionJobs.from(
+                    new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
+                    instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient);
             for (TableProperties table : tables) {
-                jobCreator.createJobs(table);
+                mode.createJobs(jobCreator, table);
             }
         } finally {
             s3Client.shutdown();

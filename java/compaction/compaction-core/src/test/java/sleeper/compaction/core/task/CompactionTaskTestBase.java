@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
@@ -63,7 +64,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class CompactionTaskTestBase {
@@ -215,7 +215,7 @@ public class CompactionTaskTestBase {
                 .partitionId("root")
                 .inputFiles(List.of(UUID.randomUUID().toString()))
                 .outputFile(UUID.randomUUID().toString()).build();
-        jobStore.jobCreated(job, DEFAULT_CREATED_TIME);
+        jobStore.jobCreated(compactionJobCreated(job), DEFAULT_CREATED_TIME);
         return job;
     }
 
@@ -226,7 +226,7 @@ public class CompactionTaskTestBase {
     }
 
     protected void assignFilesToJob(CompactionJob job, StateStore stateStore) throws Exception {
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
     }
 
     protected void send(CompactionJob job) {

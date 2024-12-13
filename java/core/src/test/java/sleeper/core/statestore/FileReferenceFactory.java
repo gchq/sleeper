@@ -17,6 +17,9 @@ package sleeper.core.statestore;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.table.TableFilePaths;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,14 +31,12 @@ import java.util.Objects;
 public class FileReferenceFactory {
     private final PartitionTree partitionTree;
     private final Instant lastStateStoreUpdate;
+    private final FilePathGenerator filePathGenerator;
 
-    private FileReferenceFactory(PartitionTree partitionTree) {
-        this(partitionTree, null);
-    }
-
-    private FileReferenceFactory(PartitionTree partitionTree, Instant lastStateStoreUpdate) {
+    private FileReferenceFactory(PartitionTree partitionTree, Instant lastStateStoreUpdate, FilePathGenerator filePathGenerator) {
         this.partitionTree = Objects.requireNonNull(partitionTree, "partitionTree must not be null");
         this.lastStateStoreUpdate = lastStateStoreUpdate;
+        this.filePathGenerator = Objects.requireNonNull(filePathGenerator, "filePathGenerator must not be null");
     }
 
     /**
@@ -45,7 +46,21 @@ public class FileReferenceFactory {
      * @return      the factory
      */
     public static FileReferenceFactory from(PartitionTree tree) {
-        return new FileReferenceFactory(tree);
+        return new FileReferenceFactory(tree, null, FilePathGenerator.filenameOnly());
+    }
+
+    /**
+     * Creates a factory to create files in the given partition tree, with file paths generated for the given
+     * properties.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  tableProperties    the table properties
+     * @param  tree               the tree
+     * @return                    the factory
+     */
+    public static FileReferenceFactory from(
+            InstanceProperties instanceProperties, TableProperties tableProperties, PartitionTree tree) {
+        return new FileReferenceFactory(tree, null, FilePathGenerator.fromProperties(instanceProperties, tableProperties));
     }
 
     /**
@@ -66,11 +81,7 @@ public class FileReferenceFactory {
      * @return            the factory
      */
     public static FileReferenceFactory from(StateStore stateStore) {
-        try {
-            return from(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return from(stateStore.getAllPartitions());
     }
 
     /**
@@ -82,7 +93,7 @@ public class FileReferenceFactory {
      * @return                      the factory
      */
     public static FileReferenceFactory fromUpdatedAt(PartitionTree tree, Instant lastStateStoreUpdate) {
-        return new FileReferenceFactory(tree, lastStateStoreUpdate);
+        return new FileReferenceFactory(tree, lastStateStoreUpdate, FilePathGenerator.filenameOnly());
     }
 
     /**
@@ -107,11 +118,7 @@ public class FileReferenceFactory {
      * @return                      the factory
      */
     public static FileReferenceFactory fromUpdatedAt(StateStore stateStore, Instant lastStateStoreUpdate) {
-        try {
-            return fromUpdatedAt(stateStore.getAllPartitions(), lastStateStoreUpdate);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return fromUpdatedAt(stateStore.getAllPartitions(), lastStateStoreUpdate);
     }
 
     /**
@@ -159,24 +166,62 @@ public class FileReferenceFactory {
      * @return             the file reference
      */
     public FileReference partitionFile(String partitionId, String filename, long records) {
-        return fileForPartition(partitionTree.getPartition(partitionId), filename, records);
+        return fileForPartitionBuilder(partitionId, records)
+                .filename(filePathGenerator.buildFilePath(partitionId, filename))
+                .build();
     }
 
     private FileReference fileForPartition(Partition partition, long records) {
-        return fileForPartitionBuilder(partition, records).build();
+        return fileForPartitionBuilder(partition.getId(), records).build();
     }
 
     private FileReference fileForPartition(Partition partition, String filename, long records) {
-        return fileForPartitionBuilder(partition, records).filename(filename).build();
+        return partitionFile(partition.getId(), filename, records);
     }
 
-    private FileReference.Builder fileForPartitionBuilder(Partition partition, long records) {
+    private FileReference.Builder fileForPartitionBuilder(String partitionId, long records) {
         return FileReference.builder()
-                .filename(partition.getId() + ".parquet")
-                .partitionId(partition.getId())
+                .filename(partitionId + ".parquet")
+                .partitionId(partitionId)
                 .numberOfRecords(records)
                 .lastStateStoreUpdateTime(lastStateStoreUpdate)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true);
+    }
+
+    /**
+     * Generates a full path for a file based on its partition and filename. Implemented by TableFilePaths if used.
+     */
+    @FunctionalInterface
+    private interface FilePathGenerator {
+
+        /**
+         * Generates a full path for a file.
+         *
+         * @param  partitionId the partition ID
+         * @param  filename    the filename
+         * @return             the full path
+         */
+        String buildFilePath(String partitionId, String filename);
+
+        /**
+         * Creates an instance that uses just the filename for the path.
+         *
+         * @return the generator
+         */
+        static FilePathGenerator filenameOnly() {
+            return (partitionId, filename) -> filename;
+        }
+
+        /**
+         * Creates an instance that builds file paths as is done in a real system with the given properties.
+         *
+         * @param  instanceProperties the instance properties
+         * @param  tableProperties    the table properties
+         * @return                    the generator
+         */
+        static FilePathGenerator fromProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
+            return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties)::constructPartitionParquetFilePath;
+        }
     }
 }

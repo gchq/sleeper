@@ -1,18 +1,18 @@
-Partition at LLL:
+Leaf partition at LLL:
 {"key":{"min":"","minInclusive":true,"max":"cm93LTEy","maxInclusive":false},"stringsBase64Encoded":true}
-Partition at LLR:
+Leaf partition at LLR:
 {"key":{"min":"cm93LTEy","minInclusive":true,"max":"cm93LTI1","maxInclusive":false},"stringsBase64Encoded":true}
-Partition at LRL:
+Leaf partition at LRL:
 {"key":{"min":"cm93LTI1","minInclusive":true,"max":"cm93LTM3","maxInclusive":false},"stringsBase64Encoded":true}
-Partition at LRR:
+Leaf partition at LRR:
 {"key":{"min":"cm93LTM3","minInclusive":true,"max":"cm93LTUw","maxInclusive":false},"stringsBase64Encoded":true}
-Partition at RLL:
+Leaf partition at RLL:
 {"key":{"min":"cm93LTUw","minInclusive":true,"max":"cm93LTYy","maxInclusive":false},"stringsBase64Encoded":true}
-Partition at RLR:
+Leaf partition at RLR:
 {"key":{"min":"cm93LTYy","minInclusive":true,"max":"cm93LTc1","maxInclusive":false},"stringsBase64Encoded":true}
-Partition at RRL:
+Leaf partition at RRL:
 {"key":{"min":"cm93LTc1","minInclusive":true,"max":"cm93LTg3","maxInclusive":false},"stringsBase64Encoded":true}
-Partition at RRR:
+Leaf partition at RRR:
 {"key":{"min":"cm93LTg3","minInclusive":true,"max":null,"maxInclusive":false},"stringsBase64Encoded":true}
 Partition at LL:
 {"key":{"min":"","minInclusive":true,"max":"cm93LTI1","maxInclusive":false},"stringsBase64Encoded":true}

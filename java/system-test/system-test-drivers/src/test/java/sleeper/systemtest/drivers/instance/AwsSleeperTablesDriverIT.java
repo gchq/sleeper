@@ -19,34 +19,19 @@ package sleeper.systemtest.drivers.instance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.SystemTestDrivers;
-import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
-import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
-import sleeper.systemtest.dsl.instance.SystemTestParameters;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.DEFAULT_SCHEMA;
-import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @LocalStackDslTest
 public class AwsSleeperTablesDriverIT {
 
-    private SleeperInstanceDriver instanceDriver;
-    private SleeperTablesDriver driver;
-    private InstanceProperties instanceProperties;
-
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper, SystemTestDrivers drivers, SystemTestParameters parameters) {
-        driver = drivers.tables(parameters);
-        instanceDriver = drivers.instance(parameters);
-        sleeper.connectToInstanceNoTables(MAIN);
-        instanceProperties = sleeper.instanceProperties();
+    void setUp(SleeperSystemTest sleeper) {
+        sleeper.connectToInstanceNoTables(LOCALSTACK_MAIN);
     }
 
     @Test
@@ -57,33 +42,9 @@ public class AwsSleeperTablesDriverIT {
     }
 
     @Test
-    void shouldInitialiseTablePartitions(SleeperSystemTest sleeper) throws StateStoreException {
+    void shouldInitialiseTablePartitions(SleeperSystemTest sleeper) {
         sleeper.tables().create("A", DEFAULT_SCHEMA);
         assertThat(sleeper.table("A").partitioning().tree().getAllPartitions())
                 .hasSize(1);
-    }
-
-    @Test
-    void shouldDeleteOneTable(SleeperSystemTest sleeper) {
-        sleeper.tables().create("A", DEFAULT_SCHEMA);
-        driver.deleteAllTables(instanceProperties);
-        assertThat(driver.tableIndex(instanceProperties).streamAllTables())
-                .isEmpty();
-    }
-
-    @Test
-    void shouldDeleteNothingWhenNoTablesArePresent() {
-        assertThatCode(() -> driver.deleteAllTables(instanceProperties))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
-    void shouldDeleteNothingWhenNoTablesArePresentAndInstancePropertiesAreSavedInConfigBucket(SystemTestDrivers drivers) {
-        instanceDriver.saveInstanceProperties(instanceProperties);
-        driver.deleteAllTables(instanceProperties);
-
-        InstanceProperties loaded = new InstanceProperties();
-        instanceDriver.loadInstanceProperties(loaded, instanceProperties.get(ID));
-        assertThat(loaded).isEqualTo(instanceProperties);
     }
 }

@@ -72,7 +72,7 @@ jobs:
         with:
           driver-opts: network=host
       - name: Download artifacts from previous workflows
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       - name: Load dependencies image
         run: docker load --input dependencies-image/dependencies-image.tar
       - name: Expose dependencies image to Docker Buildx via local registry

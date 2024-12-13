@@ -50,7 +50,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
     class FirstLoad {
 
         @Test
-        void shouldLoadFilesFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
+        void shouldLoadSnapshotOnFirstQueryForFiles() throws Exception {
             // Given
             FileReference file = fileFactory().rootFile(123);
 
@@ -64,7 +64,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
         }
 
         @Test
-        void shouldLoadPartitionsFromSnapshotWhenNotInLogOnFirstLoad() throws Exception {
+        void shouldLoadSnapshotOnFirstQueryForPartitions() throws Exception {
             // Given
             partitions.splitToNewChildren("root", "L", "R", "abc");
 
@@ -157,6 +157,21 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
             // Then
             assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(snapshotPartitions);
+        }
+
+        @Test
+        void shouldIgnoreMinTransactionsAheadOnFirstQuery() throws Exception {
+            // Given
+            FileReference file = fileFactory().rootFile(123);
+            StateStore stateStore = stateStore(builder -> builder.minTransactionsAheadToLoadSnapshot(5));
+
+            // When
+            createSnapshotWithFreshStateAtTransactionNumber(1, store -> {
+                store.addFile(file);
+            });
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(file);
         }
     }
 

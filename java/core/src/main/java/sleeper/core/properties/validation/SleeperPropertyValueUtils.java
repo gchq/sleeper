@@ -99,6 +99,16 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
+     * Checks if a property value is an integer greater than or equal to 0 or unset.
+     *
+     * @param  integer the value
+     * @return         true if the value meets the requirement
+     */
+    public static boolean isNonNegativeIntegerOrNull(String integer) {
+        return (integer == null) || (isNonNegativeInteger(integer));
+    }
+
+    /**
      * Checks if a property value is an integer.
      *
      * @param  integer the value

@@ -26,8 +26,6 @@ import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
 import java.time.Duration;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
 import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
 import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
@@ -65,8 +63,8 @@ public class DynamoDBTransactionLogStateStoreNoSnapshots {
                 .retryBackoff(new ExponentialBackoffWithJitter(WaitRange.firstAndMaxWaitCeilingSecs(
                         tableProperties.getLong(ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS) / 1000.0,
                         tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0)))
-                .filesLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3))
-                .partitionsLogStore(new DynamoDBTransactionLogStore(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME), instanceProperties, tableProperties, dynamoDB, s3));
+                .filesLogStore(DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoDB, s3))
+                .partitionsLogStore(DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoDB, s3));
     }
 
 }

@@ -83,13 +83,7 @@ public class StateStoreCommitter {
         for (int i = 0; i < requests.size(); i++) {
             RequestHandle handle = requests.get(i);
             try {
-                retryOnThrottling.doWithRetries(() -> {
-                    try {
-                        apply(handle.request());
-                    } catch (StateStoreException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                retryOnThrottling.doWithRetries(() -> apply(handle.request()));
             } catch (InterruptedException e) {
                 LOGGER.error("Interrupted applying commit request", e);
                 requests.subList(i, requests.size())
@@ -120,13 +114,7 @@ public class StateStoreCommitter {
         }
         TransactionLogStateStore state = (TransactionLogStateStore) stateStore;
         try {
-            retryOnThrottling.doWithRetries(() -> {
-                try {
-                    state.updateFromLogs();
-                } catch (StateStoreException e) {
-                    throw new RuntimeException("Failed updating state store at start of batch", e);
-                }
-            });
+            retryOnThrottling.doWithRetries(() -> state.updateFromLogs());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
@@ -185,7 +173,6 @@ public class StateStoreCommitter {
     void assignCompactionInputFiles(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStore(request.getTableId());
         stateStore.assignJobIds(request.getAssignJobIdRequests());
-        compactionJobStatusStore.jobInputFilesAssigned(request.getTableId(), request.getAssignJobIdRequests());
     }
 
     void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {

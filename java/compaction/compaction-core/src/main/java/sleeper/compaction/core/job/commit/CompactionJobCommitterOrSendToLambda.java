@@ -24,7 +24,6 @@ import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 
@@ -58,7 +57,7 @@ public class CompactionJobCommitterOrSendToLambda {
         this.timeSupplier = timeSupplier;
     }
 
-    public void commit(CompactionJob job, CompactionJobFinishedEvent finishedEvent) throws StateStoreException {
+    public void commit(CompactionJob job, CompactionJobFinishedEvent finishedEvent) {
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         TableStatus table = tableProperties.getStatus();
         boolean commitAsync = tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC);

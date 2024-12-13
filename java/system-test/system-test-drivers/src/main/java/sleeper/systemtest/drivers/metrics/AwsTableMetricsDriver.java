@@ -55,7 +55,7 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
 public class AwsTableMetricsDriver implements TableMetricsDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsTableMetricsDriver.class);

@@ -59,6 +59,16 @@ public class TableFilePaths {
     }
 
     /**
+     * Creates an instance of this class to generate object keys within the data bucket.
+     *
+     * @param  tableProperties the table properties
+     * @return                 an instance of this class
+     */
+    public static TableFilePaths buildObjectKeyInDataBucket(TableProperties tableProperties) {
+        return new TableFilePaths(tableProperties.get(TABLE_ID));
+    }
+
+    /**
      * Generates a path to a data file in the given partition. Will have `.parquet` appended at the end. The filename
      * must match the filename used for the corresponding sketches file.
      *
@@ -92,6 +102,16 @@ public class TableFilePaths {
      */
     public String constructQuantileSketchesFilePath(Partition partition, String fileName) {
         return String.format("%s/data/partition_%s/%s.sketches", filePathPrefix, partition.getId(), fileName);
+    }
+
+    /**
+     * Generates a path to a batch of compaction jobs to be dispatched.
+     *
+     * @param  batchId the ID of the batch
+     * @return         the file path
+     */
+    public String constructCompactionJobBatchPath(String batchId) {
+        return String.format("%s/compactions/%s.json", filePathPrefix, batchId);
     }
 
     public String getFilePathPrefix() {

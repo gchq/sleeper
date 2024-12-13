@@ -15,6 +15,9 @@
  */
 package sleeper.compaction.core.job;
 
+import sleeper.core.statestore.AssignJobIdRequest;
+import sleeper.core.statestore.CheckFileAssignmentsRequest;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -63,6 +66,14 @@ public class CompactionJob {
 
     public List<String> getInputFiles() {
         return inputFiles;
+    }
+
+    public CheckFileAssignmentsRequest createInputFileAssignmentsCheck() {
+        return CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(jobId, inputFiles, partitionId);
+    }
+
+    public AssignJobIdRequest createAssignJobIdRequest() {
+        return AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, inputFiles);
     }
 
     /**

@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.CheckFileAssignmentsRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.SplitFileReferences;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
@@ -75,7 +75,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     class HandleIngest {
 
         @Test
-        public void shouldAddAndReadActiveFiles() throws Exception {
+        public void shouldAddAndReadActiveFiles() {
             // Given
             Instant fixedUpdateTime = Instant.parse("2023-10-04T14:08:00Z");
             FileReference file1 = factory.rootFile("file1", 100L);
@@ -97,7 +97,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldSetLastUpdateTimeForFile() throws Exception {
+        void shouldSetLastUpdateTimeForFile() {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             FileReference file = factory.rootFile("file1", 100L);
@@ -111,7 +111,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldAddFileSplitOverTwoPartitions() throws Exception {
+        void shouldAddFileSplitOverTwoPartitions() {
             // Given
             splitPartition("root", "L", "R", 5);
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
@@ -128,7 +128,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldAddFileWithReferencesSplitOverTwoPartitions() throws Exception {
+        void shouldAddFileWithReferencesSplitOverTwoPartitions() {
             // Given
             splitPartition("root", "L", "R", 5);
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
@@ -150,7 +150,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldAddTwoFilesWithReferences() throws Exception {
+        void shouldAddTwoFilesWithReferences() {
             // Given
             splitPartition("root", "L", "R", 5);
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
@@ -176,7 +176,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldAddFileWithNoReferencesForGC() throws Exception {
+        void shouldAddFileWithNoReferencesForGC() {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             store.fixFileUpdateTime(updateTime);
@@ -192,7 +192,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailToAddSameFileTwice() throws Exception {
+        void shouldFailToAddSameFileTwice() {
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             FileReference file = factory.rootFile("file1", 100L);
@@ -209,7 +209,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailToAddAnotherReferenceForSameFile() throws Exception {
+        void shouldFailToAddAnotherReferenceForSameFile() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file1", 100L);
@@ -231,7 +231,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     @DisplayName("Split file references across multiple partitions")
     class SplitFiles {
         @Test
-        void shouldSplitOneFileInRootPartition() throws Exception {
+        void shouldSplitOneFileInRootPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
@@ -249,7 +249,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldSplitTwoFilesInOnePartition() throws Exception {
+        void shouldSplitTwoFilesInOnePartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file1 = factory.rootFile("file1", 100L);
@@ -272,7 +272,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldSplitOneFileFromTwoOriginalPartitions() throws Exception {
+        void shouldSplitOneFileFromTwoOriginalPartitions() {
             // Given
             splitPartition("root", "L", "R", 5);
             splitPartition("L", "LL", "LR", 2);
@@ -298,7 +298,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldSplitFilesInDifferentPartitions() throws Exception {
+        void shouldSplitFilesInDifferentPartitions() {
             // Given
             splitPartition("root", "L", "R", 5);
             splitPartition("L", "LL", "LR", 2);
@@ -323,7 +323,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldOnlyPerformOneLevelOfSplits() throws Exception {
+        void shouldOnlyPerformOneLevelOfSplits() {
             // Given
             splitPartition("root", "L", "R", 5L);
             splitPartition("L", "LL", "LR", 2L);
@@ -345,7 +345,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldNotSplitOneFileInLeafPartition() throws Exception {
+        void shouldNotSplitOneFileInLeafPartition() {
             // Given
             splitPartition("root", "L", "R", 5L);
             FileReference file = factory.partitionFile("L", "already-split.parquet", 100L);
@@ -362,7 +362,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldDoNothingWhenNoFilesExist() throws StateStoreException {
+        void shouldDoNothingWhenNoFilesExist() {
             // Given
             splitPartition("root", "L", "R", 5);
 
@@ -376,7 +376,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailToSplitFileWhichDoesNotExist() throws StateStoreException {
+        void shouldFailToSplitFileWhichDoesNotExist() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
@@ -392,7 +392,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailToSplitFileWhenReferenceDoesNotExistInPartition() throws StateStoreException {
+        void shouldFailToSplitFileWhenReferenceDoesNotExistInPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
@@ -410,7 +410,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailToSplitFileWhenTheOriginalFileWasSplitIncorrectlyToMultipleLevels() throws StateStoreException {
+        void shouldFailToSplitFileWhenTheOriginalFileWasSplitIncorrectlyToMultipleLevels() {
             // Given
             splitPartition("root", "L", "R", 5);
             splitPartition("L", "LL", "LR", 2);
@@ -434,7 +434,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldThrowExceptionWhenSplittingFileHasBeenAssignedToTheJob() throws Exception {
+        void shouldThrowExceptionWhenSplittingFileHasBeenAssignedToTheJob() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
@@ -458,7 +458,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     class CreateCompactionJobs {
 
         @Test
-        public void shouldMarkFileWithJobId() throws Exception {
+        public void shouldMarkFileWithJobId() {
             // Given
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
@@ -473,7 +473,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldMarkOneHalfOfSplitFileWithJobId() throws Exception {
+        public void shouldMarkOneHalfOfSplitFileWithJobId() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
@@ -491,7 +491,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldMarkMultipleFilesWithJobIds() throws Exception {
+        public void shouldMarkMultipleFilesWithJobIds() {
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
@@ -510,7 +510,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() throws Exception {
+        public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() {
             // Given
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
@@ -526,7 +526,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldNotUpdateOtherFilesIfOneFileAlreadyHasJobId() throws Exception {
+        public void shouldNotUpdateOtherFilesIfOneFileAlreadyHasJobId() {
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
@@ -545,7 +545,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() throws Exception {
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() {
             // Given
             FileReference file = factory.rootFile("existingFile", 100L);
             store.addFile(file);
@@ -559,7 +559,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() throws Exception {
+        public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() {
             // When / Then
             assertThatThrownBy(() -> store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
@@ -569,7 +569,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldNotMarkFileWithJobIdWhenReferenceDoesNotExistInPartition() throws Exception {
+        public void shouldNotMarkFileWithJobIdWhenReferenceDoesNotExistInPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
@@ -590,19 +590,20 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     class QueryCompactionFileAssignment {
 
         @Test
-        void shouldFilesNotYetAssigned() throws Exception {
+        void shouldFilesNotYetAssigned() {
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
             store.addFiles(List.of(file1, file2));
 
             // When / Then
-            assertThat(store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "root"))))
                     .isFalse();
         }
 
         @Test
-        void shouldCheckAllFilesAssigned() throws Exception {
+        void shouldCheckAllFilesAssigned() {
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
@@ -610,12 +611,13 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1", "file2"))));
 
             // When / Then
-            assertThat(store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "root"))))
                     .isTrue();
         }
 
         @Test
-        void shouldCheckSomeFilesAssigned() throws Exception {
+        void shouldCheckSomeFilesAssigned() {
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
@@ -623,12 +625,13 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1"))));
 
             // When / Then
-            assertThat(store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "root"))))
                     .isFalse();
         }
 
         @Test
-        void shouldCheckFilesAssignedOnOnePartition() throws Exception {
+        void shouldCheckFilesAssignedOnOnePartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file1 = factory.rootFile("file1", 100L);
@@ -641,48 +644,54 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "L", List.of("file1", "file2"))));
 
             // When / Then
-            assertThat(store.isPartitionFilesAssignedToJob("R", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "R"))))
                     .isFalse();
-            assertThat(store.isPartitionFilesAssignedToJob("L", List.of("file1", "file2"), "test-job"))
+            assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "L"))))
                     .isTrue();
         }
 
         @Test
         void shouldFailIfFileDoesNotExist() {
             // When / Then
-            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file"), "test-job"))
+            assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file"), "root"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
         }
 
         @Test
-        void shouldFailIfFileDoesNotExistOnPartition() throws Exception {
+        void shouldFailIfFileDoesNotExistOnPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             store.addFile(factory.partitionFile("L", "file", 100L));
 
             // When / Then
-            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("R", List.of("file"), "test-job"))
+            assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file"), "R"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
         }
 
         @Test
-        void shouldFailIfFileAssignedToOtherJob() throws Exception {
+        void shouldFailIfFileAssignedToOtherJob() {
             // Given
             store.addFile(factory.rootFile("file", 100L));
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("A", "root", List.of("file"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file"), "B"))
+            assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "B", List.of("file"), "root"))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
         }
 
         @Test
-        void shouldFailIfOneFileDoesNotExist() throws Exception {
+        void shouldFailIfOneFileDoesNotExist() {
             // Given
             store.addFile(factory.rootFile("file1", 100L));
 
             // When / Then
-            assertThatThrownBy(() -> store.isPartitionFilesAssignedToJob("root", List.of("file1", "file2"), "test-job"))
+            assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
+                    "test-job", List.of("file1", "file2"), "root"))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
         }
     }
@@ -692,7 +701,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     class ApplyCompaction {
 
         @Test
-        public void shouldSetFileReadyForGC() throws Exception {
+        public void shouldSetFileReadyForGC() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -715,7 +724,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldApplyMultipleCompactions() throws Exception {
+        void shouldApplyMultipleCompactions() {
             // Given
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile1 = factory.rootFile("newFile1", 100L);
@@ -742,7 +751,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailToSetReadyForGCWhenAlreadyReadyForGC() throws Exception {
+        void shouldFailToSetReadyForGCWhenAlreadyReadyForGC() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -769,7 +778,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() throws Exception {
+        void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -783,7 +792,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToSetFileReadyForGCWhichDoesNotExist() throws Exception {
+        public void shouldFailToSetFileReadyForGCWhichDoesNotExist() {
             // Given
             FileReference newFile = factory.rootFile("newFile", 100L);
 
@@ -797,7 +806,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToSetFilesReadyForGCWhenOneDoesNotExist() throws Exception {
+        public void shouldFailToSetFilesReadyForGCWhenOneDoesNotExist() {
             // Given
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -816,7 +825,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() throws Exception {
+        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
@@ -833,7 +842,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() throws Exception {
+        void shouldFailWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() {
             // Given
             FileReference file = factory.rootFile("file1", 100L);
             store.addFile(file);
@@ -851,7 +860,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailWhenOutputFileAlreadyExists() throws Exception {
+        public void shouldFailWhenOutputFileAlreadyExists() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("oldFile", 100L);
@@ -877,7 +886,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     class FindFilesForGarbageCollection {
 
         @Test
-        public void shouldFindFileWithNoReferencesWhichWasUpdatedLongEnoughAgo() throws Exception {
+        public void shouldFindFileWithNoReferencesWhichWasUpdatedLongEnoughAgo() {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
@@ -890,7 +899,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldNotFindFileWhichWasMarkedReadyForGCTooRecently() throws Exception {
+        public void shouldNotFindFileWhichWasMarkedReadyForGCTooRecently() {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:07:00Z");
@@ -903,7 +912,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldNotFindFileWhichHasTwoReferencesAndOnlyOneWasMarkedAsReadyForGC() throws Exception {
+        public void shouldNotFindFileWhichHasTwoReferencesAndOnlyOneWasMarkedAsReadyForGC() {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
@@ -925,7 +934,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFindFileWhichHasTwoReferencesAndBothWereMarkedAsReadyForGC() throws Exception {
+        public void shouldFindFileWhichHasTwoReferencesAndBothWereMarkedAsReadyForGC() {
             // Given
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
@@ -950,7 +959,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldNotFindSplitFileWhenOnlyFirstReadyForGCUpdateIsOldEnough() throws Exception {
+        public void shouldNotFindSplitFileWhenOnlyFirstReadyForGCUpdateIsOldEnough() {
             // Given ingest, compactions and GC check happened in order
             Instant ingestTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant firstCompactionTime = Instant.parse("2023-10-04T14:09:00Z");
@@ -989,7 +998,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     class ApplyGarbageCollection {
 
         @Test
-        public void shouldDeleteGarbageCollectedFile() throws Exception {
+        public void shouldDeleteGarbageCollectedFile() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -1007,7 +1016,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldDeleteGarbageCollectedFileSplitAcrossTwoPartitions() throws Exception {
+        void shouldDeleteGarbageCollectedFileSplitAcrossTwoPartitions() {
             // Given we have partitions, input files and output files for compactions
             splitPartition("root", "L", "R", 5);
             FileReference rootFile = factory.rootFile("file", 100L);
@@ -1035,7 +1044,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToDeleteActiveFile() throws Exception {
+        public void shouldFailToDeleteActiveFile() {
             // Given
             FileReference file = factory.rootFile("test", 100L);
             store.addFile(file);
@@ -1053,7 +1062,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToDeleteActiveFileWhenOneOfTwoSplitRecordsIsReadyForGC() throws Exception {
+        public void shouldFailToDeleteActiveFileWhenOneOfTwoSplitRecordsIsReadyForGC() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference rootFile = factory.rootFile("file", 100L);
@@ -1072,7 +1081,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldDeleteGarbageCollectedFileWhileIteratingThroughReadyForGCFiles() throws Exception {
+        public void shouldDeleteGarbageCollectedFileWhileIteratingThroughReadyForGCFiles() {
             // Given
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
@@ -1094,7 +1103,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToDeleteActiveFileWhenAlsoDeletingReadyForGCFile() throws Exception {
+        public void shouldFailToDeleteActiveFileWhenAlsoDeletingReadyForGCFile() {
             // Given
             FileReference activeFile = factory.rootFile("activeFile", 100L);
             store.addFilesWithReferences(List.of(
@@ -1116,7 +1125,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     class ReportFileStatus {
 
         @Test
-        void shouldReportOneActiveFile() throws Exception {
+        void shouldReportOneActiveFile() {
             // Given
             FileReference file = factory.rootFile("test", 100L);
             store.addFile(file);
@@ -1129,7 +1138,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldReportOneReadyForGCFile() throws Exception {
+        void shouldReportOneReadyForGCFile() {
             // Given
             store.addFilesWithReferences(List.of(fileWithNoReferences("test")));
 
@@ -1141,7 +1150,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldReportTwoActiveFiles() throws Exception {
+        void shouldReportTwoActiveFiles() {
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
@@ -1155,7 +1164,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldReportFileSplitOverTwoPartitions() throws Exception {
+        void shouldReportFileSplitOverTwoPartitions() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference rootFile = factory.rootFile("file", 100L);
@@ -1171,7 +1180,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldReportFileSplitOverTwoPartitionsWithOneSideCompacted() throws Exception {
+        void shouldReportFileSplitOverTwoPartitionsWithOneSideCompacted() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference rootFile = factory.rootFile("file", 100L);
@@ -1192,7 +1201,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldReportReadyForGCFilesWithLimit() throws Exception {
+        void shouldReportReadyForGCFilesWithLimit() {
             // Given
             store.addFilesWithReferences(List.of(
                     fileWithNoReferences("test1"),
@@ -1207,7 +1216,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldReportReadyForGCFilesMeetingLimit() throws Exception {
+        void shouldReportReadyForGCFilesMeetingLimit() {
             // Given
             store.addFilesWithReferences(List.of(
                     fileWithNoReferences("test1"),
@@ -1226,7 +1235,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     class FilesByPartition {
 
         @Test
-        public void shouldReturnMultipleFilesOnEachPartition() throws Exception {
+        public void shouldReturnMultipleFilesOnEachPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference rootFile1 = factory.rootFile("rootFile1", 10);
@@ -1249,7 +1258,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldNotReturnPartitionsWithNoFiles() throws Exception {
+        public void shouldNotReturnPartitionsWithNoFiles() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.partitionFile("L", "file", 100);
@@ -1265,7 +1274,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
     @DisplayName("Clear files")
     class ClearFiles {
         @Test
-        void shouldDeleteReferencedFileOnClear() throws Exception {
+        void shouldDeleteReferencedFileOnClear() {
             // Given
             FileReference file = factory.rootFile("file", 100L);
             store.addFile(file);
@@ -1283,7 +1292,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldDeleteUnreferencedFileOnClear() throws Exception {
+        void shouldDeleteUnreferencedFileOnClear() {
             // Given
             store.addFilesWithReferences(List.of(AllReferencesToAFile.builder()
                     .filename("file")

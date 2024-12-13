@@ -24,9 +24,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.UncheckedStateStoreException;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
@@ -35,6 +33,7 @@ import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
@@ -81,7 +80,7 @@ public class StateStoreWaitForFiles {
         this.timeSupplier = timeSupplier;
     }
 
-    public void wait(CompactionJob job, String taskId, String jobRunId) throws StateStoreException, InterruptedException {
+    public void wait(CompactionJob job, String taskId, String jobRunId) throws InterruptedException {
         Instant startTime = timeSupplier.get();
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         LOGGER.info("Waiting for {} file{} to be assigned to compaction job {} for table {}",
@@ -107,19 +106,12 @@ public class StateStoreWaitForFiles {
 
     private boolean allFilesAssignedToJob(
             PollWithRetries throttlingRetries, StateStore stateStore, CompactionJob job,
-            String taskId, String jobRunId, Instant startTime) throws StateStoreException, InterruptedException {
+            String taskId, String jobRunId, Instant startTime) throws InterruptedException {
         ResultTracker result = new ResultTracker();
         try {
             DynamoDBUtils.retryOnThrottlingException(throttlingRetries, () -> {
-                try {
-                    result.set(stateStore.isPartitionFilesAssignedToJob(job.getPartitionId(), job.getInputFiles(), job.getId()));
-                } catch (StateStoreException e) {
-                    throw new UncheckedStateStoreException(e);
-                }
+                result.set(stateStore.isAssigned(List.of(job.createInputFileAssignmentsCheck())));
             });
-        } catch (UncheckedStateStoreException e) {
-            reportFailure(job, taskId, jobRunId, startTime, e.getStateStoreException());
-            throw e.getStateStoreException();
         } catch (RuntimeException e) {
             reportFailure(job, taskId, jobRunId, startTime, e);
             throw e;
@@ -142,7 +134,7 @@ public class StateStoreWaitForFiles {
             this.allFilesAssigned = allFilesAssigned;
         }
 
-        boolean get() throws StateStoreException {
+        boolean get() {
             return allFilesAssigned;
         }
     }

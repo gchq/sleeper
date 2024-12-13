@@ -1,0 +1,5 @@
+{
+  "tableId": "test-table",
+  "batchKey": "test-table/compactions/test-batch.json",
+  "createTime": 1731931260000
+}

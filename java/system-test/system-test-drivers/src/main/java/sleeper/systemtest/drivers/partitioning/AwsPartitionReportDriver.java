@@ -17,7 +17,6 @@
 package sleeper.systemtest.drivers.partitioning;
 
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.splitter.core.status.PartitionsStatus;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.PartitionReportDriver;
@@ -32,13 +31,7 @@ public class AwsPartitionReportDriver implements PartitionReportDriver {
     }
 
     public SystemTestReport statusReport() {
-        return (out, startTime) -> {
-            try {
-                new PartitionsStatusReporter(out)
-                        .report(PartitionsStatus.from(instance.getTableProperties(), instance.getStateStore()));
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
-            }
-        };
+        return (out, startTime) -> new PartitionsStatusReporter(out)
+                .report(PartitionsStatus.from(instance.getTableProperties(), instance.getStateStore()));
     }
 }

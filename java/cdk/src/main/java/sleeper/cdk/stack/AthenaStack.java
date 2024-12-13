@@ -36,6 +36,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.AutoDeleteS3Objects;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
@@ -55,6 +57,7 @@ import static sleeper.core.properties.instance.CommonProperty.REGION;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class AthenaStack extends NestedStack {
+
     public AthenaStack(
             Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, CoreStacks coreStacks) {
         super(scope, id);
@@ -75,63 +78,86 @@ public class AthenaStack extends NestedStack {
                 .removalPolicy(RemovalPolicy.DESTROY)
                 .build();
 
-        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, coreStacks, lambdaCode, spillBucket, bucketName);
+        AutoDeleteS3Objects.autoDeleteForBucket(this, instanceProperties, lambdaCode, spillBucket, bucketName,
+                coreStacks.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE), coreStacks.getLogGroup(LogGroupRef.SPILL_BUCKET_AUTODELETE_PROVIDER));
 
         IKey spillMasterKey = createSpillMasterKey(this, instanceProperties);
+        List<Policy> connectorPolicies = createConnectorPolicies(this, instanceProperties);
+
+        createConnector("sleeper.athena.composite.SimpleCompositeHandler",
+                LambdaHandler.ATHENA_SIMPLE_COMPOSITE, LogGroupRef.SIMPLE_ATHENA_HANDLER,
+                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey, connectorPolicies);
+        createConnector("sleeper.athena.composite.IteratorApplyingCompositeHandler",
+                LambdaHandler.ATHENA_ITERATORS_COMPOSITE, LogGroupRef.ITERATOR_APPLYING_ATHENA_HANDLER,
+                instanceProperties, coreStacks, lambdaCode, jarsBucket, spillBucket, spillMasterKey, connectorPolicies);
+
+        Utils.addStackTagIfSet(this, instanceProperties);
+    }
+
+    private void createConnector(
+            String className, LambdaHandler handler, LogGroupRef logGroupRef, InstanceProperties instanceProperties, CoreStacks coreStacks,
+            LambdaCode lambdaCode, IBucket jarsBucket, IBucket spillBucket, IKey spillMasterKey, List<Policy> connectorPolicies) {
+        if (!instanceProperties.getList(ATHENA_COMPOSITE_HANDLER_CLASSES).contains(className)) {
+            return;
+        }
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String simpleClassName = getSimpleClassName(className);
+
+        String functionName = String.join("-", "sleeper", instanceId, simpleClassName, "athena-handler");
 
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("spill_bucket", spillBucket.getBucketName());
         env.put("kms_key_id", spillMasterKey.getKeyId());
 
-        Integer memory = instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_MEMORY);
-        Integer timeout = instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS);
-        List<String> handlerClasses = instanceProperties.getList(ATHENA_COMPOSITE_HANDLER_CLASSES);
+        IFunction athenaCompositeHandler = lambdaCode.buildFunction(this, handler, simpleClassName + "AthenaCompositeHandler", builder -> builder
+                .functionName(functionName)
+                .memorySize(instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_MEMORY))
+                .timeout(Duration.seconds(instanceProperties.getInt(ATHENA_COMPOSITE_HANDLER_TIMEOUT_IN_SECONDS)))
+                .logGroup(coreStacks.getLogGroup(logGroupRef))
+                .environment(env));
 
-        Policy listAllBucketsPolicy = Policy.Builder.create(this, "ListAllBucketsPolicy")
-                .statements(Lists.newArrayList(PolicyStatement.Builder.create()
-                        .resources(Lists.newArrayList("*"))
-                        .actions(Lists.newArrayList("S3:ListAllMyBuckets"))
-                        .build()))
+        CfnDataCatalog.Builder.create(this, simpleClassName + "AthenaDataCatalog")
+                .name(instanceId + simpleClassName + "SleeperConnector")
+                .description("Athena Connector for Sleeper")
+                .type("LAMBDA")
+                .parameters(Map.of("function", athenaCompositeHandler.getFunctionArn()))
                 .build();
 
-        Policy keyGenerationPolicy = Policy.Builder.create(this, "KeyGenerationPolicy")
-                .statements(Lists.newArrayList(PolicyStatement.Builder.create()
-                        .resources(Lists.newArrayList("*"))
-                        .actions(Lists.newArrayList("kms:GenerateRandom"))
-                        .build()))
-                .build();
+        jarsBucket.grantRead(athenaCompositeHandler);
 
-        Policy getAthenaQueryStatusPolicy = Policy.Builder.create(this, "GetAthenaQueryStatusPolicy")
-                .statements(Lists.newArrayList(PolicyStatement.Builder.create()
-                        .resources(Lists.newArrayList("arn:aws:athena:" + instanceProperties.get(REGION) + ":"
-                                + instanceProperties.get(ACCOUNT) + ":workgroup/*"))
-                        .actions(Lists.newArrayList("athena:getQueryExecution"))
-                        .build()))
-                .build();
+        coreStacks.grantReadTablesAndData(athenaCompositeHandler);
+        spillBucket.grantReadWrite(athenaCompositeHandler);
+        spillMasterKey.grant(athenaCompositeHandler, "kms:GenerateDataKey", "kms:DescribeKey");
 
-        for (String className : handlerClasses) {
-            IFunction handler = createConnector(className, instanceProperties, coreStacks, lambdaCode, env, memory, timeout);
+        IRole role = Objects.requireNonNull(athenaCompositeHandler.getRole());
+        connectorPolicies.forEach(role::attachInlinePolicy);
+    }
 
-            jarsBucket.grantRead(handler);
-
-            coreStacks.grantReadTablesAndData(handler);
-            spillBucket.grantReadWrite(handler);
-            spillMasterKey.grant(handler, "kms:GenerateDataKey", "kms:DescribeKey");
-
-            IRole role = Objects.requireNonNull(handler.getRole());
-            // Required for when spill bucket changes
-            role.attachInlinePolicy(listAllBucketsPolicy);
-
-            // Required for when creating a encryption data key
-            role.attachInlinePolicy(keyGenerationPolicy);
-
-            // Allow our function to get the status of the query. Allowed to query all workgroups within this account
-            // and region
-            role.attachInlinePolicy(getAthenaQueryStatusPolicy);
-
-        }
-
-        Utils.addStackTagIfSet(this, instanceProperties);
+    private static List<Policy> createConnectorPolicies(Construct scope, InstanceProperties instanceProperties) {
+        return List.of(
+                // Required when spill bucket changes
+                Policy.Builder.create(scope, "ListAllBucketsPolicy")
+                        .statements(Lists.newArrayList(PolicyStatement.Builder.create()
+                                .resources(Lists.newArrayList("*"))
+                                .actions(Lists.newArrayList("S3:ListAllMyBuckets"))
+                                .build()))
+                        .build(),
+                // Required for creating an encryption data key
+                Policy.Builder.create(scope, "KeyGenerationPolicy")
+                        .statements(Lists.newArrayList(PolicyStatement.Builder.create()
+                                .resources(Lists.newArrayList("*"))
+                                .actions(Lists.newArrayList("kms:GenerateRandom"))
+                                .build()))
+                        .build(),
+                // Allow connectors to get the status of the query. Allowed to query all workgroups within this account
+                // and region
+                Policy.Builder.create(scope, "GetAthenaQueryStatusPolicy")
+                        .statements(Lists.newArrayList(PolicyStatement.Builder.create()
+                                .resources(Lists.newArrayList("arn:aws:athena:" + instanceProperties.get(REGION) + ":"
+                                        + instanceProperties.get(ACCOUNT) + ":workgroup/*"))
+                                .actions(Lists.newArrayList("athena:getQueryExecution"))
+                                .build()))
+                        .build());
     }
 
     private static IKey createSpillMasterKey(Construct scope, InstanceProperties instanceProperties) {
@@ -146,32 +172,6 @@ public class AthenaStack extends NestedStack {
         } else {
             return Key.fromKeyArn(scope, "SpillMasterKey", spillKeyArn);
         }
-    }
-
-    private IFunction createConnector(
-            String className, InstanceProperties instanceProperties, CoreStacks coreStacks,
-            LambdaCode lambdaCode, Map<String, String> env, Integer memory, Integer timeout) {
-        String instanceId = Utils.cleanInstanceId(instanceProperties);
-        String simpleClassName = getSimpleClassName(className);
-
-        String functionName = String.join("-", "sleeper", instanceId, simpleClassName, "athena-handler");
-        LambdaHandler handler = LambdaHandler.athenaHandlerForClass(className);
-
-        IFunction athenaCompositeHandler = lambdaCode.buildFunction(this, handler, simpleClassName + "AthenaCompositeHandler", builder -> builder
-                .functionName(functionName)
-                .memorySize(memory)
-                .timeout(Duration.seconds(timeout))
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
-                .environment(env));
-
-        CfnDataCatalog.Builder.create(this, simpleClassName + "AthenaDataCatalog")
-                .name(instanceId + simpleClassName + "SleeperConnector")
-                .description("Athena Connector for Sleeper")
-                .type("LAMBDA")
-                .parameters(Map.of("function", athenaCompositeHandler.getFunctionArn()))
-                .build();
-
-        return athenaCompositeHandler;
     }
 
     private static String getSimpleClassName(String className) {

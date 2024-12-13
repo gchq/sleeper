@@ -29,6 +29,7 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -43,7 +44,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCF
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.DEFAULT_SCHEMA;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THROUGHPUT;
 
 @SystemTest
@@ -91,6 +92,29 @@ public class StateStoreCommitterThroughputST {
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
                 .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
+    }
+
+    @Test
+    void shouldMeetExpectedThroughputWhenCommittingLargeRequestsOnOneTable(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.connectToInstance(COMMITTER_THROUGHPUT);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(UUID.randomUUID().toString()).buildTree();
+        sleeper.partitioning().setPartitions(partitions);
+
+        // When
+        FileReferenceFactory fileFactory = FileReferenceFactory.from(sleeper.instanceProperties(), sleeper.tableProperties(), partitions);
+        sleeper.stateStore().fakeCommits()
+                .sendBatched(IntStream.rangeClosed(1, 100)
+                        .mapToObj(i -> IntStream.rangeClosed(1, 10_000)
+                                .mapToObj(j -> fileFactory.rootFile(UUID.randomUUID().toString(), 123_456))
+                                .toList())
+                        .map(StateStoreCommitMessage::addFiles))
+                .waitForCommitLogs();
+
+        // Then
+        assertThat(sleeper.tableFiles().references()).hasSize(1_000_000);
+        assertThat(sleeper.stateStore().commitsPerSecondForTable())
+                .satisfies(expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit());
     }
 
     @Test
@@ -292,6 +316,14 @@ public class StateStoreCommitterThroughputST {
     private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAcrossTables() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
                 .isGreaterThan(20.0);
+    }
+
+    private static Consumer<Double> expectedCommitsPerSecondForTransactionLogWith10kFilesPerCommit() {
+        return commitsPerSecond -> {
+            double filesPerSecond = commitsPerSecond * 10_000;
+            assertThat(filesPerSecond)
+                    .isGreaterThan(300.0);
+        };
     }
 
 }

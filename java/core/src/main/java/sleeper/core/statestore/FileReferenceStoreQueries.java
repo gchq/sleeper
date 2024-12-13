@@ -23,10 +23,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Serves queries about the data files in a Sleeper table. This includes a count of the number of references
@@ -66,26 +65,28 @@ public interface FileReferenceStoreQueries {
     List<FileReference> getFileReferencesWithNoJobId() throws StateStoreException;
 
     /**
-     * Checks if files on a given partition are assigned to a certain job.
+     * Checks if files are assigned to jobs.
      *
-     * @param  partitionId         the ID of the partition to query
-     * @return                     a list of {@link FileReference}s on the partition
+     * @param  requests            the definitions of which files should be assigned to which jobs
+     * @return                     true if all files are assigned to all jobs
      * @throws StateStoreException if query fails
      */
-    default boolean isPartitionFilesAssignedToJob(String partitionId, List<String> filenames, String jobId) throws StateStoreException {
+    default boolean isAssigned(List<CheckFileAssignmentsRequest> requests) throws StateStoreException {
         List<FileReference> fileReferences = getFileReferences();
-        Map<String, FileReference> partitionFileByName = fileReferences.stream()
-                .filter(reference -> Objects.equals(partitionId, reference.getPartitionId()))
-                .collect(toMap(FileReference::getFilename, f -> f));
+        Map<String, List<FileReference>> referencesByPartitionId = fileReferences.stream()
+                .collect(groupingBy(FileReference::getPartitionId));
         boolean allAssigned = true;
-        for (String filename : filenames) {
-            FileReference reference = partitionFileByName.get(filename);
-            if (reference == null) {
-                throw new FileReferenceNotFoundException(filename, partitionId);
-            } else if (reference.getJobId() == null) {
-                allAssigned = false;
-            } else if (!reference.getJobId().equals(jobId)) {
-                throw new FileReferenceAssignedToJobException(reference);
+        for (CheckFileAssignmentsRequest request : requests) {
+            List<FileReference> references = referencesByPartitionId.getOrDefault(request.getPartitionId(), List.of());
+            for (String filename : request.getFilenames()) {
+                FileReference reference = references.stream().filter(ref -> filename.equals(ref.getFilename())).findFirst().orElse(null);
+                if (reference == null) {
+                    throw new FileReferenceNotFoundException(filename, request.getPartitionId());
+                } else if (reference.getJobId() == null) {
+                    allAssigned = false;
+                } else if (!reference.getJobId().equals(request.getJobId())) {
+                    throw new FileReferenceAssignedToJobException(reference);
+                }
             }
         }
         return allAssigned;

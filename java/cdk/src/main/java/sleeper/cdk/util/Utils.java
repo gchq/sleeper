@@ -42,7 +42,6 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.constructs.Construct;
 
-import sleeper.cdk.stack.CoreStacks;
 import sleeper.core.SleeperVersion;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -66,12 +65,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSIO
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CommonProperty.STACK_TAG_NAME;
-import static sleeper.core.properties.instance.DashboardProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.APACHE_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.AWS_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.PARQUET_LOGGING_LEVEL;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.ROOT_LOGGING_LEVEL;
+import static sleeper.core.properties.instance.MetricsProperty.DASHBOARD_TIME_WINDOW_MINUTES;
 
 /**
  * Collection of utility methods related to the CDK deployment.
@@ -137,17 +136,16 @@ public class Utils {
                 .replace(".", "-");
     }
 
-    public static LogDriver createECSContainerLogDriver(CoreStacks coreStacks, String id) {
-        ILogGroup logGroup = coreStacks.getLogGroupByECSLogDriverId(id);
+    public static LogDriver createECSContainerLogDriver(ILogGroup logGroup) {
         return LogDriver.awsLogs(AwsLogDriverProps.builder()
                 .streamPrefix(logGroup.getLogGroupName())
                 .logGroup(logGroup)
                 .build());
     }
 
-    public static LogOptions createStateMachineLogOptions(CoreStacks coreStacks, String id) {
+    public static LogOptions createStateMachineLogOptions(ILogGroup logGroup) {
         return LogOptions.builder()
-                .destination(coreStacks.getLogGroupByStateMachineId(id))
+                .destination(logGroup)
                 .level(LogLevel.ALL)
                 .includeExecutionData(true)
                 .build();

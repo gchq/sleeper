@@ -21,13 +21,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DeployInstanceConfiguration;
+import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.SleeperProperties;
 import sleeper.core.properties.SleeperProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.systemtest.dsl.SystemTestDrivers;
-import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 
 import java.util.List;
 import java.util.Objects;
@@ -51,20 +51,15 @@ public final class DeployedSleeperInstance {
         this.instanceAdminDrivers = instanceAdminDrivers;
     }
 
-    public static DeployedSleeperInstance loadOrDeployIfNeeded(
+    public static DeployedSleeperInstance loadOrDeployAtFirstConnect(
             String instanceId, SystemTestInstanceConfiguration configuration,
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver, SnapshotsDriver snapshotsDriver) {
+            SleeperInstanceDriver driver, AssumeAdminRoleDriver assumeRoleDriver, ScheduleRulesDriver schedulesDriver) {
         DeployInstanceConfiguration deployConfig = configuration.buildDeployConfig(parameters, systemTest);
         boolean newInstance = driver.deployInstanceIfNotPresent(instanceId, deployConfig);
 
         InstanceProperties instanceProperties = new InstanceProperties();
         driver.loadInstanceProperties(instanceProperties, instanceId);
-        if (configuration.shouldEnableTransactionLogSnapshots()) {
-            snapshotsDriver.enableCreation(instanceProperties);
-        } else {
-            snapshotsDriver.disableCreation(instanceProperties);
-        }
 
         DeployedSleeperInstance instance = new DeployedSleeperInstance(
                 deployConfig, instanceProperties,
@@ -72,6 +67,16 @@ public final class DeployedSleeperInstance {
         if (!newInstance && instance.isRedeployNeeded(parameters, systemTest)) {
             instance.redeploy(driver, parameters);
         }
+        driver.resetOnFirstConnect(instanceProperties);
+        instance.resetInstanceProperties(driver);
+
+        SleeperScheduleRule.getDeployedRules(instanceProperties).forEach(rule -> {
+            if (configuration.isEnable(rule)) {
+                schedulesDriver.enableRule(rule);
+            } else {
+                schedulesDriver.disableRule(rule);
+            }
+        });
         return instance;
     }
 
@@ -89,7 +94,7 @@ public final class DeployedSleeperInstance {
                         .streamAllTables().collect(toUnmodifiableList()));
     }
 
-    public void resetInstanceProperties(SleeperInstanceDriver driver) {
+    private void resetInstanceProperties(SleeperInstanceDriver driver) {
         ResetProperties.reset(instanceProperties, configuration.getInstanceProperties());
         driver.saveInstanceProperties(instanceProperties);
     }

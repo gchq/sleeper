@@ -19,8 +19,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Schema;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
@@ -47,11 +46,10 @@ public class InMemorySourceFilesDriver implements IngestSourceFilesDriver {
     public void writeFile(InstanceProperties instanceProperties, TableProperties tableProperties,
             String path, boolean writeSketches, Iterator<Record> records) {
         List<Record> recordList = new ArrayList<>();
-        Schema schema = tableProperties.getSchema();
-        Sketches sketches = Sketches.from(schema);
+        Sketches sketches = Sketches.from(tableProperties.getSchema());
         for (Record record : (Iterable<Record>) () -> records) {
             recordList.add(record);
-            sketches.update(schema, record);
+            sketches.update(record);
         }
         if (path.contains(instanceProperties.get(DATA_BUCKET))) {
             dataStore.addFile(path, recordList);

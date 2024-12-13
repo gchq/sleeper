@@ -54,6 +54,7 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedComp
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -64,7 +65,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("createdStatus.updateTime", "expiryDate")
+            .withIgnoredFields("createUpdateTime", "expiryDate")
             .withIgnoredFieldsMatchingRegexes("jobRun.+updateTime").build();
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_TIME = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate").build();
@@ -124,6 +125,24 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     protected CompactionJobFactory jobFactoryForOtherTable() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         return new CompactionJobFactory(instanceProperties, tableProperties);
+    }
+
+    protected void storeJobsCreated(CompactionJob... jobs) {
+        for (CompactionJob job : jobs) {
+            storeJobCreated(job);
+        }
+    }
+
+    protected void storeJobCreated(CompactionJob job) {
+        store.jobCreated(compactionJobCreated(job));
+    }
+
+    protected void storeJobCreated(CompactionJobStatusStore store, CompactionJob job) {
+        store.jobCreated(compactionJobCreated(job));
+    }
+
+    protected void storeJobCreatedAtTime(Instant updateTime, CompactionJob job) {
+        storeWithUpdateTime(updateTime).jobCreated(compactionJobCreated(job));
     }
 
     protected static Instant ignoredUpdateTime() {

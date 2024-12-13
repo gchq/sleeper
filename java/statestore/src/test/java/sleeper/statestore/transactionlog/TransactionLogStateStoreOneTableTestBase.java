@@ -20,7 +20,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -39,13 +38,13 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
     protected FileReferenceFactory factory;
     protected StateStore store;
 
-    protected void initialiseWithSchema(Schema schema) throws Exception {
+    protected void initialiseWithSchema(Schema schema) {
         createStore(schema);
         setPartitions(new PartitionsBuilder(schema).singlePartition("root"));
         store.initialise();
     }
 
-    protected void initialiseWithPartitions(PartitionsBuilder partitions) throws Exception {
+    protected void initialiseWithPartitions(PartitionsBuilder partitions) {
         createStore(partitions.getSchema());
         setPartitions(partitions);
         store.initialise(partitions.buildList());
@@ -62,7 +61,7 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
     }
 
-    protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) throws StateStoreException {
+    protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
                 .applySplit(store, parentId);
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);

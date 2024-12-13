@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
 import sleeper.splitter.core.find.FindPartitionsToSplit.JobSender;
 import sleeper.splitter.core.split.SplitPartition;
@@ -45,13 +44,7 @@ public class InMemoryPartitionSplittingDriver implements PartitionSplittingDrive
                 instance.getInstanceProperties(),
                 instance.getStateStoreProvider(),
                 splitPartition());
-        instance.streamTableProperties().forEach(table -> {
-            try {
-                finder.run(table);
-            } catch (StateStoreException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        instance.streamTableProperties().forEach(table -> finder.run(table));
     }
 
     private JobSender splitPartition() {

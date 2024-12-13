@@ -40,8 +40,12 @@ public class TestProjectStructure {
     private static ProjectStructure.Builder exampleBuilder() {
         return ProjectStructure.builder()
                 .chunksYamlPath(BASE_PATH.resolve("config/chunks.yaml"))
-                .mavenProjectPath(BASE_PATH.resolve("maven"))
+                .mavenProjectPath(mavenPath())
                 .workflowsPath(BASE_PATH.resolve("github-actions"));
+    }
+
+    public static Path mavenPath() {
+        return BASE_PATH.resolve("maven");
     }
 
     public static CheckGitHubStatusConfig loadExampleGitHubStatusConfiguration() throws IOException {

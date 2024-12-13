@@ -63,6 +63,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
     private final AwsRegionProvider regionProvider;
     private final CloudFormationClient cloudFormationClient;
     private final EcrClient ecr;
+    private final AwsResetInstanceOnFirstConnect resetInstance;
 
     public AwsSleeperInstanceDriver(SystemTestParameters parameters, SystemTestClients clients) {
         this.parameters = parameters;
@@ -73,6 +74,7 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         this.regionProvider = clients.getRegionProvider();
         this.cloudFormationClient = clients.getCloudFormation();
         this.ecr = clients.getEcr();
+        this.resetInstance = new AwsResetInstanceOnFirstConnect(clients);
     }
 
     public void loadInstanceProperties(InstanceProperties instanceProperties, String instanceId) {
@@ -142,5 +144,10 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
             throw new UncheckedIOException(e);
         }
         loadInstanceProperties(instanceProperties, instanceProperties.get(ID));
+    }
+
+    @Override
+    public void resetOnFirstConnect(InstanceProperties instanceProperties) {
+        resetInstance.reset(instanceProperties);
     }
 }

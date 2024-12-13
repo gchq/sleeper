@@ -19,11 +19,11 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCommittedStatus;
+import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
 import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.status.CompactionJobInputFilesAssignedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
@@ -31,7 +31,6 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.statestore.AssignJobIdRequest;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -66,29 +65,15 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     }
 
     @Override
-    public void jobCreated(CompactionJob job) {
-        jobCreated(job, getUpdateTimeOrDefault(Instant::now));
+    public void jobCreated(CompactionJobCreatedEvent event) {
+        jobCreated(event, getUpdateTimeOrDefault(Instant::now));
     }
 
-    public void jobCreated(CompactionJob job, Instant createdTime) {
-        add(job, ProcessStatusUpdateRecord.builder()
-                .jobId(job.getId())
-                .statusUpdate(CompactionJobCreatedStatus.from(job, createdTime))
+    public void jobCreated(CompactionJobCreatedEvent event, Instant assignedTime) {
+        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+                .jobId(event.getJobId())
+                .statusUpdate(CompactionJobCreatedStatus.from(event, assignedTime))
                 .build());
-    }
-
-    @Override
-    public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests) {
-        jobInputFilesAssigned(tableId, requests, getUpdateTimeOrDefault(Instant::now));
-    }
-
-    public void jobInputFilesAssigned(String tableId, List<AssignJobIdRequest> requests, Instant assignedTime) {
-        for (AssignJobIdRequest request : requests) {
-            add(tableId, ProcessStatusUpdateRecord.builder()
-                    .jobId(request.getJobId())
-                    .statusUpdate(new CompactionJobInputFilesAssignedStatus(assignedTime))
-                    .build());
-        }
     }
 
     @Override

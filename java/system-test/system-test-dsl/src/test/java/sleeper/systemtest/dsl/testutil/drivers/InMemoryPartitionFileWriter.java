@@ -28,7 +28,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.sketches.Sketches;
 
 import java.util.ArrayList;
@@ -49,14 +49,12 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     private final String filename;
     private final List<Record> records = new ArrayList<>();
     private final Sketches sketches;
-    private final Schema schema;
 
     private InMemoryPartitionFileWriter(InMemoryDataStore dataStore, InMemorySketchesStore sketchesStore, Partition partition, String filename, Schema schema) {
         this.dataStore = dataStore;
         this.sketchesStore = sketchesStore;
         this.partition = partition;
         this.filename = filename;
-        this.schema = schema;
         this.sketches = Sketches.from(schema);
     }
 
@@ -72,7 +70,7 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     @Override
     public void append(Record record) {
         records.add(record);
-        sketches.update(schema, record);
+        sketches.update(record);
     }
 
     @Override

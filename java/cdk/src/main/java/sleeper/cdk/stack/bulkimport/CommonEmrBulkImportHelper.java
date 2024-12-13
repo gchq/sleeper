@@ -32,7 +32,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.CoreStacks;
+import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
+import static sleeper.core.properties.instance.BulkImportProperty.BULK_IMPORT_STARTER_LAMBDA_MEMORY;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 
 public class CommonEmrBulkImportHelper {
@@ -101,14 +103,14 @@ public class CommonEmrBulkImportHelper {
     }
 
     public IFunction createJobStarterFunction(
-            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
+            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket, LogGroupRef logGroupRef,
             CommonEmrBulkImportStack commonEmrStack) {
-        return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket,
+        return createJobStarterFunction(bulkImportPlatform, jobQueue, jars, importBucket, logGroupRef,
                 List.of(commonEmrStack.getEmrRole(), commonEmrStack.getEc2Role()));
     }
 
     public IFunction createJobStarterFunction(
-            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket,
+            String bulkImportPlatform, Queue jobQueue, BuiltJars jars, IBucket importBucket, LogGroupRef logGroupRef,
             List<IRole> passRoles) {
         Map<String, String> env = Utils.createDefaultEnvironment(instanceProperties);
         env.put("BULK_IMPORT_PLATFORM", bulkImportPlatform);
@@ -121,10 +123,10 @@ public class CommonEmrBulkImportHelper {
         IFunction function = lambdaCode.buildFunction(scope, LambdaHandler.BULK_IMPORT_STARTER, "BulkImport" + platform + "JobStarter", builder -> builder
                 .functionName(functionName)
                 .description("Function to start " + platform + " bulk import jobs")
-                .memorySize(1024)
+                .memorySize(instanceProperties.getInt(BULK_IMPORT_STARTER_LAMBDA_MEMORY))
                 .timeout(Duration.minutes(2))
                 .environment(env)
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName))
+                .logGroup(coreStacks.getLogGroup(logGroupRef))
                 .events(Lists.newArrayList(SqsEventSource.Builder.create(jobQueue).batchSize(1).build())));
 
         coreStacks.grantValidateBulkImport(function.getRole());

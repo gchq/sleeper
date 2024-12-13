@@ -28,7 +28,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.StateStoreTestBuilder;
 
 import java.util.List;
@@ -131,7 +130,7 @@ class PartitionsStatusTest {
     class CountPartitions {
 
         @Test
-        void shouldCountLeafPartitions() throws StateStoreException {
+        void shouldCountLeafPartitions() {
             // Given
             StateStore store = createRootPartitionWithTwoChildren().buildStateStore();
 
@@ -143,7 +142,7 @@ class PartitionsStatusTest {
         }
 
         @Test
-        void shouldFindNoSplittingPartitionsWhenThresholdNotExceeded() throws StateStoreException {
+        void shouldFindNoSplittingPartitionsWhenThresholdNotExceeded() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
             StateStore store = createRootPartitionWithTwoChildren()
@@ -157,7 +156,7 @@ class PartitionsStatusTest {
         }
 
         @Test
-        void shouldFindSplittingPartitionsWhenThresholdExceeded() throws StateStoreException {
+        void shouldFindSplittingPartitionsWhenThresholdExceeded() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
             StateStore store = createRootPartitionWithTwoChildren()
@@ -171,7 +170,7 @@ class PartitionsStatusTest {
         }
 
         @Test
-        void shouldExcludeNonLeafPartitionsInNeedsSplittingCount() throws StateStoreException {
+        void shouldExcludeNonLeafPartitionsInNeedsSplittingCount() {
             // Given
             TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
             StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
@@ -189,7 +188,7 @@ class PartitionsStatusTest {
     }
 
     @Test
-    void shouldOrderPartitionsByTreeLeavesFirst() throws StateStoreException {
+    void shouldOrderPartitionsByTreeLeavesFirst() {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
         PartitionTree partitions = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,

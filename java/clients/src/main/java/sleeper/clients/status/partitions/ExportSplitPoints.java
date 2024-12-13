@@ -36,7 +36,6 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.BufferedWriter;
@@ -67,7 +66,7 @@ public class ExportSplitPoints {
         this.schema = schema;
     }
 
-    public List<Object> getSplitPoints() throws StateStoreException {
+    public List<Object> getSplitPoints() {
         Type rowKey0Type = schema.getRowKeyTypes().get(0);
         List<Partition> leafPartitions = stateStore.getLeafPartitions();
         SortedSet<Comparable<?>> splitPoints = new TreeSet<>();
@@ -116,7 +115,7 @@ public class ExportSplitPoints {
         return splitPointsToReturn;
     }
 
-    public static void main(String[] args) throws IOException, StateStoreException {
+    public static void main(String[] args) throws IOException {
         if (3 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id> <table-name> <output-file>");
         }

@@ -25,7 +25,6 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputConstants;
@@ -133,7 +132,7 @@ public class QueryLambdaClient extends QueryCommandLineClient {
                         query.withResultsPublisherConfig(resultsPublisherConfig))));
     }
 
-    public static void main(String[] args) throws StateStoreException, InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         if (1 != args.length) {
             throw new IllegalArgumentException("Usage: <instance-id>");
         }

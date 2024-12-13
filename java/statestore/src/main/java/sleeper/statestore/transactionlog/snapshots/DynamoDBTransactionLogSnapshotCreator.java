@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
@@ -37,9 +36,6 @@ import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapsho
 
 import java.io.IOException;
 import java.util.Optional;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 
 /**
  * Creates a snapshot of the current state of a state store if it has changed since the previous snapshot.
@@ -65,11 +61,9 @@ public class DynamoDBTransactionLogSnapshotCreator {
     public static DynamoDBTransactionLogSnapshotCreator from(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             AmazonS3 s3Client, AmazonDynamoDB dynamoDBClient, Configuration configuration) {
-        TransactionLogStore fileTransactionStore = new DynamoDBTransactionLogStore(
-                instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME),
+        TransactionLogStore fileTransactionStore = DynamoDBTransactionLogStore.forFiles(
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
-        TransactionLogStore partitionTransactionStore = new DynamoDBTransactionLogStore(
-                instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME),
+        TransactionLogStore partitionTransactionStore = DynamoDBTransactionLogStore.forPartitions(
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
                 instanceProperties, tableProperties, dynamoDBClient);
@@ -110,7 +104,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 snapshotStore.saveFilesSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new files snapshot");
             }
-        } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
+        } catch (DuplicateSnapshotException | IOException e) {
             LOGGER.error("Failed to create files snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }
@@ -125,7 +119,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 snapshotStore.savePartitionsSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new partitions snapshot");
             }
-        } catch (DuplicateSnapshotException | StateStoreException | IOException e) {
+        } catch (DuplicateSnapshotException | IOException e) {
             LOGGER.error("Failed to create partitions snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }

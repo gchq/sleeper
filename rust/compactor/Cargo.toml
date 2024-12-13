@@ -14,9 +14,9 @@
 [package]
 name = "compactor"
 authors = ["GCHQ"]
-rust-version = "1.77"
+rust-version = "1.79"
 description = "Binary crate for running the data compactor from the command line."
-version = "0.26.0"
+version = "0.27.0"
 edition = "2021"
 license = "Apache-2.0"
 keywords = ["sleeper", "compaction"]
@@ -27,17 +27,17 @@ default-run = "main"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-thiserror = { version = "2.0.3" } # Derivable error enums
+thiserror = { version = "2.0.6" } # Derivable error enums
 log = { version = "0.4.22", features = [
     "release_max_level_debug",
 ] } # Standard logging framework
 env_logger = { version = "0.11.5" } # Standard logging to stderr
 human-panic = { version = "2.0.2" } # Readable panic messages
-clap = { version = "4.5.20", features = ["derive"] } # Cmd line args processing
+clap = { version = "4.5.23", features = ["derive"] } # Cmd line args processing
 color-eyre = { version = "0.6.2" } # Colourised version of `anyhow`
 owo-colors = { version = "4.1.0" } # Colourised output
 compaction = { path = "../compaction" }
-chrono = { version = "0.4.26" } # Log helper
-tokio = { version = "1.41.1", features = ["full"] } # Async runtime
-url = { version = "2.5.3" }
+chrono = { version = "0.4.39" } # Log helper
+tokio = { version = "1.42.0", features = ["full"] } # Async runtime
+url = { version = "2.5.4" }
 num-format = { version = "0.4.4" } # Formatted numbers

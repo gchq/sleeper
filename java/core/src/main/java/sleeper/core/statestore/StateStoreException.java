@@ -18,7 +18,7 @@ package sleeper.core.statestore;
 /**
  * An exception for failures in methods on a Sleeper state store.
  */
-public class StateStoreException extends Exception {
+public class StateStoreException extends RuntimeException {
     private static final long serialVersionUID = -3745911189033191252L;
 
     public StateStoreException(String message, Throwable e) {

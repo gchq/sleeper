@@ -52,7 +52,7 @@ jobs:
       - name: Save dependencies image to tarball
         run: docker save ${{ env.DEPENDENCIES_IMAGE }} --output /tmp/dependencies-image.tar
       - name: Upload dependencies image as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dependencies-image
           path: /tmp/dependencies-image.tar

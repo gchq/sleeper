@@ -36,7 +36,7 @@ public interface AthenaProperty {
             .defaultValue("sleeper.athena.composite.SimpleCompositeHandler,sleeper.athena.composite.IteratorApplyingCompositeHandler")
             .propertyGroup(InstancePropertyGroup.ATHENA)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_MEMORY = Index.propertyBuilder("sleeper.athena.handler.memory")
+    UserDefinedInstanceProperty ATHENA_COMPOSITE_HANDLER_MEMORY = Index.propertyBuilder("sleeper.athena.handler.memory.mb")
             .description("The amount of memory (MB) the athena composite handler has.")
             .defaultValue("4096")
             .propertyGroup(InstancePropertyGroup.ATHENA)
@@ -65,7 +65,7 @@ public interface AthenaProperty {
 
         private static final SleeperPropertyIndex<UserDefinedInstanceProperty> INSTANCE = new SleeperPropertyIndex<>();
 
-        static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
+        private static UserDefinedInstancePropertyImpl.Builder propertyBuilder(String propertyName) {
             return UserDefinedInstancePropertyImpl.named(propertyName)
                     .addToIndex(INSTANCE::add);
         }

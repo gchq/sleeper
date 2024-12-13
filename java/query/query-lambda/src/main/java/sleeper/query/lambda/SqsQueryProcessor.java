@@ -22,15 +22,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.UserDefinedInstanceProperty;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
@@ -38,7 +38,8 @@ import sleeper.query.core.model.QueryException;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.model.QuerySerDe;
 import sleeper.query.core.output.ResultsOutputInfo;
-import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.query.runner.tracker.DynamoDBQueryTracker;
 import sleeper.query.runner.tracker.QueryStatusReportListeners;
 import sleeper.statestore.StateStoreFactory;
@@ -74,7 +75,7 @@ public class SqsQueryProcessor {
         instanceProperties = builder.instanceProperties;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         executorService = Executors.newFixedThreadPool(instanceProperties.getInt(EXECUTOR_POOL_THREADS));
-        objectFactory = new ObjectFactory(instanceProperties, builder.s3Client, "/tmp");
+        objectFactory = new S3UserJarsLoader(instanceProperties, builder.s3Client, "/tmp").buildObjectFactory();
         queryTracker = new DynamoDBQueryTracker(instanceProperties, builder.dynamoClient);
         // The following Configuration is only used in StateStoreProvider for reading from S3 if the S3StateStore is used,
         // so use the standard Configuration rather than the one for query lambdas which is specific to the table.
@@ -95,17 +96,18 @@ public class SqsQueryProcessor {
             Query parentQuery = query.asParentQuery();
             queryTrackers.queryInProgress(parentQuery);
             processRangeQuery(parentQuery, tableProperties, queryTrackers);
-        } catch (StateStoreException | QueryException e) {
+        } catch (RuntimeException | QueryException e) {
             LOGGER.error("Exception thrown executing query", e);
             query.reportFailed(queryTrackers, e);
         }
     }
 
-    private void processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws StateStoreException, QueryException {
+    private void processRangeQuery(Query query, TableProperties tableProperties, QueryStatusReportListeners queryTrackers) throws QueryException {
         QueryExecutor queryExecutor = queryExecutorCache.computeIfAbsent(query.getTableName(), tableName -> {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(tableProperties);
-            return new QueryExecutor(objectFactory, tableProperties, stateStore, conf, executorService);
+            return new QueryExecutor(objectFactory, tableProperties, stateStore,
+                    new LeafPartitionRecordRetrieverImpl(executorService, conf));
         });
 
         queryExecutor.initIfNeeded(Instant.now());

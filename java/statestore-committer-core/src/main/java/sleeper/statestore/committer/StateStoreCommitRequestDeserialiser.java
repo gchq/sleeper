@@ -24,8 +24,6 @@ import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobJsonSerDe;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.partition.Partition;
@@ -36,9 +34,11 @@ import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.util.GsonConfig;
+import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
 import java.lang.reflect.Type;
+import java.time.Instant;
 
 /**
  * Deserialises a state store commit request.
@@ -59,7 +59,6 @@ public class StateStoreCommitRequestDeserialiser {
 
     private static Gson gson(TablePropertiesProvider tablePropertiesProvider, DeserialiseFromDataBucket readFromDataBucket) {
         return GsonConfig.standardBuilder()
-                .registerTypeAdapter(CompactionJob.class, new CompactionJobJsonSerDe())
                 .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser(readFromDataBucket))
                 .registerTypeAdapter(SplitPartitionCommitRequest.class, new SplitPartitionDeserialiser(tablePropertiesProvider))
                 .serializeNulls()
@@ -77,8 +76,13 @@ public class StateStoreCommitRequestDeserialiser {
     }
 
     private StateStoreCommitRequest fromDataBucket(StateStoreCommitRequestInS3 request) {
+        Instant startTime = Instant.now();
         String json = loadFromDataBucket.loadFromDataBucket(request.getKeyInS3());
-        return gsonFromDataBucket.fromJson(json, StateStoreCommitRequest.class);
+        LOGGER.debug("Loaded from S3 in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
+        Instant parseStartTime = Instant.now();
+        StateStoreCommitRequest fromS3 = gsonFromDataBucket.fromJson(json, StateStoreCommitRequest.class);
+        LOGGER.debug("Parsed in {}", LoggedDuration.withShortOutput(parseStartTime, Instant.now()));
+        return fromS3;
     }
 
     /**

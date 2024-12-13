@@ -20,7 +20,6 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,7 +39,7 @@ public class PartitionsStatus {
         this.splitThreshold = splitThreshold;
     }
 
-    public static PartitionsStatus from(TableProperties tableProperties, StateStore store) throws StateStoreException {
+    public static PartitionsStatus from(TableProperties tableProperties, StateStore store) {
         List<Partition> partitions = store.getAllPartitions();
         long splitThreshold = tableProperties.getLong(PARTITION_SPLIT_THRESHOLD);
         if (partitions.isEmpty()) {

@@ -19,6 +19,7 @@ package sleeper.systemtest.dsl.compaction;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
@@ -27,32 +28,39 @@ import java.util.List;
 
 public class SystemTestCompaction {
 
+    private final IngestSourceFilesContext sourceFiles;
     private final CompactionDriver driver;
+    private final CompactionDriver baseDriver;
     private final PollWithRetriesDriver pollDriver;
     private final WaitForCompactionJobCreation waitForJobCreation;
     private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
 
-    public SystemTestCompaction(SystemTestContext context) {
+    public SystemTestCompaction(SystemTestContext context, SystemTestDrivers baseDrivers) {
+        this.sourceFiles = context.sourceFiles();
         SystemTestDrivers drivers = context.instance().adminDrivers();
         driver = drivers.compaction(context);
         pollDriver = drivers.pollWithRetries();
         waitForJobCreation = new WaitForCompactionJobCreation(context.instance(), driver);
         waitForJobs = drivers.waitForCompaction(context);
+        // Use base driver to drain compaction queue as admin role does not have permission to do this
+        baseDriver = baseDrivers.compaction(context);
     }
 
     public SystemTestCompaction createJobs(int expectedJobs) {
         return createJobs(expectedJobs,
-                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)));
     }
 
     public SystemTestCompaction createJobs(int expectedJobs, PollWithRetries poll) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, poll, driver::triggerCreateJobs);
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll), driver::triggerCreateJobs);
         return this;
     }
 
     public SystemTestCompaction forceCreateJobs(int expectedJobs) {
-        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, PollWithRetries.noRetries(), driver::forceCreateJobs);
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
+                pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
+                driver::forceCreateJobs);
         return this;
     }
 
@@ -87,6 +95,10 @@ public class SystemTestCompaction {
             PollWithRetries pollUntilFinished, PollWithRetries pollUntilCommitted) {
         waitForJobs.waitForJobs(lastJobIds, pollUntilFinished, pollUntilCommitted);
         return this;
+    }
+
+    public FoundCompactionJobs drainJobsQueueForWholeInstance() {
+        return FoundCompactionJobs.from(sourceFiles, baseDriver.drainJobsQueueForWholeInstance());
     }
 
     public void scaleToZero() {

@@ -16,16 +16,15 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.configuration.jars.ObjectFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
-import sleeper.query.runner.recordretrieval.QueryExecutor;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.QueryExecutor;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
 import sleeper.systemtest.dsl.query.QueryAllTablesInParallelDriver;
@@ -55,11 +54,7 @@ public class InMemoryDirectQueryDriver implements QueryDriver {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, dataStore, Instant.now());
-        try {
-            executor.init();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        executor.init();
         try (CloseableIterator<Record> iterator = executor.execute(query)) {
             List<Record> records = new ArrayList<>();
             iterator.forEachRemaining(records::add);

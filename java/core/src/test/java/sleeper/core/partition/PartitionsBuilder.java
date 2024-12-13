@@ -17,7 +17,6 @@ package sleeper.core.partition;
 
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -111,11 +110,10 @@ public class PartitionsBuilder {
      * method like {@link #splitToNewChildren}, then call this method to apply a split in the state store. This must be
      * called for each partition that was split. This must be done before splitting the new child partitions further.
      *
-     * @param  stateStore          state store to update
-     * @param  partitionId         the ID of the partition that was split
-     * @throws StateStoreException if the state store update failed
+     * @param stateStore  state store to update
+     * @param partitionId the ID of the partition that was split
      */
-    public void applySplit(StateStore stateStore, String partitionId) throws StateStoreException {
+    public void applySplit(StateStore stateStore, String partitionId) {
         Partition toSplit = partitionById(partitionId);
         Partition left = partitionById(toSplit.getChildPartitionIds().get(0));
         Partition right = partitionById(toSplit.getChildPartitionIds().get(1));

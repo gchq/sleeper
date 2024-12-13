@@ -16,28 +16,30 @@
 
 package sleeper.systemtest.dsl.instance;
 
-import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
+import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class DeployedSleeperInstances {
     private final SystemTestParameters parameters;
     private final DeployedSystemTestResources systemTest;
     private final SleeperInstanceDriver instanceDriver;
     private final AssumeAdminRoleDriver assumeRoleDriver;
-    private final SnapshotsDriver snapshotsDriver;
+    private final ScheduleRulesDriver schedulesDriver;
     private final Map<String, Exception> failureById = new HashMap<>();
     private final Map<String, DeployedSleeperInstance> instanceByShortName = new HashMap<>();
 
     public DeployedSleeperInstances(
             SystemTestParameters parameters, DeployedSystemTestResources systemTest,
-            SleeperInstanceDriver instanceDriver, AssumeAdminRoleDriver assumeRoleDriver, SnapshotsDriver snapshotsDriver) {
+            SleeperInstanceDriver instanceDriver, AssumeAdminRoleDriver assumeRoleDriver, ScheduleRulesDriver schedulesDriver) {
         this.parameters = parameters;
         this.systemTest = systemTest;
         this.instanceDriver = instanceDriver;
         this.assumeRoleDriver = assumeRoleDriver;
-        this.snapshotsDriver = snapshotsDriver;
+        this.schedulesDriver = schedulesDriver;
     }
 
     public DeployedSleeperInstance connectToAndReset(SystemTestInstanceConfiguration configuration) {
@@ -46,22 +48,34 @@ public class DeployedSleeperInstances {
             throw new InstanceDidNotDeployException(instanceShortName, failureById.get(instanceShortName));
         }
         try {
-            DeployedSleeperInstance instance = instanceByShortName.computeIfAbsent(instanceShortName,
-                    name -> createInstanceIfMissing(name, configuration));
-            instance.resetInstanceProperties(instanceDriver);
-            instance.getInstanceAdminDrivers().tables(parameters)
-                    .deleteAllTables(instance.getInstanceProperties());
-            return instance;
+            return instanceByShortName.computeIfAbsent(instanceShortName,
+                    name -> firstConnectInstance(name, configuration));
         } catch (RuntimeException e) {
             failureById.put(instanceShortName, e);
             throw e;
         }
     }
 
-    private DeployedSleeperInstance createInstanceIfMissing(String identifier, SystemTestInstanceConfiguration configuration) {
+    private DeployedSleeperInstance firstConnectInstance(String identifier, SystemTestInstanceConfiguration configuration) {
         String instanceId = parameters.buildInstanceId(identifier);
         OutputInstanceIds.addInstanceIdToOutput(instanceId, parameters);
-        return DeployedSleeperInstance.loadOrDeployIfNeeded(
-                instanceId, configuration, parameters, systemTest, instanceDriver, assumeRoleDriver, snapshotsDriver);
+        DeployedSleeperInstance instance = loadOrDeployAtFirstConnect(instanceId, configuration);
+        takeAllTablesOffline(instance);
+        return instance;
+    }
+
+    private DeployedSleeperInstance loadOrDeployAtFirstConnect(String instanceId, SystemTestInstanceConfiguration configuration) {
+        return DeployedSleeperInstance.loadOrDeployAtFirstConnect(
+                instanceId, configuration, parameters, systemTest, instanceDriver, assumeRoleDriver, schedulesDriver);
+    }
+
+    private void takeAllTablesOffline(DeployedSleeperInstance instance) {
+        InstanceProperties instanceProperties = instance.getInstanceProperties();
+        SleeperTablesDriver tablesDriver = instance.getInstanceAdminDrivers().tables(parameters);
+        tablesDriver.createTablePropertiesProvider(instanceProperties)
+                .streamOnlineTables().forEach(table -> {
+                    table.set(TABLE_ONLINE, "false");
+                    tablesDriver.saveTableProperties(instanceProperties, table);
+                });
     }
 }

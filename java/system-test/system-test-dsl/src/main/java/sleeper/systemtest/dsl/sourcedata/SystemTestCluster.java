@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperty;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -138,11 +137,7 @@ public class SystemTestCluster {
     }
 
     private List<FileReference> loadFileReferences() {
-        try {
-            return instance.getStateStore().getFileReferences();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return instance.getStateStore().getFileReferences();
     }
 
     public List<String> findIngestJobIdsInSourceBucket() {

@@ -48,8 +48,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        storeJobsCreated(job1, job2);
 
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
@@ -69,7 +68,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                 partition.getId());
 
         // When
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
@@ -94,8 +93,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        storeJobsCreated(job1, job2);
         store.jobStarted(compactionJobStarted(job2, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job2, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
         store.jobCommitted(compactionJobCommitted(job2, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
@@ -119,8 +117,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                 partition.getId());
 
         // When
-        store.jobCreated(job1);
-        store.jobCreated(job2);
+        storeJobsCreated(job1, job2);
 
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
@@ -138,8 +135,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
                 partition.getId());
 
         // When
-        store.jobCreated(job);
-        store.jobCreated(job);
+        storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
         store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());

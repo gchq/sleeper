@@ -38,9 +38,9 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobFilesAssigned;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
@@ -53,7 +53,6 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
 class InMemoryCompactionJobStatusStoreTest {
 
@@ -68,26 +67,14 @@ class InMemoryCompactionJobStatusStoreTest {
     class StoreStatusUpdates {
 
         @Test
-        void shouldStoreCreatedJob() {
-            // Given
-            Instant storeTime = Instant.parse("2023-03-29T12:27:42Z");
-            CompactionJob job = addCreatedJob(storeTime);
-
-            // When / Then
-            assertThat(store.streamAllJobs(tableId))
-                    .containsExactly(jobCreated(job, storeTime));
-        }
-
-        @Test
         void shouldStoreInputFilesAssigned() {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
-            Instant assignedTime = Instant.parse("2023-03-29T12:27:43Z");
-            CompactionJob job = addFilesAssignedJob(createdTime, assignedTime);
+            CompactionJob job = addCreatedJob(createdTime);
 
             // When / Then
             assertThat(store.streamAllJobs(tableId))
-                    .containsExactly(jobFilesAssigned(job, createdTime, assignedTime));
+                    .containsExactly(jobCreated(job, createdTime));
         }
 
         @Test
@@ -175,7 +162,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
             RecordsProcessedSummary summary = summary(startedTime, finishTime, 100L, 100L);
             CompactionJob job = dataHelper.singleFileCompaction();
-            store.jobCreated(job, createdTime);
+            store.jobCreated(compactionJobCreated(job), createdTime);
             store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
             store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
 
@@ -377,7 +364,7 @@ class InMemoryCompactionJobStatusStoreTest {
             String taskId1 = "test-task-1";
             String taskId2 = "test-task-2";
             CompactionJob job = dataHelper.singleFileCompaction();
-            store.jobCreated(job, createdTime);
+            store.jobCreated(compactionJobCreated(job), createdTime);
             store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId1).build());
             store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId2).build());
             store.jobFinished(compactionJobFinished(job, summary2).taskId(taskId2).build());
@@ -486,7 +473,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
             // When
             CompactionJob job = dataHelper.singleFileCompaction();
-            store.jobCreated(job, createdTime);
+            store.jobCreated(compactionJobCreated(job), createdTime);
             store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId).jobRunId(runId1).build());
             store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId).jobRunId(runId1).build());
             store.jobCommitted(compactionJobCommitted(job, committedTime1).taskId(taskId).jobRunId(runId1).build());
@@ -512,17 +499,7 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addCreatedJob(Instant createdTime) {
         CompactionJob job = dataHelper.singleFileCompaction();
         store.fixUpdateTime(createdTime);
-        store.jobCreated(job);
-        return job;
-    }
-
-    private CompactionJob addFilesAssignedJob(Instant createdTime, Instant assignedTime) {
-        CompactionJob job = dataHelper.singleFileCompaction();
-        store.fixUpdateTime(createdTime);
-        store.jobCreated(job);
-        store.fixUpdateTime(assignedTime);
-        store.jobInputFilesAssigned(tableId, List.of(
-                assignJobOnPartitionToFiles(job.getId(), job.getPartitionId(), job.getInputFiles())));
+        store.jobCreated(compactionJobCreated(job));
         return job;
     }
 

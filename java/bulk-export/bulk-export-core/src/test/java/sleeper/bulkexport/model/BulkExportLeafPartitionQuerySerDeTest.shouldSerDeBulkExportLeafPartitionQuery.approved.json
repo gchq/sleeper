@@ -1,0 +1,29 @@
+{
+  "tableId": "t-id",
+  "exportId": "e-id",
+  "subExportId": "se-id",
+  "regions": [
+    {
+      "key": {
+        "min": 1,
+        "minInclusive": true,
+        "max": 10,
+        "maxInclusive": true
+      },
+      "stringsBase64Encoded": true
+    }
+  ],
+  "leafPartitionId": "lp-id",
+  "partitionRegion": {
+    "key": {
+      "min": 0,
+      "minInclusive": true,
+      "max": 1000,
+      "maxInclusive": false
+    },
+    "stringsBase64Encoded": true
+  },
+  "files": [
+    "/test/file.parquet"
+  ]
+}

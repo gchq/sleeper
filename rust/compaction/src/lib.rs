@@ -41,6 +41,7 @@ use std::{
 };
 use url::Url;
 
+pub use datafusion::sketch::{deserialise_sketches, DataSketchVariant};
 pub use details::merge_sorted_files;
 pub use details::{ColRange, CompactionInput, CompactionResult, PartitionBound};
 

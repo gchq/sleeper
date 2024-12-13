@@ -52,8 +52,11 @@ public class SleeperEnvironmentCdkApp {
                 .region(System.getenv("CDK_DEFAULT_REGION"))
                 .build();
         AppContext context = AppContext.of(app);
-        String instanceId = context.get(INSTANCE_ID);
-        Stack stack = new Stack(app, "SleeperEnvironment", StackProps.builder().stackName(instanceId + "-SleeperEnvironment").env(environment).build());
+        String environmentId = context.get(INSTANCE_ID);
+        Stack stack = new Stack(app, "SleeperEnvironment", StackProps.builder()
+                .stackName(getStackNameForEnvironment(environmentId))
+                .env(environment)
+                .build());
         NightlyTestDeployment nightlyTests = new NightlyTestDeployment(stack);
         NetworkingDeployment networking = new NetworkingDeployment(stack);
         BuildEC2Deployment buildEc2 = null;
@@ -66,5 +69,13 @@ public class SleeperEnvironmentCdkApp {
             AutoShutdownSchedule.create(stack, buildUptime, buildEc2, autoStopRules);
         }
         app.synth();
+    }
+
+    public static List<String> getStackNamesForEnvironment(String environmentId) {
+        return List.of(getStackNameForEnvironment(environmentId));
+    }
+
+    private static String getStackNameForEnvironment(String environmentId) {
+        return environmentId + "-SleeperEnvironment";
     }
 }

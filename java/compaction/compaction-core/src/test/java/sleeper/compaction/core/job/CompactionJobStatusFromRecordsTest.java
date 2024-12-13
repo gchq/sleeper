@@ -72,7 +72,7 @@ class CompactionJobStatusFromRecordsTest {
     }
 
     @Test
-    void shouldIgnoreJobWithNoCreatedUpdate() {
+    void shouldBuildJobWithNoCreatedUpdate() {
         // Given
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 200L, 100L));
@@ -82,7 +82,10 @@ class CompactionJobStatusFromRecordsTest {
                 forJob("test-job", started, finished));
 
         // Then
-        assertThat(statuses).isEmpty();
+        assertThat(statuses).containsExactly(
+                CompactionJobStatus.builder().jobId("test-job")
+                        .singleJobRun(ProcessRun.finished(DEFAULT_TASK_ID, started, finished))
+                        .expiryDate(DEFAULT_EXPIRY).build());
     }
 
     @Test

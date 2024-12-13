@@ -27,6 +27,7 @@ import sleeper.core.record.process.status.ProcessRun;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -42,14 +43,13 @@ public class CompactionJobRunTest {
     @Test
     public void shouldReportNoRunsWhenJobNotStarted() {
         // Given
-        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
-                .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
-                .partitionId("partition1")
-                .inputFilesCount(11)
-                .build();
+        CompactionJobCreatedStatus createdStatus = CompactionJobCreatedStatus.from(CompactionJob.builder()
+                .tableId("test-table").jobId("test-job").partitionId("test-partition")
+                .inputFiles(List.of("file1", "file2")).outputFile("output")
+                .build(), Instant.parse("2022-09-23T09:23:00.012Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(created);
+        CompactionJobStatus status = jobStatusFromUpdates(createdStatus);
 
         // Then
         assertThat(status.getJobRuns())
@@ -60,15 +60,10 @@ public class CompactionJobRunTest {
     @Test
     public void shouldReportNoFinishedStatusWhenJobNotFinished() {
         // Given
-        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
-                .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
-                .partitionId("partition1")
-                .inputFilesCount(11)
-                .build();
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(created, started);
+        CompactionJobStatus status = jobStatusFromUpdates(started);
 
         // Then
         assertThat(status.getJobRuns())
@@ -81,16 +76,11 @@ public class CompactionJobRunTest {
     @Test
     public void shouldReportRunWhenJobUncommitted() {
         // Given
-        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
-                .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
-                .partitionId("partition1")
-                .inputFilesCount(11)
-                .build();
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 450L, 300L));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(created, started, finished);
+        CompactionJobStatus status = jobStatusFromUpdates(started, finished);
 
         // Then
         assertThat(status.getJobRuns())
@@ -103,17 +93,12 @@ public class CompactionJobRunTest {
     @Test
     public void shouldReportRunWhenJobFinished() {
         // Given
-        CompactionJobCreatedStatus created = CompactionJobCreatedStatus.builder()
-                .updateTime(Instant.parse("2022-09-23T09:23:00.012Z"))
-                .partitionId("partition1")
-                .inputFilesCount(11)
-                .build();
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 450L, 300L));
         CompactionJobCommittedStatus committed = compactionCommittedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(created, started, finished, committed);
+        CompactionJobStatus status = jobStatusFromUpdates(started, finished, committed);
 
         // Then
         assertThat(status.getJobRuns())

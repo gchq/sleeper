@@ -17,6 +17,7 @@ package sleeper.compaction.core.job.status;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.statestore.AssignJobIdRequest;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -27,14 +28,22 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
     private final String partitionId;
     private final int inputFilesCount;
 
-    private CompactionJobCreatedStatus(Builder builder) {
-        updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
-        partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
+    public CompactionJobCreatedStatus(Builder builder) {
+        updateTime = builder.updateTime;
+        partitionId = builder.partitionId;
         inputFilesCount = builder.inputFilesCount;
     }
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static CompactionJobCreatedStatus from(CompactionJobCreatedEvent event, Instant updateTime) {
+        return builder()
+                .updateTime(updateTime)
+                .partitionId(event.getPartitionId())
+                .inputFilesCount(event.getInputFilesCount())
+                .build();
     }
 
     public static CompactionJobCreatedStatus from(CompactionJob job, Instant updateTime) {
@@ -45,6 +54,15 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
                 .build();
     }
 
+    public static CompactionJobCreatedStatus from(AssignJobIdRequest request, Instant updateTime) {
+        return builder()
+                .updateTime(updateTime)
+                .partitionId(request.getPartitionId())
+                .inputFilesCount(request.getFilenames().size())
+                .build();
+    }
+
+    @Override
     public Instant getUpdateTime() {
         return updateTime;
     }
@@ -55,6 +73,28 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
 
     public int getInputFilesCount() {
         return inputFilesCount;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(updateTime, partitionId, inputFilesCount);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof CompactionJobCreatedStatus)) {
+            return false;
+        }
+        CompactionJobCreatedStatus other = (CompactionJobCreatedStatus) obj;
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(partitionId, other.partitionId) && inputFilesCount == other.inputFilesCount;
+    }
+
+    @Override
+    public String toString() {
+        return "CompactionJobCreatedStatus{updateTime=" + updateTime + ", partitionId=" + partitionId + ", inputFilesCount=" + inputFilesCount + "}";
     }
 
     public static final class Builder {
@@ -83,33 +123,5 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
         public CompactionJobCreatedStatus build() {
             return new CompactionJobCreatedStatus(this);
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        CompactionJobCreatedStatus that = (CompactionJobCreatedStatus) o;
-        return inputFilesCount == that.inputFilesCount
-                && updateTime.equals(that.updateTime)
-                && partitionId.equals(that.partitionId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(updateTime, partitionId, inputFilesCount);
-    }
-
-    @Override
-    public String toString() {
-        return "CompactionJobCreatedStatus{" +
-                "updateTime=" + updateTime +
-                ", partitionId='" + partitionId + '\'' +
-                ", inputFilesCount=" + inputFilesCount +
-                '}';
     }
 }

@@ -30,50 +30,14 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_CREATION_LIMIT;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_METHOD;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_MAX_CONCURRENT_JOBS_PER_PARTITION;
 import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_SIZERATIO_COMPACTION_STRATEGY_RATIO;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_COMPRESSION_CODEC;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILES;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_FILES;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_FILE_WRITING_STRATEGY;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_ROW_GROUP_SIZE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
-import static sleeper.core.properties.instance.DefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES;
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
@@ -86,6 +50,45 @@ import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_
 import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_RELEASE_LABEL;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.DEFAULT_PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.instance.QueryProperty.DEFAULT_QUERY_PROCESSOR_CACHE_TIMEOUT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_FIRST_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_ATTEMPTS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_FILES;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_JOB_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_FILES;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MIN_JOB_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_TRACKING_TTL_MINUTES;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ROW_GROUP_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TIME_BETWEEN_TRANSACTION_CHECKS_MS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS;
 import static sleeper.core.properties.validation.SleeperPropertyValueUtils.describeEnumValuesInLowerCase;
 
 /**
@@ -246,6 +249,12 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "for the output file.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
+    TableProperty COMPACTION_JOB_CREATION_LIMIT = Index.propertyBuilder("sleeper.table.compaction.job.creation.limit")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_CREATION_LIMIT)
+            .description("The number of compaction jobs that are to be created as a limit during a single invocation. " +
+                    "If this limit is exceeded, the selection of jobs is randomised.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
     TableProperty COMPACTION_JOB_SEND_BATCH_SIZE = Index.propertyBuilder("sleeper.table.compaction.job.send.batch.size")
             .defaultProperty(DEFAULT_COMPACTION_JOB_SEND_BATCH_SIZE)
             .description("The number of compaction jobs to send in a single batch.\n" +
@@ -253,6 +262,26 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "A batch is a group of compaction jobs that will have their creation updates applied at the same time. " +
                     "For each batch, we send all compaction jobs to the SQS queue, then update the state store to " +
                     "assign job IDs to the input files.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_SEND_TIMEOUT_SECS = Index.propertyBuilder("sleeper.table.compaction.job.send.timeout.seconds")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_SEND_TIMEOUT_SECS)
+            .description("The amount of time in seconds a batch of compaction jobs may be pending before it should " +
+                    "not be retried. If the input files have not been successfully assigned to the jobs, and this " +
+                    "much time has passed, then the batch will fail to send.\n" +
+                    "Once a pending batch fails the input files will never be compacted again without other " +
+                    "intervention, so it's important to ensure file assignment will be done within this time. That " +
+                    "depends on the throughput of state store commits.\n" +
+                    "It's also necessary to ensure file assignment will be done before the next invocation of " +
+                    "compaction job creation, otherwise invalid jobs will be created for the same input files. " +
+                    "The rate of these invocations is set in `sleeper.compaction.job.creation.period.minutes`.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_SEND_RETRY_DELAY_SECS = Index.propertyBuilder("sleeper.table.compaction.job.send.retry.delay.seconds")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_SEND_RETRY_DELAY_SECS)
+            .description("The amount of time in seconds to wait between attempts to send a batch of compaction jobs. " +
+                    "The batch will be sent if all input files have been successfully assigned to the jobs, otherwise " +
+                    "the batch will be retried after a delay.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC = Index.propertyBuilder("sleeper.table.compaction.job.id.assignment.commit.async")

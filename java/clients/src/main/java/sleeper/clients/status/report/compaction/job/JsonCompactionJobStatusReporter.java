@@ -23,7 +23,7 @@ import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
-import sleeper.compaction.core.job.status.CompactionJobUpdateType;
+import sleeper.compaction.core.job.status.CompactionJobUpdateTypeInRun;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRuns;
@@ -37,7 +37,7 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(ProcessRunTime.class, JsonProcessRunTime.serializer())
-            .registerTypeAdapter(ProcessRuns.class, processRunsJsonSerializer(CompactionJobUpdateType::typeOfUpdate))
+            .registerTypeAdapter(ProcessRuns.class, processRunsJsonSerializer(CompactionJobUpdateTypeInRun::typeOfUpdateInRun))
             .create();
     private final PrintStream out;
 

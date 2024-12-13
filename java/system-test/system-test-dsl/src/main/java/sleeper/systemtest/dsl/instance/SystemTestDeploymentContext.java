@@ -29,7 +29,7 @@ public class SystemTestDeploymentContext {
         this.drivers = drivers;
         this.deployedResources = new DeployedSystemTestResources(parameters, drivers.systemTestDeployment(parameters));
         this.deployedInstances = new DeployedSleeperInstances(
-                parameters, deployedResources, drivers.instance(parameters), drivers.assumeAdminRole(), drivers.snapshots());
+                parameters, deployedResources, drivers.instance(parameters), drivers.assumeAdminRole(), drivers.schedules());
     }
 
     public SystemTestParameters parameters() {

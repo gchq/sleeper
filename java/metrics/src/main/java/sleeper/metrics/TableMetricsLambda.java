@@ -42,7 +42,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
@@ -58,7 +57,7 @@ import java.util.Map.Entry;
 import static java.util.stream.Collectors.groupingBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.METRICS_NAMESPACE;
+import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
 public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
     private static final Logger LOGGER = LoggerFactory.getLogger(TableMetricsLambda.class);
@@ -112,7 +111,7 @@ public class TableMetricsLambda implements RequestHandler<SQSEvent, SQSBatchResp
                 TableMetrics metrics = TableMetrics.from(
                         instanceProperties.get(ID), tableStatus, stateStore);
                 publishStateStoreMetrics(metricsLogger, metrics);
-            } catch (StateStoreException | RuntimeException e) {
+            } catch (RuntimeException e) {
                 LOGGER.error("Failed publishing metrics for table {}", tableStatus, e);
                 messagesByTableId.get(tableStatus.getTableUniqueId()).stream()
                         .map(SQSMessage::getMessageId)

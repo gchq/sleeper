@@ -16,20 +16,25 @@
 
 package sleeper.systemtest.dsl.instance;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.PollWithRetries;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Map.entry;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class SystemTestTableFiles {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestTableFiles.class);
 
     private final SystemTestInstanceContext instance;
 
@@ -38,23 +43,27 @@ public class SystemTestTableFiles {
     }
 
     public AllReferencesToAllFiles all() {
-        try {
-            return instance.getStateStore().getAllFilesWithMaxUnreferenced(10000);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return instance.getStateStore().getAllFilesWithMaxUnreferenced(10000);
     }
 
     public List<FileReference> references() {
-        try {
-            return instance.getStateStore().getFileReferences();
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return instance.getStateStore().getFileReferences();
     }
 
     public Map<String, Long> recordsByFilename() {
         return all().recordsByFilename();
+    }
+
+    public SystemTestTableFiles waitForState(Predicate<AllReferencesToAllFiles> stateCheck, PollWithRetries poll) throws InterruptedException {
+        poll.pollUntil("files meet expected state", () -> {
+            AllReferencesToAllFiles files = all();
+            LOGGER.info("Found {} file references, {} referenced files, {} unreferenced files",
+                    files.countFileReferences(),
+                    files.getFilesWithReferences().size(),
+                    files.getFilesWithNoReferences().size());
+            return stateCheck.test(files);
+        });
+        return this;
     }
 
     public Map<String, AllReferencesToAllFiles> filesByTable() {
@@ -71,21 +80,12 @@ public class SystemTestTableFiles {
 
     private Map.Entry<String, List<FileReference>> getReferences(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
-        try {
-            return entry(properties.get(TABLE_NAME), stateStore.getFileReferences());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return entry(properties.get(TABLE_NAME), stateStore.getFileReferences());
     }
 
     private Map.Entry<String, AllReferencesToAllFiles> getFiles(TableProperties properties) {
         StateStore stateStore = instance.getStateStore(properties);
-        try {
-            return entry(
-                    properties.get(TABLE_NAME),
-                    stateStore.getAllFilesWithMaxUnreferenced(100));
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        return entry(properties.get(TABLE_NAME),
+                stateStore.getAllFilesWithMaxUnreferenced(100));
     }
 }

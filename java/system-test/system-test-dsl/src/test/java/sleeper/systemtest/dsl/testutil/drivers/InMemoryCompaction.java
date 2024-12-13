@@ -20,16 +20,15 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobCommitter;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
+import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.compaction.core.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
-import sleeper.compaction.job.creation.CreateCompactionJobs;
-import sleeper.compaction.job.creation.CreateCompactionJobs.Mode;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
-import sleeper.configuration.jars.ObjectFactory;
-import sleeper.configuration.jars.ObjectFactoryException;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
@@ -42,9 +41,10 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreException;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
 import sleeper.core.util.PollWithRetries;
-import sleeper.query.runner.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -59,11 +59,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
+import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
@@ -118,12 +120,26 @@ public class InMemoryCompaction {
 
         @Override
         public void triggerCreateJobs() {
-            createJobs(Mode.STRATEGY);
+            CreateCompactionJobs jobCreator = jobCreator();
+            instance.streamTableProperties().forEach(table -> {
+                try {
+                    jobCreator.createJobsWithStrategy(table);
+                } catch (IOException | ObjectFactoryException e) {
+                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
+                }
+            });
         }
 
         @Override
         public void forceCreateJobs() {
-            createJobs(Mode.FORCE_ALL_FILES_AFTER_STRATEGY);
+            CreateCompactionJobs jobCreator = jobCreator();
+            instance.streamTableProperties().forEach(table -> {
+                try {
+                    jobCreator.createJobWithForceAllFiles(table);
+                } catch (IOException | ObjectFactoryException e) {
+                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
+                }
+            });
         }
 
         @Override
@@ -143,23 +159,23 @@ public class InMemoryCompaction {
             invokeTasks(numberOfTasks, poll);
         }
 
+        @Override
         public void scaleToZero() {
         }
 
-        private void createJobs(Mode mode) {
-            CreateCompactionJobs jobCreator = jobCreator(mode);
-            instance.streamTableProperties().forEach(table -> {
-                try {
-                    jobCreator.createJobs(table);
-                } catch (StateStoreException | IOException | ObjectFactoryException e) {
-                    throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
-                }
-            });
+        @Override
+        public List<CompactionJob> drainJobsQueueForWholeInstance() {
+            List<CompactionJob> jobs = queuedJobsById.values().stream().toList();
+            queuedJobsById.clear();
+            return jobs;
         }
 
-        private CreateCompactionJobs jobCreator(Mode mode) {
+        private CreateCompactionJobs jobCreator() {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
-                    instance.getStateStoreProvider(), jobSender(), jobStore, mode, jobIdAssignmentRequests::add);
+                    instance.getStateStoreProvider(), batchJobsWriter(),
+                    message -> {
+                    }, jobIdAssignmentRequests::add,
+                    GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
         }
     }
 
@@ -191,22 +207,13 @@ public class InMemoryCompaction {
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
-        try {
-            CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
     }
 
     private static Partition getPartitionForJob(StateStore stateStore, CompactionJob job) {
-        PartitionTree partitionTree = null;
-        try {
-            partitionTree = new PartitionTree(stateStore.getAllPartitions());
-        } catch (StateStoreException e) {
-            throw new RuntimeException(e);
-        }
+        PartitionTree partitionTree = new PartitionTree(stateStore.getAllPartitions());
         return partitionTree.getPartition(job.getPartitionId());
     }
 
@@ -225,7 +232,7 @@ public class InMemoryCompaction {
         List<Record> records = new ArrayList<>();
         mergingIterator.forEachRemaining(record -> {
             records.add(record);
-            sketches.update(schema, record);
+            sketches.update(record);
         });
         dataStore.addFile(job.getOutputFile(), records);
         sketchesStore.addSketchForFile(job.getOutputFile(), sketches);
@@ -235,8 +242,12 @@ public class InMemoryCompaction {
                 .sum());
     }
 
-    private CreateCompactionJobs.JobSender jobSender() {
-        return job -> queuedJobsById.put(job.getId(), job);
+    private CreateCompactionJobs.BatchJobsWriter batchJobsWriter() {
+        return (bucketName, key, jobs) -> jobs.forEach(
+                job -> {
+                    queuedJobsById.put(job.getId(), job);
+                    jobStore.jobCreated(compactionJobCreated(job));
+                });
     }
 
     private class CountingIterator implements CloseableIterator<Record> {

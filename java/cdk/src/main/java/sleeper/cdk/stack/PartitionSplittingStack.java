@@ -35,6 +35,8 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.CoreStacks;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.deploy.SleeperScheduleRule;
@@ -55,8 +57,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTIT
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.CommonProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED;
@@ -66,6 +66,8 @@ import static sleeper.core.properties.instance.PartitionSplittingProperty.PARTIT
 import static sleeper.core.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_RESERVED_CONCURRENCY;
 import static sleeper.core.properties.instance.PartitionSplittingProperty.SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
 /**
  * Deploys resources to perform partition splitting. A CloudWatch rule will periodically trigger to check every Sleeper
@@ -192,7 +194,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
                 .reservedConcurrentExecutions(1)
-                .logGroup(coreStacks.getLogGroupByFunctionName(triggerFunctionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.PARTITION_SPLITTING_TRIGGER)));
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
                 .create(this, "FindPartitionsToSplitPeriodicTrigger")
@@ -219,14 +221,14 @@ public class PartitionSplittingStack extends NestedStack {
                 .memorySize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
-                .reservedConcurrentExecutions(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED))
-                .logGroup(coreStacks.getLogGroupByFunctionName(functionName)));
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_RESERVED))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.PARTITION_SPLITTING_FIND_TO_SPLIT)));
 
         coreStacks.grantReadTablesMetadata(findPartitionsToSplitLambda);
         partitionSplittingJobQueue.grantSendMessages(findPartitionsToSplitLambda);
         findPartitionsToSplitLambda.addEventSource(SqsEventSource.Builder.create(findPartitionsToSplitQueue)
                 .batchSize(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_BATCH_SIZE))
-                .maxConcurrency(instanceProperties.getInt(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM))
+                .maxConcurrency(instanceProperties.getIntOrNull(FIND_PARTITIONS_TO_SPLIT_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
     }
 
@@ -236,7 +238,7 @@ public class PartitionSplittingStack extends NestedStack {
 
         // Lambda to split partitions (triggered by partition splitting job
         // arriving on partitionSplittingQueue)
-        int concurrency = instanceProperties.getInt(SPLIT_PARTITIONS_RESERVED_CONCURRENCY);
+        Integer concurrency = instanceProperties.getIntOrNull(SPLIT_PARTITIONS_RESERVED_CONCURRENCY);
         IFunction splitPartitionLambda = lambdaCode.buildFunction(this, LambdaHandler.SPLIT_PARTITION, "SplitPartitionLambda", builder -> builder
                 .functionName(splitFunctionName)
                 .description("Triggered by an SQS event that contains a partition to split")
@@ -244,7 +246,7 @@ public class PartitionSplittingStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(SPLIT_PARTITIONS_TIMEOUT_IN_SECONDS)))
                 .reservedConcurrentExecutions(concurrency)
                 .environment(environmentVariables)
-                .logGroup(coreStacks.getLogGroupByFunctionName(splitFunctionName)));
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.PARTITION_SPLITTING_HANDLER)));
 
         coreStacks.grantSplitPartitions(splitPartitionLambda);
         splitPartitionLambda.addEventSource(SqsEventSource.Builder.create(partitionSplittingJobQueue)

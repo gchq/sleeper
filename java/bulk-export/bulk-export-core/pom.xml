@@ -19,8 +19,31 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>bulk-export</artifactId>
-        <version>0.26.0</version>
+        <version>0.27.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>bulk-export-core</artifactId>
+
+    <dependencies>
+        <!-- Sleeper dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.approvaltests</groupId>
+            <artifactId>approvaltests</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
