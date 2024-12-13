@@ -277,7 +277,7 @@ public class IngestStack extends NestedStack {
         Rule rule = Rule.Builder
                 .create(this, "IngestTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.INGEST.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the ingest tasks lambda")
+                .description(SleeperScheduleRule.INGEST.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))

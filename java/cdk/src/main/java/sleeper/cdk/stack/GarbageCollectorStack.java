@@ -110,7 +110,7 @@ public class GarbageCollectorStack extends NestedStack {
         Rule rule = Rule.Builder
                 .create(this, "GarbageCollectorPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.GARBAGE_COLLECTOR.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the garbage collector")
+                .description(SleeperScheduleRule.GARBAGE_COLLECTOR.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(triggerFunction)))

@@ -80,7 +80,7 @@ public class KeepLambdaWarmStack extends NestedStack {
         Rule rule = Rule.Builder
                 .create(this, "QueryExecutionPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.QUERY_WARM_LAMBDA.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the query execution lambda")
+                .description(SleeperScheduleRule.QUERY_WARM_LAMBDA.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties
                         .getInt(QUERY_WARM_LAMBDA_EXECUTION_PERIOD_IN_MINUTES))))

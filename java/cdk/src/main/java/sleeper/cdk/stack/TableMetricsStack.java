@@ -92,6 +92,7 @@ public class TableMetricsStack extends NestedStack {
 
         Rule rule = Rule.Builder.create(this, "MetricsPublishSchedule")
                 .ruleName(SleeperScheduleRule.TABLE_METRICS.buildRuleName(instanceProperties))
+                .description(SleeperScheduleRule.TABLE_METRICS.getDescription())
                 .schedule(Schedule.rate(Duration.minutes(1)))
                 .targets(Collections.singletonList(new LambdaFunction(tableMetricsTrigger)))
                 .enabled(!shouldDeployPaused(this))
