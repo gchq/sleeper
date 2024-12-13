@@ -92,8 +92,8 @@
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
         -->
         <snappy.version>1.1.10.7</snappy.version>
-        <!-- Parquet declares an old version of Aircompressor with vulnerabilities. Managed from 0.21. -->
-        <aircompressor.version>0.27</aircompressor.version>
+        <!-- Parquet uses Aircompressor. -->
+        <aircompressor.version>2.0.2</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 3.23.4. -->
         <protobuf.version>4.29.1</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
