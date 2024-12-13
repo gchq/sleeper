@@ -168,8 +168,6 @@
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>9.4.56.v20240826</jetty.version>
         <jettison.version>1.5.4</jettison.version>
-        <json-path.version>2.9.0</json-path.version>
-        <xmlunit.version>2.10.0</xmlunit.version>
         <jakarta.activation.version>2.1.3</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
@@ -186,6 +184,8 @@
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
         <approvaltests.version>24.12.0</approvaltests.version>
+        <json-path.version>2.9.0</json-path.version>
+        <xmlunit.version>2.10.0</xmlunit.version>
         <jsonunit.version>4.1.0</jsonunit.version>
         <checkstyle.version>10.21.0</checkstyle.version>
         <sleeper.system.test.short.id/>
