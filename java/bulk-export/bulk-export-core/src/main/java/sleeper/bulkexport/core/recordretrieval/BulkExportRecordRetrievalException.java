@@ -15,6 +15,9 @@
  */
 package sleeper.bulkexport.core.recordretrieval;
 
+/**
+ * Custom exception for BulkExportRecordRetrieval.
+ */
 public class BulkExportRecordRetrievalException extends Exception {
 
     public BulkExportRecordRetrievalException(String msg, Throwable cause) {

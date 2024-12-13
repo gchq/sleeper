@@ -19,6 +19,9 @@ import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.record.Record;
 
+/**
+ * Interface for a LeafPartitionRecordRetriever.
+ */
 @FunctionalInterface
 public interface LeafPartitionRecordRetriever {
 
@@ -26,7 +29,7 @@ public interface LeafPartitionRecordRetriever {
      * Retrieve all records in the files specified by a sub query.
      *
      * @param bulkExportLeafPartitionQuery the sub export query
-     * 
+     *
      * @return An iterator over all records in the specified files that are in the
      *         specified
      *         partition, and are in one of the specified regions. Only values
