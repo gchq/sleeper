@@ -127,4 +127,17 @@ public class CheckNoticesTest {
         assertThat(CheckNotices.findProblemsInNotices(notices, versions))
                 .containsExactly("Dependency not present in pom.xml: org.junit.jupiter:junit-jupiter-*:5.*");
     }
+
+    @Test
+    void shouldFindOneOfTwoNoticesNotInDependencies() {
+        String notices = """
+                JUnit (org.junit.jupiter:junit-jupiter-*:5.*)
+                Jettison (org.codehaus.jettison:jettison:1.*)
+                """;
+        DependencyVersions versions = DependencyVersions.builder()
+                .dependency("org.junit.jupiter", "junit-jupiter-api", "5.11.3")
+                .build();
+        assertThat(CheckNotices.findProblemsInNotices(notices, versions))
+                .containsExactly("Dependency not present in pom.xml: org.codehaus.jettison:jettison:1.*");
+    }
 }
