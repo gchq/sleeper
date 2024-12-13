@@ -185,7 +185,7 @@
         <testcontainers.version>1.20.4</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.26.3</assertj.version>
-        <approvaltests.version>24.11.0</approvaltests.version>
+        <approvaltests.version>24.12.0</approvaltests.version>
         <jsonunit.version>4.1.0</jsonunit.version>
         <checkstyle.version>10.21.0</checkstyle.version>
         <sleeper.system.test.short.id/>
