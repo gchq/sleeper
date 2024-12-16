@@ -20,11 +20,11 @@ import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static sleeper.core.deploy.SleeperScheduleRule.INGEST;
 import static sleeper.core.deploy.SleeperScheduleRule.QUERY_WARM_LAMBDA;
 import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_DELETION;
@@ -98,7 +98,8 @@ public class SystemTestInstanceConfiguration {
                 QUERY_WARM_LAMBDA,
                 TRANSACTION_LOG_SNAPSHOT_CREATION,
                 TRANSACTION_LOG_SNAPSHOT_DELETION,
-                TRANSACTION_LOG_TRANSACTION_DELETION);
+                TRANSACTION_LOG_TRANSACTION_DELETION,
+                INGEST);
         private String shortName;
 
         private Builder() {
@@ -120,7 +121,7 @@ public class SystemTestInstanceConfiguration {
         }
 
         public Builder enableSchedules(List<SleeperScheduleRule> enableSchedules) {
-            this.enableSchedules = new HashSet<>(enableSchedules);
+            this.enableSchedules.addAll(enableSchedules);
             return this;
         }
 
