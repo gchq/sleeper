@@ -29,23 +29,21 @@ import java.util.Set;
 
 import static java.util.stream.Collectors.toSet;
 
-public class InvokeIngestTasks {
-    public static final Logger LOGGER = LoggerFactory.getLogger(InvokeIngestTasks.class);
+public class WaitForIngestTasks {
+    public static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
 
-    private final InvokeTaskCreator invokeTaskCreator;
     private final IngestJobStatusStore jobStatusStore;
 
-    public InvokeIngestTasks(InvokeTaskCreator invokeTaskCreator, IngestJobStatusStore jobStatusStore) {
-        this.invokeTaskCreator = invokeTaskCreator;
+    public WaitForIngestTasks(IngestJobStatusStore jobStatusStore) {
         this.jobStatusStore = jobStatusStore;
     }
 
-    public void invokeUntilOneTaskStartedAJob(List<String> jobIds, PollWithRetriesDriver pollDriver) {
-        invokeUntilNumTasksStartedAJob(1, jobIds,
+    public void waitUntilOneTaskStartedAJob(List<String> jobIds, PollWithRetriesDriver pollDriver) {
+        waitUntilNumTasksStartedAJob(1, jobIds,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
     }
 
-    public void invokeUntilNumTasksStartedAJob(int expectedTasks, List<String> jobIds, PollWithRetries poll) {
+    public void waitUntilNumTasksStartedAJob(int expectedTasks, List<String> jobIds, PollWithRetries poll) {
         if (jobIds.isEmpty()) {
             throw new IllegalArgumentException("Need jobs to wait for before invoking tasks, none are yet specified");
         }
@@ -54,7 +52,6 @@ public class InvokeIngestTasks {
         }
         try {
             poll.pollUntil("expected number of tasks have picked up a job", () -> {
-                invokeTaskCreator.invokeCreator();
                 return numTasksStartedAJob(jobIds) >= expectedTasks;
             });
         } catch (InterruptedException e) {

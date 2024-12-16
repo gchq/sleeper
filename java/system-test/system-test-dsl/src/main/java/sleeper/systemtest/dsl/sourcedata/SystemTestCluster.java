@@ -26,7 +26,7 @@ import sleeper.systemtest.configuration.SystemTestStandaloneProperties;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
@@ -45,7 +45,7 @@ public class SystemTestCluster {
     private final DataGenerationTasksDriver driver;
     private final IngestByQueue ingestByQueue;
     private final GeneratedIngestSourceFilesDriver sourceFiles;
-    private final InvokeIngestTasksDriver tasksDriver;
+    private final IngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngestJobs;
     private final WaitForJobs waitForBulkImportJobs;
     private final PollWithRetriesDriver pollDriver;
@@ -60,7 +60,7 @@ public class SystemTestCluster {
         driver = baseDrivers.dataGenerationTasks(context);
         ingestByQueue = instanceAdminDrivers.ingestByQueue(context);
         sourceFiles = baseDrivers.generatedSourceFiles(context.parameters(), context.systemTest());
-        tasksDriver = instanceAdminDrivers.invokeIngestTasks(context);
+        tasksDriver = instanceAdminDrivers.ingestTasks(context);
         waitForIngestJobs = instanceAdminDrivers.waitForIngest(context);
         waitForBulkImportJobs = instanceAdminDrivers.waitForBulkImport(context);
         pollDriver = instanceAdminDrivers.pollWithRetries();
@@ -87,12 +87,12 @@ public class SystemTestCluster {
     }
 
     public SystemTestCluster invokeStandardIngestTask() {
-        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(jobIds(), pollDriver);
+        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(jobIds(), pollDriver);
         return this;
     }
 
     public SystemTestCluster invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
-        tasksDriver.invokeTasksForCurrentInstance().invokeUntilNumTasksStartedAJob(expectedTasks, jobIds(), poll);
+        tasksDriver.waitForTasksForCurrentInstance().waitUntilNumTasksStartedAJob(expectedTasks, jobIds(), poll);
         return this;
     }
 

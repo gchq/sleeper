@@ -17,37 +17,29 @@
 package sleeper.systemtest.drivers.ingest;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import software.amazon.awssdk.services.lambda.LambdaClient;
 
-import sleeper.clients.deploy.InvokeLambda;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasks;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.WaitForIngestTasks;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_LAMBDA_FUNCTION;
-
-public class AwsInvokeIngestTasksDriver implements InvokeIngestTasksDriver {
+public class AwsInvokeIngestTasksDriver implements IngestTasksDriver {
 
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
-    private final LambdaClient lambdaClient;
 
     public AwsInvokeIngestTasksDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.dynamoDBClient = clients.getDynamoDB();
-        this.lambdaClient = clients.getLambda();
     }
 
     @Override
-    public InvokeIngestTasks invokeTasksForCurrentInstance() {
+    public WaitForIngestTasks waitForTasksForCurrentInstance() {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        return new InvokeIngestTasks(() -> {
-            InvokeLambda.invokeWith(lambdaClient, instanceProperties.get(INGEST_LAMBDA_FUNCTION));
-        }, statusStore);
+        return new WaitForIngestTasks(statusStore);
     }
 }

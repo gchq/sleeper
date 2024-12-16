@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 public class SystemTestIngestBatcher {
     private final IngestSourceFilesContext sourceFiles;
     private final IngestBatcherDriver driver;
-    private final InvokeIngestTasksDriver tasksDriver;
+    private final IngestTasksDriver tasksDriver;
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
     private final PollWithRetriesDriver pollDriver;
@@ -38,7 +38,7 @@ public class SystemTestIngestBatcher {
     public SystemTestIngestBatcher(SystemTestContext context, SystemTestDrivers drivers) {
         sourceFiles = context.sourceFiles();
         driver = drivers.ingestBatcher(context);
-        tasksDriver = drivers.invokeIngestTasks(context);
+        tasksDriver = drivers.ingestTasks(context);
         waitForIngest = drivers.waitForIngest(context);
         waitForBulkImport = drivers.waitForBulkImport(context);
         pollDriver = drivers.pollWithRetries();
@@ -55,7 +55,7 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher invokeStandardIngestTask() {
-        tasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(getInvokeResult().createdJobIds, pollDriver);
+        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(getInvokeResult().createdJobIds, pollDriver);
         return this;
     }
 

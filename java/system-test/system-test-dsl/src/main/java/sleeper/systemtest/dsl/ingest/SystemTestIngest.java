@@ -81,14 +81,14 @@ public class SystemTestIngest {
         return adminDrivers.ingestByQueue(context);
     }
 
-    private InvokeIngestTasksDriver noTasksDriverForBulkImport() {
+    private IngestTasksDriver noTasksDriverForBulkImport() {
         return () -> {
             throw new IllegalArgumentException("Bulk import does not require tasks to be invoked.");
         };
     }
 
-    private InvokeIngestTasksDriver tasksDriver() {
-        return adminDrivers.invokeIngestTasks(context);
+    private IngestTasksDriver tasksDriver() {
+        return adminDrivers.ingestTasks(context);
     }
 
     private WaitForJobs waitForIngest() {

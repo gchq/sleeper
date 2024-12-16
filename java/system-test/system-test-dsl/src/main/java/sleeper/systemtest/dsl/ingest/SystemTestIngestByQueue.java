@@ -31,14 +31,14 @@ public class SystemTestIngestByQueue {
     private final IngestSourceFilesContext sourceFiles;
     private final IngestByQueue ingest;
     private final InstanceProperty defaultQueueProperty;
-    private final InvokeIngestTasksDriver invokeTasksDriver;
+    private final IngestTasksDriver invokeTasksDriver;
     private final WaitForJobs waitForJobs;
     private final PollWithRetriesDriver pollDriver;
     private final List<String> sentJobIds = new ArrayList<>();
 
     public SystemTestIngestByQueue(
             IngestSourceFilesContext sourceFiles, IngestByQueue ingest, InstanceProperty defaultQueueProperty,
-            InvokeIngestTasksDriver invokeTasksDriver, WaitForJobs waitForJobs, PollWithRetriesDriver pollDriver) {
+            IngestTasksDriver invokeTasksDriver, WaitForJobs waitForJobs, PollWithRetriesDriver pollDriver) {
         this.sourceFiles = sourceFiles;
         this.ingest = ingest;
         this.defaultQueueProperty = defaultQueueProperty;
@@ -62,7 +62,7 @@ public class SystemTestIngestByQueue {
     }
 
     public SystemTestIngestByQueue invokeTask() {
-        invokeTasksDriver.invokeTasksForCurrentInstance().invokeUntilOneTaskStartedAJob(sentJobIds, pollDriver);
+        invokeTasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobIds, pollDriver);
         return this;
     }
 
