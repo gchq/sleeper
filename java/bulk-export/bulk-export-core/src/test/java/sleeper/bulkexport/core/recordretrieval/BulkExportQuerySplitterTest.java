@@ -19,23 +19,26 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportQuery;
-import sleeper.core.partition.PartitionTree;
+import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.range.Range;
-import sleeper.core.range.Region;
 import sleeper.core.record.Record;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -47,6 +50,7 @@ import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemorySta
 public class BulkExportQuerySplitterTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final InMemoryDataStore recordStore = new InMemoryDataStore();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
@@ -54,55 +58,72 @@ public class BulkExportQuerySplitterTest {
     @Test
     public void shouldExportWholeTree() throws Exception {
         // Given
-        BulkExportQuery bulkExportQuery = query();
+        BulkExportQuery bulkExportQuery = bulkExportQuery();
+        List<Record> right = List.of(
+                new Record(Map.of("key", 1L)),
+                new Record(Map.of("key", 4L)));
+        List<Record> left = List.of(
+                new Record(Map.of("key", 8L)),
+                new Record(Map.of("key", 13L)));
+        List<Record> leftleft = List.of(
+                new Record(Map.of("key", 8L)),
+                new Record(Map.of("key", 13L)));
+        List<Record> leftright = List.of(
+                new Record(Map.of("key", 15)),
+                new Record(Map.of("key", 20L)));
+
         stateStore.initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 5L)
                 .splitToNewChildren("L", "LL", "LR", 15L)
                 .buildList());
         addRootFile("root.parquet", List.of(new Record(Map.of("key", 123L))));
-        addPartitionFile("R", "right.parquet", List.of(
-                new Record(Map.of("key", 1L)),
-                new Record(Map.of("key", 4L))));
-        addPartitionFile("L", "left.parquet", List.of(
-                new Record(Map.of("key", 8L)),
-                new Record(Map.of("key", 13L))));
-        addPartitionFile("LL", "leftleft.parquet", List.of(
-                new Record(Map.of("key", 8L)),
-                new Record(Map.of("key", 13L))));
-        addPartitionFile("LR", "leftright.parquet", List.of(
-                new Record(Map.of("key", 15)),
-                new Record(Map.of("key", 20L))));
+        addPartitionFile("R", "right.parquet", right);
+        addPartitionFile("L", "left.parquet", left);
+        addPartitionFile("LL", "leftleft.parquet", leftleft);
+        addPartitionFile("LR", "leftright.parquet", leftright);
         BulkExportQuerySplitter bulkExportQuerySplitter = executor();
 
         // When
         List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter.execute(bulkExportQuery);
 
         // That
+        List<Record> records = getAllRecords(leafPartitionQueries);
         assertThat(leafPartitionQueries).hasSize(3);
+        assertThat(records)
+                .containsAll(Stream.of(left, right, leftleft, leftright)
+                        .flatMap(List::stream)
+                        .collect(Collectors.toList()));
     }
 
     @Test
     public void shouldProduceTwoBulkExportLeafPartitionQueries() throws Exception {
         // Given
-        BulkExportQuery bulkExportQuery = query();
+        BulkExportQuery bulkExportQuery = bulkExportQuery();
+        List<Record> right = List.of(
+                new Record(Map.of("key", 2L)),
+                new Record(Map.of("key", 7L)));
+        List<Record> left = List.of(
+                new Record(Map.of("key", 8L)),
+                new Record(Map.of("key", 13L)));
+
         stateStore.initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 5L)
                 .buildList());
-        addPartitionFile("R", "right.parquet", List.of(
-                new Record(Map.of("key", 2L)),
-                new Record(Map.of("key", 7L))));
-        addPartitionFile("L", "left.parquet", List.of(
-                new Record(Map.of("key", 8L)),
-                new Record(Map.of("key", 13L))));
+        addPartitionFile("R", "right.parquet", right);
+        addPartitionFile("L", "left.parquet", left);
         BulkExportQuerySplitter bulkExportQuerySplitter = executor();
 
         // When
         List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter.execute(bulkExportQuery);
 
         // That
+        List<Record> records = getAllRecords(leafPartitionQueries);
         assertThat(leafPartitionQueries).hasSize(2);
+        assertThat(records).containsAll(Stream.of(left, right)
+                .flatMap(List::stream)
+                .collect(Collectors.toList()));
     }
 
     private BulkExportQuerySplitter executor() throws Exception {
@@ -128,6 +149,7 @@ public class BulkExportQuerySplitterTest {
     }
 
     private void addFile(FileReference fileReference, List<Record> records) {
+        recordStore.addFile(fileReference.getFilename(), records);
         addFileMetadata(fileReference);
     }
 
@@ -135,18 +157,31 @@ public class BulkExportQuerySplitterTest {
         stateStore.addFile(fileReference);
     }
 
-    private BulkExportQuery query() {
+    private List<Record> getAllRecords(List<BulkExportLeafPartitionQuery> bulkExportLeafPartitionQueries) {
+        return bulkExportLeafPartitionQueries.stream()
+                .flatMap(this::getRecordsSafely)
+                .collect(Collectors.toList());
+    }
+
+    private Stream<Record> getRecordsSafely(BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery) {
+        try {
+            return getRecords(bulkExportLeafPartitionQuery).stream();
+        } catch (BulkExportRecordRetrievalException | IOException e) {
+            return Stream.empty();
+        }
+    }
+
+    private List<Record> getRecords(BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery)
+            throws BulkExportRecordRetrievalException, IOException {
+        try (CloseableIterator<Record> it = recordStore.getRecords(bulkExportLeafPartitionQuery)) {
+            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, Spliterator.IMMUTABLE), false)
+                    .collect(Collectors.toUnmodifiableList());
+        }
+    }
+
+    private BulkExportQuery bulkExportQuery() {
         return BulkExportQuery.builder().exportId(UUID.randomUUID().toString())
                 .tableName(tableProperties.get(TABLE_NAME)).build();
-    }
-
-    private Region range(Object min, Object max) {
-        Field field = tableProperties.getSchema().getField("key").orElseThrow();
-        return new Region(new Range(field, min, max));
-    }
-
-    private PartitionTree partitionTree() {
-        return new PartitionTree(stateStore.getAllPartitions());
     }
 
     private FileReferenceFactory fileReferenceFactory() {
