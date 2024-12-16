@@ -20,9 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.lambda.LambdaClient;
 
-import sleeper.clients.deploy.InvokeLambda;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
@@ -35,13 +33,8 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_JOB_CREATION_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
@@ -51,7 +44,6 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
-    private final LambdaClient lambdaClient;
     private final PollWithRetries pollBatcherStore = PollWithRetries
             .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2));
 
@@ -62,9 +54,9 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
         this.instance = instance;
         this.dynamoDBClient = clients.getDynamoDB();
         this.sqsClient = clients.getSqs();
-        this.lambdaClient = clients.getLambda();
     }
 
+    @Override
     public void sendFiles(List<String> files) {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
         int filesBefore = batcherStore().getPendingFilesOldestFirst().size();
@@ -84,28 +76,20 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
         }
     }
 
-    public List<String> invokeGetJobIds() {
-        LOGGER.info("Triggering ingest batcher job creation lambda");
-        Set<String> jobIdsBefore = getAllJobIdsInStore().collect(Collectors.toSet());
-        InvokeLambda.invokeWith(lambdaClient,
-                instance.getInstanceProperties().get(INGEST_BATCHER_JOB_CREATION_FUNCTION));
-        return getAllJobIdsInStore()
-                .filter(not(jobIdsBefore::contains))
-                .collect(toUnmodifiableList());
-    }
-
-    private Stream<String> getAllJobIdsInStore() {
+    @Override
+    public Stream<String> allJobIdsInStore() {
         return batcherStore().getAllFilesNewestFirst().stream()
                 .filter(FileIngestRequest::isAssignedToJob)
                 .map(FileIngestRequest::getJobId)
                 .distinct();
     }
 
+    @Override
     public void clearStore() {
         batcherStore().deleteAllPending();
     }
 
-    public IngestBatcherStore batcherStore() {
+    private IngestBatcherStore batcherStore() {
         return new DynamoDBIngestBatcherStore(dynamoDBClient,
                 instance.getInstanceProperties(), instance.getTablePropertiesProvider());
     }

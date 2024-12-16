@@ -23,8 +23,14 @@ import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
+
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 public class SystemTestIngestBatcher {
     private final IngestSourceFilesContext sourceFiles;
@@ -33,7 +39,7 @@ public class SystemTestIngestBatcher {
     private final WaitForJobs waitForIngest;
     private final WaitForJobs waitForBulkImport;
     private final PollWithRetriesDriver pollDriver;
-    private Result lastInvokeResult;
+    private List<String> createdJobIds = new ArrayList<>();
 
     public SystemTestIngestBatcher(SystemTestContext context, SystemTestDrivers drivers) {
         sourceFiles = context.sourceFiles();
@@ -44,51 +50,41 @@ public class SystemTestIngestBatcher {
         pollDriver = drivers.pollWithRetries();
     }
 
-    public SystemTestIngestBatcher sendSourceFiles(String... filenames) {
+    public SystemTestIngestBatcher sendSourceFilesExpectingJobs(int expectedJobs, String... filenames) {
+        Set<String> jobIdsBefore = driver.allJobIdsInStore().collect(toUnmodifiableSet());
         driver.sendFiles(sourceFiles.getIngestJobFilesInBucket(Stream.of(filenames)));
-        return this;
-    }
-
-    public SystemTestIngestBatcher invoke() {
-        lastInvokeResult = new Result(driver.invokeGetJobIds());
+        try {
+            List<String> newJobIds = pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2))
+                    .queryUntil("expected jobs are found",
+                            () -> driver.allJobIdsInStore().filter(not(jobIdsBefore::contains)).toList(),
+                            ids -> ids.size() >= expectedJobs);
+            if (newJobIds.size() > expectedJobs) {
+                throw new IllegalStateException("More jobs were created than expected, found " + newJobIds.size() + ", expected" + expectedJobs);
+            }
+            createdJobIds.addAll(newJobIds);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
         return this;
     }
 
     public SystemTestIngestBatcher waitForStandardIngestTask() {
-        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(getInvokeResult().createdJobIds, pollDriver);
+        tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(createdJobIds, pollDriver);
         return this;
     }
 
     public SystemTestIngestBatcher waitForIngestJobs() {
-        waitForIngest.waitForJobs(getInvokeResult().createdJobIds);
+        waitForIngest.waitForJobs(createdJobIds);
         return this;
     }
 
     public SystemTestIngestBatcher waitForBulkImportJobs(PollWithRetries pollWithRetries) {
-        waitForBulkImport.waitForJobs(getInvokeResult().createdJobIds, pollWithRetries);
+        waitForBulkImport.waitForJobs(createdJobIds, pollWithRetries);
         return this;
-    }
-
-    public Result getInvokeResult() {
-        if (lastInvokeResult == null) {
-            throw new IllegalStateException("Batcher has not been invoked");
-        }
-        return lastInvokeResult;
     }
 
     public void clearStore() {
         driver.clearStore();
-    }
-
-    public static class Result {
-        private final List<String> createdJobIds;
-
-        public Result(List<String> createdJobIds) {
-            this.createdJobIds = createdJobIds;
-        }
-
-        public int numJobsCreated() {
-            return createdJobIds.size();
-        }
     }
 }
