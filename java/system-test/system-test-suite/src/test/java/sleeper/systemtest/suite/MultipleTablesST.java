@@ -35,6 +35,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
@@ -152,6 +153,7 @@ public class MultipleTablesST {
         // Given we have several tables
         // And we ingest two source files as separate jobs
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
