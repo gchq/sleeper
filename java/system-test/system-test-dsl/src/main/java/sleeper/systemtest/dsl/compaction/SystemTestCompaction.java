@@ -66,7 +66,7 @@ public class SystemTestCompaction {
 
     public SystemTestCompaction putTableOnlineWaitForJobCreation(int expectedJobs) {
         return putTablesOnlineWaitForJobCreation(expectedJobs,
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(1), Duration.ofMinutes(2)));
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(15), Duration.ofMinutes(2)));
     }
 
     public SystemTestCompaction putTableOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
