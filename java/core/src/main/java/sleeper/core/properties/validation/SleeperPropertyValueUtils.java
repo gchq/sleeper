@@ -78,17 +78,6 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
-     * Checks if a property value is a whole positive number of minutes within the maximum timeout for an invocation of
-     * AWS Lambda.
-     *
-     * @param  integer the value
-     * @return         true if the value meets the requirement
-     */
-    public static boolean isPositiveIntegerLtEq15(String integer) {
-        return parseAndCheckInteger(integer, num -> num > 0 && num <= 15);
-    }
-
-    /**
      * Checks if a property value is an integer greater than or equal to 0.
      *
      * @param  integer the value

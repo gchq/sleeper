@@ -13,7 +13,7 @@
 #  limitations under the License.
 [package]
 name = "rust_sketch"
-version = "0.27.0-SNAPSHOT"
+version = "0.28.0-SNAPSHOT"
 edition = "2021"
 rust-version = "1.77"
 publish = false

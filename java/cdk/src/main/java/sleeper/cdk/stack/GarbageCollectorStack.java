@@ -53,7 +53,7 @@ import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES;
+import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_TABLE_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
@@ -80,7 +80,7 @@ public class GarbageCollectorStack extends NestedStack {
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "garbage-collector-trigger");
         String functionName = String.join("-", "sleeper", instanceId, "garbage-collector");
 
-        Duration handlerTimeout = Duration.seconds((60 * instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_MINUTES)));
+        Duration handlerTimeout = Duration.seconds(instanceProperties.getInt(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS));
 
         // Garbage collector function
         IFunction triggerFunction = lambdaCode.buildFunction(this, LambdaHandler.GARBAGE_COLLECTOR_TRIGGER, "GarbageCollectorTrigger", builder -> builder
@@ -110,7 +110,7 @@ public class GarbageCollectorStack extends NestedStack {
         Rule rule = Rule.Builder
                 .create(this, "GarbageCollectorPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.GARBAGE_COLLECTOR.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the garbage collector")
+                .description(SleeperScheduleRule.GARBAGE_COLLECTOR.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(triggerFunction)))

@@ -1034,7 +1034,7 @@ dependencies = [
 
 [[package]]
 name = "compaction"
-version = "0.27.0-SNAPSHOT"
+version = "0.28.0-SNAPSHOT"
 dependencies = [
  "arrow",
  "aws-config",
@@ -1060,7 +1060,7 @@ dependencies = [
 
 [[package]]
 name = "compactor"
-version = "0.27.0-SNAPSHOT"
+version = "0.28.0-SNAPSHOT"
 dependencies = [
  "chrono",
  "clap",
@@ -3325,7 +3325,7 @@ dependencies = [
 
 [[package]]
 name = "rust_sketch"
-version = "0.27.0-SNAPSHOT"
+version = "0.28.0-SNAPSHOT"
 dependencies = [
  "cxx",
  "cxx-build",

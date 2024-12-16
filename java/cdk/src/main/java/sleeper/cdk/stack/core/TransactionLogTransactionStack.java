@@ -94,6 +94,7 @@ public class TransactionLogTransactionStack extends NestedStack {
 
         Rule rule = Rule.Builder.create(this, "TransactionLogTransactionDeletionSchedule")
                 .ruleName(SleeperScheduleRule.TRANSACTION_LOG_TRANSACTION_DELETION.buildRuleName(instanceProperties))
+                .description(SleeperScheduleRule.TRANSACTION_LOG_TRANSACTION_DELETION.getDescription())
                 .schedule(Schedule.rate(Duration.minutes(
                         instanceProperties.getLong(TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(transactionDeletionTrigger)))

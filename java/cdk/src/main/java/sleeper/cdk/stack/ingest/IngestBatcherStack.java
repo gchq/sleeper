@@ -173,7 +173,7 @@ public class IngestBatcherStack extends NestedStack {
         Rule rule = Rule.Builder
                 .create(this, "IngestBatcherJobCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the ingest batcher job creation lambda")
+                .description(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(jobCreatorLambda)))

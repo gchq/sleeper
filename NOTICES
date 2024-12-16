@@ -45,7 +45,7 @@ Snappy Java (org.xerial.snappy:snappy-java:1.*)
 
 - Apache License, Version 2.0
 
-Aircompressor (io.airlift:aircompressor:0.*)
+Aircompressor (io.airlift:aircompressor:2.*)
 
 - Apache License, Version 2.0
 
@@ -253,10 +253,6 @@ Eclipse Jetty (org.eclipse.jetty:*:9.*, org.eclipse.jetty.http2:*:9.*, org.eclip
 - Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
 - Eclipse Public License 1.0
-
-Jettison (org.codehaus.jettison:jettison:1.*)
-
-- Apache License, Version 2.0
 
 JSON Path (com.jayway.jsonpath:json-path:2.*)
 
