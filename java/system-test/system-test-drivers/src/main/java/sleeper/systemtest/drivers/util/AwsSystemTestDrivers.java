@@ -143,7 +143,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public PartitionSplittingDriver partitionSplitting(SystemTestContext context) {
-        return new AwsPartitionSplittingDriver(context.instance(), clients.getLambda());
+        return new AwsPartitionSplittingDriver(context.instance(), clients);
     }
 
     @Override
