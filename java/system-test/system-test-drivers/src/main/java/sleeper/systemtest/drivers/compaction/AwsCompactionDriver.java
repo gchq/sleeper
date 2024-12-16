@@ -23,20 +23,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.lambda.LambdaClient;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
-import sleeper.clients.deploy.InvokeLambda;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.invoke.tables.InvokeForTables;
 import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -46,14 +46,13 @@ import sleeper.task.common.EC2Scaler;
 import java.io.IOException;
 import java.util.List;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
 
     private final SystemTestInstanceContext instance;
-    private final LambdaClient lambdaClient;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
@@ -64,7 +63,6 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.lambdaClient = clients.getLambda();
         this.dynamoDBClient = clients.getDynamoDB();
         this.s3Client = clients.getS3();
         this.sqsClient = clients.getSqs();
@@ -81,8 +79,8 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     @Override
     public void triggerCreateJobs() {
-        InvokeLambda.invokeWith(lambdaClient,
-                instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION));
+        String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_CREATION_QUEUE_URL);
+        InvokeForTables.sendOneMessagePerTable(sqsClient, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
     }
 
     @Override
