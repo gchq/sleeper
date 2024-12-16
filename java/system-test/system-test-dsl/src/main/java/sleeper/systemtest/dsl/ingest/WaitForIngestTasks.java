@@ -69,9 +69,4 @@ public class WaitForIngestTasks {
         LOGGER.info("Found {} tasks with runs for given jobs", taskIds.size());
         return taskIds.size();
     }
-
-    public interface InvokeTaskCreator {
-
-        void invokeCreator();
-    }
 }
