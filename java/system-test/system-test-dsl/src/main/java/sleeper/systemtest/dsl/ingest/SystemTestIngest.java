@@ -83,7 +83,7 @@ public class SystemTestIngest {
 
     private IngestTasksDriver noTasksDriverForBulkImport() {
         return () -> {
-            throw new IllegalArgumentException("Bulk import does not require tasks to be invoked.");
+            throw new IllegalArgumentException("Bulk import does not use tasks.");
         };
     }
 

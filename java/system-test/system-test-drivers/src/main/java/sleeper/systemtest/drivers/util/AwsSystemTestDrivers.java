@@ -25,7 +25,7 @@ import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
-import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
+import sleeper.systemtest.drivers.ingest.AwsIngestTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsPurgeQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.HadoopLocalFilesDriver;
@@ -168,7 +168,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public IngestTasksDriver ingestTasks(SystemTestContext context) {
-        return new AwsInvokeIngestTasksDriver(context.instance(), clients);
+        return new AwsIngestTasksDriver(context.instance(), clients);
     }
 
     @Override

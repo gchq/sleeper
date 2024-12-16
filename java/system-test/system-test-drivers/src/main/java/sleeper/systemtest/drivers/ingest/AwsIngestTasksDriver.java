@@ -26,12 +26,12 @@ import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.ingest.WaitForIngestTasks;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
-public class AwsInvokeIngestTasksDriver implements IngestTasksDriver {
+public class AwsIngestTasksDriver implements IngestTasksDriver {
 
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
 
-    public AwsInvokeIngestTasksDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
+    public AwsIngestTasksDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
         this.dynamoDBClient = clients.getDynamoDB();
     }
