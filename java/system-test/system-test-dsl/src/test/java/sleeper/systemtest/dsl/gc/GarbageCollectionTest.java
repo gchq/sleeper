@@ -77,7 +77,7 @@ public class GarbageCollectionTest {
         IntStream.range(0, 1000)
                 .mapToObj(i -> numbers.range(i * 100, i * 100 + 100))
                 .forEach(range -> ingest.numberedRecords(range));
-        sleeper.compaction().createJobs(200).invokeTasks(1).waitForJobs();
+        sleeper.compaction().createJobs(200).waitForTasks(1).waitForJobs();
 
         // When
         sleeper.garbageCollection().invoke().waitFor(

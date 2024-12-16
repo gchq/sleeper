@@ -73,7 +73,7 @@ public class CompactionTest {
                     .numberedRecords(numbers.range(36, 46));
 
             // When
-            sleeper.compaction().createJobs(1).invokeTasks(1).waitForJobs();
+            sleeper.compaction().createJobs(1).waitForTasks(1).waitForJobs();
 
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
@@ -95,7 +95,7 @@ public class CompactionTest {
                     .numberedRecords(numbers.range(75, 100));
 
             // When
-            sleeper.compaction().createJobs(2).invokeTasks(1).waitForJobs();
+            sleeper.compaction().createJobs(2).waitForTasks(1).waitForJobs();
 
             // Then
             assertThat(sleeper.directQuery().allRecordsInTable())
@@ -140,7 +140,7 @@ public class CompactionTest {
             sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 50).map(n -> n * 2 + 1));
 
             // When we run compaction
-            sleeper.compaction().createJobs(4).invokeTasks(1).waitForJobs();
+            sleeper.compaction().createJobs(4).waitForTasks(1).waitForJobs();
 
             // Then the same records should be present, in one file on each leaf partition
             assertThat(sleeper.directQuery().allRecordsInTable())
@@ -166,7 +166,7 @@ public class CompactionTest {
             // And we run compaction
             sleeper.compaction()
                     .createJobs(0).createJobs(4) // Split down two levels of the tree
-                    .invokeTasks(1).waitForJobs();
+                    .waitForTasks(1).waitForJobs();
 
             // Then the same records should be present, in one file on each leaf partition
             assertThat(sleeper.directQuery().allRecordsInTable())

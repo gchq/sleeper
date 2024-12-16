@@ -76,7 +76,7 @@ public class ParallelCompactionsST {
                 .createJobs(8192,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(10)))
-                .invokeTasks(300)
+                .waitForTasks(300)
                 .waitForJobsToFinishThenCommit(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)),

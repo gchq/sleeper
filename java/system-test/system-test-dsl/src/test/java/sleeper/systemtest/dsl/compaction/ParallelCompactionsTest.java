@@ -84,8 +84,8 @@ public class ParallelCompactionsTest {
 
         // When we run compaction
         sleeper.compaction()
-                .invokeTasks(NUMBER_OF_COMPACTIONS)
                 .createJobs(NUMBER_OF_COMPACTIONS)
+                .waitForTasks(NUMBER_OF_COMPACTIONS)
                 .waitForJobs();
 
         // Then we have one output file per compaction

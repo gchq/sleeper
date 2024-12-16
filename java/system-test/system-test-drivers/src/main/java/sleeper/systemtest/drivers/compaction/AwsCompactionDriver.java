@@ -32,15 +32,11 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
-import sleeper.compaction.core.task.CompactionTaskStatus;
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -52,7 +48,6 @@ import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_TRIGGER_LAMBDA_FUNCTION;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_LAMBDA_FUNCTION;
 
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
@@ -103,23 +98,6 @@ public class AwsCompactionDriver implements CompactionDriver {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);
             }
         });
-    }
-
-    @Override
-    public void invokeTasks(int expectedTasks, PollWithRetries poll) {
-        CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
-        long tasksFinishedBefore = store.getAllTasks().stream().filter(CompactionTaskStatus::isFinished).count();
-        try {
-            poll.pollUntil("tasks are started", () -> {
-                InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(COMPACTION_TASK_CREATION_LAMBDA_FUNCTION));
-                long tasksStarted = store.getAllTasks().size() - tasksFinishedBefore;
-                LOGGER.info("Found {} running compaction tasks", tasksStarted);
-                return tasksStarted >= expectedTasks;
-            });
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
     }
 
     @Override

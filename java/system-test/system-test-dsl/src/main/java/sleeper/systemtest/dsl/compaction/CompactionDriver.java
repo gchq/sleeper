@@ -18,7 +18,6 @@ package sleeper.systemtest.dsl.compaction;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.core.util.PollWithRetries;
 
 import java.util.List;
 
@@ -29,8 +28,6 @@ public interface CompactionDriver {
     void triggerCreateJobs();
 
     void forceCreateJobs();
-
-    void invokeTasks(int expectedTasks, PollWithRetries poll);
 
     void scaleToZero();
 
