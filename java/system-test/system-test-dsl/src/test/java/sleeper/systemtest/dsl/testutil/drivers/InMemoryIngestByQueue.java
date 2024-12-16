@@ -36,7 +36,7 @@ import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
-import sleeper.systemtest.dsl.ingest.WaitForIngestTasks;
+import sleeper.systemtest.dsl.ingest.WaitForTasks;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
@@ -94,7 +94,7 @@ public class InMemoryIngestByQueue {
     }
 
     public IngestTasksDriver tasksDriver(SystemTestContext context) {
-        return () -> new WaitForIngestTasks(jobStore);
+        return () -> new WaitForTasks(jobStore);
     }
 
     private IngestTask newTask(SystemTestContext context, String taskId) {

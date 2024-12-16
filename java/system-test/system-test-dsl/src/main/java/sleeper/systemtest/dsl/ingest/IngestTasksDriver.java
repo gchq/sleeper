@@ -17,6 +17,6 @@ package sleeper.systemtest.dsl.ingest;
 
 public interface IngestTasksDriver {
 
-    WaitForIngestTasks waitForTasksForCurrentInstance();
+    WaitForTasks waitForTasksForCurrentInstance();
 
 }
