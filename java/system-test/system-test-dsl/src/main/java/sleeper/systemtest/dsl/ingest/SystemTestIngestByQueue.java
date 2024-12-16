@@ -61,7 +61,7 @@ public class SystemTestIngestByQueue {
         return this;
     }
 
-    public SystemTestIngestByQueue invokeTask() {
+    public SystemTestIngestByQueue waitForTask() {
         invokeTasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobIds, pollDriver);
         return this;
     }

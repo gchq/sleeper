@@ -86,12 +86,12 @@ public class SystemTestCluster {
         return this;
     }
 
-    public SystemTestCluster invokeStandardIngestTask() {
+    public SystemTestCluster waitForStandardIngestTask() {
         tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(jobIds(), pollDriver);
         return this;
     }
 
-    public SystemTestCluster invokeStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
+    public SystemTestCluster waitForStandardIngestTasks(int expectedTasks, PollWithRetries poll) {
         tasksDriver.waitForTasksForCurrentInstance().waitUntilNumTasksStartedAJob(expectedTasks, jobIds(), poll);
         return this;
     }

@@ -61,7 +61,7 @@ public class SystemTestPythonIngest {
         return this;
     }
 
-    public SystemTestPythonIngest invokeTask() {
+    public SystemTestPythonIngest waitForTask() {
         tasksDriver.waitForTasksForCurrentInstance().waitUntilOneTaskStartedAJob(sentJobIds, pollDriver);
         return this;
     }

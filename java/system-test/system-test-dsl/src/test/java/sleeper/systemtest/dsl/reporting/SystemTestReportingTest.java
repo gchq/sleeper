@@ -45,7 +45,7 @@ public class SystemTestReportingTest {
         // Given
         sleeper.connectToInstance(IN_MEMORY_MAIN);
         sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.of(1, 2, 3));
-        sleeper.ingest().byQueue().sendSourceFiles("test.parquet").invokeTask().waitForJobs();
+        sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
 
         // When / Then
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
