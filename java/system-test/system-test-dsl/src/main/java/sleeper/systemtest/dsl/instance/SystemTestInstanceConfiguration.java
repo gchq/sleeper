@@ -133,6 +133,11 @@ public class SystemTestInstanceConfiguration {
             return this;
         }
 
+        public Builder disableSchedules(List<SleeperScheduleRule> disableSchedules) {
+            this.enableSchedules.removeAll(disableSchedules);
+            return this;
+        }
+
         public SystemTestInstanceConfiguration build() {
             return new SystemTestInstanceConfiguration(this);
         }
