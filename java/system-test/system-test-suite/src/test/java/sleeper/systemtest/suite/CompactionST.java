@@ -17,8 +17,6 @@
 package sleeper.systemtest.suite;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -40,7 +38,9 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH
 import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
+import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
@@ -57,196 +57,97 @@ public class CompactionST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstanceNoTables(MAIN);
+        sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false",
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "2"));
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
-    @Nested
-    @DisplayName("Merge whole files together")
-    class MergeFiles {
+    @Test
+    void shouldCompactFilesFromMultiplePartitionsInJava(SleeperSystemTest sleeper) throws Exception {
+        // Given we compact in Java
+        sleeper.updateTableProperties(Map.of(
+                COMPACTION_METHOD, CompactionMethod.JAVA.toString()));
+        // And we have 4 leaf partitions, LL, LR, RL, RR
+        sleeper.setGeneratorOverrides(overrideField(
+                ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+        sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50")
+                .splitToNewChildren("L", "LL", "LR", "row-25")
+                .splitToNewChildren("R", "RL", "RR", "row-75")
+                .buildTree());
+        // And half the partitions have a file A wholly on each partition
+        sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(numbers.range(0, 50));
+        // And we have a file B containing data for all partitions, referenced on each
+        sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF.toString()));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(numbers.range(0, 100));
+        // And we have a file C in the root partition
+        sleeper.sourceFiles().inDataBucket().writeSketches()
+                .createWithNumberedRecords("file.parquet", numbers.range(50, 100));
+        sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
 
-        @Test
-        void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) {
-            // Given
-            sleeper.updateTableProperties(Map.of(
-                    COMPACTION_FILES_BATCH_SIZE, "5"));
-            // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
-            RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 46));
-            sleeper.ingest().direct(tempDir)
-                    .numberedRecords(numbers.range(0, 9))
-                    .numberedRecords(numbers.range(9, 18))
-                    .numberedRecords(numbers.range(18, 27))
-                    .numberedRecords(numbers.range(27, 36))
-                    .numberedRecords(numbers.range(36, 46));
+        // When
+        sleeper.compaction()
+                // Merge files A and B on LL and LR, split C one level down to L and R
+                .createJobs(2).waitForTasks(1).waitForJobs()
+                // Split C another level to LL and LR, merge it with the existing data
+                .createJobs(4).waitForTasks(1).waitForJobs();
 
-            // When
-            sleeper.compaction().createJobs(1).waitForTasks(1).waitForJobs();
-
-            // Then
-            assertThat(sleeper.directQuery().allRecordsInTable())
-                    .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 46)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                    .isEqualTo(exampleString("compaction/compacted5ToSingleFile.txt"));
-        }
-
-        @Test
-        void shouldCompactFilesUsingBasicCompactionStrategy(SleeperSystemTest sleeper) {
-            // Given
-            sleeper.updateTableProperties(Map.of(
-                    COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                    COMPACTION_FILES_BATCH_SIZE, "2"));
-            RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
-            sleeper.ingest().direct(tempDir)
-                    .numberedRecords(numbers.range(0, 25))
-                    .numberedRecords(numbers.range(25, 50))
-                    .numberedRecords(numbers.range(50, 75))
-                    .numberedRecords(numbers.range(75, 100));
-
-            // When
-            sleeper.compaction().createJobs(2).waitForTasks(1).waitForJobs();
-
-            // Then
-            assertThat(sleeper.directQuery().allRecordsInTable())
-                    .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                    .isEqualTo(exampleString("compaction/compacted4To2Files.txt"));
-        }
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
+                        LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
+        assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
     }
 
-    @Nested
-    @DisplayName("Merge parts of files referenced on multiple partitions")
-    class MergePartialFiles {
+    @Test
+    void shouldCompactFilesFromMultiplePartitionsInDataFusion(SleeperSystemTest sleeper) throws Exception {
+        // Given we compact in DataFusion
+        sleeper.updateTableProperties(Map.of(
+                COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString()));
+        // And we have 4 leaf partitions, LL, LR, RL, RR
+        sleeper.setGeneratorOverrides(overrideField(
+                ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
+        sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "row-50")
+                .splitToNewChildren("L", "LL", "LR", "row-25")
+                .splitToNewChildren("R", "RL", "RR", "row-75")
+                .buildTree());
+        // And half the partitions have a file A wholly on each partition
+        sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
+        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(numbers.range(0, 50));
+        // And we have a file B containing data for all partitions, referenced on each
+        sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF.toString()));
+        sleeper.ingest().direct(tempDir)
+                .numberedRecords(numbers.range(0, 100));
+        // And we have a file C in the root partition
+        sleeper.sourceFiles().inDataBucket().writeSketches()
+                .createWithNumberedRecords("file.parquet", numbers.range(50, 100));
+        sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
 
-        @BeforeEach
-        void setUp(SleeperSystemTest sleeper) {
-            sleeper.setGeneratorOverrides(overrideField(
-                    ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "row-50")
-                    .splitToNewChildren("L", "LL", "LR", "row-25")
-                    .splitToNewChildren("R", "RL", "RR", "row-75")
-                    .buildTree());
-        }
+        // When
+        sleeper.compaction()
+                // Merge files A and B on LL and LR, split C one level down to L and R
+                .createJobs(2).waitForTasks(1).waitForJobs()
+                // Split C another level to LL and LR, merge it with the existing data
+                .createJobs(4).waitForTasks(1).waitForJobs();
 
-        @Test
-        void shouldCompactOneFileIntoExistingFilesOnLeafPartitions(SleeperSystemTest sleeper) throws Exception {
-            // Given a compaction strategy which will always compact two files together
-            sleeper.updateTableProperties(Map.of(
-                    COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                    COMPACTION_FILES_BATCH_SIZE, "2"));
-            // A file which we add to all 4 leaf partitions
-            sleeper.sourceFiles().inDataBucket().writeSketches()
-                    .createWithNumberedRecords("file.parquet", LongStream.range(0, 50).map(n -> n * 2));
-            sleeper.ingest().toStateStore().addFileWithRecordEstimatesOnPartitions(
-                    "file.parquet", Map.of(
-                            "LL", 12L,
-                            "LR", 12L,
-                            "RL", 12L,
-                            "RR", 12L));
-            // And a file in each leaf partition
-            sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 50).map(n -> n * 2 + 1));
-
-            // When we run compaction
-            sleeper.compaction().createJobs(4).waitForTasks(1).waitForJobs();
-
-            // Then the same records should be present, in one file on each leaf partition
-            assertThat(sleeper.directQuery().allRecordsInTable())
-                    .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                    .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
-        }
-
-        @Test
-        void shouldCompactOneFileFromRootIntoExistingFilesOnLeafPartitions(SleeperSystemTest sleeper) throws Exception {
-            // Given a compaction strategy which will always compact two files together
-            sleeper.updateTableProperties(Map.of(
-                    COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                    COMPACTION_FILES_BATCH_SIZE, "2"));
-            // And a file which we add to the root partition
-            sleeper.sourceFiles().inDataBucket().writeSketches()
-                    .createWithNumberedRecords("file.parquet", LongStream.range(0, 50).map(n -> n * 2));
-            sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
-            // And a file in each leaf partition
-            sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
-            sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 50).map(n -> n * 2 + 1));
-
-            // When we split the file from the root partition into separate references in the leaf partitions
-            // And we run compaction
-            sleeper.compaction()
-                    .createJobs(0).createJobs(4) // Split down two levels of the tree
-                    .waitForTasks(1).waitForJobs();
-
-            // Then the same records should be present, in one file on each leaf partition
-            assertThat(sleeper.directQuery().allRecordsInTable())
-                    .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                    .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
-        }
-    }
-
-    @Nested
-    @DisplayName("Run with Rust")
-    class RunWithRust {
-
-        @BeforeEach
-        void setUp(SleeperSystemTest sleeper) {
-            sleeper.updateTableProperties(Map.of(
-                    COMPACTION_METHOD, CompactionMethod.DATAFUSION.toString(),
-                    COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                    COMPACTION_FILES_BATCH_SIZE, "2"));
-        }
-
-        @Test
-        void shouldCompactFilesInSinglePartition(SleeperSystemTest sleeper) {
-            // Given
-            RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
-            sleeper.ingest().direct(tempDir)
-                    .numberedRecords(numbers.range(0, 25))
-                    .numberedRecords(numbers.range(25, 50))
-                    .numberedRecords(numbers.range(50, 75))
-                    .numberedRecords(numbers.range(75, 100));
-
-            // When
-            sleeper.compaction().createJobs(2).waitForTasks(1).waitForJobs();
-
-            // Then
-            assertThat(sleeper.directQuery().allRecordsInTable())
-                    .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                    .isEqualTo(exampleString("compaction/compacted4To2Files.txt"));
-        }
-
-        @Test
-        void shouldCompactFilesFromMultiplePartitions(SleeperSystemTest sleeper) throws Exception {
-            // Given
-            sleeper.setGeneratorOverrides(overrideField(
-                    ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
-            sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "row-50")
-                    .splitToNewChildren("L", "LL", "LR", "row-25")
-                    .splitToNewChildren("R", "RL", "RR", "row-75")
-                    .buildTree());
-            sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
-            RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
-            sleeper.ingest().direct(tempDir)
-                    .numberedRecords(numbers.range(0, 50));
-            sleeper.sourceFiles().inDataBucket().writeSketches()
-                    .createWithNumberedRecords("file.parquet", numbers.range(50, 100));
-            sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
-
-            // When
-            sleeper.compaction()
-                    .createJobs(0).createJobs(4) // Split down two levels of the tree
-                    .waitForTasks(1).waitForJobs();
-
-            // Then
-            assertThat(sleeper.directQuery().allRecordsInTable())
-                    .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 100)));
-            assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                    .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
-        }
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
+                        LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
+        assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
+                .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
     }
 }
