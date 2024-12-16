@@ -26,7 +26,6 @@ import sleeper.core.properties.validation.CompactionMethod;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
-import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
@@ -81,16 +80,15 @@ public class CompactionST {
                 .buildTree());
         // And half the partitions have a file A wholly on each partition
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 50));
+                .numberedRecords(LongStream.range(0, 50));
         // And we have a file B containing data for all partitions, referenced on each
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF.toString()));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 100));
+                .numberedRecords(sleeper.scrambleNumberedRecords(LongStream.range(0, 100)).stream());
         // And we have a file C in the root partition
         sleeper.sourceFiles().inDataBucket().writeSketches()
-                .createWithNumberedRecords("file.parquet", numbers.range(50, 100));
+                .createWithNumberedRecords("file.parquet", LongStream.range(50, 100));
         sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
 
         // When
@@ -124,16 +122,15 @@ public class CompactionST {
                 .buildTree());
         // And half the partitions have a file A wholly on each partition
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF.toString()));
-        RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 50));
+                .numberedRecords(LongStream.range(0, 50));
         // And we have a file B containing data for all partitions, referenced on each
         sleeper.updateTableProperties(Map.of(INGEST_FILE_WRITING_STRATEGY, ONE_REFERENCE_PER_LEAF.toString()));
         sleeper.ingest().direct(tempDir)
-                .numberedRecords(numbers.range(0, 100));
+                .numberedRecords(sleeper.scrambleNumberedRecords(LongStream.range(0, 100)).stream());
         // And we have a file C in the root partition
         sleeper.sourceFiles().inDataBucket().writeSketches()
-                .createWithNumberedRecords("file.parquet", numbers.range(50, 100));
+                .createWithNumberedRecords("file.parquet", LongStream.range(50, 100));
         sleeper.ingest().toStateStore().addFileOnPartition("file.parquet", "root", 50);
 
         // When
