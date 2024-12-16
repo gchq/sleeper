@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.toSet;
 import static sleeper.core.deploy.SleeperScheduleRule.COMPACTION_TASK_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.INGEST_TASK_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.QUERY_WARM_LAMBDA;
+import static sleeper.core.deploy.SleeperScheduleRule.TABLE_METRICS;
 import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_DELETION;
 import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_TRANSACTION_DELETION;
@@ -102,6 +103,7 @@ public class SystemTestInstanceConfiguration {
                 TRANSACTION_LOG_SNAPSHOT_CREATION,
                 TRANSACTION_LOG_SNAPSHOT_DELETION,
                 TRANSACTION_LOG_TRANSACTION_DELETION,
+                TABLE_METRICS,
                 INGEST_TASK_CREATION,
                 COMPACTION_TASK_CREATION).collect(toSet());
         private String shortName;
