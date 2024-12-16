@@ -17,7 +17,6 @@
 package sleeper.systemtest.suite.fixtures;
 
 import sleeper.core.deploy.DeployInstanceConfiguration;
-import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
@@ -28,6 +27,7 @@ import sleeper.systemtest.dsl.util.SystemTestSchema;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static sleeper.core.deploy.SleeperScheduleRule.COMPACTION_TASK_CREATION;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
@@ -88,7 +88,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration COMPACTION_CREATION = SystemTestInstanceConfiguration.builder()
             .shortName("cpt-cr")
             .deployConfig(SystemTestInstance::createCompactionCreationConfiguration)
-            .disableSchedules(List.of(COMPACTION_TASK_CREATION))
+            .disableSchedules(Set.of(COMPACTION_TASK_CREATION))
             .build();
     public static final SystemTestInstanceConfiguration BULK_IMPORT_PERFORMANCE = usingSystemTestDefaults("emr", SystemTestInstance::createBulkImportPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration BULK_IMPORT_EKS = usingSystemTestDefaults("bi-eks", SystemTestInstance::createBulkImportOnEksConfiguration);
@@ -101,7 +101,6 @@ public class SystemTestInstance {
             .shortName("xf-off")
             .deployConfig(SystemTestInstance::createOptionalFeaturesDisabledConfiguration)
             .useSystemTestIngestSourceBucket(false)
-            .enableSchedules(SleeperScheduleRule.all())
             .build();
 
     private static final String MAIN_EMR_MASTER_TYPES = "m7i.xlarge,m6i.xlarge,m6a.xlarge,m5.xlarge,m5a.xlarge";
