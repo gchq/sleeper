@@ -46,10 +46,12 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.partitionsBuilder;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.ROW_KEY_FIELD_NAME;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
@@ -60,30 +62,31 @@ public class GarbageCollectionST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstanceNoTables(MAIN);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
     @Test
     void shouldGarbageCollectFilesAfterCompaction(SleeperSystemTest sleeper) {
         // Given
+        sleeper.tables().createWithProperties("gc", DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false",
+                INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString(),
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "10",
+                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         sleeper.setGeneratorOverrides(overrideField(ROW_KEY_FIELD_NAME,
                 numberStringAndZeroPadTo(5).then(addPrefix("row-"))));
         sleeper.partitioning().setPartitions(partitionsBuilder(sleeper)
                 .rootFirst("root")
                 .splitToNewChildren("root", UUID.randomUUID().toString(), UUID.randomUUID().toString(), "row-50000")
                 .buildTree());
-        sleeper.updateTableProperties(Map.of(
-                INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString(),
-                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
-                COMPACTION_FILES_BATCH_SIZE, "10",
-                GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
         RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 100_000));
         SystemTestDirectIngest ingest = sleeper.ingest().direct(tempDir);
         IntStream.range(0, 1000)
                 .mapToObj(i -> numbers.range(i * 100, i * 100 + 100))
                 .forEach(range -> ingest.numberedRecords(range));
-        sleeper.compaction().createJobs(200).waitForTasks(1).waitForJobs();
+        sleeper.compaction().putTableOnlineWaitForJobCreation(200).waitForTasks(1).waitForJobs();
 
         // When
         sleeper.garbageCollection().invoke().waitFor(

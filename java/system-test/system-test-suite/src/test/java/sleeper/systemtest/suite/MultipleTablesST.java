@@ -90,6 +90,7 @@ public class MultipleTablesST {
         // Given we have several tables
         // And we ingest two source files as separate jobs
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
@@ -102,7 +103,7 @@ public class MultipleTablesST {
                 .waitForTask().waitForJobs();
 
         // When we run compaction and GC
-        sleeper.compaction().createJobs(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
+        sleeper.compaction().putTableOnlineWaitForJobCreation(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
         sleeper.garbageCollection().invoke().waitFor();
 
         // Then all tables should have one active file with the expected records, and none ready for GC
