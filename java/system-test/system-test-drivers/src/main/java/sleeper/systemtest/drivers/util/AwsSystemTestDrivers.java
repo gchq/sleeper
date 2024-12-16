@@ -213,7 +213,7 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
 
     @Override
     public GarbageCollectionDriver garbageCollection(SystemTestContext context) {
-        return new AwsGarbageCollectionDriver(context.instance(), clients.getLambda());
+        return new AwsGarbageCollectionDriver(context.instance(), clients);
     }
 
     @Override
