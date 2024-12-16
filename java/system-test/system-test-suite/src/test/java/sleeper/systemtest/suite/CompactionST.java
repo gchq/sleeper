@@ -103,7 +103,7 @@ public class CompactionST {
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
                         LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
+                .isEqualTo(exampleString("compaction/compactedFilesFromMultiplePartitions.txt"));
     }
 
     @Test
@@ -145,6 +145,6 @@ public class CompactionST {
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(
                         LongStream.range(0, 100).flatMap(number -> LongStream.of(number, number))));
         assertThat(printFiles(sleeper.partitioning().tree(), sleeper.tableFiles().all()))
-                .isEqualTo(exampleString("compaction/compactedFileIntoLeafPartitions.txt"));
+                .isEqualTo(exampleString("compaction/compactedFilesFromMultiplePartitions.txt"));
     }
 }
