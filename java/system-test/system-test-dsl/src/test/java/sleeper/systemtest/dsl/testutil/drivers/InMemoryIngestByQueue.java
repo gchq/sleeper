@@ -36,11 +36,11 @@ import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
-import sleeper.systemtest.dsl.ingest.WaitForTasks;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
+import sleeper.systemtest.dsl.util.WaitForTasks;
 
 import java.time.Duration;
 import java.time.Instant;

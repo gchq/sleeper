@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.ingest;
+package sleeper.systemtest.dsl.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,6 @@ import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.time.Duration;
 import java.util.Collection;

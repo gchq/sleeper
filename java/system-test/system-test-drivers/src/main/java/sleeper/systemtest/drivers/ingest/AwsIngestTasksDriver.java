@@ -23,8 +23,8 @@ import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
-import sleeper.systemtest.dsl.ingest.WaitForTasks;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.WaitForTasks;
 
 public class AwsIngestTasksDriver implements IngestTasksDriver {
 
