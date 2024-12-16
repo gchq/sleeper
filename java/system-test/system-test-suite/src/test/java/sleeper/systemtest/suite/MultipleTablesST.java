@@ -120,8 +120,9 @@ public class MultipleTablesST {
     void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
         // Given we have several tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
-        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema,
-                Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                TABLE_ONLINE, "false",
+                PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
