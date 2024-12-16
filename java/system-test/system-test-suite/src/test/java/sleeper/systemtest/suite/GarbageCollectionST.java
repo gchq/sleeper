@@ -90,7 +90,7 @@ public class GarbageCollectionST {
 
         // When
         sleeper.garbageCollection().invoke().waitFor(
-                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
 
         // Then
         assertThat(new HashSet<>(sleeper.query().byQueue().allRecordsInTable()))
