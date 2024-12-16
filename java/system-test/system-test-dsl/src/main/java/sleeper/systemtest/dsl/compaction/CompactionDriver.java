@@ -32,8 +32,6 @@ public interface CompactionDriver {
 
     void invokeTasks(int expectedTasks, PollWithRetries poll);
 
-    void forceStartTasks(int numberOfTasks, PollWithRetries poll);
-
     void scaleToZero();
 
     List<CompactionJob> drainJobsQueueForWholeInstance();

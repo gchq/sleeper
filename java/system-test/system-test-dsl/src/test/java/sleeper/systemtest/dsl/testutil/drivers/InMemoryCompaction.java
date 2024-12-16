@@ -155,11 +155,6 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public void forceStartTasks(int numberOfTasks, PollWithRetries poll) {
-            invokeTasks(numberOfTasks, poll);
-        }
-
-        @Override
         public void scaleToZero() {
         }
 

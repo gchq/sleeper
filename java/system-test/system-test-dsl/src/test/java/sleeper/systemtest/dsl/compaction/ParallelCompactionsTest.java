@@ -84,7 +84,7 @@ public class ParallelCompactionsTest {
 
         // When we run compaction
         sleeper.compaction()
-                .forceStartTasks(NUMBER_OF_COMPACTIONS)
+                .invokeTasks(NUMBER_OF_COMPACTIONS)
                 .createJobs(NUMBER_OF_COMPACTIONS)
                 .waitForJobs();
 

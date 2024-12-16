@@ -76,11 +76,6 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public SystemTestCompaction forceStartTasks(int expectedTasks) {
-        driver.forceStartTasks(expectedTasks, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-        return this;
-    }
-
     public SystemTestCompaction waitForJobs() {
         waitForJobs.waitForJobs(lastJobIds);
         return this;
