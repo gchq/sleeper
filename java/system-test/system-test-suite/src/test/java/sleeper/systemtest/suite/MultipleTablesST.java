@@ -71,7 +71,7 @@ public class MultipleTablesST {
 
         // When we send an ingest job with the source file to all tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then all tables should contain the source file records
         // And all tables should have one active file
@@ -98,7 +98,7 @@ public class MultipleTablesST {
         sleeper.ingest().byQueue()
                 .sendSourceFilesToAllTables("file1.parquet")
                 .sendSourceFilesToAllTables("file2.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // When we run compaction and GC
         sleeper.compaction().createJobs(NUMBER_OF_TABLES).invokeTasks(1).waitForJobs();
@@ -125,7 +125,7 @@ public class MultipleTablesST {
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // When we run 3 partition splits with compactions
         sleeper.partitioning().split();
@@ -161,7 +161,7 @@ public class MultipleTablesST {
         sleeper.ingest().byQueue()
                 .sendSourceFilesToAllTables("file1.parquet")
                 .sendSourceFilesToAllTables("file2.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // When we compute table metrics
         sleeper.tableMetrics().generate();

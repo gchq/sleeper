@@ -25,7 +25,7 @@ import sleeper.systemtest.drivers.ingest.AwsDirectIngestDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestBatcherDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestByQueueDriver;
 import sleeper.systemtest.drivers.ingest.AwsIngestReportsDriver;
-import sleeper.systemtest.drivers.ingest.AwsInvokeIngestTasksDriver;
+import sleeper.systemtest.drivers.ingest.AwsIngestTasksDriver;
 import sleeper.systemtest.drivers.ingest.AwsPurgeQueueDriver;
 import sleeper.systemtest.drivers.ingest.DirectEmrServerlessDriver;
 import sleeper.systemtest.drivers.ingest.HadoopLocalFilesDriver;
@@ -59,7 +59,7 @@ import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
@@ -167,8 +167,8 @@ public class AwsSystemTestDrivers implements SystemTestDrivers {
     }
 
     @Override
-    public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
-        return new AwsInvokeIngestTasksDriver(context.instance(), clients);
+    public IngestTasksDriver ingestTasks(SystemTestContext context) {
+        return new AwsIngestTasksDriver(context.instance(), clients);
     }
 
     @Override

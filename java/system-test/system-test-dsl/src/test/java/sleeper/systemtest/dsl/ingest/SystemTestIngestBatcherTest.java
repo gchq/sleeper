@@ -62,7 +62,7 @@ public class SystemTestIngestBatcherTest {
         // When
         SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
                 .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().invokeStandardIngestTask().waitForIngestJobs().getInvokeResult();
+                .invoke().waitForStandardIngestTask().waitForIngestJobs().getInvokeResult();
 
         // Then
         assertThat(result.numJobsCreated()).isEqualTo(2);

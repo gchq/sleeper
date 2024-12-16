@@ -20,11 +20,13 @@ import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toSet;
+import static sleeper.core.deploy.SleeperScheduleRule.INGEST;
 import static sleeper.core.deploy.SleeperScheduleRule.QUERY_WARM_LAMBDA;
 import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_DELETION;
@@ -94,11 +96,12 @@ public class SystemTestInstanceConfiguration {
     public static final class Builder {
         private Supplier<DeployInstanceConfiguration> deployConfig;
         private boolean useSystemTestIngestSourceBucket = true;
-        private Set<SleeperScheduleRule> enableSchedules = Set.of(
+        private Set<SleeperScheduleRule> enableSchedules = Stream.of(
                 QUERY_WARM_LAMBDA,
                 TRANSACTION_LOG_SNAPSHOT_CREATION,
                 TRANSACTION_LOG_SNAPSHOT_DELETION,
-                TRANSACTION_LOG_TRANSACTION_DELETION);
+                TRANSACTION_LOG_TRANSACTION_DELETION,
+                INGEST).collect(toSet());
         private String shortName;
 
         private Builder() {
@@ -120,7 +123,7 @@ public class SystemTestInstanceConfiguration {
         }
 
         public Builder enableSchedules(List<SleeperScheduleRule> enableSchedules) {
-            this.enableSchedules = new HashSet<>(enableSchedules);
+            this.enableSchedules.addAll(enableSchedules);
             return this;
         }
 

@@ -31,12 +31,14 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
 
+    private final SystemTestContext context;
     private final SystemTestInstanceContext instance;
     private final IngestBatcherStore store;
     private final InMemoryIngestByQueue ingest;
     private final long fileSizeBytes;
 
     public InMemoryIngestBatcherDriver(SystemTestContext context, IngestBatcherStore store, InMemoryIngestByQueue ingest, long fileSizeBytes) {
+        this.context = context;
         this.instance = context.instance();
         this.store = store;
         this.ingest = ingest;
@@ -63,7 +65,7 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
                 .tablePropertiesProvider(instance.getTablePropertiesProvider())
                 .store(store)
                 .queueClient((queueUrl, job) -> {
-                    ingest.send(job);
+                    ingest.send(job, context);
                     jobIds.add(job.getId());
                 })
                 .build().batchFiles();

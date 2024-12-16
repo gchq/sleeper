@@ -33,24 +33,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class InvokeIngestTasksTest {
+public class WaitForIngestTasksTest {
 
     private final IngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
     private final List<Duration> waits = new ArrayList<>();
-    private InvokeIngestTasks.InvokeTaskCreator invokeCreator;
+    private Runnable onWait = () -> {
+    };
 
     @Test
-    void shouldInvokeTaskThatImmediatelyStartsJob() {
+    void shouldFindJobStartsDuringFirstWait() {
         // Given
-        onInvokeTaskCreator(() -> {
+        onWait(() -> {
             jobStore.jobStarted(jobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
         });
 
         // When / Then
-        assertThatCode(() -> invokeTasks()
-                .invokeUntilNumTasksStartedAJob(1, List.of("test-job"), noRetries()))
+        assertThatCode(() -> waitUntilNumTasksStartedAJob(1, List.of("test-job"), retries(1)))
                 .doesNotThrowAnyException();
-        assertThat(waits).isEmpty();
+        assertThat(waits).hasSize(1);
     }
 
     @Test
@@ -58,8 +58,7 @@ public class InvokeIngestTasksTest {
         jobStore.jobStarted(jobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
 
         // When / Then
-        assertThatCode(() -> invokeTasks()
-                .invokeUntilNumTasksStartedAJob(1, List.of("test-job"), noRetries()))
+        assertThatCode(() -> waitUntilNumTasksStartedAJob(1, List.of("test-job"), noRetries()))
                 .doesNotThrowAnyException();
         assertThat(waits).isEmpty();
     }
@@ -70,8 +69,7 @@ public class InvokeIngestTasksTest {
         jobStore.jobStarted(jobStartedOnTask("job-2", "task-2", Instant.parse("2024-09-02T14:47:02Z")));
 
         // When / Then
-        assertThatCode(() -> invokeTasks()
-                .invokeUntilNumTasksStartedAJob(1, List.of("job-1", "job-2"), noRetries()))
+        assertThatCode(() -> waitUntilNumTasksStartedAJob(1, List.of("job-1", "job-2"), noRetries()))
                 .doesNotThrowAnyException();
         assertThat(waits).isEmpty();
     }
@@ -79,13 +77,12 @@ public class InvokeIngestTasksTest {
     @Test
     void shouldFailToStartAJob() {
         // Given
-        onInvokeTaskCreator(() -> {
+        onWait(() -> {
             // Do nothing
         });
 
         // When / Then
-        assertThatThrownBy(() -> invokeTasks()
-                .invokeUntilNumTasksStartedAJob(1, List.of("test-job"), noRetries()))
+        assertThatThrownBy(() -> waitUntilNumTasksStartedAJob(1, List.of("test-job"), noRetries()))
                 .isInstanceOf(CheckFailedException.class);
         assertThat(waits).isEmpty();
     }
@@ -93,46 +90,43 @@ public class InvokeIngestTasksTest {
     @Test
     void shouldStartJobOnRetry() {
         // Given
-        onInvokeTaskCreator(() -> {
-            // Do nothing on first invocation
+        onWait(() -> {
+            // Do nothing on first wait
         }, () -> {
             jobStore.jobStarted(jobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
         });
 
         // When / Then
-        assertThatCode(() -> invokeTasks()
-                .invokeUntilNumTasksStartedAJob(1, List.of("test-job"), retries(1)))
+        assertThatCode(() -> waitUntilNumTasksStartedAJob(1, List.of("test-job"), retries(2)))
                 .doesNotThrowAnyException();
-        assertThat(waits).hasSize(1);
+        assertThat(waits).hasSize(2);
     }
 
     @Test
     void shouldPassWithMoreTasksThanExpectedOnRetry() {
-        onInvokeTaskCreator(() -> {
-            // Do nothing on first invocation
+        onWait(() -> {
+            // Do nothing on first wait
         }, () -> {
             jobStore.jobStarted(jobStartedOnTask("job-1", "task-1", Instant.parse("2024-09-02T14:47:01Z")));
             jobStore.jobStarted(jobStartedOnTask("job-2", "task-2", Instant.parse("2024-09-02T14:47:02Z")));
         });
 
         // When / Then
-        assertThatCode(() -> invokeTasks()
-                .invokeUntilNumTasksStartedAJob(1, List.of("job-1", "job-2"), retries(1)))
+        assertThatCode(() -> waitUntilNumTasksStartedAJob(1, List.of("job-1", "job-2"), retries(2)))
                 .doesNotThrowAnyException();
-        assertThat(waits).hasSize(1);
+        assertThat(waits).hasSize(2);
     }
 
     @Test
     void shouldFailToStartEnoughTasks() {
         // Given
-        onInvokeTaskCreator(() -> {
+        onWait(() -> {
             jobStore.jobStarted(jobStartedOnTask("job-1", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
             jobStore.jobStarted(jobStartedOnTask("job-2", "test-task", Instant.parse("2024-09-02T14:47:02Z")));
         });
 
         // When / Then
-        assertThatThrownBy(() -> invokeTasks()
-                .invokeUntilNumTasksStartedAJob(2, List.of("job-1", "job-2"), noRetries()))
+        assertThatThrownBy(() -> waitUntilNumTasksStartedAJob(2, List.of("job-1", "job-2"), noRetries()))
                 .isInstanceOf(CheckFailedException.class);
         assertThat(waits).isEmpty();
     }
@@ -140,13 +134,12 @@ public class InvokeIngestTasksTest {
     @Test
     void shouldFailWhenTaskStartedWithUnexpectedJob() {
         // Given
-        onInvokeTaskCreator(() -> {
+        onWait(() -> {
             jobStore.jobStarted(jobStartedOnTask("other-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
         });
 
         // When / Then
-        assertThatThrownBy(() -> invokeTasks()
-                .invokeUntilNumTasksStartedAJob(2, List.of("test-job"), noRetries()))
+        assertThatThrownBy(() -> waitUntilNumTasksStartedAJob(2, List.of("test-job"), noRetries()))
                 .isInstanceOf(CheckFailedException.class);
         assertThat(waits).isEmpty();
     }
@@ -154,14 +147,13 @@ public class InvokeIngestTasksTest {
     @Test
     void shouldFailWhenNoJobsGiven() {
         // When / Then
-        assertThatThrownBy(() -> invokeTasks()
-                .invokeUntilNumTasksStartedAJob(1, List.of(), noRetries()))
+        assertThatThrownBy(() -> waitUntilNumTasksStartedAJob(1, List.of(), noRetries()))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(waits).isEmpty();
     }
 
-    private InvokeIngestTasks invokeTasks() {
-        return new InvokeIngestTasks(invokeCreator, jobStore);
+    private void waitUntilNumTasksStartedAJob(int expectedTasks, List<String> jobIds, PollWithRetries poll) {
+        new WaitForIngestTasks(jobStore).waitUntilNumTasksStartedAJob(expectedTasks, jobIds, poll);
     }
 
     private PollWithRetries noRetries() {
@@ -172,13 +164,16 @@ public class InvokeIngestTasksTest {
         return PollWithRetries.builder()
                 .pollIntervalMillis(10)
                 .maxRetries(retries)
-                .sleepInInterval(millis -> waits.add(Duration.ofMillis(millis)))
+                .sleepInInterval(millis -> {
+                    waits.add(Duration.ofMillis(millis));
+                    onWait.run();
+                })
                 .build();
     }
 
-    private void onInvokeTaskCreator(Runnable... actions) {
+    private void onWait(Runnable... actions) {
         Iterator<Runnable> iterator = List.of(actions).iterator();
-        invokeCreator = () -> iterator.next().run();
+        onWait = () -> iterator.next().run();
     }
 
     private IngestJobStartedEvent jobStartedOnTask(String jobId, String taskId, Instant startTime) {
