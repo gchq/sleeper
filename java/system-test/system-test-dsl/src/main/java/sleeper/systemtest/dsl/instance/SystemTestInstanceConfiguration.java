@@ -29,6 +29,7 @@ import static java.util.stream.Collectors.toSet;
 import static sleeper.core.deploy.SleeperScheduleRule.COMPACTION_JOB_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.COMPACTION_TASK_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.GARBAGE_COLLECTOR;
+import static sleeper.core.deploy.SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.INGEST_TASK_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.PARTITION_SPLITTING;
 import static sleeper.core.deploy.SleeperScheduleRule.QUERY_WARM_LAMBDA;
@@ -111,7 +112,8 @@ public class SystemTestInstanceConfiguration {
                 COMPACTION_TASK_CREATION,
                 COMPACTION_JOB_CREATION,
                 GARBAGE_COLLECTOR,
-                PARTITION_SPLITTING).collect(toSet());
+                PARTITION_SPLITTING,
+                INGEST_BATCHER_JOB_CREATION).collect(toSet());
         private String shortName;
 
         private Builder() {
