@@ -104,7 +104,7 @@ public class MultipleTablesST {
 
         // When we run compaction and GC
         sleeper.compaction().putTableOnlineWaitForJobCreation(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
-        sleeper.garbageCollection().invoke().waitFor();
+        sleeper.garbageCollection().waitFor();
 
         // Then all tables should have one active file with the expected records, and none ready for GC
         assertThat(sleeper.query().byQueue().allRecordsByTable())

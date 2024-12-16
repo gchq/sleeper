@@ -89,7 +89,7 @@ public class GarbageCollectionST {
         sleeper.compaction().putTableOnlineWaitForJobCreation(200).waitForTasks(1).waitForJobs();
 
         // When
-        sleeper.garbageCollection().invoke().waitFor(
+        sleeper.garbageCollection().waitFor(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // Then
