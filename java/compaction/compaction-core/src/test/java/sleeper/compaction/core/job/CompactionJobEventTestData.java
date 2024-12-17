@@ -15,7 +15,12 @@
  */
 package sleeper.compaction.core.job;
 
+import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 
 import java.time.Instant;
@@ -37,6 +42,18 @@ public class CompactionJobEventTestData {
 
     public static CompactionJobStartedEvent.Builder startedEventBuilder(CompactionJobCreatedEvent created, Instant startTime) {
         return CompactionJobStartedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).startTime(startTime);
+    }
+
+    public static CompactionJobFinishedEvent.Builder finishedEventBuilder(CompactionJobCreatedEvent created, RecordsProcessedSummary summary) {
+        return CompactionJobFinishedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).summary(summary);
+    }
+
+    public static CompactionJobCommittedEvent.Builder committedEventBuilder(CompactionJobCreatedEvent created, Instant commitTime) {
+        return CompactionJobCommittedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).commitTime(commitTime);
+    }
+
+    public static CompactionJobFailedEvent.Builder failedEventBuilder(CompactionJobCreatedEvent created, ProcessRunTime runTime) {
+        return CompactionJobFailedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).runTime(runTime);
     }
 
 }
