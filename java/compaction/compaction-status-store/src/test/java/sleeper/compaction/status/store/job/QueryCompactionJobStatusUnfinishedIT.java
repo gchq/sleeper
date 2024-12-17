@@ -29,7 +29,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCo
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 
 public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -68,7 +67,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // When
         storeJobCreated(job);
         store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
@@ -93,7 +92,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // When
         storeJobsCreated(job1, job2);
         store.jobStarted(job2.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(compactionJobFinished(job2, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(job2.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
         store.jobCommitted(job2.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
@@ -135,7 +134,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // When
         storeJobCreated(job);
         store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
         store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
 

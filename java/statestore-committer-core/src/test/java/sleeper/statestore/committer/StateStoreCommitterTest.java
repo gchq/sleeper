@@ -80,7 +80,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -691,7 +690,7 @@ public class StateStoreCommitterTest {
         compactionJobStatusStore.jobCreated(job.createCreatedEvent(), createTime);
         compactionJobStatusStore.jobStarted(job.startedEventBuilder(startTime)
                 .taskId("test-task").jobRunId("test-job-run").build());
-        compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary)
+        compactionJobStatusStore.jobFinished(job.finishedEventBuilder(summary)
                 .taskId("test-task").jobRunId("test-job-run").build());
         return new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
     }

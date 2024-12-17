@@ -64,7 +64,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 
 public class InMemoryCompaction {
     private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
@@ -182,7 +181,7 @@ public class InMemoryCompaction {
             TableProperties tableProperties = tablesProvider.getById(job.getTableId());
             RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), taskId);
             jobStore.jobStarted(job.startedEventBuilder(summary.getStartTime()).taskId(taskId).build());
-            jobStore.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
+            jobStore.jobFinished(job.finishedEventBuilder(summary).taskId(taskId).build());
             jobStore.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(taskId).build());
         }
         queuedJobsById.clear();

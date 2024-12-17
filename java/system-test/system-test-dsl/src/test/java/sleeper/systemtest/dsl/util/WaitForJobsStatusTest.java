@@ -31,7 +31,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
@@ -94,10 +93,10 @@ public class WaitForJobsStatusTest {
         store.jobStarted(uncommittedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").build());
         store.jobStarted(finishedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
-        store.jobFinished(compactionJobFinished(uncommittedJob,
+        store.jobFinished(uncommittedJob.finishedEventBuilder(
                 summary(Instant.parse("2023-09-18T14:48:01Z"), Instant.parse("2023-09-18T14:50:01Z"), 100L, 100L))
                 .taskId("finished-task-1").build());
-        store.jobFinished(compactionJobFinished(finishedJob,
+        store.jobFinished(finishedJob.finishedEventBuilder(
                 summary(Instant.parse("2023-09-18T14:48:02Z"), Instant.parse("2023-09-18T14:50:02Z"), 100L, 100L))
                 .taskId("finished-task-2").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
@@ -263,7 +262,7 @@ public class WaitForJobsStatusTest {
         store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
 
         store.fixUpdateTime(defaultUpdateTime(finishTime));
-        store.jobFinished(compactionJobFinished(job,
+        store.jobFinished(job.finishedEventBuilder(
                 summary(startTime, finishTime, 100L, 100L))
                 .taskId(taskId).build());
         Instant commitTime = finishTime.plus(Duration.ofMinutes(1));

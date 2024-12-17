@@ -49,7 +49,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
@@ -202,7 +201,7 @@ public class CompactionTask {
             IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker, RecordsProcessedSummary summary) throws Exception {
         CompactionJob job = message.getJob();
         try {
-            jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());
+            jobCommitter.commit(job, job.finishedEventBuilder(summary).taskId(taskId).jobRunId(jobRunId).build());
             logMetrics(job, summary);
             builder.addJobSummary(summary);
             message.deleteFromQueue();
