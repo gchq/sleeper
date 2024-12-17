@@ -98,7 +98,7 @@ public class CompactionStatusReportScreen {
     }
 
     private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQuery.Type queryType, String queryParameters) {
-        new CompactionJobStatusReport(statusStores.loadCompactionJobStatusStore(properties),
+        new CompactionJobStatusReport(statusStores.loadCompactionJobTracker(properties),
                 new StandardCompactionJobStatusReporter(out.printStream()), table, queryType, queryParameters).run();
         confirmReturnToMainScreen(out, in);
     }

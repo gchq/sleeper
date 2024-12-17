@@ -31,7 +31,7 @@ import static org.mockito.Mockito.mock;
 class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
 
     @Test
-    void shouldSetCompactionJobStatusStore() {
+    void shouldSetCompactionJobTracker() {
         // Given
         CompactionJobTracker store = new InMemoryCompactionJobTracker();
         InstanceProperties properties = createValidInstanceProperties();
@@ -41,7 +41,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
         RunAdminClient runner = runClient().statusStore(store);
 
         // Then
-        assertThat(runner.statusStores().loadCompactionJobStatusStore(properties))
+        assertThat(runner.statusStores().loadCompactionJobTracker(properties))
                 .isSameAs(store);
     }
 
@@ -91,13 +91,13 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnNoCompactionJobStatusStore() {
+    void shouldReturnNoCompactionJobTracker() {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().statusStores().loadCompactionJobStatusStore(properties))
+        assertThat(runClient().statusStores().loadCompactionJobTracker(properties))
                 .isSameAs(CompactionJobTracker.NONE);
     }
 

@@ -19,7 +19,7 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -34,7 +34,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
-public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldUpdateExpiryDateForCompactionJobStatusCreated() {

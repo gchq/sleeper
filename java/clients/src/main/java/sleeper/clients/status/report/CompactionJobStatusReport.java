@@ -52,31 +52,31 @@ public class CompactionJobStatusReport {
     }
 
     private final CompactionJobStatusReporter compactionJobStatusReporter;
-    private final CompactionJobTracker compactionJobStatusStore;
+    private final CompactionJobTracker compactionJobTracker;
     private final JobQuery.Type queryType;
     private final JobQuery query;
 
     public CompactionJobStatusReport(
-            CompactionJobTracker compactionJobStatusStore,
+            CompactionJobTracker compactionJobTracker,
             CompactionJobStatusReporter reporter,
             TableStatus table, JobQuery.Type queryType) {
-        this(compactionJobStatusStore, reporter, table, queryType, "");
+        this(compactionJobTracker, reporter, table, queryType, "");
     }
 
     public CompactionJobStatusReport(
-            CompactionJobTracker compactionJobStatusStore,
+            CompactionJobTracker compactionJobTracker,
             CompactionJobStatusReporter reporter,
             TableStatus table, JobQuery.Type queryType, String queryParameters) {
-        this(compactionJobStatusStore, reporter,
+        this(compactionJobTracker, reporter,
                 JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
                         Clock.systemUTC(), new ConsoleInput(System.console())));
     }
 
     public CompactionJobStatusReport(
-            CompactionJobTracker compactionJobStatusStore,
+            CompactionJobTracker compactionJobTracker,
             CompactionJobStatusReporter reporter,
             JobQuery query) {
-        this.compactionJobStatusStore = compactionJobStatusStore;
+        this.compactionJobTracker = compactionJobTracker;
         this.compactionJobStatusReporter = reporter;
         this.query = query;
         this.queryType = query.getType();
@@ -86,7 +86,7 @@ public class CompactionJobStatusReport {
         if (query == null) {
             return;
         }
-        compactionJobStatusReporter.report(query.run(compactionJobStatusStore), queryType);
+        compactionJobStatusReporter.report(query.run(compactionJobTracker), queryType);
     }
 
     public static void main(String[] args) {

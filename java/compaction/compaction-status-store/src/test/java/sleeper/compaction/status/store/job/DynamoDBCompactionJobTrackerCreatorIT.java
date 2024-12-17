@@ -30,7 +30,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
+public class DynamoDBCompactionJobTrackerCreatorIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String updatesTableName = DynamoDBCompactionJobTracker.jobUpdatesTableName(instanceProperties.get(ID));

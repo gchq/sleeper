@@ -59,7 +59,7 @@ public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFacto
     }
 
     @Override
-    public CompactionJobTracker loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
+    public CompactionJobTracker loadCompactionJobTracker(InstanceProperties instanceProperties) {
         return Optional.ofNullable(compactionJobStoreByInstance.get(instanceProperties.get(ID)))
                 .orElse(CompactionJobTracker.NONE);
     }

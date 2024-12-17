@@ -51,19 +51,19 @@ import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_U
 public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
-    private final CompactionJobTracker compactionJobStatusStore;
+    private final CompactionJobTracker compactionJobTracker;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
-            CompactionJobTracker compactionJobStatusStore,
+            CompactionJobTracker compactionJobTracker,
             IngestJobStatusStore ingestJobStatusStore,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             Supplier<Instant> timeSupplier) {
-        this.compactionJobStatusStore = compactionJobStatusStore;
+        this.compactionJobTracker = compactionJobTracker;
         this.ingestJobStatusStore = ingestJobStatusStore;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
@@ -136,7 +136,7 @@ public class StateStoreCommitter {
         try {
             CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(), stateStore);
         } catch (Exception e) {
-            compactionJobStatusStore.jobFailed(job
+            compactionJobTracker.jobFailed(job
                     .failedEventBuilder(new ProcessRunTime(request.getFinishTime(), timeSupplier.get()))
                     .failure(e)
                     .taskId(request.getTaskId())
@@ -144,7 +144,7 @@ public class StateStoreCommitter {
                     .build());
             throw e;
         }
-        compactionJobStatusStore.jobCommitted(job.committedEventBuilder(timeSupplier.get())
+        compactionJobTracker.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                 .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
         LOGGER.debug("Successfully committed compaction job {}", job.getId());
     }

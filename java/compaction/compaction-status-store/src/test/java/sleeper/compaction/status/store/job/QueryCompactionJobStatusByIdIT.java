@@ -18,7 +18,7 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 
@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 
-public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldReturnCompactionJobById() {

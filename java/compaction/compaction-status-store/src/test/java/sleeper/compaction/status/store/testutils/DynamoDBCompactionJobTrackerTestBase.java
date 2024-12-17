@@ -61,7 +61,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.fa
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 
-public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
+public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("createUpdateTime", "expiryDate")

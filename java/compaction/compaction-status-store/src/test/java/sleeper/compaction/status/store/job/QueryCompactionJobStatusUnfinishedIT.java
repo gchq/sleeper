@@ -18,7 +18,7 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 
@@ -30,7 +30,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.fi
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 
-public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldReturnUnfinishedCompactionJobs() {

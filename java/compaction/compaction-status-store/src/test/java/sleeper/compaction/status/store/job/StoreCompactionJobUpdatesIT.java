@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
@@ -33,7 +33,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 
-public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldReportCompactionJobStarted() {

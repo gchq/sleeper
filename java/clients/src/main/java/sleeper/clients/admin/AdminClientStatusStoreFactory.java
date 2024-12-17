@@ -34,7 +34,7 @@ import java.util.Optional;
 
 public interface AdminClientStatusStoreFactory {
 
-    CompactionJobTracker loadCompactionJobStatusStore(InstanceProperties instanceProperties);
+    CompactionJobTracker loadCompactionJobTracker(InstanceProperties instanceProperties);
 
     CompactionTaskStatusStore loadCompactionTaskStatusStore(InstanceProperties instanceProperties);
 
@@ -47,7 +47,7 @@ public interface AdminClientStatusStoreFactory {
     static AdminClientStatusStoreFactory from(AmazonDynamoDB dynamoDB) {
         return new AdminClientStatusStoreFactory() {
             @Override
-            public CompactionJobTracker loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
+            public CompactionJobTracker loadCompactionJobTracker(InstanceProperties instanceProperties) {
                 return CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
             }
 
