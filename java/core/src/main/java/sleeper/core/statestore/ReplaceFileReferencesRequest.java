@@ -42,6 +42,13 @@ public class ReplaceFileReferencesRequest {
         return new ReplaceFileReferencesRequest(jobId, partitionId, inputFiles, newReference);
     }
 
+    private ReplaceFileReferencesRequest(Builder builder) {
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
+        newReference = Objects.requireNonNull(builder.newReference, "newReference must not be null");
+        partitionId = builder.newReference.getPartitionId();
+    }
+
     private ReplaceFileReferencesRequest(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) {
         this.jobId = jobId;
         this.partitionId = partitionId;
@@ -98,4 +105,37 @@ public class ReplaceFileReferencesRequest {
         return "ReplaceFileReferencesRequest{jobId=" + jobId + ", partitionId=" + partitionId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+
+        private String jobId;
+        private List<String> inputFiles;
+        private FileReference newReference;
+
+        private Builder() {
+        }
+
+        public ReplaceFileReferencesRequest build() {
+            return new ReplaceFileReferencesRequest(this);
+        }
+
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
+        public Builder inputFiles(List<String> inputFiles) {
+            this.inputFiles = inputFiles;
+            return this;
+        }
+
+        public Builder newReference(FileReference newReference) {
+            this.newReference = newReference;
+            return this;
+        }
+
+    }
 }
