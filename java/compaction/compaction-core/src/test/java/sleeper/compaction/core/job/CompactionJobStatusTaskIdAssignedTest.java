@@ -18,7 +18,9 @@ package sleeper.compaction.core.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -27,11 +29,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
 
 public class CompactionJobStatusTaskIdAssignedTest {
 
-    private final CompactionJob job = new CompactionJobTestDataHelper().singleFileCompaction();
+    private final CompactionJobCreatedEvent job = defaultCompactionJobCreatedEvent();
 
     @Test
     public void shouldHaveTaskWhenOneRunHasTask() {
@@ -69,8 +72,8 @@ public class CompactionJobStatusTaskIdAssignedTest {
     }
 
     private CompactionJobStatus.Builder statusBuilder() {
-        return CompactionJobStatus.builder().jobId(job.getId())
-                .createdStatus(CompactionJobStatusFromJobTestData.compactionCreatedStatus(job,
+        return CompactionJobStatus.builder().jobId(job.getJobId())
+                .createdStatus(CompactionJobCreatedStatus.from(job,
                         Instant.parse("2022-10-12T11:29:00.000Z")));
     }
 

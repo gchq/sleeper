@@ -16,7 +16,6 @@
 package sleeper.compaction.core.job;
 
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Instant;
@@ -28,10 +27,6 @@ public class CompactionJobStatusFromJobTestData {
 
     public static CompactionJobStatus compactionJobCreated(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
         return CompactionJobStatusTestData.compactionJobCreated(job.createCreatedEvent(), createdTime, runsLatestFirst);
-    }
-
-    public static CompactionJobCreatedStatus compactionCreatedStatus(CompactionJob job, Instant createdTime) {
-        return CompactionJobCreatedStatus.from(job.createAssignJobIdRequest(), createdTime);
     }
 
 }

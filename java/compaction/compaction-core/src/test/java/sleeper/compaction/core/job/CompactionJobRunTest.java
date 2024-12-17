@@ -27,10 +27,10 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.compaction.core.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
@@ -43,10 +43,8 @@ public class CompactionJobRunTest {
     @Test
     public void shouldReportNoRunsWhenJobNotStarted() {
         // Given
-        CompactionJobCreatedStatus createdStatus = CompactionJobStatusFromJobTestData.compactionCreatedStatus(CompactionJob.builder()
-                .tableId("test-table").jobId("test-job").partitionId("test-partition")
-                .inputFiles(List.of("file1", "file2")).outputFile("output")
-                .build(), Instant.parse("2022-09-23T09:23:00.012Z"));
+        CompactionJobCreatedStatus createdStatus = CompactionJobCreatedStatus.from(
+                defaultCompactionJobCreatedEvent(), Instant.parse("2022-09-23T09:23:00.012Z"));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(createdStatus);
