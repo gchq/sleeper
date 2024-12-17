@@ -39,7 +39,11 @@ public class ReplaceFileReferencesRequest {
      */
     public static ReplaceFileReferencesRequest replaceJobFileReferences(
             String jobId, String partitionId, List<String> inputFiles, FileReference newReference) {
-        return new ReplaceFileReferencesRequest(jobId, partitionId, inputFiles, newReference);
+        return ReplaceFileReferencesRequest.builder()
+                .jobId(jobId)
+                .inputFiles(inputFiles)
+                .newReference(newReference)
+                .build();
     }
 
     private ReplaceFileReferencesRequest(Builder builder) {
