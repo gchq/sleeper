@@ -16,6 +16,7 @@
 package sleeper.compaction.core.job;
 
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
+import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.CheckFileAssignmentsRequest;
 
@@ -76,6 +77,10 @@ public class CompactionJob {
 
     public AssignJobIdRequest createAssignJobIdRequest() {
         return AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, inputFiles);
+    }
+
+    public CompactionJobCreatedEvent createCreatedEvent() {
+        return CompactionJobCreatedEvent.compactionJobCreated(this);
     }
 
     public CompactionJobCommittedEvent.Builder committedEventBuilder(Instant commitTime) {

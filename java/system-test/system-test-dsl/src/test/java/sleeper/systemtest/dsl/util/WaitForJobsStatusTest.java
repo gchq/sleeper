@@ -31,7 +31,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
@@ -246,12 +245,12 @@ public class WaitForJobsStatusTest {
 
     private void addCreatedJob(CompactionJob job, Instant createdTime) {
         store.fixUpdateTime(defaultUpdateTime(createdTime));
-        store.jobCreated(compactionJobCreated(job));
+        store.jobCreated(job.createCreatedEvent());
     }
 
     private void jobsCreated(CompactionJob... jobs) {
         for (CompactionJob job : jobs) {
-            store.jobCreated(compactionJobCreated(job));
+            store.jobCreated(job.createCreatedEvent());
         }
     }
 

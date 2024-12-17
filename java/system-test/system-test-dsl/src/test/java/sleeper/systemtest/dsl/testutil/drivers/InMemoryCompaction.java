@@ -64,7 +64,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
@@ -245,7 +244,7 @@ public class InMemoryCompaction {
         return (bucketName, key, jobs) -> jobs.forEach(
                 job -> {
                     queuedJobsById.put(job.getId(), job);
-                    jobStore.jobCreated(compactionJobCreated(job));
+                    jobStore.jobCreated(job.createCreatedEvent());
                 });
     }
 
