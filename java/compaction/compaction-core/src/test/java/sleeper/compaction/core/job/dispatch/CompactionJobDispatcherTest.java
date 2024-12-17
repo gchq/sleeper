@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -42,6 +41,7 @@ import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
@@ -93,8 +93,8 @@ public class CompactionJobDispatcherTest {
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                CompactionJobStatusFromJobTestData.compactionJobCreated(job2, Instant.parse("2024-11-15T10:30:11Z")),
-                CompactionJobStatusFromJobTestData.compactionJobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
+                compactionJobCreated(job2, Instant.parse("2024-11-15T10:30:11Z")),
+                compactionJobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).isEmpty();
     }
@@ -264,7 +264,7 @@ public class CompactionJobDispatcherTest {
                 .isSameAs(sendFailure);
         assertThat(compactionQueue).containsExactly(job1);
         assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                CompactionJobStatusFromJobTestData.compactionJobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
+                compactionJobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).isEmpty();
     }

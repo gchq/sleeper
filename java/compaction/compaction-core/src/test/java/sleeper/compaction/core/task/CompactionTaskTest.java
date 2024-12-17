@@ -19,7 +19,6 @@ package sleeper.compaction.core.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
 
@@ -29,6 +28,7 @@ import java.util.List;
 import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -103,10 +103,10 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
         assertThat(jobStore.getAllJobs(table.get(TABLE_ID))).containsExactlyInAnyOrder(
-                CompactionJobStatusFromJobTestData.compactionJobCreated(job1, DEFAULT_CREATED_TIME,
+                compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(startTime1, finishTime1), List.of(
                                 "Table not found with ID \"" + table.get(TABLE_ID) + "\""))),
-                CompactionJobStatusFromJobTestData.compactionJobCreated(job2, DEFAULT_CREATED_TIME,
+                compactionJobCreated(job2, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(startTime2, finishTime2), List.of(
                                 "Table not found with ID \"" + table.get(TABLE_ID) + "\""))));
     }

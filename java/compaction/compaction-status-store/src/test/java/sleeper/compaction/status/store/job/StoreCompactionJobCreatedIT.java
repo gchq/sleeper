@@ -18,7 +18,6 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -27,6 +26,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 
 public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -46,7 +46,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
-                .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, createdTime));
+                .containsExactly(compactionJobCreated(job, createdTime));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
-                .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, createdTime));
+                .containsExactly(compactionJobCreated(job, createdTime));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
                 .containsExactlyInAnyOrder(
-                        CompactionJobStatusFromJobTestData.compactionJobCreated(job1, createdTime1),
-                        CompactionJobStatusFromJobTestData.compactionJobCreated(job2, createdTime2));
+                        compactionJobCreated(job1, createdTime1),
+                        compactionJobCreated(job2, createdTime2));
     }
 }

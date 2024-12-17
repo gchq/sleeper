@@ -20,7 +20,6 @@ import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -35,6 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -49,9 +49,9 @@ public class JobQueryTestBase {
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
     protected final CompactionJob exampleJob1 = dataHelper.singleFileCompaction();
     protected final CompactionJob exampleJob2 = dataHelper.singleFileCompaction();
-    protected final CompactionJobStatus exampleStatus1 = CompactionJobStatusFromJobTestData.compactionJobCreated(
+    protected final CompactionJobStatus exampleStatus1 = compactionJobCreated(
             exampleJob1, Instant.parse("2022-09-22T13:33:12.001Z"));
-    protected final CompactionJobStatus exampleStatus2 = CompactionJobStatusFromJobTestData.compactionJobCreated(
+    protected final CompactionJobStatus exampleStatus2 = compactionJobCreated(
             exampleJob2, Instant.parse("2022-09-22T13:53:12.001Z"));
     protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus2, exampleStatus1);
     protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
