@@ -29,7 +29,7 @@ import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.tracker.compaction.job.InMemoryCompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 
 import java.time.Instant;
 import java.util.List;
@@ -57,7 +57,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction job status report")
     class CompactionJobStatusReport {
-        private final InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
+        private final InMemoryCompactionJobTracker statusStore = new InMemoryCompactionJobTracker();
         private CompactionJob exampleJob;
 
         @BeforeEach

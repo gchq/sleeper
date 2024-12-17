@@ -29,7 +29,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.tracker.compaction.job.InMemoryCompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -59,7 +59,7 @@ public class CompactionJobDispatcherTest {
 
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
-    InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
+    InMemoryCompactionJobTracker statusStore = new InMemoryCompactionJobTracker();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
 

@@ -52,7 +52,7 @@ import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.tracker.compaction.job.InMemoryCompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
@@ -101,7 +101,7 @@ public class StateStoreCommitterTest {
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
-    private final InMemoryCompactionJobStatusStore compactionJobStatusStore = new InMemoryCompactionJobStatusStore();
+    private final InMemoryCompactionJobTracker compactionJobStatusStore = new InMemoryCompactionJobTracker();
     private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Map<String, TableProperties> propertiesByTableId = new LinkedHashMap<>();

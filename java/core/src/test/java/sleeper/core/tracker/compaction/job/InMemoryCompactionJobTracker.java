@@ -42,7 +42,7 @@ import java.util.stream.Stream;
 
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
-public class InMemoryCompactionJobStatusStore implements CompactionJobTracker {
+public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
     private Supplier<Instant> timeSupplier;
 

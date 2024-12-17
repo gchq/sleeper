@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.core.tracker.compaction.job.InMemoryCompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
@@ -42,7 +42,7 @@ import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAc
 public class WaitForJobsStatusTest {
 
     private final TableStatus table = TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table");
-    private final InMemoryCompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
+    private final InMemoryCompactionJobTracker store = new InMemoryCompactionJobTracker();
 
     @Test
     void shouldReportSeveralBulkImportJobs() {

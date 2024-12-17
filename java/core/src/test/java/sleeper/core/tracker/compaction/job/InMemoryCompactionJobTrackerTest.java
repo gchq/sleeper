@@ -47,10 +47,10 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 
-class InMemoryCompactionJobStatusStoreTest {
+class InMemoryCompactionJobTrackerTest {
 
     private final String tableId = "some-table";
-    private final InMemoryCompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
+    private final InMemoryCompactionJobTracker store = new InMemoryCompactionJobTracker();
 
     @Nested
     @DisplayName("Store status updates")
