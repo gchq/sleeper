@@ -27,6 +27,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -41,9 +42,13 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobStatus jobCreated(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
+        return jobCreated(job.createCreatedEvent(), createdTime, runsLatestFirst);
+    }
+
+    public static CompactionJobStatus jobCreated(CompactionJobCreatedEvent event, Instant createdTime, ProcessRun... runsLatestFirst) {
         return CompactionJobStatus.builder()
-                .jobId(job.getId())
-                .createdStatus(compactionCreatedStatus(job, createdTime))
+                .jobId(event.getJobId())
+                .createdStatus(CompactionJobCreatedStatus.from(event, createdTime))
                 .jobRunsLatestFirst(Arrays.asList(runsLatestFirst))
                 .build();
     }
