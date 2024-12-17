@@ -32,9 +32,13 @@ public class CompactionJobEventTestData {
     }
 
     public static CompactionJobCreatedEvent defaultCompactionJobCreatedEvent() {
+        return defaultCompactionJobCreatedEventForTable("test-table");
+    }
+
+    public static CompactionJobCreatedEvent defaultCompactionJobCreatedEventForTable(String tableId) {
         return CompactionJobCreatedEvent.builder()
                 .jobId(UUID.randomUUID().toString())
-                .tableId("test-table")
+                .tableId(tableId)
                 .partitionId("root")
                 .inputFilesCount(1)
                 .build();
