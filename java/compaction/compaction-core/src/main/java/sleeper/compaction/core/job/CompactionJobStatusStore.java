@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.core.job;
 
-import sleeper.compaction.core.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;

@@ -16,15 +16,15 @@
 package sleeper.compaction.core.testutils;
 
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.query.CompactionJobCommittedStatus;
-import sleeper.compaction.core.job.query.CompactionJobCreatedStatus;
-import sleeper.compaction.core.job.query.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.query.CompactionJobStartedStatus;
-import sleeper.compaction.core.job.query.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;

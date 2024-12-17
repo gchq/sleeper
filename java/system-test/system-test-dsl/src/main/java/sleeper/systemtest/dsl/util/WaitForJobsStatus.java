@@ -22,9 +22,9 @@ import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.query.CompactionJobStatus;
-import sleeper.compaction.core.job.query.CompactionJobStatusType;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.util.GsonConfig;
 import sleeper.ingest.core.job.status.IngestJobStatus;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;

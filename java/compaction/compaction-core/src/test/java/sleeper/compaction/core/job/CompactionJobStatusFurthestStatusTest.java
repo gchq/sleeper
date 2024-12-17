@@ -17,12 +17,12 @@ package sleeper.compaction.core.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.query.CompactionJobCommittedStatus;
-import sleeper.compaction.core.job.query.CompactionJobCreatedStatus;
-import sleeper.compaction.core.job.query.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.query.CompactionJobStartedStatus;
-import sleeper.compaction.core.job.query.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessFailedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -33,13 +33,13 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobStatusFromUpdates;
-import static sleeper.compaction.core.job.query.CompactionJobStatusType.CREATED;
-import static sleeper.compaction.core.job.query.CompactionJobStatusType.FAILED;
-import static sleeper.compaction.core.job.query.CompactionJobStatusType.FINISHED;
-import static sleeper.compaction.core.job.query.CompactionJobStatusType.IN_PROGRESS;
-import static sleeper.compaction.core.job.query.CompactionJobStatusType.UNCOMMITTED;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
+import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.CREATED;
+import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.FAILED;
+import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.FINISHED;
+import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.IN_PROGRESS;
+import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.UNCOMMITTED;
 
 public class CompactionJobStatusFurthestStatusTest {
 

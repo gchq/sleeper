@@ -20,11 +20,11 @@ import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
-import sleeper.compaction.core.job.query.CompactionJobCreatedStatus;
-import sleeper.compaction.core.job.query.CompactionJobStatus;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.io.PrintStream;
 import java.time.Duration;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.core.job.query;
+package sleeper.core.tracker.compaction.job.query;
 
 import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 

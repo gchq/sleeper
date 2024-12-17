@@ -17,7 +17,7 @@ package sleeper.compaction.core.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Instant;
 import java.util.List;

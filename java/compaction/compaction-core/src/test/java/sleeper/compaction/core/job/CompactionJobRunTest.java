@@ -18,12 +18,12 @@ package sleeper.compaction.core.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.query.CompactionJobCommittedStatus;
-import sleeper.compaction.core.job.query.CompactionJobCreatedStatus;
-import sleeper.compaction.core.job.query.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.query.CompactionJobStartedStatus;
-import sleeper.compaction.core.job.query.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Duration;
 import java.time.Instant;
