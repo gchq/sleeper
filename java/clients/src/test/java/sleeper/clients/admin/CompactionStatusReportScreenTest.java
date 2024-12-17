@@ -26,10 +26,10 @@ import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.compaction.core.task.CompactionTaskStatus;
-import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;

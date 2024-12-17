@@ -23,7 +23,6 @@ import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
-import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.compaction.core.testutils.StateStoreWaitForFilesTestHelper;
 import sleeper.core.properties.PropertiesReloader;
@@ -37,6 +36,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobStatusStore;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 

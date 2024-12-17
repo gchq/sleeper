@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -30,6 +29,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;

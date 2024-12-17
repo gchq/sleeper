@@ -19,9 +19,9 @@ package sleeper.systemtest.dsl.util;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobStatusStore;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
