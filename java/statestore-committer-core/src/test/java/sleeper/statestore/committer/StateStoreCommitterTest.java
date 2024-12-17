@@ -437,7 +437,7 @@ public class StateStoreCommitterTest {
                     assignJobOnPartitionToFiles("test-job", "root", filenames)));
             FileReference fileAfterCompaction = fileFactory.rootFile("after.parquet", 300);
             stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("test-job", "root", filenames, fileAfterCompaction)));
+                    replaceJobFileReferences("test-job", filenames, fileAfterCompaction)));
             // And we have a request to commit that they have been deleted
             GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest("test-table", filenames);
 
