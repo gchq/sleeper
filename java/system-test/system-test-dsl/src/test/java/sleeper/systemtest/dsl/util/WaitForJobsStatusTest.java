@@ -32,7 +32,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
@@ -91,9 +90,9 @@ public class WaitForJobsStatusTest {
         store.fixUpdateTime(Instant.parse("2023-09-18T14:47:00Z"));
         jobsCreated(createdJob, startedJob, uncommittedJob, finishedJob);
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:03Z"));
-        store.jobStarted(compactionJobStarted(startedJob, Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").build());
-        store.jobStarted(compactionJobStarted(uncommittedJob, Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").build());
-        store.jobStarted(compactionJobStarted(finishedJob, Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").build());
+        store.jobStarted(startedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").build());
+        store.jobStarted(uncommittedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").build());
+        store.jobStarted(finishedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
         store.jobFinished(compactionJobFinished(uncommittedJob,
                 summary(Instant.parse("2023-09-18T14:48:01Z"), Instant.parse("2023-09-18T14:50:01Z"), 100L, 100L))
@@ -256,12 +255,12 @@ public class WaitForJobsStatusTest {
 
     private void addUnfinishedRun(CompactionJob job, Instant startTime, String taskId) {
         store.fixUpdateTime(defaultUpdateTime(startTime));
-        store.jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
+        store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
     }
 
     private void addFinishedRun(CompactionJob job, Instant startTime, Instant finishTime, String taskId) {
         store.fixUpdateTime(defaultUpdateTime(startTime));
-        store.jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
+        store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
 
         store.fixUpdateTime(defaultUpdateTime(finishTime));
         store.jobFinished(compactionJobFinished(job,

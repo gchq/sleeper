@@ -41,7 +41,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -161,7 +160,7 @@ class InMemoryCompactionJobStatusStoreTest {
             RecordsProcessedSummary summary = summary(startedTime, finishTime, 100L, 100L);
             CompactionJob job = dataHelper.singleFileCompaction();
             store.jobCreated(job.createCreatedEvent(), createdTime);
-            store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startedTime).taskId(taskId).build());
             store.jobFinished(compactionJobFinished(job, summary).taskId(taskId).build());
 
             // When / Then
@@ -363,8 +362,8 @@ class InMemoryCompactionJobStatusStoreTest {
             String taskId2 = "test-task-2";
             CompactionJob job = dataHelper.singleFileCompaction();
             store.jobCreated(job.createCreatedEvent(), createdTime);
-            store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId1).build());
-            store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId2).build());
+            store.jobStarted(job.startedEventBuilder(startedTime1).taskId(taskId1).build());
+            store.jobStarted(job.startedEventBuilder(startedTime2).taskId(taskId2).build());
             store.jobFinished(compactionJobFinished(job, summary2).taskId(taskId2).build());
             store.jobCommitted(job.committedEventBuilder(committedTime2).taskId(taskId2).build());
             store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId1).build());
@@ -472,10 +471,10 @@ class InMemoryCompactionJobStatusStoreTest {
             // When
             CompactionJob job = dataHelper.singleFileCompaction();
             store.jobCreated(job.createCreatedEvent(), createdTime);
-            store.jobStarted(compactionJobStarted(job, startedTime1).taskId(taskId).jobRunId(runId1).build());
+            store.jobStarted(job.startedEventBuilder(startedTime1).taskId(taskId).jobRunId(runId1).build());
             store.jobFinished(compactionJobFinished(job, summary1).taskId(taskId).jobRunId(runId1).build());
             store.jobCommitted(job.committedEventBuilder(committedTime1).taskId(taskId).jobRunId(runId1).build());
-            store.jobStarted(compactionJobStarted(job, startedTime2).taskId(taskId).jobRunId(runId2).build());
+            store.jobStarted(job.startedEventBuilder(startedTime2).taskId(taskId).jobRunId(runId2).build());
             store.jobFailed(compactionJobFailed(job, summary2.getRunTime()).taskId(taskId).jobRunId(runId2)
                     .failure(new RuntimeException("Could not commit same compaction twice")).build());
 
@@ -504,7 +503,7 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addStartedJob(Instant createdTime, Instant startedTime, String taskId) {
         CompactionJob job = addCreatedJob(createdTime);
         store.fixUpdateTime(defaultUpdateTime(startedTime));
-        store.jobStarted(compactionJobStarted(job, startedTime).taskId(taskId).build());
+        store.jobStarted(job.startedEventBuilder(startedTime).taskId(taskId).build());
         return job;
     }
 
