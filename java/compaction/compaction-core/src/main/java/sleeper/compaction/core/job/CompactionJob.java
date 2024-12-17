@@ -17,8 +17,10 @@ package sleeper.compaction.core.job;
 
 import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
+import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.CheckFileAssignmentsRequest;
@@ -96,6 +98,10 @@ public class CompactionJob {
 
     public CompactionJobCommittedEvent.Builder committedEventBuilder(Instant commitTime) {
         return CompactionJobCommittedEvent.builder().jobId(jobId).tableId(tableId).commitTime(commitTime);
+    }
+
+    public CompactionJobFailedEvent.Builder failedEventBuilder(ProcessRunTime runTime) {
+        return CompactionJobFailedEvent.builder().jobId(jobId).tableId(tableId).runTime(runTime);
     }
 
     /**

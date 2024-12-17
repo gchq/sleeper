@@ -30,7 +30,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 
 public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -113,7 +112,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
         storeJobCreated(job);
         store.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        store.jobFailed(compactionJobFailed(job, defaultRunTime()).failure(new RuntimeException("Failed"))
+        store.jobFailed(job.failedEventBuilder(defaultRunTime()).failure(new RuntimeException("Failed"))
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then

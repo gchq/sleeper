@@ -39,7 +39,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobStatusFrom;
-import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -474,7 +473,7 @@ class InMemoryCompactionJobStatusStoreTest {
             store.jobFinished(job.finishedEventBuilder(summary1).taskId(taskId).jobRunId(runId1).build());
             store.jobCommitted(job.committedEventBuilder(committedTime1).taskId(taskId).jobRunId(runId1).build());
             store.jobStarted(job.startedEventBuilder(startedTime2).taskId(taskId).jobRunId(runId2).build());
-            store.jobFailed(compactionJobFailed(job, summary2.getRunTime()).taskId(taskId).jobRunId(runId2)
+            store.jobFailed(job.failedEventBuilder(summary2.getRunTime()).taskId(taskId).jobRunId(runId2)
                     .failure(new RuntimeException("Could not commit same compaction twice")).build());
 
             // Then
@@ -523,7 +522,7 @@ class InMemoryCompactionJobStatusStoreTest {
     private CompactionJob addFailedJob(Instant createdTime, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
         CompactionJob job = addStartedJob(createdTime, runTime.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
-        store.jobFailed(compactionJobFailed(job, runTime).failureReasons(failureReasons).taskId(taskId).build());
+        store.jobFailed(job.failedEventBuilder(runTime).failureReasons(failureReasons).taskId(taskId).build());
         return job;
     }
 }

@@ -45,7 +45,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -220,7 +219,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             // And the commits are saved to the status store
             jobStore.jobCommitted(job.committedEventBuilder(commitTime)
                     .taskId("test-task").jobRunId("test-job-run-1").build());
-            jobStore.jobFailed(compactionJobFailed(job, new ProcessRunTime(startTime2, commitFailTime))
+            jobStore.jobFailed(job.failedEventBuilder(new ProcessRunTime(startTime2, commitFailTime))
                     .failureReasons(List.of("Could not commit same job twice"))
                     .taskId("test-task").jobRunId("test-job-run-2").build());
 

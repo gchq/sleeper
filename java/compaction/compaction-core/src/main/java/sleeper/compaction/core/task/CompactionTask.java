@@ -48,7 +48,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
@@ -190,8 +189,8 @@ public class CompactionTask {
             commitCompaction(jobRunId, builder, message, idleTimeTracker, failureTracker, summary);
         } catch (Exception e) {
             Instant jobFinishTime = timeSupplier.get();
-            jobStatusStore.jobFailed(compactionJobFailed(message.getJob(),
-                    new ProcessRunTime(jobStartTime, jobFinishTime))
+            jobStatusStore.jobFailed(message.getJob()
+                    .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
                     .failure(e).taskId(taskId).jobRunId(jobRunId).build());
         }
     }

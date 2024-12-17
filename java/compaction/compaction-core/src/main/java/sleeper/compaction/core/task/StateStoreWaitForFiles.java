@@ -36,8 +36,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
-
 public class StateStoreWaitForFiles {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreWaitForFiles.class);
@@ -121,8 +119,7 @@ public class StateStoreWaitForFiles {
     private void reportFailure(CompactionJob job, String taskId, String jobRunId, Instant startTime, Exception e) {
         Instant finishTime = timeSupplier.get();
         jobStatusStore.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(jobRunId).build());
-        jobStatusStore.jobFailed(compactionJobFailed(job,
-                new ProcessRunTime(startTime, finishTime))
+        jobStatusStore.jobFailed(job.failedEventBuilder(new ProcessRunTime(startTime, finishTime))
                 .failure(e).taskId(taskId).jobRunId(jobRunId).build());
     }
 

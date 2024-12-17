@@ -32,7 +32,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 
 public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -109,7 +108,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // When
         storeJobCreated(job);
         store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFailed(compactionJobFailed(job, defaultRunTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
+        store.jobFailed(job.failedEventBuilder(defaultRunTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -199,7 +198,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // When
         storeJobCreated(job);
         store.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
-        store.jobFailed(compactionJobFailed(job, runTime).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
+        store.jobFailed(job.failedEventBuilder(runTime).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
