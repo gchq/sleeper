@@ -18,7 +18,7 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusTestData;
+import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -51,9 +51,9 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
         assertThat(store.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        CompactionJobStatusTestData.compactionJobCreated(job3, ignoredUpdateTime()),
-                        CompactionJobStatusTestData.compactionJobCreated(job2, ignoredUpdateTime()),
-                        CompactionJobStatusTestData.compactionJobCreated(job1, ignoredUpdateTime()));
+                        CompactionJobStatusFromJobTestData.compactionJobCreated(job3, ignoredUpdateTime()),
+                        CompactionJobStatusFromJobTestData.compactionJobCreated(job2, ignoredUpdateTime()),
+                        CompactionJobStatusFromJobTestData.compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
         // Then
         assertThat(store.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatusTestData.compactionJobCreated(job1, ignoredUpdateTime()));
+                .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test

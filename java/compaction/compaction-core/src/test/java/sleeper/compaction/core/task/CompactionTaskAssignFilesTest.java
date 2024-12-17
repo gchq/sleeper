@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
@@ -98,7 +98,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
         // Then
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                compactionJobCreated(job, DEFAULT_CREATED_TIME,
+                CompactionJobStatusFromJobTestData.compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
                                 "Too many retries waiting for input files to be assigned to job in state store"))));
     }
@@ -123,7 +123,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(consumedJobs).containsExactly(job);
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                compactionJobCreated(job, DEFAULT_CREATED_TIME,
+                CompactionJobStatusFromJobTestData.compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
                                 "File reference not found in partition root, filename " + job.getInputFiles().get(0)))));
     }
@@ -147,7 +147,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(consumedJobs).containsExactly(job);
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                compactionJobCreated(job, DEFAULT_CREATED_TIME,
+                CompactionJobStatusFromJobTestData.compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
                                 "Reference to file is already assigned to job job2, in partition root, filename " + job.getInputFiles().get(0)))));
     }
@@ -173,7 +173,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                compactionJobCreated(job, DEFAULT_CREATED_TIME,
+                CompactionJobStatusFromJobTestData.compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID,
                                 Instant.parse("2024-10-28T11:51:00Z"),
                                 Instant.parse("2024-10-28T11:52:00Z"),
@@ -204,7 +204,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();
         assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                compactionJobCreated(job, DEFAULT_CREATED_TIME,
+                CompactionJobStatusFromJobTestData.compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         uncommittedCompactionRun(DEFAULT_TASK_ID, expectedSummary)));
         assertThat(commitRequestsOnQueue).containsExactly(
                 new CompactionJobCommitRequest(job, DEFAULT_TASK_ID, "test-job-run-1", expectedSummary));

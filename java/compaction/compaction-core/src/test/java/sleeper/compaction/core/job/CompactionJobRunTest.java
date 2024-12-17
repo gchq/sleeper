@@ -32,7 +32,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCreatedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobStatusFromUpdates;
@@ -44,7 +43,7 @@ public class CompactionJobRunTest {
     @Test
     public void shouldReportNoRunsWhenJobNotStarted() {
         // Given
-        CompactionJobCreatedStatus createdStatus = compactionCreatedStatus(CompactionJob.builder()
+        CompactionJobCreatedStatus createdStatus = CompactionJobStatusFromJobTestData.compactionCreatedStatus(CompactionJob.builder()
                 .tableId("test-table").jobId("test-job").partitionId("test-partition")
                 .inputFiles(List.of("file1", "file2")).outputFile("output")
                 .build(), Instant.parse("2022-09-23T09:23:00.012Z"));

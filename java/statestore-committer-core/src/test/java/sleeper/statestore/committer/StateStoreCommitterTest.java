@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobCommitter;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
@@ -78,7 +79,6 @@ import static org.mockito.Mockito.mock;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
@@ -134,7 +134,7 @@ public class StateStoreCommitterTest {
             assertThat(stateStore.getFileReferences()).containsExactly(
                     fileFactory.rootFile(job.getOutputFile(), 123L));
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    compactionJobCreated(job, createdTime,
+                    CompactionJobStatusFromJobTestData.compactionJobCreated(job, createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .finishedStatus(compactionFinishedStatus(summary))
@@ -167,7 +167,7 @@ public class StateStoreCommitterTest {
                     .cause().isInstanceOf(FileNotFoundException.class));
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    compactionJobCreated(job, createdTime,
+                    CompactionJobStatusFromJobTestData.compactionJobCreated(job, createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
@@ -201,7 +201,7 @@ public class StateStoreCommitterTest {
             // Then
             assertThat(failures).singleElement().isSameAs(failure);
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    compactionJobCreated(request.getJob(), createdTime,
+                    CompactionJobStatusFromJobTestData.compactionJobCreated(request.getJob(), createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
@@ -237,7 +237,7 @@ public class StateStoreCommitterTest {
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
                     .isSameAs(failure));
             assertThat(compactionJobStatusStore.getAllJobs("test-table")).containsExactly(
-                    compactionJobCreated(job, createdTime,
+                    CompactionJobStatusFromJobTestData.compactionJobCreated(job, createdTime,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))

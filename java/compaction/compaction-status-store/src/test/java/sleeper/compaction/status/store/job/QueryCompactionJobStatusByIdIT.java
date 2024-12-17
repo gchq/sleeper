@@ -18,7 +18,7 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusTestData;
+import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -48,7 +48,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         // Then
         assertThat(getJobStatus(job1.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(CompactionJobStatusTestData.compactionJobCreated(job1, ignoredUpdateTime()));
+                .isEqualTo(CompactionJobStatusFromJobTestData.compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -69,7 +69,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         // Then
         assertThat(getJobStatus(job.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(CompactionJobStatusTestData.compactionJobCreated(job, ignoredUpdateTime(),
+                .isEqualTo(CompactionJobStatusFromJobTestData.compactionJobCreated(job, ignoredUpdateTime(),
                         finishedCompactionRun("test-task", defaultSummary(), defaultCommitTime())));
     }
 

@@ -18,6 +18,7 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -25,7 +26,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
 
 public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
@@ -51,7 +51,7 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
         // Then
         assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(compactionJobCreated(job1, ignoredUpdateTime(),
+                .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job1, ignoredUpdateTime(),
                         startedCompactionRun(searchingTaskId, defaultStartTime())));
     }
 
@@ -76,7 +76,7 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
         // Then
         assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(compactionJobCreated(job, ignoredUpdateTime(),
+                .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, ignoredUpdateTime(),
                         startedCompactionRun(taskId3, defaultStartTime()),
                         startedCompactionRun(searchingTaskId, defaultStartTime()),
                         startedCompactionRun(taskId1, defaultStartTime())));

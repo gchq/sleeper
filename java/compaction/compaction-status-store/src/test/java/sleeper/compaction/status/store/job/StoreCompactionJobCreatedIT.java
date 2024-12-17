@@ -18,7 +18,7 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusTestData;
+import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -46,7 +46,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
-                .containsExactly(CompactionJobStatusTestData.compactionJobCreated(job, createdTime));
+                .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, createdTime));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
-                .containsExactly(CompactionJobStatusTestData.compactionJobCreated(job, createdTime));
+                .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, createdTime));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class StoreCompactionJobCreatedIT extends DynamoDBCompactionJobStatusStor
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_TIME)
                 .containsExactlyInAnyOrder(
-                        CompactionJobStatusTestData.compactionJobCreated(job1, createdTime1),
-                        CompactionJobStatusTestData.compactionJobCreated(job2, createdTime2));
+                        CompactionJobStatusFromJobTestData.compactionJobCreated(job1, createdTime1),
+                        CompactionJobStatusFromJobTestData.compactionJobCreated(job2, createdTime2));
     }
 }
