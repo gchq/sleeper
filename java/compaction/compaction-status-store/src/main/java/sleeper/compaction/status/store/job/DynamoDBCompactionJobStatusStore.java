@@ -28,14 +28,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
-import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
-import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
-import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
-import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 

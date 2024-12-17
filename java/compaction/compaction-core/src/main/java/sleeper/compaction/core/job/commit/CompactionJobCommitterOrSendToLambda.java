@@ -20,11 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 
 import java.time.Instant;
 import java.util.function.Supplier;

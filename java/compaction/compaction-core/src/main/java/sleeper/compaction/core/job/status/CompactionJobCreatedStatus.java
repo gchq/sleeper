@@ -18,6 +18,7 @@ package sleeper.compaction.core.job.status;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.statestore.AssignJobIdRequest;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.time.Instant;
 import java.util.Objects;

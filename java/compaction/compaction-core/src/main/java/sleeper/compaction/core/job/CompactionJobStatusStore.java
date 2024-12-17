@@ -15,12 +15,12 @@
  */
 package sleeper.compaction.core.job;
 
-import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
-import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
-import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
-import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
-import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 
 import java.time.Instant;
 import java.util.List;

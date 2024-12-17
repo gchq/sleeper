@@ -20,14 +20,9 @@ import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCommittedStatus;
-import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
-import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
@@ -37,6 +32,11 @@ import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.statestore.AssignJobIdRequest;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 

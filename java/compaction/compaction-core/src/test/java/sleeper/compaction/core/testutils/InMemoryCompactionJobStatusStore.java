@@ -15,22 +15,21 @@
  */
 package sleeper.compaction.core.testutils;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCommittedStatus;
-import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
 import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
-import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
 import sleeper.compaction.core.job.status.CompactionJobStartedStatus;
 import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -129,10 +128,6 @@ public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStor
     @Override
     public Stream<CompactionJobStatus> streamAllJobs(String tableId) {
         return CompactionJobStatus.streamFrom(streamRecordsByTableId(tableId));
-    }
-
-    private void add(CompactionJob job, ProcessStatusUpdateRecord record) {
-        add(job.getTableId(), record);
     }
 
     private void add(String tableId, ProcessStatusUpdateRecord record) {
