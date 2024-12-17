@@ -26,6 +26,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * In memory data store test class which implements
+ * LeafPartitionRecordRetriever.
+ */
 public class InMemoryDataStore implements LeafPartitionRecordRetriever {
 
     private final Map<String, List<Record>> recordsByFilename = new HashMap<>();
@@ -41,6 +45,12 @@ public class InMemoryDataStore implements LeafPartitionRecordRetriever {
         return new WrappedIterator<>(allRecords.iterator());
     }
 
+    /**
+     * Adds a file and associated record.
+     *
+     * @param filename file that the records will be associated with.
+     * @param records  records that belong to the file.
+     */
     public void addFile(String filename, List<Record> records) {
         if (recordsByFilename.containsKey(filename)) {
             throw new IllegalArgumentException("File already exists: " + filename);
@@ -48,14 +58,28 @@ public class InMemoryDataStore implements LeafPartitionRecordRetriever {
         recordsByFilename.put(filename, records);
     }
 
+    /**
+     * Deletes the file and associated records.
+     *
+     * @param filename to delete.
+     */
     public void deleteFile(String filename) {
         recordsByFilename.remove(filename);
     }
 
+    /**
+     * Gets all of the files.
+     *
+     * @return a collection of files.
+     *
+     */
     public Collection<String> files() {
         return recordsByFilename.keySet();
     }
 
+    /**
+     * Deletes all files from the data store.
+     */
     public void deleteAllFiles() {
         recordsByFilename.clear();
     }
