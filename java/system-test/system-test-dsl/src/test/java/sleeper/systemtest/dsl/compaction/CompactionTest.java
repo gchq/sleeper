@@ -56,7 +56,7 @@ public class CompactionTest {
     }
 
     @Test
-    void shouldCompactFilesFromMultiplePartitionsInDataFusion(SleeperSystemTest sleeper) throws Exception {
+    void shouldCompactFilesFromMultiplePartitions(SleeperSystemTest sleeper) throws Exception {
         // Given we have 4 leaf partitions, LL, LR, RL, RR
         sleeper.setGeneratorOverrides(overrideField(
                 ROW_KEY_FIELD_NAME, numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
