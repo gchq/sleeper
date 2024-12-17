@@ -49,13 +49,13 @@ public class RangeJobsQuery implements JobQuery {
     }
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker statusStore) {
-        return statusStore.getJobsInTimePeriod(tableId, start, end);
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
+        return tracker.getJobsInTimePeriod(tableId, start, end);
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return statusStore.getJobsInTimePeriod(tableId, start, end);
+    public List<IngestJobStatus> run(IngestJobStatusStore tracker) {
+        return tracker.getJobsInTimePeriod(tableId, start, end);
     }
 
     @Override

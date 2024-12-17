@@ -35,13 +35,13 @@ public class DetailedJobsQuery implements JobQuery {
     }
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker statusStore) {
-        return run(statusStore::getJob);
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
+        return run(tracker::getJob);
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return run(statusStore::getJob);
+    public List<IngestJobStatus> run(IngestJobStatusStore tracker) {
+        return run(tracker::getJob);
     }
 
     @Override

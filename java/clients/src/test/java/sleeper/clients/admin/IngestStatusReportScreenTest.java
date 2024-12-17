@@ -196,7 +196,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             setInstanceProperties(instanceProperties, tableProperties);
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
                     INGEST_JOB_STATUS_REPORT_OPTION, "test-table")
-                    .queueClient(queueCounts).statusStore(ingestJobStatusStore);
+                    .queueClient(queueCounts).tracker(ingestJobStatusStore);
         }
 
         private List<IngestJobStatus> oneStartedJobStatus() {
@@ -279,7 +279,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             setInstanceProperties(createValidInstanceProperties());
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
                     INGEST_TASK_STATUS_REPORT_OPTION)
-                    .statusStore(ingestTaskStatusStore);
+                    .tracker(ingestTaskStatusStore);
         }
     }
 

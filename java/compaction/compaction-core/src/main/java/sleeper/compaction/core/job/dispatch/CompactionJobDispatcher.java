@@ -44,7 +44,7 @@ public class CompactionJobDispatcher {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobTracker statusStore;
+    private final CompactionJobTracker tracker;
     private final ReadBatch readBatch;
     private final SendJobs sendJobs;
     private final int sendBatchSize;
@@ -54,14 +54,14 @@ public class CompactionJobDispatcher {
 
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, CompactionJobTracker statusStore, ReadBatch readBatch,
+            StateStoreProvider stateStoreProvider, CompactionJobTracker tracker, ReadBatch readBatch,
             SendJobs sendJobs, int sendBatchSize,
             ReturnRequestToPendingQueue returnToPendingQueue, SendDeadLetter sendDeadLetter,
             Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.statusStore = statusStore;
+        this.tracker = tracker;
         this.readBatch = readBatch;
         this.sendJobs = sendJobs;
         this.sendBatchSize = sendBatchSize;
@@ -99,7 +99,7 @@ public class CompactionJobDispatcher {
         LOGGER.info("Validated input file assignments, sending {} jobs", batch.size());
         for (List<CompactionJob> toSend : SplitIntoBatches.splitListIntoBatchesOf(sendBatchSize, batch)) {
             sendJobs.send(toSend);
-            toSend.forEach(job -> statusStore.jobCreated(job.createCreatedEvent()));
+            toSend.forEach(job -> tracker.jobCreated(job.createCreatedEvent()));
         }
         LOGGER.info("Sent {} jobs", batch.size());
     }

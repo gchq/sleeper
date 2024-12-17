@@ -28,7 +28,7 @@ import sleeper.ingest.core.task.IngestTaskStatusStore;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
+class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
 
     @Test
     void shouldSetCompactionJobTracker() {
@@ -38,7 +38,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().statusStore(store);
+        RunAdminClient runner = runClient().tracker(store);
 
         // Then
         assertThat(runner.statusStores().loadCompactionJobTracker(properties))
@@ -53,7 +53,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().statusStore(store);
+        RunAdminClient runner = runClient().tracker(store);
 
         // Then
         assertThat(runner.statusStores().loadCompactionTaskStatusStore(properties))
@@ -68,7 +68,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().statusStore(store);
+        RunAdminClient runner = runClient().tracker(store);
 
         // Then
         assertThat(runner.statusStores().loadIngestJobStatusStore(properties))
@@ -83,7 +83,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().statusStore(store);
+        RunAdminClient runner = runClient().tracker(store);
 
         // Then
         assertThat(runner.statusStores().loadIngestTaskStatusStore(properties))

@@ -31,13 +31,13 @@ public class AllJobsQuery implements JobQuery {
     }
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker statusStore) {
-        return statusStore.getAllJobs(tableId);
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
+        return tracker.getAllJobs(tableId);
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return statusStore.getAllJobs(tableId);
+    public List<IngestJobStatus> run(IngestJobStatusStore tracker) {
+        return tracker.getAllJobs(tableId);
     }
 
     @Override

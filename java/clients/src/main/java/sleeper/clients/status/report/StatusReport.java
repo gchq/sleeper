@@ -55,7 +55,7 @@ public class StatusReport {
     private final TableProperties tableProperties;
     private final boolean verbose;
     private final StateStore stateStore;
-    private final CompactionJobTracker compactionStatusStore;
+    private final CompactionJobTracker compactionJobTracker;
     private final CompactionTaskStatusStore compactionTaskStatusStore;
     private final SqsClient sqsClient;
     private final QueueMessageCount.Client messageCount;
@@ -64,13 +64,13 @@ public class StatusReport {
     public StatusReport(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             boolean verbose, StateStore stateStore,
-            CompactionJobTracker compactionStatusStore, CompactionTaskStatusStore compactionTaskStatusStore,
+            CompactionJobTracker compactionJobTracker, CompactionTaskStatusStore compactionTaskStatusStore,
             SqsClient sqsClient, QueueMessageCount.Client messageCount, TablePropertiesProvider tablePropertiesProvider) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.verbose = verbose;
         this.stateStore = stateStore;
-        this.compactionStatusStore = compactionStatusStore;
+        this.compactionJobTracker = compactionJobTracker;
         this.compactionTaskStatusStore = compactionTaskStatusStore;
         this.sqsClient = sqsClient;
         this.messageCount = messageCount;
@@ -86,7 +86,7 @@ public class StatusReport {
         new FilesStatusReport(stateStore, 1000, verbose).run();
 
         // Jobs
-        new CompactionJobStatusReport(compactionStatusStore,
+        new CompactionJobStatusReport(compactionJobTracker,
                 new StandardCompactionJobStatusReporter(),
                 tableProperties.getStatus(),
                 JobQuery.Type.UNFINISHED).run();

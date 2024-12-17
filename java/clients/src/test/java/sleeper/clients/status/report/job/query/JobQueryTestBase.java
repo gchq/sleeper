@@ -45,7 +45,7 @@ public class JobQueryTestBase {
     private final TableProperties tableProperties = createTableProperties();
     protected static final String TABLE_NAME = "test-table";
     protected final String tableId = tableProperties.get(TABLE_ID);
-    protected final CompactionJobTracker statusStore = mock(CompactionJobTracker.class);
+    protected final CompactionJobTracker tracker = mock(CompactionJobTracker.class);
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
     protected final CompactionJob exampleJob1 = dataHelper.singleFileCompaction();
     protected final CompactionJob exampleJob2 = dataHelper.singleFileCompaction();
@@ -75,7 +75,7 @@ public class JobQueryTestBase {
     }
 
     private List<CompactionJobStatus> queryStatuses(Type queryType, String queryParameters, Clock clock) {
-        return queryFrom(queryType, queryParameters, clock).run(statusStore);
+        return queryFrom(queryType, queryParameters, clock).run(tracker);
     }
 
     private JobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {

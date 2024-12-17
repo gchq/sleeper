@@ -30,37 +30,37 @@ import java.util.Optional;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFactory {
+public class AdminClientProcessTrackerHolder implements AdminClientStatusStoreFactory {
 
-    private final Map<String, CompactionJobTracker> compactionJobStoreByInstance = new HashMap<>();
+    private final Map<String, CompactionJobTracker> compactionJobTrackerByInstance = new HashMap<>();
     private final Map<String, CompactionTaskStatusStore> compactionTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestJobStatusStore> ingestJobStoreByInstance = new HashMap<>();
     private final Map<String, IngestTaskStatusStore> ingestTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestBatcherStore> ingestBatcherStoreByInstance = new HashMap<>();
 
-    public void setStore(String instanceId, CompactionJobTracker store) {
-        compactionJobStoreByInstance.put(instanceId, store);
+    public void setTracker(String instanceId, CompactionJobTracker tracker) {
+        compactionJobTrackerByInstance.put(instanceId, tracker);
     }
 
-    public void setStore(String instanceId, CompactionTaskStatusStore store) {
-        compactionTaskStoreByInstance.put(instanceId, store);
+    public void setTracker(String instanceId, CompactionTaskStatusStore tracker) {
+        compactionTaskStoreByInstance.put(instanceId, tracker);
     }
 
-    public void setStore(String instanceId, IngestJobStatusStore store) {
-        ingestJobStoreByInstance.put(instanceId, store);
+    public void setTracker(String instanceId, IngestJobStatusStore tracker) {
+        ingestJobStoreByInstance.put(instanceId, tracker);
     }
 
-    public void setStore(String instanceId, IngestTaskStatusStore store) {
-        ingestTaskStoreByInstance.put(instanceId, store);
+    public void setTracker(String instanceId, IngestTaskStatusStore tracker) {
+        ingestTaskStoreByInstance.put(instanceId, tracker);
     }
 
-    public void setStore(String instanceId, IngestBatcherStore store) {
+    public void setBatcherStore(String instanceId, IngestBatcherStore store) {
         ingestBatcherStoreByInstance.put(instanceId, store);
     }
 
     @Override
     public CompactionJobTracker loadCompactionJobTracker(InstanceProperties instanceProperties) {
-        return Optional.ofNullable(compactionJobStoreByInstance.get(instanceProperties.get(ID)))
+        return Optional.ofNullable(compactionJobTrackerByInstance.get(instanceProperties.get(ID)))
                 .orElse(CompactionJobTracker.NONE);
     }
 

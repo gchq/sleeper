@@ -40,7 +40,7 @@ public class RunAdminClient {
     private final ToStringConsoleOutput out;
     private final TestConsoleInput in;
     private final AdminConfigStoreTestHarness harness;
-    private final AdminClientStatusStoreHolder statusStores = new AdminClientStatusStoreHolder();
+    private final AdminClientProcessTrackerHolder statusStores = new AdminClientProcessTrackerHolder();
     private final UpdatePropertiesWithTextEditor editor;
     private QueueMessageCount.Client queueClient = noQueues();
 
@@ -135,28 +135,28 @@ public class RunAdminClient {
         return this;
     }
 
-    public RunAdminClient statusStore(CompactionJobTracker store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+    public RunAdminClient tracker(CompactionJobTracker store) {
+        statusStores.setTracker(harness.getInstanceId(), store);
         return this;
     }
 
-    public RunAdminClient statusStore(CompactionTaskStatusStore store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+    public RunAdminClient tracker(CompactionTaskStatusStore store) {
+        statusStores.setTracker(harness.getInstanceId(), store);
         return this;
     }
 
-    public RunAdminClient statusStore(IngestJobStatusStore store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+    public RunAdminClient tracker(IngestJobStatusStore store) {
+        statusStores.setTracker(harness.getInstanceId(), store);
         return this;
     }
 
-    public RunAdminClient statusStore(IngestTaskStatusStore store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+    public RunAdminClient tracker(IngestTaskStatusStore store) {
+        statusStores.setTracker(harness.getInstanceId(), store);
         return this;
     }
 
     public RunAdminClient batcherStore(IngestBatcherStore store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+        statusStores.setBatcherStore(harness.getInstanceId(), store);
         return this;
     }
 

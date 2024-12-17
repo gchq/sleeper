@@ -151,7 +151,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         private RunAdminClient runCompactionJobStatusReport() {
             return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION,
                     COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table")
-                    .statusStore(statusStore);
+                    .tracker(statusStore);
         }
     }
 
@@ -210,7 +210,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties);
             return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION, COMPACTION_TASK_STATUS_REPORT_OPTION)
-                    .statusStore(compactionTaskStatusStore);
+                    .tracker(compactionTaskStatusStore);
         }
     }
 

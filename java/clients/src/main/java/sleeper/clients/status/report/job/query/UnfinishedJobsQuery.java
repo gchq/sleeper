@@ -31,13 +31,13 @@ public class UnfinishedJobsQuery implements JobQuery {
     }
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker statusStore) {
-        return statusStore.getUnfinishedJobs(tableId);
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
+        return tracker.getUnfinishedJobs(tableId);
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return statusStore.getUnfinishedJobs(tableId);
+    public List<IngestJobStatus> run(IngestJobStatusStore tracker) {
+        return tracker.getUnfinishedJobs(tableId);
     }
 
     @Override

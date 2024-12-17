@@ -87,10 +87,10 @@ public class CreateCompactionJobsClient {
                     .collect(toUnmodifiableList());
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-            CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+            CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
             CreateCompactionJobs jobCreator = AwsCreateCompactionJobs.from(
                     new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
-                    instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient);
+                    instanceProperties, stateStoreProvider, jobTracker, s3Client, sqsClient);
             for (TableProperties table : tables) {
                 mode.createJobs(jobCreator, table);
             }

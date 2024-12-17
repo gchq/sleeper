@@ -26,13 +26,13 @@ import java.util.List;
 public class RejectedJobsQuery implements JobQuery {
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobTracker statusStore) {
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
         return List.of(); // not implemented
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return statusStore.getInvalidJobs();
+    public List<IngestJobStatus> run(IngestJobStatusStore tracker) {
+        return tracker.getInvalidJobs();
     }
 
     @Override

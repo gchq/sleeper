@@ -28,9 +28,9 @@ import java.util.Map;
 
 public interface JobQuery {
 
-    List<CompactionJobStatus> run(CompactionJobTracker statusStore);
+    List<CompactionJobStatus> run(CompactionJobTracker tracker);
 
-    List<IngestJobStatus> run(IngestJobStatusStore statusStore);
+    List<IngestJobStatus> run(IngestJobStatusStore tracker);
 
     Type getType();
 
