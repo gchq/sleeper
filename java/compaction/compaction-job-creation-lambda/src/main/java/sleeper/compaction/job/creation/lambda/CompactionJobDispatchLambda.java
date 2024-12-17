@@ -88,7 +88,7 @@ public class CompactionJobDispatchLambda implements RequestHandler<SQSEvent, Voi
         return new CompactionJobDispatcher(instanceProperties,
                 S3TableProperties.createProvider(instanceProperties, s3, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf),
-                CompactionJobTrackerFactory.getStatusStore(dynamoDB, instanceProperties),
+                CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
                 readBatch(s3, compactionJobSerDe), sendJobs(instanceProperties, sqs, compactionJobSerDe), 10,
                 returnToQueue(instanceProperties, sqs), sendDeadLetter(instanceProperties, sqs), timeSupplier);
     }

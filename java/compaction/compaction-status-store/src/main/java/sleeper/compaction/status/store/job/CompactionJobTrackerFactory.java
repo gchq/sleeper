@@ -28,7 +28,7 @@ public class CompactionJobTrackerFactory {
     private CompactionJobTrackerFactory() {
     }
 
-    public static CompactionJobTracker getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public static CompactionJobTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return DynamoDBCompactionJobTracker.eventuallyConsistentReads(dynamoDB, properties);
         } else {
@@ -36,7 +36,7 @@ public class CompactionJobTrackerFactory {
         }
     }
 
-    public static CompactionJobTracker getStatusStoreWithStronglyConsistentReads(
+    public static CompactionJobTracker getTrackerWithStronglyConsistentReads(
             AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return DynamoDBCompactionJobTracker.stronglyConsistentReads(dynamoDB, properties);

@@ -155,7 +155,7 @@ public class StateStoreCommitterThroughputIT {
 
     private StateStoreCommitter committer() {
         return new StateStoreCommitter(
-                CompactionJobTrackerFactory.getStatusStore(dynamoDB, instanceProperties),
+                CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 tablePropertiesProvider(),
                 stateStoreProvider(),

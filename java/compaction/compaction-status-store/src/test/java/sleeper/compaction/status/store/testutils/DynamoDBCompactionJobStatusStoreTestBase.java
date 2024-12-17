@@ -77,7 +77,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected final String tableId = tableProperties.get(TABLE_ID);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    protected final CompactionJobTracker store = CompactionJobTrackerFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {

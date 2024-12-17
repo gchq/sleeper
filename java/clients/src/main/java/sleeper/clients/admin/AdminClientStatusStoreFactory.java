@@ -48,7 +48,7 @@ public interface AdminClientStatusStoreFactory {
         return new AdminClientStatusStoreFactory() {
             @Override
             public CompactionJobTracker loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
-                return CompactionJobTrackerFactory.getStatusStore(dynamoDB, instanceProperties);
+                return CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
             }
 
             @Override

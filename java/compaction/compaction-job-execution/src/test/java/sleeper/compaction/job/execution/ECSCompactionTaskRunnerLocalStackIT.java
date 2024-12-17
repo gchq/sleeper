@@ -145,7 +145,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getStatusStore(dynamoDB, instanceProperties);
+    private final CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
     private final CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
 
     @AfterEach

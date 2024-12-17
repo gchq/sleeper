@@ -108,7 +108,7 @@ public class CompactionJobStatusReport {
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                CompactionJobTracker statusStore = CompactionJobTrackerFactory.getStatusStore(dynamoDBClient, instanceProperties);
+                CompactionJobTracker statusStore = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
                 new CompactionJobStatusReport(statusStore, reporter, table, queryType, queryParameters).run();
             } finally {
                 s3Client.shutdown();

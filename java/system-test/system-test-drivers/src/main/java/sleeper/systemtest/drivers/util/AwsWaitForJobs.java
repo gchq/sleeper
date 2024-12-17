@@ -46,7 +46,7 @@ public class AwsWaitForJobs {
 
     public static WaitForJobs forCompaction(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forCompaction(instance,
-                properties -> CompactionJobTrackerFactory.getStatusStore(dynamoDBClient, properties),
+                properties -> CompactionJobTrackerFactory.getTracker(dynamoDBClient, properties),
                 properties -> CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
                 pollDriver);
     }

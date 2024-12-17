@@ -92,7 +92,7 @@ public class ECSCompactionTaskRunner {
             PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getStatusStore(dynamoDBClient,
+            CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getTracker(dynamoDBClient,
                     instanceProperties);
             CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                     instanceProperties);

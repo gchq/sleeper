@@ -81,7 +81,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key));
         committer = new StateStoreCommitter(
-                CompactionJobTrackerFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
                 tablePropertiesProvider, stateStoreProvider,
                 Instant::now);

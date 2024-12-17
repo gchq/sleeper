@@ -85,7 +85,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     @Override
     public CompactionJobTracker getJobStatusStore() {
         return CompactionJobTrackerFactory
-                .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
+                .getTrackerWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
     }
 
     @Override

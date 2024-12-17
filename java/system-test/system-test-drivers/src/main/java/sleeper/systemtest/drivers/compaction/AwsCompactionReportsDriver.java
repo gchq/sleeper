@@ -72,7 +72,7 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
     }
 
     private CompactionJobTracker jobStore() {
-        return CompactionJobTrackerFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
+        return CompactionJobTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
     }
 
     private CompactionTaskStatusStore taskStore() {
