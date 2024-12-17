@@ -80,9 +80,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -437,7 +434,7 @@ public class StateStoreCommitterTest {
                     assignJobOnPartitionToFiles("test-job", "root", filenames)));
             FileReference fileAfterCompaction = fileFactory.rootFile("after.parquet", 300);
             stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("test-job", "root", filenames, fileAfterCompaction)));
+                    replaceJobFileReferences("test-job", filenames, fileAfterCompaction)));
             // And we have a request to commit that they have been deleted
             GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest("test-table", filenames);
 
@@ -690,10 +687,10 @@ public class StateStoreCommitterTest {
         List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
                 job.getId(), job.getPartitionId(), job.getInputFiles()));
         stateStore(job.getTableId()).assignJobIds(assignIdRequests);
-        compactionJobStatusStore.jobCreated(compactionJobCreated(job), createTime);
-        compactionJobStatusStore.jobStarted(compactionJobStarted(job, startTime)
+        compactionJobStatusStore.jobCreated(job.createCreatedEvent(), createTime);
+        compactionJobStatusStore.jobStarted(job.startedEventBuilder(startTime)
                 .taskId("test-task").jobRunId("test-job-run").build());
-        compactionJobStatusStore.jobFinished(compactionJobFinished(job, summary)
+        compactionJobStatusStore.jobFinished(job.finishedEventBuilder(summary)
                 .taskId("test-task").jobRunId("test-job-run").build());
         return new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
     }

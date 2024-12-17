@@ -232,8 +232,7 @@ public class StateStoreCommitterThroughputST {
                     .collect(toUnmodifiableList()));
             store.atomicallyReplaceFileReferencesWithNewOnes(IntStream.rangeClosed(1, 1000)
                     .mapToObj(i -> replaceJobFileReferences(
-                            jobId(i), "root", List.of(filename(i), filename(i + 1000)),
-                            fileFactory.rootFile(filename(i + 2000), i * 2)))
+                            jobId(i), List.of(filename(i), filename(i + 1000)), fileFactory.rootFile(filename(i + 2000), i * 2)))
                     .collect(toUnmodifiableList()));
         });
 

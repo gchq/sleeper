@@ -15,8 +15,6 @@
  */
 package sleeper.compaction.core.job.status;
 
-import sleeper.compaction.core.job.CompactionJob;
-
 import java.time.Instant;
 import java.util.Objects;
 
@@ -36,17 +34,6 @@ public class CompactionJobCommittedEvent {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         jobRunId = builder.jobRunId;
         commitTime = Objects.requireNonNull(builder.commitTime, "commitTime must not be null");
-    }
-
-    /**
-     * Creates a builder for this class.
-     *
-     * @param  job        the compaction job
-     * @param  commitTime the commit time
-     * @return            a builder
-     */
-    public static Builder compactionJobCommitted(CompactionJob job, Instant commitTime) {
-        return builder().job(job).commitTime(commitTime);
     }
 
     public static Builder builder() {
@@ -111,17 +98,6 @@ public class CompactionJobCommittedEvent {
         private Instant commitTime;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the compaction job ID and the table ID using the provided compaction job.
-         *
-         * @param  job the compaction job
-         * @return     the builder
-         */
-        public Builder job(CompactionJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId());
         }
 
         /**
