@@ -29,7 +29,7 @@ public class ReplaceFileReferencesRequest {
 
     /**
      * Creates a request to commit one job.
-     * 
+     *
      * @param  jobId        the job ID
      * @param  inputFiles   the filenames of the job's input files
      * @param  newReference the new reference to replace the input file references on the partition
@@ -110,6 +110,9 @@ public class ReplaceFileReferencesRequest {
         return "ReplaceFileReferencesRequest{jobId=" + jobId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
     }
 
+    /**
+     * Builder for replace file references requests.
+     */
     public static final class Builder {
 
         private String jobId;
@@ -123,16 +126,34 @@ public class ReplaceFileReferencesRequest {
             return new ReplaceFileReferencesRequest(this);
         }
 
+        /**
+         * Sets the ID of the compaction job being committed.
+         *
+         * @param  jobId the job ID
+         * @return       this builder
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets the filenames of the job's input files.
+         *
+         * @param  inputFiles the input files
+         * @return            this builder
+         */
         public Builder inputFiles(List<String> inputFiles) {
             this.inputFiles = inputFiles;
             return this;
         }
 
+        /**
+         * Sets the new reference to replace the input file references on the partition.
+         *
+         * @param  newReference the output file reference
+         * @return              this builder
+         */
         public Builder newReference(FileReference newReference) {
             this.newReference = newReference;
             return this;
