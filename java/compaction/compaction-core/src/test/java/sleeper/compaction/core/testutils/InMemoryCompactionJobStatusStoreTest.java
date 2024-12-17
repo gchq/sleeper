@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
-import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.process.ProcessRunTime;
@@ -34,6 +33,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCreatedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
@@ -83,7 +83,7 @@ class InMemoryCompactionJobStatusStoreTest {
             // When / Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJob(job.getId(), compactionCreatedStatus(job, createdTime)),
                             forJobOnTask(job.getId(), taskId, compactionStartedStatus(startedTime)))));
         }
 
@@ -100,7 +100,7 @@ class InMemoryCompactionJobStatusStoreTest {
             // When / Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJob(job.getId(), compactionCreatedStatus(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary(startedTime, finishedTime, 100, 100))))));
@@ -120,7 +120,7 @@ class InMemoryCompactionJobStatusStoreTest {
             // When / Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJob(job.getId(), compactionCreatedStatus(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary(startedTime, finishedTime, 100, 100)),
@@ -141,7 +141,7 @@ class InMemoryCompactionJobStatusStoreTest {
             // When / Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJob(job.getId(), compactionCreatedStatus(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFailedStatus(new ProcessRunTime(startedTime, finishedTime), failureReasons)))));
@@ -164,7 +164,7 @@ class InMemoryCompactionJobStatusStoreTest {
             // When / Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJob(job.getId(), compactionCreatedStatus(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary)))));
@@ -251,7 +251,7 @@ class InMemoryCompactionJobStatusStoreTest {
             assertThat(store.getUnfinishedJobs(tableId))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
-                                    forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
+                                    forJob(job1.getId(), compactionCreatedStatus(job1, createdTime1)),
                                     forJobOnTask(job1.getId(), taskId1, compactionStartedStatus(startedTime1)))));
         }
 
@@ -295,7 +295,7 @@ class InMemoryCompactionJobStatusStoreTest {
             assertThat(store.getJobsByTaskId(tableId, taskId1))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
-                                    forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
+                                    forJob(job1.getId(), compactionCreatedStatus(job1, createdTime1)),
                                     forJobOnTask(job1.getId(), taskId1, compactionStartedStatus(startedTime1)))));
         }
 
@@ -340,7 +340,7 @@ class InMemoryCompactionJobStatusStoreTest {
                     Instant.parse("2023-03-29T13:00:00Z")))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
-                                    forJob(job1.getId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
+                                    forJob(job1.getId(), compactionCreatedStatus(job1, createdTime1)),
                                     forJobOnTask(job1.getId(), taskId1, compactionStartedStatus(startedTime1)))));
         }
 
@@ -373,7 +373,7 @@ class InMemoryCompactionJobStatusStoreTest {
                     Instant.parse("2024-07-01T11:00:00Z")))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
-                                    forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                                    forJob(job.getId(), compactionCreatedStatus(job, createdTime)),
                                     forJobOnTask(job.getId(), taskId1,
                                             compactionStartedStatus(startedTime1),
                                             compactionFinishedStatus(summary1),
@@ -424,7 +424,7 @@ class InMemoryCompactionJobStatusStoreTest {
             // When / Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJob(job.getId(), compactionCreatedStatus(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary)))));
@@ -444,7 +444,7 @@ class InMemoryCompactionJobStatusStoreTest {
             // When / Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                            forJob(job.getId(), compactionCreatedStatus(job, createdTime)),
                             forJobOnTask(job.getId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary),

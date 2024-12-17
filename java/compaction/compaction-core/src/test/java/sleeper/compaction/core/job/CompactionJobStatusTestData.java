@@ -43,7 +43,7 @@ public class CompactionJobStatusTestData {
     public static CompactionJobStatus jobCreated(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
         return CompactionJobStatus.builder()
                 .jobId(job.getId())
-                .createdStatus(CompactionJobCreatedStatus.from(job, createdTime))
+                .createdStatus(compactionCreatedStatus(job, createdTime))
                 .jobRunsLatestFirst(Arrays.asList(runsLatestFirst))
                 .build();
     }
@@ -78,6 +78,10 @@ public class CompactionJobStatusTestData {
                 .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)))
                 .statusUpdate(compactionFailedStatus(new ProcessRunTime(startTime, failureTime), failureReasons))
                 .build();
+    }
+
+    public static CompactionJobCreatedStatus compactionCreatedStatus(CompactionJob job, Instant createdTime) {
+        return CompactionJobCreatedStatus.from(job.createAssignJobIdRequest(), createdTime);
     }
 
     public static CompactionJobStartedStatus compactionStartedStatus(Instant startTime) {

@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.status;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
@@ -44,14 +43,6 @@ public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
                 .updateTime(updateTime)
                 .partitionId(event.getPartitionId())
                 .inputFilesCount(event.getInputFilesCount())
-                .build();
-    }
-
-    public static CompactionJobCreatedStatus from(CompactionJob job, Instant updateTime) {
-        return builder()
-                .updateTime(updateTime)
-                .partitionId(job.getPartitionId())
-                .inputFilesCount(job.getInputFiles().size())
                 .build();
     }
 
