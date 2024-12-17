@@ -28,7 +28,6 @@ import java.time.Period;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
@@ -117,7 +116,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Instant periodEnd = Instant.now();
         Thread.sleep(1);
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))
@@ -141,7 +140,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Thread.sleep(1);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
 
         // Then

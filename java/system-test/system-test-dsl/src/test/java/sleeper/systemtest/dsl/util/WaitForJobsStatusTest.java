@@ -31,7 +31,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
@@ -104,7 +103,7 @@ public class WaitForJobsStatusTest {
                 summary(Instant.parse("2023-09-18T14:48:02Z"), Instant.parse("2023-09-18T14:50:02Z"), 100L, 100L))
                 .taskId("finished-task-2").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
-        store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").build());
+        store.jobCommitted(finishedJob.committedEventBuilder(Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").build());
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
                 List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
@@ -271,6 +270,6 @@ public class WaitForJobsStatusTest {
                 .taskId(taskId).build());
         Instant commitTime = finishTime.plus(Duration.ofMinutes(1));
         store.fixUpdateTime(defaultUpdateTime(commitTime));
-        store.jobCommitted(compactionJobCommitted(job, commitTime).taskId(taskId).build());
+        store.jobCommitted(job.committedEventBuilder(commitTime).taskId(taskId).build());
     }
 }

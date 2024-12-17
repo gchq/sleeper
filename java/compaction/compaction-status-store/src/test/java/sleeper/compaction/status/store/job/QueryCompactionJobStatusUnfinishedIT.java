@@ -29,7 +29,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCo
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
-import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
 import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
@@ -96,7 +95,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         storeJobsCreated(job1, job2);
         store.jobStarted(compactionJobStarted(job2, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job2, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(compactionJobCommitted(job2, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(job2.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
@@ -138,7 +137,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         storeJobCreated(job);
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
         store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
