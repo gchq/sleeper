@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
@@ -103,10 +103,10 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
         assertThat(jobStore.getAllJobs(table.get(TABLE_ID))).containsExactlyInAnyOrder(
-                jobCreated(job1, DEFAULT_CREATED_TIME,
+                compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(startTime1, finishTime1), List.of(
                                 "Table not found with ID \"" + table.get(TABLE_ID) + "\""))),
-                jobCreated(job2, DEFAULT_CREATED_TIME,
+                compactionJobCreated(job2, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(startTime2, finishTime2), List.of(
                                 "Table not found with ID \"" + table.get(TABLE_ID) + "\""))));
     }

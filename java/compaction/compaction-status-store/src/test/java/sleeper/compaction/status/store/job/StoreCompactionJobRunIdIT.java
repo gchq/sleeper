@@ -28,8 +28,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 
 public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -148,7 +148,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobCreated(job, ignoredUpdateTime(),
+                .containsExactly(compactionJobCreated(job, ignoredUpdateTime(),
                         ProcessRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
                                 .finishedStatus(compactionFinishedStatus(defaultSummary()))

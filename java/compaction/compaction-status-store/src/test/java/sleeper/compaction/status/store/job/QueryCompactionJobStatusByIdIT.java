@@ -48,7 +48,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         // Then
         assertThat(getJobStatus(job1.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+                .isEqualTo(CompactionJobStatusTestData.compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -69,7 +69,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         // Then
         assertThat(getJobStatus(job.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(CompactionJobStatusTestData.jobCreated(job, ignoredUpdateTime(),
+                .isEqualTo(CompactionJobStatusTestData.compactionJobCreated(job, ignoredUpdateTime(),
                         finishedCompactionRun("test-task", defaultSummary(), defaultCommitTime())));
     }
 

@@ -49,9 +49,9 @@ import java.util.function.Consumer;
 
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -168,12 +168,12 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static CompactionJobStatus startedStatusWithDefaults(CompactionJob job) {
-        return jobCreated(job, ignoredUpdateTime(),
+        return compactionJobCreated(job, ignoredUpdateTime(),
                 startedCompactionRun(DEFAULT_TASK_ID, defaultStartTime()));
     }
 
     protected static CompactionJobStatus finishedUncommittedStatusWithDefaults(CompactionJob job) {
-        return jobCreated(job, ignoredUpdateTime(),
+        return compactionJobCreated(job, ignoredUpdateTime(),
                 uncommittedCompactionRun(DEFAULT_TASK_ID, defaultSummary()));
     }
 
@@ -182,7 +182,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job, RecordsProcessedSummary summary) {
-        return jobCreated(job, ignoredUpdateTime(),
+        return compactionJobCreated(job, ignoredUpdateTime(),
                 ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                         .startedStatus(compactionStartedStatus(summary.getStartTime()))
                         .finishedStatus(compactionFinishedStatus(summary))
@@ -195,7 +195,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static CompactionJobStatus failedStatusWithDefaults(CompactionJob job, ProcessRunTime runTime, List<String> failureReasons) {
-        return jobCreated(job, ignoredUpdateTime(),
+        return compactionJobCreated(job, ignoredUpdateTime(),
                 failedCompactionRun(DEFAULT_TASK_ID, runTime, failureReasons));
     }
 

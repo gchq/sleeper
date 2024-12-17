@@ -42,7 +42,7 @@ public class CompactionJobStatusTestData {
     private CompactionJobStatusTestData() {
     }
 
-    public static CompactionJobStatus jobCreated(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
+    public static CompactionJobStatus compactionJobCreated(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
         return jobCreated(job.createCreatedEvent(), createdTime, runsLatestFirst);
     }
 

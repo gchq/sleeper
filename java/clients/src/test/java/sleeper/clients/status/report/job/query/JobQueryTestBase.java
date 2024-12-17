@@ -49,9 +49,9 @@ public class JobQueryTestBase {
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
     protected final CompactionJob exampleJob1 = dataHelper.singleFileCompaction();
     protected final CompactionJob exampleJob2 = dataHelper.singleFileCompaction();
-    protected final CompactionJobStatus exampleStatus1 = CompactionJobStatusTestData.jobCreated(
+    protected final CompactionJobStatus exampleStatus1 = CompactionJobStatusTestData.compactionJobCreated(
             exampleJob1, Instant.parse("2022-09-22T13:33:12.001Z"));
-    protected final CompactionJobStatus exampleStatus2 = CompactionJobStatusTestData.jobCreated(
+    protected final CompactionJobStatus exampleStatus2 = CompactionJobStatusTestData.compactionJobCreated(
             exampleJob2, Instant.parse("2022-09-22T13:53:12.001Z"));
     protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus2, exampleStatus1);
     protected final ToStringConsoleOutput out = new ToStringConsoleOutput();

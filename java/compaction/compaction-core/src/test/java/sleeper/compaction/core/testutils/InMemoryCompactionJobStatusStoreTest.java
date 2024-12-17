@@ -36,8 +36,8 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCreatedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -69,7 +69,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
             // When / Then
             assertThat(store.streamAllJobs(tableId))
-                    .containsExactly(jobCreated(job, createdTime));
+                    .containsExactly(compactionJobCreated(job, createdTime));
         }
 
         @Test
@@ -182,7 +182,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
             // When / Then
             assertThat(store.getJob(job.getId()))
-                    .contains(jobCreated(job, storeTime));
+                    .contains(compactionJobCreated(job, storeTime));
         }
 
         @Test
@@ -217,9 +217,9 @@ class InMemoryCompactionJobStatusStoreTest {
             // When / Then
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(
-                            jobCreated(job3, time3),
-                            jobCreated(job2, time2),
-                            jobCreated(job1, time1));
+                            compactionJobCreated(job3, time3),
+                            compactionJobCreated(job2, time2),
+                            compactionJobCreated(job1, time1));
         }
 
         @Test
@@ -478,7 +478,7 @@ class InMemoryCompactionJobStatusStoreTest {
 
             // Then
             assertThat(store.streamAllJobs(tableId))
-                    .containsExactly(jobCreated(job, createdTime,
+                    .containsExactly(compactionJobCreated(job, createdTime,
                             ProcessRun.builder().taskId(taskId)
                                     .startedStatus(compactionStartedStatus(startedTime2))
                                     .finishedStatus(compactionFailedStatus(summary2.getRunTime(), List.of("Could not commit same compaction twice")))
