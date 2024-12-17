@@ -19,34 +19,31 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SQSTest {
+public class SQSQueuesTest {
 
     @Test
     void shouldValidateThatAllTheQueuePropertiesArePartOfTheListDefinitions() throws Exception {
-        assertThat(SqsQueues.QUEUE_URL_PROPERTIES).containsAll(grabAllValidProperties("queue.url"));
+        assertThat(SqsQueues.QUEUE_URL_PROPERTIES).containsAll(findAllPropertiesWithNamePart("queue.url"));
     }
 
     @Test
     void shouldValidateThatAllTheDeadLetterQueuePropertiesArePartOfTheListDefinitions() throws Exception {
-        assertThat(SqsQueues.DEAD_LETTER_QUEUE_URL_PROPERTIES).containsAll(grabAllValidProperties("dlq.url"));
+        assertThat(SqsQueues.DEAD_LETTER_QUEUE_URL_PROPERTIES).containsAll(findAllPropertiesWithNamePart("dlq.url"));
     }
 
-    private List<CdkDefinedInstanceProperty> grabAllValidProperties(String nameDef) throws Exception {
+    private List<CdkDefinedInstanceProperty> findAllPropertiesWithNamePart(String namePart) throws Exception {
         List<CdkDefinedInstanceProperty> outList = new ArrayList<CdkDefinedInstanceProperty>();
 
-        Field[] interfaceFields = CdkDefinedInstanceProperty.class.getFields();
-        for (Field f : interfaceFields) {
-            CdkDefinedInstanceProperty present = (CdkDefinedInstanceProperty) f.get(this);
-            if (present.getPropertyName().contains(nameDef)) {
-                outList.add(present);
+        CdkDefinedInstanceProperty.getAll().stream().forEach(property -> {
+            if (property.getPropertyName().contains(namePart)) {
+                outList.add(property);
             }
-        }
+        });
         return outList;
     }
 }
