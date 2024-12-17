@@ -25,7 +25,7 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -47,31 +47,31 @@ public class CompactionStatusStoreStack extends NestedStack implements Compactio
 
         updatesTable = Table.Builder
                 .create(this, "DynamoDBCompactionJobUpdatesTable")
-                .tableName(DynamoDBCompactionJobStatusStore.jobUpdatesTableName(instanceId))
+                .tableName(DynamoDBCompactionJobTracker.jobUpdatesTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusStore.TABLE_ID)
+                        .name(DynamoDBCompactionJobTracker.TABLE_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusStore.JOB_ID_AND_UPDATE)
+                        .name(DynamoDBCompactionJobTracker.JOB_ID_AND_UPDATE)
                         .type(AttributeType.STRING)
                         .build())
-                .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBCompactionJobTracker.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
 
         jobsTable = Table.Builder
                 .create(this, "DynamoDBCompactionJobLookupTable")
-                .tableName(DynamoDBCompactionJobStatusStore.jobLookupTableName(instanceId))
+                .tableName(DynamoDBCompactionJobTracker.jobLookupTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBCompactionJobStatusStore.JOB_ID)
+                        .name(DynamoDBCompactionJobTracker.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
-                .timeToLiveAttribute(DynamoDBCompactionJobStatusStore.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBCompactionJobTracker.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
 

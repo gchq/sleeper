@@ -33,8 +33,8 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final String updatesTableName = DynamoDBCompactionJobStatusStore.jobUpdatesTableName(instanceProperties.get(ID));
-    private final String jobsTableName = DynamoDBCompactionJobStatusStore.jobLookupTableName(instanceProperties.get(ID));
+    private final String updatesTableName = DynamoDBCompactionJobTracker.jobUpdatesTableName(instanceProperties.get(ID));
+    private final String jobsTableName = DynamoDBCompactionJobTracker.jobLookupTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {
@@ -47,7 +47,7 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
                 .extracting(DescribeTableResult::getTable).isNotNull();
         assertThat(dynamoDBClient.describeTable(jobsTableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
-        assertThat(store).isInstanceOf(DynamoDBCompactionJobStatusStore.class);
+        assertThat(store).isInstanceOf(DynamoDBCompactionJobTracker.class);
     }
 
     @Test

@@ -22,8 +22,8 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -71,7 +71,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
     public static final String DEFAULT_TASK_ID_2 = "task-id-2";
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final String jobStatusTableName = DynamoDBCompactionJobStatusStore.jobLookupTableName(instanceProperties.get(ID));
+    private final String jobStatusTableName = DynamoDBCompactionJobTracker.jobLookupTableName(instanceProperties.get(ID));
     private final Schema schema = schemaWithKey("key", new StringType());
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
@@ -99,7 +99,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected CompactionJobTracker storeWithUpdateTimes(Instant... updateTimes) {
-        return new DynamoDBCompactionJobStatusStore(dynamoDBClient, instanceProperties,
+        return new DynamoDBCompactionJobTracker(dynamoDBClient, instanceProperties,
                 true, Arrays.stream(updateTimes).iterator()::next);
     }
 

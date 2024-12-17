@@ -60,8 +60,8 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-public class DynamoDBCompactionJobStatusStore implements CompactionJobTracker {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStore.class);
+public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobTracker.class);
     public static final String TABLE_ID = DynamoDBCompactionJobStatusFormat.TABLE_ID;
     public static final String JOB_ID = DynamoDBCompactionJobStatusFormat.JOB_ID;
     public static final String JOB_ID_AND_UPDATE = DynamoDBCompactionJobStatusFormat.JOB_ID_AND_UPDATE;
@@ -77,11 +77,11 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobTracker {
     private final boolean stronglyConsistentReads;
     private final Supplier<Instant> getTimeNow;
 
-    private DynamoDBCompactionJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads) {
+    private DynamoDBCompactionJobTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads) {
         this(dynamoDB, properties, stronglyConsistentReads, Instant::now);
     }
 
-    public DynamoDBCompactionJobStatusStore(
+    public DynamoDBCompactionJobTracker(
             AmazonDynamoDB dynamoDB, InstanceProperties properties, boolean stronglyConsistentReads, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.updatesTableName = jobUpdatesTableName(properties.get(ID));
@@ -91,14 +91,14 @@ public class DynamoDBCompactionJobStatusStore implements CompactionJobTracker {
         this.getTimeNow = getTimeNow;
     }
 
-    public static DynamoDBCompactionJobStatusStore stronglyConsistentReads(
+    public static DynamoDBCompactionJobTracker stronglyConsistentReads(
             AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        return new DynamoDBCompactionJobStatusStore(dynamoDB, instanceProperties, true);
+        return new DynamoDBCompactionJobTracker(dynamoDB, instanceProperties, true);
     }
 
-    public static DynamoDBCompactionJobStatusStore eventuallyConsistentReads(
+    public static DynamoDBCompactionJobTracker eventuallyConsistentReads(
             AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        return new DynamoDBCompactionJobStatusStore(dynamoDB, instanceProperties, false);
+        return new DynamoDBCompactionJobTracker(dynamoDB, instanceProperties, false);
     }
 
     public static String jobUpdatesTableName(String instanceId) {

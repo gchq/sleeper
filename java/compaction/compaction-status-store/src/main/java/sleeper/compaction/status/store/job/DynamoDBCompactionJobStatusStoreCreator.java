@@ -26,12 +26,12 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.EXPIRY_DATE;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_ID;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.JOB_ID_AND_UPDATE;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.TABLE_ID;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.jobLookupTableName;
-import static sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore.jobUpdatesTableName;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker.EXPIRY_DATE;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker.JOB_ID;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker.JOB_ID_AND_UPDATE;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker.TABLE_ID;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker.jobLookupTableName;
+import static sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker.jobUpdatesTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
