@@ -24,7 +24,6 @@ import java.util.Objects;
  */
 public class ReplaceFileReferencesRequest {
     private final String jobId;
-    private final String partitionId;
     private final List<String> inputFiles;
     private final FileReference newReference;
 
@@ -50,16 +49,14 @@ public class ReplaceFileReferencesRequest {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
         newReference = Objects.requireNonNull(builder.newReference, "newReference must not be null");
-        partitionId = builder.newReference.getPartitionId();
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    private ReplaceFileReferencesRequest(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) {
+    private ReplaceFileReferencesRequest(String jobId, List<String> inputFiles, FileReference newReference) {
         this.jobId = jobId;
-        this.partitionId = partitionId;
         this.inputFiles = inputFiles;
         this.newReference = newReference;
     }
@@ -71,7 +68,7 @@ public class ReplaceFileReferencesRequest {
      * @return the copy
      */
     public ReplaceFileReferencesRequest withNoUpdateTime() {
-        return new ReplaceFileReferencesRequest(jobId, partitionId, inputFiles,
+        return new ReplaceFileReferencesRequest(jobId, inputFiles,
                 newReference.toBuilder().lastStateStoreUpdateTime(null).build());
     }
 
@@ -80,7 +77,7 @@ public class ReplaceFileReferencesRequest {
     }
 
     public String getPartitionId() {
-        return partitionId;
+        return newReference.getPartitionId();
     }
 
     public List<String> getInputFiles() {
@@ -93,7 +90,7 @@ public class ReplaceFileReferencesRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, partitionId, inputFiles, newReference);
+        return Objects.hash(jobId, inputFiles, newReference);
     }
 
     @Override
@@ -105,12 +102,12 @@ public class ReplaceFileReferencesRequest {
             return false;
         }
         ReplaceFileReferencesRequest other = (ReplaceFileReferencesRequest) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && Objects.equals(inputFiles, other.inputFiles) && Objects.equals(newReference, other.newReference);
+        return Objects.equals(jobId, other.jobId) && Objects.equals(inputFiles, other.inputFiles) && Objects.equals(newReference, other.newReference);
     }
 
     @Override
     public String toString() {
-        return "ReplaceFileReferencesRequest{jobId=" + jobId + ", partitionId=" + partitionId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
+        return "ReplaceFileReferencesRequest{jobId=" + jobId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
     }
 
     public static final class Builder {
