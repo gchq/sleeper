@@ -32,8 +32,8 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
+import static sleeper.compaction.core.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
@@ -47,7 +47,7 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobStatus compactionJobCreated(Instant createdTime, ProcessRun... runsLatestFirst) {
-        return compactionJobCreated(defaultCreatedEvent(), createdTime, runsLatestFirst);
+        return compactionJobCreated(defaultCompactionJobCreatedEvent(), createdTime, runsLatestFirst);
     }
 
     public static CompactionJobStatus compactionJobCreated(CompactionJobCreatedEvent event, Instant createdTime, ProcessRun... runsLatestFirst) {
@@ -55,15 +55,6 @@ public class CompactionJobStatusTestData {
                 .jobId(event.getJobId())
                 .createdStatus(CompactionJobCreatedStatus.from(event, createdTime))
                 .jobRunsLatestFirst(Arrays.asList(runsLatestFirst))
-                .build();
-    }
-
-    private static CompactionJobCreatedEvent defaultCreatedEvent() {
-        return CompactionJobCreatedEvent.builder()
-                .jobId(UUID.randomUUID().toString())
-                .tableId("test-table")
-                .partitionId("root")
-                .inputFilesCount(1)
                 .build();
     }
 
