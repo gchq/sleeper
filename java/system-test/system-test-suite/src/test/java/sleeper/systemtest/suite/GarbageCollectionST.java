@@ -86,10 +86,10 @@ public class GarbageCollectionST {
         IntStream.range(0, 1000)
                 .mapToObj(i -> numbers.range(i * 100, i * 100 + 100))
                 .forEach(range -> ingest.numberedRecords(range));
-        sleeper.compaction().putTableOnlineWaitForJobCreation(200).waitForTasks(1).waitForJobs();
+        sleeper.compaction().createJobs(200).waitForTasks(1).waitForJobs();
 
         // When
-        sleeper.garbageCollection().waitFor(
+        sleeper.garbageCollection().invoke().waitFor(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(10)));
 
         // Then
