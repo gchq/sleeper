@@ -26,7 +26,7 @@ import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatu
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
 import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
@@ -72,7 +72,7 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
     }
 
     private CompactionJobTracker jobStore() {
-        return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
+        return CompactionJobTrackerFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
     }
 
     private CompactionTaskStatusStore taskStore() {

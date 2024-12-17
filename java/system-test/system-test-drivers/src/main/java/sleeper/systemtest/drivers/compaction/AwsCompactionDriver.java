@@ -35,7 +35,7 @@ import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -84,7 +84,7 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     @Override
     public CompactionJobTracker getJobStatusStore() {
-        return CompactionJobStatusStoreFactory
+        return CompactionJobTrackerFactory
                 .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
     }
 

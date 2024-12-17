@@ -26,7 +26,7 @@ import org.apache.hadoop.conf.Configuration;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -87,7 +87,7 @@ public class CreateCompactionJobsClient {
                     .collect(toUnmodifiableList());
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient(instanceProperties);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-            CompactionJobTracker jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+            CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getStatusStore(dynamoDBClient, instanceProperties);
             CreateCompactionJobs jobCreator = AwsCreateCompactionJobs.from(
                     new S3UserJarsLoader(instanceProperties, s3Client, "/tmp").buildObjectFactory(),
                     instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient);

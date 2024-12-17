@@ -30,7 +30,7 @@ import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatu
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -119,7 +119,7 @@ public class StatusReport {
             TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, new Configuration());
             StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-            CompactionJobTracker compactionStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+            CompactionJobTracker compactionStatusStore = CompactionJobTrackerFactory.getStatusStore(dynamoDBClient, instanceProperties);
             CompactionTaskStatusStore compactionTaskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
             StatusReport statusReport = new StatusReport(

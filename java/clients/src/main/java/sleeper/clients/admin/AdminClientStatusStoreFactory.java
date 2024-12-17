@@ -18,7 +18,7 @@ package sleeper.clients.admin;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -48,7 +48,7 @@ public interface AdminClientStatusStoreFactory {
         return new AdminClientStatusStoreFactory() {
             @Override
             public CompactionJobTracker loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
-                return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+                return CompactionJobTrackerFactory.getStatusStore(dynamoDB, instanceProperties);
             }
 
             @Override

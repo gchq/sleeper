@@ -49,7 +49,7 @@ import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
@@ -145,7 +145,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final CompactionJobTracker jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+    private final CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getStatusStore(dynamoDB, instanceProperties);
     private final CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
 
     @AfterEach

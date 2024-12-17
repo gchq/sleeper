@@ -23,9 +23,9 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
-public class CompactionJobStatusStoreFactory {
+public class CompactionJobTrackerFactory {
 
-    private CompactionJobStatusStoreFactory() {
+    private CompactionJobTrackerFactory() {
     }
 
     public static CompactionJobTracker getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.core.partition.Partition;
@@ -77,7 +77,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected final String tableId = tableProperties.get(TABLE_ID);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    protected final CompactionJobTracker store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final CompactionJobTracker store = CompactionJobTrackerFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {

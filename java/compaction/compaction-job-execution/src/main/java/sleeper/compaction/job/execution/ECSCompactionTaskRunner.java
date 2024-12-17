@@ -33,7 +33,7 @@ import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda.C
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -92,7 +92,7 @@ public class ECSCompactionTaskRunner {
             PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            CompactionJobTracker jobStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient,
+            CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getStatusStore(dynamoDBClient,
                     instanceProperties);
             CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                     instanceProperties);

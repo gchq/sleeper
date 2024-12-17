@@ -27,7 +27,7 @@ import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusR
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQueryArgument;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -108,7 +108,7 @@ public class CompactionJobStatusReport {
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                CompactionJobTracker statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+                CompactionJobTracker statusStore = CompactionJobTrackerFactory.getStatusStore(dynamoDBClient, instanceProperties);
                 new CompactionJobStatusReport(statusStore, reporter, table, queryType, queryParameters).run();
             } finally {
                 s3Client.shutdown();

@@ -28,7 +28,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -155,7 +155,7 @@ public class StateStoreCommitterThroughputIT {
 
     private StateStoreCommitter committer() {
         return new StateStoreCommitter(
-                CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
+                CompactionJobTrackerFactory.getStatusStore(dynamoDB, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
                 tablePropertiesProvider(),
                 stateStoreProvider(),
