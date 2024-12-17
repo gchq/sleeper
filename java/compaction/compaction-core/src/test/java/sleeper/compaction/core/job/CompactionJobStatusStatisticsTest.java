@@ -23,8 +23,8 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
@@ -33,12 +33,12 @@ public class CompactionJobStatusStatisticsTest {
     @Test
     void shouldComputeStatisticsForDelayBetweenFinishAndCommitWhenCommitted() {
         // Given
-        CompactionJobStatus status1 = jobCreated(
+        CompactionJobStatus status1 = compactionJobCreated(
                 Instant.parse("2024-09-09T10:29:50Z"),
                 finishedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:30:00Z"), Instant.parse("2024-09-09T10:31:00Z"), 100, 100),
                         Instant.parse("2024-09-09T10:31:02Z")));
-        CompactionJobStatus status2 = jobCreated(
+        CompactionJobStatus status2 = compactionJobCreated(
                 Instant.parse("2024-09-09T10:31:50Z"),
                 finishedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:32:00Z"), Instant.parse("2024-09-09T10:33:00Z"), 100, 100),
@@ -52,7 +52,7 @@ public class CompactionJobStatusStatisticsTest {
     @Test
     void shouldComputeStatisticsForDelayBetweenFinishAndCommitWhenNoneCommitted() {
         // Given
-        CompactionJobStatus status = jobCreated(
+        CompactionJobStatus status = compactionJobCreated(
                 Instant.parse("2024-09-09T10:29:50Z"),
                 uncommittedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:30:00Z"), Instant.parse("2024-09-09T10:31:00Z"), 100, 100)));

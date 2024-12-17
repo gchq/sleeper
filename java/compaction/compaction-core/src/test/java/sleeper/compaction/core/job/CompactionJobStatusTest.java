@@ -27,9 +27,9 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 
@@ -41,7 +41,7 @@ class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = jobCreated(updateTime);
+        CompactionJobStatus status = compactionJobCreated(updateTime);
 
         // Then
         assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount")
@@ -54,7 +54,7 @@ class CompactionJobStatusTest {
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = jobCreated(updateTime);
+        CompactionJobStatus status = compactionJobCreated(updateTime);
 
         // Then
         assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)
@@ -64,7 +64,7 @@ class CompactionJobStatusTest {
     @Test
     void shouldBuildCompactionJobStarted() {
         // When
-        CompactionJobStatus status = jobCreated(Instant.parse("2022-09-22T13:33:12.001Z"),
+        CompactionJobStatus status = compactionJobCreated(Instant.parse("2022-09-22T13:33:12.001Z"),
                 startedCompactionRun(DEFAULT_TASK_ID, Instant.parse("2022-09-22T13:33:30.001Z")));
 
         // Then
@@ -82,7 +82,7 @@ class CompactionJobStatusTest {
                 new RecordsProcessed(450L, 300L), startTime, finishTime);
 
         // When
-        CompactionJobStatus status = jobCreated(Instant.parse("2022-09-22T13:33:00.001Z"),
+        CompactionJobStatus status = compactionJobCreated(Instant.parse("2022-09-22T13:33:00.001Z"),
                 finishedCompactionRun(DEFAULT_TASK_ID, summary, commitTime));
 
         // Then
@@ -99,7 +99,7 @@ class CompactionJobStatusTest {
         List<String> failureReasons = List.of("Could not read input file", "Some IO failure");
 
         // When
-        CompactionJobStatus status = jobCreated(Instant.parse("2022-09-22T13:33:00.001Z"),
+        CompactionJobStatus status = compactionJobCreated(Instant.parse("2022-09-22T13:33:00.001Z"),
                 failedCompactionRun(DEFAULT_TASK_ID, runTime, failureReasons));
 
         // Then
@@ -117,7 +117,7 @@ class CompactionJobStatusTest {
         Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
 
         // When
-        CompactionJobStatus status = jobCreated(Instant.parse("2022-09-22T13:33:00.001Z"),
+        CompactionJobStatus status = compactionJobCreated(Instant.parse("2022-09-22T13:33:00.001Z"),
                 finishedCompactionRun("task-1", run1Summary, commitTime1),
                 startedCompactionRun("task-2", startTime2));
 
