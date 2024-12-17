@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
 
 public class CompactionJobStatusTaskIdAssignedTest {
 
