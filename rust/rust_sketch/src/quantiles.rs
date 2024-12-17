@@ -75,7 +75,6 @@
     clippy::must_use_candidate,
     clippy::missing_errors_doc
 )]
-
 pub mod i32 {
 
     unsafe extern "C++" {
