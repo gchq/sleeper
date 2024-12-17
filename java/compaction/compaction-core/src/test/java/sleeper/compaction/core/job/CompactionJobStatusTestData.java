@@ -43,14 +43,14 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobStatus compactionJobCreated(CompactionJob job, Instant createdTime, ProcessRun... runsLatestFirst) {
-        return jobCreated(job.createCreatedEvent(), createdTime, runsLatestFirst);
+        return compactionJobCreated(job.createCreatedEvent(), createdTime, runsLatestFirst);
     }
 
     public static CompactionJobStatus compactionJobCreated(Instant createdTime, ProcessRun... runsLatestFirst) {
-        return jobCreated(defaultCreatedEvent(), createdTime, runsLatestFirst);
+        return compactionJobCreated(defaultCreatedEvent(), createdTime, runsLatestFirst);
     }
 
-    public static CompactionJobStatus jobCreated(CompactionJobCreatedEvent event, Instant createdTime, ProcessRun... runsLatestFirst) {
+    public static CompactionJobStatus compactionJobCreated(CompactionJobCreatedEvent event, Instant createdTime, ProcessRun... runsLatestFirst) {
         return CompactionJobStatus.builder()
                 .jobId(event.getJobId())
                 .createdStatus(CompactionJobCreatedStatus.from(event, createdTime))
