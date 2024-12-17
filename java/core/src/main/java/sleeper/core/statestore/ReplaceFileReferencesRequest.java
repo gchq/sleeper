@@ -42,7 +42,7 @@ public class ReplaceFileReferencesRequest {
         return new ReplaceFileReferencesRequest(jobId, partitionId, inputFiles, newReference);
     }
 
-    private ReplaceFileReferencesRequest(Builder builder) {
+    private static ReplaceFileReferencesRequest(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
         newReference = Objects.requireNonNull(builder.newReference, "newReference must not be null");
