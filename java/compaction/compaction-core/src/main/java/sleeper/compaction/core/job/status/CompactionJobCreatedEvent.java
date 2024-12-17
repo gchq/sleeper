@@ -15,7 +15,7 @@
  */
 package sleeper.compaction.core.job.status;
 
-import sleeper.compaction.core.job.CompactionJob;
+import java.util.Objects;
 
 public class CompactionJobCreatedEvent {
 
@@ -24,15 +24,15 @@ public class CompactionJobCreatedEvent {
     private final String partitionId;
     private final int inputFilesCount;
 
-    private CompactionJobCreatedEvent(CompactionJob compactionJob) {
-        jobId = compactionJob.getId();
-        tableId = compactionJob.getTableId();
-        partitionId = compactionJob.getPartitionId();
-        inputFilesCount = compactionJob.getInputFiles().size();
+    public CompactionJobCreatedEvent(Builder builder) {
+        this.jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        this.tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        this.partitionId = Objects.requireNonNull(builder.partitionId, "partitionId must not be null");
+        this.inputFilesCount = builder.inputFilesCount;
     }
 
-    public static CompactionJobCreatedEvent compactionJobCreated(CompactionJob compactionJob) {
-        return new CompactionJobCreatedEvent(compactionJob);
+    public static Builder builder() {
+        return new Builder();
     }
 
     public String getJobId() {
@@ -49,5 +49,40 @@ public class CompactionJobCreatedEvent {
 
     public int getInputFilesCount() {
         return inputFilesCount;
+    }
+
+    public static final class Builder {
+
+        private String jobId;
+        private String tableId;
+        private String partitionId;
+        private int inputFilesCount;
+
+        private Builder() {
+        }
+
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
+        public Builder tableId(String tableId) {
+            this.tableId = tableId;
+            return this;
+        }
+
+        public Builder partitionId(String partitionId) {
+            this.partitionId = partitionId;
+            return this;
+        }
+
+        public Builder inputFilesCount(int inputFilesCount) {
+            this.inputFilesCount = inputFilesCount;
+            return this;
+        }
+
+        public CompactionJobCreatedEvent build() {
+            return new CompactionJobCreatedEvent(this);
+        }
     }
 }

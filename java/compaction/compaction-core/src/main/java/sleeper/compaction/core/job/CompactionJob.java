@@ -85,7 +85,7 @@ public class CompactionJob {
     }
 
     public CompactionJobCreatedEvent createCreatedEvent() {
-        return CompactionJobCreatedEvent.compactionJobCreated(this);
+        return CompactionJobCreatedEvent.builder().jobId(jobId).tableId(tableId).partitionId(partitionId).inputFilesCount(inputFiles.size()).build();
     }
 
     public CompactionJobStartedEvent.Builder startedEventBuilder(Instant startTime) {
