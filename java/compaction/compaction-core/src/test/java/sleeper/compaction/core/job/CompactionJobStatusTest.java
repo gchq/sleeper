@@ -35,16 +35,13 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 
 class CompactionJobStatusTest {
 
-    private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-
     @Test
     void shouldBuildCompactionJobCreatedFromJob() {
         // Given
-        CompactionJob job = dataHelper.singleFileCompaction();
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = jobCreated(job, updateTime);
+        CompactionJobStatus status = jobCreated(updateTime);
 
         // Then
         assertThat(status).extracting("createUpdateTime", "partitionId", "inputFilesCount")
@@ -54,11 +51,10 @@ class CompactionJobStatusTest {
     @Test
     void shouldReportCompactionJobNotStarted() {
         // Given
-        CompactionJob job = dataHelper.singleFileCompaction();
         Instant updateTime = Instant.parse("2022-09-22T13:33:12.001Z");
 
         // When
-        CompactionJobStatus status = jobCreated(job, updateTime);
+        CompactionJobStatus status = jobCreated(updateTime);
 
         // Then
         assertThat(status).extracting(CompactionJobStatus::isStarted, CompactionJobStatus::isUnstartedOrInProgress)
@@ -67,11 +63,8 @@ class CompactionJobStatusTest {
 
     @Test
     void shouldBuildCompactionJobStarted() {
-        // Given
-        CompactionJob job = dataHelper.singleFileCompaction();
-
         // When
-        CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:12.001Z"),
+        CompactionJobStatus status = jobCreated(Instant.parse("2022-09-22T13:33:12.001Z"),
                 startedCompactionRun(DEFAULT_TASK_ID, Instant.parse("2022-09-22T13:33:30.001Z")));
 
         // Then
@@ -82,7 +75,6 @@ class CompactionJobStatusTest {
     @Test
     void shouldBuildCompactionJobFinished() {
         // Given
-        CompactionJob job = dataHelper.singleFileCompaction();
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
         Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
         Instant commitTime = Instant.parse("2022-09-22T13:34:20.001Z");
@@ -90,7 +82,7 @@ class CompactionJobStatusTest {
                 new RecordsProcessed(450L, 300L), startTime, finishTime);
 
         // When
-        CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:00.001Z"),
+        CompactionJobStatus status = jobCreated(Instant.parse("2022-09-22T13:33:00.001Z"),
                 finishedCompactionRun(DEFAULT_TASK_ID, summary, commitTime));
 
         // Then
@@ -101,14 +93,13 @@ class CompactionJobStatusTest {
     @Test
     void shouldBuildCompactionJobFailedWaitingForRetry() {
         // Given
-        CompactionJob job = dataHelper.singleFileCompaction();
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
         Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
         ProcessRunTime runTime = new ProcessRunTime(startTime, finishTime);
         List<String> failureReasons = List.of("Could not read input file", "Some IO failure");
 
         // When
-        CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:00.001Z"),
+        CompactionJobStatus status = jobCreated(Instant.parse("2022-09-22T13:33:00.001Z"),
                 failedCompactionRun(DEFAULT_TASK_ID, runTime, failureReasons));
 
         // Then
@@ -119,7 +110,6 @@ class CompactionJobStatusTest {
     @Test
     void shouldBuildCompactionJobFinishedAndInProgress() {
         // Given
-        CompactionJob job = dataHelper.singleFileCompaction();
         RecordsProcessedSummary run1Summary = new RecordsProcessedSummary(
                 new RecordsProcessed(450L, 300L),
                 Instant.parse("2022-09-22T13:33:10.001Z"), Duration.ofMinutes(1));
@@ -127,7 +117,7 @@ class CompactionJobStatusTest {
         Instant startTime2 = Instant.parse("2022-09-22T13:33:15.001Z");
 
         // When
-        CompactionJobStatus status = jobCreated(job, Instant.parse("2022-09-22T13:33:00.001Z"),
+        CompactionJobStatus status = jobCreated(Instant.parse("2022-09-22T13:33:00.001Z"),
                 finishedCompactionRun("task-1", run1Summary, commitTime1),
                 startedCompactionRun("task-2", startTime2));
 

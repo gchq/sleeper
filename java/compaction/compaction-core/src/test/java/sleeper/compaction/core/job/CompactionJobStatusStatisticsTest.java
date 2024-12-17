@@ -30,17 +30,15 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 
 public class CompactionJobStatusStatisticsTest {
 
-    private final CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
-
     @Test
     void shouldComputeStatisticsForDelayBetweenFinishAndCommitWhenCommitted() {
         // Given
-        CompactionJobStatus status1 = jobCreated(dataHelper.singleFileCompaction(),
+        CompactionJobStatus status1 = jobCreated(
                 Instant.parse("2024-09-09T10:29:50Z"),
                 finishedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:30:00Z"), Instant.parse("2024-09-09T10:31:00Z"), 100, 100),
                         Instant.parse("2024-09-09T10:31:02Z")));
-        CompactionJobStatus status2 = jobCreated(dataHelper.singleFileCompaction(),
+        CompactionJobStatus status2 = jobCreated(
                 Instant.parse("2024-09-09T10:31:50Z"),
                 finishedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:32:00Z"), Instant.parse("2024-09-09T10:33:00Z"), 100, 100),
@@ -54,7 +52,7 @@ public class CompactionJobStatusStatisticsTest {
     @Test
     void shouldComputeStatisticsForDelayBetweenFinishAndCommitWhenNoneCommitted() {
         // Given
-        CompactionJobStatus status = jobCreated(dataHelper.singleFileCompaction(),
+        CompactionJobStatus status = jobCreated(
                 Instant.parse("2024-09-09T10:29:50Z"),
                 uncommittedCompactionRun("test-task",
                         summary(Instant.parse("2024-09-09T10:30:00Z"), Instant.parse("2024-09-09T10:31:00Z"), 100, 100)));
