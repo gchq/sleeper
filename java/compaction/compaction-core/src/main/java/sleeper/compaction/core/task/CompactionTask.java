@@ -50,7 +50,6 @@ import java.util.function.Supplier;
 
 import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
@@ -224,7 +223,7 @@ public class CompactionTask {
 
     private RecordsProcessedSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
-        jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
+        jobStatusStore.jobStarted(job.startedEventBuilder(jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
