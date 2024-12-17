@@ -50,7 +50,7 @@ import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -157,7 +157,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
 
     @BeforeEach
     void setUp() {
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDB);
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
     }
 

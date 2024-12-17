@@ -39,7 +39,7 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDBClient);
         CompactionJobTracker store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
@@ -56,7 +56,7 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
         instanceProperties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
 
         // When
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDBClient);
         CompactionJobTracker store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
@@ -75,6 +75,6 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
 
     @AfterEach
     public void tearDown() {
-        DynamoDBCompactionJobStatusStoreCreator.tearDown(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionJobTrackerCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 }

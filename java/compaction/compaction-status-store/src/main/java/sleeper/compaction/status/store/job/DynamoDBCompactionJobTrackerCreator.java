@@ -37,10 +37,10 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STA
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
-public class DynamoDBCompactionJobStatusStoreCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStoreCreator.class);
+public class DynamoDBCompactionJobTrackerCreator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobTrackerCreator.class);
 
-    private DynamoDBCompactionJobStatusStoreCreator() {
+    private DynamoDBCompactionJobTrackerCreator() {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {

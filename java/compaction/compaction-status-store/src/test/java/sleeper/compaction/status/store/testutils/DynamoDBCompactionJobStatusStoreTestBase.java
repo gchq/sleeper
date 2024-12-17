@@ -22,8 +22,8 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
@@ -81,7 +81,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     @BeforeEach
     public void setUp() {
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDBClient);
     }
 
     @AfterEach
