@@ -35,7 +35,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
@@ -52,6 +51,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;

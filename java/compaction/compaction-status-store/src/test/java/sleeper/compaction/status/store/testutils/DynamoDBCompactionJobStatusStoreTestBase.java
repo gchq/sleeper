@@ -21,7 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStore;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
@@ -37,6 +36,7 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 

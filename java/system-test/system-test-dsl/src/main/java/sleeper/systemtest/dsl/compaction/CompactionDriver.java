@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.compaction;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.PollWithRetries;
 
 import java.util.List;

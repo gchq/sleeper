@@ -18,8 +18,8 @@ package sleeper.compaction.status.store.job;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 

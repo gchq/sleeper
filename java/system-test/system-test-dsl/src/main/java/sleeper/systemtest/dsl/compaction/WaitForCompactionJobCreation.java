@@ -18,7 +18,7 @@ package sleeper.systemtest.dsl.compaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

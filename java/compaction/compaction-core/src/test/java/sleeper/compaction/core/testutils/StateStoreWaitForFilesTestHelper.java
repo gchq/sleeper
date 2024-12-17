@@ -15,10 +15,10 @@
  */
 package sleeper.compaction.core.testutils;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.ThreadSleep;

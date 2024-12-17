@@ -43,7 +43,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
@@ -77,6 +76,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;

@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobCommitter;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
@@ -33,6 +32,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;

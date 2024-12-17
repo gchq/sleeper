@@ -21,8 +21,8 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.util.GsonConfig;

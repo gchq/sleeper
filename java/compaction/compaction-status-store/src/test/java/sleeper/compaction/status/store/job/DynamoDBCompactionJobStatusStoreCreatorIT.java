@@ -20,8 +20,8 @@ import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;

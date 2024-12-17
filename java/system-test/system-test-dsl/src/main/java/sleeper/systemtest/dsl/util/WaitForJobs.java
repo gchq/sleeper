@@ -19,9 +19,9 @@ package sleeper.systemtest.dsl.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;

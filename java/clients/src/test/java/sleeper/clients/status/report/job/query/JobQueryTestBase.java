@@ -20,12 +20,12 @@ import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.CompactionJobStatusTestData;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Clock;

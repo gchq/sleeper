@@ -24,7 +24,6 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
@@ -35,6 +34,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;

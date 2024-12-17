@@ -27,12 +27,12 @@ import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusR
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQueryArgument;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 
 import java.time.Clock;
 import java.util.HashMap;

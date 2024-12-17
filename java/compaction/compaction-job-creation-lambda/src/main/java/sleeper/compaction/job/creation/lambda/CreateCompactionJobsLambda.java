@@ -30,7 +30,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
@@ -43,6 +42,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;

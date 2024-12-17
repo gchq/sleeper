@@ -15,11 +15,11 @@
  */
 package sleeper.compaction.core.testutils;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;

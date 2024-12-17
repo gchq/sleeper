@@ -19,12 +19,12 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;

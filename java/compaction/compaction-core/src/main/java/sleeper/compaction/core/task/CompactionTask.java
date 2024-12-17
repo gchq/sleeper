@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.core.partition.Partition;
@@ -38,6 +37,7 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;

@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.testutils.StateStoreWaitForFilesTestHelper;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -34,6 +33,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryFileReferenceStore;
 import sleeper.core.statestore.testutils.InMemoryPartitionStore;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 

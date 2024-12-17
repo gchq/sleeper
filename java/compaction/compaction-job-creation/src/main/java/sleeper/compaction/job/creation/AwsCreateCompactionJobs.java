@@ -18,12 +18,12 @@ package sleeper.compaction.job.creation;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
 import sleeper.core.util.ObjectFactory;
 
 import java.time.Instant;
