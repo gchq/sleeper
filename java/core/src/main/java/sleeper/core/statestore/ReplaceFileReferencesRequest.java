@@ -42,11 +42,15 @@ public class ReplaceFileReferencesRequest {
         return new ReplaceFileReferencesRequest(jobId, partitionId, inputFiles, newReference);
     }
 
-    private static ReplaceFileReferencesRequest(Builder builder) {
+    private ReplaceFileReferencesRequest(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
         newReference = Objects.requireNonNull(builder.newReference, "newReference must not be null");
         partitionId = builder.newReference.getPartitionId();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     private ReplaceFileReferencesRequest(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) {
@@ -103,10 +107,6 @@ public class ReplaceFileReferencesRequest {
     @Override
     public String toString() {
         return "ReplaceFileReferencesRequest{jobId=" + jobId + ", partitionId=" + partitionId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 
     public static final class Builder {
