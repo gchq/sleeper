@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.core.job;
+package sleeper.core.tracker.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
