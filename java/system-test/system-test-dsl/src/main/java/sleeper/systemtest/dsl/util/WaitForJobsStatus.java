@@ -22,7 +22,7 @@ import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.util.GsonConfig;
@@ -66,7 +66,7 @@ public class WaitForJobsStatus {
         return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 
-    public static WaitForJobsStatus forCompaction(CompactionJobStatusStore store, Collection<String> jobIds, Instant now) {
+    public static WaitForJobsStatus forCompaction(CompactionJobTracker store, Collection<String> jobIds, Instant now) {
         return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 

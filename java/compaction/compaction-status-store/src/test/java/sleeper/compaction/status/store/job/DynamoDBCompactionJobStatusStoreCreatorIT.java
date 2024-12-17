@@ -21,7 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +40,7 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
     public void shouldCreateStore() {
         // When
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        CompactionJobTracker store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
         assertThat(dynamoDBClient.describeTable(updatesTableName))
@@ -57,14 +57,14 @@ public class DynamoDBCompactionJobStatusStoreCreatorIT extends DynamoDBTestBase 
 
         // When
         DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        CompactionJobTracker store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
         assertThatThrownBy(() -> dynamoDBClient.describeTable(updatesTableName))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThatThrownBy(() -> dynamoDBClient.describeTable(jobsTableName))
                 .isInstanceOf(ResourceNotFoundException.class);
-        assertThat(store).isSameAs(CompactionJobStatusStore.NONE);
+        assertThat(store).isSameAs(CompactionJobTracker.NONE);
         assertThatThrownBy(() -> store.getAllJobs("some-table"))
                 .isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> store.getUnfinishedJobs("some-table"))

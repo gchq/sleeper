@@ -28,7 +28,7 @@ import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
@@ -71,7 +71,7 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
                 .run(taskStore());
     }
 
-    private CompactionJobStatusStore jobStore() {
+    private CompactionJobTracker jobStore() {
         return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
     }
 

@@ -19,7 +19,7 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
-public class InMemoryCompactionJobStatusStore implements CompactionJobStatusStore {
+public class InMemoryCompactionJobStatusStore implements CompactionJobTracker {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
     private Supplier<Instant> timeSupplier;
 

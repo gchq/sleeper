@@ -38,7 +38,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.task.common.QueueMessageCount;
 
@@ -55,7 +55,7 @@ public class StatusReport {
     private final TableProperties tableProperties;
     private final boolean verbose;
     private final StateStore stateStore;
-    private final CompactionJobStatusStore compactionStatusStore;
+    private final CompactionJobTracker compactionStatusStore;
     private final CompactionTaskStatusStore compactionTaskStatusStore;
     private final SqsClient sqsClient;
     private final QueueMessageCount.Client messageCount;
@@ -64,7 +64,7 @@ public class StatusReport {
     public StatusReport(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             boolean verbose, StateStore stateStore,
-            CompactionJobStatusStore compactionStatusStore, CompactionTaskStatusStore compactionTaskStatusStore,
+            CompactionJobTracker compactionStatusStore, CompactionTaskStatusStore compactionTaskStatusStore,
             SqsClient sqsClient, QueueMessageCount.Client messageCount, TablePropertiesProvider tablePropertiesProvider) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
@@ -119,7 +119,7 @@ public class StatusReport {
             TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, new Configuration());
             StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-            CompactionJobStatusStore compactionStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+            CompactionJobTracker compactionStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             CompactionTaskStatusStore compactionTaskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
             StatusReport statusReport = new StatusReport(

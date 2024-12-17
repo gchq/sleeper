@@ -40,7 +40,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.core.util.PollWithRetries;
@@ -69,7 +69,7 @@ public class InMemoryCompaction {
     private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
-    private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
+    private final CompactionJobTracker jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
     private final InMemoryDataStore dataStore;
     private final InMemorySketchesStore sketchesStore;
@@ -93,7 +93,7 @@ public class InMemoryCompaction {
         }, properties -> taskStore, pollDriver);
     }
 
-    public CompactionJobStatusStore jobStore() {
+    public CompactionJobTracker jobStore() {
         return jobStore;
     }
 
@@ -110,7 +110,7 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public CompactionJobStatusStore getJobStatusStore() {
+        public CompactionJobTracker getJobStatusStore() {
             return jobStore;
         }
 

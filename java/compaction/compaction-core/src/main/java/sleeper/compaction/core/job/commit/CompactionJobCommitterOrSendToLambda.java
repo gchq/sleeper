@@ -23,7 +23,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 
 import java.time.Instant;
@@ -36,19 +36,19 @@ public class CompactionJobCommitterOrSendToLambda {
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore statusStore;
+    private final CompactionJobTracker statusStore;
     private final CommitQueueSender jobCommitQueueSender;
     private final Supplier<Instant> timeSupplier;
 
     public CompactionJobCommitterOrSendToLambda(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore statusStore, CommitQueueSender jobCommitQueueSender) {
+            CompactionJobTracker statusStore, CommitQueueSender jobCommitQueueSender) {
         this(tablePropertiesProvider, stateStoreProvider, statusStore, jobCommitQueueSender, Instant::now);
     }
 
     public CompactionJobCommitterOrSendToLambda(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore statusStore, CommitQueueSender jobCommitQueueSender, Supplier<Instant> timeSupplier) {
+            CompactionJobTracker statusStore, CommitQueueSender jobCommitQueueSender, Supplier<Instant> timeSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.statusStore = statusStore;

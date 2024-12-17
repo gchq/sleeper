@@ -32,7 +32,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
@@ -51,14 +51,14 @@ import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_U
 public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
-    private final CompactionJobStatusStore compactionJobStatusStore;
+    private final CompactionJobTracker compactionJobStatusStore;
     private final IngestJobStatusStore ingestJobStatusStore;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
-            CompactionJobStatusStore compactionJobStatusStore,
+            CompactionJobTracker compactionJobStatusStore,
             IngestJobStatusStore ingestJobStatusStore,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,

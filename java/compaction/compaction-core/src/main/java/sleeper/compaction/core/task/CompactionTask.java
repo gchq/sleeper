@@ -37,7 +37,7 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class CompactionTask {
     private final Consumer<Duration> sleepForTime;
     private final MessageReceiver messageReceiver;
     private final CompactionRunnerFactory selector;
-    private final CompactionJobStatusStore jobStatusStore;
+    private final CompactionJobTracker jobStatusStore;
     private final CompactionTaskStatusStore taskStatusStore;
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
@@ -78,7 +78,7 @@ public class CompactionTask {
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
-            CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
+            CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobTracker jobStore,
             CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector, String taskId) {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 messageReceiver, waitForFiles, jobCommitter,
@@ -94,7 +94,7 @@ public class CompactionTask {
             StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
-            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector,
+            CompactionJobTracker jobStore, CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;

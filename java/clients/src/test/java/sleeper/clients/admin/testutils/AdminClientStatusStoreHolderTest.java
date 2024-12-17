@@ -21,7 +21,7 @@ import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 
@@ -33,7 +33,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
     @Test
     void shouldSetCompactionJobStatusStore() {
         // Given
-        CompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
+        CompactionJobTracker store = new InMemoryCompactionJobStatusStore();
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
@@ -98,7 +98,7 @@ class AdminClientStatusStoreHolderTest extends AdminClientMockStoreBase {
 
         // When / Then
         assertThat(runClient().statusStores().loadCompactionJobStatusStore(properties))
-                .isSameAs(CompactionJobStatusStore.NONE);
+                .isSameAs(CompactionJobTracker.NONE);
     }
 
     @Test

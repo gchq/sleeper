@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
@@ -76,7 +76,7 @@ public class WaitForJobs {
 
     public static WaitForJobs forCompaction(
             SystemTestInstanceContext instance,
-            Function<InstanceProperties, CompactionJobStatusStore> getJobsStore,
+            Function<InstanceProperties, CompactionJobTracker> getJobsStore,
             Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "compaction",
@@ -143,7 +143,7 @@ public class WaitForJobs {
             return jobId -> WaitForJobsStatus.forIngest(store, jobId, Instant.now());
         }
 
-        static JobStatusStore forCompaction(CompactionJobStatusStore store) {
+        static JobStatusStore forCompaction(CompactionJobTracker store) {
             return jobId -> WaitForJobsStatus.forCompaction(store, jobId, Instant.now());
         }
     }

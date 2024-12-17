@@ -24,7 +24,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
@@ -49,13 +49,13 @@ public class StateStoreWaitForFiles {
     private final PollWithRetries throttlingRetriesConfig;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore jobStatusStore;
+    private final CompactionJobTracker jobStatusStore;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreWaitForFiles(
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore jobStatusStore) {
+            CompactionJobTracker jobStatusStore) {
         this(JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
                 JOB_ASSIGNMENT_THROTTLING_RETRIES, tablePropertiesProvider, stateStoreProvider, jobStatusStore, Instant::now);
     }
@@ -66,7 +66,7 @@ public class StateStoreWaitForFiles {
             PollWithRetries throttlingRetriesConfig,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore jobStatusStore,
+            CompactionJobTracker jobStatusStore,
             Supplier<Instant> timeSupplier) {
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;

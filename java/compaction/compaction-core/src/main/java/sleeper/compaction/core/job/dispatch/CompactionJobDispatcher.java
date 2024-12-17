@@ -26,7 +26,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.SplitIntoBatches;
 
 import java.time.Duration;
@@ -44,7 +44,7 @@ public class CompactionJobDispatcher {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore statusStore;
+    private final CompactionJobTracker statusStore;
     private final ReadBatch readBatch;
     private final SendJobs sendJobs;
     private final int sendBatchSize;
@@ -54,7 +54,7 @@ public class CompactionJobDispatcher {
 
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, CompactionJobStatusStore statusStore, ReadBatch readBatch,
+            StateStoreProvider stateStoreProvider, CompactionJobTracker statusStore, ReadBatch readBatch,
             SendJobs sendJobs, int sendBatchSize,
             ReturnRequestToPendingQueue returnToPendingQueue, SendDeadLetter sendDeadLetter,
             Supplier<Instant> timeSupplier) {

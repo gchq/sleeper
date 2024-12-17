@@ -19,7 +19,7 @@ import sleeper.clients.admin.AdminClientStatusStoreFactory;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
@@ -32,13 +32,13 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFactory {
 
-    private final Map<String, CompactionJobStatusStore> compactionJobStoreByInstance = new HashMap<>();
+    private final Map<String, CompactionJobTracker> compactionJobStoreByInstance = new HashMap<>();
     private final Map<String, CompactionTaskStatusStore> compactionTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestJobStatusStore> ingestJobStoreByInstance = new HashMap<>();
     private final Map<String, IngestTaskStatusStore> ingestTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestBatcherStore> ingestBatcherStoreByInstance = new HashMap<>();
 
-    public void setStore(String instanceId, CompactionJobStatusStore store) {
+    public void setStore(String instanceId, CompactionJobTracker store) {
         compactionJobStoreByInstance.put(instanceId, store);
     }
 
@@ -59,9 +59,9 @@ public class AdminClientStatusStoreHolder implements AdminClientStatusStoreFacto
     }
 
     @Override
-    public CompactionJobStatusStore loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
+    public CompactionJobTracker loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
         return Optional.ofNullable(compactionJobStoreByInstance.get(instanceProperties.get(ID)))
-                .orElse(CompactionJobStatusStore.NONE);
+                .orElse(CompactionJobTracker.NONE);
     }
 
     @Override

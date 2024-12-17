@@ -24,7 +24,7 @@ import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
@@ -135,7 +135,7 @@ public class RunAdminClient {
         return this;
     }
 
-    public RunAdminClient statusStore(CompactionJobStatusStore store) {
+    public RunAdminClient statusStore(CompactionJobTracker store) {
         statusStores.setStore(harness.getInstanceId(), store);
         return this;
     }

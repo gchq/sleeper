@@ -36,7 +36,7 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
@@ -77,7 +77,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected final String tableId = tableProperties.get(TABLE_ID);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    protected final CompactionJobStatusStore store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final CompactionJobTracker store = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
@@ -89,16 +89,16 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         dynamoDBClient.deleteTable(jobStatusTableName);
     }
 
-    protected CompactionJobStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+    protected CompactionJobTracker storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
         return storeWithUpdateTimes(updateTimes);
     }
 
-    protected CompactionJobStatusStore storeWithUpdateTime(Instant updateTime) {
+    protected CompactionJobTracker storeWithUpdateTime(Instant updateTime) {
         return storeWithUpdateTimes(updateTime);
     }
 
-    protected CompactionJobStatusStore storeWithUpdateTimes(Instant... updateTimes) {
+    protected CompactionJobTracker storeWithUpdateTimes(Instant... updateTimes) {
         return new DynamoDBCompactionJobStatusStore(dynamoDBClient, instanceProperties,
                 true, Arrays.stream(updateTimes).iterator()::next);
     }
@@ -136,7 +136,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         store.jobCreated(job.createCreatedEvent());
     }
 
-    protected void storeJobCreated(CompactionJobStatusStore store, CompactionJob job) {
+    protected void storeJobCreated(CompactionJobTracker store, CompactionJob job) {
         store.jobCreated(job.createCreatedEvent());
     }
 
@@ -203,7 +203,7 @@ public class DynamoDBCompactionJobStatusStoreTestBase extends DynamoDBTestBase {
         return getJobStatus(store, jobId);
     }
 
-    protected CompactionJobStatus getJobStatus(CompactionJobStatusStore store, String jobId) {
+    protected CompactionJobStatus getJobStatus(CompactionJobTracker store, String jobId) {
         return store.getJob(jobId).orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
     }
 

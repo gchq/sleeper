@@ -32,7 +32,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.time.Clock;
 import java.util.HashMap;
@@ -52,19 +52,19 @@ public class CompactionJobStatusReport {
     }
 
     private final CompactionJobStatusReporter compactionJobStatusReporter;
-    private final CompactionJobStatusStore compactionJobStatusStore;
+    private final CompactionJobTracker compactionJobStatusStore;
     private final JobQuery.Type queryType;
     private final JobQuery query;
 
     public CompactionJobStatusReport(
-            CompactionJobStatusStore compactionJobStatusStore,
+            CompactionJobTracker compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
             TableStatus table, JobQuery.Type queryType) {
         this(compactionJobStatusStore, reporter, table, queryType, "");
     }
 
     public CompactionJobStatusReport(
-            CompactionJobStatusStore compactionJobStatusStore,
+            CompactionJobTracker compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
             TableStatus table, JobQuery.Type queryType, String queryParameters) {
         this(compactionJobStatusStore, reporter,
@@ -73,7 +73,7 @@ public class CompactionJobStatusReport {
     }
 
     public CompactionJobStatusReport(
-            CompactionJobStatusStore compactionJobStatusStore,
+            CompactionJobTracker compactionJobStatusStore,
             CompactionJobStatusReporter reporter,
             JobQuery query) {
         this.compactionJobStatusStore = compactionJobStatusStore;
@@ -108,7 +108,7 @@ public class CompactionJobStatusReport {
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+                CompactionJobTracker statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
                 new CompactionJobStatusReport(statusStore, reporter, table, queryType, queryParameters).run();
             } finally {
                 s3Client.shutdown();

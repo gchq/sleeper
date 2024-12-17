@@ -28,8 +28,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public interface CompactionJobStatusStore {
-    CompactionJobStatusStore NONE = new CompactionJobStatusStore() {
+public interface CompactionJobTracker {
+    CompactionJobTracker NONE = new CompactionJobTracker() {
     };
 
     default void jobCreated(CompactionJobCreatedEvent event) {
@@ -48,11 +48,11 @@ public interface CompactionJobStatusStore {
     }
 
     default Optional<CompactionJobStatus> getJob(String jobId) {
-        throw new UnsupportedOperationException("Instance has no compaction job status store");
+        throw new UnsupportedOperationException("Instance has no compaction job tracker");
     }
 
     default Stream<CompactionJobStatus> streamAllJobs(String tableId) {
-        throw new UnsupportedOperationException("Instance has no compaction job status store");
+        throw new UnsupportedOperationException("Instance has no compaction job tracker");
     }
 
     default List<CompactionJobStatus> getAllJobs(String tableId) {

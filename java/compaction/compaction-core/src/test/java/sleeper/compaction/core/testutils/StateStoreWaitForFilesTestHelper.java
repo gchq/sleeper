@@ -18,7 +18,7 @@ package sleeper.compaction.core.testutils;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.ThreadSleep;
@@ -33,13 +33,13 @@ public class StateStoreWaitForFilesTestHelper {
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore jobStatusStore;
+    private final CompactionJobTracker jobStatusStore;
     private final ThreadSleep waiter;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreWaitForFilesTestHelper(
             TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, CompactionJobStatusStore jobStatusStore,
+            StateStoreProvider stateStoreProvider, CompactionJobTracker jobStatusStore,
             ThreadSleep waiter, Supplier<Instant> timeSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;

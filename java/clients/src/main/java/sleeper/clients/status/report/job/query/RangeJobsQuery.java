@@ -17,7 +17,7 @@ package sleeper.clients.status.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
 import sleeper.core.table.TableStatus;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.ingest.core.job.status.IngestJobStatus;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
@@ -49,7 +49,7 @@ public class RangeJobsQuery implements JobQuery {
     }
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+    public List<CompactionJobStatus> run(CompactionJobTracker statusStore) {
         return statusStore.getJobsInTimePeriod(tableId, start, end);
     }
 

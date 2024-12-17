@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.status.store.CompactionStatusStoreException;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
@@ -60,7 +60,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-public class DynamoDBCompactionJobStatusStore implements CompactionJobStatusStore {
+public class DynamoDBCompactionJobStatusStore implements CompactionJobTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionJobStatusStore.class);
     public static final String TABLE_ID = DynamoDBCompactionJobStatusFormat.TABLE_ID;
     public static final String JOB_ID = DynamoDBCompactionJobStatusFormat.JOB_ID;

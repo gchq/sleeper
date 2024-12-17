@@ -19,7 +19,7 @@ package sleeper.compaction.status.store.job;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
@@ -28,20 +28,20 @@ public class CompactionJobStatusStoreFactory {
     private CompactionJobStatusStoreFactory() {
     }
 
-    public static CompactionJobStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public static CompactionJobTracker getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return DynamoDBCompactionJobStatusStore.eventuallyConsistentReads(dynamoDB, properties);
         } else {
-            return CompactionJobStatusStore.NONE;
+            return CompactionJobTracker.NONE;
         }
     }
 
-    public static CompactionJobStatusStore getStatusStoreWithStronglyConsistentReads(
+    public static CompactionJobTracker getStatusStoreWithStronglyConsistentReads(
             AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
             return DynamoDBCompactionJobStatusStore.stronglyConsistentReads(dynamoDB, properties);
         } else {
-            return CompactionJobStatusStore.NONE;
+            return CompactionJobTracker.NONE;
         }
     }
 }

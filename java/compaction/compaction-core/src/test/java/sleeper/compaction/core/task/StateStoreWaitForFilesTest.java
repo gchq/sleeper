@@ -33,7 +33,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryFileReferenceStore;
 import sleeper.core.statestore.testutils.InMemoryPartitionStore;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -206,7 +206,7 @@ public class StateStoreWaitForFilesTest {
         return new StateStoreWaitForFilesTestHelper(
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                CompactionJobStatusStore.NONE, waiter, Instant::now)
+                CompactionJobTracker.NONE, waiter, Instant::now)
                 .withAttemptsAndThrottlingRetries(attempts, jitter);
     }
 

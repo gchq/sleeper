@@ -22,7 +22,7 @@ import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.tracker.compaction.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.IngestBatcherStoreFactory;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
@@ -34,7 +34,7 @@ import java.util.Optional;
 
 public interface AdminClientStatusStoreFactory {
 
-    CompactionJobStatusStore loadCompactionJobStatusStore(InstanceProperties instanceProperties);
+    CompactionJobTracker loadCompactionJobStatusStore(InstanceProperties instanceProperties);
 
     CompactionTaskStatusStore loadCompactionTaskStatusStore(InstanceProperties instanceProperties);
 
@@ -47,7 +47,7 @@ public interface AdminClientStatusStoreFactory {
     static AdminClientStatusStoreFactory from(AmazonDynamoDB dynamoDB) {
         return new AdminClientStatusStoreFactory() {
             @Override
-            public CompactionJobStatusStore loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
+            public CompactionJobTracker loadCompactionJobStatusStore(InstanceProperties instanceProperties) {
                 return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
             }
 
