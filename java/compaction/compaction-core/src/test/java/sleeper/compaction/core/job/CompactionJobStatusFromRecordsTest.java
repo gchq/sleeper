@@ -17,10 +17,10 @@ package sleeper.compaction.core.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.core.job.status.CompactionJobFinishedStatus;
-import sleeper.compaction.core.job.status.CompactionJobStartedStatus;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
+import sleeper.compaction.core.job.query.CompactionJobCreatedStatus;
+import sleeper.compaction.core.job.query.CompactionJobFinishedStatus;
+import sleeper.compaction.core.job.query.CompactionJobStartedStatus;
+import sleeper.compaction.core.job.query.CompactionJobStatus;
 import sleeper.core.record.process.status.ProcessRun;
 
 import java.time.Duration;

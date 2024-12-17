@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.job.status;
+package sleeper.compaction.core.job.query;
 
 import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
@@ -35,10 +35,10 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingInt;
-import static sleeper.compaction.core.job.status.CompactionJobStatusType.FAILED;
-import static sleeper.compaction.core.job.status.CompactionJobStatusType.FINISHED;
-import static sleeper.compaction.core.job.status.CompactionJobStatusType.IN_PROGRESS;
-import static sleeper.compaction.core.job.status.CompactionJobStatusType.UNCOMMITTED;
+import static sleeper.compaction.core.job.query.CompactionJobStatusType.FAILED;
+import static sleeper.compaction.core.job.query.CompactionJobStatusType.FINISHED;
+import static sleeper.compaction.core.job.query.CompactionJobStatusType.IN_PROGRESS;
+import static sleeper.compaction.core.job.query.CompactionJobStatusType.UNCOMMITTED;
 
 public class CompactionJobStatus {
 
