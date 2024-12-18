@@ -24,6 +24,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,8 +48,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
         tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(event.toStatusUpdate(
-                                defaultUpdateTime(event.getValidationTime())))
+                        .statusUpdate(toStatusUpdate(event, defaultUpdateTime(event.getValidationTime())))
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());
@@ -166,6 +166,20 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
         private Stream<ProcessStatusUpdateRecord> streamAllRecords() {
             return jobIdToUpdateRecords.values().stream().flatMap(List::stream);
+        }
+    }
+
+    private static IngestJobValidatedStatus toStatusUpdate(IngestJobValidatedEvent event, Instant updateTime) {
+        if (event.isAccepted()) {
+            return IngestJobAcceptedStatus.from(
+                    event.getFileCount(), event.getValidationTime(), updateTime);
+        } else {
+            return IngestJobRejectedStatus.builder()
+                    .inputFileCount(event.getFileCount())
+                    .validationTime(event.getValidationTime())
+                    .updateTime(updateTime)
+                    .reasons(event.getReasons())
+                    .jsonMessage(event.getJsonMessage()).build();
         }
     }
 }

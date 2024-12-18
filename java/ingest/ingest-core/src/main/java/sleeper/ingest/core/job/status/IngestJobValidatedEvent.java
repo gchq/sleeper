@@ -66,26 +66,6 @@ public class IngestJobValidatedEvent {
         return new Builder();
     }
 
-    /**
-     * Creates the appropriate validation status for this event.
-     *
-     * @param  updateTime the update time
-     * @return            an {@link IngestJobAcceptedStatus} or an {@link IngestJobRejectedStatus}
-     */
-    public IngestJobValidatedStatus toStatusUpdate(Instant updateTime) {
-        if (isAccepted()) {
-            return IngestJobAcceptedStatus.from(
-                    getFileCount(), validationTime, updateTime);
-        } else {
-            return IngestJobRejectedStatus.builder()
-                    .inputFileCount(getFileCount())
-                    .validationTime(validationTime)
-                    .updateTime(updateTime)
-                    .reasons(reasons)
-                    .jsonMessage(jsonMessage).build();
-        }
-    }
-
     public String getJobId() {
         return jobId;
     }
