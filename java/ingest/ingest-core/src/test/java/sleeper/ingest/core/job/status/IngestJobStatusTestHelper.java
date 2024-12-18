@@ -452,12 +452,23 @@ public class IngestJobStatusTestHelper {
     /**
      * Creates an ingest job started status.
      *
-     * @param  job       the ingest job
      * @param  startTime the start time
      * @return           an ingest job started status
      */
-    public static IngestJobStartedStatus validatedIngestStartedStatus(IngestJob job, Instant startTime) {
-        return IngestJobStartedStatus.withStartOfRun(false).inputFileCount(job.getFileCount())
+    public static IngestJobStartedStatus validatedIngestStartedStatus(Instant startTime) {
+        return IngestJobStartedStatus.withStartOfRun(false).inputFileCount(1)
+                .startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                .build();
+    }
+
+    /**
+     * Creates an ingest job started status.
+     *
+     * @param  startTime the start time
+     * @return           an ingest job started status
+     */
+    public static IngestJobStartedStatus validatedIngestStartedStatus(int inputFileCount, Instant startTime) {
+        return IngestJobStartedStatus.withStartOfRun(false).inputFileCount(inputFileCount)
                 .startTime(startTime).updateTime(defaultUpdateTime(startTime))
                 .build();
     }

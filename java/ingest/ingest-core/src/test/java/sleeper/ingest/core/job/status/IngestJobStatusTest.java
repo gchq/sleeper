@@ -458,7 +458,7 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {
-        return IngestJobStatusTestHelper.validatedIngestStartedStatus(job, startTime);
+        return IngestJobStatusTestHelper.validatedIngestStartedStatus(startTime);
     }
 
     private IngestJobAddedFilesStatus filesAddedStatusUpdate(Instant writtenTime, int fileCount) {

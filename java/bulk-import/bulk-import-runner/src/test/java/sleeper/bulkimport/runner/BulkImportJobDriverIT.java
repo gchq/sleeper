@@ -120,9 +120,9 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestAcceptedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.validatedIngestStartedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.validatedIngestStartedStatus;
 import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers

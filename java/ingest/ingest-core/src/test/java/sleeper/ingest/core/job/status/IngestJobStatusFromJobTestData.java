@@ -66,4 +66,15 @@ public class IngestJobStatusFromJobTestData {
         return IngestJobStatusTestHelper.ingestStartedStatus(job.getFileCount(), startTime, defaultUpdateTime(startTime));
     }
 
+    /**
+     * Creates an ingest job started status.
+     *
+     * @param  job       the ingest job
+     * @param  startTime the start time
+     * @return           an ingest job started status
+     */
+    public static IngestJobStartedStatus validatedIngestStartedStatus(IngestJob job, Instant startTime) {
+        return IngestJobStatusTestHelper.validatedIngestStartedStatus(job.getFileCount(), startTime);
+    }
+
 }
