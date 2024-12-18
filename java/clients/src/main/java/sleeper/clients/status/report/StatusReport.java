@@ -119,12 +119,12 @@ public class StatusReport {
             TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, new Configuration());
             StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-            CompactionJobTracker compactionStatusStore = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+            CompactionJobTracker compactionJobTracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
             CompactionTaskStatusStore compactionTaskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
             StatusReport statusReport = new StatusReport(
                     instanceProperties, tableProperties, verbose,
-                    stateStore, compactionStatusStore, compactionTaskStatusStore,
+                    stateStore, compactionJobTracker, compactionTaskStatusStore,
                     sqsClient, QueueMessageCount.withSqsClient(sqsClientV1), tablePropertiesProvider);
             statusReport.run();
         } finally {

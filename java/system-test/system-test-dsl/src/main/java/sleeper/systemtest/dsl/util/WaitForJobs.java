@@ -37,51 +37,51 @@ public class WaitForJobs {
 
     private final SystemTestInstanceContext instance;
     private final String typeDescription;
-    private final Function<InstanceProperties, JobStatusStore> getJobsStore;
-    private final Function<InstanceProperties, TaskStatusStore> getTasksStore;
+    private final Function<InstanceProperties, JobTracker> getJobTracker;
+    private final Function<InstanceProperties, TaskTracker> getTaskTracker;
     private final PollWithRetriesDriver pollDriver;
 
     private WaitForJobs(
             SystemTestInstanceContext instance, String typeDescription,
-            Function<InstanceProperties, JobStatusStore> getJobsStore,
-            Function<InstanceProperties, TaskStatusStore> getTasksStore,
+            Function<InstanceProperties, JobTracker> getJobTracker,
+            Function<InstanceProperties, TaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
         this.instance = instance;
         this.typeDescription = typeDescription;
-        this.getJobsStore = getJobsStore;
-        this.getTasksStore = getTasksStore;
+        this.getJobTracker = getJobTracker;
+        this.getTaskTracker = getTaskTracker;
         this.pollDriver = pollDriver;
     }
 
     public static WaitForJobs forIngest(
             SystemTestInstanceContext instance,
-            Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
-            Function<InstanceProperties, IngestTaskStatusStore> getTasksStore,
+            Function<InstanceProperties, IngestJobStatusStore> getJobTracker,
+            Function<InstanceProperties, IngestTaskStatusStore> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "ingest",
-                properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
-                properties -> TaskStatusStore.forIngest(getTasksStore.apply(properties)),
+                properties -> JobTracker.forIngest(getJobTracker.apply(properties)),
+                properties -> TaskTracker.forIngest(getTaskTracker.apply(properties)),
                 pollDriver);
     }
 
     public static WaitForJobs forBulkImport(
             SystemTestInstanceContext instance,
-            Function<InstanceProperties, IngestJobStatusStore> getJobsStore,
+            Function<InstanceProperties, IngestJobStatusStore> getJobTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "bulk import",
-                properties -> JobStatusStore.forIngest(getJobsStore.apply(properties)),
+                properties -> JobTracker.forIngest(getJobTracker.apply(properties)),
                 properties -> () -> true,
                 pollDriver);
     }
 
     public static WaitForJobs forCompaction(
             SystemTestInstanceContext instance,
-            Function<InstanceProperties, CompactionJobTracker> getJobsStore,
-            Function<InstanceProperties, CompactionTaskStatusStore> getTasksStore,
+            Function<InstanceProperties, CompactionJobTracker> getJobTracker,
+            Function<InstanceProperties, CompactionTaskStatusStore> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "compaction",
-                properties -> JobStatusStore.forCompaction(getJobsStore.apply(properties)),
-                properties -> TaskStatusStore.forCompaction(getTasksStore.apply(properties)),
+                properties -> JobTracker.forCompaction(getJobTracker.apply(properties)),
+                properties -> TaskTracker.forCompaction(getTaskTracker.apply(properties)),
                 pollDriver);
     }
 
@@ -97,21 +97,21 @@ public class WaitForJobs {
     public void waitForJobs(
             Collection<String> jobIds, PollWithRetries pollUntilJobsFinished, PollWithRetries pollUntilJobsCommit) {
         InstanceProperties properties = instance.getInstanceProperties();
-        JobStatusStore store = getJobsStore.apply(properties);
-        TaskStatusStore tasksStore = getTasksStore.apply(properties);
+        JobTracker jobTracker = getJobTracker.apply(properties);
+        TaskTracker taskTracker = getTaskTracker.apply(properties);
         LOGGER.info("Waiting for {} jobs to finish: {}", typeDescription, jobIds.size());
         try {
             pollUntilJobsFinished.pollUntil("jobs are finished", () -> {
-                WaitForJobsStatus status = store.getStatus(jobIds);
+                WaitForJobsStatus status = jobTracker.getStatus(jobIds);
                 LOGGER.info("Status of {} jobs: {}", typeDescription, status);
                 if (status.areAllJobsFinished()) {
                     return true;
                 }
-                if (tasksStore.hasRunningTasks()) {
+                if (taskTracker.hasRunningTasks()) {
                     return false;
                 } else {
                     LOGGER.info("Found no running tasks while waiting for {} jobs, will wait for async commits", typeDescription);
-                    waitForJobsToCommit(jobIds, store, pollUntilJobsCommit);
+                    waitForJobsToCommit(jobIds, jobTracker, pollUntilJobsCommit);
                     return true;
                 }
             });
@@ -122,10 +122,10 @@ public class WaitForJobs {
     }
 
     private void waitForJobsToCommit(
-            Collection<String> jobIds, JobStatusStore store, PollWithRetries pollUntilJobsCommit) {
+            Collection<String> jobIds, JobTracker tracker, PollWithRetries pollUntilJobsCommit) {
         try {
             pollUntilJobsCommit.pollUntil("jobs are committed", () -> {
-                WaitForJobsStatus status = store.getStatus(jobIds);
+                WaitForJobsStatus status = tracker.getStatus(jobIds);
                 LOGGER.info("Status of {} jobs waiting for async commits: {}", typeDescription, status);
                 return status.areAllJobsFinished();
             });
@@ -136,28 +136,28 @@ public class WaitForJobs {
     }
 
     @FunctionalInterface
-    private interface JobStatusStore {
+    private interface JobTracker {
         WaitForJobsStatus getStatus(Collection<String> jobIds);
 
-        static JobStatusStore forIngest(IngestJobStatusStore store) {
-            return jobId -> WaitForJobsStatus.forIngest(store, jobId, Instant.now());
+        static JobTracker forIngest(IngestJobStatusStore tracker) {
+            return jobId -> WaitForJobsStatus.forIngest(tracker, jobId, Instant.now());
         }
 
-        static JobStatusStore forCompaction(CompactionJobTracker store) {
-            return jobId -> WaitForJobsStatus.forCompaction(store, jobId, Instant.now());
+        static JobTracker forCompaction(CompactionJobTracker tracker) {
+            return jobId -> WaitForJobsStatus.forCompaction(tracker, jobId, Instant.now());
         }
     }
 
     @FunctionalInterface
-    private interface TaskStatusStore {
+    private interface TaskTracker {
         boolean hasRunningTasks();
 
-        static TaskStatusStore forIngest(IngestTaskStatusStore store) {
-            return () -> !store.getTasksInProgress().isEmpty();
+        static TaskTracker forIngest(IngestTaskStatusStore tracker) {
+            return () -> !tracker.getTasksInProgress().isEmpty();
         }
 
-        static TaskStatusStore forCompaction(CompactionTaskStatusStore store) {
-            return () -> !store.getTasksInProgress().isEmpty();
+        static TaskTracker forCompaction(CompactionTaskStatusStore tracker) {
+            return () -> !tracker.getTasksInProgress().isEmpty();
         }
     }
 }

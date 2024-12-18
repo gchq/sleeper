@@ -32,7 +32,7 @@ import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 
 import java.util.Optional;
 
-public interface AdminClientStatusStoreFactory {
+public interface AdminClientTrackerFactory {
 
     CompactionJobTracker loadCompactionJobTracker(InstanceProperties instanceProperties);
 
@@ -44,8 +44,8 @@ public interface AdminClientStatusStoreFactory {
 
     Optional<IngestBatcherStore> loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider);
 
-    static AdminClientStatusStoreFactory from(AmazonDynamoDB dynamoDB) {
-        return new AdminClientStatusStoreFactory() {
+    static AdminClientTrackerFactory from(AmazonDynamoDB dynamoDB) {
+        return new AdminClientTrackerFactory() {
             @Override
             public CompactionJobTracker loadCompactionJobTracker(InstanceProperties instanceProperties) {
                 return CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);

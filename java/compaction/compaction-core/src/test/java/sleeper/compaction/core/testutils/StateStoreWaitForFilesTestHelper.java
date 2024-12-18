@@ -33,17 +33,17 @@ public class StateStoreWaitForFilesTestHelper {
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobTracker jobStatusStore;
+    private final CompactionJobTracker jobTracker;
     private final ThreadSleep waiter;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreWaitForFilesTestHelper(
             TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, CompactionJobTracker jobStatusStore,
+            StateStoreProvider stateStoreProvider, CompactionJobTracker jobTracker,
             ThreadSleep waiter, Supplier<Instant> timeSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.jobStatusStore = jobStatusStore;
+        this.jobTracker = jobTracker;
         this.waiter = waiter;
         this.timeSupplier = timeSupplier;
     }
@@ -64,6 +64,6 @@ public class StateStoreWaitForFilesTestHelper {
                 throttlingRetries.toBuilder()
                         .sleepInInterval(waiter::waitForMillis)
                         .build(),
-                tablePropertiesProvider, stateStoreProvider, jobStatusStore, timeSupplier);
+                tablePropertiesProvider, stateStoreProvider, jobTracker, timeSupplier);
     }
 }

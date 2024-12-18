@@ -27,7 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.status.store.CompactionStatusStoreException;
+import sleeper.compaction.status.store.CompactionTrackerException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
@@ -114,7 +114,7 @@ public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
         try {
             save(createJobCreated(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving created event for job " + event.getJobId(), e);
+            throw new CompactionTrackerException("Failed saving created event for job " + event.getJobId(), e);
         }
     }
 
@@ -123,7 +123,7 @@ public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
         try {
             save(createJobStartedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving started event for job " + event.getJobId(), e);
+            throw new CompactionTrackerException("Failed saving started event for job " + event.getJobId(), e);
         }
     }
 
@@ -132,7 +132,7 @@ public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
         try {
             save(createJobFinishedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving finished event for job " + event.getJobId(), e);
+            throw new CompactionTrackerException("Failed saving finished event for job " + event.getJobId(), e);
         }
     }
 
@@ -141,7 +141,7 @@ public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
         try {
             save(createJobCommittedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving committed event for job " + event.getJobId(), e);
+            throw new CompactionTrackerException("Failed saving committed event for job " + event.getJobId(), e);
         }
     }
 
@@ -150,7 +150,7 @@ public class DynamoDBCompactionJobTracker implements CompactionJobTracker {
         try {
             save(createJobFailedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed saving failed event for job " + event.getJobId(), e);
+            throw new CompactionTrackerException("Failed saving failed event for job " + event.getJobId(), e);
         }
     }
 

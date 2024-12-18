@@ -117,14 +117,14 @@ public class InMemoryReports {
 
         @Override
         public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
-            return compaction.jobStore().getJobsInTimePeriod(
+            return compaction.jobTracker().getJobsInTimePeriod(
                     instance.getTableStatus().getTableUniqueId(),
                     reportingContext.getRecordingStartTime(), Instant.MAX);
         }
 
         @Override
         public List<CompactionTaskStatus> tasks(ReportingContext reportingContext) {
-            return compaction.taskStore().getTasksInTimePeriod(
+            return compaction.taskTracker().getTasksInTimePeriod(
                     reportingContext.getRecordingStartTime(), Instant.MAX);
         }
     }

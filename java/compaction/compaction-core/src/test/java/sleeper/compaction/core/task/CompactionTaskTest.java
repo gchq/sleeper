@@ -102,7 +102,7 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         assertThat(consumedJobs).containsExactly(job1, job2);
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
-        assertThat(jobStore.getAllJobs(table.get(TABLE_ID))).containsExactlyInAnyOrder(
+        assertThat(jobTracker.getAllJobs(table.get(TABLE_ID))).containsExactlyInAnyOrder(
                 compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(startTime1, finishTime1), List.of(
                                 "Table not found with ID \"" + table.get(TABLE_ID) + "\""))),

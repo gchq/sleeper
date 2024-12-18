@@ -145,18 +145,18 @@ public class SleeperCdkApp extends Stack {
                 transactionLogStateStoreStack, policiesStack);
         IngestStatusStoreResources ingestStatusStore = IngestStatusStoreResources.from(
                 this, "IngestStatusStore", instanceProperties, policiesStack);
-        CompactionTrackerResources compactionStatusStore = CompactionTrackerResources.from(
-                this, "CompactionStatusStore", instanceProperties, policiesStack);
+        CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
+                this, "CompactionTracker", instanceProperties, policiesStack);
         ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
                 instanceProperties, jars,
                 loggingStack, configBucketStack, tableIndexStack,
-                stateStoreStacks, ingestStatusStore, compactionStatusStore,
+                stateStoreStacks, ingestStatusStore, compactionTracker,
                 policiesStack, topicStack.getTopic(), errorMetrics);
         coreStacks = new CoreStacks(
                 loggingStack, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
-                stateStoreCommitterStack, ingestStatusStore, compactionStatusStore);
+                stateStoreCommitterStack, ingestStatusStore, compactionTracker);
 
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);

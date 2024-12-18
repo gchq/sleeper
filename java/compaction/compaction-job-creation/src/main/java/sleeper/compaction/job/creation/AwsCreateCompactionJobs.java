@@ -23,7 +23,6 @@ import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ObjectFactory;
 
 import java.time.Instant;
@@ -38,7 +37,6 @@ public class AwsCreateCompactionJobs {
             ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
-            CompactionJobTracker jobStatusStore,
             AmazonS3 s3Client,
             AmazonSQS sqsClient) {
         return new CreateCompactionJobs(

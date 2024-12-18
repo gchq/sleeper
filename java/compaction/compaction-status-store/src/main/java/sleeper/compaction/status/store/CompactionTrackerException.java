@@ -15,9 +15,9 @@
  */
 package sleeper.compaction.status.store;
 
-public class CompactionStatusStoreException extends RuntimeException {
+public class CompactionTrackerException extends RuntimeException {
 
-    public CompactionStatusStoreException(String message, Throwable cause) {
+    public CompactionTrackerException(String message, Throwable cause) {
         super(message, cause);
     }
 }

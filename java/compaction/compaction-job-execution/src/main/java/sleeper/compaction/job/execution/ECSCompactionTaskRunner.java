@@ -92,7 +92,7 @@ public class ECSCompactionTaskRunner {
             PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
-            CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getTracker(dynamoDBClient,
+            CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient,
                     instanceProperties);
             CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
                     instanceProperties);
@@ -103,13 +103,13 @@ public class ECSCompactionTaskRunner {
             DefaultCompactionRunnerFactory compactionSelector = new DefaultCompactionRunnerFactory(objectFactory,
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
 
-            StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobStatusStore);
+            StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobTracker);
 
             CompactionJobCommitterOrSendToLambda committerOrLambda = committerOrSendToLambda(
-                    tablePropertiesProvider, stateStoreProvider, jobStatusStore, instanceProperties, sqsClient);
+                    tablePropertiesProvider, stateStoreProvider, jobTracker, instanceProperties, sqsClient);
             CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider, propertiesReloader,
                     stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
-                    waitForFiles, committerOrLambda, jobStatusStore, taskStatusStore, compactionSelector, taskId);
+                    waitForFiles, committerOrLambda, jobTracker, taskStatusStore, compactionSelector, taskId);
             task.run();
         } finally {
             sqsClient.shutdown();
@@ -141,9 +141,9 @@ public class ECSCompactionTaskRunner {
 
     public static CompactionJobCommitterOrSendToLambda committerOrSendToLambda(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobTracker jobStatusStore, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+            CompactionJobTracker jobTracker, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return new CompactionJobCommitterOrSendToLambda(
-                tablePropertiesProvider, stateStoreProvider, jobStatusStore,
+                tablePropertiesProvider, stateStoreProvider, jobTracker,
                 sendToSqs(instanceProperties, sqsClient));
     }
 

@@ -62,12 +62,12 @@ public class WaitForJobsStatus {
         longestInProgressDuration = builder.longestInProgressDuration;
     }
 
-    public static WaitForJobsStatus forIngest(IngestJobStatusStore store, Collection<String> jobIds, Instant now) {
-        return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
+    public static WaitForJobsStatus forIngest(IngestJobStatusStore tracker, Collection<String> jobIds, Instant now) {
+        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 
-    public static WaitForJobsStatus forCompaction(CompactionJobTracker store, Collection<String> jobIds, Instant now) {
-        return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
+    public static WaitForJobsStatus forCompaction(CompactionJobTracker tracker, Collection<String> jobIds, Instant now) {
+        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 
     public boolean areAllJobsFinished() {
@@ -78,12 +78,12 @@ public class WaitForJobsStatus {
         return GSON.toJson(this);
     }
 
-    private static WaitForJobsStatus forJobStore(
-            JobStatusStore store,
+    private static WaitForJobsStatus forJobTracker(
+            JobTracker tracker,
             Collection<String> jobIds, Instant now) {
         Builder builder = new Builder(now);
         jobIds.stream().parallel()
-                .map(jobId -> store.getJob(jobId)
+                .map(jobId -> tracker.getJob(jobId)
                         .orElseGet(JobStatus::none))
                 .collect(Collectors.toUnmodifiableList())
                 .forEach(builder::addJob);
@@ -98,7 +98,7 @@ public class WaitForJobsStatus {
         return (duration, type, context) -> new JsonPrimitive(duration.toString());
     }
 
-    private interface JobStatusStore {
+    private interface JobTracker {
         Optional<JobStatus> getJob(String jobId);
     }
 

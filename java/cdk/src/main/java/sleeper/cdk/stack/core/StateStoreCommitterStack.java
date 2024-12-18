@@ -73,7 +73,7 @@ public class StateStoreCommitterStack extends NestedStack {
             TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks,
             IngestStatusStoreResources ingestStatusStore,
-            CompactionTrackerResources compactionStatusStore,
+            CompactionTrackerResources compactionTracker,
             ManagedPoliciesStack policiesStack,
             Topic topic,
             List<IMetric> errorMetrics) {
@@ -86,7 +86,7 @@ public class StateStoreCommitterStack extends NestedStack {
         lambdaToCommitStateStoreUpdates(
                 loggingStack, policiesStack, lambdaCode,
                 configBucketStack, tableIndexStack, stateStoreStacks,
-                compactionStatusStore, ingestStatusStore);
+                compactionTracker, ingestStatusStore);
     }
 
     private Queue sqsQueueForStateStoreCommitter(ManagedPoliciesStack policiesStack, Topic topic, List<IMetric> errorMetrics) {
@@ -126,7 +126,7 @@ public class StateStoreCommitterStack extends NestedStack {
     private void lambdaToCommitStateStoreUpdates(
             LoggingStack loggingStack, ManagedPoliciesStack policiesStack, LambdaCode lambdaCode,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
-            CompactionTrackerResources compactionStatusStore,
+            CompactionTrackerResources compactionTracker,
             IngestStatusStoreResources ingestStatusStore) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
@@ -167,7 +167,7 @@ public class StateStoreCommitterStack extends NestedStack {
         configBucketStack.grantRead(handlerFunction);
         tableIndexStack.grantRead(handlerFunction);
         stateStoreStacks.grantReadWriteAllFilesAndPartitions(handlerFunction);
-        compactionStatusStore.grantWriteJobEvent(handlerFunction);
+        compactionTracker.grantWriteJobEvent(handlerFunction);
         ingestStatusStore.grantWriteJobEvent(handlerFunction);
     }
 

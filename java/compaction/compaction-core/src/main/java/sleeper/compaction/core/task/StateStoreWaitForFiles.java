@@ -49,15 +49,15 @@ public class StateStoreWaitForFiles {
     private final PollWithRetries throttlingRetriesConfig;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobTracker jobStatusStore;
+    private final CompactionJobTracker jobTracker;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreWaitForFiles(
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            CompactionJobTracker jobStatusStore) {
+            CompactionJobTracker jobTracker) {
         this(JOB_ASSIGNMENT_WAIT_ATTEMPTS, new ExponentialBackoffWithJitter(JOB_ASSIGNMENT_WAIT_RANGE),
-                JOB_ASSIGNMENT_THROTTLING_RETRIES, tablePropertiesProvider, stateStoreProvider, jobStatusStore, Instant::now);
+                JOB_ASSIGNMENT_THROTTLING_RETRIES, tablePropertiesProvider, stateStoreProvider, jobTracker, Instant::now);
     }
 
     public StateStoreWaitForFiles(
@@ -66,14 +66,14 @@ public class StateStoreWaitForFiles {
             PollWithRetries throttlingRetriesConfig,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            CompactionJobTracker jobStatusStore,
+            CompactionJobTracker jobTracker,
             Supplier<Instant> timeSupplier) {
         this.jobAssignmentWaitAttempts = jobAssignmentWaitAttempts;
         this.jobAssignmentWaitBackoff = jobAssignmentWaitBackoff;
         this.throttlingRetriesConfig = throttlingRetriesConfig;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.jobStatusStore = jobStatusStore;
+        this.jobTracker = jobTracker;
         this.timeSupplier = timeSupplier;
     }
 
@@ -118,8 +118,8 @@ public class StateStoreWaitForFiles {
 
     private void reportFailure(CompactionJob job, String taskId, String jobRunId, Instant startTime, Exception e) {
         Instant finishTime = timeSupplier.get();
-        jobStatusStore.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(jobRunId).build());
-        jobStatusStore.jobFailed(job.failedEventBuilder(new ProcessRunTime(startTime, finishTime))
+        jobTracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(jobRunId).build());
+        jobTracker.jobFailed(job.failedEventBuilder(new ProcessRunTime(startTime, finishTime))
                 .failure(e).taskId(taskId).jobRunId(jobRunId).build());
     }
 

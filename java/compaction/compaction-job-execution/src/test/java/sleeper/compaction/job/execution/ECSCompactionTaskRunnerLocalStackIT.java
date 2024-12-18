@@ -145,7 +145,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
+    private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
     private final CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
 
     @AfterEach
@@ -452,12 +452,12 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
                 ObjectFactory.noUserJars(), configuration);
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
-                tablePropertiesProvider, stateStoreProvider, jobStatusStore,
+                tablePropertiesProvider, stateStoreProvider, jobTracker,
                 instanceProperties, sqs);
-        StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobStatusStore);
+        StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobTracker);
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
                 PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqs, instanceProperties),
-                waitForFiles, committer, jobStatusStore, taskStatusStore, selector, taskId,
+                waitForFiles, committer, jobTracker, taskStatusStore, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {
                 });
         return task;

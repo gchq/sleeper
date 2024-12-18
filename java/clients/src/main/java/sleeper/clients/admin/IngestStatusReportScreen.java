@@ -47,19 +47,19 @@ public class IngestStatusReportScreen {
     private final ConsoleInput in;
     private final ConsoleHelper consoleHelper;
     private final AdminClientPropertiesStore store;
-    private final AdminClientStatusStoreFactory statusStores;
+    private final AdminClientTrackerFactory trackers;
     private final QueueMessageCount.Client queueClient;
     private final TableSelectHelper tableSelectHelper;
     private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
     public IngestStatusReportScreen(ConsoleOutput out, ConsoleInput in, AdminClientPropertiesStore store,
-            AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient,
+            AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient,
             Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
         this.store = store;
-        this.statusStores = statusStores;
+        this.trackers = trackers;
         this.queueClient = queueClient;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);
         this.getStepCount = getStepCount;
@@ -108,14 +108,14 @@ public class IngestStatusReportScreen {
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
             JobQuery.Type queryType, String queryParameters) {
-        new IngestJobStatusReport(statusStores.loadIngestJobStatusStore(properties), table, queryType, queryParameters,
+        new IngestJobStatusReport(trackers.loadIngestJobStatusStore(properties), table, queryType, queryParameters,
                 new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties, getStepCount.apply(properties)).run();
         confirmReturnToMainScreen(out, in);
     }
 
     private void runIngestTaskStatusReport(InstanceProperties properties, IngestTaskQuery queryType) {
-        new IngestTaskStatusReport(statusStores.loadIngestTaskStatusStore(properties),
+        new IngestTaskStatusReport(trackers.loadIngestTaskStatusStore(properties),
                 new StandardIngestTaskStatusReporter(out.printStream()), queryType).run();
         confirmReturnToMainScreen(out, in);
     }

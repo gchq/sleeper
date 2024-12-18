@@ -41,7 +41,7 @@ public class WaitForCompactionJobCreation {
 
     public WaitForCompactionJobCreation(SystemTestInstanceContext instance, CompactionDriver driver) {
         this.instance = instance;
-        this.store = driver.getJobStatusStore();
+        this.store = driver.getJobTracker();
     }
 
     public List<String> createJobsGetIds(int expectedJobs, PollWithRetries poll, Runnable createJobs) {

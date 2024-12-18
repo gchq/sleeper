@@ -69,8 +69,8 @@ public class InMemoryCompaction {
     private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
     private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
-    private final CompactionJobTracker jobStore = new InMemoryCompactionJobTracker();
-    private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
+    private final CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
+    private final CompactionTaskStatusStore taskTracker = new InMemoryCompactionTaskStatusStore();
     private final InMemoryDataStore dataStore;
     private final InMemorySketchesStore sketchesStore;
 
@@ -89,16 +89,16 @@ public class InMemoryCompaction {
                     .findFirst().orElseThrow();
             finishJobs(context.instance(), taskId);
             finishTasks();
-            return jobStore;
-        }, properties -> taskStore, pollDriver);
+            return jobTracker;
+        }, properties -> taskTracker, pollDriver);
     }
 
-    public CompactionJobTracker jobStore() {
-        return jobStore;
+    public CompactionJobTracker jobTracker() {
+        return jobTracker;
     }
 
-    public CompactionTaskStatusStore taskStore() {
-        return taskStore;
+    public CompactionTaskStatusStore taskTracker() {
+        return taskTracker;
     }
 
     private class Driver implements CompactionDriver {
@@ -110,8 +110,8 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public CompactionJobTracker getJobStatusStore() {
-            return jobStore;
+        public CompactionJobTracker getJobTracker() {
+            return jobTracker;
         }
 
         @Override
@@ -145,7 +145,7 @@ public class InMemoryCompaction {
                         .taskId(UUID.randomUUID().toString())
                         .startTime(Instant.now())
                         .build();
-                taskStore.taskStarted(task);
+                taskTracker.taskStarted(task);
                 runningTasks.add(task);
             }
         }
@@ -180,16 +180,16 @@ public class InMemoryCompaction {
         for (CompactionJob job : queuedJobsById.values()) {
             TableProperties tableProperties = tablesProvider.getById(job.getTableId());
             RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), taskId);
-            jobStore.jobStarted(job.startedEventBuilder(summary.getStartTime()).taskId(taskId).build());
-            jobStore.jobFinished(job.finishedEventBuilder(summary).taskId(taskId).build());
-            jobStore.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(taskId).build());
+            jobTracker.jobStarted(job.startedEventBuilder(summary.getStartTime()).taskId(taskId).build());
+            jobTracker.jobFinished(job.finishedEventBuilder(summary).taskId(taskId).build());
+            jobTracker.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(taskId).build());
         }
         queuedJobsById.clear();
     }
 
     private void finishTasks() {
         for (CompactionTaskStatus task : runningTasks) {
-            taskStore.taskFinished(CompactionTaskStatus.builder()
+            taskTracker.taskFinished(CompactionTaskStatus.builder()
                     .taskId(task.getTaskId())
                     .startTime(task.getStartTime())
                     .finished(task.getStartTime().plus(Duration.ofMinutes(2)), CompactionTaskFinishedStatus.builder())
@@ -242,7 +242,7 @@ public class InMemoryCompaction {
         return (bucketName, key, jobs) -> jobs.forEach(
                 job -> {
                     queuedJobsById.put(job.getId(), job);
-                    jobStore.jobCreated(job.createCreatedEvent());
+                    jobTracker.jobCreated(job.createCreatedEvent());
                 });
     }
 

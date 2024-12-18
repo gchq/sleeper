@@ -86,7 +86,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             new RecordsProcessedSummary(job1Summary,
                                     Instant.parse("2024-02-22T13:50:01Z"),
                                     Instant.parse("2024-02-22T13:50:02Z"))));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime))
@@ -126,14 +126,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             new RecordsProcessedSummary(job1Records, startTime1, finishTime1)),
                     commitRequestFor(job2, "test-job-run-2",
                             new RecordsProcessedSummary(job2Records, startTime2, finishTime2)));
-            assertThat(jobStore.getAllJobs(table1.get(TABLE_ID))).containsExactly(
+            assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime1))
                                     .finishedStatus(compactionFinishedStatus(
                                             new RecordsProcessedSummary(job1Records, startTime1, finishTime1)))
                                     .build()));
-            assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
+            assertThat(jobTracker.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime2))
@@ -173,14 +173,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(jobsOnQueue).isEmpty();
             assertThat(commitRequestsOnQueue).containsExactly(
                     commitRequestFor(job1, new RecordsProcessedSummary(job1Records, startTime1, finishTime1)));
-            assertThat(jobStore.getAllJobs(table1.get(TABLE_ID))).containsExactly(
+            assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime1))
                                     .finishedStatus(compactionFinishedStatus(
                                             new RecordsProcessedSummary(job1Records, startTime1, finishTime1)))
                                     .build()));
-            assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
+            assertThat(jobTracker.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime2))
@@ -217,14 +217,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobSucceeds(recordsProcessed)),
                     jobRunIds::poll, timesInTask::poll);
             // And the commits are saved to the status store
-            jobStore.jobCommitted(job.committedEventBuilder(commitTime)
+            jobTracker.jobCommitted(job.committedEventBuilder(commitTime)
                     .taskId("test-task").jobRunId("test-job-run-1").build());
-            jobStore.jobFailed(job.failedEventBuilder(new ProcessRunTime(startTime2, commitFailTime))
+            jobTracker.jobFailed(job.failedEventBuilder(new ProcessRunTime(startTime2, commitFailTime))
                     .failureReasons(List.of("Could not commit same job twice"))
                     .taskId("test-task").jobRunId("test-job-run-2").build());
 
             // Then
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime2))
@@ -288,7 +288,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     timesInTask::poll);
 
             // Then
-            assertThat(jobStore.getAllJobs(table1.get(TABLE_ID))).containsExactly(
+            assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime1))
@@ -296,7 +296,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                             new RecordsProcessedSummary(recordsProcessed, startTime1, finishTime1)))
                                     .statusUpdate(compactionCommittedStatus(commitTime1))
                                     .build()));
-            assertThat(jobStore.getAllJobs(table2.get(TABLE_ID))).containsExactly(
+            assertThat(jobTracker.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
                             ProcessRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime2))
@@ -334,7 +334,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(consumedJobs).containsExactly(job);
             assertThat(jobsReturnedToQueue).isEmpty();
-            assertThat(jobStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+            assertThat(jobTracker.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job, DEFAULT_CREATED_TIME,
                             failedCompactionRun("test-task", startTime, finishTime, failTime, List.of(
                                     "1 replace file reference requests failed to update the state store",
@@ -361,7 +361,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             // Then
             assertThat(consumedJobs).containsExactly(job);
             assertThat(jobsReturnedToQueue).isEmpty();
-            assertThat(jobStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+            assertThat(jobTracker.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job, DEFAULT_CREATED_TIME,
                             failedCompactionRun("test-task", startTime, finishTime, failTime, List.of(
                                     "1 replace file reference requests failed to update the state store",
@@ -370,8 +370,8 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     }
 
     @Nested
-    @DisplayName("Update status stores")
-    class UpdateStatusStores {
+    @DisplayName("Update trackers")
+    class UpdateTrackers {
         @BeforeEach
         void setup() {
             tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
@@ -402,7 +402,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobStartTime, jobFinishTime);
             assertThat(taskStore.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1", taskStartTime, taskFinishTime, jobSummary));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job, DEFAULT_CREATED_TIME,
                             finishedCompactionRun("test-task-1", jobSummary, jobCommitTime)));
         }
@@ -441,7 +441,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     job2StartTime, job2FinishTime);
             assertThat(taskStore.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1", taskStartTime, taskFinishTime, job1Summary, job2Summary));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             finishedCompactionRun("test-task-1", job1Summary, job1CommitTime)),
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
@@ -469,7 +469,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     finishedCompactionTask("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:06Z")));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job, DEFAULT_CREATED_TIME,
                             failedCompactionRun("test-task-1",
                                     new ProcessRunTime(
@@ -493,7 +493,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     finishedCompactionTask("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z")));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).isEmpty();
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).isEmpty();
         }
 
         private CompactionTaskFinishedStatus.Builder withJobSummaries(RecordsProcessedSummary... summaries) {

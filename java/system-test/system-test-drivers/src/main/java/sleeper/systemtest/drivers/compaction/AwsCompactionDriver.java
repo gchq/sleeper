@@ -83,7 +83,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public CompactionJobTracker getJobStatusStore() {
+    public CompactionJobTracker getJobTracker() {
         return CompactionJobTrackerFactory
                 .getTrackerWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
     }
@@ -101,7 +101,7 @@ public class AwsCompactionDriver implements CompactionDriver {
                 CreateCompactionJobs createJobs = AwsCreateCompactionJobs.from(
                         ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                         new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
-                        getJobStatusStore(), s3Client, sqsClient);
+                        s3Client, sqsClient);
                 createJobs.createJobWithForceAllFiles(table);
             } catch (IOException | ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);

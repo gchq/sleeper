@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
-import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
@@ -42,7 +41,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -89,10 +87,9 @@ public class CreateCompactionJobsLambda implements RequestHandler<SQSEvent, SQSB
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-        CompactionJobTracker jobStatusStore = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         createJobs = AwsCreateCompactionJobs.from(
-                objectFactory, instanceProperties, stateStoreProvider, jobStatusStore, s3Client, sqsClient);
+                objectFactory, instanceProperties, stateStoreProvider, s3Client, sqsClient);
     }
 
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {

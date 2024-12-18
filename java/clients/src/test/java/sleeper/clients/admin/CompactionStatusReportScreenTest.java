@@ -57,7 +57,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction job status report")
     class CompactionJobStatusReport {
-        private final InMemoryCompactionJobTracker statusStore = new InMemoryCompactionJobTracker();
+        private final InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
         private CompactionJob exampleJob;
 
         @BeforeEach
@@ -66,10 +66,10 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             TableProperties tableProperties = createValidTableProperties(properties, "test-table");
             setInstanceProperties(properties, tableProperties);
             exampleJob = CompactionJobTestDataHelper.forTable(properties, tableProperties).singleFileCompaction();
-            statusStore.fixUpdateTime(Instant.parse("2023-03-15T17:52:12.001Z"));
-            statusStore.jobCreated(exampleJob.createCreatedEvent());
-            statusStore.fixUpdateTime(Instant.parse("2023-03-15T17:53:12.123Z"));
-            statusStore.jobStarted(exampleJob.startedEventBuilder(Instant.parse("2023-03-15T17:53:12.001Z")).taskId("test-task-1").build());
+            tracker.fixUpdateTime(Instant.parse("2023-03-15T17:52:12.001Z"));
+            tracker.jobCreated(exampleJob.createCreatedEvent());
+            tracker.fixUpdateTime(Instant.parse("2023-03-15T17:53:12.123Z"));
+            tracker.jobStarted(exampleJob.startedEventBuilder(Instant.parse("2023-03-15T17:53:12.001Z")).taskId("test-task-1").build());
         }
 
         @Test
@@ -151,7 +151,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         private RunAdminClient runCompactionJobStatusReport() {
             return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION,
                     COMPACTION_JOB_STATUS_REPORT_OPTION, "test-table")
-                    .tracker(statusStore);
+                    .tracker(tracker);
         }
     }
 

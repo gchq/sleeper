@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.AdminClientStatusStoreFactory;
+import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -30,7 +30,7 @@ import java.util.Optional;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-public class AdminClientProcessTrackerHolder implements AdminClientStatusStoreFactory {
+public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactory {
 
     private final Map<String, CompactionJobTracker> compactionJobTrackerByInstance = new HashMap<>();
     private final Map<String, CompactionTaskStatusStore> compactionTaskStoreByInstance = new HashMap<>();

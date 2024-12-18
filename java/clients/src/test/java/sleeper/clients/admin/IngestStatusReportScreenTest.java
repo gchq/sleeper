@@ -284,7 +284,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnToMainMenuIfCompactionStatusStoreNotEnabled() throws Exception {
+    void shouldReturnToMainMenuIfIngestTrackerNotEnabled() throws Exception {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         properties.set(INGEST_STATUS_STORE_ENABLED, "false");

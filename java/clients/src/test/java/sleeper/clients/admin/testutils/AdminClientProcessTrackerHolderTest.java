@@ -41,7 +41,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         RunAdminClient runner = runClient().tracker(store);
 
         // Then
-        assertThat(runner.statusStores().loadCompactionJobTracker(properties))
+        assertThat(runner.trackers().loadCompactionJobTracker(properties))
                 .isSameAs(store);
     }
 
@@ -56,7 +56,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         RunAdminClient runner = runClient().tracker(store);
 
         // Then
-        assertThat(runner.statusStores().loadCompactionTaskStatusStore(properties))
+        assertThat(runner.trackers().loadCompactionTaskStatusStore(properties))
                 .isSameAs(store);
     }
 
@@ -71,7 +71,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         RunAdminClient runner = runClient().tracker(store);
 
         // Then
-        assertThat(runner.statusStores().loadIngestJobStatusStore(properties))
+        assertThat(runner.trackers().loadIngestJobStatusStore(properties))
                 .isSameAs(store);
     }
 
@@ -86,7 +86,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         RunAdminClient runner = runClient().tracker(store);
 
         // Then
-        assertThat(runner.statusStores().loadIngestTaskStatusStore(properties))
+        assertThat(runner.trackers().loadIngestTaskStatusStore(properties))
                 .isSameAs(store);
     }
 
@@ -97,7 +97,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().statusStores().loadCompactionJobTracker(properties))
+        assertThat(runClient().trackers().loadCompactionJobTracker(properties))
                 .isSameAs(CompactionJobTracker.NONE);
     }
 
@@ -108,7 +108,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().statusStores().loadCompactionTaskStatusStore(properties))
+        assertThat(runClient().trackers().loadCompactionTaskStatusStore(properties))
                 .isSameAs(CompactionTaskStatusStore.NONE);
     }
 
@@ -119,7 +119,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().statusStores().loadIngestJobStatusStore(properties))
+        assertThat(runClient().trackers().loadIngestJobStatusStore(properties))
                 .isSameAs(IngestJobStatusStore.NONE);
     }
 
@@ -130,7 +130,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().statusStores().loadIngestTaskStatusStore(properties))
+        assertThat(runClient().trackers().loadIngestTaskStatusStore(properties))
                 .isSameAs(IngestTaskStatusStore.NONE);
     }
 }

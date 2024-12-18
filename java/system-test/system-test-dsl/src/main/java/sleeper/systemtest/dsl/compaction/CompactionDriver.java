@@ -24,7 +24,7 @@ import java.util.List;
 
 public interface CompactionDriver {
 
-    CompactionJobTracker getJobStatusStore();
+    CompactionJobTracker getJobTracker();
 
     void triggerCreateJobs();
 
