@@ -55,9 +55,9 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRecords;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestAcceptedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAcceptedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.validatedIngestStartedStatus;

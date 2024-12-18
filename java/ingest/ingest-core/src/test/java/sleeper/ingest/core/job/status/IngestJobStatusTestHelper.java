@@ -407,12 +407,11 @@ public class IngestJobStatusTestHelper {
     /**
      * Creates an ingest job accepted status.
      *
-     * @param  job            the ingest job
      * @param  validationTime the validation time
      * @return                an ingest job accepted status
      */
-    public static IngestJobAcceptedStatus ingestAcceptedStatus(IngestJob job, Instant validationTime) {
-        return IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime));
+    public static IngestJobAcceptedStatus ingestAcceptedStatus(Instant validationTime) {
+        return IngestJobAcceptedStatus.from(1, validationTime, defaultUpdateTime(validationTime));
     }
 
     /**
@@ -436,6 +435,19 @@ public class IngestJobStatusTestHelper {
      */
     public static IngestJobStartedStatus ingestStartedStatus(IngestJob job, Instant startTime, Instant updateTime) {
         return IngestJobStartedStatus.withStartOfRun(true).inputFileCount(job.getFileCount())
+                .startTime(startTime).updateTime(updateTime)
+                .build();
+    }
+
+    /**
+     * Creates an ingest job started status.
+     *
+     * @param  startTime  the start time
+     * @param  updateTime the update time
+     * @return            an ingest job started status
+     */
+    public static IngestJobStartedStatus ingestStartedStatus(Instant startTime, Instant updateTime) {
+        return IngestJobStartedStatus.withStartOfRun(true).inputFileCount(1)
                 .startTime(startTime).updateTime(updateTime)
                 .build();
     }

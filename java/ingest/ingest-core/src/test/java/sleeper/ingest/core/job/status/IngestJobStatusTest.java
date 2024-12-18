@@ -450,11 +450,11 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobAcceptedStatus acceptedStatusUpdate(Instant validationTime) {
-        return IngestJobStatusTestHelper.ingestAcceptedStatus(job, validationTime);
+        return IngestJobStatusTestHelper.ingestAcceptedStatus(validationTime);
     }
 
     private IngestJobStartedStatus startedStatusUpdate(Instant startTime) {
-        return IngestJobStatusTestHelper.ingestStartedStatus(job, startTime, defaultUpdateTime(startTime));
+        return IngestJobStatusTestHelper.ingestStartedStatus(startTime, defaultUpdateTime(startTime));
     }
 
     private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {

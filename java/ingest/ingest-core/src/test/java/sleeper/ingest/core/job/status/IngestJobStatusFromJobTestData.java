@@ -17,7 +17,12 @@ package sleeper.ingest.core.job.status;
 
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.ingest.core.job.IngestJob;
+
+import java.time.Instant;
+
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
 /**
  * A helper for creating ingest job statuses for tests.
@@ -36,6 +41,17 @@ public class IngestJobStatusFromJobTestData {
      */
     public static IngestJobStatus ingestJobStatus(IngestJob job, ProcessRun... runs) {
         return IngestJobStatusTestHelper.ingestJobStatus(job.getId(), runs);
+    }
+
+    /**
+     * Creates an ingest job accepted status.
+     *
+     * @param  job            the ingest job
+     * @param  validationTime the validation time
+     * @return                an ingest job accepted status
+     */
+    public static IngestJobAcceptedStatus ingestAcceptedStatus(IngestJob job, Instant validationTime) {
+        return IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime));
     }
 
 }
