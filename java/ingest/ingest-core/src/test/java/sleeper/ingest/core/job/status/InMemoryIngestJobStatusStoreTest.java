@@ -43,7 +43,6 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobAddedFilesEvent.ingestJobAddedFiles;
 import static sleeper.ingest.core.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
@@ -510,7 +509,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-            store.jobAddedFiles(ingestJobAddedFiles(job, filesAdded, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -542,7 +541,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-            store.jobAddedFiles(ingestJobAddedFiles(job, filesAdded, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -571,7 +570,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-            store.jobAddedFiles(ingestJobAddedFiles(job, filesAdded, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableId))

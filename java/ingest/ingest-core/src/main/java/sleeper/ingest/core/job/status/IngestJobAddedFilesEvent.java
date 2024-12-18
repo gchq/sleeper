@@ -16,7 +16,6 @@
 package sleeper.ingest.core.job.status;
 
 import sleeper.core.statestore.AllReferencesToAFile;
-import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,21 +39,6 @@ public class IngestJobAddedFilesEvent {
         this.taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         this.writtenTime = Objects.requireNonNull(builder.writtenTime, "writtenTime must not be null");
         this.fileCount = builder.fileCount;
-    }
-
-    /**
-     * Creates a builder for when an ingest job committed files to the state store.
-     *
-     * @param  job         the job
-     * @param  files       the files added to the state store
-     * @param  writtenTime the time the files were written
-     * @return             a builder to set further information
-     */
-    public static Builder ingestJobAddedFiles(IngestJob job, List<AllReferencesToAFile> files, Instant writtenTime) {
-        return builder()
-                .job(job)
-                .writtenTime(writtenTime)
-                .files(files);
     }
 
     public static Builder builder() {
@@ -118,17 +102,6 @@ public class IngestJobAddedFilesEvent {
         private String taskId;
         private Instant writtenTime;
         private int fileCount;
-
-        /**
-         * Sets the job ID and table ID from the given ingest job.
-         *
-         * @param  job the job
-         * @return     the builder for chaining
-         */
-        public Builder job(IngestJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId());
-        }
 
         /**
          * Sets the job ID.

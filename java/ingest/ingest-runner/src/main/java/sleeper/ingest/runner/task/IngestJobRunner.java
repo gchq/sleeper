@@ -161,7 +161,7 @@ public class IngestJobRunner implements IngestJobHandler {
                     requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         } else {
             return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), statusStore,
-                    updateBuilder -> updateBuilder.job(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
+                    job.addedFilesEventBuilder(timeSupplier.get()).taskId(taskId).jobRunId(jobRunId));
         }
     }
 }

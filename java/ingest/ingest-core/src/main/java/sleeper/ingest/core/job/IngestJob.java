@@ -15,6 +15,9 @@
  */
 package sleeper.ingest.core.job;
 
+import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,6 +42,16 @@ public class IngestJob {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates a builder for an event when files have been added to the state store. Used with the ingest job tracker.
+     *
+     * @param  writtenTime the time the files were written
+     * @return             the builder
+     */
+    public IngestJobAddedFilesEvent.Builder addedFilesEventBuilder(Instant writtenTime) {
+        return IngestJobAddedFilesEvent.builder().jobId(id).tableId(tableId).writtenTime(writtenTime);
     }
 
     public String getId() {

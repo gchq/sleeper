@@ -49,15 +49,11 @@ public interface AddFilesToStateStore {
     }
 
     static AddFilesToStateStore synchronous(
-            StateStore stateStore, IngestJobStatusStore statusStore,
-            Consumer<IngestJobAddedFilesEvent.Builder> statusUpdateConfig) {
+            StateStore stateStore, IngestJobStatusStore statusStore, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
             stateStore.addFilesWithReferences(files);
-            IngestJobAddedFilesEvent.Builder statusUpdateBuilder = IngestJobAddedFilesEvent.builder()
-                    .files(files);
-            statusUpdateConfig.accept(statusUpdateBuilder);
-            statusStore.jobAddedFiles(statusUpdateBuilder.build());
+            statusStore.jobAddedFiles(statusUpdateBuilder.files(files).build());
         };
     }
 

@@ -35,7 +35,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
@@ -155,7 +154,7 @@ public class StateStoreCommitter {
         stateStore.addFilesWithReferences(files);
         IngestJob job = request.getJob();
         if (job != null) {
-            ingestJobStatusStore.jobAddedFiles(IngestJobAddedFilesEvent.ingestJobAddedFiles(job, files, request.getWrittenTime())
+            ingestJobStatusStore.jobAddedFiles(job.addedFilesEventBuilder(request.getWrittenTime()).files(files)
                     .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
             LOGGER.debug("Successfully committed new files for ingest job {}", job.getId());
         } else {

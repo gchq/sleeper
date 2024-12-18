@@ -38,7 +38,6 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.d
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobAddedFilesEvent.ingestJobAddedFiles;
 import static sleeper.ingest.core.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
@@ -100,7 +99,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
                 fileFactory.rootFile("file2.parquet", 456)));
 
         // When
-        store.jobAddedFiles(ingestJobAddedFiles(job, outputFiles, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(outputFiles).jobRunId(jobRunId).taskId(taskId).build());
         store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
 
         // Then
