@@ -15,7 +15,9 @@
  */
 package sleeper.ingest.core.job;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
+import sleeper.ingest.core.job.status.IngestJobFailedEvent;
 
 import java.time.Instant;
 import java.util.List;
@@ -52,6 +54,16 @@ public class IngestJob {
      */
     public IngestJobAddedFilesEvent.Builder addedFilesEventBuilder(Instant writtenTime) {
         return IngestJobAddedFilesEvent.builder().jobId(id).tableId(tableId).writtenTime(writtenTime);
+    }
+
+    /**
+     * Creates a builder for an event when the ingest job failed. Used with the ingest job tracker.
+     *
+     * @param  runTime the time spent on the failed operation
+     * @return         the builder
+     */
+    public IngestJobFailedEvent.Builder failedEventBuilder(ProcessRunTime runTime) {
+        return IngestJobFailedEvent.builder().jobId(id).tableId(tableId).runTime(runTime);
     }
 
     public String getId() {

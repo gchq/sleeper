@@ -16,7 +16,6 @@
 package sleeper.ingest.core.job.status;
 
 import sleeper.core.record.process.ProcessRunTime;
-import sleeper.ingest.core.job.IngestJob;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,17 +43,6 @@ public class IngestJobFailedEvent {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Creates an instance of this class.
-     *
-     * @param  job     the ingest job
-     * @param  runTime the process run time
-     * @return         an instance of this class
-     */
-    public static Builder ingestJobFailed(IngestJob job, ProcessRunTime runTime) {
-        return builder().job(job).runTime(runTime);
     }
 
     public String getJobId() {
@@ -114,17 +102,6 @@ public class IngestJobFailedEvent {
         private String taskId;
         private ProcessRunTime runTime;
         private List<String> failureReasons;
-
-        /**
-         * Sets the ingest job ID and the table ID using the provided ingest job.
-         *
-         * @param  job the ingest job
-         * @return     the builder
-         */
-        public Builder job(IngestJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId());
-        }
 
         /**
          * Sets the ingest job ID.

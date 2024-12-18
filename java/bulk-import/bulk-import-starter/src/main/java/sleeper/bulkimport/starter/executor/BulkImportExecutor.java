@@ -26,7 +26,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.ingest.core.job.status.IngestJobFailedEvent;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Duration;
@@ -94,8 +93,8 @@ public class BulkImportExecutor {
         } catch (RuntimeException e) {
             LOGGER.error("Failed submitting job with id {} for table {}",
                     bulkImportJob.getId(), bulkImportJob.getTableId(), e);
-            ingestJobStatusStore.jobFailed(IngestJobFailedEvent.ingestJobFailed(bulkImportJob.toIngestJob(),
-                    new ProcessRunTime(validationTimeSupplier.get(), Duration.ZERO))
+            ingestJobStatusStore.jobFailed(bulkImportJob.toIngestJob()
+                    .failedEventBuilder(new ProcessRunTime(validationTimeSupplier.get(), Duration.ZERO))
                     .jobRunId(jobRunId).failure(e)
                     .build());
             throw e;

@@ -30,7 +30,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static sleeper.ingest.core.job.status.IngestJobFailedEvent.ingestJobFailed;
 import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 
@@ -129,7 +128,8 @@ public class IngestTask {
             } catch (Exception e) {
                 LOGGER.error("Failed processing ingest job, terminating task", e);
                 Instant jobFinishTime = timeSupplier.get();
-                jobStatusStore.jobFailed(ingestJobFailed(job, new ProcessRunTime(jobStartTime, jobFinishTime))
+                jobStatusStore.jobFailed(job
+                        .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
                         .taskId(taskId).jobRunId(jobRunId).failure(e)
                         .build());
                 message.failed();
