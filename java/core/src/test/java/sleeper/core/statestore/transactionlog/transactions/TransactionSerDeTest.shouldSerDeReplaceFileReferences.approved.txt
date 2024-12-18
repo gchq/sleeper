@@ -2,7 +2,6 @@
   "jobs": [
     {
       "jobId": "job",
-      "partitionId": "root",
       "inputFiles": [
         "file1.parquet",
         "file2.parquet"

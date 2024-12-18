@@ -27,7 +27,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -46,8 +45,8 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
 
         // When
         storeJobsCreated(job1, job2);
-        store.jobStarted(compactionJobStarted(job1, defaultStartTime()).taskId(searchingTaskId).build());
-        store.jobStarted(compactionJobStarted(job2, defaultStartTime()).taskId("another-task").build());
+        store.jobStarted(job1.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).build());
+        store.jobStarted(job2.startedEventBuilder(defaultStartTime()).taskId("another-task").build());
 
         // Then
         assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
@@ -70,9 +69,9 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobSta
 
         // When
         storeJobCreated(job);
-        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(taskId1).build());
-        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(searchingTaskId).build());
-        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(taskId3).build());
+        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId1).build());
+        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).build());
+        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId3).build());
 
         // Then
         assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
