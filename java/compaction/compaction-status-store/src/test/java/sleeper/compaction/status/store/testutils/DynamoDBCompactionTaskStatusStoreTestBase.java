@@ -19,9 +19,9 @@ import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguratio
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
+import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskTracker;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
@@ -35,7 +35,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 
-import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
+import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskTracker.taskStatusTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -46,11 +46,11 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
             .withIgnoredFields("expiryDate").build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final CompactionTaskTracker store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
     }
 
     @AfterEach
@@ -58,9 +58,9 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         dynamoDBClient.deleteTable(taskStatusTableName);
     }
 
-    protected CompactionTaskTracker storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+    protected CompactionTaskTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
-        return new DynamoDBCompactionTaskStatusStore(dynamoDBClient, instanceProperties,
+        return new DynamoDBCompactionTaskTracker(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

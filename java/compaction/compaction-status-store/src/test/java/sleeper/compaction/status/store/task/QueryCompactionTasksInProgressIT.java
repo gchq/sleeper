@@ -32,10 +32,10 @@ public class QueryCompactionTasksInProgressIT extends DynamoDBCompactionTaskStat
         CompactionTaskStatus task = startedTaskWithDefaults();
 
         // When
-        store.taskStarted(task);
+        tracker.taskStarted(task);
 
         // Then
-        assertThat(store.getTasksInProgress())
+        assertThat(tracker.getTasksInProgress())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(task);
     }
@@ -46,11 +46,11 @@ public class QueryCompactionTasksInProgressIT extends DynamoDBCompactionTaskStat
         CompactionTaskStatus task = finishedTaskWithDefaults();
 
         // When
-        store.taskStarted(task);
-        store.taskFinished(task);
+        tracker.taskStarted(task);
+        tracker.taskFinished(task);
 
         // Then
-        assertThat(store.getTasksInProgress()).isEmpty();
+        assertThat(tracker.getTasksInProgress()).isEmpty();
     }
 
     @Test
@@ -62,11 +62,11 @@ public class QueryCompactionTasksInProgressIT extends DynamoDBCompactionTaskStat
                 .startTime(Instant.parse("2022-10-06T11:19:10.001Z")).build();
 
         // When
-        store.taskStarted(task1);
-        store.taskStarted(task2);
+        tracker.taskStarted(task1);
+        tracker.taskStarted(task2);
 
         // Then
-        assertThat(store.getTasksInProgress())
+        assertThat(tracker.getTasksInProgress())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(task2, task1);
     }

@@ -26,7 +26,7 @@ public interface CompactionTaskQuery {
     CompactionTaskQuery UNFINISHED = CompactionTaskTracker::getTasksInProgress;
     CompactionTaskQuery ALL = CompactionTaskTracker::getAllTasks;
 
-    List<CompactionTaskStatus> run(CompactionTaskTracker store);
+    List<CompactionTaskStatus> run(CompactionTaskTracker tracker);
 
     static CompactionTaskQuery from(String type) {
         switch (type) {

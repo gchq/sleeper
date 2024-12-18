@@ -402,7 +402,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             // Then
             RecordsProcessedSummary jobSummary = new RecordsProcessedSummary(recordsProcessed,
                     jobStartTime, jobFinishTime);
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1", taskStartTime, taskFinishTime, jobSummary));
             assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job, DEFAULT_CREATED_TIME,
@@ -441,7 +441,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     job1StartTime, job1FinishTime);
             RecordsProcessedSummary job2Summary = new RecordsProcessedSummary(job2RecordsProcessed,
                     job2StartTime, job2FinishTime);
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1", taskStartTime, taskFinishTime, job1Summary, job2Summary));
             assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
@@ -467,7 +467,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask("test-task-1", processJobs(jobFails(failure)), times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:06Z")));
@@ -491,7 +491,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             runTask("test-task-1", processNoJobs(), times::poll);
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedCompactionTask("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z")));

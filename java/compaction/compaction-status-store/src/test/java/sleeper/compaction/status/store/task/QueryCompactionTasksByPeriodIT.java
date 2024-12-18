@@ -36,11 +36,11 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
         Instant periodEnd = Instant.parse("2022-10-06T12:00:00.000Z");
 
         // When
-        store.taskStarted(task);
-        store.taskFinished(task);
+        tracker.taskStarted(task);
+        tracker.taskFinished(task);
 
         // Then
-        assertThat(store.getTasksInTimePeriod(periodStart, periodEnd))
+        assertThat(tracker.getTasksInTimePeriod(periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(task);
     }
@@ -55,11 +55,11 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
         Instant periodEnd = Instant.parse("2022-10-06T11:00:00.000Z");
 
         // When
-        store.taskStarted(task);
-        store.taskFinished(task);
+        tracker.taskStarted(task);
+        tracker.taskFinished(task);
 
         // Then
-        assertThat(store.getTasksInTimePeriod(periodStart, periodEnd)).isEmpty();
+        assertThat(tracker.getTasksInTimePeriod(periodStart, periodEnd)).isEmpty();
     }
 
     @Test
@@ -75,13 +75,13 @@ public class QueryCompactionTasksByPeriodIT extends DynamoDBCompactionTaskStatus
         Instant periodEnd = Instant.parse("2022-10-06T12:00:00.000Z");
 
         // When
-        store.taskStarted(task1);
-        store.taskFinished(task1);
-        store.taskStarted(task2);
-        store.taskFinished(task2);
+        tracker.taskStarted(task1);
+        tracker.taskFinished(task1);
+        tracker.taskStarted(task2);
+        tracker.taskFinished(task2);
 
         // Then
-        assertThat(store.getTasksInTimePeriod(periodStart, periodEnd))
+        assertThat(tracker.getTasksInTimePeriod(periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(task2, task1);
     }

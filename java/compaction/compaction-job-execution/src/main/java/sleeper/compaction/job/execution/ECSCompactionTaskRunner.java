@@ -33,7 +33,7 @@ import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda.C
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
+import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3PropertiesReloader;
@@ -94,7 +94,7 @@ public class ECSCompactionTaskRunner {
                     HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
             CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient,
                     instanceProperties);
-            CompactionTaskTracker taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient,
+            CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient,
                     instanceProperties);
             String taskId = UUID.randomUUID().toString();
 
@@ -109,7 +109,7 @@ public class ECSCompactionTaskRunner {
                     tablePropertiesProvider, stateStoreProvider, jobTracker, instanceProperties, sqsClient);
             CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider, propertiesReloader,
                     stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
-                    waitForFiles, committerOrLambda, jobTracker, taskStatusStore, compactionSelector, taskId);
+                    waitForFiles, committerOrLambda, jobTracker, taskTracker, compactionSelector, taskId);
             task.run();
         } finally {
             sqsClient.shutdown();

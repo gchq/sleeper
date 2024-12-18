@@ -33,7 +33,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactory {
 
     private final Map<String, CompactionJobTracker> compactionJobTrackerByInstance = new HashMap<>();
-    private final Map<String, CompactionTaskTracker> compactionTaskStoreByInstance = new HashMap<>();
+    private final Map<String, CompactionTaskTracker> compactionTaskTrackerByInstance = new HashMap<>();
     private final Map<String, IngestJobStatusStore> ingestJobStoreByInstance = new HashMap<>();
     private final Map<String, IngestTaskStatusStore> ingestTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestBatcherStore> ingestBatcherStoreByInstance = new HashMap<>();
@@ -43,7 +43,7 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     }
 
     public void setTracker(String instanceId, CompactionTaskTracker tracker) {
-        compactionTaskStoreByInstance.put(instanceId, tracker);
+        compactionTaskTrackerByInstance.put(instanceId, tracker);
     }
 
     public void setTracker(String instanceId, IngestJobStatusStore tracker) {
@@ -65,8 +65,8 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     }
 
     @Override
-    public CompactionTaskTracker loadCompactionTaskStatusStore(InstanceProperties instanceProperties) {
-        return Optional.ofNullable(compactionTaskStoreByInstance.get(instanceProperties.get(ID)))
+    public CompactionTaskTracker loadCompactionTaskTracker(InstanceProperties instanceProperties) {
+        return Optional.ofNullable(compactionTaskTrackerByInstance.get(instanceProperties.get(ID)))
                 .orElse(CompactionTaskTracker.NONE);
     }
 

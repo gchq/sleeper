@@ -30,10 +30,10 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
 
         // When
-        store.taskStarted(taskStatus);
+        tracker.taskStarted(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
+        assertThat(tracker.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
@@ -44,11 +44,11 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
         CompactionTaskStatus taskStatus = finishedTaskWithDefaults();
 
         // When
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
+        tracker.taskStarted(taskStatus);
+        tracker.taskFinished(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
+        assertThat(tracker.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
@@ -59,11 +59,11 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
         CompactionTaskStatus taskStatus = finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber();
 
         // When
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
+        tracker.taskStarted(taskStatus);
+        tracker.taskFinished(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
+        assertThat(tracker.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
@@ -74,7 +74,7 @@ public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTest
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
 
         // When/Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
+        assertThat(tracker.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isNull();
     }

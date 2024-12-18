@@ -48,17 +48,17 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-public class DynamoDBCompactionTaskStatusStore implements CompactionTaskTracker {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStore.class);
+public class DynamoDBCompactionTaskTracker implements CompactionTaskTracker {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskTracker.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
     private final DynamoDBCompactionTaskStatusFormat format;
 
-    public DynamoDBCompactionTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public DynamoDBCompactionTaskTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this(dynamoDB, properties, Instant::now);
     }
 
-    public DynamoDBCompactionTaskStatusStore(
+    public DynamoDBCompactionTaskTracker(
             AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = taskStatusTableName(properties.get(ID));

@@ -82,7 +82,7 @@ public class CompactionTaskTestBase {
     protected final List<CompactionJob> consumedJobs = new ArrayList<>();
     protected final List<CompactionJob> jobsReturnedToQueue = new ArrayList<>();
     protected final InMemoryCompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
-    protected final CompactionTaskTracker taskStore = new InMemoryCompactionTaskTracker();
+    protected final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
     protected final List<Duration> sleeps = new ArrayList<>();
     protected final List<CompactionJobCommitRequest> commitRequestsOnQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
@@ -150,7 +150,7 @@ public class CompactionTaskTestBase {
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskStore, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
+                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
                 .run();
     }
 

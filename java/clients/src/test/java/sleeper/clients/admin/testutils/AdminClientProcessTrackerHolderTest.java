@@ -46,7 +46,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldSetCompactionTaskStatusStore() {
+    void shouldSetCompactionTaskTracker() {
         // Given
         InMemoryCompactionTaskTracker store = new InMemoryCompactionTaskTracker();
         InstanceProperties properties = createValidInstanceProperties();
@@ -56,7 +56,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         RunAdminClient runner = runClient().tracker(store);
 
         // Then
-        assertThat(runner.trackers().loadCompactionTaskStatusStore(properties))
+        assertThat(runner.trackers().loadCompactionTaskTracker(properties))
                 .isSameAs(store);
     }
 
@@ -102,13 +102,13 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnNoCompactionTaskStatusStore() {
+    void shouldReturnNoCompactionTaskTracker() {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().trackers().loadCompactionTaskStatusStore(properties))
+        assertThat(runClient().trackers().loadCompactionTaskTracker(properties))
                 .isSameAs(CompactionTaskTracker.NONE);
     }
 

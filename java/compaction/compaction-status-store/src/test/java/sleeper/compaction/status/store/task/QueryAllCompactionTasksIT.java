@@ -41,15 +41,15 @@ public class QueryAllCompactionTasksIT extends DynamoDBCompactionTaskStatusStore
                 Instant.parse("2022-10-06T11:22:00.001Z"));
 
         // When
-        store.taskStarted(task1);
-        store.taskStarted(task2);
-        store.taskStarted(task3);
-        store.taskFinished(task2);
-        store.taskStarted(task4);
-        store.taskFinished(task4);
+        tracker.taskStarted(task1);
+        tracker.taskStarted(task2);
+        tracker.taskStarted(task3);
+        tracker.taskFinished(task2);
+        tracker.taskStarted(task4);
+        tracker.taskFinished(task4);
 
         // Then
-        assertThat(store.getAllTasks())
+        assertThat(tracker.getAllTasks())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(task4, task3, task2, task1);
     }
@@ -57,6 +57,6 @@ public class QueryAllCompactionTasksIT extends DynamoDBCompactionTaskStatusStore
     @Test
     public void shouldReportNoCompactionTasks() {
         // When / Then
-        assertThat(store.getAllTasks()).isEmpty();
+        assertThat(tracker.getAllTasks()).isEmpty();
     }
 }

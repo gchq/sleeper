@@ -34,13 +34,13 @@ public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusSto
         // Given
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        CompactionTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        CompactionTaskTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
-        store.taskStarted(taskStatus);
+        tracker.taskStarted(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+        assertThat(tracker.getTask(taskStatus.getTaskId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 
@@ -49,15 +49,15 @@ public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusSto
         // Given
         CompactionTaskStatus taskStatus = finishedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        CompactionTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        CompactionTaskTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultTaskStartTime(), defaultTaskFinishTime());
 
         // When
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
+        tracker.taskStarted(taskStatus);
+        tracker.taskFinished(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+        assertThat(tracker.getTask(taskStatus.getTaskId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 
@@ -66,13 +66,13 @@ public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusSto
         // Given
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(1);
-        CompactionTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        CompactionTaskTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
-        store.taskStarted(taskStatus);
+        tracker.taskStarted(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+        assertThat(tracker.getTask(taskStatus.getTaskId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 

@@ -23,7 +23,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportArguments;
 import sleeper.clients.status.report.compaction.task.CompactionTaskStatusReporter;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
+import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
@@ -32,21 +32,21 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class CompactionTaskStatusReport {
 
-    private final CompactionTaskTracker store;
+    private final CompactionTaskTracker tracker;
     private final CompactionTaskStatusReporter reporter;
     private final CompactionTaskQuery query;
 
     public CompactionTaskStatusReport(
-            CompactionTaskTracker store,
+            CompactionTaskTracker tracker,
             CompactionTaskStatusReporter reporter,
             CompactionTaskQuery query) {
-        this.store = store;
+        this.tracker = tracker;
         this.reporter = reporter;
         this.query = query;
     }
 
     public void run() {
-        reporter.report(query, query.run(store));
+        reporter.report(query, query.run(tracker));
     }
 
     public static void main(String[] args) {
@@ -65,8 +65,8 @@ public class CompactionTaskStatusReport {
 
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, arguments.getInstanceId());
-            CompactionTaskTracker statusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-            new CompactionTaskStatusReport(statusStore, arguments.getReporter(), arguments.getQuery()).run();
+            CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+            new CompactionTaskStatusReport(tracker, arguments.getReporter(), arguments.getQuery()).run();
         } finally {
             s3Client.shutdown();
             dynamoDBClient.shutdown();
