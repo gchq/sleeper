@@ -46,7 +46,6 @@ public class IngestBatcherST {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(MAIN);
-        sleeper.ingest().batcher().clearStore();
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 

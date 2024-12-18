@@ -89,10 +89,6 @@ public class SystemTestIngestBatcher {
         return this;
     }
 
-    public void clearStore() {
-        driver.batcherStore().deleteAllPending();
-    }
-
     private Stream<String> jobIdsInStore() {
         Set<String> tableIds = instance.streamTableProperties().map(table -> table.get(TABLE_ID)).collect(toUnmodifiableSet());
         return driver.batcherStore().getAllFilesNewestFirst().stream()
