@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
+import static sleeper.core.deploy.SleeperScheduleRule.COMPACTION_JOB_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.COMPACTION_TASK_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.INGEST_TASK_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.QUERY_WARM_LAMBDA;
@@ -105,7 +106,8 @@ public class SystemTestInstanceConfiguration {
                 TRANSACTION_LOG_TRANSACTION_DELETION,
                 TABLE_METRICS,
                 INGEST_TASK_CREATION,
-                COMPACTION_TASK_CREATION).collect(toSet());
+                COMPACTION_TASK_CREATION,
+                COMPACTION_JOB_CREATION).collect(toSet());
         private String shortName;
 
         private Builder() {
