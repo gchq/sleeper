@@ -43,7 +43,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedR
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFinished;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
@@ -53,7 +52,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId("test-run").build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId("test-run").build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -71,7 +70,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
 
         // Then
@@ -123,7 +122,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
         store.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
@@ -146,7 +145,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         List<String> failureReasons = List.of("Something failed");
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
         store.jobFailed(job.failedEventBuilder(runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
 

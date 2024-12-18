@@ -23,12 +23,11 @@ import sleeper.ingest.core.job.status.IngestJobValidatedEvent;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedEvent;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
@@ -40,8 +39,8 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(rejectedEvent(job1, validationTime1, "Test reason 1"));
-        store.jobValidated(rejectedEvent(job2, validationTime2, "Test reason 2"));
+        store.jobValidated(job1.createRejectedEvent(validationTime1, List.of("Test reason 1")));
+        store.jobValidated(job2.createRejectedEvent(validationTime2, List.of("Test reason 2")));
 
         // Then
         assertThat(store.getInvalidJobs())
@@ -74,8 +73,8 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(rejectedEvent(job, validationTime1, "Test reason 1"));
-        store.jobValidated(rejectedEvent(job, validationTime2, "Test reason 2"));
+        store.jobValidated(job.createRejectedEvent(validationTime1, List.of("Test reason 1")));
+        store.jobValidated(job.createRejectedEvent(validationTime2, List.of("Test reason 2")));
 
         // Then
         assertThat(store.getInvalidJobs())
@@ -95,8 +94,8 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(ingestJobAccepted(job1, validationTime1).build());
-        store.jobValidated(rejectedEvent(job2, validationTime2, "Test reason 2"));
+        store.jobValidated(job1.acceptedEventBuilder(validationTime1).build());
+        store.jobValidated(job2.createRejectedEvent(validationTime2, List.of("Test reason 2")));
 
         // Then
         assertThat(store.getInvalidJobs())
@@ -113,8 +112,8 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(rejectedEvent(job, validationTime1, "Test reason 1"));
-        store.jobValidated(ingestJobAccepted(job, validationTime2).build());
+        store.jobValidated(job.createRejectedEvent(validationTime1, List.of("Test reason 1")));
+        store.jobValidated(job.acceptedEventBuilder(validationTime2).build());
 
         // Then
         assertThat(store.getInvalidJobs()).isEmpty();

@@ -123,7 +123,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFin
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.validatedIngestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
@@ -704,7 +703,7 @@ class BulkImportJobDriverIT {
     }
 
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job, Supplier<Instant> timeSupplier) throws IOException {
-        statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
+        statusStore.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         AddFilesAsynchronously addFilesAsync = BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties);

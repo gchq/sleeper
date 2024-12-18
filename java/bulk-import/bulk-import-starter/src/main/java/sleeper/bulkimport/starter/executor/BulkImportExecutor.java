@@ -37,9 +37,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobRejected;
-
 public class BulkImportExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportExecutor.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
@@ -78,8 +75,8 @@ public class BulkImportExecutor {
         if (!validateJob(bulkImportJob)) {
             return;
         }
-        ingestJobStatusStore.jobValidated(ingestJobAccepted(
-                bulkImportJob.toIngestJob(), validationTimeSupplier.get())
+        ingestJobStatusStore.jobValidated(bulkImportJob.toIngestJob()
+                .acceptedEventBuilder(validationTimeSupplier.get())
                 .jobRunId(jobRunId).build());
         try {
             LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
@@ -123,8 +120,8 @@ public class BulkImportExecutor {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
             LOGGER.warn(errorMessage);
-            ingestJobStatusStore.jobValidated(ingestJobRejected(
-                    bulkImportJob.toIngestJob(), validationTimeSupplier.get(), failedChecks));
+            ingestJobStatusStore.jobValidated(bulkImportJob.toIngestJob()
+                    .createRejectedEvent(validationTimeSupplier.get(), failedChecks));
             return false;
         } else {
             return true;

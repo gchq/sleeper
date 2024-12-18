@@ -29,9 +29,7 @@ import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFil
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunOnTask;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedEvent;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
@@ -42,7 +40,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).taskId(taskId).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -59,7 +57,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).taskId(taskId).build());
         store.jobStarted(job.startedAfterValidationEventBuilder(startTime).taskId(taskId).build());
 
         // Then
@@ -76,7 +74,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobValidated(rejectedEvent(job, validationTime, "Test validation reason"));
+        store.jobValidated(job.createRejectedEvent(validationTime, List.of("Test validation reason")));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -92,8 +90,8 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobValidated(rejectedEvent(job, validationTime,
-                "Test validation reason 1", "Test validation reason 2"));
+        store.jobValidated(job.createRejectedEvent(validationTime,
+                List.of("Test validation reason 1", "Test validation reason 2")));
 
         // Then
         assertThat(getAllJobStatuses())

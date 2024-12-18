@@ -499,16 +499,4 @@ public class IngestJobStatusTestHelper {
                 .build();
     }
 
-    /**
-     * Creates an ingest job validated event for a rejected job.
-     *
-     * @param  job            the ingest job
-     * @param  validationTime the validation time
-     * @param  reasons        the list of reasons
-     * @return                an ingest job validated event for a rejected job
-     */
-    public static IngestJobValidatedEvent rejectedEvent(IngestJob job, Instant validationTime, String... reasons) {
-        return IngestJobValidatedEvent.ingestJobRejected(job, validationTime, List.of(reasons));
-    }
-
 }

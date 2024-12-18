@@ -16,8 +16,6 @@
 
 package sleeper.ingest.core.job.status;
 
-import sleeper.ingest.core.job.IngestJob;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -47,17 +45,6 @@ public class IngestJobValidatedEvent {
     }
 
     /**
-     * Creates an instance of this class for when an ingest job passed validation checks.
-     *
-     * @param  job            the ingest job
-     * @param  validationTime the validation time
-     * @return                an instance of this class
-     */
-    public static Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
-        return builder().job(job).validationTime(validationTime).reasons(List.of());
-    }
-
-    /**
      * Creates an instance of this class for when an ingest job failed validation checks.
      *
      * @param  jobId          the ingest job ID
@@ -73,18 +60,6 @@ public class IngestJobValidatedEvent {
                 .reasons(reasons)
                 .jsonMessage(jsonMessage)
                 .build();
-    }
-
-    /**
-     * Creates an instance of this class for when an ingest job failed validation checks.
-     *
-     * @param  job            the ingest job
-     * @param  validationTime the validation time
-     * @param  reasons        the list of reasons why the validation failed
-     * @return                an instance of this class
-     */
-    public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, List<String> reasons) {
-        return builder().job(job).validationTime(validationTime).reasons(reasons).build();
     }
 
     public static Builder builder() {
@@ -196,18 +171,6 @@ public class IngestJobValidatedEvent {
         private String jsonMessage;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the job ID, table ID, and file count from the ingest job.
-         *
-         * @param  job the ingest job
-         * @return     the builder
-         */
-        public Builder job(IngestJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId())
-                    .fileCount(job.getFileCount());
         }
 
         /**

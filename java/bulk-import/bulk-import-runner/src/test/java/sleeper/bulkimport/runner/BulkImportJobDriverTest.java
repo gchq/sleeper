@@ -61,7 +61,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFin
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.validatedIngestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 class BulkImportJobDriverTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -227,7 +226,7 @@ class BulkImportJobDriverTest {
     private void runJob(
             BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
             BulkImportJobDriver driver) throws Exception {
-        statusStore.jobValidated(ingestJobAccepted(job.toIngestJob(), validationTime).jobRunId(jobRunId).build());
+        statusStore.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         driver.run(job, jobRunId, taskId);
     }
 

@@ -21,6 +21,7 @@ import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
 import sleeper.ingest.core.job.status.IngestJobFailedEvent;
 import sleeper.ingest.core.job.status.IngestJobFinishedEvent;
 import sleeper.ingest.core.job.status.IngestJobStartedEvent;
+import sleeper.ingest.core.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
 import java.util.List;
@@ -50,13 +51,28 @@ public class IngestJob {
     }
 
     /**
-     * Creates a builder for an event when files have been added to the state store. Used with the ingest job tracker.
+     * Creates a builder for an event when an ingest job passed validation checks. Used with the ingest job tracker.
      *
-     * @param  writtenTime the time the files were written
-     * @return             the builder
+     * @param  validationTime the validation time
+     * @return                the builder
      */
-    public IngestJobAddedFilesEvent.Builder addedFilesEventBuilder(Instant writtenTime) {
-        return IngestJobAddedFilesEvent.builder().jobId(id).tableId(tableId).writtenTime(writtenTime);
+    public IngestJobValidatedEvent.Builder acceptedEventBuilder(Instant validationTime) {
+        return validatedEventBuilder(validationTime).reasons(List.of());
+    }
+
+    /**
+     * Creates a builder for an event when an ingest job failed validation checks. Used with the ingest job tracker.
+     *
+     * @param  validationTime the validation time
+     * @param  reasons        the reasons why the validation failed
+     * @return                the builder
+     */
+    public IngestJobValidatedEvent createRejectedEvent(Instant validationTime, List<String> reasons) {
+        return validatedEventBuilder(validationTime).reasons(reasons).build();
+    }
+
+    private IngestJobValidatedEvent.Builder validatedEventBuilder(Instant validationTime) {
+        return IngestJobValidatedEvent.builder().jobId(id).tableId(tableId).validationTime(validationTime).fileCount(getFileCount());
     }
 
     /**
@@ -92,6 +108,16 @@ public class IngestJob {
      */
     public IngestJobStartedEvent.Builder startedAfterValidationEventBuilder(Instant startTime) {
         return IngestJobStartedEvent.builder().jobId(id).tableId(tableId).startTime(startTime).fileCount(getFileCount()).startOfRun(false);
+    }
+
+    /**
+     * Creates a builder for an event when files have been added to the state store. Used with the ingest job tracker.
+     *
+     * @param  writtenTime the time the files were written
+     * @return             the builder
+     */
+    public IngestJobAddedFilesEvent.Builder addedFilesEventBuilder(Instant writtenTime) {
+        return IngestJobAddedFilesEvent.builder().jobId(id).tableId(tableId).writtenTime(writtenTime);
     }
 
     /**

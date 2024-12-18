@@ -54,10 +54,8 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAdd
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedEvent;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class InMemoryIngestJobStatusStoreTest {
 
@@ -230,7 +228,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(rejectedEvent(job, validationTime, "Test validation reason"));
+            store.jobValidated(job.createRejectedEvent(validationTime, List.of("Test validation reason")));
 
             // Then
             assertThat(store.getInvalidJobs())
@@ -248,8 +246,8 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
 
             // When
-            store.jobValidated(rejectedEvent(job1, validationTime1, "Test validation reason"));
-            store.jobValidated(ingestJobAccepted(job2, validationTime2).build());
+            store.jobValidated(job1.createRejectedEvent(validationTime1, List.of("Test validation reason")));
+            store.jobValidated(job2.acceptedEventBuilder(validationTime2).build());
 
             // Then
             assertThat(store.getInvalidJobs())
@@ -267,8 +265,8 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
 
             // When
-            store.jobValidated(rejectedEvent(job1, validationTime1, "Test reason 1"));
-            store.jobValidated(rejectedEvent(job2, validationTime2, "Test reason 2"));
+            store.jobValidated(job1.createRejectedEvent(validationTime1, List.of("Test reason 1")));
+            store.jobValidated(job2.createRejectedEvent(validationTime2, List.of("Test reason 2")));
 
             // Then
             assertThat(store.getInvalidJobs()).containsExactly(
@@ -285,8 +283,8 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
 
             // When
-            store.jobValidated(rejectedEvent(job1, validationTime1, "Test validation reason"));
-            store.jobValidated(ingestJobAccepted(job1, validationTime2).build());
+            store.jobValidated(job1.createRejectedEvent(validationTime1, List.of("Test validation reason")));
+            store.jobValidated(job1.acceptedEventBuilder(validationTime2).build());
 
             // Then
             assertThat(store.getInvalidJobs()).isEmpty();
@@ -299,7 +297,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(rejectedEvent(job, validationTime, "Test validation reason"));
+            store.jobValidated(job.createRejectedEvent(validationTime, List.of("Test validation reason")));
 
             // Then
             assertThat(store.getInvalidJobs()).containsExactly(
@@ -318,7 +316,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
+            store.jobValidated(job.acceptedEventBuilder(validationTime).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -334,7 +332,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
             // When
-            store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
+            store.jobValidated(job.acceptedEventBuilder(validationTime).taskId(taskId).build());
             store.jobStarted(job.startedAfterValidationEventBuilder(startTime).taskId(taskId).build());
 
             // Then
@@ -350,7 +348,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(rejectedEvent(job, validationTime, "Test validation reason"));
+            store.jobValidated(job.createRejectedEvent(validationTime, List.of("Test validation reason")));
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -365,8 +363,8 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(rejectedEvent(job, validationTime,
-                    "Test validation reason 1", "Test validation reason 2"));
+            store.jobValidated(job.createRejectedEvent(validationTime,
+                    List.of("Test validation reason 1", "Test validation reason 2")));
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -385,7 +383,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId("test-run").build());
+            store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId("test-run").build());
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -405,7 +403,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
             // When
-            store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+            store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
             store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
@@ -428,7 +426,7 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
 
             // When
-            store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+            store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
             store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
@@ -474,7 +472,7 @@ public class InMemoryIngestJobStatusStoreTest {
             List<String> failureReasons = List.of("Something went wrong");
 
             // When
-            store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
+            store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
             store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobFailed(job.failedEventBuilder(runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
 
