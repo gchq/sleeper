@@ -158,7 +158,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction task status report")
     class CompactionTaskStatusReport {
-        private final InMemoryCompactionTaskTracker compactionTaskStatusStore = new InMemoryCompactionTaskTracker();
+        private final InMemoryCompactionTaskTracker compactionTaskTracker = new InMemoryCompactionTaskTracker();
 
         private List<CompactionTaskStatus> exampleTaskStartedStatuses() {
             return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));
@@ -167,7 +167,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            exampleTaskStartedStatuses().forEach(compactionTaskStatusStore::taskStarted);
+            exampleTaskStartedStatuses().forEach(compactionTaskTracker::taskStarted);
 
             // When/Then
             String output = runCompactionTaskStatusReport()
@@ -189,7 +189,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            exampleTaskStartedStatuses().forEach(compactionTaskStatusStore::taskStarted);
+            exampleTaskStartedStatuses().forEach(compactionTaskTracker::taskStarted);
 
             // When/Then
             String output = runCompactionTaskStatusReport()
@@ -210,7 +210,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties);
             return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION, COMPACTION_TASK_STATUS_REPORT_OPTION)
-                    .tracker(compactionTaskStatusStore);
+                    .tracker(compactionTaskTracker);
         }
     }
 

@@ -35,13 +35,13 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 
 public class CompactionTaskStatusReportTest {
 
-    private final InMemoryCompactionTaskTracker store = new InMemoryCompactionTaskTracker();
+    private final InMemoryCompactionTaskTracker tracker = new InMemoryCompactionTaskTracker();
 
     @Test
     public void shouldReportCompactionTaskUnfinished() throws Exception {
         // Given
         CompactionTaskStatus task = startedTask("A", "2022-10-06T12:17:00.001Z");
-        store.taskStarted(task);
+        tracker.taskStarted(task);
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.UNFINISHED)).hasToString(
@@ -56,8 +56,8 @@ public class CompactionTaskStatusReportTest {
         CompactionTaskStatus unfinishedTask = startedTask("unfinished-task", "2022-10-06T12:17:00.001Z");
         CompactionTaskStatus finishedTask = finishedTask("finished-task", "2022-10-06T12:20:00.001Z",
                 "2022-10-06T12:20:30.001Z", 200L, 100L);
-        store.taskStarted(unfinishedTask);
-        store.taskStartedAndFinished(finishedTask);
+        tracker.taskStarted(unfinishedTask);
+        tracker.taskStartedAndFinished(finishedTask);
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
@@ -81,8 +81,8 @@ public class CompactionTaskStatusReportTest {
                 summary(Instant.parse("2022-10-06T12:24:12.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:24:23.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:24:34.001Z"), Duration.ofSeconds(10), 400, 200));
-        store.taskStartedAndFinished(finishedTask1);
-        store.taskStartedAndFinished(finishedTask2);
+        tracker.taskStartedAndFinished(finishedTask1);
+        tracker.taskStartedAndFinished(finishedTask2);
 
         // When / Then
         assertThat(getStandardReport(CompactionTaskQuery.ALL)).hasToString(
@@ -101,7 +101,7 @@ public class CompactionTaskStatusReportTest {
 
     private String getReport(CompactionTaskQuery query, Function<PrintStream, CompactionTaskStatusReporter> getReporter) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
-        new CompactionTaskStatusReport(store,
+        new CompactionTaskStatusReport(tracker,
                 getReporter.apply(output.getPrintStream()),
                 query).run();
         return output.toString();

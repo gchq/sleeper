@@ -48,16 +48,16 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     @Test
     void shouldSetCompactionTaskTracker() {
         // Given
-        InMemoryCompactionTaskTracker store = new InMemoryCompactionTaskTracker();
+        InMemoryCompactionTaskTracker tracker = new InMemoryCompactionTaskTracker();
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().tracker(store);
+        RunAdminClient runner = runClient().tracker(tracker);
 
         // Then
         assertThat(runner.trackers().loadCompactionTaskTracker(properties))
-                .isSameAs(store);
+                .isSameAs(tracker);
     }
 
     @Test
