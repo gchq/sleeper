@@ -17,9 +17,9 @@ package sleeper.systemtest.dsl.util;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
-import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.PollWithRetries.CheckFailedException;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class WaitForTasksTest {
 
     private final IngestJobStatusStore ingestJobStore = new InMemoryIngestJobStatusStore();
-    private final CompactionJobStatusStore compactionJobStore = new InMemoryCompactionJobStatusStore();
+    private final CompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
     private final List<Duration> waits = new ArrayList<>();
     private Runnable onWait = () -> {
     };
@@ -160,7 +160,7 @@ public class WaitForTasksTest {
     void shouldFindCompactionStartsDuringFirstWait() {
         // Given
         onWait(() -> {
-            compactionJobStore.jobStarted(compactionJobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
+            compactionJobTracker.jobStarted(compactionJobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
         });
 
         // When / Then
@@ -173,8 +173,8 @@ public class WaitForTasksTest {
     void shouldFailToStartEnoughCompactionTasks() {
         // Given
         onWait(() -> {
-            compactionJobStore.jobStarted(compactionJobStartedOnTask("job-1", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
-            compactionJobStore.jobStarted(compactionJobStartedOnTask("job-2", "test-task", Instant.parse("2024-09-02T14:47:02Z")));
+            compactionJobTracker.jobStarted(compactionJobStartedOnTask("job-1", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
+            compactionJobTracker.jobStarted(compactionJobStartedOnTask("job-2", "test-task", Instant.parse("2024-09-02T14:47:02Z")));
         });
 
         // When / Then
@@ -188,7 +188,7 @@ public class WaitForTasksTest {
     }
 
     private void waitUntilNumTasksStartedACompaction(int expectedTasks, List<String> jobIds, PollWithRetries poll) {
-        new WaitForTasks(compactionJobStore).waitUntilNumTasksStartedAJob(expectedTasks, jobIds, poll);
+        new WaitForTasks(compactionJobTracker).waitUntilNumTasksStartedAJob(expectedTasks, jobIds, poll);
     }
 
     private PollWithRetries noRetries() {
