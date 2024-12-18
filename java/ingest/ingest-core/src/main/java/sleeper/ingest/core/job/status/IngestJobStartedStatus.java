@@ -15,8 +15,6 @@
  */
 package sleeper.ingest.core.job.status;
 
-import sleeper.ingest.core.job.IngestJob;
-
 import java.time.Instant;
 import java.util.Objects;
 
@@ -117,16 +115,6 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         private boolean isStartOfRun = true;
 
         public Builder() {
-        }
-
-        /**
-         * Sets the input file count using the provided ingest job.
-         *
-         * @param  job the ingest job
-         * @return     the builder
-         */
-        public Builder job(IngestJob job) {
-            return inputFileCount(job.getFiles().size());
         }
 
         /**

@@ -440,7 +440,7 @@ public class IngestJobStatusTestHelper {
      * @return            an ingest job started status
      */
     public static IngestJobStartedStatus ingestStartedStatus(IngestJob job, Instant startTime, Instant updateTime) {
-        return IngestJobStartedStatus.withStartOfRun(true).job(job)
+        return IngestJobStartedStatus.withStartOfRun(true).inputFileCount(job.getFileCount())
                 .startTime(startTime).updateTime(updateTime)
                 .build();
     }
@@ -453,7 +453,7 @@ public class IngestJobStatusTestHelper {
      * @return           an ingest job started status
      */
     public static IngestJobStartedStatus validatedIngestStartedStatus(IngestJob job, Instant startTime) {
-        return IngestJobStartedStatus.withStartOfRun(false).job(job)
+        return IngestJobStartedStatus.withStartOfRun(false).inputFileCount(job.getFileCount())
                 .startTime(startTime).updateTime(defaultUpdateTime(startTime))
                 .build();
     }
