@@ -427,7 +427,7 @@ public class IngestJobStatusTestHelper {
     /**
      * Creates an ingest job started status.
      *
-     * @param  job        the ingest job
+     * @param  fileCount  the number of input files in the job
      * @param  startTime  the start time
      * @param  updateTime the update time
      * @return            an ingest job started status
@@ -464,8 +464,9 @@ public class IngestJobStatusTestHelper {
     /**
      * Creates an ingest job started status.
      *
-     * @param  startTime the start time
-     * @return           an ingest job started status
+     * @param  inputFileCount the number of input files in the job
+     * @param  startTime      the start time
+     * @return                an ingest job started status
      */
     public static IngestJobStartedStatus validatedIngestStartedStatus(int inputFileCount, Instant startTime) {
         return IngestJobStartedStatus.withStartOfRun(false).inputFileCount(inputFileCount)
