@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
@@ -34,14 +34,14 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 public class WaitForTasks {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForTasks.class);
 
-    private final JobStatusStore jobStatusStore;
+    private final JobTracker jobTracker;
 
-    public WaitForTasks(IngestJobStatusStore jobStatusStore) {
-        this.jobStatusStore = JobStatusStore.forIngest(jobStatusStore);
+    public WaitForTasks(IngestJobStatusStore jobTracker) {
+        this.jobTracker = JobTracker.forIngest(jobTracker);
     }
 
-    public WaitForTasks(CompactionJobStatusStore jobStatusStore) {
-        this.jobStatusStore = JobStatusStore.forCompaction(jobStatusStore);
+    public WaitForTasks(CompactionJobTracker jobTracker) {
+        this.jobTracker = JobTracker.forCompaction(jobTracker);
     }
 
     public void waitUntilOneTaskStartedAJob(List<String> jobIds, PollWithRetriesDriver pollDriver) {
@@ -67,7 +67,7 @@ public class WaitForTasks {
     }
 
     private int numTasksStartedAJob(List<String> jobIds) {
-        Set<String> taskIds = jobStatusStore.findRunsOfJobs(jobIds)
+        Set<String> taskIds = jobTracker.findRunsOfJobs(jobIds)
                 .map(ProcessRun::getTaskId)
                 .collect(toUnmodifiableSet());
         LOGGER.info("Found {} tasks with runs for given jobs", taskIds.size());
@@ -75,18 +75,18 @@ public class WaitForTasks {
     }
 
     @FunctionalInterface
-    private interface JobStatusStore {
+    private interface JobTracker {
         Stream<ProcessRun> findRunsOfJobs(Collection<String> jobIds);
 
-        static JobStatusStore forIngest(IngestJobStatusStore store) {
+        static JobTracker forIngest(IngestJobStatusStore tracker) {
             return jobIds -> jobIds.stream().parallel()
-                    .flatMap(jobId -> store.getJob(jobId).stream())
+                    .flatMap(jobId -> tracker.getJob(jobId).stream())
                     .flatMap(job -> job.getJobRuns().stream());
         }
 
-        static JobStatusStore forCompaction(CompactionJobStatusStore store) {
+        static JobTracker forCompaction(CompactionJobTracker tracker) {
             return jobIds -> jobIds.stream().parallel()
-                    .flatMap(jobId -> store.getJob(jobId).stream())
+                    .flatMap(jobId -> tracker.getJob(jobId).stream())
                     .flatMap(job -> job.getJobRuns().stream());
         }
     }
