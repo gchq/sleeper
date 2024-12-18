@@ -16,8 +16,10 @@
 package sleeper.cdk.stack.core;
 
 import software.amazon.awscdk.NestedStack;
+import software.amazon.awscdk.services.iam.AccountRootPrincipal;
 import software.amazon.awscdk.services.iam.IRole;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.iam.Role;
 import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -33,6 +35,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ADMIN_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BY_QUEUE_ROLE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_DIRECT_ROLE_ARN;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class ManagedPoliciesStack extends NestedStack {
@@ -68,6 +73,12 @@ public class ManagedPoliciesStack extends NestedStack {
             readIngestSourcesPolicy = createManagedPolicy("ReadIngestSources");
             sourceBuckets.forEach(bucket -> bucket.grantRead(readIngestSourcesPolicy));
         }
+    }
+
+    public void createRoles() {
+        createAdminRole();
+        createIngestByQueueRole();
+        createDirectIngestRole();
     }
 
     public ManagedPolicy getDirectIngestPolicyForGrants() {
@@ -125,14 +136,6 @@ public class ManagedPoliciesStack extends NestedStack {
         }
     }
 
-    Stream<ManagedPolicy> instanceAdminPolicies() {
-        return Stream.of(
-                directIngestPolicy, ingestByQueuePolicy, queryPolicy,
-                editTablesPolicy, reportingPolicy, clearInstancePolicy, adminPolicy,
-                invokeCompactionPolicy)
-                .filter(policy -> policy != null);
-    }
-
     private ManagedPolicy createManagedPolicy(String id) {
         return ManagedPolicy.Builder.create(this, id)
                 .managedPolicyName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties), id))
@@ -145,5 +148,43 @@ public class ManagedPoliciesStack extends NestedStack {
                 .filter(not(String::isBlank))
                 .map(bucketName -> Bucket.fromBucketName(scope, "SourceBucket" + index.getAndIncrement(), bucketName))
                 .collect(Collectors.toList());
+    }
+
+    private void createAdminRole() {
+        Role adminRole = Role.Builder.create(this, "AdminRole")
+                .assumedBy(new AccountRootPrincipal())
+                .roleName("sleeper-admin-" + Utils.cleanInstanceId(instanceProperties))
+                .build();
+
+        instanceAdminPolicies().forEach(policy -> policy.attachToRole(adminRole));
+        adminRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonECSTaskExecutionRolePolicy"));
+
+        instanceProperties.set(ADMIN_ROLE_ARN, adminRole.getRoleArn());
+    }
+
+    private Stream<ManagedPolicy> instanceAdminPolicies() {
+        return Stream.of(
+                directIngestPolicy, ingestByQueuePolicy, queryPolicy,
+                editTablesPolicy, reportingPolicy, clearInstancePolicy, adminPolicy,
+                invokeCompactionPolicy)
+                .filter(policy -> policy != null);
+    }
+
+    private void createIngestByQueueRole() {
+        Role ingestRole = Role.Builder.create(this, "IngestByQueueRole")
+                .assumedBy(new AccountRootPrincipal())
+                .roleName("sleeper-ingest-by-queue-" + Utils.cleanInstanceId(instanceProperties))
+                .build();
+        ingestByQueuePolicy.attachToRole(ingestRole);
+        instanceProperties.set(INGEST_BY_QUEUE_ROLE_ARN, ingestRole.getRoleArn());
+    }
+
+    private void createDirectIngestRole() {
+        Role ingestRole = Role.Builder.create(this, "DirectIngestRole")
+                .assumedBy(new AccountRootPrincipal())
+                .roleName("sleeper-ingest-direct-" + Utils.cleanInstanceId(instanceProperties))
+                .build();
+        directIngestPolicy.attachToRole(ingestRole);
+        instanceProperties.set(INGEST_DIRECT_ROLE_ARN, ingestRole.getRoleArn());
     }
 }
