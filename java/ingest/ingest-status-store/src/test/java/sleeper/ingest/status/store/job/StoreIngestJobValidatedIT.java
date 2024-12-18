@@ -26,7 +26,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunOnTask;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
@@ -61,7 +60,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestB
 
         // When
         store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
-        store.jobStarted(validatedIngestJobStarted(job, startTime).taskId(taskId).build());
+        store.jobStarted(job.startedAfterValidationEventBuilder(startTime).taskId(taskId).build());
 
         // Then
         assertThat(getAllJobStatuses())

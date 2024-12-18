@@ -43,8 +43,6 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunOnTask;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
@@ -76,7 +74,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             IngestJob job = createJobWithTableAndFiles("test-job", table);
 
-            store.jobStarted(ingestJobStarted(job, startTime).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
                     jobStatus(job, startedIngestRun(job, taskId, startTime)));
         }
@@ -87,7 +85,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             IngestJob job = createJobWithTableAndFiles("test-job", table, "test-file-1.parquet", "test-file-2.parquet");
 
-            store.jobStarted(ingestJobStarted(job, startTime).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
                     jobStatus(job, startedIngestRun(job, taskId, startTime)));
         }
@@ -101,7 +99,7 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime, finishTime);
 
-            store.jobStarted(ingestJobStarted(job, startTime).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
             store.jobFinished(job.finishedEventBuilder(summary).taskId(taskId).numFilesWrittenByJob(1).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
                     jobStatus(job, finishedIngestRun(job, taskId, summary, 1)));
@@ -133,9 +131,9 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
-            store.jobStarted(ingestJobStarted(job, startTime1).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime1).taskId(taskId).build());
             store.jobFinished(job.finishedEventBuilder(summary1).taskId(taskId).numFilesWrittenByJob(1).build());
-            store.jobStarted(ingestJobStarted(job, startTime2).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime2).taskId(taskId).build());
             store.jobFinished(job.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
@@ -156,9 +154,9 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
-            store.jobStarted(ingestJobStarted(job1, startTime1).taskId(taskId).build());
+            store.jobStarted(job1.startedEventBuilder(startTime1).taskId(taskId).build());
             store.jobFinished(job1.finishedEventBuilder(summary1).taskId(taskId).numFilesWrittenByJob(1).build());
-            store.jobStarted(ingestJobStarted(job2, startTime2).taskId(taskId).build());
+            store.jobStarted(job2.startedEventBuilder(startTime2).taskId(taskId).build());
             store.jobFinished(job2.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
@@ -182,9 +180,9 @@ public class InMemoryIngestJobStatusStoreTest {
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
             // When
-            store.jobStarted(ingestJobStarted(job1, startTime1).taskId(taskId).build());
+            store.jobStarted(job1.startedEventBuilder(startTime1).taskId(taskId).build());
             store.jobFinished(job1.finishedEventBuilder(summary1).taskId(taskId).numFilesWrittenByJob(1).build());
-            store.jobStarted(ingestJobStarted(job2, startTime2).taskId(taskId).build());
+            store.jobStarted(job2.startedEventBuilder(startTime2).taskId(taskId).build());
             store.jobFinished(job2.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
@@ -211,8 +209,8 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
 
             // When
-            store.jobStarted(ingestJobStarted(job1, startTime1).taskId(taskId).build());
-            store.jobStarted(ingestJobStarted(job2, startTime2).taskId(taskId).build());
+            store.jobStarted(job1.startedEventBuilder(startTime1).taskId(taskId).build());
+            store.jobStarted(job2.startedEventBuilder(startTime2).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(table2.getTableUniqueId())).containsExactly(
@@ -337,7 +335,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobValidated(ingestJobAccepted(job, validationTime).taskId(taskId).build());
-            store.jobStarted(validatedIngestJobStarted(job, startTime).taskId(taskId).build());
+            store.jobStarted(job.startedAfterValidationEventBuilder(startTime).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -408,7 +406,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
-            store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -431,7 +429,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
-            store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
@@ -453,7 +451,7 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
 
             // When
-            store.jobStarted(ingestJobStartedBuilder(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
@@ -477,7 +475,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
-            store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobFailed(job.failedEventBuilder(runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
 
             // Then
@@ -506,7 +504,7 @@ public class InMemoryIngestJobStatusStoreTest {
             List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(fileFactory.rootFile("file.parquet", 123)));
 
             // When
-            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
@@ -538,7 +536,7 @@ public class InMemoryIngestJobStatusStoreTest {
                     fileFactory.partitionFile("R", "file.parquet", 50)));
 
             // When
-            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
@@ -567,7 +565,7 @@ public class InMemoryIngestJobStatusStoreTest {
                     fileFactory.rootFile("file2.parquet", 456)));
 
             // When
-            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
@@ -595,7 +593,7 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(1), 123, 123);
 
             // When
-            store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            store.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
             store.jobFinished(job.finishedEventBuilder(summary)
                     .jobRunId(jobRunId).taskId(taskId)
                     .filesWrittenByJob(filesAdded).committedBySeparateFileUpdates(true)
@@ -616,12 +614,5 @@ public class InMemoryIngestJobStatusStoreTest {
 
     private TableStatus createTable(String tableName) {
         return TableStatusTestHelper.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
-    }
-
-    private static IngestJobStartedEvent.Builder ingestJobStartedBuilder(IngestJob job, Instant startTime) {
-        return IngestJobStartedEvent.builder()
-                .job(job)
-                .startTime(startTime)
-                .startOfRun(true);
     }
 }

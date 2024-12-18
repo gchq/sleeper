@@ -32,7 +32,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 
@@ -85,8 +84,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         String taskId2 = "second-task";
 
         // When
-        store.jobStarted(ingestJobStarted(job, startTime1).taskId(taskId1).build());
-        store.jobStarted(ingestJobStarted(job, startTime2).taskId(taskId2).build());
+        store.jobStarted(job.startedEventBuilder(startTime1).taskId(taskId1).build());
+        store.jobStarted(job.startedEventBuilder(startTime2).taskId(taskId2).build());
         store.jobFinished(job.finishedEventBuilder(defaultSummary(startTime1, finishTime1)).taskId(taskId1).numFilesWrittenByJob(1).build());
         store.jobFinished(job.finishedEventBuilder(defaultSummary(startTime2, finishTime2)).taskId(taskId2).numFilesWrittenByJob(2).build());
 

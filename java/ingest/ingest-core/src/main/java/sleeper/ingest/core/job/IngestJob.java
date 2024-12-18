@@ -20,6 +20,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
 import sleeper.ingest.core.job.status.IngestJobFailedEvent;
 import sleeper.ingest.core.job.status.IngestJobFinishedEvent;
+import sleeper.ingest.core.job.status.IngestJobStartedEvent;
 
 import java.time.Instant;
 import java.util.List;
@@ -56,6 +57,41 @@ public class IngestJob {
      */
     public IngestJobAddedFilesEvent.Builder addedFilesEventBuilder(Instant writtenTime) {
         return IngestJobAddedFilesEvent.builder().jobId(id).tableId(tableId).writtenTime(writtenTime);
+    }
+
+    /**
+     * Creates a builder for an event when the job started. Used with the ingest job tracker.
+     * <p>
+     * This is specifically for ingest jobs and creates an event that marks the start of a job run.
+     * <p>
+     * This is not used for bulk import jobs, as they have a validation event before this, and this validation event
+     * marks the start of a job run. Bulk import jobs should use the
+     * {@link IngestJob#startedAfterValidationEventBuilder} method.
+     *
+     * @param  startTime the start time
+     * @return           the builder
+     */
+    public IngestJobStartedEvent.Builder startedEventBuilder(Instant startTime) {
+        return IngestJobStartedEvent.builder().jobId(id).tableId(tableId).startTime(startTime).fileCount(getFileCount()).startOfRun(true);
+    }
+
+    /**
+     * Creates a builder for an event when the job started after previously being validated. Used with the ingest job
+     * tracker.
+     * <p>
+     * This is specifically for bulk import jobs and creates an event that indicates the job has been picked up in the
+     * Spark cluster by the driver.
+     * <p>
+     * Note that this does not mark the start of a job run. Once the bulk import starter picks up a bulk import job, it
+     * validates the job and saves an event then, which marks the start of a job run.
+     * <p>
+     * This is not used for ingest jobs. Ingest jobs should use the {@link IngestJob#startedEventBuilder} method.
+     *
+     * @param  startTime the start time
+     * @return           the builder
+     */
+    public IngestJobStartedEvent.Builder startedAfterValidationEventBuilder(Instant startTime) {
+        return IngestJobStartedEvent.builder().jobId(id).tableId(tableId).startTime(startTime).fileCount(getFileCount()).startOfRun(false);
     }
 
     /**

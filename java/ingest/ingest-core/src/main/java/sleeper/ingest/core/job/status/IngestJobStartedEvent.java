@@ -16,8 +16,6 @@
 
 package sleeper.ingest.core.job.status;
 
-import sleeper.ingest.core.job.IngestJob;
-
 import java.time.Instant;
 import java.util.Objects;
 
@@ -45,44 +43,6 @@ public class IngestJobStartedEvent {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Creates an instance of this class. This constructor is specifically for ingest jobs and creates an event that
-     * marks the start of a job run. This is not used for bulk import jobs, as they have a validation event before
-     * this, and this validation event marks the start of a job run. Bulk import jobs should use the
-     * {@link IngestJobStartedEvent#validatedIngestJobStarted} constructor.
-     *
-     * @param  job       the ingest job
-     * @param  startTime the start time
-     * @return           an instance of this class
-     */
-    public static Builder ingestJobStarted(IngestJob job, Instant startTime) {
-        return builder()
-                .job(job)
-                .startTime(startTime)
-                .startOfRun(true);
-    }
-
-    /**
-     * Creates a builder for this class. This constructor is specifically for bulk import jobs and creates an event
-     * that indicates the job has been picked up in the Spark cluster by the driver.
-     * <p>
-     * Note that this does not mark the start of a job run. Once the bulk import starter picks up a bulk import job, it
-     * validates the job and saves an event then, which marks the start of a job run.
-     * <p>
-     * This is not used for ingest jobs. Ingest jobs should use the {@link IngestJobStartedEvent#ingestJobStarted}
-     * constructor.
-     *
-     * @param  job       the ingest job
-     * @param  startTime the start time
-     * @return           a builder for this class
-     */
-    public static Builder validatedIngestJobStarted(IngestJob job, Instant startTime) {
-        return builder()
-                .job(job)
-                .startTime(startTime)
-                .startOfRun(false);
     }
 
     public String getJobId() {
@@ -159,18 +119,6 @@ public class IngestJobStartedEvent {
         private boolean startOfRun;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the ingest job ID, table ID, and file count using the provided ingest job.
-         *
-         * @param  job the ingest job
-         * @return     the builder
-         */
-        public Builder job(IngestJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId())
-                    .fileCount(job.getFileCount());
         }
 
         /**

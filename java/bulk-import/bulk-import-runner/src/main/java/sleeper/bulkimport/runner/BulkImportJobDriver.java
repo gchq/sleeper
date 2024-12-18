@@ -64,7 +64,6 @@ import java.util.function.Supplier;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
 /**
  * Executes a Spark job that reads input Parquet files and writes to a Sleeper table. This takes a
@@ -101,7 +100,8 @@ public class BulkImportJobDriver {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is for table {}: {}", table, job);
-        statusStore.jobStarted(validatedIngestJobStarted(job.toIngestJob(), startTime)
+        statusStore.jobStarted(job.toIngestJob()
+                .startedAfterValidationEventBuilder(startTime)
                 .jobRunId(jobRunId).taskId(taskId).build());
 
         BulkImportJobOutput output;

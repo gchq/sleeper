@@ -91,7 +91,6 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
@@ -332,7 +331,7 @@ public class StateStoreCommitterTest {
                     .writtenTime(writtenTime)
                     .build();
 
-            ingestJobStatusStore.jobStarted(ingestJobStarted(ingestJob, startTime)
+            ingestJobStatusStore.jobStarted(ingestJob.startedEventBuilder(startTime)
                     .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
             // When

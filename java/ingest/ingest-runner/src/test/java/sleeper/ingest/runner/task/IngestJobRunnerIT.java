@@ -57,7 +57,6 @@ import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStartedEvent;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
@@ -341,7 +340,7 @@ class IngestJobRunnerIT {
             TableProperties tableProperties,
             StateStore stateStore,
             IngestJob job) throws Exception {
-        statusStore.jobStarted(IngestJobStartedEvent.ingestJobStarted(job, timeSupplier.get()).taskId("test-task").jobRunId("test-job-run").build());
+        statusStore.jobStarted(job.startedEventBuilder(timeSupplier.get()).taskId("test-task").jobRunId("test-job-run").build());
         ingestJobRunner(instanceProperties, tableProperties, stateStore)
                 .ingest(job, "test-job-run");
     }

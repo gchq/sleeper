@@ -23,7 +23,6 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
@@ -40,8 +39,8 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(job1, startedTime1).taskId(searchingTaskId).build());
-        store.jobStarted(ingestJobStarted(job2, startedTime2).taskId("another-task").build());
+        store.jobStarted(job1.startedEventBuilder(startedTime1).taskId(searchingTaskId).build());
+        store.jobStarted(job2.startedEventBuilder(startedTime2).taskId("another-task").build());
 
         // Then
         assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
@@ -61,9 +60,9 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
         Instant startedTime3 = Instant.parse("2022-12-14T13:53:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(job, startedTime1).taskId(taskId1).build());
-        store.jobStarted(ingestJobStarted(job, startedTime2).taskId(searchingTaskId).build());
-        store.jobStarted(ingestJobStarted(job, startedTime3).taskId(taskId3).build());
+        store.jobStarted(job.startedEventBuilder(startedTime1).taskId(taskId1).build());
+        store.jobStarted(job.startedEventBuilder(startedTime2).taskId(searchingTaskId).build());
+        store.jobStarted(job.startedEventBuilder(startedTime3).taskId(taskId3).build());
 
         // Then
         assertThat(store.getJobsByTaskId(tableId, searchingTaskId))

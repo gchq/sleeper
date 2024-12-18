@@ -57,7 +57,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
@@ -114,7 +113,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStartedEvent defaultJobStartedEvent(IngestJob job, Instant startedTime) {
-        return ingestJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build();
+        return job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build();
     }
 
     protected static IngestJobAddedFilesEvent defaultJobAddedFilesEvent(IngestJob job, List<FileReference> files, Instant writtenTime) {

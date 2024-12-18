@@ -30,8 +30,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
-
 /**
  * Runs an ingest task. Executes jobs from a queue, updating the status stores with progress of the task.
  */
@@ -109,7 +107,7 @@ public class IngestTask {
             String jobRunId = jobRunIdSupplier.get();
             Instant jobStartTime = timeSupplier.get();
             try {
-                jobStatusStore.jobStarted(ingestJobStarted(job, jobStartTime)
+                jobStatusStore.jobStarted(job.startedEventBuilder(jobStartTime)
                         .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
                 IngestResult result = ingester.ingest(job, jobRunId);
                 LOGGER.info("{} records were written", result.getRecordsWritten());
