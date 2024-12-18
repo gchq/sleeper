@@ -27,7 +27,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 
 public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusStoreTestBase {
 
@@ -105,7 +105,7 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job,
+                .containsExactly(ingestJobStatus(job,
                         defaultJobStartedRun(job, startedTime2),
                         defaultJobFinishedRun(job, startedTime1, finishedTime1)));
     }

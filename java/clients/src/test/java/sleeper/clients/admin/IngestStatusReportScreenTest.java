@@ -58,7 +58,7 @@ import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.task.common.InMemoryQueueMessageCounts.visibleMessages;
@@ -204,7 +204,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private List<IngestJobStatus> oneRejectedJobStatus() {
-            return List.of(jobStatus("test-job",
+            return List.of(ingestJobStatus("test-job",
                     rejectedRun("test-job", "{}", Instant.parse("2023-07-05T11:59:00Z"),
                             "Test reason")));
         }

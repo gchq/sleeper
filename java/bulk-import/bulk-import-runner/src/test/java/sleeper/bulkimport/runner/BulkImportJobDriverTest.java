@@ -55,7 +55,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRecords;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAcceptedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatus;
@@ -87,7 +87,7 @@ class BulkImportJobDriverTest {
         // Then
         IngestJob ingestJob = job.toIngestJob();
         assertThat(allJobsReported())
-                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId("test-task")
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
@@ -119,7 +119,7 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(jobStatus(job.toIngestJob(), acceptedRunWhichFailed(
+                .containsExactly(ingestJobStatus(job.toIngestJob(), acceptedRunWhichFailed(
                         job.toIngestJob(), "test-task", validationTime,
                         new ProcessRunTime(startTime, finishTime),
                         List.of("Failed running job", "Some cause", "Root cause"))));
@@ -148,7 +148,7 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(jobStatus(job.toIngestJob(), acceptedRunWhichFailed(
+                .containsExactly(ingestJobStatus(job.toIngestJob(), acceptedRunWhichFailed(
                         job.toIngestJob(), "test-task", validationTime,
                         new ProcessRunTime(startTime, finishTime),
                         List.of("Failed updating files"))));
@@ -178,7 +178,7 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(jobStatus(job.toIngestJob(), acceptedRunWhichFailed(
+                .containsExactly(ingestJobStatus(job.toIngestJob(), acceptedRunWhichFailed(
                         job.toIngestJob(), "test-task", validationTime,
                         new ProcessRunTime(startTime, finishTime),
                         List.of("Failed updating files"))));
@@ -207,7 +207,7 @@ class BulkImportJobDriverTest {
         // Then
         IngestJob ingestJob = job.toIngestJob();
         assertThat(allJobsReported())
-                .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId("test-task")
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))

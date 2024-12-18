@@ -34,8 +34,8 @@ public class IngestJobStatusFromJobTestData {
      * @param  runs the process runs
      * @return      an {@link IngestJobStatus}
      */
-    public static IngestJobStatus jobStatus(IngestJob job, ProcessRun... runs) {
-        return IngestJobStatusTestHelper.jobStatus(job.getId(), runs);
+    public static IngestJobStatus ingestJobStatus(IngestJob job, ProcessRun... runs) {
+        return IngestJobStatusTestHelper.ingestJobStatus(job.getId(), runs);
     }
 
 }

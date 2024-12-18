@@ -91,7 +91,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
 
@@ -340,7 +340,7 @@ public class StateStoreCommitterTest {
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
             assertThat(ingestJobStatusStore.getAllJobs("test-table"))
-                    .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                             .taskId("test-task-id")
                             .startedStatus(ingestStartedStatus(ingestJob, startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))

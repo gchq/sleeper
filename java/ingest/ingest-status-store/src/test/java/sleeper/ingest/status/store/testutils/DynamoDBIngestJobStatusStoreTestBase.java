@@ -57,7 +57,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
@@ -157,7 +157,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobAddedFilesStatus(IngestJob job, Instant startedTime, Instant writtenTime, int fileCount) {
-        return jobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, ProcessRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .statusUpdate(IngestJobAddedFilesStatus.builder()
@@ -177,7 +177,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedButUncommittedStatus(IngestJob job, Instant startedTime, Instant finishedTime, int numFiles) {
-        return jobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, ProcessRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
@@ -188,7 +188,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedAndCommittedStatus(IngestJob job, Instant startedTime, Instant writtenTime, Instant finishedTime, int numFiles) {
-        return jobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, ProcessRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))

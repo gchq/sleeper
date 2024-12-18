@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 public class IngestJobMessageHandlerTest {
@@ -188,7 +188,7 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expected = jobStatus("test-job-id",
+            IngestJobStatus expected = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Could not find one or more files"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
@@ -213,7 +213,7 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expected = jobStatus("test-job-id",
+            IngestJobStatus expected = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Could not find one or more files"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
@@ -238,7 +238,7 @@ public class IngestJobMessageHandlerTest {
             // When / Then
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
+                    .containsExactly(ingestJobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
             assertThat(ingestJobStatusStore.getAllJobs(tableId))
@@ -260,7 +260,7 @@ public class IngestJobMessageHandlerTest {
             // When / Then
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
+                    .containsExactly(ingestJobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Table not found")));
             assertThat(ingestJobStatusStore.getAllJobs(tableId))
@@ -280,7 +280,7 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expected = jobStatus("test-job-id",
+            IngestJobStatus expected = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Missing property \"files\""));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
@@ -305,7 +305,7 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expectedStatus = jobStatus("test-job-id",
+            IngestJobStatus expectedStatus = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Table not found"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
@@ -328,7 +328,7 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expectedStatus = jobStatus("test-job-id",
+            IngestJobStatus expectedStatus = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Table not found"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
@@ -349,7 +349,7 @@ public class IngestJobMessageHandlerTest {
             // When / Then
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
+                    .containsExactly(ingestJobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Missing property \"files\"",
                                     "Table not found")));
@@ -371,7 +371,7 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expected = jobStatus("invalid-job-1",
+            IngestJobStatus expected = ingestJobStatus("invalid-job-1",
                     rejectedRun("invalid-job-1", json, validationTime,
                             "One of the files was null"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();

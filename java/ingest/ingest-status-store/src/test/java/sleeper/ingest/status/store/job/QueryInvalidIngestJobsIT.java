@@ -26,8 +26,8 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
@@ -47,8 +47,8 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         assertThat(store.getInvalidJobs())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        jobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")),
-                        jobStatus(job1, rejectedRun(job1, validationTime1, "Test reason 1")));
+                        ingestJobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")),
+                        ingestJobStatus(job1, rejectedRun(job1, validationTime1, "Test reason 1")));
     }
 
     @Test
@@ -63,7 +63,7 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         assertThat(store.getInvalidJobs())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        jobStatus(jobId, rejectedRun(jobId, json, validationTime, "Test reason")));
+                        ingestJobStatus(jobId, rejectedRun(jobId, json, validationTime, "Test reason")));
     }
 
     @Test
@@ -81,7 +81,7 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         assertThat(store.getInvalidJobs())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        jobStatus(job,
+                        ingestJobStatus(job,
                                 rejectedRun(job, validationTime2, "Test reason 2"),
                                 rejectedRun(job, validationTime1, "Test reason 1")));
     }
@@ -102,7 +102,7 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         assertThat(store.getInvalidJobs())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        jobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")));
+                        ingestJobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")));
     }
 
     @Test

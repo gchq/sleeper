@@ -38,7 +38,7 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.d
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFinished;
@@ -57,7 +57,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRun(job, validationTime)));
+                .containsExactly(ingestJobStatus(job, acceptedRun(job, validationTime)));
     }
 
     @Test
@@ -76,7 +76,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRunWhichStarted(job, taskId,
+                .containsExactly(ingestJobStatus(job, acceptedRunWhichStarted(job, taskId,
                         validationTime, startTime)));
     }
 
@@ -100,7 +100,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                         .taskId(taskId)
                         .statusUpdate(IngestJobAddedFilesStatus.builder()
                                 .fileCount(2)
@@ -129,7 +129,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRunWhichFinished(job, taskId,
+                .containsExactly(ingestJobStatus(job, acceptedRunWhichFinished(job, taskId,
                         validationTime, summary, 2)));
     }
 
@@ -152,7 +152,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRunWhichFailed(job, taskId,
+                .containsExactly(ingestJobStatus(job, acceptedRunWhichFailed(job, taskId,
                         validationTime, runTime, failureReasons)));
     }
 }

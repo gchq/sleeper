@@ -44,7 +44,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunOnTask;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
@@ -75,7 +75,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    jobStatus(job, startedIngestRun(job, taskId, startTime)));
+                    ingestJobStatus(job, startedIngestRun(job, taskId, startTime)));
         }
 
         @Test
@@ -86,7 +86,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    jobStatus(job, startedIngestRun(job, taskId, startTime)));
+                    ingestJobStatus(job, startedIngestRun(job, taskId, startTime)));
         }
 
         @Test
@@ -101,7 +101,7 @@ public class InMemoryIngestJobStatusStoreTest {
             store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
             store.jobFinished(job.finishedEventBuilder(summary).taskId(taskId).numFilesWrittenByJob(1).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    jobStatus(job, finishedIngestRun(job, taskId, summary, 1)));
+                    ingestJobStatus(job, finishedIngestRun(job, taskId, summary, 1)));
         }
 
         @Test
@@ -136,7 +136,7 @@ public class InMemoryIngestJobStatusStoreTest {
             store.jobFinished(job.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    jobStatus(job,
+                    ingestJobStatus(job,
                             finishedIngestRun(job, taskId, summary2, 2),
                             finishedIngestRun(job, taskId, summary1, 1)));
         }
@@ -159,8 +159,8 @@ public class InMemoryIngestJobStatusStoreTest {
             store.jobFinished(job2.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    jobStatus(job2, finishedIngestRun(job2, taskId, summary2, 2)),
-                    jobStatus(job1, finishedIngestRun(job1, taskId, summary1, 1)));
+                    ingestJobStatus(job2, finishedIngestRun(job2, taskId, summary2, 2)),
+                    ingestJobStatus(job1, finishedIngestRun(job1, taskId, summary1, 1)));
         }
 
         @Test
@@ -186,9 +186,9 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(table2.getTableUniqueId())).containsExactly(
-                    jobStatus(job2, finishedIngestRun(job2, taskId, summary2, 2)));
+                    ingestJobStatus(job2, finishedIngestRun(job2, taskId, summary2, 2)));
             assertThat(store.getAllJobs(table1.getTableUniqueId())).containsExactly(
-                    jobStatus(job1, finishedIngestRun(job1, taskId, summary1, 1)));
+                    ingestJobStatus(job1, finishedIngestRun(job1, taskId, summary1, 1)));
         }
 
         @Test
@@ -213,9 +213,9 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(table2.getTableUniqueId())).containsExactly(
-                    jobStatus(job2, startedIngestRun(job2, taskId, startTime2)));
+                    ingestJobStatus(job2, startedIngestRun(job2, taskId, startTime2)));
             assertThat(store.getAllJobs(table1.getTableUniqueId())).containsExactly(
-                    jobStatus(job1, startedIngestRun(job1, taskId, startTime1)));
+                    ingestJobStatus(job1, startedIngestRun(job1, taskId, startTime1)));
         }
     }
 
@@ -233,7 +233,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getInvalidJobs())
-                    .containsExactly(jobStatus(job, rejectedRun(job,
+                    .containsExactly(ingestJobStatus(job, rejectedRun(job,
                             validationTime, "Test validation reason")));
         }
 
@@ -252,7 +252,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getInvalidJobs())
-                    .containsExactly(jobStatus(job1, rejectedRun(job1,
+                    .containsExactly(ingestJobStatus(job1, rejectedRun(job1,
                             validationTime1, "Test validation reason")));
         }
 
@@ -271,8 +271,8 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getInvalidJobs()).containsExactly(
-                    jobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")),
-                    jobStatus(job1, rejectedRun(job1, validationTime1, "Test reason 1")));
+                    ingestJobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")),
+                    ingestJobStatus(job1, rejectedRun(job1, validationTime1, "Test reason 1")));
         }
 
         @Test
@@ -302,7 +302,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getInvalidJobs()).containsExactly(
-                    jobStatus(job, rejectedRun(job, validationTime, "Test validation reason")));
+                    ingestJobStatus(job, rejectedRun(job, validationTime, "Test validation reason")));
         }
     }
 
@@ -321,7 +321,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, acceptedRunOnTask(job, taskId, validationTime)));
+                    .containsExactly(ingestJobStatus(job, acceptedRunOnTask(job, taskId, validationTime)));
         }
 
         @Test
@@ -338,7 +338,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, acceptedRunWhichStarted(job, taskId,
+                    .containsExactly(ingestJobStatus(job, acceptedRunWhichStarted(job, taskId,
                             validationTime, startTime)));
         }
 
@@ -353,7 +353,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, rejectedRun(job,
+                    .containsExactly(ingestJobStatus(job, rejectedRun(job,
                             validationTime, "Test validation reason")));
         }
 
@@ -369,7 +369,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, rejectedRun(job, validationTime,
+                    .containsExactly(ingestJobStatus(job, rejectedRun(job, validationTime,
                             List.of("Test validation reason 1", "Test validation reason 2"))));
         }
     }
@@ -388,7 +388,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, acceptedRun(job, validationTime)));
+                    .containsExactly(ingestJobStatus(job, acceptedRun(job, validationTime)));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
                     .containsExactly("test-run");
@@ -409,7 +409,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, acceptedRunWhichStarted(job, taskId,
+                    .containsExactly(ingestJobStatus(job, acceptedRunWhichStarted(job, taskId,
                             validationTime, startTime)));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
@@ -433,7 +433,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, acceptedRunWhichFinished(job, taskId,
+                    .containsExactly(ingestJobStatus(job, acceptedRunWhichFinished(job, taskId,
                             validationTime, summary, 2)));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
@@ -479,7 +479,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, acceptedRunWhichFailed(job, taskId,
+                    .containsExactly(ingestJobStatus(job, acceptedRunWhichFailed(job, taskId,
                             validationTime, runTime, failureReasons)));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
@@ -508,7 +508,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
                             .startedStatus(ingestStartedStatus(job, startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
@@ -540,7 +540,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
                             .startedStatus(ingestStartedStatus(job, startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
@@ -569,7 +569,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
                             .startedStatus(ingestStartedStatus(job, startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 2))
@@ -600,7 +600,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(store.getAllJobs(tableId))
-                    .containsExactly(jobStatus(job, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
                             .startedStatus(ingestStartedStatus(job, startTime))
                             .statusUpdate(ingestFinishedStatusUncommitted(job, summary, 1))

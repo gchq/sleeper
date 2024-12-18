@@ -35,7 +35,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.bulkimport.starter.BulkImportStarterLambdaTestHelper.getSqsEvent;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 public class BulkImportStarterLambdaTest {
@@ -64,7 +64,7 @@ public class BulkImportStarterLambdaTest {
 
         // Then
         assertThat(ingestJobStatusStore.getInvalidJobs())
-                .containsExactly(jobStatus("test-job-id",
+                .containsExactly(ingestJobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
                                 "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
     }
@@ -87,7 +87,7 @@ public class BulkImportStarterLambdaTest {
 
         // Then
         assertThat(ingestJobStatusStore.getInvalidJobs())
-                .containsExactly(jobStatus("test-job-id",
+                .containsExactly(ingestJobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
                                 "Table not found")));
     }
@@ -110,7 +110,7 @@ public class BulkImportStarterLambdaTest {
 
         // Then
         assertThat(ingestJobStatusStore.getInvalidJobs())
-                .containsExactly(jobStatus("test-job-id",
+                .containsExactly(ingestJobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
                                 "Missing property \"files\"")));
     }
@@ -131,7 +131,7 @@ public class BulkImportStarterLambdaTest {
 
         // Then
         assertThat(ingestJobStatusStore.getInvalidJobs())
-                .containsExactly(jobStatus("test-job-id",
+                .containsExactly(ingestJobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
                                 "Missing property \"files\"",
                                 "Table not found")));

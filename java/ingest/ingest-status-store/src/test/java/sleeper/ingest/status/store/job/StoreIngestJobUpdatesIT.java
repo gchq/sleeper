@@ -32,7 +32,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 
 public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBase {
@@ -92,7 +92,7 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job,
+                .containsExactly(ingestJobStatus(job,
                         finishedIngestRun(job, taskId2, defaultSummary(startTime2, finishTime2), 2),
                         finishedIngestRun(job, taskId1, defaultSummary(startTime1, finishTime1), 1)));
     }

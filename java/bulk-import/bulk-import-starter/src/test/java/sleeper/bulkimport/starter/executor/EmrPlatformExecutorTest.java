@@ -75,7 +75,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 
@@ -426,7 +426,7 @@ class EmrPlatformExecutorTest {
         assertThat(requested.get())
                 .isNull();
         assertThat(ingestJobStatusStore.getAllJobs(tableId))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
@@ -442,7 +442,7 @@ class EmrPlatformExecutorTest {
 
         // Then
         assertThat(ingestJobStatusStore.getAllJobs(tableId))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         acceptedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
         assertThat(ingestJobStatusStore.streamTableRecords(tableId))
                 .extracting(ProcessStatusUpdateRecord::getJobRunId)
