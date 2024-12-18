@@ -18,7 +18,8 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
@@ -30,10 +31,9 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 
-public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldReportCompactionJobStarted() {
@@ -146,7 +146,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobStatusStor
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobCreated(job, ignoredUpdateTime(),
+                .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, ignoredUpdateTime(),
                         finishedCompactionRun(DEFAULT_TASK_ID_2, new RecordsProcessedSummary(processed, startTime2, finishTime2),
                                 commitTime2),
                         finishedCompactionRun(DEFAULT_TASK_ID, new RecordsProcessedSummary(processed, startTime1, finishTime1),

@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.core.partition.Partition;
@@ -38,6 +37,7 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class CompactionTask {
     private final Consumer<Duration> sleepForTime;
     private final MessageReceiver messageReceiver;
     private final CompactionRunnerFactory selector;
-    private final CompactionJobStatusStore jobStatusStore;
+    private final CompactionJobTracker jobTracker;
     private final CompactionTaskStatusStore taskStatusStore;
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
@@ -78,7 +78,7 @@ public class CompactionTask {
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
-            CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
+            CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobTracker jobStore,
             CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector, String taskId) {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 messageReceiver, waitForFiles, jobCommitter,
@@ -94,7 +94,7 @@ public class CompactionTask {
             StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
-            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector,
+            CompactionJobTracker jobTracker, CompactionTaskStatusStore taskTracker, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -104,8 +104,8 @@ public class CompactionTask {
         this.sleepForTime = sleepForTime;
         this.messageReceiver = messageReceiver;
         this.selector = selector;
-        this.jobStatusStore = jobStore;
-        this.taskStatusStore = taskStore;
+        this.jobTracker = jobTracker;
+        this.taskStatusStore = taskTracker;
         this.taskId = taskId;
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.jobCommitter = jobCommitter;
@@ -189,7 +189,7 @@ public class CompactionTask {
             commitCompaction(jobRunId, builder, message, idleTimeTracker, failureTracker, summary);
         } catch (Exception e) {
             Instant jobFinishTime = timeSupplier.get();
-            jobStatusStore.jobFailed(message.getJob()
+            jobTracker.jobFailed(message.getJob()
                     .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
                     .failure(e).taskId(taskId).jobRunId(jobRunId).build());
         }
@@ -221,7 +221,7 @@ public class CompactionTask {
 
     private RecordsProcessedSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
-        jobStatusStore.jobStarted(job.startedEventBuilder(jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
+        jobTracker.jobStarted(job.startedEventBuilder(jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);

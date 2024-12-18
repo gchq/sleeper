@@ -23,7 +23,6 @@ import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
-import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.compaction.core.testutils.StateStoreWaitForFilesTestHelper;
 import sleeper.core.properties.PropertiesReloader;
@@ -37,6 +36,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -81,7 +81,7 @@ public class CompactionTaskTestBase {
     protected final Queue<CompactionJob> jobsOnQueue = new LinkedList<>();
     protected final List<CompactionJob> consumedJobs = new ArrayList<>();
     protected final List<CompactionJob> jobsReturnedToQueue = new ArrayList<>();
-    protected final InMemoryCompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
+    protected final InMemoryCompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     protected final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
     protected final List<Duration> sleeps = new ArrayList<>();
     protected final List<CompactionJobCommitRequest> commitRequestsOnQueue = new ArrayList<>();
@@ -146,11 +146,11 @@ public class CompactionTaskTestBase {
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider(), stateStoreProvider(),
-                jobStore, commitRequestsOnQueue::add, timeSupplier);
+                jobTracker, commitRequestsOnQueue::add, timeSupplier);
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobStore, taskStore, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
+                committer, jobTracker, taskStore, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
                 .run();
     }
 
@@ -163,7 +163,7 @@ public class CompactionTaskTestBase {
     }
 
     protected StateStoreWaitForFilesTestHelper waitForFileAssignment(Supplier<Instant> timeSupplier) {
-        return new StateStoreWaitForFilesTestHelper(tablePropertiesProvider(), stateStoreProvider(), jobStore, waiterForFileAssignment, timeSupplier);
+        return new StateStoreWaitForFilesTestHelper(tablePropertiesProvider(), stateStoreProvider(), jobTracker, waiterForFileAssignment, timeSupplier);
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {
@@ -214,7 +214,7 @@ public class CompactionTaskTestBase {
                 .partitionId("root")
                 .inputFiles(List.of(UUID.randomUUID().toString()))
                 .outputFile(UUID.randomUUID().toString()).build();
-        jobStore.jobCreated(job.createCreatedEvent(), DEFAULT_CREATED_TIME);
+        jobTracker.jobCreated(job.createCreatedEvent(), DEFAULT_CREATED_TIME);
         return job;
     }
 

@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -30,6 +29,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -41,7 +41,7 @@ import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
@@ -59,7 +59,7 @@ public class CompactionJobDispatcherTest {
 
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
-    InMemoryCompactionJobStatusStore statusStore = new InMemoryCompactionJobStatusStore();
+    InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
 
@@ -83,7 +83,7 @@ public class CompactionJobDispatcherTest {
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
                 "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
         putCompactionJobBatch(request, List.of(job1, job2));
-        statusStore.setTimeSupplier(List.of(
+        tracker.setTimeSupplier(List.of(
                 Instant.parse("2024-11-15T10:30:10Z"),
                 Instant.parse("2024-11-15T10:30:11Z")).iterator()::next);
 
@@ -92,9 +92,9 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).containsExactly(job1, job2);
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                jobCreated(job2, Instant.parse("2024-11-15T10:30:11Z")),
-                jobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                compactionJobCreated(job2, Instant.parse("2024-11-15T10:30:11Z")),
+                compactionJobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).isEmpty();
     }
@@ -121,7 +121,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).containsExactly(
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
         assertThat(pendingDeadLetterQueue).isEmpty();
@@ -150,7 +150,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).containsExactly(
                 BatchRequestMessage.requestAndDelay(request, Duration.ofSeconds(12)));
         assertThat(pendingDeadLetterQueue).isEmpty();
@@ -180,7 +180,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).containsExactly(request);
     }
@@ -207,7 +207,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).containsExactly(request);
     }
@@ -233,7 +233,7 @@ public class CompactionJobDispatcherTest {
 
         // Then
         assertThat(compactionQueue).isEmpty();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).isEmpty();
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).containsExactly(request);
     }
@@ -256,15 +256,15 @@ public class CompactionJobDispatcherTest {
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
                 "test-batch", Instant.parse("2024-11-15T10:30:00Z"));
         putCompactionJobBatch(request, List.of(job1, job2, job3));
-        statusStore.setTimeSupplier(List.of(
+        tracker.setTimeSupplier(List.of(
                 Instant.parse("2024-11-15T10:30:10Z")).iterator()::next);
 
         // When / Then
         assertThatThrownBy(() -> dispatchWithNoRetry(request))
                 .isSameAs(sendFailure);
         assertThat(compactionQueue).containsExactly(job1);
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
-                jobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID))).containsExactly(
+                compactionJobCreated(job1, Instant.parse("2024-11-15T10:30:10Z")));
         assertThat(delayedPendingQueue).isEmpty();
         assertThat(pendingDeadLetterQueue).isEmpty();
     }
@@ -283,7 +283,7 @@ public class CompactionJobDispatcherTest {
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
         return new CompactionJobDispatcher(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                new FixedStateStoreProvider(tableProperties, stateStore), statusStore,
+                new FixedStateStoreProvider(tableProperties, stateStore), tracker,
                 readBatch(), sendJobs(), 1,
                 returnRequest(), pendingDeadLetterQueue::add, times.iterator()::next);
     }

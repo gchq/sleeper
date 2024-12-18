@@ -19,12 +19,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 
 import java.time.Instant;
 import java.util.function.Supplier;
@@ -36,22 +36,22 @@ public class CompactionJobCommitterOrSendToLambda {
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore statusStore;
+    private final CompactionJobTracker tracker;
     private final CommitQueueSender jobCommitQueueSender;
     private final Supplier<Instant> timeSupplier;
 
     public CompactionJobCommitterOrSendToLambda(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore statusStore, CommitQueueSender jobCommitQueueSender) {
-        this(tablePropertiesProvider, stateStoreProvider, statusStore, jobCommitQueueSender, Instant::now);
+            CompactionJobTracker tracker, CommitQueueSender jobCommitQueueSender) {
+        this(tablePropertiesProvider, stateStoreProvider, tracker, jobCommitQueueSender, Instant::now);
     }
 
     public CompactionJobCommitterOrSendToLambda(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobStatusStore statusStore, CommitQueueSender jobCommitQueueSender, Supplier<Instant> timeSupplier) {
+            CompactionJobTracker tracker, CommitQueueSender jobCommitQueueSender, Supplier<Instant> timeSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.statusStore = statusStore;
+        this.tracker = tracker;
         this.jobCommitQueueSender = jobCommitQueueSender;
         this.timeSupplier = timeSupplier;
     }
@@ -60,7 +60,7 @@ public class CompactionJobCommitterOrSendToLambda {
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         TableStatus table = tableProperties.getStatus();
         boolean commitAsync = tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
-        statusStore.jobFinished(finishedEvent);
+        tracker.jobFinished(finishedEvent);
         if (commitAsync) {
             CompactionJobCommitRequest request = new CompactionJobCommitRequest(job,
                     finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getSummary());
@@ -72,7 +72,7 @@ public class CompactionJobCommitterOrSendToLambda {
             CompactionJobCommitter.updateStateStoreSuccess(job,
                     finishedEvent.getSummary().getRecordsWritten(),
                     stateStoreProvider.getStateStore(tableProperties));
-            statusStore.jobCommitted(job.committedEventBuilder(timeSupplier.get())
+            tracker.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())
                     .build());

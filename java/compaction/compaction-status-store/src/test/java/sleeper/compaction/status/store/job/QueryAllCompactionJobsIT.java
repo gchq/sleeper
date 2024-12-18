@@ -18,16 +18,16 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusTestData;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 
-public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldReturnMultipleCompactionJobsSortedMostRecentFirst() {
@@ -51,9 +51,9 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
         assertThat(store.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        CompactionJobStatusTestData.jobCreated(job3, ignoredUpdateTime()),
-                        CompactionJobStatusTestData.jobCreated(job2, ignoredUpdateTime()),
-                        CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+                        compactionJobCreated(job3, ignoredUpdateTime()),
+                        compactionJobCreated(job2, ignoredUpdateTime()),
+                        compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -74,7 +74,7 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobStatusStoreTe
         // Then
         assertThat(store.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+                .containsExactly(compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test

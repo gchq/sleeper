@@ -29,7 +29,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -81,7 +81,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key));
         committer = new StateStoreCommitter(
-                CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
                 IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
                 tablePropertiesProvider, stateStoreProvider,
                 Instant::now);

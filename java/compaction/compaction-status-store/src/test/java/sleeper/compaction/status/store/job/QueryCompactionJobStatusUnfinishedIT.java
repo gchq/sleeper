@@ -18,19 +18,19 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 
-public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldReturnUnfinishedCompactionJobs() {
@@ -51,8 +51,8 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        jobCreated(job2, ignoredUpdateTime()),
-                        jobCreated(job1, ignoredUpdateTime()));
+                        compactionJobCreated(job2, ignoredUpdateTime()),
+                        compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -73,7 +73,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        jobCreated(job, ignoredUpdateTime(),
+                        compactionJobCreated(job, ignoredUpdateTime(),
                                 uncommittedCompactionRun(DEFAULT_TASK_ID, defaultSummary())));
     }
 
@@ -98,7 +98,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobCreated(job1, ignoredUpdateTime()));
+                .containsExactly(compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -119,7 +119,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobCreated(job1, ignoredUpdateTime()));
+                .containsExactly(compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -141,7 +141,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobS
         // Then
         assertThat(store.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobCreated(job, ignoredUpdateTime(),
+                .containsExactly(compactionJobCreated(job, ignoredUpdateTime(),
                         startedCompactionRun(DEFAULT_TASK_ID, defaultStartTime()),
                         finishedCompactionRun(DEFAULT_TASK_ID, defaultSummary(), defaultCommitTime())));
     }
