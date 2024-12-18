@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
-import sleeper.compaction.status.store.CompactionStatusStoreException;
+import sleeper.compaction.status.store.CompactionTrackerException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
 
@@ -71,7 +71,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
         try {
             putItem(format.createTaskStartedRecord(taskStatus));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed putItem in taskStarted for task " + taskStatus.getTaskId(), e);
+            throw new CompactionTrackerException("Failed putItem in taskStarted for task " + taskStatus.getTaskId(), e);
         }
     }
 
@@ -80,7 +80,7 @@ public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusSt
         try {
             putItem(format.createTaskFinishedRecord(taskStatus));
         } catch (RuntimeException e) {
-            throw new CompactionStatusStoreException("Failed putItem in taskFinished for task " + taskStatus.getTaskId(), e);
+            throw new CompactionTrackerException("Failed putItem in taskFinished for task " + taskStatus.getTaskId(), e);
         }
     }
 

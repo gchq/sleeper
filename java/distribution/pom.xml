@@ -20,7 +20,7 @@
     <parent>
         <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.27.0-SNAPSHOT</version>
+        <version>0.28.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -142,6 +142,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>splitter-lambda</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>statestore-lambda</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
     </dependencies>

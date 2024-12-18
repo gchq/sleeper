@@ -47,7 +47,11 @@ public class SystemTestTables {
     }
 
     public SystemTestTables create(List<String> names, Schema schema) {
-        names.forEach(name -> instance.createTable(name, schema, Map.of()));
+        return createWithProperties(names, schema, Map.of());
+    }
+
+    public SystemTestTables createWithProperties(List<String> names, Schema schema, Map<TableProperty, String> setProperties) {
+        names.forEach(name -> instance.createTable(name, schema, setProperties));
         return this;
     }
 

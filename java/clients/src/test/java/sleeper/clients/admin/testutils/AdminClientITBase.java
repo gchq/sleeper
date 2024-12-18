@@ -27,7 +27,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.AdminClient;
-import sleeper.clients.admin.AdminClientStatusStoreFactory;
+import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.clients.deploy.UploadDockerImages;
 import sleeper.clients.util.cdk.InvokeCdkForInstance;
@@ -65,7 +65,7 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
     protected Path tempDir;
 
     @Override
-    public void startClient(AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient) throws InterruptedException {
+    public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
         AdminClient.start(instanceId, s3, dynamoDB, cdk, tempDir, uploadDockerImages,
                 out.consoleOut(), in.consoleIn(), editor, queueClient, properties -> Map.of());
     }

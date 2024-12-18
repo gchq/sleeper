@@ -53,7 +53,7 @@ public class IngestST {
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -72,7 +72,7 @@ public class IngestST {
 
         // When
         sleeper.ingest().byQueue().sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -93,7 +93,7 @@ public class IngestST {
         sleeper.ingest().byQueue()
                 .sendSourceFiles("file1.parquet", "file2.parquet")
                 .sendSourceFiles("file3.parquet", "file4.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -111,7 +111,7 @@ public class IngestST {
         // When
         sleeper.ingest().setType(ingestType)
                 .byQueue().sendSourceFiles("file.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())

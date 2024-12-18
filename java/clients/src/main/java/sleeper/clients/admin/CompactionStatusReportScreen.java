@@ -44,17 +44,17 @@ public class CompactionStatusReportScreen {
     private final ConsoleInput in;
     private final ConsoleHelper consoleHelper;
     private final AdminClientPropertiesStore store;
-    private final AdminClientStatusStoreFactory statusStores;
+    private final AdminClientTrackerFactory trackers;
     private final TableSelectHelper tableSelectHelper;
 
     public CompactionStatusReportScreen(
             ConsoleOutput out, ConsoleInput in,
-            AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores) {
+            AdminClientPropertiesStore store, AdminClientTrackerFactory trackers) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
         this.store = store;
-        this.statusStores = statusStores;
+        this.trackers = trackers;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);
     }
 
@@ -98,13 +98,13 @@ public class CompactionStatusReportScreen {
     }
 
     private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQuery.Type queryType, String queryParameters) {
-        new CompactionJobStatusReport(statusStores.loadCompactionJobStatusStore(properties),
+        new CompactionJobStatusReport(trackers.loadCompactionJobTracker(properties),
                 new StandardCompactionJobStatusReporter(out.printStream()), table, queryType, queryParameters).run();
         confirmReturnToMainScreen(out, in);
     }
 
     private void runCompactionTaskStatusReport(InstanceProperties properties, CompactionTaskQuery queryType) {
-        new CompactionTaskStatusReport(statusStores.loadCompactionTaskStatusStore(properties),
+        new CompactionTaskStatusReport(trackers.loadCompactionTaskStatusStore(properties),
                 new StandardCompactionTaskStatusReporter(out.printStream()), queryType).run();
         confirmReturnToMainScreen(out, in);
     }

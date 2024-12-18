@@ -19,7 +19,7 @@ package sleeper.clients.status.report.job.query;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery.Type;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,7 +34,7 @@ public class JobQueryTest extends JobQueryTestBase {
     public void shouldCreateAllQueryWithNoParameters() {
         // Given
         Type queryType = Type.ALL;
-        when(statusStore.getAllJobs(tableId)).thenReturn(exampleStatusList);
+        when(tracker.getAllJobs(tableId)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
@@ -47,7 +47,7 @@ public class JobQueryTest extends JobQueryTestBase {
     public void shouldCreateUnfinishedQueryWithNoParameters() {
         // Given
         Type queryType = Type.UNFINISHED;
-        when(statusStore.getUnfinishedJobs(tableId)).thenReturn(exampleStatusList);
+        when(tracker.getUnfinishedJobs(tableId)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatuses(queryType);
@@ -61,8 +61,8 @@ public class JobQueryTest extends JobQueryTestBase {
         // Given
         Type queryType = Type.DETAILED;
         String queryParameters = "job1,job2";
-        when(statusStore.getJob("job1")).thenReturn(Optional.of(exampleStatus1));
-        when(statusStore.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
+        when(tracker.getJob("job1")).thenReturn(Optional.of(exampleStatus1));
+        when(tracker.getJob("job2")).thenReturn(Optional.of(exampleStatus2));
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
@@ -88,7 +88,7 @@ public class JobQueryTest extends JobQueryTestBase {
         String queryParameters = "20221123115442,20221130115442";
         Instant start = Instant.parse("2022-11-23T11:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
+        when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesWithParams(queryType, queryParameters);
@@ -103,7 +103,7 @@ public class JobQueryTest extends JobQueryTestBase {
         Type queryType = Type.RANGE;
         Instant start = Instant.parse("2022-11-30T07:54:42.000Z");
         Instant end = Instant.parse("2022-11-30T11:54:42.000Z");
-        when(statusStore.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
+        when(tracker.getJobsInTimePeriod(tableId, start, end)).thenReturn(exampleStatusList);
 
         // When
         List<CompactionJobStatus> statuses = queryStatusesAtTime(queryType, end);

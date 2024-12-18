@@ -48,7 +48,7 @@ public class SystemTestIngestTest {
         // When
         sleeper.ingest().byQueue()
                 .sendSourceFiles("test.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())

@@ -1,10 +1,6 @@
 Sleeper is mainly written in Java and this is built using Maven. This process will automatically
 pull in dependencies. We list Sleeper's dependencies, and their licenses below.
 
-AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:*)
-
-- Apache License, Version 2.0
-
 AWS Java SDK (com.amazonaws:aws-java-sdk-*:1.*)
 
 - Apache License, Version 2.0
@@ -25,6 +21,14 @@ AWS Lambda Java Events SDK (com.amazonaws:aws-lambda-java-events:3.*)
 
 - Apache License, Version 2.0
 
+AWS Athena SDK (com.amazonaws:aws-athena-federation-sdk:2023.*)
+
+- Apache License, Version 2.0
+
+Trino (io.trino:trino-*:390)
+
+- Apache License, Version 2.0
+
 WildFly OpenSSL (org.wildfly.openssl:wildfly-openssl:2.*)
 
 - Apache License, Version 2.0
@@ -41,7 +45,7 @@ Snappy Java (org.xerial.snappy:snappy-java:1.*)
 
 - Apache License, Version 2.0
 
-Aircompressor (io.airlift:aircompressor:0.*)
+Aircompressor (io.airlift:aircompressor:2.*)
 
 - Apache License, Version 2.0
 
@@ -73,7 +77,7 @@ XZ (org.tukaani:xz:1.*)
 
 - BSD Zero Clause License
 
-OkHttp (com.squareup.okhttp3:okhttp:4.*)
+OkHttp (com.squareup.okhttp3:*:4.*)
 
 - Apache License, Version 2.0
 
@@ -85,13 +89,13 @@ Kotlin Stdlib (org.jetbrains.kotlin:*:2.*)
 
 - Apache License, Version 2.0
 
-Logback (ch.qos.logback:logback-core:1.*)
+Logback (ch.qos.logback:logback-*:1.*)
 
 - Dual license (<https://logback.qos.ch/license.html>)
 - Eclipse Public License 1.0
 - GNU Lesser General Public License, version 2.1
 
-Facebook Jcommon collections (com.facebook.jcommon:collections::0.*)
+Facebook Jcommon collections (com.facebook.jcommon:collections:0.*)
 
 - Apache License, Version 2.0
 
@@ -99,7 +103,7 @@ Guava: Google Core Libraries For Java (com.google.guava:guava:33.*)
 
 - Apache License, Version 2.0
 
-Fasterxml Jackson (com.fasterxml.jackson.core:*:2.*, com.fasterxml.jackson.module:*:2.*)
+Fasterxml Jackson (com.fasterxml.jackson.*:jackson-*:2.*)
 
 - Apache License, Version 2.0
 
@@ -135,7 +139,11 @@ Apache Commons Net (commons-net:commons-net:3.*)
 
 - Apache License, Version 2.0
 
-Apache Commons Lang (org.apache.commons:commons-lang3:3.*)
+Apache Commons Lang (org.apache.commons:commons-lang3:3.*, commons-lang:commons-lang:2.*)
+
+- Apache License, Version 2.0
+
+Apache Commons FileUpload (commons-fileupload:commons-fileupload:1.*)
 
 - Apache License, Version 2.0
 
@@ -147,15 +155,15 @@ Apache Datasketches (org.apache.datasketches:datasketches-java:3.*)
 
 - Apache License, Version 2.0
 
-Apache Hadoop (org.apache.hadoop:hadoop-aws:3.*, org.apache.hadoop:hadoop-client:3.*)
+Apache Hadoop (org.apache.hadoop:hadoop-*:3.*)
 
 - Apache License, Version 2.0
 
-Apache Parquet (org.apache.parquet:parquet-hadoop:1.*)
+Apache Parquet (org.apache.parquet:parquet-*:1.*)
 
 - Apache License, Version 2.0
 
-Apache Spark (org.apache.spark:spark-sql_2.12:3.*)
+Apache Spark (org.apache.spark:spark-*_2.*:3.*)
 
 - Apache License, Version 2.0
 
@@ -175,7 +183,7 @@ Java Websocket (org.java-websocket:Java-WebSocket:1.*)
 
 - MIT License
 
-JUnit (org.junit.jupiter:junit-jupiter-*:5.*, org.junit.platform:junit-platform-suite:1.*)
+JUnit (org.junit.jupiter:junit-jupiter-*:5.*, org.junit.platform:junit-platform-suite:1.*, org.junit.vintage:junit-vintage-engine:5.* - Trino needs the vintage engine)
 
 - Eclipse Public License 1.0
 
@@ -191,7 +199,7 @@ AssertJ (org.assertj:assertj-core:3.*)
 
 - Apache License, Version 2.0
 
-JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:3.*)
+JsonUnit (net.javacrumbs.json-unit:json-unit-assertj:4.*)
 
 - Apache License, Version 2.0
 
@@ -227,7 +235,7 @@ AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.*)
 
 - MIT License (<https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE>)
 
-Jersey Client (org.glassfish.jersey.core:jersey-client:2.*)
+Jersey Client (org.glassfish.jersey.core:jersey-client:2.*, org.glassfish.jersey.inject:jersey-hk2:2.*, org.glassfish.jersey.media:jersey-media-json-jackson:2.*)
 
 - Eclipse Public License 2.0 (<https://projects.eclipse.org/projects/ee4j.jersey>)
 
@@ -240,15 +248,11 @@ Netty (io.netty:*:4.*)
 
 - Apache License, Version 2.0
 
-Eclipse Jetty (org.eclipse.jetty:*:9.*)
+Eclipse Jetty (org.eclipse.jetty:*:9.*, org.eclipse.jetty.http2:*:9.*, org.eclipse.jetty.websocket:*:9.*)
 
 - Dual license (<https://eclipse.dev/jetty/licenses.php>)
 - Apache License, Version 2.0
 - Eclipse Public License 1.0
-
-Jettison (org.codehaus.jettison:jettison:1.*)
-
-- Apache License, Version 2.0
 
 JSON Path (com.jayway.jsonpath:json-path:2.*)
 
@@ -270,11 +274,11 @@ JJWT (io.jsonwebtoken:*:0.*)
 
 - Apache License, Version 2.0
 
-Jungrapht Visualization (jungrapht) (com.github.tomnelson:jungrapht-visualization:1.*)
+Jungrapht Visualization (jungrapht) (com.github.tomnelson:jungrapht-*:1.*)
 
 - The 3-Clause BSD License
 
-JGraphT (org.jgrapht:*:1.*)
+JGraphT (org.jgrapht:*:1.*, org.jgrapht:jgrapht-core:0.* - Trino uses an older version)
 
 - May be used under either of two licenses (<https://github.com/jgrapht/jgrapht>)
 - GNU Lesser General Public License (LGPL) 2.1
@@ -304,6 +308,18 @@ Dependency Check Maven Plugin (org.owasp:dependency-check-maven:11.*)
 
 - Apache License, Version 2.0
 
+SpotBugs Maven Plugin (com.github.spotbugs:spotbugs-*:4.*)
+
+- GNU Lesser General Public License, version 3
+
+Checkstyle (com.puppycrawl.tools:checkstyle:10.*)
+
+- GNU Lesser General Public License, version 2.1
+
+Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
+
+- Apache License, Version 2.0
+
 The file java/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
 on ArrayOfStringsSerDe from the Apache DataSketches library, licensed under the Apache License, Version 2.0.
 
@@ -320,8 +336,6 @@ boto3:
 s3fs:
 
 - The 3-Clause BSD License
-
-
 
 Sleeper contains Rust code. This has the following dependencies.
 
@@ -457,26 +471,26 @@ jwgmeligmeyling/spotbugs-github-action (<https://github.com/marketplace/actions/
 
 - MIT License
 
-dtolnay/rust-toolchain (https://github.com/marketplace/actions/rustup-toolchain-install)
+dtolnay/rust-toolchain (<https://github.com/marketplace/actions/rustup-toolchain-install>)
 
 - MIT License
 
-mozilla-actions/sccache-action (https://github.com/marketplace/actions/sccache-action)
+mozilla-actions/sccache-action (<https://github.com/marketplace/actions/sccache-action>)
 
 - Apache License, Version 2.0
 
-docker/setup-qemu-action (https://github.com/marketplace/actions/docker-setup-qemu)
+docker/setup-qemu-action (<https://github.com/marketplace/actions/docker-setup-qemu>)
 
 - Apache License, Version 2.0
 
-docker/setup-buildx-action (https://github.com/marketplace/actions/docker-setup-buildx)
+docker/setup-buildx-action (<https://github.com/marketplace/actions/docker-setup-buildx>)
 
 - Apache License, Version 2.0
 
-docker/login-action (https://github.com/marketplace/actions/docker-login)
+docker/login-action (<https://github.com/marketplace/actions/docker-login>)
 
 - Apache License, Version 2.0
 
-docker/build-push-action (https://github.com/marketplace/actions/build-and-push-docker-images)
+docker/build-push-action (<https://github.com/marketplace/actions/build-and-push-docker-images>)
 
 - Apache License, Version 2.0

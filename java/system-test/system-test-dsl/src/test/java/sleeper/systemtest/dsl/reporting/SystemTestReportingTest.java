@@ -45,7 +45,7 @@ public class SystemTestReportingTest {
         // Given
         sleeper.connectToInstance(IN_MEMORY_MAIN);
         sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.of(1, 2, 3));
-        sleeper.ingest().byQueue().sendSourceFiles("test.parquet").invokeTask().waitForJobs();
+        sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
 
         // When / Then
         assertThat(sleeper.reporting().ingestJobs().finishedStatistics())
@@ -58,7 +58,7 @@ public class SystemTestReportingTest {
         // Given
         sleeper.connectToInstance(IN_MEMORY_MAIN);
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.of(1, 2, 3));
-        sleeper.compaction().forceCreateJobs(1).invokeTasks(1).waitForJobs();
+        sleeper.compaction().forceCreateJobs(1).waitForTasks(1).waitForJobs();
 
         // When / Then
         assertThat(sleeper.reporting().compactionJobs().finishedStatistics())

@@ -49,7 +49,7 @@ public class OptionalFeaturesDisabledST {
     }
 
     @Test
-    void shouldIngest1FileFromDataBucketWhenSourceBucketAndStatusStoreDisabled(SleeperSystemTest sleeper) throws Exception {
+    void shouldIngest1FileFromDataBucketWhenSourceBucketAndTrackerAreDisabled(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.sourceFiles().inDataBucket()
                 .createWithNumberedRecords("file.parquet", LongStream.range(0, 100));
@@ -67,7 +67,7 @@ public class OptionalFeaturesDisabledST {
     }
 
     @Test
-    void shouldAllowForCompactionWhenStatusStoreDisabled(SleeperSystemTest sleeper) throws Exception {
+    void shouldAllowForCompactionWhenTrackerIsDisabled(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.updateTableProperties(Map.of(COMPACTION_FILES_BATCH_SIZE, "5"));
         // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)

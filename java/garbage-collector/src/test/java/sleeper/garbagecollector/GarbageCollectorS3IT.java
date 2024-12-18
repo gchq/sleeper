@@ -123,7 +123,7 @@ public class GarbageCollectorS3IT {
                 assignJobOnPartitionToFiles("job1", "root",
                         List.of(oldFile1.getFilename(), oldFile2.getFilename()))));
         stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "job1", "root", List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2)));
+                "job1", List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2)));
 
         // When
         GarbageCollector collector = createGarbageCollector(instanceProperties, tableProperties, stateStore);
@@ -156,7 +156,7 @@ public class GarbageCollectorS3IT {
         stateStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("test-job", "root", List.of(oldFile.getFilename()))));
         stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "test-job", "root", List.of(oldFile.getFilename()), newFile)));
+                "test-job", List.of(oldFile.getFilename()), newFile)));
 
         // When
         createGarbageCollector(instanceProperties, tableProperties, stateStore)
@@ -188,7 +188,7 @@ public class GarbageCollectorS3IT {
         stateStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("test-job", "root", List.of(oldFile.getFilename()))));
         stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "test-job", "root", List.of(oldFile.getFilename()), newFile)));
+                "test-job", List.of(oldFile.getFilename()), newFile)));
 
         // When
         createGarbageCollectorWithMaxCommitLength(1, instanceProperties, tableProperties, stateStore)

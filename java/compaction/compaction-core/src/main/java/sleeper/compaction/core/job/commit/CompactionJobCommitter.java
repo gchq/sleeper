@@ -46,6 +46,6 @@ public class CompactionJobCommitter {
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .build();
-        return replaceJobFileReferences(job.getId(), job.getPartitionId(), job.getInputFiles(), fileReference);
+        return replaceJobFileReferences(job.getId(), job.getInputFiles(), fileReference);
     }
 }

@@ -31,13 +31,13 @@ import java.util.List;
 import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 
 public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
@@ -84,7 +84,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
     }
 
     @Test
-    void shouldNotUpdateStatusStoreWhenTimingOutWaitingForFilesToBeAssignedToJob() throws Exception {
+    void shouldNotUpdateTrackerWhenTimingOutWaitingForFilesToBeAssignedToJob() throws Exception {
         // Given
         Instant waitForFilesTime = Instant.parse("2024-02-22T13:50:01Z");
         Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
@@ -97,8 +97,8 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
                 processNoJobs());
 
         // Then
-        assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                jobCreated(job, DEFAULT_CREATED_TIME,
+        assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
                                 "Too many retries waiting for input files to be assigned to job in state store"))));
     }
@@ -122,8 +122,8 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(stateStore.getFileReferences()).isEmpty();
         assertThat(consumedJobs).containsExactly(job);
         assertThat(jobsReturnedToQueue).isEmpty();
-        assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                jobCreated(job, DEFAULT_CREATED_TIME,
+        assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
                                 "File reference not found in partition root, filename " + job.getInputFiles().get(0)))));
     }
@@ -146,8 +146,8 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         // Then
         assertThat(consumedJobs).containsExactly(job);
         assertThat(jobsReturnedToQueue).isEmpty();
-        assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                jobCreated(job, DEFAULT_CREATED_TIME,
+        assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
                                 "Reference to file is already assigned to job job2, in partition root, filename " + job.getInputFiles().get(0)))));
     }
@@ -172,8 +172,8 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(consumedJobs).containsExactly(job);
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();
-        assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                jobCreated(job, DEFAULT_CREATED_TIME,
+        assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         failedCompactionRun(DEFAULT_TASK_ID,
                                 Instant.parse("2024-10-28T11:51:00Z"),
                                 Instant.parse("2024-10-28T11:52:00Z"),
@@ -203,8 +203,8 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();
         assertThat(foundWaitsForFileAssignment).isEmpty();
-        assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
-                jobCreated(job, DEFAULT_CREATED_TIME,
+        assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         uncommittedCompactionRun(DEFAULT_TASK_ID, expectedSummary)));
         assertThat(commitRequestsOnQueue).containsExactly(
                 new CompactionJobCommitRequest(job, DEFAULT_TASK_ID, "test-job-run-1", expectedSummary));

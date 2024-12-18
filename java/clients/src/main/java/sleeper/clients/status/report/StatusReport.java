@@ -29,9 +29,8 @@ import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -39,6 +38,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.task.common.QueueMessageCount;
 
@@ -55,7 +55,7 @@ public class StatusReport {
     private final TableProperties tableProperties;
     private final boolean verbose;
     private final StateStore stateStore;
-    private final CompactionJobStatusStore compactionStatusStore;
+    private final CompactionJobTracker compactionJobTracker;
     private final CompactionTaskStatusStore compactionTaskStatusStore;
     private final SqsClient sqsClient;
     private final QueueMessageCount.Client messageCount;
@@ -64,13 +64,13 @@ public class StatusReport {
     public StatusReport(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             boolean verbose, StateStore stateStore,
-            CompactionJobStatusStore compactionStatusStore, CompactionTaskStatusStore compactionTaskStatusStore,
+            CompactionJobTracker compactionJobTracker, CompactionTaskStatusStore compactionTaskStatusStore,
             SqsClient sqsClient, QueueMessageCount.Client messageCount, TablePropertiesProvider tablePropertiesProvider) {
         this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.verbose = verbose;
         this.stateStore = stateStore;
-        this.compactionStatusStore = compactionStatusStore;
+        this.compactionJobTracker = compactionJobTracker;
         this.compactionTaskStatusStore = compactionTaskStatusStore;
         this.sqsClient = sqsClient;
         this.messageCount = messageCount;
@@ -86,7 +86,7 @@ public class StatusReport {
         new FilesStatusReport(stateStore, 1000, verbose).run();
 
         // Jobs
-        new CompactionJobStatusReport(compactionStatusStore,
+        new CompactionJobStatusReport(compactionJobTracker,
                 new StandardCompactionJobStatusReporter(),
                 tableProperties.getStatus(),
                 JobQuery.Type.UNFINISHED).run();
@@ -119,12 +119,12 @@ public class StatusReport {
             TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
             StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, new Configuration());
             StateStore stateStore = stateStoreFactory.getStateStore(tableProperties);
-            CompactionJobStatusStore compactionStatusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+            CompactionJobTracker compactionJobTracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
             CompactionTaskStatusStore compactionTaskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
             StatusReport statusReport = new StatusReport(
                     instanceProperties, tableProperties, verbose,
-                    stateStore, compactionStatusStore, compactionTaskStatusStore,
+                    stateStore, compactionJobTracker, compactionTaskStatusStore,
                     sqsClient, QueueMessageCount.withSqsClient(sqsClientV1), tablePropertiesProvider);
             statusReport.run();
         } finally {

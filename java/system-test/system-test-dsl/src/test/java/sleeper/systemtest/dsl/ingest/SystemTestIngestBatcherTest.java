@@ -60,12 +60,11 @@ public class SystemTestIngestBatcherTest {
                 .createWithNumberedRecords("file4.parquet", numbers.range(300, 400));
 
         // When
-        SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
-                .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().invokeStandardIngestTask().waitForIngestJobs().getInvokeResult();
+        sleeper.ingest().batcher()
+                .sendSourceFilesExpectingJobs(2, "file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
+                .waitForStandardIngestTask().waitForIngestJobs();
 
         // Then
-        assertThat(result.numJobsCreated()).isEqualTo(2);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);

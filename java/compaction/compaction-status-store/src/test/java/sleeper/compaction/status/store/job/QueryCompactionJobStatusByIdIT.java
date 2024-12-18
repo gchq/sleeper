@@ -18,20 +18,17 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusTestData;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 
-public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldReturnCompactionJobById() {
@@ -51,7 +48,7 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
         // Then
         assertThat(getJobStatus(job1.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+                .isEqualTo(compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -65,14 +62,14 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobStatusS
 
         // When
         storeJobCreated(job);
-        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId("test-task").build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId("test-task").build());
-        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId("test-task").build());
+        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId("test-task").build());
+        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId("test-task").build());
+        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId("test-task").build());
 
         // Then
         assertThat(getJobStatus(job.getId()))
                 .usingRecursiveComparison(IGNORE_UPDATE_TIMES)
-                .isEqualTo(CompactionJobStatusTestData.jobCreated(job, ignoredUpdateTime(),
+                .isEqualTo(compactionJobCreated(job, ignoredUpdateTime(),
                         finishedCompactionRun("test-task", defaultSummary(), defaultCommitTime())));
     }
 

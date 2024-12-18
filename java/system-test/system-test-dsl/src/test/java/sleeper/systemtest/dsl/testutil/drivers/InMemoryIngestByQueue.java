@@ -35,12 +35,12 @@ import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasks;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
+import sleeper.systemtest.dsl.util.WaitForTasks;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -73,29 +73,28 @@ public class InMemoryIngestByQueue {
         this.sketches = sketches;
     }
 
-    public IngestByQueueDriver byQueueDriver() {
+    public IngestByQueueDriver byQueueDriver(SystemTestContext context) {
         return (queueUrl, tableName, files) -> {
             IngestJob job = IngestJob.builder()
                     .id(UUID.randomUUID().toString())
                     .tableName(tableName)
                     .files(files)
                     .build();
-            send(job);
+            send(job, context);
             return job.getId();
         };
     }
 
-    public synchronized void send(IngestJob job) {
+    public synchronized void send(IngestJob job, SystemTestContext context) {
         jobsQueue.add(job);
+        IngestTask task = newTask(context, UUID.randomUUID().toString());
+        task.start();
+        runningTasks.add(task);
+        task.handleOneMessage();
     }
 
-    public InvokeIngestTasksDriver tasksDriver(SystemTestContext context) {
-        return () -> new InvokeIngestTasks(() -> {
-            IngestTask task = newTask(context, UUID.randomUUID().toString());
-            task.start();
-            runningTasks.add(task);
-            task.handleOneMessage();
-        }, jobStore);
+    public IngestTasksDriver tasksDriver(SystemTestContext context) {
+        return () -> new WaitForTasks(jobStore);
     }
 
     private IngestTask newTask(SystemTestContext context, String taskId) {

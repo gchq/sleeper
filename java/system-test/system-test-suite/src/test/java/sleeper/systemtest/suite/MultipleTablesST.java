@@ -35,6 +35,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printTableFilesExpectingIdentical;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printTablePartitionsExpectingIdentical;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
@@ -71,7 +72,7 @@ public class MultipleTablesST {
 
         // When we send an ingest job with the source file to all tables
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then all tables should contain the source file records
         // And all tables should have one active file
@@ -89,6 +90,7 @@ public class MultipleTablesST {
         // Given we have several tables
         // And we ingest two source files as separate jobs
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
@@ -98,11 +100,11 @@ public class MultipleTablesST {
         sleeper.ingest().byQueue()
                 .sendSourceFilesToAllTables("file1.parquet")
                 .sendSourceFilesToAllTables("file2.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // When we run compaction and GC
-        sleeper.compaction().createJobs(NUMBER_OF_TABLES).invokeTasks(1).waitForJobs();
-        sleeper.garbageCollection().invoke().waitFor();
+        sleeper.compaction().putTablesOnlineWaitForJobCreation(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
+        sleeper.garbageCollection().waitFor();
 
         // Then all tables should have one active file with the expected records, and none ready for GC
         assertThat(sleeper.query().byQueue().allRecordsByTable())
@@ -118,14 +120,15 @@ public class MultipleTablesST {
     void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
         // Given we have several tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
-        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema,
-                Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                TABLE_ONLINE, "false",
+                PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
         sleeper.sourceFiles().createWithNumberedRecords(schema, "file.parquet", LongStream.range(0, 100));
         sleeper.ingest().byQueue().sendSourceFilesToAllTables("file.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // When we run 3 partition splits with compactions
         sleeper.partitioning().split();
@@ -152,6 +155,7 @@ public class MultipleTablesST {
         // Given we have several tables
         // And we ingest two source files as separate jobs
         sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2",
                 GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0"));
@@ -161,7 +165,7 @@ public class MultipleTablesST {
         sleeper.ingest().byQueue()
                 .sendSourceFilesToAllTables("file1.parquet")
                 .sendSourceFilesToAllTables("file2.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // When we compute table metrics
         sleeper.tableMetrics().generate();

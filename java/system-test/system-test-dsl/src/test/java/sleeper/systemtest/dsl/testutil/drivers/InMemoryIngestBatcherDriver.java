@@ -24,19 +24,21 @@ import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
 
+    private final SystemTestContext context;
     private final SystemTestInstanceContext instance;
     private final IngestBatcherStore store;
     private final InMemoryIngestByQueue ingest;
     private final long fileSizeBytes;
 
     public InMemoryIngestBatcherDriver(SystemTestContext context, IngestBatcherStore store, InMemoryIngestByQueue ingest, long fileSizeBytes) {
+        this.context = context;
         this.instance = context.instance();
         this.store = store;
         this.ingest = ingest;
@@ -53,21 +55,22 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
                     .receivedTime(Instant.now())
                     .build());
         }
-    }
-
-    @Override
-    public List<String> invokeGetJobIds() {
-        List<String> jobIds = new ArrayList<>();
         IngestBatcher.builder()
                 .instanceProperties(instance.getInstanceProperties())
                 .tablePropertiesProvider(instance.getTablePropertiesProvider())
                 .store(store)
                 .queueClient((queueUrl, job) -> {
-                    ingest.send(job);
-                    jobIds.add(job.getId());
+                    ingest.send(job, context);
                 })
                 .build().batchFiles();
-        return jobIds;
+    }
+
+    @Override
+    public Stream<String> allJobIdsInStore() {
+        return store.getAllFilesNewestFirst().stream()
+                .filter(FileIngestRequest::isAssignedToJob)
+                .map(FileIngestRequest::getJobId)
+                .distinct();
     }
 
     @Override

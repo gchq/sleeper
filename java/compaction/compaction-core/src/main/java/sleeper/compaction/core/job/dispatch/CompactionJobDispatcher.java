@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -27,6 +26,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.SplitIntoBatches;
 
 import java.time.Duration;
@@ -34,7 +34,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
@@ -45,7 +44,7 @@ public class CompactionJobDispatcher {
     private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final CompactionJobStatusStore statusStore;
+    private final CompactionJobTracker tracker;
     private final ReadBatch readBatch;
     private final SendJobs sendJobs;
     private final int sendBatchSize;
@@ -55,14 +54,14 @@ public class CompactionJobDispatcher {
 
     public CompactionJobDispatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, CompactionJobStatusStore statusStore, ReadBatch readBatch,
+            StateStoreProvider stateStoreProvider, CompactionJobTracker tracker, ReadBatch readBatch,
             SendJobs sendJobs, int sendBatchSize,
             ReturnRequestToPendingQueue returnToPendingQueue, SendDeadLetter sendDeadLetter,
             Supplier<Instant> timeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.statusStore = statusStore;
+        this.tracker = tracker;
         this.readBatch = readBatch;
         this.sendJobs = sendJobs;
         this.sendBatchSize = sendBatchSize;
@@ -100,7 +99,7 @@ public class CompactionJobDispatcher {
         LOGGER.info("Validated input file assignments, sending {} jobs", batch.size());
         for (List<CompactionJob> toSend : SplitIntoBatches.splitListIntoBatchesOf(sendBatchSize, batch)) {
             sendJobs.send(toSend);
-            toSend.forEach(job -> statusStore.jobCreated(compactionJobCreated(job)));
+            toSend.forEach(job -> tracker.jobCreated(job.createCreatedEvent()));
         }
         LOGGER.info("Sent {} jobs", batch.size());
     }

@@ -175,7 +175,7 @@ public class CompactionTaskResources {
         Rule rule = Rule.Builder
                 .create(stack, "CompactionTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_TASK_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the compaction task creation lambda")
+                .description(SleeperScheduleRule.COMPACTION_TASK_CREATION.getDescription())
                 .enabled(!shouldDeployPaused(stack))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))

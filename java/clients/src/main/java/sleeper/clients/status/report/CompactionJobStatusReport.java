@@ -27,12 +27,12 @@ import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusR
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.job.query.JobQueryArgument;
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.time.Clock;
 import java.util.HashMap;
@@ -52,31 +52,31 @@ public class CompactionJobStatusReport {
     }
 
     private final CompactionJobStatusReporter compactionJobStatusReporter;
-    private final CompactionJobStatusStore compactionJobStatusStore;
+    private final CompactionJobTracker compactionJobTracker;
     private final JobQuery.Type queryType;
     private final JobQuery query;
 
     public CompactionJobStatusReport(
-            CompactionJobStatusStore compactionJobStatusStore,
+            CompactionJobTracker compactionJobTracker,
             CompactionJobStatusReporter reporter,
             TableStatus table, JobQuery.Type queryType) {
-        this(compactionJobStatusStore, reporter, table, queryType, "");
+        this(compactionJobTracker, reporter, table, queryType, "");
     }
 
     public CompactionJobStatusReport(
-            CompactionJobStatusStore compactionJobStatusStore,
+            CompactionJobTracker compactionJobTracker,
             CompactionJobStatusReporter reporter,
             TableStatus table, JobQuery.Type queryType, String queryParameters) {
-        this(compactionJobStatusStore, reporter,
+        this(compactionJobTracker, reporter,
                 JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
                         Clock.systemUTC(), new ConsoleInput(System.console())));
     }
 
     public CompactionJobStatusReport(
-            CompactionJobStatusStore compactionJobStatusStore,
+            CompactionJobTracker compactionJobTracker,
             CompactionJobStatusReporter reporter,
             JobQuery query) {
-        this.compactionJobStatusStore = compactionJobStatusStore;
+        this.compactionJobTracker = compactionJobTracker;
         this.compactionJobStatusReporter = reporter;
         this.query = query;
         this.queryType = query.getType();
@@ -86,7 +86,7 @@ public class CompactionJobStatusReport {
         if (query == null) {
             return;
         }
-        compactionJobStatusReporter.report(query.run(compactionJobStatusStore), queryType);
+        compactionJobStatusReporter.report(query.run(compactionJobTracker), queryType);
     }
 
     public static void main(String[] args) {
@@ -108,8 +108,8 @@ public class CompactionJobStatusReport {
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                CompactionJobStatusStore statusStore = CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-                new CompactionJobStatusReport(statusStore, reporter, table, queryType, queryParameters).run();
+                CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+                new CompactionJobStatusReport(tracker, reporter, table, queryType, queryParameters).run();
             } finally {
                 s3Client.shutdown();
                 dynamoDBClient.shutdown();

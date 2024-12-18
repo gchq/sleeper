@@ -100,8 +100,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
         stateStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "B", List.of("file1.parquet", "file2.parquet"))));
         stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "job1", "B", List.of("file1.parquet", "file2.parquet"),
-                fileReferenceFactory.partitionFile("B", "file3.parquet", 200))));
+                "job1", List.of("file1.parquet", "file2.parquet"), fileReferenceFactory.partitionFile("B", "file3.parquet", 200))));
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
@@ -128,8 +127,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 assignJobOnPartitionToFiles("job1", "B",
                         List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"))));
         stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "job1", "B",
-                List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
+                "job1", List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
                 fileReferenceFactory.partitionFile("B", "file5.parquet", 400))));
         int maxFilesWithNoReferences = 3;
 

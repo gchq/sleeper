@@ -44,50 +44,53 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 public class SleeperScheduleRule {
 
     private static final List<SleeperScheduleRule> RULES = new ArrayList<>();
-    // Rule that creates compaction jobs
     public static final SleeperScheduleRule COMPACTION_JOB_CREATION = add(
-            COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "%s-CompactionJobCreationRule");
-    // Rule that creates compaction tasks
+            COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "%s-CompactionJobCreationRule",
+            "Triggers creation of compaction jobs for online Sleeper tables");
     public static final SleeperScheduleRule COMPACTION_TASK_CREATION = add(
-            COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-CompactionTasksCreationRule");
-    // Rule that looks for partitions that need splitting
+            COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "%s-CompactionTasksCreationRule",
+            "Triggers scaling compaction tasks to run created jobs");
     public static final SleeperScheduleRule PARTITION_SPLITTING = add(
-            PARTITION_SPLITTING_CLOUDWATCH_RULE, "%s-FindPartitionsToSplitPeriodicTrigger");
-    // Rule that triggers garbage collector lambda
+            PARTITION_SPLITTING_CLOUDWATCH_RULE, "%s-FindPartitionsToSplitPeriodicTrigger",
+            "Triggers looking for partitions to split in online Sleeper tables");
     public static final SleeperScheduleRule GARBAGE_COLLECTOR = add(
-            GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "%s-GarbageCollectorPeriodicTrigger");
-    // Rule that triggers creation of ingest tasks
-    public static final SleeperScheduleRule INGEST = add(
-            INGEST_CLOUDWATCH_RULE, "%s-IngestTasksCreationRule");
-    // Rule that batches up ingest jobs from file ingest requests
+            GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "%s-GarbageCollectorPeriodicTrigger",
+            "Triggers garbage collection to delete unused files");
+    public static final SleeperScheduleRule INGEST_TASK_CREATION = add(
+            INGEST_CLOUDWATCH_RULE, "%s-IngestTasksCreationRule",
+            "Triggers scaling ingest tasks to run queued jobs");
     public static final SleeperScheduleRule INGEST_BATCHER_JOB_CREATION = add(
-            INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "%s-IngestBatcherJobCreationRule");
-    public static final SleeperScheduleRule TABLE_METRICS = add(TABLE_METRICS_RULE, "%s-MetricsPublishRule");
-    // Rule that triggers the query lambdas to keep warm
+            INGEST_BATCHER_JOB_CREATION_CLOUDWATCH_RULE, "%s-IngestBatcherJobCreationRule",
+            "Triggers creation of jobs from files submitted to the ingest batcher");
+    public static final SleeperScheduleRule TABLE_METRICS = add(TABLE_METRICS_RULE, "%s-MetricsPublishRule",
+            "Triggers publishing metrics based on the current state of Sleeper tables");
     public static final SleeperScheduleRule QUERY_WARM_LAMBDA = add(
-            QUERY_WARM_LAMBDA_CLOUDWATCH_RULE, "%s-QueryWarmLambdaRule");
-    // Rule that triggers transaction log snapshot creation
+            QUERY_WARM_LAMBDA_CLOUDWATCH_RULE, "%s-QueryWarmLambdaRule",
+            "Triggers query requests to prevent the system scaling to zero");
     public static final SleeperScheduleRule TRANSACTION_LOG_SNAPSHOT_CREATION = add(
-            TRANSACTION_LOG_SNAPSHOT_CREATION_RULE, "%s-TransactionLogSnapshotCreationRule");
-    // Rule that triggers deletion of old transaction log snapshots
+            TRANSACTION_LOG_SNAPSHOT_CREATION_RULE, "%s-TransactionLogSnapshotCreationRule",
+            "Triggers creation of snapshots of the current state of online Sleeper tables based on a transaction log");
     public static final SleeperScheduleRule TRANSACTION_LOG_SNAPSHOT_DELETION = add(
-            TRANSACTION_LOG_SNAPSHOT_DELETION_RULE, "%s-TransactionLogSnapshotDeletionRule");
-    // Rule that triggers deletion of old transaction log transactions
+            TRANSACTION_LOG_SNAPSHOT_DELETION_RULE, "%s-TransactionLogSnapshotDeletionRule",
+            "Triggers deletion of old snapshots of online Sleeper tables based on a transaction log");
     public static final SleeperScheduleRule TRANSACTION_LOG_TRANSACTION_DELETION = add(
-            TRANSACTION_LOG_TRANSACTION_DELETION_RULE, "%s-TransactionLogTransactionDeletionRule");
+            TRANSACTION_LOG_TRANSACTION_DELETION_RULE, "%s-TransactionLogTransactionDeletionRule",
+            "Triggers deletion of old transactions from the active transaction logs of online Sleeper tables");
 
     private final InstanceProperty property;
     private final String nameFormat;
+    private final String description;
 
-    private static SleeperScheduleRule add(InstanceProperty property, String nameFormat) {
-        SleeperScheduleRule rule = new SleeperScheduleRule(property, nameFormat);
+    private static SleeperScheduleRule add(InstanceProperty property, String nameFormat, String description) {
+        SleeperScheduleRule rule = new SleeperScheduleRule(property, nameFormat, description);
         RULES.add(rule);
         return rule;
     }
 
-    private SleeperScheduleRule(InstanceProperty property, String nameFormat) {
+    private SleeperScheduleRule(InstanceProperty property, String nameFormat, String description) {
         this.property = requireNonNull(property, "property must not be null");
         this.nameFormat = requireNonNull(nameFormat, "nameFormat must not be null");
+        this.description = requireNonNull(description, "description must not be null");
     }
 
     /**
@@ -169,6 +172,10 @@ public class SleeperScheduleRule {
 
     public InstanceProperty getProperty() {
         return property;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     /**

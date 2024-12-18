@@ -22,11 +22,11 @@ import sleeper.clients.status.report.job.JsonProcessRunTime;
 import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
-import sleeper.compaction.core.job.status.CompactionJobUpdateTypeInRun;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRuns;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobUpdateTypeInRun;
 
 import java.io.PrintStream;
 import java.util.List;

@@ -18,8 +18,8 @@ package sleeper.systemtest.dsl.compaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -37,11 +37,11 @@ public class WaitForCompactionJobCreation {
     public static final Logger LOGGER = LoggerFactory.getLogger(WaitForCompactionJobCreation.class);
 
     private final SystemTestInstanceContext instance;
-    private final CompactionJobStatusStore store;
+    private final CompactionJobTracker store;
 
     public WaitForCompactionJobCreation(SystemTestInstanceContext instance, CompactionDriver driver) {
         this.instance = instance;
-        this.store = driver.getJobStatusStore();
+        this.store = driver.getJobTracker();
     }
 
     public List<String> createJobsGetIds(int expectedJobs, PollWithRetries poll, Runnable createJobs) {
