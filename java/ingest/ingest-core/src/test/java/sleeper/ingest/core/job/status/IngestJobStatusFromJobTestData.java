@@ -63,7 +63,7 @@ public class IngestJobStatusFromJobTestData {
      * @return           an ingest job started status
      */
     public static IngestJobStartedStatus ingestStartedStatus(IngestJob job, Instant startTime) {
-        return IngestJobStatusTestHelper.ingestStartedStatus(job, startTime, defaultUpdateTime(startTime));
+        return IngestJobStatusTestHelper.ingestStartedStatus(job.getFileCount(), startTime, defaultUpdateTime(startTime));
     }
 
 }
