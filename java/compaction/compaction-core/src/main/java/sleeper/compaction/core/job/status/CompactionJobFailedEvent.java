@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.status;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.record.process.ProcessRunTime;
 
 import java.util.ArrayList;
@@ -40,17 +39,6 @@ public class CompactionJobFailedEvent {
         jobRunId = builder.jobRunId;
         runTime = Objects.requireNonNull(builder.runTime, "runTime must not be null");
         failureReasons = Objects.requireNonNull(builder.failureReasons, "failureReasons must not be null");
-    }
-
-    /**
-     * Creates a builder for this class.
-     *
-     * @param  job     the compaction job
-     * @param  runTime the process run time
-     * @return         a builder
-     */
-    public static Builder compactionJobFailed(CompactionJob job, ProcessRunTime runTime) {
-        return builder().job(job).runTime(runTime);
     }
 
     public static Builder builder() {
@@ -115,17 +103,6 @@ public class CompactionJobFailedEvent {
         private String taskId;
         private ProcessRunTime runTime;
         private List<String> failureReasons;
-
-        /**
-         * Sets the compaction job ID and the table ID using the provided compaction job.
-         *
-         * @param  job the compaction job
-         * @return     the builder
-         */
-        public Builder job(CompactionJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId());
-        }
 
         /**
          * Sets the compaction job ID.

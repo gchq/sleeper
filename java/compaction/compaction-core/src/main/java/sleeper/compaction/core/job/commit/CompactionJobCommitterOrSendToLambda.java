@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
 import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -73,7 +72,7 @@ public class CompactionJobCommitterOrSendToLambda {
             CompactionJobCommitter.updateStateStoreSuccess(job,
                     finishedEvent.getSummary().getRecordsWritten(),
                     stateStoreProvider.getStateStore(tableProperties));
-            statusStore.jobCommitted(CompactionJobCommittedEvent.compactionJobCommitted(job, timeSupplier.get())
+            statusStore.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())
                     .build());

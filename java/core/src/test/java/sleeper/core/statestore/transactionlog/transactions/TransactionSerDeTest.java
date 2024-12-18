@@ -206,8 +206,7 @@ public class TransactionSerDeTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
         FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
                 replaceJobFileReferences(
-                        "job", "root", List.of("file1.parquet", "file2.parquet"),
-                        fileFactory.rootFile("file3.parquet", 100))));
+                        "job", List.of("file1.parquet", "file2.parquet"), fileFactory.rootFile("file3.parquet", 100))));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
