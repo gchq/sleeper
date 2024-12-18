@@ -223,7 +223,7 @@ class BulkImportJobDriverIT {
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
-                        .finishedStatus(ingestFinishedStatus(ingestJob,
+                        .finishedStatus(ingestFinishedStatus(
                                 summary(startTime, endTime, 200, 200), 1))
                         .build()));
     }
@@ -272,8 +272,8 @@ class BulkImportJobDriverIT {
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
-                        .finishedStatus(ingestFinishedStatus(ingestJob,
-                                summary(startTime, endTime, 100, 100), 1))
+                        .finishedStatus(ingestFinishedStatus(summary(startTime, endTime, 100, 100),
+                                1))
                         .build()));
     }
 
@@ -314,8 +314,8 @@ class BulkImportJobDriverIT {
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
-                        .finishedStatus(ingestFinishedStatus(ingestJob,
-                                summary(startTime, endTime, 200, 200), 2))
+                        .finishedStatus(ingestFinishedStatus(summary(startTime, endTime, 200, 200),
+                                2))
                         .build()));
     }
 
@@ -385,8 +385,8 @@ class BulkImportJobDriverIT {
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
-                        .finishedStatus(ingestFinishedStatus(ingestJob,
-                                summary(startTime, endTime, 100000, 100000), 50))
+                        .finishedStatus(ingestFinishedStatus(summary(startTime, endTime, 100000, 100000),
+                                50))
                         .build()));
     }
 
@@ -422,8 +422,8 @@ class BulkImportJobDriverIT {
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
-                        .finishedStatus(ingestFinishedStatus(ingestJob,
-                                summary(startTime, endTime, 200, 200), 1))
+                        .finishedStatus(ingestFinishedStatus(summary(startTime, endTime, 200, 200),
+                                1))
                         .build()));
     }
 
@@ -473,8 +473,8 @@ class BulkImportJobDriverIT {
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
-                        .finishedStatus(ingestFinishedStatus(ingestJob,
-                                summary(startTime, endTime, 200, 200), 1))
+                        .finishedStatus(ingestFinishedStatus(summary(startTime, endTime, 200, 200),
+                                1))
                         .build()));
     }
 

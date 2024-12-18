@@ -466,7 +466,7 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
-        return IngestJobStatusTestHelper.ingestFinishedStatus(job, summary(startTime, finishTime), 2);
+        return IngestJobStatusTestHelper.ingestFinishedStatus(summary(startTime, finishTime), 2);
     }
 
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(

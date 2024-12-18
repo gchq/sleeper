@@ -486,13 +486,13 @@ public class IngestJobStatusTestHelper {
 
     /**
      * Creates an ingest job finished status where files are committed.
-     *
-     * @param  job                  the ingest job
+     * 
      * @param  summary              the summary
      * @param  numFilesWrittenByJob the number of files written by the job
+     *
      * @return                      an ingest job started status
      */
-    public static IngestJobFinishedStatus ingestFinishedStatus(IngestJob job, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+    public static IngestJobFinishedStatus ingestFinishedStatus(RecordsProcessedSummary summary, int numFilesWrittenByJob) {
         return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
                 .committedBySeparateFileUpdates(false)
                 .numFilesWrittenByJob(numFilesWrittenByJob)

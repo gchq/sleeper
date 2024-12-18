@@ -91,7 +91,7 @@ class BulkImportJobDriverTest {
                         .taskId("test-task")
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
-                        .finishedStatus(ingestFinishedStatus(ingestJob,
+                        .finishedStatus(ingestFinishedStatus(
                                 summary(startTime, finishTime, 100, 100), 1))
                         .build()));
         assertThat(stateStore.getFileReferences())
