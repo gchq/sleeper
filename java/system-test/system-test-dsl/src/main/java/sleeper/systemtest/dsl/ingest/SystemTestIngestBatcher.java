@@ -64,7 +64,7 @@ public class SystemTestIngestBatcher {
                             () -> jobIdsInStore().filter(not(jobIdsBefore::contains)).toList(),
                             ids -> ids.size() >= expectedJobs);
             if (newJobIds.size() > expectedJobs) {
-                throw new IllegalStateException("More jobs were created than expected, found " + newJobIds.size() + ", expected" + expectedJobs);
+                throw new IllegalStateException("More jobs were created than expected, found " + newJobIds.size() + ", expected " + expectedJobs);
             }
             createdJobIds.addAll(newJobIds);
         } catch (InterruptedException e) {
@@ -94,6 +94,7 @@ public class SystemTestIngestBatcher {
         return driver.batcherStore().getAllFilesNewestFirst().stream()
                 .filter(request -> tableIds.contains(request.getTableId()))
                 .filter(request -> request.getJobId() != null)
-                .map(FileIngestRequest::getJobId);
+                .map(FileIngestRequest::getJobId)
+                .distinct();
     }
 }

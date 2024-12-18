@@ -19,11 +19,13 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcher;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.ingest.core.job.IngestJob;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -54,14 +56,16 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
                     .receivedTime(Instant.now())
                     .build());
         }
+        List<IngestJob> jobs = new ArrayList<>();
         IngestBatcher.builder()
                 .instanceProperties(instance.getInstanceProperties())
                 .tablePropertiesProvider(instance.getTablePropertiesProvider())
                 .store(store)
-                .queueClient((queueUrl, job) -> {
-                    ingest.send(job, context);
-                })
+                .queueClient((queueUrl, job) -> jobs.add(job))
                 .build().batchFiles();
+        for (IngestJob job : jobs) {
+            ingest.send(job, context);
+        }
     }
 
     @Override
