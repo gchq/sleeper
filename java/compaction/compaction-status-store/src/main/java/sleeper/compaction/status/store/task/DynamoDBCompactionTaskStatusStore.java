@@ -28,10 +28,10 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.status.store.CompactionTrackerException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
 import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;

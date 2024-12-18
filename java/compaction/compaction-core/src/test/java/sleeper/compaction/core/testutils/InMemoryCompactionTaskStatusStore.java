@@ -16,8 +16,8 @@
 
 package sleeper.compaction.core.testutils;
 
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;

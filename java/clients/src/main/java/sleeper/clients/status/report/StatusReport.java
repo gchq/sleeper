@@ -29,7 +29,6 @@ import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.status.report.partitions.PartitionsStatusReporter;
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -39,6 +38,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.task.common.QueueMessageCount;
 
