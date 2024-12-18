@@ -147,7 +147,7 @@ public class CompactionTaskTestBase {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider(), stateStoreProvider(),
                 jobTracker, commitRequestsOnQueue::add, timeSupplier);
-        CompactionRunnerFactory selector = (job, properties) -> compactor;
+        CompactionRunnerFactory selector = (job, instProperties ,properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
                 committer, jobTracker, taskStore, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
