@@ -422,8 +422,7 @@ public class GarbageCollectorIT {
         stateStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
         stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "job1", "root", List.of(oldFile.getFilename()),
-                FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100))));
+                "job1", List.of(oldFile.getFilename()), FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100))));
     }
 
     private FileReference activeReference(Path filePath) {

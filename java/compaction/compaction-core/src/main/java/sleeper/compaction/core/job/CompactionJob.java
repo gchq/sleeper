@@ -15,9 +15,17 @@
  */
 package sleeper.compaction.core.job;
 
+import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
+import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
+import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
+import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
+import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
+import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.CheckFileAssignmentsRequest;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -74,6 +82,26 @@ public class CompactionJob {
 
     public AssignJobIdRequest createAssignJobIdRequest() {
         return AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, inputFiles);
+    }
+
+    public CompactionJobCreatedEvent createCreatedEvent() {
+        return CompactionJobCreatedEvent.compactionJobCreated(this);
+    }
+
+    public CompactionJobStartedEvent.Builder startedEventBuilder(Instant startTime) {
+        return CompactionJobStartedEvent.builder().jobId(jobId).tableId(tableId).startTime(startTime);
+    }
+
+    public CompactionJobFinishedEvent.Builder finishedEventBuilder(RecordsProcessedSummary summary) {
+        return CompactionJobFinishedEvent.builder().jobId(jobId).tableId(tableId).summary(summary);
+    }
+
+    public CompactionJobCommittedEvent.Builder committedEventBuilder(Instant commitTime) {
+        return CompactionJobCommittedEvent.builder().jobId(jobId).tableId(tableId).commitTime(commitTime);
+    }
+
+    public CompactionJobFailedEvent.Builder failedEventBuilder(ProcessRunTime runTime) {
+        return CompactionJobFailedEvent.builder().jobId(jobId).tableId(tableId).runTime(runTime);
     }
 
     /**
