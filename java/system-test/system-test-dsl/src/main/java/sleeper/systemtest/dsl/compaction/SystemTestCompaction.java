@@ -22,6 +22,7 @@ import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
+import sleeper.systemtest.dsl.util.WaitForTasks;
 
 import java.time.Duration;
 import java.util.List;
@@ -65,19 +66,16 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction splitFilesAndRunJobs(int expectedJobs) {
-        forceCreateJobs(expectedJobs).invokeTasks(1).waitForJobsToFinishThenCommit(
+        forceCreateJobs(expectedJobs).waitForTasks(1).waitForJobsToFinishThenCommit(
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)),
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5)));
         return this;
     }
 
-    public SystemTestCompaction invokeTasks(int expectedTasks) {
-        driver.invokeTasks(expectedTasks, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-        return this;
-    }
-
-    public SystemTestCompaction forceStartTasks(int expectedTasks) {
-        driver.forceStartTasks(expectedTasks, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
+    public SystemTestCompaction waitForTasks(int expectedTasks) {
+        new WaitForTasks(driver.getJobStatusStore())
+                .waitUntilNumTasksStartedAJob(expectedTasks, lastJobIds,
+                        pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
         return this;
     }
 

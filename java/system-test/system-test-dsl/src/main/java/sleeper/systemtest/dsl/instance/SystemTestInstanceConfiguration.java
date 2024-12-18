@@ -26,7 +26,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
-import static sleeper.core.deploy.SleeperScheduleRule.INGEST;
+import static sleeper.core.deploy.SleeperScheduleRule.COMPACTION_TASK_CREATION;
+import static sleeper.core.deploy.SleeperScheduleRule.INGEST_TASK_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.QUERY_WARM_LAMBDA;
 import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION;
 import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_DELETION;
@@ -101,7 +102,8 @@ public class SystemTestInstanceConfiguration {
                 TRANSACTION_LOG_SNAPSHOT_CREATION,
                 TRANSACTION_LOG_SNAPSHOT_DELETION,
                 TRANSACTION_LOG_TRANSACTION_DELETION,
-                INGEST).collect(toSet());
+                INGEST_TASK_CREATION,
+                COMPACTION_TASK_CREATION).collect(toSet());
         private String shortName;
 
         private Builder() {
@@ -124,6 +126,11 @@ public class SystemTestInstanceConfiguration {
 
         public Builder enableSchedules(List<SleeperScheduleRule> enableSchedules) {
             this.enableSchedules.addAll(enableSchedules);
+            return this;
+        }
+
+        public Builder disableSchedules(List<SleeperScheduleRule> disableSchedules) {
+            this.enableSchedules.removeAll(disableSchedules);
             return this;
         }
 

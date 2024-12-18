@@ -23,6 +23,7 @@ import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
+import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.compaction.core.task.CompactionTaskFinishedStatus;
 import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
@@ -39,11 +40,11 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.core.util.PollWithRetries;
 import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -58,16 +59,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.TreeMap;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class InMemoryCompaction {
     private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
-    private final Map<String, CompactionJob> queuedJobsById = new TreeMap<>();
+    private final List<CompactionJob> queuedJobs = new ArrayList<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobStatusStore jobStore = new InMemoryCompactionJobStatusStore();
     private final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
@@ -85,9 +84,7 @@ public class InMemoryCompaction {
 
     public WaitForJobs waitForJobs(SystemTestContext context, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forCompaction(context.instance(), properties -> {
-            String taskId = runningTasks.stream().map(CompactionTaskStatus::getTaskId)
-                    .findFirst().orElseThrow();
-            finishJobs(context.instance(), taskId);
+            finishJobs(context.instance());
             finishTasks();
             return jobStore;
         }, properties -> taskStore, pollDriver);
@@ -139,30 +136,13 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public void invokeTasks(int expectedTasks, PollWithRetries poll) {
-            for (int i = 0; i < expectedTasks; i++) {
-                CompactionTaskStatus task = CompactionTaskStatus.builder()
-                        .taskId(UUID.randomUUID().toString())
-                        .startTime(Instant.now())
-                        .build();
-                taskStore.taskStarted(task);
-                runningTasks.add(task);
-            }
-        }
-
-        @Override
-        public void forceStartTasks(int numberOfTasks, PollWithRetries poll) {
-            invokeTasks(numberOfTasks, poll);
-        }
-
-        @Override
         public void scaleToZero() {
         }
 
         @Override
         public List<CompactionJob> drainJobsQueueForWholeInstance() {
-            List<CompactionJob> jobs = queuedJobsById.values().stream().toList();
-            queuedJobsById.clear();
+            List<CompactionJob> jobs = new ArrayList<>(queuedJobs);
+            queuedJobs.clear();
             return jobs;
         }
 
@@ -175,16 +155,17 @@ public class InMemoryCompaction {
         }
     }
 
-    private void finishJobs(SystemTestInstanceContext instance, String taskId) {
+    private void finishJobs(SystemTestInstanceContext instance) {
         TablePropertiesProvider tablesProvider = instance.getTablePropertiesProvider();
-        for (CompactionJob job : queuedJobsById.values()) {
+        for (CompactionJob job : queuedJobs) {
             TableProperties tableProperties = tablesProvider.getById(job.getTableId());
-            RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), taskId);
-            jobStore.jobStarted(job.startedEventBuilder(summary.getStartTime()).taskId(taskId).build());
-            jobStore.jobFinished(job.finishedEventBuilder(summary).taskId(taskId).build());
-            jobStore.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(taskId).build());
+            CompactionJobStatus status = jobStore.getJob(job.getId()).orElseThrow();
+            ProcessRun run = status.getJobRuns().stream().findFirst().orElseThrow();
+            RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), run);
+            jobStore.jobFinished(job.finishedEventBuilder(summary).taskId(run.getTaskId()).build());
+            jobStore.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).build());
         }
-        queuedJobsById.clear();
+        queuedJobs.clear();
     }
 
     private void finishTasks() {
@@ -198,8 +179,8 @@ public class InMemoryCompaction {
         runningTasks.clear();
     }
 
-    private RecordsProcessedSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, String taskId) {
-        Instant startTime = Instant.now();
+    private RecordsProcessedSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, ProcessRun run) {
+        Instant startTime = run.getStartTime();
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
@@ -239,11 +220,17 @@ public class InMemoryCompaction {
     }
 
     private CreateCompactionJobs.BatchJobsWriter batchJobsWriter() {
-        return (bucketName, key, jobs) -> jobs.forEach(
-                job -> {
-                    queuedJobsById.put(job.getId(), job);
-                    jobStore.jobCreated(job.createCreatedEvent());
-                });
+        return (bucketName, key, jobs) -> jobs.forEach(job -> {
+            queuedJobs.add(job);
+            jobStore.jobCreated(job.createCreatedEvent());
+            CompactionTaskStatus task = CompactionTaskStatus.builder()
+                    .taskId(UUID.randomUUID().toString())
+                    .startTime(Instant.now())
+                    .build();
+            taskStore.taskStarted(task);
+            runningTasks.add(task);
+            jobStore.jobStarted(job.startedEventBuilder(Instant.now()).taskId(task.getTaskId()).build());
+        });
     }
 
     private class CountingIterator implements CloseableIterator<Record> {

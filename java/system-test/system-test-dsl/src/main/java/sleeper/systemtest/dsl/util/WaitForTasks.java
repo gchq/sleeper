@@ -13,29 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.ingest;
+package sleeper.systemtest.dsl.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
-public class WaitForIngestTasks {
-    public static final Logger LOGGER = LoggerFactory.getLogger(WaitForIngestTasks.class);
+public class WaitForTasks {
+    public static final Logger LOGGER = LoggerFactory.getLogger(WaitForTasks.class);
 
-    private final IngestJobStatusStore jobStatusStore;
+    private final JobStatusStore jobStatusStore;
 
-    public WaitForIngestTasks(IngestJobStatusStore jobStatusStore) {
-        this.jobStatusStore = jobStatusStore;
+    public WaitForTasks(IngestJobStatusStore jobStatusStore) {
+        this.jobStatusStore = JobStatusStore.forIngest(jobStatusStore);
+    }
+
+    public WaitForTasks(CompactionJobStatusStore jobStatusStore) {
+        this.jobStatusStore = JobStatusStore.forCompaction(jobStatusStore);
     }
 
     public void waitUntilOneTaskStartedAJob(List<String> jobIds, PollWithRetriesDriver pollDriver) {
@@ -61,12 +67,27 @@ public class WaitForIngestTasks {
     }
 
     private int numTasksStartedAJob(List<String> jobIds) {
-        Set<String> taskIds = jobIds.stream()
-                .flatMap(jobId -> jobStatusStore.getJob(jobId).stream())
-                .flatMap(status -> status.getJobRuns().stream())
+        Set<String> taskIds = jobStatusStore.findRunsOfJobs(jobIds)
                 .map(ProcessRun::getTaskId)
-                .collect(toSet());
+                .collect(toUnmodifiableSet());
         LOGGER.info("Found {} tasks with runs for given jobs", taskIds.size());
         return taskIds.size();
+    }
+
+    @FunctionalInterface
+    private interface JobStatusStore {
+        Stream<ProcessRun> findRunsOfJobs(Collection<String> jobIds);
+
+        static JobStatusStore forIngest(IngestJobStatusStore store) {
+            return jobIds -> jobIds.stream().parallel()
+                    .flatMap(jobId -> store.getJob(jobId).stream())
+                    .flatMap(job -> job.getJobRuns().stream());
+        }
+
+        static JobStatusStore forCompaction(CompactionJobStatusStore store) {
+            return jobIds -> jobIds.stream().parallel()
+                    .flatMap(jobId -> store.getJob(jobId).stream())
+                    .flatMap(job -> job.getJobRuns().stream());
+        }
     }
 }
