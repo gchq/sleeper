@@ -38,6 +38,7 @@ import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;

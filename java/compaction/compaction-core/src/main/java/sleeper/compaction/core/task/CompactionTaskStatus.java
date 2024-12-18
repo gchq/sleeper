@@ -19,6 +19,8 @@ package sleeper.compaction.core.task;
 import sleeper.core.record.process.status.ProcessFinishedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.TimeWindowQuery;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStartedStatus;
 
 import java.time.Duration;
 import java.time.Instant;

@@ -17,6 +17,7 @@
 package sleeper.compaction.core.task;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 
 import java.time.Duration;
 import java.time.Instant;

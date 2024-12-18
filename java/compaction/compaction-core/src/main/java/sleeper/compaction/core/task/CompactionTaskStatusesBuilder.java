@@ -15,6 +15,8 @@
  */
 package sleeper.compaction.core.task;
 
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
+
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashMap;
