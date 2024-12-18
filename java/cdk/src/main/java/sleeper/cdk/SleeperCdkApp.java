@@ -45,7 +45,6 @@ import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.DynamoDBStateStoreStack;
-import sleeper.cdk.stack.core.InstanceRolesStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
@@ -317,12 +316,8 @@ public class SleeperCdkApp extends Stack {
                     queryQueueStack);
         }
 
-        // Only create instance admin role after we know which policies are deployed in the instance
-        InstanceRolesStack rolesStack = new InstanceRolesStack(this, "InstanceRoles", instanceProperties, policiesStack);
-
-        // At time of writing this seems to be necessary due to a bug in the CDK where it intermittently tries to delete
-        // the policies when they are still attached to roles.
-        policiesStack.addDependency(rolesStack);
+        // Only create roles after we know which policies are deployed in the instance
+        policiesStack.createRoles();
 
         this.generateProperties();
         addTags(app);
