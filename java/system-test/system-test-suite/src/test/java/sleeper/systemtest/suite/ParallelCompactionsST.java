@@ -35,11 +35,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.configuration.SystemTestIngestMode.DIRECT;
 import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.create8192StringPartitions;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.PARALLEL_COMPACTIONS;
 
 @SystemTest
@@ -48,18 +50,19 @@ public class ParallelCompactionsST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) throws Exception {
-        sleeper.connectToInstance(PARALLEL_COMPACTIONS);
+        sleeper.connectToInstanceNoTables(PARALLEL_COMPACTIONS);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
     @Test
     void shouldApplyOneCompactionPerPartition(SleeperSystemTest sleeper) {
         // Given we configure to compact many partitions
-        sleeper.partitioning().setPartitions(create8192StringPartitions(sleeper));
-        sleeper.updateTableProperties(Map.of(
+        sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "10",
                 INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.ONE_FILE_PER_LEAF.toString()));
+        sleeper.partitioning().setPartitions(create8192StringPartitions(sleeper));
         // And we have records spread across all partitions in many files per partition
         sleeper.systemTestCluster()
                 .updateProperties(properties -> {
@@ -73,10 +76,10 @@ public class ParallelCompactionsST {
 
         // When we run compaction
         sleeper.compaction()
-                .createJobs(8192,
+                .putTableOnlineWaitForJobCreation(8192,
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(10)))
-                .invokeTasks(300)
+                .waitForTasks(300)
                 .waitForJobsToFinishThenCommit(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)),

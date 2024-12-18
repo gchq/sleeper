@@ -24,8 +24,8 @@ import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -55,21 +55,22 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
                     .receivedTime(Instant.now())
                     .build());
         }
-    }
-
-    @Override
-    public List<String> invokeGetJobIds() {
-        List<String> jobIds = new ArrayList<>();
         IngestBatcher.builder()
                 .instanceProperties(instance.getInstanceProperties())
                 .tablePropertiesProvider(instance.getTablePropertiesProvider())
                 .store(store)
                 .queueClient((queueUrl, job) -> {
                     ingest.send(job, context);
-                    jobIds.add(job.getId());
                 })
                 .build().batchFiles();
-        return jobIds;
+    }
+
+    @Override
+    public Stream<String> allJobIdsInStore() {
+        return store.getAllFilesNewestFirst().stream()
+                .filter(FileIngestRequest::isAssignedToJob)
+                .map(FileIngestRequest::getJobId)
+                .distinct();
     }
 
     @Override

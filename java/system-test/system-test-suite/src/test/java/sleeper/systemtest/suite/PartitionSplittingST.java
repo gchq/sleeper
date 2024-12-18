@@ -36,11 +36,13 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.testutils.printers.PartitionsPrinter.printPartitions;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
 @SystemTest
@@ -50,13 +52,16 @@ public class PartitionSplittingST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstanceNoTables(MAIN);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::partitionStatus);
     }
 
     @Test
     void shouldSplitPartitionsWith100RecordsAndThresholdOf20(SleeperSystemTest sleeper) {
         // Given
+        sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false",
+                PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));

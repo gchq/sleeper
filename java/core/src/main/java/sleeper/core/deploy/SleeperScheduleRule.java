@@ -56,7 +56,7 @@ public class SleeperScheduleRule {
     public static final SleeperScheduleRule GARBAGE_COLLECTOR = add(
             GARBAGE_COLLECTOR_CLOUDWATCH_RULE, "%s-GarbageCollectorPeriodicTrigger",
             "Triggers garbage collection to delete unused files");
-    public static final SleeperScheduleRule INGEST = add(
+    public static final SleeperScheduleRule INGEST_TASK_CREATION = add(
             INGEST_CLOUDWATCH_RULE, "%s-IngestTasksCreationRule",
             "Triggers scaling ingest tasks to run queued jobs");
     public static final SleeperScheduleRule INGEST_BATCHER_JOB_CREATION = add(

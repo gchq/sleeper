@@ -20,30 +20,22 @@ import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.deploy.SleeperScheduleRule;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toSet;
-import static sleeper.core.deploy.SleeperScheduleRule.INGEST;
-import static sleeper.core.deploy.SleeperScheduleRule.QUERY_WARM_LAMBDA;
-import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION;
-import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_DELETION;
-import static sleeper.core.deploy.SleeperScheduleRule.TRANSACTION_LOG_TRANSACTION_DELETION;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_SOURCE_BUCKET;
 
 public class SystemTestInstanceConfiguration {
     private final String shortName;
     private final Supplier<DeployInstanceConfiguration> deployConfig;
     private final boolean useSystemTestIngestSourceBucket;
-    private final Set<SleeperScheduleRule> enableSchedules;
+    private final Set<SleeperScheduleRule> disableSchedules;
 
     private SystemTestInstanceConfiguration(Builder builder) {
         shortName = builder.shortName;
         deployConfig = builder.deployConfig;
         useSystemTestIngestSourceBucket = builder.useSystemTestIngestSourceBucket;
-        enableSchedules = builder.enableSchedules;
+        disableSchedules = builder.disableSchedules;
         // Combines with SystemTestParameters.shortTestId and a hyphen to create an instance ID within maximum length
         if (shortName.length() > 6) {
             throw new IllegalArgumentException("Instance shortName must not be longer than 6 characters");
@@ -90,18 +82,13 @@ public class SystemTestInstanceConfiguration {
     }
 
     public boolean isEnable(SleeperScheduleRule.InstanceRule rule) {
-        return enableSchedules.contains(rule.getRule());
+        return !disableSchedules.contains(rule.getRule());
     }
 
     public static final class Builder {
         private Supplier<DeployInstanceConfiguration> deployConfig;
         private boolean useSystemTestIngestSourceBucket = true;
-        private Set<SleeperScheduleRule> enableSchedules = Stream.of(
-                QUERY_WARM_LAMBDA,
-                TRANSACTION_LOG_SNAPSHOT_CREATION,
-                TRANSACTION_LOG_SNAPSHOT_DELETION,
-                TRANSACTION_LOG_TRANSACTION_DELETION,
-                INGEST).collect(toSet());
+        private Set<SleeperScheduleRule> disableSchedules = Set.of();
         private String shortName;
 
         private Builder() {
@@ -122,8 +109,8 @@ public class SystemTestInstanceConfiguration {
             return this;
         }
 
-        public Builder enableSchedules(List<SleeperScheduleRule> enableSchedules) {
-            this.enableSchedules.addAll(enableSchedules);
+        public Builder disableSchedules(Set<SleeperScheduleRule> disableSchedules) {
+            this.disableSchedules = disableSchedules;
             return this;
         }
 

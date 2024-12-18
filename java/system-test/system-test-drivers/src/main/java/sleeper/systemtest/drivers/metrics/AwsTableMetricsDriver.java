@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
@@ -29,9 +30,7 @@ import software.amazon.awssdk.services.cloudwatch.model.Metric;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDataQuery;
 import software.amazon.awssdk.services.cloudwatch.model.MetricDataResult;
 import software.amazon.awssdk.services.cloudwatch.model.MetricStat;
-import software.amazon.awssdk.services.lambda.LambdaClient;
 
-import sleeper.clients.deploy.InvokeLambda;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.metrics.TableMetrics;
@@ -39,6 +38,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.PollWithRetries;
+import sleeper.invoke.tables.InvokeForTables;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.metrics.TableMetricsDriver;
@@ -53,7 +53,7 @@ import java.util.Map;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_METRICS_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
@@ -70,7 +70,7 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
 
     private final SystemTestInstanceContext instance;
     private final ReportingContext reporting;
-    private final LambdaClient lambda;
+    private final AmazonSQS sqs;
     private final CloudWatchClient cloudWatch;
 
     public AwsTableMetricsDriver(SystemTestInstanceContext instance,
@@ -78,13 +78,14 @@ public class AwsTableMetricsDriver implements TableMetricsDriver {
             SystemTestClients clients) {
         this.instance = instance;
         this.reporting = reporting;
-        this.lambda = clients.getLambda();
+        this.sqs = clients.getSqs();
         this.cloudWatch = clients.getCloudWatch();
     }
 
     @Override
     public void generateTableMetrics() {
-        InvokeLambda.invokeWith(lambda, instance.getInstanceProperties().get(TABLE_METRICS_LAMBDA_FUNCTION));
+        String queueUrl = instance.getInstanceProperties().get(TABLE_METRICS_QUEUE_URL);
+        InvokeForTables.sendOneMessagePerTable(sqs, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
     }
 
     @Override
