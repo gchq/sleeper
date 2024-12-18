@@ -162,7 +162,6 @@ public class InMemoryCompaction {
             CompactionJobStatus status = jobStore.getJob(job.getId()).orElseThrow();
             ProcessRun run = status.getJobRuns().stream().findFirst().orElseThrow();
             RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), run);
-            jobStore.jobStarted(job.startedEventBuilder(summary.getStartTime()).taskId(run.getTaskId()).build());
             jobStore.jobFinished(job.finishedEventBuilder(summary).taskId(run.getTaskId()).build());
             jobStore.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).build());
         }
