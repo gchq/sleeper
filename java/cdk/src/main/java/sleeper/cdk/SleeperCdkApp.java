@@ -41,7 +41,7 @@ import sleeper.cdk.stack.bulkimport.EmrServerlessBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EmrStudioStack;
 import sleeper.cdk.stack.bulkimport.PersistentEmrBulkImportStack;
 import sleeper.cdk.stack.compaction.CompactionStack;
-import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
+import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.DynamoDBStateStoreStack;
@@ -145,7 +145,7 @@ public class SleeperCdkApp extends Stack {
                 transactionLogStateStoreStack, policiesStack);
         IngestStatusStoreResources ingestStatusStore = IngestStatusStoreResources.from(
                 this, "IngestStatusStore", instanceProperties, policiesStack);
-        CompactionStatusStoreResources compactionStatusStore = CompactionStatusStoreResources.from(
+        CompactionTrackerResources compactionStatusStore = CompactionTrackerResources.from(
                 this, "CompactionStatusStore", instanceProperties, policiesStack);
         ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
         TableIndexStack tableIndexStack = new TableIndexStack(this, "TableIndex", instanceProperties, policiesStack);

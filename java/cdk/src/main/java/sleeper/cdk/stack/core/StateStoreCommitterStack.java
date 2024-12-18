@@ -35,7 +35,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
+import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
 import sleeper.cdk.util.Utils;
@@ -73,7 +73,7 @@ public class StateStoreCommitterStack extends NestedStack {
             TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks,
             IngestStatusStoreResources ingestStatusStore,
-            CompactionStatusStoreResources compactionStatusStore,
+            CompactionTrackerResources compactionStatusStore,
             ManagedPoliciesStack policiesStack,
             Topic topic,
             List<IMetric> errorMetrics) {
@@ -126,7 +126,7 @@ public class StateStoreCommitterStack extends NestedStack {
     private void lambdaToCommitStateStoreUpdates(
             LoggingStack loggingStack, ManagedPoliciesStack policiesStack, LambdaCode lambdaCode,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
-            CompactionStatusStoreResources compactionStatusStore,
+            CompactionTrackerResources compactionStatusStore,
             IngestStatusStoreResources ingestStatusStore) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 

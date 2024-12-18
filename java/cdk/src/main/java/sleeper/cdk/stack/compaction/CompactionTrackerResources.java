@@ -23,7 +23,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
-public interface CompactionStatusStoreResources {
+public interface CompactionTrackerResources {
 
     default void grantWriteJobEvent(IGrantable grantee) {
     }
@@ -31,16 +31,16 @@ public interface CompactionStatusStoreResources {
     default void grantWriteTaskEvent(IGrantable grantee) {
     }
 
-    static CompactionStatusStoreResources from(Construct scope, String id, InstanceProperties properties, ManagedPoliciesStack policiesStack) {
+    static CompactionTrackerResources from(Construct scope, String id, InstanceProperties properties, ManagedPoliciesStack policiesStack) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
-            return new CompactionStatusStoreStack(scope, id, properties, policiesStack);
+            return new CompactionTrackerStack(scope, id, properties, policiesStack);
         } else {
             return none();
         }
     }
 
-    static CompactionStatusStoreResources none() {
-        return new CompactionStatusStoreResources() {
+    static CompactionTrackerResources none() {
+        return new CompactionTrackerResources() {
         };
     }
 }

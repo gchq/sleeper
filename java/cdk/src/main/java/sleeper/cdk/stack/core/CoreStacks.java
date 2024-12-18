@@ -24,7 +24,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.sqs.IQueue;
 
-import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
+import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
 
@@ -42,13 +42,13 @@ public class CoreStacks {
     private final TableDataStack dataStack;
     private final StateStoreCommitterStack stateStoreCommitterStack;
     private final IngestStatusStoreResources ingestStatusStore;
-    private final CompactionStatusStoreResources compactionStatusStore;
+    private final CompactionTrackerResources compactionStatusStore;
 
     public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestStatusStoreResources ingestStatusStore,
-            CompactionStatusStoreResources compactionStatusStore) {
+            CompactionTrackerResources compactionStatusStore) {
         this.loggingStack = loggingStack;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;

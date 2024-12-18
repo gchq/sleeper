@@ -33,12 +33,12 @@ import sleeper.core.properties.instance.InstanceProperties;
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-public class CompactionStatusStoreStack extends NestedStack implements CompactionStatusStoreResources {
+public class CompactionTrackerStack extends NestedStack implements CompactionTrackerResources {
     private final Table updatesTable;
     private final Table jobsTable;
     private final Table tasksTable;
 
-    public CompactionStatusStoreStack(
+    public CompactionTrackerStack(
             Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);
