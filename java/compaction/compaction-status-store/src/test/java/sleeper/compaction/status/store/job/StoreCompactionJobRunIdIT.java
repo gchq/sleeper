@@ -30,10 +30,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusTestData.compaction
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
 
@@ -48,7 +44,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
 
         // When
         storeJobCreated(job);
-        store.jobStarted(compactionJobStarted(job, defaultStartTime())
+        store.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then
@@ -68,9 +64,9 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
 
         // When
         storeJobCreated(job);
-        store.jobStarted(compactionJobStarted(job, defaultStartTime())
+        store.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary())
+        store.jobFinished(job.finishedEventBuilder(defaultSummary())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then
@@ -90,11 +86,11 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
 
         // When
         storeJobCreated(job);
-        store.jobStarted(compactionJobStarted(job, defaultStartTime())
+        store.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary())
+        store.jobFinished(job.finishedEventBuilder(defaultSummary())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime())
+        store.jobCommitted(job.committedEventBuilder(defaultCommitTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then
@@ -114,9 +110,9 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
 
         // When
         storeJobCreated(job);
-        store.jobStarted(compactionJobStarted(job, defaultStartTime())
+        store.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        store.jobFailed(compactionJobFailed(job, defaultRunTime()).failure(new RuntimeException("Failed"))
+        store.jobFailed(job.failedEventBuilder(defaultRunTime()).failure(new RuntimeException("Failed"))
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then
@@ -136,17 +132,17 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
 
         // When
         storeJobCreated(job);
-        store.jobStarted(compactionJobStarted(job, defaultStartTime())
+        store.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId("test-task").jobRunId("test-run-1").build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary())
+        store.jobFinished(job.finishedEventBuilder(defaultSummary())
                 .taskId("test-task").jobRunId("test-run-1").build());
-        store.jobStarted(compactionJobStarted(job, defaultStartTime())
+        store.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId("test-task").jobRunId("test-run-2").build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary())
+        store.jobFinished(job.finishedEventBuilder(defaultSummary())
                 .taskId("test-task").jobRunId("test-run-2").build());
-        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime())
+        store.jobCommitted(job.committedEventBuilder(defaultCommitTime())
                 .taskId("test-task").jobRunId("test-run-1").build());
-        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime())
+        store.jobCommitted(job.committedEventBuilder(defaultCommitTime())
                 .taskId("test-task").jobRunId("test-run-2").build());
 
         // Then

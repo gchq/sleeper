@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.status;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.record.process.RecordsProcessedSummary;
 
 import java.util.Objects;
@@ -36,17 +35,6 @@ public class CompactionJobFinishedEvent {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         jobRunId = builder.jobRunId;
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
-    }
-
-    /**
-     * Creates a builder for this class.
-     *
-     * @param  job     the compaction job
-     * @param  summary the records processed summary
-     * @return         a builder
-     */
-    public static Builder compactionJobFinished(CompactionJob job, RecordsProcessedSummary summary) {
-        return builder().job(job).summary(summary);
     }
 
     public static Builder builder() {
@@ -107,17 +95,6 @@ public class CompactionJobFinishedEvent {
         private String taskId;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the compaction job ID and the table ID using the provided compaction job.
-         *
-         * @param  job the compaction job
-         * @return     the builder
-         */
-        public Builder job(CompactionJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId());
         }
 
         /**

@@ -43,8 +43,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 
 /**
@@ -138,15 +136,15 @@ public class StateStoreCommitter {
         try {
             CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(), stateStore);
         } catch (Exception e) {
-            compactionJobStatusStore.jobFailed(compactionJobFailed(job,
-                    new ProcessRunTime(request.getFinishTime(), timeSupplier.get()))
+            compactionJobStatusStore.jobFailed(job
+                    .failedEventBuilder(new ProcessRunTime(request.getFinishTime(), timeSupplier.get()))
                     .failure(e)
                     .taskId(request.getTaskId())
                     .jobRunId(request.getJobRunId())
                     .build());
             throw e;
         }
-        compactionJobStatusStore.jobCommitted(compactionJobCommitted(job, timeSupplier.get())
+        compactionJobStatusStore.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                 .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
         LOGGER.debug("Successfully committed compaction job {}", job.getId());
     }
