@@ -64,7 +64,6 @@ import java.util.function.Supplier;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
 /**
@@ -147,8 +146,8 @@ public class BulkImportJobDriver {
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
 
-        statusStore.jobFinished(ingestJobFinished(job.toIngestJob(),
-                new RecordsProcessedSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
+        statusStore.jobFinished(job.toIngestJob()
+                .finishedEventBuilder(new RecordsProcessedSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
                 .jobRunId(jobRunId).taskId(taskId)
                 .fileReferencesAddedByJob(output.fileReferences())
                 .committedBySeparateFileUpdates(asyncCommit)

@@ -16,8 +16,10 @@
 package sleeper.ingest.core.job;
 
 import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
 import sleeper.ingest.core.job.status.IngestJobFailedEvent;
+import sleeper.ingest.core.job.status.IngestJobFinishedEvent;
 
 import java.time.Instant;
 import java.util.List;
@@ -54,6 +56,16 @@ public class IngestJob {
      */
     public IngestJobAddedFilesEvent.Builder addedFilesEventBuilder(Instant writtenTime) {
         return IngestJobAddedFilesEvent.builder().jobId(id).tableId(tableId).writtenTime(writtenTime);
+    }
+
+    /**
+     * Creates a builder for an event when the job finished. Used with the ingest job tracker.
+     *
+     * @param  summary a summary of the time spent on the job and records processed
+     * @return         the builder
+     */
+    public IngestJobFinishedEvent.Builder finishedEventBuilder(RecordsProcessedSummary summary) {
+        return IngestJobFinishedEvent.builder().jobId(id).tableId(tableId).summary(summary);
     }
 
     /**

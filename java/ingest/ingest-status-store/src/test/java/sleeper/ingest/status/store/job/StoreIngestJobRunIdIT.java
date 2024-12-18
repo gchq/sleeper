@@ -38,7 +38,6 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.d
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
@@ -128,7 +127,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         // When
         store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
         store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
+        store.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
         // Then
         assertThat(getAllJobStatuses())

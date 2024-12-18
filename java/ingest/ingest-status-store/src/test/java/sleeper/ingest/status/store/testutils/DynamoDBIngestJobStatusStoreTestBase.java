@@ -57,7 +57,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestJob;
@@ -131,12 +130,12 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, RecordsProcessedSummary summary) {
-        return ingestJobFinished(job, summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
+        return job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedButUncommittedEvent(
             IngestJob job, Instant startedTime, Instant finishedTime, int numFilesAdded) {
-        return ingestJobFinished(job, defaultSummary(startedTime, finishedTime))
+        return job.finishedEventBuilder(defaultSummary(startedTime, finishedTime))
                 .committedBySeparateFileUpdates(true)
                 .numFilesWrittenByJob(numFilesAdded)
                 .taskId(DEFAULT_TASK_ID)

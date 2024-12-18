@@ -30,7 +30,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 
 /**
@@ -116,7 +115,7 @@ public class IngestTask {
                 LOGGER.info("{} records were written", result.getRecordsWritten());
                 Instant jobFinishTime = timeSupplier.get();
                 RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
-                jobStatusStore.jobFinished(ingestJobFinished(job, summary)
+                jobStatusStore.jobFinished(job.finishedEventBuilder(summary)
                         .taskId(taskId).jobRunId(jobRunId)
                         .committedBySeparateFileUpdates(true)
                         .fileReferencesAddedByJob(result.getFileReferenceList())

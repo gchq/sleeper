@@ -19,7 +19,6 @@ package sleeper.ingest.core.job.status;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
-import sleeper.ingest.core.job.IngestJob;
 
 import java.util.List;
 import java.util.Objects;
@@ -48,17 +47,6 @@ public class IngestJobFinishedEvent {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Creates an instance of this class.
-     *
-     * @param  job     the ingest job
-     * @param  summary the records processed summary
-     * @return         an instance of this class
-     */
-    public static Builder ingestJobFinished(IngestJob job, RecordsProcessedSummary summary) {
-        return builder().job(job).summary(summary);
     }
 
     public String getJobId() {
@@ -127,17 +115,6 @@ public class IngestJobFinishedEvent {
         private String taskId;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the ingest job ID and the table ID using the provided ingest job.
-         *
-         * @param  job the ingest job
-         * @return     the builder
-         */
-        public Builder job(IngestJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId());
         }
 
         /**

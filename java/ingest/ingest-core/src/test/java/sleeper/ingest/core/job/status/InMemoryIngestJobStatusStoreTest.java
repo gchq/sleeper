@@ -43,7 +43,6 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
@@ -103,7 +102,7 @@ public class InMemoryIngestJobStatusStoreTest {
                     new RecordsProcessed(200L, 200L), startTime, finishTime);
 
             store.jobStarted(ingestJobStarted(job, startTime).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job, summary).taskId(taskId).numFilesWrittenByJob(1).build());
+            store.jobFinished(job.finishedEventBuilder(summary).taskId(taskId).numFilesWrittenByJob(1).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
                     jobStatus(job, finishedIngestRun(job, taskId, summary, 1)));
         }
@@ -117,7 +116,7 @@ public class InMemoryIngestJobStatusStoreTest {
             RecordsProcessedSummary summary = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime, finishTime);
 
-            IngestJobFinishedEvent event = ingestJobFinished(job, summary)
+            IngestJobFinishedEvent event = job.finishedEventBuilder(summary)
                     .taskId(taskId).numFilesWrittenByJob(1).build();
             assertThatThrownBy(() -> store.jobFinished(event))
                     .isInstanceOf(IllegalStateException.class);
@@ -135,9 +134,9 @@ public class InMemoryIngestJobStatusStoreTest {
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
             store.jobStarted(ingestJobStarted(job, startTime1).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job, summary1).taskId(taskId).numFilesWrittenByJob(1).build());
+            store.jobFinished(job.finishedEventBuilder(summary1).taskId(taskId).numFilesWrittenByJob(1).build());
             store.jobStarted(ingestJobStarted(job, startTime2).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job, summary2).taskId(taskId).numFilesWrittenByJob(2).build());
+            store.jobFinished(job.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
                     jobStatus(job,
@@ -158,9 +157,9 @@ public class InMemoryIngestJobStatusStoreTest {
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
 
             store.jobStarted(ingestJobStarted(job1, startTime1).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job1, summary1).taskId(taskId).numFilesWrittenByJob(1).build());
+            store.jobFinished(job1.finishedEventBuilder(summary1).taskId(taskId).numFilesWrittenByJob(1).build());
             store.jobStarted(ingestJobStarted(job2, startTime2).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job2, summary2).taskId(taskId).numFilesWrittenByJob(2).build());
+            store.jobFinished(job2.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
                     jobStatus(job2, finishedIngestRun(job2, taskId, summary2, 2)),
@@ -184,9 +183,9 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobStarted(ingestJobStarted(job1, startTime1).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job1, summary1).taskId(taskId).numFilesWrittenByJob(1).build());
+            store.jobFinished(job1.finishedEventBuilder(summary1).taskId(taskId).numFilesWrittenByJob(1).build());
             store.jobStarted(ingestJobStarted(job2, startTime2).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job2, summary2).taskId(taskId).numFilesWrittenByJob(2).build());
+            store.jobFinished(job2.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
             assertThat(store.getAllJobs(table2.getTableUniqueId())).containsExactly(
@@ -433,7 +432,7 @@ public class InMemoryIngestJobStatusStoreTest {
             // When
             store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
             store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
+            store.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -455,7 +454,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobStarted(ingestJobStartedBuilder(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
+            store.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
             assertThat(store.getAllJobs(tableId))
@@ -597,7 +596,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // When
             store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-            store.jobFinished(ingestJobFinished(job, summary)
+            store.jobFinished(job.finishedEventBuilder(summary)
                     .jobRunId(jobRunId).taskId(taskId)
                     .filesWrittenByJob(filesAdded).committedBySeparateFileUpdates(true)
                     .build());
