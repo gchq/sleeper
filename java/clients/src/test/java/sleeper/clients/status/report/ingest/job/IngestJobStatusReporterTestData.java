@@ -83,7 +83,7 @@ public class IngestJobStatusReporterTestData {
                 ingestJobStatus(job4, ProcessRun.builder()
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job4, startTime4))
-                        .finishedStatus(ingestFinishedStatusUncommitted(job4, summary(startTime4, Duration.ofMinutes(1), 600, 300), 1))
+                        .finishedStatus(ingestFinishedStatusUncommitted(summary(startTime4, Duration.ofMinutes(1), 600, 300), 1))
                         .build()),
                 ingestJobStatus(job3, failedIngestRun(job3, task(2),
                         new ProcessRunTime(startTime3, Duration.ofSeconds(30)),
@@ -119,7 +119,7 @@ public class IngestJobStatusReporterTestData {
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job7, startTime7))
                         .statusUpdate(ingestAddedFilesStatus(startTime7.plus(Duration.ofSeconds(55)), 2))
-                        .finishedStatus(ingestFinishedStatusUncommitted(job7, summary(startTime7, Duration.ofMinutes(1), 600, 300), 2))
+                        .finishedStatus(ingestFinishedStatusUncommitted(summary(startTime7, Duration.ofMinutes(1), 600, 300), 2))
                         .build()),
                 ingestJobStatus(job6, ProcessRun.builder()
                         .taskId(task(3))

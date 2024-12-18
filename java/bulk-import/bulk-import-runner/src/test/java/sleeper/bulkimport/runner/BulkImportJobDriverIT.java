@@ -517,7 +517,7 @@ class BulkImportJobDriverIT {
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
-                        .finishedStatus(ingestFinishedStatusUncommitted(ingestJob,
+                        .finishedStatus(ingestFinishedStatusUncommitted(
                                 summary(startTime, endTime, 200, 200), 1))
                         .build()));
     }

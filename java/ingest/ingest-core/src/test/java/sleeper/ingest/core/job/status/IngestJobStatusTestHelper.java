@@ -341,7 +341,7 @@ public class IngestJobStatusTestHelper {
             IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
         return ProcessRun.finished(taskId,
                 ingestStartedStatus(job.getFileCount(), summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
-                ingestFinishedStatusUncommitted(job, summary, numFilesWrittenByJob));
+                ingestFinishedStatusUncommitted(summary, numFilesWrittenByJob));
     }
 
     /**
@@ -489,7 +489,6 @@ public class IngestJobStatusTestHelper {
      * 
      * @param  summary              the summary
      * @param  numFilesWrittenByJob the number of files written by the job
-     *
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatus(RecordsProcessedSummary summary, int numFilesWrittenByJob) {
@@ -501,13 +500,12 @@ public class IngestJobStatusTestHelper {
 
     /**
      * Creates an ingest job finished status where files are uncommitted.
-     *
-     * @param  job                  the ingest job
+     * 
      * @param  summary              the summary
      * @param  numFilesWrittenByJob the number of files written by the job
      * @return                      an ingest job started status
      */
-    public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(IngestJob job, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+    public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(RecordsProcessedSummary summary, int numFilesWrittenByJob) {
         return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
                 .committedBySeparateFileUpdates(true)
                 .numFilesWrittenByJob(numFilesWrittenByJob)

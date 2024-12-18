@@ -471,7 +471,7 @@ public class IngestJobStatusTest {
 
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
             Instant startTime, Instant finishTime, int numFilesAddedByJob) {
-        return IngestJobStatusTestHelper.ingestFinishedStatusUncommitted(job, summary(startTime, finishTime), numFilesAddedByJob);
+        return IngestJobStatusTestHelper.ingestFinishedStatusUncommitted(summary(startTime, finishTime), numFilesAddedByJob);
     }
 
     private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {

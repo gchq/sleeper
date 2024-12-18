@@ -603,7 +603,7 @@ public class InMemoryIngestJobStatusStoreTest {
                     .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
                             .startedStatus(ingestStartedStatus(startTime))
-                            .statusUpdate(ingestFinishedStatusUncommitted(job, summary, 1))
+                            .statusUpdate(ingestFinishedStatusUncommitted(summary, 1))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
