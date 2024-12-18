@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobRejected;
+import static sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent.ingestJobRejected;
 
 /**
  * Deserialises and validates a JSON string to a type of ingest job. Any validation failures are recorded in the

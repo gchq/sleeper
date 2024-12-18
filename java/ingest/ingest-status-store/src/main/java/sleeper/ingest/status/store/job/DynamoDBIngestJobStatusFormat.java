@@ -31,6 +31,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.ingest.core.job.status.IngestJobAcceptedStatus;
@@ -39,7 +40,6 @@ import sleeper.ingest.core.job.status.IngestJobFinishedStatus;
 import sleeper.ingest.core.job.status.IngestJobRejectedStatus;
 import sleeper.ingest.core.job.status.IngestJobStartedStatus;
 import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobValidatedEvent;
 
 import java.security.SecureRandom;
 import java.time.Duration;

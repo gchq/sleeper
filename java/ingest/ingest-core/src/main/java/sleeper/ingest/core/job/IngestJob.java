@@ -21,7 +21,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
-import sleeper.ingest.core.job.status.IngestJobValidatedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 
 import java.time.Instant;
 import java.util.List;
