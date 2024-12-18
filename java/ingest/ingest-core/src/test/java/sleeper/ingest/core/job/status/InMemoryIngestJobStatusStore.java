@@ -19,6 +19,10 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;

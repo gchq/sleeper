@@ -31,6 +31,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;

@@ -17,10 +17,10 @@ package sleeper.ingest.core.job;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
-import sleeper.ingest.core.job.status.IngestJobFailedEvent;
-import sleeper.ingest.core.job.status.IngestJobFinishedEvent;
-import sleeper.ingest.core.job.status.IngestJobStartedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.ingest.core.job.status.IngestJobValidatedEvent;
 
 import java.time.Instant;

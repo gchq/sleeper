@@ -29,12 +29,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
-import sleeper.ingest.core.job.status.IngestJobFailedEvent;
-import sleeper.ingest.core.job.status.IngestJobFinishedEvent;
-import sleeper.ingest.core.job.status.IngestJobStartedEvent;
 import sleeper.ingest.core.job.status.IngestJobStatus;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobValidatedEvent;

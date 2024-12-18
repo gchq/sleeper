@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job.update;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AllReferencesToAFile;
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * An event for when an ingest job was finished. Used in the ingest job status store.
+ * An event for when an ingest job was finished. Used in the ingest job tracker.
  */
 public class IngestJobFinishedEvent {
     private final String jobId;

@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * An event for when an ingest job was validated. Used in the ingest job status store.
+ * An event for when an ingest job was validated. Used in the ingest job tracker.
  */
 public class IngestJobValidatedEvent {
     private final String jobId;

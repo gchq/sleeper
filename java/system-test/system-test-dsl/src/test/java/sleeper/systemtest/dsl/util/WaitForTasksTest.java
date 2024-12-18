@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.PollWithRetries.CheckFailedException;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStartedEvent;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Duration;

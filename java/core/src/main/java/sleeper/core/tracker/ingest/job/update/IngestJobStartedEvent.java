@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job.update;
 
 import java.time.Instant;
 import java.util.Objects;
 
 /**
- * An event for when an ingest job was started. Used in the ingest job status store.
+ * An event for when an ingest job was started. Used in the ingest job tracker.
  */
 public class IngestJobStartedEvent {
     private final String jobId;
