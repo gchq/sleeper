@@ -44,6 +44,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunOnTask;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
@@ -54,7 +55,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedI
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
 

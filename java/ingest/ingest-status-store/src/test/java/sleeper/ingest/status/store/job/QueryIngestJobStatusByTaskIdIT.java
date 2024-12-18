@@ -23,7 +23,7 @@ import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBas
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
 

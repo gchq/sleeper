@@ -91,9 +91,9 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 
 public class StateStoreCommitterTest {
     private static final Instant DEFAULT_FILE_UPDATE_TIME = FilesReportTestHelper.DEFAULT_UPDATE_TIME;

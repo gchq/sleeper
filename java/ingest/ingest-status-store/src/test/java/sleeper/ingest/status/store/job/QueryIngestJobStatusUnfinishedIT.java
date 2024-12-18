@@ -27,7 +27,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.jobStatus;
 
 public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusStoreTestBase {
 

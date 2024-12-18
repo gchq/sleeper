@@ -53,19 +53,8 @@ public class IngestJobStatusTestHelper {
      * @return       an {@link IngestJobStatus}
      */
     public static IngestJobStatus jobStatus(String jobId, ProcessRun... runs) {
-        return jobStatus(IngestJob.builder().id(jobId).build(), runs);
-    }
-
-    /**
-     * Creates an ingest job status.
-     *
-     * @param  job  the ingest job
-     * @param  runs the process runs
-     * @return      an {@link IngestJobStatus}
-     */
-    public static IngestJobStatus jobStatus(IngestJob job, ProcessRun... runs) {
         return IngestJobStatus.builder()
-                .jobId(job.getId())
+                .jobId(jobId)
                 .jobRuns(ProcessRuns.latestFirst(Arrays.asList(runs)))
                 .build();
     }
@@ -79,7 +68,7 @@ public class IngestJobStatusTestHelper {
      * @return           an {@link IngestJobStatus}
      */
     public static IngestJobStatus startedIngestJob(IngestJob job, String taskId, Instant startTime) {
-        return jobStatus(job, startedIngestRun(job, taskId, startTime));
+        return IngestJobStatusFromJobTestData.jobStatus(job, startedIngestRun(job, taskId, startTime));
     }
 
     /**
@@ -92,7 +81,7 @@ public class IngestJobStatusTestHelper {
      * @return                      an {@link IngestJobStatus}
      */
     public static IngestJobStatus finishedIngestJob(IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
-        return jobStatus(job, finishedIngestRun(job, taskId, summary, numFilesWrittenByJob));
+        return IngestJobStatusFromJobTestData.jobStatus(job, finishedIngestRun(job, taskId, summary, numFilesWrittenByJob));
     }
 
     /**
@@ -117,7 +106,7 @@ public class IngestJobStatusTestHelper {
      * @return                      an {@link IngestJobStatus}
      */
     public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
-        return jobStatus(job, finishedIngestRunUncommitted(job, taskId, summary, numFilesWrittenByJob));
+        return IngestJobStatusFromJobTestData.jobStatus(job, finishedIngestRunUncommitted(job, taskId, summary, numFilesWrittenByJob));
     }
 
     /**
@@ -130,7 +119,7 @@ public class IngestJobStatusTestHelper {
      * @return                an {@link IngestJobStatus}
      */
     public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
-        return jobStatus(job, failedIngestRun(job, taskId, runTime, failureReasons));
+        return IngestJobStatusFromJobTestData.jobStatus(job, failedIngestRun(job, taskId, runTime, failureReasons));
     }
 
     /**
