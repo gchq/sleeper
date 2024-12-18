@@ -17,11 +17,11 @@ package sleeper.clients.admin.testutils;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 

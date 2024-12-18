@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.core.testutils;
-
-import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
+package sleeper.core.tracker.compaction.task;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;

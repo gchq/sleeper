@@ -25,11 +25,11 @@ import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
-import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskStatusStore;
 
 import java.time.Instant;
 import java.util.List;

@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.core.testutils;
+package sleeper.core.tracker.compaction.task;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.core.task.CompactionTaskStatusTestData.finishedStatusWithDefaultSummary;
-import static sleeper.compaction.core.task.CompactionTaskStatusTestData.finishedStatusWithDefaults;
-import static sleeper.compaction.core.task.CompactionTaskStatusTestData.startedStatusBuilder;
-import static sleeper.compaction.core.task.CompactionTaskStatusTestData.startedStatusBuilderWithDefaults;
+import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.finishedStatusWithDefaultSummary;
+import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.finishedStatusWithDefaults;
+import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.startedStatusBuilder;
+import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.startedStatusBuilderWithDefaults;
 
 public class InMemoryCompactionTaskStatusStoreTest {
     private final InMemoryCompactionTaskStatusStore store = new InMemoryCompactionTaskStatusStore();

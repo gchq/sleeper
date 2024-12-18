@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.core.task;
+package sleeper.core.tracker.compaction.task;
 
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 
 import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.task.CompactionTaskStatusTestData.finishedStatusBuilder;
-import static sleeper.compaction.core.task.CompactionTaskStatusTestData.startedStatusBuilder;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.finishedStatusBuilder;
+import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.startedStatusBuilder;
 
 public class CompactionTaskStatusTest {
 

@@ -19,8 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.CompactionTaskStatusReport;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskStatusStore;
 
 import java.io.PrintStream;
 import java.time.Duration;
