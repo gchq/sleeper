@@ -93,6 +93,7 @@ public class SystemTestIngestBatcher {
         Set<String> tableIds = instance.streamTableProperties().map(table -> table.get(TABLE_ID)).collect(toUnmodifiableSet());
         return driver.batcherStore().getAllFilesNewestFirst().stream()
                 .filter(request -> tableIds.contains(request.getTableId()))
+                .filter(request -> request.getJobId() != null)
                 .map(FileIngestRequest::getJobId);
     }
 }
