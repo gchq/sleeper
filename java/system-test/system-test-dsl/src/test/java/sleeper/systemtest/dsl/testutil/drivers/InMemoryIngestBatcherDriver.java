@@ -25,7 +25,6 @@ import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -66,16 +65,8 @@ public class InMemoryIngestBatcherDriver implements IngestBatcherDriver {
     }
 
     @Override
-    public Stream<String> allJobIdsInStore() {
-        return store.getAllFilesNewestFirst().stream()
-                .filter(FileIngestRequest::isAssignedToJob)
-                .map(FileIngestRequest::getJobId)
-                .distinct();
-    }
-
-    @Override
-    public void clearStore() {
-        store.deleteAllPending();
+    public IngestBatcherStore batcherStore() {
+        return store;
     }
 
 }
