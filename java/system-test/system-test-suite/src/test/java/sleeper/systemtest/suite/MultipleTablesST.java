@@ -103,8 +103,8 @@ public class MultipleTablesST {
                 .waitForTask().waitForJobs();
 
         // When we run compaction and GC
-        sleeper.compaction().putTableOnlineWaitForJobCreation(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
-        sleeper.garbageCollection().invoke().waitFor();
+        sleeper.compaction().putTablesOnlineWaitForJobCreation(NUMBER_OF_TABLES).waitForTasks(1).waitForJobs();
+        sleeper.garbageCollection().waitFor();
 
         // Then all tables should have one active file with the expected records, and none ready for GC
         assertThat(sleeper.query().byQueue().allRecordsByTable())
@@ -120,8 +120,9 @@ public class MultipleTablesST {
     void shouldSplitPartitionsOfMultipleTables(SleeperSystemTest sleeper) {
         // Given we have several tables with a split threshold of 20
         // And we ingest a file of 100 records to each table
-        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema,
-                Map.of(PARTITION_SPLIT_THRESHOLD, "20"));
+        sleeper.tables().createManyWithProperties(NUMBER_OF_TABLES, schema, Map.of(
+                TABLE_ONLINE, "false",
+                PARTITION_SPLIT_THRESHOLD, "20"));
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));

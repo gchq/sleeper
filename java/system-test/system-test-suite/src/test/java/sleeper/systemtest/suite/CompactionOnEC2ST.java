@@ -73,7 +73,7 @@ public class CompactionOnEC2ST {
                 .numberedRecords(numbers.range(36, 46));
 
         // When
-        sleeper.compaction().putTableOnlineWaitForJobCreation(1).waitForTasks(1).waitForJobs();
+        sleeper.compaction().createJobs(1).waitForTasks(1).waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
