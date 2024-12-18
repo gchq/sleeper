@@ -285,7 +285,7 @@ public class IngestJobStatusTestHelper {
                         .updateTime(defaultUpdateTime(validationTime))
                         .reasons(reasons)
                         .jsonMessage(jsonMessage)
-                        .job(job)
+                        .inputFileCount(job.getFileCount())
                         .build())
                 .build();
     }

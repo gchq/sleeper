@@ -18,7 +18,6 @@ package sleeper.ingest.core.job.status;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRunFinishedUpdate;
-import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Instant;
 import java.util.List;
@@ -188,16 +187,6 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, Proces
         public Builder inputFileCount(int inputFileCount) {
             this.inputFileCount = inputFileCount;
             return this;
-        }
-
-        /**
-         * Sets the input file count using the ingest job.
-         *
-         * @param  job the ingest job
-         * @return     the builder
-         */
-        public Builder job(IngestJob job) {
-            return inputFileCount(job.getFileCount());
         }
 
         public IngestJobRejectedStatus build() {
