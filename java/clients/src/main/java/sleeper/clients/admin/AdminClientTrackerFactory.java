@@ -42,7 +42,7 @@ public interface AdminClientTrackerFactory {
 
     IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties);
 
-    Optional<IngestBatcherStore> loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider);
+    Optional<IngestBatcherStore> loadIngestBatcherStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider);
 
     static AdminClientTrackerFactory from(AmazonDynamoDB dynamoDB) {
         return new AdminClientTrackerFactory() {
@@ -67,7 +67,7 @@ public interface AdminClientTrackerFactory {
             }
 
             @Override
-            public Optional<IngestBatcherStore> loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
+            public Optional<IngestBatcherStore> loadIngestBatcherStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
                 return IngestBatcherStoreFactory.getStore(dynamoDB, properties, tablePropertiesProvider);
             }
         };
