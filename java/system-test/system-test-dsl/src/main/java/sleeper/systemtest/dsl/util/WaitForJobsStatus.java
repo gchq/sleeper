@@ -25,10 +25,10 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatusType;
 import sleeper.core.util.GsonConfig;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusType;
 
 import java.time.Duration;
 import java.time.Instant;

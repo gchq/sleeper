@@ -20,11 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.Optional;

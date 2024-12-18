@@ -24,6 +24,7 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
@@ -41,6 +42,11 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.ACCEPTED;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobInDefaultTable;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestRun;
@@ -51,11 +57,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.ACCEPTED;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.FAILED;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.FINISHED;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.IN_PROGRESS;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.UNCOMMITTED;
 
 public class IngestJobStatusTest {
     private final IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");

@@ -34,10 +34,10 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;

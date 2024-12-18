@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job;
 
 import sleeper.core.record.process.status.JobStatusUpdates;
 import sleeper.core.record.process.status.ProcessRun;
@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.FINISHED;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 
 /**
  * Stores the status of an ingest job. This is used for reporting on the state of ingest jobs.

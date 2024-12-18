@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job;
 
 import sleeper.core.record.process.status.ProcessRun;
 

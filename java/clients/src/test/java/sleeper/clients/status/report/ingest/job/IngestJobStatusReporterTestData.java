@@ -18,10 +18,10 @@ package sleeper.clients.status.report.ingest.job;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.IngestJobStatus;
 
 import java.time.Duration;
 import java.time.Instant;

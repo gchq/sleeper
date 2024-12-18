@@ -24,7 +24,7 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportArguments;
 import sleeper.bulkimport.starter.executor.EmrServerlessPlatformExecutor;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;

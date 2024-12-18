@@ -21,8 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.ArrayList;

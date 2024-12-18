@@ -33,8 +33,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.ArrayList;

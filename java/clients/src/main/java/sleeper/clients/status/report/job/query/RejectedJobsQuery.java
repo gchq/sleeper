@@ -18,8 +18,8 @@ package sleeper.clients.status.report.job.query;
 
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 
 import java.util.List;
 

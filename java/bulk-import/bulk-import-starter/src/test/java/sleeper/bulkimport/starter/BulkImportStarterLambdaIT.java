@@ -39,9 +39,9 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusTestHelper;
 import sleeper.parquet.utils.HadoopPathUtils;
 

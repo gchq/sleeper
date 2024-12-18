@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job;
 
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;

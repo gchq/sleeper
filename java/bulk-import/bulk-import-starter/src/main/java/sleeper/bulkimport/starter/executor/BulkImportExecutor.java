@@ -26,7 +26,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;

@@ -26,9 +26,9 @@ import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelpe
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatus;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.task.common.QueueMessageCount;
