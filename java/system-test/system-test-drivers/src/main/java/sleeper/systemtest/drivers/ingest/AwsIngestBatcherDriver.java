@@ -21,8 +21,6 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.DynamoDBIngestBatcherStore;
 import sleeper.ingest.batcher.submitter.FileIngestRequestSerDe;
@@ -31,9 +29,7 @@ import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
-import java.time.Duration;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -44,8 +40,6 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
     private final AmazonSQS sqsClient;
-    private final PollWithRetries pollBatcherStore = PollWithRetries
-            .intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2));
 
     public AwsIngestBatcherDriver(
             SystemTestInstanceContext instance,
@@ -59,37 +53,13 @@ public class AwsIngestBatcherDriver implements IngestBatcherDriver {
     @Override
     public void sendFiles(List<String> files) {
         LOGGER.info("Sending {} files to ingest batcher queue", files.size());
-        int filesBefore = batcherStore().getPendingFilesOldestFirst().size();
-        int filesAfter = filesBefore + files.size();
         sqsClient.sendMessage(instance.getInstanceProperties().get(INGEST_BATCHER_SUBMIT_QUEUE_URL),
                 FileIngestRequestSerDe.toJson(files,
                         instance.getTableProperties().get(TABLE_NAME)));
-        try {
-            pollBatcherStore.pollUntil("files appear in batcher store", () -> {
-                List<FileIngestRequest> pending = batcherStore().getPendingFilesOldestFirst();
-                LOGGER.info("Found pending files in batcher store: {}", pending);
-                return pending.size() == filesAfter;
-            });
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
-    public Stream<String> allJobIdsInStore() {
-        return batcherStore().getAllFilesNewestFirst().stream()
-                .filter(FileIngestRequest::isAssignedToJob)
-                .map(FileIngestRequest::getJobId)
-                .distinct();
-    }
-
-    @Override
-    public void clearStore() {
-        batcherStore().deleteAllPending();
-    }
-
-    private IngestBatcherStore batcherStore() {
+    public IngestBatcherStore batcherStore() {
         return new DynamoDBIngestBatcherStore(dynamoDBClient,
                 instance.getInstanceProperties(), instance.getTablePropertiesProvider());
     }
