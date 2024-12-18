@@ -318,7 +318,11 @@ public class SleeperCdkApp extends Stack {
         }
 
         // Only create instance admin role after we know which policies are deployed in the instance
-        new InstanceRolesStack(this, "InstanceRoles", instanceProperties, policiesStack);
+        InstanceRolesStack rolesStack = new InstanceRolesStack(this, "InstanceRoles", instanceProperties, policiesStack);
+
+        // At time of writing this seems to be necessary due to a bug in the CDK where it intermittently tries to delete
+        // the policies when they are still attached to roles.
+        policiesStack.addDependency(rolesStack);
 
         this.generateProperties();
         addTags(app);

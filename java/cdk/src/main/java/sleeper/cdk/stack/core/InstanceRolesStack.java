@@ -37,10 +37,6 @@ public class InstanceRolesStack extends NestedStack {
         createAdminRole(instanceProperties, policiesStack);
         createIngestByQueueRole(instanceProperties, policiesStack);
         createDirectIngestRole(instanceProperties, policiesStack);
-
-        // At time of writing this seems to be necessary due to a bug in the CDK where it intermittently tries to delete
-        // the policies when they are still attached to roles.
-        policiesStack.addDependency(this);
     }
 
     private void createAdminRole(InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
