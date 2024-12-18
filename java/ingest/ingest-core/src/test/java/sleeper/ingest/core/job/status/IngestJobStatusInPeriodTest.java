@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Instant;

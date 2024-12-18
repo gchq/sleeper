@@ -29,7 +29,7 @@ import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.ingest.core.job.status.IngestJobStartedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.ingest.core.job.status.IngestJobStatus;
 import sleeper.ingest.core.job.status.IngestJobUpdateType;
 

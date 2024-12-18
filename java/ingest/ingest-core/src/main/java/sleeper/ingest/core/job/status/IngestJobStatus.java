@@ -21,6 +21,7 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.record.process.status.TimeWindowQuery;
+import sleeper.core.tracker.ingest.job.query.IngestJobInfoStatus;
 
 import java.time.Instant;
 import java.util.List;

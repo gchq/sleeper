@@ -17,6 +17,8 @@ package sleeper.ingest.core.job.status;
 
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 
 /**
  * Tracks how many files were tracked as written and added to the state store.
