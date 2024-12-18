@@ -63,10 +63,6 @@ import java.util.Random;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 
 public class InMemoryCompaction {
     private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
@@ -166,8 +162,9 @@ public class InMemoryCompaction {
             CompactionJobStatus status = jobStore.getJob(job.getId()).orElseThrow();
             ProcessRun run = status.getJobRuns().stream().findFirst().orElseThrow();
             RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), run);
-            jobStore.jobFinished(compactionJobFinished(job, summary).taskId(run.getTaskId()).build());
-            jobStore.jobCommitted(compactionJobCommitted(job, summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).build());
+            jobStore.jobStarted(job.startedEventBuilder(summary.getStartTime()).taskId(run.getTaskId()).build());
+            jobStore.jobFinished(job.finishedEventBuilder(summary).taskId(run.getTaskId()).build());
+            jobStore.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).build());
         }
         queuedJobs.clear();
     }
@@ -226,14 +223,14 @@ public class InMemoryCompaction {
     private CreateCompactionJobs.BatchJobsWriter batchJobsWriter() {
         return (bucketName, key, jobs) -> jobs.forEach(job -> {
             queuedJobs.add(job);
-            jobStore.jobCreated(compactionJobCreated(job));
+            jobStore.jobCreated(job.createCreatedEvent());
             CompactionTaskStatus task = CompactionTaskStatus.builder()
                     .taskId(UUID.randomUUID().toString())
                     .startTime(Instant.now())
                     .build();
             taskStore.taskStarted(task);
             runningTasks.add(task);
-            jobStore.jobStarted(compactionJobStarted(job, Instant.now()).taskId(task.getTaskId()).build());
+            jobStore.jobStarted(job.startedEventBuilder(Instant.now()).taskId(task.getTaskId()).build());
         });
     }
 

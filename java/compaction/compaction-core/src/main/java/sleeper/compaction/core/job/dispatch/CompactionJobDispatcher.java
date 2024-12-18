@@ -34,7 +34,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_RETRY_DELAY_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
@@ -100,7 +99,7 @@ public class CompactionJobDispatcher {
         LOGGER.info("Validated input file assignments, sending {} jobs", batch.size());
         for (List<CompactionJob> toSend : SplitIntoBatches.splitListIntoBatchesOf(sendBatchSize, batch)) {
             sendJobs.send(toSend);
-            toSend.forEach(job -> statusStore.jobCreated(compactionJobCreated(job)));
+            toSend.forEach(job -> statusStore.jobCreated(job.createCreatedEvent()));
         }
         LOGGER.info("Sent {} jobs", batch.size());
     }
