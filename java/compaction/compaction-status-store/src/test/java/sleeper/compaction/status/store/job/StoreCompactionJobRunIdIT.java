@@ -18,7 +18,8 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -26,12 +27,11 @@ import sleeper.core.statestore.FileReferenceFactory;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 
-public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldReportStartedJob() {
@@ -148,7 +148,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobStatusStoreT
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobCreated(job, ignoredUpdateTime(),
+                .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, ignoredUpdateTime(),
                         ProcessRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
                                 .finishedStatus(compactionFinishedStatus(defaultSummary()))

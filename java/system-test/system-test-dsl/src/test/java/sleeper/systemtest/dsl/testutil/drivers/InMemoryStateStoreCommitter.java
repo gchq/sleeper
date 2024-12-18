@@ -90,7 +90,7 @@ public class InMemoryStateStoreCommitter {
             TablePropertiesProvider tablePropertiesProvider = instance.getTablePropertiesProvider();
             deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, InMemoryStateStoreCommitter::failToLoadS3Object);
             committer = new StateStoreCommitter(
-                    compaction.jobStore(), ingest.jobStore(),
+                    compaction.jobTracker(), ingest.jobStore(),
                     tablePropertiesProvider, instance.getStateStoreProvider(),
                     Instant::now);
         }

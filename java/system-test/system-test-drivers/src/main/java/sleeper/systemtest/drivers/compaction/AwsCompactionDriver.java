@@ -28,12 +28,12 @@ import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.invoke.tables.InvokeForTables;
@@ -72,9 +72,9 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public CompactionJobStatusStore getJobStatusStore() {
-        return CompactionJobStatusStoreFactory
-                .getStatusStoreWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
+    public CompactionJobTracker getJobTracker() {
+        return CompactionJobTrackerFactory
+                .getTrackerWithStronglyConsistentReads(dynamoDBClient, instance.getInstanceProperties());
     }
 
     @Override
@@ -90,7 +90,7 @@ public class AwsCompactionDriver implements CompactionDriver {
                 CreateCompactionJobs createJobs = AwsCreateCompactionJobs.from(
                         ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                         new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
-                        getJobStatusStore(), s3Client, sqsClient);
+                        s3Client, sqsClient);
                 createJobs.createJobWithForceAllFiles(table);
             } catch (IOException | ObjectFactoryException e) {
                 throw new RuntimeException("Failed creating compaction jobs for table " + table.getStatus(), e);

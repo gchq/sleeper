@@ -21,10 +21,10 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
-import sleeper.compaction.core.job.status.CompactionJobStatusType;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.util.GsonConfig;
 import sleeper.ingest.core.job.status.IngestJobStatus;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
@@ -62,12 +62,12 @@ public class WaitForJobsStatus {
         longestInProgressDuration = builder.longestInProgressDuration;
     }
 
-    public static WaitForJobsStatus forIngest(IngestJobStatusStore store, Collection<String> jobIds, Instant now) {
-        return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
+    public static WaitForJobsStatus forIngest(IngestJobStatusStore tracker, Collection<String> jobIds, Instant now) {
+        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 
-    public static WaitForJobsStatus forCompaction(CompactionJobStatusStore store, Collection<String> jobIds, Instant now) {
-        return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
+    public static WaitForJobsStatus forCompaction(CompactionJobTracker tracker, Collection<String> jobIds, Instant now) {
+        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 
     public boolean areAllJobsFinished() {
@@ -78,12 +78,12 @@ public class WaitForJobsStatus {
         return GSON.toJson(this);
     }
 
-    private static WaitForJobsStatus forJobStore(
-            JobStatusStore store,
+    private static WaitForJobsStatus forJobTracker(
+            JobTracker tracker,
             Collection<String> jobIds, Instant now) {
         Builder builder = new Builder(now);
         jobIds.stream().parallel()
-                .map(jobId -> store.getJob(jobId)
+                .map(jobId -> tracker.getJob(jobId)
                         .orElseGet(JobStatus::none))
                 .collect(Collectors.toUnmodifiableList())
                 .forEach(builder::addJob);
@@ -98,7 +98,7 @@ public class WaitForJobsStatus {
         return (duration, type, context) -> new JsonPrimitive(duration.toString());
     }
 
-    private interface JobStatusStore {
+    private interface JobTracker {
         Optional<JobStatus> getJob(String jobId);
     }
 

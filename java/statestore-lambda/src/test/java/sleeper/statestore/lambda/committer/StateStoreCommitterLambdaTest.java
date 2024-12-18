@@ -22,7 +22,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -38,6 +37,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -138,7 +138,7 @@ public class StateStoreCommitterLambdaTest {
     }
 
     private StateStoreCommitter committer(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
-        return new StateStoreCommitter(CompactionJobStatusStore.NONE, IngestJobStatusStore.NONE,
+        return new StateStoreCommitter(CompactionJobTracker.NONE, IngestJobStatusStore.NONE,
                 tablePropertiesProvider, stateStoreProvider,
                 Instant::now);
     }

@@ -20,11 +20,11 @@ import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
-import sleeper.compaction.core.job.status.CompactionJobCreatedStatus;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -37,14 +37,14 @@ import java.util.stream.Collectors;
 import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionCommittedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionFinishedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.failedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.jobCreated;
-import static sleeper.compaction.core.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 
 public abstract class CompactionJobStatusReporterTestBase {
 
@@ -62,27 +62,27 @@ public abstract class CompactionJobStatusReporterTestBase {
                 .parentJoining(partition("F"), partition("E"), partition("C"))
                 .parentJoining(partition("G"), partition("F"), partition("D")));
 
-        CompactionJobStatus status1 = jobCreated(
+        CompactionJobStatus status1 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(1), partition("A")),
                 Instant.parse("2022-09-17T13:33:12.001Z"));
-        CompactionJobStatus status2 = jobCreated(
+        CompactionJobStatus status2 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(2), partition("B")),
                 Instant.parse("2022-09-18T13:33:12.001Z"),
                 startedCompactionRun(task(1), Instant.parse("2022-09-18T13:34:12.001Z")));
-        CompactionJobStatus status3 = jobCreated(
+        CompactionJobStatus status3 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(3), partition("C")),
                 Instant.parse("2022-09-19T13:33:12.001Z"),
                 failedCompactionRun(task(1),
                         new ProcessRunTime(Instant.parse("2022-09-19T13:34:12.001Z"), Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
-        CompactionJobStatus status4 = jobCreated(
+        CompactionJobStatus status4 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(4), partition("D")),
                 Instant.parse("2022-09-20T13:33:12.001Z"),
                 ProcessRun.builder().taskId(task(1))
                         .startedStatus(compactionStartedStatus(Instant.parse("2022-09-20T13:34:12.001Z")))
                         .finishedStatus(compactionFinishedStatus(summary(Instant.parse("2022-09-20T13:34:12.001Z"), Duration.ofMinutes(1), 600, 300)))
                         .build());
-        CompactionJobStatus status5 = jobCreated(
+        CompactionJobStatus status5 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(5), partition("E")),
                 Instant.parse("2022-09-21T13:33:12.001Z"),
                 ProcessRun.builder().taskId(task(1))
@@ -90,7 +90,7 @@ public abstract class CompactionJobStatusReporterTestBase {
                         .finishedStatus(compactionFinishedStatus(summary(Instant.parse("2022-09-21T13:34:12.001Z"), Duration.ofMinutes(1), 600, 300)))
                         .statusUpdate(compactionCommittedStatus(Instant.parse("2022-09-21T13:36:12.001Z")))
                         .build());
-        CompactionJobStatus status6 = jobCreated(
+        CompactionJobStatus status6 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(6), partition("F")),
                 Instant.parse("2022-09-22T13:33:12.001Z"),
                 ProcessRun.builder().taskId(task(1))
@@ -109,7 +109,7 @@ public abstract class CompactionJobStatusReporterTestBase {
     protected static List<CompactionJobStatus> jobsWithMultipleRuns() {
         CompactionJobTestDataHelper dataHelper = new CompactionJobTestDataHelper();
 
-        CompactionJobStatus succeededThenFailed = jobCreated(dataHelper.singleFileCompaction(job(1)),
+        CompactionJobStatus succeededThenFailed = compactionJobCreated(dataHelper.singleFileCompaction(job(1)),
                 Instant.parse("2022-10-10T10:00:00.001Z"),
                 failedCompactionRun(task(2), new ProcessRunTime(
                         Instant.parse("2022-10-10T10:01:15.001Z"), Duration.ofSeconds(30)),
@@ -118,14 +118,14 @@ public abstract class CompactionJobStatusReporterTestBase {
                         Instant.parse("2022-10-10T10:01:00.001Z"), Duration.ofSeconds(20), 200L, 100L),
                         Instant.parse("2022-10-10T10:01:30.001Z")));
 
-        CompactionJobStatus failedThenInProgress = jobCreated(dataHelper.singleFileCompaction(job(2)),
+        CompactionJobStatus failedThenInProgress = compactionJobCreated(dataHelper.singleFileCompaction(job(2)),
                 Instant.parse("2022-10-11T10:00:00.001Z"),
                 startedCompactionRun(task(1), Instant.parse("2022-10-11T10:02:00.001Z")),
                 failedCompactionRun(task(2), new ProcessRunTime(
                         Instant.parse("2022-10-11T10:01:00.001Z"), Duration.ofSeconds(30)),
                         List.of("Unexpected failure reading input file", "Some temporary IO problem")));
 
-        CompactionJobStatus twoFinishedRunsOneInProgress = jobCreated(dataHelper.singleFileCompaction(job(3)),
+        CompactionJobStatus twoFinishedRunsOneInProgress = compactionJobCreated(dataHelper.singleFileCompaction(job(3)),
                 Instant.parse("2022-10-12T10:00:00.001Z"),
                 startedCompactionRun(task(1), Instant.parse("2022-10-12T10:02:00.001Z")),
                 finishedCompactionRun(task(2), summary(
@@ -154,10 +154,10 @@ public abstract class CompactionJobStatusReporterTestBase {
         Instant committedTime2 = Instant.parse("2022-10-13T14:01:30.000Z");
 
         return Arrays.asList(
-                jobCreated(job2, creationTime2, finishedCompactionRun("task-id",
+                compactionJobCreated(job2, creationTime2, finishedCompactionRun("task-id",
                         summary(startedTime2, Duration.ofHours(2), 1000600, 500300),
                         committedTime2)),
-                jobCreated(job1, creationTime1, finishedCompactionRun("task-id",
+                compactionJobCreated(job1, creationTime1, finishedCompactionRun("task-id",
                         summary(startedTime1, Duration.ofMillis(123), 600, 300),
                         committedTime1)));
     }

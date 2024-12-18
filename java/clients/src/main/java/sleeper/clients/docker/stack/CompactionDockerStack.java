@@ -19,7 +19,7 @@ package sleeper.clients.docker.stack;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -43,7 +43,7 @@ public class CompactionDockerStack implements DockerStack {
     }
 
     public void deploy() {
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDB);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDB);
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
         String queueName = "sleeper-" + instanceProperties.get(ID) + "-CompactionJobQ";
         String queueUrl = sqsClient.createQueue(request -> request.queueName(queueName)).queueUrl();
@@ -52,7 +52,7 @@ public class CompactionDockerStack implements DockerStack {
 
     @Override
     public void tearDown() {
-        DynamoDBCompactionJobStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
+        DynamoDBCompactionJobTrackerCreator.tearDown(instanceProperties, dynamoDB);
         DynamoDBCompactionTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
         sqsClient.deleteQueue(request -> request.queueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL)));
     }

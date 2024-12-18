@@ -17,13 +17,13 @@
 package sleeper.systemtest.dsl.compaction;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.util.List;
 
 public interface CompactionDriver {
 
-    CompactionJobStatusStore getJobStatusStore();
+    CompactionJobTracker getJobTracker();
 
     void triggerCreateJobs();
 

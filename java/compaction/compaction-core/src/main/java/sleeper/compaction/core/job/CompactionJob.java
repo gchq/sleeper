@@ -15,15 +15,15 @@
  */
 package sleeper.compaction.core.job;
 
-import sleeper.compaction.core.job.status.CompactionJobCommittedEvent;
-import sleeper.compaction.core.job.status.CompactionJobCreatedEvent;
-import sleeper.compaction.core.job.status.CompactionJobFailedEvent;
-import sleeper.compaction.core.job.status.CompactionJobFinishedEvent;
-import sleeper.compaction.core.job.status.CompactionJobStartedEvent;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.CheckFileAssignmentsRequest;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 
 import java.time.Instant;
 import java.util.List;
@@ -85,7 +85,7 @@ public class CompactionJob {
     }
 
     public CompactionJobCreatedEvent createCreatedEvent() {
-        return CompactionJobCreatedEvent.compactionJobCreated(this);
+        return CompactionJobCreatedEvent.builder().jobId(jobId).tableId(tableId).partitionId(partitionId).inputFilesCount(inputFiles.size()).build();
     }
 
     public CompactionJobStartedEvent.Builder startedEventBuilder(Instant startTime) {
