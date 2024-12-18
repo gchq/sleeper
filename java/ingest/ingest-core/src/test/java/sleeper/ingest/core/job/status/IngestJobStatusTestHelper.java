@@ -140,11 +140,11 @@ public class IngestJobStatusTestHelper {
             IngestJob job, String taskId, Instant validationTime, Instant startTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(job,
+                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)))
                 .statusUpdate(
                         IngestJobStartedStatus.withStartOfRun(false)
-                                .inputFileCount(job.getFiles().size())
+                                .inputFileCount(job.getFileCount())
                                 .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
                 .build();
     }
@@ -162,11 +162,11 @@ public class IngestJobStatusTestHelper {
             IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(job,
+                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)))
                 .statusUpdate(
                         IngestJobStartedStatus.withStartOfRun(false)
-                                .inputFileCount(job.getFiles().size())
+                                .inputFileCount(job.getFileCount())
                                 .startTime(summary.getStartTime())
                                 .updateTime(defaultUpdateTime(summary.getStartTime())).build())
                 .finishedStatus(IngestJobFinishedStatus
@@ -189,11 +189,11 @@ public class IngestJobStatusTestHelper {
             IngestJob job, String taskId, Instant validationTime, ProcessRunTime runTime, List<String> failureReasons) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(job,
+                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)))
                 .statusUpdate(
                         IngestJobStartedStatus.withStartOfRun(false)
-                                .inputFileCount(job.getFiles().size())
+                                .inputFileCount(job.getFileCount())
                                 .startTime(runTime.getStartTime())
                                 .updateTime(defaultUpdateTime(runTime.getStartTime())).build())
                 .finishedStatus(ProcessFailedStatus
@@ -210,7 +210,7 @@ public class IngestJobStatusTestHelper {
      */
     public static ProcessRun acceptedRun(IngestJob job, Instant validationTime) {
         return ProcessRun.builder()
-                .startedStatus(IngestJobAcceptedStatus.from(job,
+                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)))
                 .build();
     }
@@ -227,7 +227,7 @@ public class IngestJobStatusTestHelper {
     public static ProcessRun acceptedRunOnTask(IngestJob job, String taskId, Instant validationTime) {
         return ProcessRun.builder()
                 .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(job, validationTime,
+                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(), validationTime,
                         defaultUpdateTime(validationTime)))
                 .build();
     }
@@ -377,7 +377,7 @@ public class IngestJobStatusTestHelper {
     public static ProcessRun acceptedAndFailedToStartIngestRun(
             IngestJob job, Instant validationTime, Instant failureTime, List<String> failureReasons) {
         return ProcessRun.builder()
-                .startedStatus(IngestJobAcceptedStatus.from(job,
+                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)))
                 .finishedStatus(ProcessFailedStatus.timeAndReasons(
                         defaultUpdateTime(failureTime), new ProcessRunTime(failureTime, Duration.ZERO), failureReasons))
@@ -417,7 +417,7 @@ public class IngestJobStatusTestHelper {
      * @return                an ingest job accepted status
      */
     public static IngestJobAcceptedStatus ingestAcceptedStatus(IngestJob job, Instant validationTime) {
-        return IngestJobAcceptedStatus.from(job, validationTime, defaultUpdateTime(validationTime));
+        return IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime));
     }
 
     /**

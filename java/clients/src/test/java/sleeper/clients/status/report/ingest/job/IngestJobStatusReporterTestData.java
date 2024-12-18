@@ -195,7 +195,7 @@ public class IngestJobStatusReporterTestData {
     }
 
     public static IngestJobAcceptedStatus acceptedStatusUpdate(IngestJob job, Instant validationTime) {
-        return IngestJobAcceptedStatus.from(job, validationTime, defaultUpdateTime(validationTime));
+        return IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime));
     }
 
     public static IngestJobRejectedStatus rejectedStatusUpdate(IngestJob job, Instant validationTime) {
