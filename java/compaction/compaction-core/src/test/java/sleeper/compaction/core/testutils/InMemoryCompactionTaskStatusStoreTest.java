@@ -20,7 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 
 import java.time.Instant;
 

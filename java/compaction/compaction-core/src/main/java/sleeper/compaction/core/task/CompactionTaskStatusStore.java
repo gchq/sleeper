@@ -16,6 +16,8 @@
 
 package sleeper.compaction.core.task;
 
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+
 import java.time.Instant;
 import java.util.List;
 

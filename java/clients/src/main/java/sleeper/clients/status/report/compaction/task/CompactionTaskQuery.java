@@ -15,8 +15,8 @@
  */
 package sleeper.clients.status.report.compaction.task;
 
-import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 
 import java.time.Instant;
 import java.util.List;

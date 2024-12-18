@@ -16,8 +16,8 @@
 
 package sleeper.systemtest.dsl.reporting;
 
-import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 
 import java.util.List;
 

@@ -22,8 +22,6 @@ import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
-import sleeper.compaction.core.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
@@ -43,6 +41,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.recordretrieval.InMemoryDataStore;

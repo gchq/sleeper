@@ -30,6 +30,7 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 
 import java.time.Instant;
 import java.util.Iterator;

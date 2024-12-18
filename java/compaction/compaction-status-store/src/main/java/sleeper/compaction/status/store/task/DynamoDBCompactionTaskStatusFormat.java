@@ -19,9 +19,9 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.task.CompactionTaskFinishedStatus;
-import sleeper.compaction.core.task.CompactionTaskStatus;
 import sleeper.compaction.core.task.CompactionTaskStatusesBuilder;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Duration;
