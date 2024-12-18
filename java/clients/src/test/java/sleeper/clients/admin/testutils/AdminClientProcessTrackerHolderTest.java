@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
-import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 
@@ -48,7 +48,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     @Test
     void shouldSetCompactionTaskStatusStore() {
         // Given
-        InMemoryCompactionTaskStatusStore store = new InMemoryCompactionTaskStatusStore();
+        InMemoryCompactionTaskTracker store = new InMemoryCompactionTaskTracker();
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
@@ -109,7 +109,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
 
         // When / Then
         assertThat(runClient().trackers().loadCompactionTaskStatusStore(properties))
-                .isSameAs(CompactionTaskStatusStore.NONE);
+                .isSameAs(CompactionTaskTracker.NONE);
     }
 
     @Test

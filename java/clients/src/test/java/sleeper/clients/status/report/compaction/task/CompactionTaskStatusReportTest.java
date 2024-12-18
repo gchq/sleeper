@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.status.report.CompactionTaskStatusReport;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -35,7 +35,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 
 public class CompactionTaskStatusReportTest {
 
-    private final InMemoryCompactionTaskStatusStore store = new InMemoryCompactionTaskStatusStore();
+    private final InMemoryCompactionTaskTracker store = new InMemoryCompactionTaskTracker();
 
     @Test
     public void shouldReportCompactionTaskUnfinished() throws Exception {

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class InMemoryCompactionTaskStatusStore implements CompactionTaskStatusStore {
+public class InMemoryCompactionTaskTracker implements CompactionTaskTracker {
     private final Map<String, CompactionTaskStatus> statusByTaskId = new LinkedHashMap<>();
 
     @Override

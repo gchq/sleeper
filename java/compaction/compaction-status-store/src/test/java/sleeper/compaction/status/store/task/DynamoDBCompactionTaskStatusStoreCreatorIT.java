@@ -21,7 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,7 +39,7 @@ public class DynamoDBCompactionTaskStatusStoreCreatorIT extends DynamoDBTestBase
     public void shouldCreateStore() {
         // When
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        CompactionTaskTracker store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
         assertThat(dynamoDBClient.describeTable(tableName))
@@ -54,12 +54,12 @@ public class DynamoDBCompactionTaskStatusStoreCreatorIT extends DynamoDBTestBase
 
         // When
         DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        CompactionTaskTracker store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
         // Then
         assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
                 .isInstanceOf(ResourceNotFoundException.class);
-        assertThat(store).isSameAs(CompactionTaskStatusStore.NONE);
+        assertThat(store).isSameAs(CompactionTaskTracker.NONE);
         assertThatThrownBy(store::getAllTasks).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(store::getTasksInProgress).isInstanceOf(UnsupportedOperationException.class);
         assertThatThrownBy(() -> store.getTask("some-task")).isInstanceOf(UnsupportedOperationException.class);

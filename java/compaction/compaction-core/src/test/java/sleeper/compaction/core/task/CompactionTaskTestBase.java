@@ -35,8 +35,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
-import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -82,7 +82,7 @@ public class CompactionTaskTestBase {
     protected final List<CompactionJob> consumedJobs = new ArrayList<>();
     protected final List<CompactionJob> jobsReturnedToQueue = new ArrayList<>();
     protected final InMemoryCompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
-    protected final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
+    protected final CompactionTaskTracker taskStore = new InMemoryCompactionTaskTracker();
     protected final List<Duration> sleeps = new ArrayList<>();
     protected final List<CompactionJobCommitRequest> commitRequestsOnQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();

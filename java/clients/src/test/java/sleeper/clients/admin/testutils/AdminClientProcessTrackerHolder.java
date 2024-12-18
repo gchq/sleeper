@@ -19,7 +19,7 @@ import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
@@ -33,7 +33,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactory {
 
     private final Map<String, CompactionJobTracker> compactionJobTrackerByInstance = new HashMap<>();
-    private final Map<String, CompactionTaskStatusStore> compactionTaskStoreByInstance = new HashMap<>();
+    private final Map<String, CompactionTaskTracker> compactionTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestJobStatusStore> ingestJobStoreByInstance = new HashMap<>();
     private final Map<String, IngestTaskStatusStore> ingestTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestBatcherStore> ingestBatcherStoreByInstance = new HashMap<>();
@@ -42,7 +42,7 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
         compactionJobTrackerByInstance.put(instanceId, tracker);
     }
 
-    public void setTracker(String instanceId, CompactionTaskStatusStore tracker) {
+    public void setTracker(String instanceId, CompactionTaskTracker tracker) {
         compactionTaskStoreByInstance.put(instanceId, tracker);
     }
 
@@ -65,9 +65,9 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     }
 
     @Override
-    public CompactionTaskStatusStore loadCompactionTaskStatusStore(InstanceProperties instanceProperties) {
+    public CompactionTaskTracker loadCompactionTaskStatusStore(InstanceProperties instanceProperties) {
         return Optional.ofNullable(compactionTaskStoreByInstance.get(instanceProperties.get(ID)))
-                .orElse(CompactionTaskStatusStore.NONE);
+                .orElse(CompactionTaskTracker.NONE);
     }
 
     @Override

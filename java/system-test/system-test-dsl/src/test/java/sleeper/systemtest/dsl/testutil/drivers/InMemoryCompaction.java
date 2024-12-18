@@ -41,8 +41,8 @@ import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
-import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.query.core.recordretrieval.InMemoryDataStore;
@@ -69,7 +69,7 @@ public class InMemoryCompaction {
     private final List<CompactionJob> queuedJobs = new ArrayList<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
-    private final CompactionTaskStatusStore taskTracker = new InMemoryCompactionTaskStatusStore();
+    private final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
     private final InMemoryDataStore dataStore;
     private final InMemorySketchesStore sketchesStore;
 
@@ -94,7 +94,7 @@ public class InMemoryCompaction {
         return jobTracker;
     }
 
-    public CompactionTaskStatusStore taskTracker() {
+    public CompactionTaskTracker taskTracker() {
         return taskTracker;
     }
 

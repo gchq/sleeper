@@ -76,7 +76,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -146,7 +146,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final TableProperties tableProperties = createTable();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
-    private final CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+    private final CompactionTaskTracker taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
 
     @AfterEach
     void tearDown() {

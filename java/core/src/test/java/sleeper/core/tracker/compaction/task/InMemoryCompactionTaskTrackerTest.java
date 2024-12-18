@@ -29,8 +29,8 @@ import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.
 import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.startedStatusBuilder;
 import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.startedStatusBuilderWithDefaults;
 
-public class InMemoryCompactionTaskStatusStoreTest {
-    private final InMemoryCompactionTaskStatusStore store = new InMemoryCompactionTaskStatusStore();
+public class InMemoryCompactionTaskTrackerTest {
+    private final InMemoryCompactionTaskTracker tracker = new InMemoryCompactionTaskTracker();
 
     @Nested
     @DisplayName("Store status updates")
@@ -41,10 +41,10 @@ public class InMemoryCompactionTaskStatusStoreTest {
             CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
 
             // When
-            store.taskStarted(started);
+            tracker.taskStarted(started);
 
             // Then
-            assertThat(store.getAllTasks()).containsExactly(started);
+            assertThat(tracker.getAllTasks()).containsExactly(started);
         }
 
         @Test
@@ -54,11 +54,11 @@ public class InMemoryCompactionTaskStatusStoreTest {
             CompactionTaskStatus finished = finishedStatusWithDefaults();
 
             // When
-            store.taskStarted(started);
-            store.taskFinished(finished);
+            tracker.taskStarted(started);
+            tracker.taskFinished(finished);
 
             // Then
-            assertThat(store.getAllTasks()).containsExactly(finished);
+            assertThat(tracker.getAllTasks()).containsExactly(finished);
         }
 
         @Test
@@ -67,10 +67,10 @@ public class InMemoryCompactionTaskStatusStoreTest {
             CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
 
             // When
-            store.taskStarted(started);
+            tracker.taskStarted(started);
 
             // Then
-            assertThatThrownBy(() -> store.taskStarted(started))
+            assertThatThrownBy(() -> tracker.taskStarted(started))
                     .isInstanceOf(IllegalStateException.class);
         }
 
@@ -80,7 +80,7 @@ public class InMemoryCompactionTaskStatusStoreTest {
             CompactionTaskStatus finished = finishedStatusWithDefaults();
 
             // When/Then
-            assertThatThrownBy(() -> store.taskFinished(finished))
+            assertThatThrownBy(() -> tracker.taskFinished(finished))
                     .isInstanceOf(IllegalStateException.class);
         }
 
@@ -90,7 +90,7 @@ public class InMemoryCompactionTaskStatusStoreTest {
             CompactionTaskStatus finished = finishedStatusWithDefaults();
 
             // When/Then
-            assertThatThrownBy(() -> store.taskStarted(finished))
+            assertThatThrownBy(() -> tracker.taskStarted(finished))
                     .isInstanceOf(IllegalStateException.class);
         }
     }
@@ -106,10 +106,10 @@ public class InMemoryCompactionTaskStatusStoreTest {
                     .taskId("some-test-task-id").build();
 
             // When
-            store.taskStarted(started);
+            tracker.taskStarted(started);
 
             // Then
-            assertThat(store.getTask("some-test-task-id")).isEqualTo(started);
+            assertThat(tracker.getTask("some-test-task-id")).isEqualTo(started);
         }
 
         @Test
@@ -119,10 +119,10 @@ public class InMemoryCompactionTaskStatusStoreTest {
                     .taskId("some-test-task-id").build();
 
             // When
-            store.taskStarted(started);
+            tracker.taskStarted(started);
 
             // Then
-            assertThat(store.getTask("other-test-task-id")).isNull();
+            assertThat(tracker.getTask("other-test-task-id")).isNull();
         }
     }
 
@@ -142,20 +142,20 @@ public class InMemoryCompactionTaskStatusStoreTest {
                     Instant.parse("2023-03-30T12:44:00Z"), Instant.parse("2023-03-30T13:00:00Z"));
 
             // When
-            store.taskStarted(started1);
-            store.taskFinished(finished1);
-            store.taskStarted(started2);
-            store.taskFinished(finished2);
+            tracker.taskStarted(started1);
+            tracker.taskFinished(finished1);
+            tracker.taskStarted(started2);
+            tracker.taskFinished(finished2);
 
             // Then
-            assertThat(store.getAllTasks())
+            assertThat(tracker.getAllTasks())
                     .containsExactly(finished2, finished1);
         }
 
         @Test
         void shouldGetNoTasks() {
             // When/Then
-            assertThat(store.getAllTasks()).isEmpty();
+            assertThat(tracker.getAllTasks()).isEmpty();
         }
     }
 
@@ -168,10 +168,10 @@ public class InMemoryCompactionTaskStatusStoreTest {
             CompactionTaskStatus started = startedStatusBuilderWithDefaults().build();
 
             // When
-            store.taskStarted(started);
+            tracker.taskStarted(started);
 
             // Then
-            assertThat(store.getTasksInProgress())
+            assertThat(tracker.getTasksInProgress())
                     .containsExactly(started);
         }
 
@@ -184,11 +184,11 @@ public class InMemoryCompactionTaskStatusStoreTest {
                     .taskId("test-task-2").build();
 
             // When
-            store.taskStarted(started1);
-            store.taskStarted(started2);
+            tracker.taskStarted(started1);
+            tracker.taskStarted(started2);
 
             // Then
-            assertThat(store.getTasksInProgress())
+            assertThat(tracker.getTasksInProgress())
                     .containsExactly(started2, started1);
         }
 
@@ -201,17 +201,17 @@ public class InMemoryCompactionTaskStatusStoreTest {
                     Instant.parse("2023-03-30T11:44:00Z"), Instant.parse("2023-03-30T12:00:00Z"));
 
             // When
-            store.taskStarted(started1);
-            store.taskFinished(finished1);
+            tracker.taskStarted(started1);
+            tracker.taskFinished(finished1);
 
             // Then
-            assertThat(store.getTasksInProgress()).isEmpty();
+            assertThat(tracker.getTasksInProgress()).isEmpty();
         }
 
         @Test
         void shouldGetNoTasksWhenNoneInStore() {
             // When/Then
-            assertThat(store.getTasksInProgress()).isEmpty();
+            assertThat(tracker.getTasksInProgress()).isEmpty();
         }
     }
 
@@ -232,13 +232,13 @@ public class InMemoryCompactionTaskStatusStoreTest {
                     Instant.parse("2023-03-30T12:44:00Z"), Instant.parse("2023-03-30T13:00:00Z"));
 
             // When
-            store.taskStarted(started1);
-            store.taskFinished(finished1);
-            store.taskStarted(started2);
-            store.taskFinished(finished2);
+            tracker.taskStarted(started1);
+            tracker.taskFinished(finished1);
+            tracker.taskStarted(started2);
+            tracker.taskFinished(finished2);
 
             // Then
-            assertThat(store.getTasksInTimePeriod(
+            assertThat(tracker.getTasksInTimePeriod(
                     Instant.parse("2023-03-30T12:30:00Z"),
                     Instant.parse("2023-03-30T13:30:00Z")))
                     .containsExactly(finished2);
@@ -257,13 +257,13 @@ public class InMemoryCompactionTaskStatusStoreTest {
                     Instant.parse("2023-03-30T12:44:00Z"), Instant.parse("2023-03-30T13:00:00Z"));
 
             // When
-            store.taskStarted(started1);
-            store.taskFinished(finished1);
-            store.taskStarted(started2);
-            store.taskFinished(finished2);
+            tracker.taskStarted(started1);
+            tracker.taskFinished(finished1);
+            tracker.taskStarted(started2);
+            tracker.taskFinished(finished2);
 
             // Then
-            assertThat(store.getTasksInTimePeriod(
+            assertThat(tracker.getTasksInTimePeriod(
                     Instant.parse("2023-03-30T11:30:00Z"),
                     Instant.parse("2023-03-30T13:30:00Z")))
                     .containsExactly(finished2, finished1);
@@ -277,10 +277,10 @@ public class InMemoryCompactionTaskStatusStoreTest {
                     .taskId("test-task").build();
 
             // When
-            store.taskStarted(started);
+            tracker.taskStarted(started);
 
             // Then
-            assertThat(store.getTasksInTimePeriod(
+            assertThat(tracker.getTasksInTimePeriod(
                     Instant.parse("2023-03-30T12:30:00Z"),
                     Instant.parse("2023-03-30T13:30:00Z")))
                     .isEmpty();

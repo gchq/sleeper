@@ -27,7 +27,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Duration;
@@ -46,7 +46,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
             .withIgnoredFields("expiryDate").build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final CompactionTaskTracker store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
@@ -58,7 +58,7 @@ public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase 
         dynamoDBClient.deleteTable(taskStatusTableName);
     }
 
-    protected CompactionTaskStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+    protected CompactionTaskTracker storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
         return new DynamoDBCompactionTaskStatusStore(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);

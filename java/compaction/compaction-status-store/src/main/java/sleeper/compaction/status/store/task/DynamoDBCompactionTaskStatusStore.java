@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.status.store.CompactionTrackerException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
@@ -48,7 +48,7 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusStore {
+public class DynamoDBCompactionTaskStatusStore implements CompactionTaskTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStore.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;

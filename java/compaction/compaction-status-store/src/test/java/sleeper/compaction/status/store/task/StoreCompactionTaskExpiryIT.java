@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.compaction.task.CompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,7 +34,7 @@ public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusSto
         // Given
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        CompactionTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        CompactionTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
         store.taskStarted(taskStatus);
@@ -49,7 +49,7 @@ public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusSto
         // Given
         CompactionTaskStatus taskStatus = finishedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        CompactionTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        CompactionTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultTaskStartTime(), defaultTaskFinishTime());
 
         // When
@@ -66,7 +66,7 @@ public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusSto
         // Given
         CompactionTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(1);
-        CompactionTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        CompactionTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
         store.taskStarted(taskStatus);
