@@ -417,12 +417,13 @@ public class IngestJobStatusTestHelper {
     /**
      * Creates an ingest job started status.
      *
-     * @param  job       the ingest job
      * @param  startTime the start time
      * @return           an ingest job started status
      */
-    public static IngestJobStartedStatus ingestStartedStatus(IngestJob job, Instant startTime) {
-        return ingestStartedStatus(job, startTime, defaultUpdateTime(startTime));
+    public static IngestJobStartedStatus ingestStartedStatus(Instant startTime) {
+        return IngestJobStartedStatus.withStartOfRun(true).inputFileCount(1)
+                .startTime(startTime).updateTime(defaultUpdateTime(startTime))
+                .build();
     }
 
     /**

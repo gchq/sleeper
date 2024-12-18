@@ -510,7 +510,7 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
-                            .startedStatus(ingestStartedStatus(job, startTime))
+                            .startedStatus(ingestStartedStatus(startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
@@ -542,7 +542,7 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
-                            .startedStatus(ingestStartedStatus(job, startTime))
+                            .startedStatus(ingestStartedStatus(startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
@@ -571,7 +571,7 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
-                            .startedStatus(ingestStartedStatus(job, startTime))
+                            .startedStatus(ingestStartedStatus(startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 2))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
@@ -602,7 +602,7 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(store.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
-                            .startedStatus(ingestStartedStatus(job, startTime))
+                            .startedStatus(ingestStartedStatus(startTime))
                             .statusUpdate(ingestFinishedStatusUncommitted(job, summary, 1))
                             .build()));
             assertThat(store.streamTableRecords(tableId))
