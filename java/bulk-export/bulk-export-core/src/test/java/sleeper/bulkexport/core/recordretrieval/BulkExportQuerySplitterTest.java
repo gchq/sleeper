@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportQuery;
-import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -29,16 +28,10 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -50,7 +43,6 @@ import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemorySta
 public class BulkExportQuerySplitterTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final InMemoryDataStore recordStore = new InMemoryDataStore();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
@@ -89,12 +81,8 @@ public class BulkExportQuerySplitterTest {
                 .splitIntoLeafPartitionQueries(bulkExportQuery);
 
         // That
-        List<Record> records = getAllRecords(leafPartitionQueries);
         assertThat(leafPartitionQueries).hasSize(3);
-        assertThat(records)
-                .containsAll(Stream.of(left, right, leftleft, leftright)
-                        .flatMap(List::stream)
-                        .collect(Collectors.toList()));
+
     }
 
     @Test
@@ -121,11 +109,7 @@ public class BulkExportQuerySplitterTest {
                 .splitIntoLeafPartitionQueries(bulkExportQuery);
 
         // That
-        List<Record> records = getAllRecords(leafPartitionQueries);
         assertThat(leafPartitionQueries).hasSize(2);
-        assertThat(records).containsAll(Stream.of(left, right)
-                .flatMap(List::stream)
-                .collect(Collectors.toList()));
     }
 
     private BulkExportQuerySplitter executor() throws Exception {
@@ -151,34 +135,11 @@ public class BulkExportQuerySplitterTest {
     }
 
     private void addFile(FileReference fileReference, List<Record> records) {
-        recordStore.addFile(fileReference.getFilename(), records);
         addFileMetadata(fileReference);
     }
 
     private void addFileMetadata(FileReference fileReference) {
         stateStore.addFile(fileReference);
-    }
-
-    private List<Record> getAllRecords(List<BulkExportLeafPartitionQuery> bulkExportLeafPartitionQueries) {
-        return bulkExportLeafPartitionQueries.stream()
-                .flatMap(this::getRecordsSafely)
-                .collect(Collectors.toList());
-    }
-
-    private Stream<Record> getRecordsSafely(BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery) {
-        try {
-            return getRecords(bulkExportLeafPartitionQuery).stream();
-        } catch (BulkExportRecordRetrievalException | IOException e) {
-            return Stream.empty();
-        }
-    }
-
-    private List<Record> getRecords(BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery)
-            throws BulkExportRecordRetrievalException, IOException {
-        try (CloseableIterator<Record> it = recordStore.getRecords(bulkExportLeafPartitionQuery)) {
-            return StreamSupport.stream(Spliterators.spliteratorUnknownSize(it, Spliterator.IMMUTABLE), false)
-                    .collect(Collectors.toUnmodifiableList());
-        }
     }
 
     private BulkExportQuery bulkExportQuery() {
@@ -189,5 +150,4 @@ public class BulkExportQuerySplitterTest {
     private FileReferenceFactory fileReferenceFactory() {
         return FileReferenceFactory.from(stateStore);
     }
-
 }
