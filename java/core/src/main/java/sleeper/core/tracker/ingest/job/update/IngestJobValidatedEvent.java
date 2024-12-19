@@ -14,18 +14,16 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
-
-import sleeper.ingest.core.job.IngestJob;
+package sleeper.core.tracker.ingest.job.update;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
 /**
- * An event for when an ingest job was validated. Used in the ingest job status store.
+ * An event for when an ingest job was validated. Used in the ingest job tracker.
  */
-public class IngestJobValidatedEvent {
+public class IngestJobValidatedEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
     private final int fileCount;
@@ -47,17 +45,6 @@ public class IngestJobValidatedEvent {
     }
 
     /**
-     * Creates an instance of this class for when an ingest job passed validation checks.
-     *
-     * @param  job            the ingest job
-     * @param  validationTime the validation time
-     * @return                an instance of this class
-     */
-    public static Builder ingestJobAccepted(IngestJob job, Instant validationTime) {
-        return builder().job(job).validationTime(validationTime).reasons(List.of());
-    }
-
-    /**
      * Creates an instance of this class for when an ingest job failed validation checks.
      *
      * @param  jobId          the ingest job ID
@@ -75,40 +62,8 @@ public class IngestJobValidatedEvent {
                 .build();
     }
 
-    /**
-     * Creates an instance of this class for when an ingest job failed validation checks.
-     *
-     * @param  job            the ingest job
-     * @param  validationTime the validation time
-     * @param  reasons        the list of reasons why the validation failed
-     * @return                an instance of this class
-     */
-    public static IngestJobValidatedEvent ingestJobRejected(IngestJob job, Instant validationTime, List<String> reasons) {
-        return builder().job(job).validationTime(validationTime).reasons(reasons).build();
-    }
-
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Creates the appropriate validation status for this event.
-     *
-     * @param  updateTime the update time
-     * @return            an {@link IngestJobAcceptedStatus} or an {@link IngestJobRejectedStatus}
-     */
-    public IngestJobValidatedStatus toStatusUpdate(Instant updateTime) {
-        if (isAccepted()) {
-            return IngestJobAcceptedStatus.from(
-                    getFileCount(), validationTime, updateTime);
-        } else {
-            return IngestJobRejectedStatus.builder()
-                    .inputFileCount(getFileCount())
-                    .validationTime(validationTime)
-                    .updateTime(updateTime)
-                    .reasons(reasons)
-                    .jsonMessage(jsonMessage).build();
-        }
     }
 
     public String getJobId() {
@@ -196,18 +151,6 @@ public class IngestJobValidatedEvent {
         private String jsonMessage;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the job ID, table ID, and file count from the ingest job.
-         *
-         * @param  job the ingest job
-         * @return     the builder
-         */
-        public Builder job(IngestJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId())
-                    .fileCount(job.getFileCount());
         }
 
         /**

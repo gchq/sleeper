@@ -23,9 +23,9 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.IngestJobAddedFilesStatus;
-import sleeper.ingest.core.job.status.IngestJobStartedStatus;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Duration;
@@ -38,17 +38,11 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.d
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobAddedFilesEvent.ingestJobAddedFiles;
-import static sleeper.ingest.core.job.status.IngestJobFailedEvent.ingestJobFailed;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFinished;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test
@@ -58,12 +52,12 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId("test-run").build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId("test-run").build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRun(job, validationTime)));
+                .containsExactly(ingestJobStatus(job, acceptedRun(job, validationTime)));
     }
 
     @Test
@@ -76,13 +70,13 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
-        store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
+        store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRunWhichStarted(job, taskId,
+                .containsExactly(ingestJobStatus(job, acceptedRunWhichStarted(job, taskId,
                         validationTime, startTime)));
     }
 
@@ -100,13 +94,13 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
                 fileFactory.rootFile("file2.parquet", 456)));
 
         // When
-        store.jobAddedFiles(ingestJobAddedFiles(job, outputFiles, writtenTime).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobStarted(ingestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(outputFiles).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                         .taskId(taskId)
                         .statusUpdate(IngestJobAddedFilesStatus.builder()
                                 .fileCount(2)
@@ -128,14 +122,14 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
-        store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobFinished(ingestJobFinished(job, summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
+        store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRunWhichFinished(job, taskId,
+                .containsExactly(ingestJobStatus(job, acceptedRunWhichFinished(job, taskId,
                         validationTime, summary, 2)));
     }
 
@@ -151,14 +145,14 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         List<String> failureReasons = List.of("Something failed");
 
         // When
-        store.jobValidated(ingestJobAccepted(job, validationTime).jobRunId(jobRunId).build());
-        store.jobStarted(validatedIngestJobStarted(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobFailed(ingestJobFailed(job, runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
+        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
+        store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
+        store.jobFailed(job.failedEventBuilder(runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job, acceptedRunWhichFailed(job, taskId,
+                .containsExactly(ingestJobStatus(job, acceptedRunWhichFailed(job, taskId,
                         validationTime, runTime, failureReasons)));
     }
 }

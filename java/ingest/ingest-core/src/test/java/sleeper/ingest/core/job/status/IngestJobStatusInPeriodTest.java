@@ -21,6 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Instant;
@@ -224,7 +226,7 @@ public class IngestJobStatusInPeriodTest {
     }
 
     private ProcessStatusUpdate startedRun(Instant startedTime) {
-        return IngestJobStatusTestHelper.ingestStartedStatus(job, startedTime, defaultUpdateTime(startedTime));
+        return IngestJobStatusTestHelper.ingestStartedStatus(startedTime, defaultUpdateTime(startedTime));
     }
 
     private ProcessStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {

@@ -16,7 +16,7 @@
 
 package sleeper.systemtest.dsl.reporting;
 
-import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
 
 import java.util.List;
 import java.util.stream.Collectors;

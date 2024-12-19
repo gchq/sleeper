@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.IngestJobStatus;
 
 import java.io.IOException;
 import java.time.Instant;

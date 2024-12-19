@@ -13,19 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package sleeper.ingest.core.job.status;
-
-import sleeper.core.record.process.status.ProcessRunStartedUpdate;
+package sleeper.core.tracker.ingest.job.update;
 
 /**
- * An ingest job process started update that has information about the input files.
+ * An event that occurred in the life of an ingest job. Used in the ingest job tracker.
  */
-public interface IngestJobInfoStatus extends ProcessRunStartedUpdate {
+public interface IngestJobEvent {
+
     /**
-     * Gets the input file count for the ingest job.
+     * Gets the ingest job ID.
      *
-     * @return the input file count
+     * @return the ID
      */
-    int getInputFileCount();
+    String getJobId();
+
+    /**
+     * Gets the Sleeper table ID.
+     *
+     * @return the ID
+     */
+    String getTableId();
+
+    /**
+     * Gets the ingest task ID.
+     *
+     * @return the ID, or null if the event did not occur on a task
+     */
+    String getTaskId();
+
 }

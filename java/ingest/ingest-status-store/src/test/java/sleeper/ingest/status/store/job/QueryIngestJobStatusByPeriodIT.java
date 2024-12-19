@@ -17,15 +17,15 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
 
 import java.time.Instant;
 import java.time.Period;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedEvent;
 
 public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStoreTestBase {
 
@@ -127,7 +127,7 @@ public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStore
         IngestJobStatusStore store = storeWithUpdateTimes(rejectedUpdateTime);
 
         // When
-        store.jobValidated(rejectedEvent(job, rejectedTime, "Test reason"));
+        store.jobValidated(job.createRejectedEvent(rejectedTime, List.of("Test reason")));
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))

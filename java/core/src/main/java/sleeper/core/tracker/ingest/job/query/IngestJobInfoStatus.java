@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job.query;
+
+import sleeper.core.record.process.status.ProcessRunStartedUpdate;
 
 /**
- * An ingest job info status that has validation information about the job.
+ * An ingest job process started update that has information about the input files.
  */
-public interface IngestJobValidatedStatus extends IngestJobInfoStatus {
+public interface IngestJobInfoStatus extends ProcessRunStartedUpdate {
     /**
-     * Checks whether the job passed validation.
+     * Gets the input file count for the ingest job.
      *
-     * @return whether the job passed validation checks
+     * @return the input file count
      */
-    boolean isValid();
+    int getInputFileCount();
 }

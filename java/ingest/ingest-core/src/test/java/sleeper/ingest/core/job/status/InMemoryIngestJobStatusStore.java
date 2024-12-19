@@ -19,7 +19,21 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
+import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +44,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.REJECTED;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.REJECTED;
 
 /**
  * An in-memory implementation of the ingest job status store.
@@ -43,8 +57,7 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
         tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(event.toStatusUpdate(
-                                defaultUpdateTime(event.getValidationTime())))
+                        .statusUpdate(toStatusUpdate(event, defaultUpdateTime(event.getValidationTime())))
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());
@@ -162,6 +175,20 @@ public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
 
         private Stream<ProcessStatusUpdateRecord> streamAllRecords() {
             return jobIdToUpdateRecords.values().stream().flatMap(List::stream);
+        }
+    }
+
+    private static IngestJobValidatedStatus toStatusUpdate(IngestJobValidatedEvent event, Instant updateTime) {
+        if (event.isAccepted()) {
+            return IngestJobAcceptedStatus.from(
+                    event.getFileCount(), event.getValidationTime(), updateTime);
+        } else {
+            return IngestJobRejectedStatus.builder()
+                    .inputFileCount(event.getFileCount())
+                    .validationTime(event.getValidationTime())
+                    .updateTime(updateTime)
+                    .reasons(event.getReasons())
+                    .jsonMessage(event.getJsonMessage()).build();
         }
     }
 }

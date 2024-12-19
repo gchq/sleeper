@@ -34,10 +34,10 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;
@@ -45,7 +45,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 @Testcontainers
@@ -187,7 +187,7 @@ public class IngestJobMessageHandlerIT {
             // Then
             assertThat(job).isNotPresent();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("id",
+                    .containsExactly(ingestJobStatus("id",
                             rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
 
@@ -209,7 +209,7 @@ public class IngestJobMessageHandlerIT {
             // Then
             assertThat(job).isNotPresent();
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("id",
+                    .containsExactly(ingestJobStatus("id",
                             rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
     }

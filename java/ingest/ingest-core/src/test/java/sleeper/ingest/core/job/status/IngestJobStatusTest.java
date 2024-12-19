@@ -24,6 +24,11 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -37,21 +42,21 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.ACCEPTED;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobInDefaultTable;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRunUncommitted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatusListFrom;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.ACCEPTED;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.FAILED;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.FINISHED;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.IN_PROGRESS;
-import static sleeper.ingest.core.job.status.IngestJobStatusType.UNCOMMITTED;
 
 public class IngestJobStatusTest {
     private final IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
@@ -65,7 +70,7 @@ public class IngestJobStatusTest {
             Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
             // When
-            IngestJobStatus status = jobStatus(job, startedIngestRun(job, "test-task", startTime));
+            IngestJobStatus status = ingestJobStatus(job, startedIngestRun(job, "test-task", startTime));
 
             // Then
             assertThat(status)
@@ -80,7 +85,7 @@ public class IngestJobStatusTest {
             Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
 
             // When
-            IngestJobStatus status = jobStatus(job,
+            IngestJobStatus status = ingestJobStatus(job,
                     finishedIngestRun(job, "test-task", summary(startTime, finishTime)));
 
             // Then
@@ -95,7 +100,7 @@ public class IngestJobStatusTest {
             Instant validationTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
             // When
-            IngestJobStatus status = jobStatus(job, acceptedRun(job, validationTime));
+            IngestJobStatus status = ingestJobStatus(job, acceptedRun(job, validationTime));
 
             // Then
             assertThat(status)
@@ -109,7 +114,7 @@ public class IngestJobStatusTest {
             Instant validationTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
             // When
-            IngestJobStatus status = jobStatus(job, rejectedRun(job, validationTime));
+            IngestJobStatus status = ingestJobStatus(job, rejectedRun(job, validationTime));
 
             // Then
             assertThat(status)
@@ -124,7 +129,7 @@ public class IngestJobStatusTest {
             Instant failTime = Instant.parse("2022-09-22T13:34:10.001Z");
 
             // When
-            IngestJobStatus status = jobStatus(job,
+            IngestJobStatus status = ingestJobStatus(job,
                     failedIngestRun(job, "test-task", new ProcessRunTime(startTime, failTime),
                             List.of("Failed reading input file", "Some IO failure")));
 
@@ -142,7 +147,7 @@ public class IngestJobStatusTest {
             RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
 
             // When
-            IngestJobStatus status = jobStatus(job,
+            IngestJobStatus status = ingestJobStatus(job,
                     finishedIngestRun(job, "test-task", new RecordsProcessedSummary(
                             recordsProcessed, new ProcessRunTime(startTime2, Duration.ofMinutes(1)))),
                     failedIngestRun(job, "test-task",
@@ -163,7 +168,7 @@ public class IngestJobStatusTest {
             RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
 
             // When
-            IngestJobStatus status = jobStatus(job,
+            IngestJobStatus status = ingestJobStatus(job,
                     startedIngestRun(job, "task-2", startTime2),
                     finishedIngestRun(job, "task-1", new RecordsProcessedSummary(
                             recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
@@ -182,7 +187,7 @@ public class IngestJobStatusTest {
             RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
 
             // When
-            IngestJobStatus status = jobStatus(job,
+            IngestJobStatus status = ingestJobStatus(job,
                     startedIngestRun(job, "task-2", startTime2),
                     finishedIngestRunUncommitted(job, "task-1", new RecordsProcessedSummary(
                             recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1))), 1));
@@ -445,15 +450,15 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobAcceptedStatus acceptedStatusUpdate(Instant validationTime) {
-        return IngestJobStatusTestHelper.ingestAcceptedStatus(job, validationTime);
+        return IngestJobStatusTestHelper.ingestAcceptedStatus(validationTime);
     }
 
     private IngestJobStartedStatus startedStatusUpdate(Instant startTime) {
-        return IngestJobStatusTestHelper.ingestStartedStatus(job, startTime, defaultUpdateTime(startTime));
+        return IngestJobStatusTestHelper.ingestStartedStatus(startTime, defaultUpdateTime(startTime));
     }
 
     private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {
-        return IngestJobStatusTestHelper.validatedIngestStartedStatus(job, startTime);
+        return IngestJobStatusTestHelper.validatedIngestStartedStatus(startTime);
     }
 
     private IngestJobAddedFilesStatus filesAddedStatusUpdate(Instant writtenTime, int fileCount) {
@@ -461,12 +466,12 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
-        return IngestJobStatusTestHelper.ingestFinishedStatus(job, summary(startTime, finishTime), 2);
+        return IngestJobStatusTestHelper.ingestFinishedStatus(summary(startTime, finishTime), 2);
     }
 
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
             Instant startTime, Instant finishTime, int numFilesAddedByJob) {
-        return IngestJobStatusTestHelper.ingestFinishedStatusUncommitted(job, summary(startTime, finishTime), numFilesAddedByJob);
+        return IngestJobStatusTestHelper.ingestFinishedStatusUncommitted(summary(startTime, finishTime), numFilesAddedByJob);
     }
 
     private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {

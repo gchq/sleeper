@@ -24,7 +24,7 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportArguments;
 import sleeper.bulkimport.starter.executor.EmrServerlessPlatformExecutor;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
@@ -34,7 +34,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
     private final SystemTestInstanceContext instance;
@@ -51,7 +50,7 @@ public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
 
     public void sendJob(BulkImportJob job) {
         String jobRunId = UUID.randomUUID().toString();
-        jobStatusStore().jobValidated(ingestJobAccepted(job.toIngestJob(), Instant.now())
+        jobStatusStore().jobValidated(job.toIngestJob().acceptedEventBuilder(Instant.now())
                 .jobRunId(jobRunId).build());
         s3Client.putObject(instance.getInstanceProperties().get(BULK_IMPORT_BUCKET),
                 "bulk_import/" + job.getId() + "-" + jobRunId + ".json",

@@ -39,9 +39,9 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusTestHelper;
 import sleeper.parquet.utils.HadoopPathUtils;
 
@@ -54,7 +54,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
 
 @Testcontainers
 public class BulkImportStarterLambdaIT {
@@ -195,7 +195,7 @@ public class BulkImportStarterLambdaIT {
             // Then
             verify(executor, times(0)).runJob(any());
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("id",
+                    .containsExactly(ingestJobStatus("id",
                             rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
 
@@ -214,7 +214,7 @@ public class BulkImportStarterLambdaIT {
             // Then
             verify(executor, times(0)).runJob(any());
             assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("id",
+                    .containsExactly(ingestJobStatus("id",
                             rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
     }

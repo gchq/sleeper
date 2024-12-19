@@ -15,6 +15,15 @@
  */
 package sleeper.ingest.core.job;
 
+import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,6 +48,96 @@ public class IngestJob {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates a builder for an event when an ingest job passed validation checks. Used with the ingest job tracker.
+     *
+     * @param  validationTime the validation time
+     * @return                the builder
+     */
+    public IngestJobValidatedEvent.Builder acceptedEventBuilder(Instant validationTime) {
+        return validatedEventBuilder(validationTime).reasons(List.of());
+    }
+
+    /**
+     * Creates a builder for an event when an ingest job failed validation checks. Used with the ingest job tracker.
+     *
+     * @param  validationTime the validation time
+     * @param  reasons        the reasons why the validation failed
+     * @return                the builder
+     */
+    public IngestJobValidatedEvent createRejectedEvent(Instant validationTime, List<String> reasons) {
+        return validatedEventBuilder(validationTime).reasons(reasons).build();
+    }
+
+    private IngestJobValidatedEvent.Builder validatedEventBuilder(Instant validationTime) {
+        return IngestJobValidatedEvent.builder().jobId(id).tableId(tableId).validationTime(validationTime).fileCount(getFileCount());
+    }
+
+    /**
+     * Creates a builder for an event when the job started. Used with the ingest job tracker.
+     * <p>
+     * This is specifically for ingest jobs and creates an event that marks the start of a job run.
+     * <p>
+     * This is not used for bulk import jobs, as they have a validation event before this, and this validation event
+     * marks the start of a job run. Bulk import jobs should use the
+     * {@link IngestJob#startedAfterValidationEventBuilder} method.
+     *
+     * @param  startTime the start time
+     * @return           the builder
+     */
+    public IngestJobStartedEvent.Builder startedEventBuilder(Instant startTime) {
+        return IngestJobStartedEvent.builder().jobId(id).tableId(tableId).startTime(startTime).fileCount(getFileCount()).startOfRun(true);
+    }
+
+    /**
+     * Creates a builder for an event when the job started after previously being validated. Used with the ingest job
+     * tracker.
+     * <p>
+     * This is specifically for bulk import jobs and creates an event that indicates the job has been picked up in the
+     * Spark cluster by the driver.
+     * <p>
+     * Note that this does not mark the start of a job run. Once the bulk import starter picks up a bulk import job, it
+     * validates the job and saves an event then, which marks the start of a job run.
+     * <p>
+     * This is not used for ingest jobs. Ingest jobs should use the {@link IngestJob#startedEventBuilder} method.
+     *
+     * @param  startTime the start time
+     * @return           the builder
+     */
+    public IngestJobStartedEvent.Builder startedAfterValidationEventBuilder(Instant startTime) {
+        return IngestJobStartedEvent.builder().jobId(id).tableId(tableId).startTime(startTime).fileCount(getFileCount()).startOfRun(false);
+    }
+
+    /**
+     * Creates a builder for an event when files have been added to the state store. Used with the ingest job tracker.
+     *
+     * @param  writtenTime the time the files were written
+     * @return             the builder
+     */
+    public IngestJobAddedFilesEvent.Builder addedFilesEventBuilder(Instant writtenTime) {
+        return IngestJobAddedFilesEvent.builder().jobId(id).tableId(tableId).writtenTime(writtenTime);
+    }
+
+    /**
+     * Creates a builder for an event when the job finished. Used with the ingest job tracker.
+     *
+     * @param  summary a summary of the time spent on the job and records processed
+     * @return         the builder
+     */
+    public IngestJobFinishedEvent.Builder finishedEventBuilder(RecordsProcessedSummary summary) {
+        return IngestJobFinishedEvent.builder().jobId(id).tableId(tableId).summary(summary);
+    }
+
+    /**
+     * Creates a builder for an event when the ingest job failed. Used with the ingest job tracker.
+     *
+     * @param  runTime the time spent on the failed operation
+     * @return         the builder
+     */
+    public IngestJobFailedEvent.Builder failedEventBuilder(ProcessRunTime runTime) {
+        return IngestJobFailedEvent.builder().jobId(id).tableId(tableId).runTime(runTime);
     }
 
     public String getId() {

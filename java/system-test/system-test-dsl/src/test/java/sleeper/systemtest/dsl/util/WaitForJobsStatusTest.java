@@ -22,9 +22,9 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,10 +34,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
 
 public class WaitForJobsStatusTest {
 
@@ -51,12 +47,12 @@ public class WaitForJobsStatusTest {
         IngestJob acceptedJob = createJobWithTableAndFiles("accepted-job", table, "test.parquet", "test2.parquet");
         IngestJob startedJob = createJobWithTableAndFiles("started-job", table, "test3.parquet", "test4.parquet");
         IngestJob finishedJob = createJobWithTableAndFiles("finished-job", table, "test3.parquet", "test4.parquet");
-        store.jobValidated(ingestJobAccepted(acceptedJob, Instant.parse("2022-09-22T13:33:10Z")).jobRunId("accepted-run").build());
-        store.jobValidated(ingestJobAccepted(startedJob, Instant.parse("2022-09-22T13:33:11Z")).jobRunId("started-run").build());
-        store.jobValidated(ingestJobAccepted(finishedJob, Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());
-        store.jobStarted(validatedIngestJobStarted(startedJob, Instant.parse("2022-09-22T13:33:31Z")).jobRunId("started-run").taskId("started-task").build());
-        store.jobStarted(validatedIngestJobStarted(finishedJob, Instant.parse("2022-09-22T13:33:32Z")).jobRunId("finished-run").taskId("finished-task").build());
-        store.jobFinished(ingestJobFinished(finishedJob,
+        store.jobValidated(acceptedJob.acceptedEventBuilder(Instant.parse("2022-09-22T13:33:10Z")).jobRunId("accepted-run").build());
+        store.jobValidated(startedJob.acceptedEventBuilder(Instant.parse("2022-09-22T13:33:11Z")).jobRunId("started-run").build());
+        store.jobValidated(finishedJob.acceptedEventBuilder(Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());
+        store.jobStarted(startedJob.startedAfterValidationEventBuilder(Instant.parse("2022-09-22T13:33:31Z")).jobRunId("started-run").taskId("started-task").build());
+        store.jobStarted(finishedJob.startedAfterValidationEventBuilder(Instant.parse("2022-09-22T13:33:32Z")).jobRunId("finished-run").taskId("finished-task").build());
+        store.jobFinished(finishedJob.finishedEventBuilder(
                 summary(Instant.parse("2022-09-22T13:33:32Z"), Instant.parse("2022-09-22T13:35:32Z"), 100L, 100L))
                 .jobRunId("finished-run").taskId("finished-task").numFilesWrittenByJob(2).build());
 
@@ -210,8 +206,8 @@ public class WaitForJobsStatusTest {
         // Given
         IngestJobStatusStore store = new InMemoryIngestJobStatusStore();
         IngestJob job = createJobWithTableAndFiles("test-job", table, "test.parquet");
-        store.jobStarted(ingestJobStarted(job, Instant.parse("2024-06-27T09:40:00Z")).jobRunId("test-run").taskId("test-task").build());
-        store.jobFinished(ingestJobFinished(job, summary(Instant.parse("2024-06-27T09:40:00Z"), Duration.ofMinutes(2), 100L, 100L))
+        store.jobStarted(job.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z")).jobRunId("test-run").taskId("test-task").build());
+        store.jobFinished(job.finishedEventBuilder(summary(Instant.parse("2024-06-27T09:40:00Z"), Duration.ofMinutes(2), 100L, 100L))
                 .jobRunId("test-run").taskId("test-task").numFilesWrittenByJob(2)
                 .committedBySeparateFileUpdates(true).build());
 

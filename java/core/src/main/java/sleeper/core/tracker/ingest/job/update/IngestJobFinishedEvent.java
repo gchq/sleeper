@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job.update;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
-import sleeper.ingest.core.job.IngestJob;
 
 import java.util.List;
 import java.util.Objects;
 
 /**
- * An event for when an ingest job was finished. Used in the ingest job status store.
+ * An event for when an ingest job was finished. Used in the ingest job tracker.
  */
-public class IngestJobFinishedEvent {
+public class IngestJobFinishedEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
     private final RecordsProcessedSummary summary;
@@ -48,17 +47,6 @@ public class IngestJobFinishedEvent {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Creates an instance of this class.
-     *
-     * @param  job     the ingest job
-     * @param  summary the records processed summary
-     * @return         an instance of this class
-     */
-    public static Builder ingestJobFinished(IngestJob job, RecordsProcessedSummary summary) {
-        return builder().job(job).summary(summary);
     }
 
     public String getJobId() {
@@ -127,17 +115,6 @@ public class IngestJobFinishedEvent {
         private String taskId;
 
         private Builder() {
-        }
-
-        /**
-         * Sets the ingest job ID and the table ID using the provided ingest job.
-         *
-         * @param  job the ingest job
-         * @return     the builder
-         */
-        public Builder job(IngestJob job) {
-            return jobId(job.getId())
-                    .tableId(job.getTableId());
         }
 
         /**

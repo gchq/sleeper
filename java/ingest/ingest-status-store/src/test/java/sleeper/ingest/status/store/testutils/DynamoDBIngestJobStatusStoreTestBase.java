@@ -30,17 +30,17 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
-import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
-import sleeper.ingest.core.job.status.IngestJobAddedFilesStatus;
-import sleeper.ingest.core.job.status.IngestJobFailedEvent;
-import sleeper.ingest.core.job.status.IngestJobFinishedEvent;
-import sleeper.ingest.core.job.status.IngestJobFinishedStatus;
-import sleeper.ingest.core.job.status.IngestJobStartedEvent;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -57,15 +57,11 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
-import static sleeper.ingest.core.job.status.IngestJobAddedFilesEvent.ingestJobAddedFiles;
-import static sleeper.ingest.core.job.status.IngestJobFailedEvent.ingestJobFailed;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestStartedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
@@ -117,11 +113,12 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStartedEvent defaultJobStartedEvent(IngestJob job, Instant startedTime) {
-        return ingestJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build();
+        return job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build();
     }
 
     protected static IngestJobAddedFilesEvent defaultJobAddedFilesEvent(IngestJob job, List<FileReference> files, Instant writtenTime) {
-        return ingestJobAddedFiles(job, filesWithReferences(files), writtenTime)
+        return job.addedFilesEventBuilder(writtenTime)
+                .files(filesWithReferences(files))
                 .taskId(DEFAULT_TASK_ID)
                 .build();
     }
@@ -132,12 +129,12 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, RecordsProcessedSummary summary) {
-        return ingestJobFinished(job, summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
+        return job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedButUncommittedEvent(
             IngestJob job, Instant startedTime, Instant finishedTime, int numFilesAdded) {
-        return ingestJobFinished(job, defaultSummary(startedTime, finishedTime))
+        return job.finishedEventBuilder(defaultSummary(startedTime, finishedTime))
                 .committedBySeparateFileUpdates(true)
                 .numFilesWrittenByJob(numFilesAdded)
                 .taskId(DEFAULT_TASK_ID)
@@ -151,7 +148,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
             IngestJob job, ProcessRunTime runTime, List<String> failureReasons) {
-        return ingestJobFailed(job, runTime)
+        return job.failedEventBuilder(runTime)
                 .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build();
     }
 
@@ -160,7 +157,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobAddedFilesStatus(IngestJob job, Instant startedTime, Instant writtenTime, int fileCount) {
-        return jobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, ProcessRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .statusUpdate(IngestJobAddedFilesStatus.builder()
@@ -180,7 +177,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedButUncommittedStatus(IngestJob job, Instant startedTime, Instant finishedTime, int numFiles) {
-        return jobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, ProcessRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
@@ -191,7 +188,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedAndCommittedStatus(IngestJob job, Instant startedTime, Instant writtenTime, Instant finishedTime, int numFiles) {
-        return jobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, ProcessRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))

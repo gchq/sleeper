@@ -45,10 +45,10 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
@@ -64,9 +64,6 @@ import java.util.function.Supplier;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
-import static sleeper.ingest.core.job.status.IngestJobFailedEvent.ingestJobFailed;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
 /**
  * Executes a Spark job that reads input Parquet files and writes to a Sleeper table. This takes a
@@ -103,14 +100,16 @@ public class BulkImportJobDriver {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is for table {}: {}", table, job);
-        statusStore.jobStarted(validatedIngestJobStarted(job.toIngestJob(), startTime)
+        statusStore.jobStarted(job.toIngestJob()
+                .startedAfterValidationEventBuilder(startTime)
                 .jobRunId(jobRunId).taskId(taskId).build());
 
         BulkImportJobOutput output;
         try {
             output = sessionRunner.run(job);
         } catch (RuntimeException e) {
-            statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
+            statusStore.jobFailed(job.toIngestJob()
+                    .failedEventBuilder(new ProcessRunTime(startTime, getTime.get()))
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw e;
         }
@@ -133,7 +132,8 @@ public class BulkImportJobDriver {
                 LOGGER.info("Added {} files to statestore for job {} in table {}", output.numFiles(), job.getId(), table);
             }
         } catch (RuntimeException e) {
-            statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
+            statusStore.jobFailed(job.toIngestJob()
+                    .failedEventBuilder(new ProcessRunTime(startTime, getTime.get()))
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
@@ -146,8 +146,8 @@ public class BulkImportJobDriver {
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
 
-        statusStore.jobFinished(ingestJobFinished(job.toIngestJob(),
-                new RecordsProcessedSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
+        statusStore.jobFinished(job.toIngestJob()
+                .finishedEventBuilder(new RecordsProcessedSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
                 .jobRunId(jobRunId).taskId(taskId)
                 .fileReferencesAddedByJob(output.fileReferences())
                 .committedBySeparateFileUpdates(asyncCommit)

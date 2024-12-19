@@ -22,12 +22,12 @@ import sleeper.core.record.Record;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.InMemoryIngestTaskStatusStore;
 import sleeper.ingest.core.task.IngestTask;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
@@ -165,7 +165,7 @@ public class InMemoryIngestByQueue {
         TableProperties tableProperties = context.instance().getTablePropertiesProvider().getById(job.getTableId());
         StateStore stateStore = context.instance().getStateStore(tableProperties);
         AddFilesToStateStore addFilesToStateStore = AddFilesToStateStore.synchronous(stateStore, jobStore,
-                updateBuilder -> updateBuilder.job(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
+                job.addedFilesEventBuilder(timeSupplier.get()).taskId(taskId).jobRunId(jobRunId));
         Iterator<Record> iterator = sourceFiles.streamRecords(filesWithFs(instanceProperties, job)).iterator();
         return new InMemoryDirectIngestDriver(context.instance(), data, sketches)
                 .ingest(instanceProperties, tableProperties, stateStore, addFilesToStateStore, iterator);

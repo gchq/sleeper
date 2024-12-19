@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
-
-import sleeper.ingest.core.job.IngestJob;
+package sleeper.core.tracker.ingest.job.query;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -33,18 +31,6 @@ public class IngestJobAcceptedStatus implements IngestJobValidatedStatus {
         this.validationTime = Objects.requireNonNull(validationTime, "validationTime must not be null");
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.inputFileCount = inputFileCount;
-    }
-
-    /**
-     * Creates an instance of this class.
-     *
-     * @param  job            the ingest job
-     * @param  validationTime the validation time
-     * @param  updateTime     the update time
-     * @return                an instance of this class
-     */
-    public static IngestJobAcceptedStatus from(IngestJob job, Instant validationTime, Instant updateTime) {
-        return new IngestJobAcceptedStatus(job.getFiles().size(), validationTime, updateTime);
     }
 
     /**

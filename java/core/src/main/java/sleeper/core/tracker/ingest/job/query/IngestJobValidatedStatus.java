@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.dsl.reporting;
+package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
-
-import java.util.List;
-
-public interface IngestReportsDriver {
-
-    SystemTestReport tasksAndJobsReport();
-
-    SystemTestReport tasksReport();
-
-    SystemTestReport jobsReport();
-
-    List<IngestJobStatus> jobs(ReportingContext reportingContext);
+/**
+ * An ingest job info status that has validation information about the job.
+ */
+public interface IngestJobValidatedStatus extends IngestJobInfoStatus {
+    /**
+     * Checks whether the job passed validation.
+     *
+     * @return whether the job passed validation checks
+     */
+    boolean isValid();
 }

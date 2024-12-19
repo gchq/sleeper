@@ -19,7 +19,7 @@ package sleeper.ingest.status.store.job;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.function.Supplier;

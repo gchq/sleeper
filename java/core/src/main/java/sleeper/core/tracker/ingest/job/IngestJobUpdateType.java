@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job;
 
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 
 /**
  * Defines the types of updates during an ingest job. Can also find the furthest update in a run of an ingest job,

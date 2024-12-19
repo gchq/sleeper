@@ -30,8 +30,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;
@@ -55,7 +55,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 
 class StateMachinePlatformExecutorTest {
@@ -148,7 +148,7 @@ class StateMachinePlatformExecutorTest {
 
         // Then
         assertThat(ingestJobStatusStore.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The input files must be set to a non-null and non-empty value.")));
     }
@@ -302,7 +302,7 @@ class StateMachinePlatformExecutorTest {
 
         // Then
         assertThat(ingestJobStatusStore.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }

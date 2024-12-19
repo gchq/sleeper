@@ -19,7 +19,7 @@ package sleeper.systemtest.drivers.ingest;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
