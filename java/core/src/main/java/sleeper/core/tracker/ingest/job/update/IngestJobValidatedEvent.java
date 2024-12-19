@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * An event for when an ingest job was validated. Used in the ingest job tracker.
  */
-public class IngestJobValidatedEvent {
+public class IngestJobValidatedEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
     private final int fileCount;

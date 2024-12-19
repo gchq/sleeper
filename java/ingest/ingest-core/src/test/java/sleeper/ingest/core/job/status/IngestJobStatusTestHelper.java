@@ -27,6 +27,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -60,6 +61,17 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
+     * Creates an ingest job status.
+     *
+     * @param  job  an event for the job this status is for
+     * @param  runs the process runs
+     * @return      an {@link IngestJobStatus}
+     */
+    public static IngestJobStatus ingestJobStatus(IngestJobEvent job, ProcessRun... runs) {
+        return ingestJobStatus(job.getJobId(), runs);
+    }
+
+    /**
      * Creates an ingest job status for a job that has started.
      *
      * @param  job       the ingest job
@@ -68,7 +80,7 @@ public class IngestJobStatusTestHelper {
      * @return           an {@link IngestJobStatus}
      */
     public static IngestJobStatus startedIngestJob(IngestJob job, String taskId, Instant startTime) {
-        return IngestJobStatusFromJobTestData.ingestJobStatus(job, startedIngestRun(job, taskId, startTime));
+        return ingestJobStatus(job.getId(), startedIngestRun(job, taskId, startTime));
     }
 
     /**
@@ -299,6 +311,18 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
+     * Creates a process run for an ingest job that started.
+     *
+     * @param  taskId    the ingest task ID
+     * @param  startTime the start time
+     * @return           a {@link ProcessRun}
+     */
+    public static ProcessRun startedIngestRun(String taskId, Instant startTime) {
+        return ProcessRun.started(taskId,
+                ingestStartedStatus(1, startTime, defaultUpdateTime(startTime)));
+    }
+
+    /**
      * Creates a process run for an ingest job that finished.
      *
      * @param  job     the ingest job
@@ -324,6 +348,21 @@ public class IngestJobStatusTestHelper {
             IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
         return ProcessRun.finished(taskId,
                 ingestStartedStatus(job.getFileCount(), summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
+                IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                        .numFilesWrittenByJob(numFilesWrittenByJob).build());
+    }
+
+    /**
+     * Creates a process run for an ingest job that finished.
+     *
+     * @param  taskId               the ingest task ID
+     * @param  summary              the records processed summary
+     * @param  numFilesWrittenByJob the number of files written by the job
+     * @return                      a {@link ProcessRun}
+     */
+    public static ProcessRun finishedIngestRun(String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+        return ProcessRun.finished(taskId,
+                ingestStartedStatus(1, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
                 IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
                         .numFilesWrittenByJob(numFilesWrittenByJob).build());
     }
@@ -422,6 +461,17 @@ public class IngestJobStatusTestHelper {
      */
     public static IngestJobStartedStatus ingestStartedStatus(Instant startTime) {
         return ingestStartedStatus(1, startTime, defaultUpdateTime(startTime));
+    }
+
+    /**
+     * Creates an ingest job started status.
+     *
+     * @param  startTime the start time
+     * @param  fileCount the number of input files in the job
+     * @return           an ingest job started status
+     */
+    public static IngestJobStartedStatus ingestStartedStatus(Instant startTime, int fileCount) {
+        return ingestStartedStatus(fileCount, startTime, defaultUpdateTime(startTime));
     }
 
     /**

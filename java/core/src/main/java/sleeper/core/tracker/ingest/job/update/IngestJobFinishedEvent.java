@@ -26,7 +26,7 @@ import java.util.Objects;
 /**
  * An event for when an ingest job was finished. Used in the ingest job tracker.
  */
-public class IngestJobFinishedEvent {
+public class IngestJobFinishedEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
     private final RecordsProcessedSummary summary;

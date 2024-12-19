@@ -24,7 +24,7 @@ import java.util.Objects;
 /**
  * An event for when an ingest job committed files to the state store. Used in the ingest job tracker.
  */
-public class IngestJobAddedFilesEvent {
+public class IngestJobAddedFilesEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
     private final String jobRunId;

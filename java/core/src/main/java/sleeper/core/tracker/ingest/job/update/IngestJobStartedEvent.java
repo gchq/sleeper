@@ -22,7 +22,7 @@ import java.util.Objects;
 /**
  * An event for when an ingest job was started. Used in the ingest job tracker.
  */
-public class IngestJobStartedEvent {
+public class IngestJobStartedEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
     private final int fileCount;

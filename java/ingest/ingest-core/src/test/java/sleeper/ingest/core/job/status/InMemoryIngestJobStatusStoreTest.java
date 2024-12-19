@@ -31,7 +31,10 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -44,15 +47,15 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFinishedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunOnTask;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFinished;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestJob;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
@@ -71,22 +74,22 @@ public class InMemoryIngestJobStatusStoreTest {
         public void shouldReturnOneStartedJobWithNoFiles() {
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
-            IngestJob job = createJobWithTableAndFiles("test-job", table);
+            IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).taskId(taskId).fileCount(0).build();
 
-            store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
+            store.jobStarted(job);
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    ingestJobStatus(job, startedIngestRun(job, taskId, startTime)));
+                    ingestJobStatus(job, ProcessRun.started(taskId, ingestStartedStatus(startTime, 0))));
         }
 
         @Test
         public void shouldReturnOneStartedJobWithFiles() {
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
-            IngestJob job = createJobWithTableAndFiles("test-job", table, "test-file-1.parquet", "test-file-2.parquet");
+            IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).taskId(taskId).fileCount(2).build();
 
-            store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
+            store.jobStarted(job);
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    ingestJobStatus(job, startedIngestRun(job, taskId, startTime)));
+                    ingestJobStatus(job, ProcessRun.started(taskId, ingestStartedStatus(startTime, 2))));
         }
 
         @Test
@@ -94,14 +97,16 @@ public class InMemoryIngestJobStatusStoreTest {
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
-            IngestJob job = createJobWithTableAndFiles("test-job", table, "test-file-1.parquet", "test-file-2.parquet");
+            IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).taskId(taskId).fileCount(2).build();
             RecordsProcessedSummary summary = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime, finishTime);
 
-            store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
-            store.jobFinished(job.finishedEventBuilder(summary).taskId(taskId).numFilesWrittenByJob(1).build());
+            store.jobStarted(job);
+            store.jobFinished(ingestJobFinishedEventBuilder(job, summary).taskId(taskId).numFilesWrittenByJob(1).build());
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    ingestJobStatus(job, finishedIngestRun(job, taskId, summary, 1)));
+                    ingestJobStatus(job, ProcessRun.finished(taskId,
+                            ingestStartedStatus(startTime, 2),
+                            ingestFinishedStatus(summary, 1))));
         }
 
         @Test
@@ -122,73 +127,74 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         public void shouldReturnTwoRunsOnSameJob() {
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job", table, "test-file-1.parquet", "test-file-2.parquet");
+            String jobId = "test-job";
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
             RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
                     new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
             RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
-
-            store.jobStarted(job.startedEventBuilder(startTime1).taskId(taskId).build());
-            store.jobFinished(job.finishedEventBuilder(summary1).taskId(taskId).numFilesWrittenByJob(1).build());
-            store.jobStarted(job.startedEventBuilder(startTime2).taskId(taskId).build());
-            store.jobFinished(job.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
+            IngestJobStartedEvent run1 = ingestJobStartedEventBuilder(jobId, startTime1).taskId(taskId).fileCount(2).build();
+            IngestJobStartedEvent run2 = ingestJobStartedEventBuilder(jobId, startTime2).taskId(taskId).fileCount(2).build();
+            store.jobStarted(run1);
+            store.jobFinished(ingestJobFinishedEventBuilder(run1, summary1).taskId(taskId).numFilesWrittenByJob(1).build());
+            store.jobStarted(run2);
+            store.jobFinished(ingestJobFinishedEventBuilder(run2, summary2).taskId(taskId).numFilesWrittenByJob(2).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    ingestJobStatus(job,
-                            finishedIngestRun(job, taskId, summary2, 2),
-                            finishedIngestRun(job, taskId, summary1, 1)));
+                    ingestJobStatus(jobId,
+                            ProcessRun.finished(taskId, ingestStartedStatus(startTime2, 2), ingestFinishedStatus(summary2, 2)),
+                            ProcessRun.finished(taskId, ingestStartedStatus(startTime1, 2), ingestFinishedStatus(summary1, 1))));
         }
 
         @Test
         public void shouldReturnTwoJobs() {
             String taskId = "test-task";
-            IngestJob job1 = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet", "test-file-2.parquet");
-            IngestJob job2 = createJobWithTableAndFiles("test-job-2", table, "test-file-3.parquet");
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
             RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
                     new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
             RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+            IngestJobStartedEvent job1 = ingestJobStartedEventBuilder(startTime1).taskId(taskId).fileCount(1).build();
+            IngestJobStartedEvent job2 = ingestJobStartedEventBuilder(startTime2).taskId(taskId).fileCount(2).build();
 
-            store.jobStarted(job1.startedEventBuilder(startTime1).taskId(taskId).build());
-            store.jobFinished(job1.finishedEventBuilder(summary1).taskId(taskId).numFilesWrittenByJob(1).build());
-            store.jobStarted(job2.startedEventBuilder(startTime2).taskId(taskId).build());
-            store.jobFinished(job2.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
+            store.jobStarted(job1);
+            store.jobFinished(ingestJobFinishedEventBuilder(job1, summary1).taskId(taskId).numFilesWrittenByJob(3).build());
+            store.jobStarted(job2);
+            store.jobFinished(ingestJobFinishedEventBuilder(job2, summary2).taskId(taskId).numFilesWrittenByJob(4).build());
 
             assertThat(store.getAllJobs(tableId)).containsExactly(
-                    ingestJobStatus(job2, finishedIngestRun(job2, taskId, summary2, 2)),
-                    ingestJobStatus(job1, finishedIngestRun(job1, taskId, summary1, 1)));
+                    ingestJobStatus(job2, ProcessRun.finished(taskId, ingestStartedStatus(startTime2, 2), ingestFinishedStatus(summary2, 4))),
+                    ingestJobStatus(job1, ProcessRun.finished(taskId, ingestStartedStatus(startTime1, 1), ingestFinishedStatus(summary1, 3))));
         }
 
         @Test
-        public void shouldReturnJobsWithCorrectTableName() {
+        public void shouldReturnJobsWithCorrectTable() {
             // Given
-            TableStatus table1 = createTable("test-table-1");
-            TableStatus table2 = createTable("test-table-2");
+            String tableId1 = "test-table-1";
+            String tableId2 = "test-table-2";
             String taskId = "test-task";
-            IngestJob job1 = createJobWithTableAndFiles("test-job-1", table1, "test-file-1.parquet", "test-file-2.parquet");
-            IngestJob job2 = createJobWithTableAndFiles("test-job-2", table2, "test-file-3.parquet");
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
             RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
                     new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
             RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
+            IngestJobStartedEvent job1 = ingestJobStartedEventBuilder(startTime1).taskId(taskId).tableId(tableId1).fileCount(1).build();
+            IngestJobStartedEvent job2 = ingestJobStartedEventBuilder(startTime2).taskId(taskId).tableId(tableId2).fileCount(2).build();
 
             // When
-            store.jobStarted(job1.startedEventBuilder(startTime1).taskId(taskId).build());
-            store.jobFinished(job1.finishedEventBuilder(summary1).taskId(taskId).numFilesWrittenByJob(1).build());
-            store.jobStarted(job2.startedEventBuilder(startTime2).taskId(taskId).build());
-            store.jobFinished(job2.finishedEventBuilder(summary2).taskId(taskId).numFilesWrittenByJob(2).build());
+            store.jobStarted(job1);
+            store.jobFinished(ingestJobFinishedEventBuilder(job1, summary1).taskId(taskId).numFilesWrittenByJob(3).build());
+            store.jobStarted(job2);
+            store.jobFinished(ingestJobFinishedEventBuilder(job2, summary2).taskId(taskId).numFilesWrittenByJob(4).build());
 
             // Then
-            assertThat(store.getAllJobs(table2.getTableUniqueId())).containsExactly(
-                    ingestJobStatus(job2, finishedIngestRun(job2, taskId, summary2, 2)));
-            assertThat(store.getAllJobs(table1.getTableUniqueId())).containsExactly(
-                    ingestJobStatus(job1, finishedIngestRun(job1, taskId, summary1, 1)));
+            assertThat(store.getAllJobs(tableId2)).containsExactly(
+                    ingestJobStatus(job2, ProcessRun.finished(taskId, ingestStartedStatus(startTime2, 2), ingestFinishedStatus(summary2, 4))));
+            assertThat(store.getAllJobs(tableId1)).containsExactly(
+                    ingestJobStatus(job1, ProcessRun.finished(taskId, ingestStartedStatus(startTime1, 1), ingestFinishedStatus(summary1, 3))));
         }
 
         @Test
@@ -613,5 +619,25 @@ public class InMemoryIngestJobStatusStoreTest {
 
     private TableStatus createTable(String tableName) {
         return TableStatusTestHelper.uniqueIdAndName(new TableIdGenerator().generateString(), tableName);
+    }
+
+    private IngestJobStartedEvent.Builder ingestJobStartedEventBuilder(Instant startTime) {
+        return IngestJobEventTestData.ingestJobStartedEventBuilder(startTime).tableId(tableId);
+    }
+
+    private IngestJobStartedEvent.Builder ingestJobStartedEventBuilder(String jobId, Instant startTime) {
+        return ingestJobStartedEventBuilder(startTime).jobId(jobId);
+    }
+
+    private IngestJobStatus ingestJobStatus(IngestJob job, ProcessRun... runs) {
+        return IngestJobStatusFromJobTestData.ingestJobStatus(job, runs);
+    }
+
+    private IngestJobStatus ingestJobStatus(IngestJobEvent job, ProcessRun... runs) {
+        return IngestJobStatusTestHelper.ingestJobStatus(job, runs);
+    }
+
+    private IngestJobStatus ingestJobStatus(String jobId, ProcessRun... runs) {
+        return IngestJobStatusTestHelper.ingestJobStatus(jobId, runs);
     }
 }

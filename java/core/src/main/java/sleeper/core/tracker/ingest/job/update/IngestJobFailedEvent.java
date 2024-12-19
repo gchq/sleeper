@@ -24,7 +24,7 @@ import java.util.Objects;
 /**
  * An event for when an ingest job failed. Used in the ingest job tracker.
  */
-public class IngestJobFailedEvent {
+public class IngestJobFailedEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
     private final String jobRunId;
