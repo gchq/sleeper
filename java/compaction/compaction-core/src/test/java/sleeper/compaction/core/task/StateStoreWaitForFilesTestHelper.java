@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.testutils;
+package sleeper.compaction.core.task;
 
-import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;

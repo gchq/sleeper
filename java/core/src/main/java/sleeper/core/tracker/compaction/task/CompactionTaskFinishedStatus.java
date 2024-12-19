@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.core.task;
+package sleeper.core.tracker.compaction.task;
 
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.RecordsProcessed;
@@ -177,7 +177,7 @@ public class CompactionTaskFinishedStatus {
             return this;
         }
 
-        Builder finish(Instant finishTime) {
+        public Builder finish(Instant finishTime) {
             AverageRecordRate rate = rateBuilder.finishTime(finishTime).build();
             totalJobRuns = rate.getRunCount();
             totalRecordsRead = rate.getRecordsRead();

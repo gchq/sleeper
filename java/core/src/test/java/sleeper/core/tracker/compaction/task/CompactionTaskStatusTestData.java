@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.core.task;
+package sleeper.core.tracker.compaction.task;
 
 import sleeper.core.record.process.RecordsProcessedSummary;
 

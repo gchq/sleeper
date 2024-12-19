@@ -58,7 +58,7 @@ public class IngestBatcherReportScreen {
 
         if (propertiesOpt.isPresent()) {
             InstanceProperties properties = propertiesOpt.get();
-            Optional<IngestBatcherStore> ingestBatcherStoreOpt = trackers.loadIngestBatcherStatusStore(properties,
+            Optional<IngestBatcherStore> ingestBatcherStoreOpt = trackers.loadIngestBatcherStore(properties,
                     store.createTablePropertiesProvider(properties));
             if (ingestBatcherStoreOpt.isEmpty()) {
                 out.println("Ingest batcher stack not enabled. Please enable the optional stack IngestBatcherStack.");

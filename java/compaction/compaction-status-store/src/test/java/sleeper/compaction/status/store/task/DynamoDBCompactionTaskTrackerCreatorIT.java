@@ -20,8 +20,8 @@ import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,21 +30,21 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBCompactionTaskStatusStoreCreatorIT extends DynamoDBTestBase {
+public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final String tableName = DynamoDBCompactionTaskStatusStore.taskStatusTableName(instanceProperties.get(ID));
+    private final String tableName = DynamoDBCompactionTaskTracker.taskStatusTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
+        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
 
         // Then
         assertThat(dynamoDBClient.describeTable(tableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
-        assertThat(store).isInstanceOf(DynamoDBCompactionTaskStatusStore.class);
+        assertThat(tracker).isInstanceOf(DynamoDBCompactionTaskTracker.class);
     }
 
     @Test
@@ -53,20 +53,20 @@ public class DynamoDBCompactionTaskStatusStoreCreatorIT extends DynamoDBTestBase
         instanceProperties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
 
         // When
-        DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskStatusStore store = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
+        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
 
         // Then
         assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
                 .isInstanceOf(ResourceNotFoundException.class);
-        assertThat(store).isSameAs(CompactionTaskStatusStore.NONE);
-        assertThatThrownBy(store::getAllTasks).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(store::getTasksInProgress).isInstanceOf(UnsupportedOperationException.class);
-        assertThatThrownBy(() -> store.getTask("some-task")).isInstanceOf(UnsupportedOperationException.class);
+        assertThat(tracker).isSameAs(CompactionTaskTracker.NONE);
+        assertThatThrownBy(tracker::getAllTasks).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(tracker::getTasksInProgress).isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> tracker.getTask("some-task")).isInstanceOf(UnsupportedOperationException.class);
     }
 
     @AfterEach
     public void tearDown() {
-        DynamoDBCompactionTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionTaskTrackerCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 }

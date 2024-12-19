@@ -30,16 +30,16 @@ import java.util.Arrays;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.EXPIRY_DATE;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.TASK_ID;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
-import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore.taskStatusTableName;
+import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskTracker.taskStatusTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
-public class DynamoDBCompactionTaskStatusStoreCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStoreCreator.class);
+public class DynamoDBCompactionTaskTrackerCreator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskTrackerCreator.class);
 
-    private DynamoDBCompactionTaskStatusStoreCreator() {
+    private DynamoDBCompactionTaskTrackerCreator() {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {

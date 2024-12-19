@@ -38,6 +38,9 @@ import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -68,7 +71,7 @@ public class CompactionTask {
     private final MessageReceiver messageReceiver;
     private final CompactionRunnerFactory selector;
     private final CompactionJobTracker jobTracker;
-    private final CompactionTaskStatusStore taskStatusStore;
+    private final CompactionTaskTracker taskTracker;
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
     private final Supplier<String> jobRunIdSupplier;
@@ -79,10 +82,10 @@ public class CompactionTask {
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobTracker jobStore,
-            CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector, String taskId) {
+            CompactionTaskTracker taskTracker, CompactionRunnerFactory selector, String taskId) {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 messageReceiver, waitForFiles, jobCommitter,
-                jobStore, taskStore, selector, taskId,
+                jobStore, taskTracker, selector, taskId,
                 () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
     }
 
@@ -94,7 +97,7 @@ public class CompactionTask {
             StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
-            CompactionJobTracker jobTracker, CompactionTaskStatusStore taskTracker, CompactionRunnerFactory selector,
+            CompactionJobTracker jobTracker, CompactionTaskTracker taskTracker, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -105,7 +108,7 @@ public class CompactionTask {
         this.messageReceiver = messageReceiver;
         this.selector = selector;
         this.jobTracker = jobTracker;
-        this.taskStatusStore = taskTracker;
+        this.taskTracker = taskTracker;
         this.taskId = taskId;
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.jobCommitter = jobCommitter;
@@ -116,14 +119,14 @@ public class CompactionTask {
         Instant startTime = timeSupplier.get();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
-        taskStatusStore.taskStarted(taskStatusBuilder.build());
+        taskTracker.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         Instant finishTime = handleMessages(startTime, taskFinishedBuilder);
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         LOGGER.info("Total number of messages processed = {}", taskFinished.getJobRuns());
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
-        taskStatusStore.taskFinished(taskFinished);
+        taskTracker.taskFinished(taskFinished);
     }
 
     private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {

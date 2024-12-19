@@ -28,10 +28,10 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.task.CompactionTaskStatus;
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.status.store.CompactionTrackerException;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
@@ -48,17 +48,17 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.createStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.instanceTableName;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 
-public class DynamoDBCompactionTaskStatusStore implements CompactionTaskStatusStore {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskStatusStore.class);
+public class DynamoDBCompactionTaskTracker implements CompactionTaskTracker {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBCompactionTaskTracker.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
     private final DynamoDBCompactionTaskStatusFormat format;
 
-    public DynamoDBCompactionTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public DynamoDBCompactionTaskTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this(dynamoDB, properties, Instant::now);
     }
 
-    public DynamoDBCompactionTaskStatusStore(
+    public DynamoDBCompactionTaskTracker(
             AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = taskStatusTableName(properties.get(ID));
