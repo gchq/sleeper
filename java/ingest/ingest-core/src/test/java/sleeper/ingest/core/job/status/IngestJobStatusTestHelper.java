@@ -27,6 +27,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.ingest.core.job.IngestJob;
 
@@ -522,6 +523,37 @@ public class IngestJobStatusTestHelper {
         return IngestJobStartedStatus.withStartOfRun(false).inputFileCount(inputFileCount)
                 .startTime(startTime).updateTime(defaultUpdateTime(startTime))
                 .build();
+    }
+
+    /**
+     * Creates an ingest job rejected status.
+     *
+     * @param  validationTime the validation time
+     * @param  jsonMessage    the JSON of the message that was rejected
+     * @param  reasons        the list of reasons the job was rejected
+     * @param  inputFileCount the number of input files in the job
+     * @return                an ingest job started status
+     */
+    public static IngestJobValidatedStatus ingestRejectedStatus(Instant validationTime, String jsonMessage, List<String> reasons, int inputFileCount) {
+        return IngestJobRejectedStatus.builder()
+                .validationTime(validationTime)
+                .updateTime(defaultUpdateTime(validationTime))
+                .reasons(reasons)
+                .jsonMessage(jsonMessage)
+                .inputFileCount(inputFileCount)
+                .build();
+    }
+
+    /**
+     * Creates an ingest job rejected status.
+     *
+     * @param  validationTime the validation time
+     * @param  reasons        the list of reasons the job was rejected
+     * @param  inputFileCount the number of input files in the job
+     * @return                an ingest job started status
+     */
+    public static IngestJobValidatedStatus ingestRejectedStatus(Instant validationTime, List<String> reasons, int inputFileCount) {
+        return ingestRejectedStatus(validationTime, null, reasons, inputFileCount);
     }
 
     /**

@@ -19,8 +19,10 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -31,6 +33,8 @@ public class IngestJobEventTestData {
     private IngestJobEventTestData() {
     }
 
+    public static String DEFAULT_TABLE_ID = "test-table";
+
     /**
      * Creates a builder for an ingest job started event when the job was not validated as a separate event.
      *
@@ -40,7 +44,7 @@ public class IngestJobEventTestData {
     public static IngestJobStartedEvent.Builder ingestJobStartedEventBuilder(Instant startTime) {
         return IngestJobStartedEvent.builder()
                 .jobId(UUID.randomUUID().toString())
-                .tableId("test-table")
+                .tableId(DEFAULT_TABLE_ID)
                 .fileCount(1)
                 .startTime(startTime)
                 .startOfRun(true);
@@ -55,10 +59,46 @@ public class IngestJobEventTestData {
     public static IngestJobStartedEvent.Builder ingestJobStartedAfterValidationEventBuilder(Instant startTime) {
         return IngestJobStartedEvent.builder()
                 .jobId(UUID.randomUUID().toString())
-                .tableId("test-table")
+                .tableId(DEFAULT_TABLE_ID)
                 .fileCount(1)
                 .startTime(startTime)
                 .startOfRun(false);
+    }
+
+    /**
+     * Creates an ingest job rejected event.
+     *
+     * @param  validationTime the validation time
+     * @param  reasons        the reasons the job was rejected
+     * @param  fileCount      the number of input files for the job
+     * @return                the event
+     */
+    public static IngestJobValidatedEvent ingestJobRejectedEvent(Instant validationTime, List<String> reasons, int fileCount) {
+        return ingestJobValidatedEventBuilder(validationTime).reasons(reasons).fileCount(fileCount).build();
+    }
+
+    /**
+     * Creates an ingest job accepted event.
+     *
+     * @param  validationTime the validation time
+     * @param  fileCount      the number of input files for the job
+     * @return                the event
+     */
+    public static IngestJobValidatedEvent ingestJobAcceptedEvent(Instant validationTime, int fileCount) {
+        return ingestJobValidatedEventBuilder(validationTime).reasons(List.of()).fileCount(fileCount).build();
+    }
+
+    /**
+     * Creates a builder for an ingest job validation event.
+     *
+     * @param  validationTime the validation time
+     * @return                the builder
+     */
+    public static IngestJobValidatedEvent.Builder ingestJobValidatedEventBuilder(Instant validationTime) {
+        return IngestJobValidatedEvent.builder()
+                .jobId(UUID.randomUUID().toString())
+                .tableId(DEFAULT_TABLE_ID)
+                .validationTime(validationTime);
     }
 
     /**
