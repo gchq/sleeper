@@ -18,8 +18,8 @@ package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
+import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -46,8 +46,8 @@ public class AwsWaitForJobs {
 
     public static WaitForJobs forCompaction(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forCompaction(instance,
-                properties -> CompactionJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
-                properties -> CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
+                properties -> CompactionJobTrackerFactory.getTracker(dynamoDBClient, properties),
+                properties -> CompactionTaskTrackerFactory.getTracker(dynamoDBClient, properties),
                 pollDriver);
     }
 }

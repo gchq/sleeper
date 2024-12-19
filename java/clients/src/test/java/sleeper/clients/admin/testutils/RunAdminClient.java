@@ -16,15 +16,15 @@
 
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.AdminClientStatusStoreFactory;
+import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.UpdatePropertiesWithTextEditor;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
@@ -40,7 +40,7 @@ public class RunAdminClient {
     private final ToStringConsoleOutput out;
     private final TestConsoleInput in;
     private final AdminConfigStoreTestHarness harness;
-    private final AdminClientStatusStoreHolder statusStores = new AdminClientStatusStoreHolder();
+    private final AdminClientProcessTrackerHolder trackers = new AdminClientProcessTrackerHolder();
     private final UpdatePropertiesWithTextEditor editor;
     private QueueMessageCount.Client queueClient = noQueues();
 
@@ -126,7 +126,7 @@ public class RunAdminClient {
     }
 
     public String runGetOutput() throws Exception {
-        harness.startClient(statusStores, queueClient);
+        harness.startClient(trackers, queueClient);
         return out.toString();
     }
 
@@ -135,32 +135,32 @@ public class RunAdminClient {
         return this;
     }
 
-    public RunAdminClient statusStore(CompactionJobStatusStore store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+    public RunAdminClient tracker(CompactionJobTracker store) {
+        trackers.setTracker(harness.getInstanceId(), store);
         return this;
     }
 
-    public RunAdminClient statusStore(CompactionTaskStatusStore store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+    public RunAdminClient tracker(CompactionTaskTracker store) {
+        trackers.setTracker(harness.getInstanceId(), store);
         return this;
     }
 
-    public RunAdminClient statusStore(IngestJobStatusStore store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+    public RunAdminClient tracker(IngestJobStatusStore store) {
+        trackers.setTracker(harness.getInstanceId(), store);
         return this;
     }
 
-    public RunAdminClient statusStore(IngestTaskStatusStore store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+    public RunAdminClient tracker(IngestTaskStatusStore store) {
+        trackers.setTracker(harness.getInstanceId(), store);
         return this;
     }
 
     public RunAdminClient batcherStore(IngestBatcherStore store) {
-        statusStores.setStore(harness.getInstanceId(), store);
+        trackers.setBatcherStore(harness.getInstanceId(), store);
         return this;
     }
 
-    public AdminClientStatusStoreFactory statusStores() {
-        return statusStores;
+    public AdminClientTrackerFactory trackers() {
+        return trackers;
     }
 }

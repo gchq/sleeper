@@ -16,25 +16,28 @@
 
 package sleeper.systemtest.drivers.partitioning;
 
-import software.amazon.awssdk.services.lambda.LambdaClient;
+import com.amazonaws.services.sqs.AmazonSQS;
 
-import sleeper.clients.deploy.InvokeLambda;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.invoke.tables.InvokeForTables;
+import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.partitioning.PartitionSplittingDriver;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FIND_PARTITIONS_TO_SPLIT_QUEUE_URL;
 
 public class AwsPartitionSplittingDriver implements PartitionSplittingDriver {
 
     private final SystemTestInstanceContext instance;
-    private final LambdaClient lambdaClient;
+    private final AmazonSQS sqs;
 
-    public AwsPartitionSplittingDriver(SystemTestInstanceContext instance, LambdaClient lambdaClient) {
+    public AwsPartitionSplittingDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
         this.instance = instance;
-        this.lambdaClient = lambdaClient;
+        this.sqs = clients.getSqs();
     }
 
     public void splitPartitions() {
-        InvokeLambda.invokeWith(lambdaClient, instance.getInstanceProperties().get(PARTITION_SPLITTING_TRIGGER_LAMBDA_FUNCTION));
+        String queueUrl = instance.getInstanceProperties().get(FIND_PARTITIONS_TO_SPLIT_QUEUE_URL);
+        InvokeForTables.sendOneMessagePerTable(sqs, queueUrl, instance.streamTableProperties().map(TableProperties::getStatus));
     }
 }

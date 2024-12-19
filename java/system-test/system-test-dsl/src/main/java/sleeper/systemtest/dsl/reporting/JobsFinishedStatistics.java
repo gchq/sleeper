@@ -16,9 +16,9 @@
 
 package sleeper.systemtest.dsl.reporting;
 
-import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.ingest.core.job.status.IngestJobStatus;
 
 import java.util.List;

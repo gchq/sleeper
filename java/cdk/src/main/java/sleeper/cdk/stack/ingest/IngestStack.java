@@ -276,8 +276,8 @@ public class IngestStack extends NestedStack {
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
                 .create(this, "IngestTasksCreationPeriodicTrigger")
-                .ruleName(SleeperScheduleRule.INGEST.buildRuleName(instanceProperties))
-                .description(SleeperScheduleRule.INGEST.getDescription())
+                .ruleName(SleeperScheduleRule.INGEST_TASK_CREATION.buildRuleName(instanceProperties))
+                .description(SleeperScheduleRule.INGEST_TASK_CREATION.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))

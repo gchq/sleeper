@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.extension.AfterTestReports;
-import sleeper.systemtest.dsl.ingest.SystemTestIngestBatcher;
 import sleeper.systemtest.dsl.reporting.SystemTestReports;
 import sleeper.systemtest.dsl.sourcedata.RecordNumbers;
 import sleeper.systemtest.suite.testutil.SystemTest;
@@ -47,7 +46,6 @@ public class IngestBatcherST {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
         sleeper.connectToInstance(MAIN);
-        sleeper.ingest().batcher().clearStore();
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
@@ -67,12 +65,11 @@ public class IngestBatcherST {
                 .createWithNumberedRecords("file4.parquet", numbers.range(300, 400));
 
         // When
-        SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
-                .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForStandardIngestTask().waitForIngestJobs().getInvokeResult();
+        sleeper.ingest().batcher()
+                .sendSourceFilesExpectingJobs(2, "file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
+                .waitForStandardIngestTask().waitForIngestJobs();
 
         // Then
-        assertThat(result.numJobsCreated()).isEqualTo(2);
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(2);
@@ -95,14 +92,12 @@ public class IngestBatcherST {
                 .createWithNumberedRecords("file4.parquet", numbers.range(300, 400));
 
         // When
-        SystemTestIngestBatcher.Result result = sleeper.ingest().batcher()
-                .sendSourceFiles("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
-                .invoke().waitForBulkImportJobs(
-                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)))
-                .getInvokeResult();
+        sleeper.ingest().batcher()
+                .sendSourceFilesExpectingJobs(1, "file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet")
+                .waitForBulkImportJobs(
+                        PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofMinutes(30)));
 
         // Then
-        assertThat(result.numJobsCreated()).isOne();
         assertThat(sleeper.directQuery().allRecordsInTable())
                 .containsExactlyElementsOf(sleeper.generateNumberedRecords(LongStream.range(0, 400)));
         assertThat(sleeper.tableFiles().references()).hasSize(1);

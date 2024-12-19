@@ -16,8 +16,8 @@
 
 package sleeper.clients.status.report.job.query;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.ingest.core.job.status.IngestJobStatus;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
@@ -26,13 +26,13 @@ import java.util.List;
 public class RejectedJobsQuery implements JobQuery {
 
     @Override
-    public List<CompactionJobStatus> run(CompactionJobStatusStore statusStore) {
+    public List<CompactionJobStatus> run(CompactionJobTracker tracker) {
         return List.of(); // not implemented
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobStatusStore statusStore) {
-        return statusStore.getInvalidJobs();
+    public List<IngestJobStatus> run(IngestJobStatusStore tracker) {
+        return tracker.getInvalidJobs();
     }
 
     @Override

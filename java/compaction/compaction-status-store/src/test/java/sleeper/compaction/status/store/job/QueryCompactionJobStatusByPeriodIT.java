@@ -18,8 +18,7 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusTestData;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 
@@ -28,11 +27,9 @@ import java.time.Period;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 
-public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldReturnCompactionJobsInPeriod() {
@@ -55,8 +52,8 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         assertThat(store.getJobsInTimePeriod(tableId, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
-                        CompactionJobStatusTestData.jobCreated(job2, ignoredUpdateTime()),
-                        CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+                        compactionJobCreated(job2, ignoredUpdateTime()),
+                        compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -97,7 +94,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
         assertThat(store.getJobsInTimePeriod(tableId, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(CompactionJobStatusTestData.jobCreated(job1, ignoredUpdateTime()));
+                .containsExactly(compactionJobCreated(job1, ignoredUpdateTime()));
     }
 
     @Test
@@ -112,12 +109,12 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         // When
         Instant periodStart = Instant.now().minus(Period.ofDays(1));
         storeJobCreated(job);
-        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         Thread.sleep(1);
         Instant periodEnd = Instant.now();
         Thread.sleep(1);
-        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))
@@ -139,9 +136,9 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobSta
         Thread.sleep(1);
         Instant periodStart = Instant.now();
         Thread.sleep(1);
-        store.jobStarted(compactionJobStarted(job, defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(compactionJobFinished(job, defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(compactionJobCommitted(job, defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
 
         // Then

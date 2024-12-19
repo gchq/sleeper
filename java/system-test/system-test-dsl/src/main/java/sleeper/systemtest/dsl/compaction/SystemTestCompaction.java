@@ -19,15 +19,21 @@ package sleeper.systemtest.dsl.compaction;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
+import sleeper.systemtest.dsl.util.WaitForTasks;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class SystemTestCompaction {
 
+    private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final CompactionDriver driver;
     private final CompactionDriver baseDriver;
@@ -37,11 +43,12 @@ public class SystemTestCompaction {
     private List<String> lastJobIds;
 
     public SystemTestCompaction(SystemTestContext context, SystemTestDrivers baseDrivers) {
+        this.instance = context.instance();
         this.sourceFiles = context.sourceFiles();
-        SystemTestDrivers drivers = context.instance().adminDrivers();
+        SystemTestDrivers drivers = instance.adminDrivers();
         driver = drivers.compaction(context);
         pollDriver = drivers.pollWithRetries();
-        waitForJobCreation = new WaitForCompactionJobCreation(context.instance(), driver);
+        waitForJobCreation = new WaitForCompactionJobCreation(instance, driver);
         waitForJobs = drivers.waitForCompaction(context);
         // Use base driver to drain compaction queue as admin role does not have permission to do this
         baseDriver = baseDrivers.compaction(context);
@@ -57,6 +64,25 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction putTableOnlineWaitForJobCreation(int expectedJobs) {
+        return putTablesOnlineWaitForJobCreation(expectedJobs);
+    }
+
+    public SystemTestCompaction putTablesOnlineWaitForJobCreation(int expectedJobs) {
+        return putTablesOnlineWaitForJobCreation(expectedJobs,
+                PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(15), Duration.ofMinutes(2)));
+    }
+
+    public SystemTestCompaction putTableOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
+        return putTablesOnlineWaitForJobCreation(expectedJobs, poll);
+    }
+
+    public SystemTestCompaction putTablesOnlineWaitForJobCreation(int expectedJobs, PollWithRetries poll) {
+        lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs, pollDriver.poll(poll),
+                () -> instance.updateTableProperties(Map.of(TABLE_ONLINE, "true")));
+        return this;
+    }
+
     public SystemTestCompaction forceCreateJobs(int expectedJobs) {
         lastJobIds = waitForJobCreation.createJobsGetIds(expectedJobs,
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofMinutes(1)),
@@ -65,19 +91,16 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction splitFilesAndRunJobs(int expectedJobs) {
-        forceCreateJobs(expectedJobs).invokeTasks(1).waitForJobsToFinishThenCommit(
+        forceCreateJobs(expectedJobs).waitForTasks(1).waitForJobsToFinishThenCommit(
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(30)),
                 pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5)));
         return this;
     }
 
-    public SystemTestCompaction invokeTasks(int expectedTasks) {
-        driver.invokeTasks(expectedTasks, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
-        return this;
-    }
-
-    public SystemTestCompaction forceStartTasks(int expectedTasks) {
-        driver.forceStartTasks(expectedTasks, pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
+    public SystemTestCompaction waitForTasks(int expectedTasks) {
+        new WaitForTasks(driver.getJobTracker())
+                .waitUntilNumTasksStartedAJob(expectedTasks, lastJobIds,
+                        pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
         return this;
     }
 

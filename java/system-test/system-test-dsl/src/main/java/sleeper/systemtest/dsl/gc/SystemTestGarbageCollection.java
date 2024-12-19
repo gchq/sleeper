@@ -43,7 +43,7 @@ public class SystemTestGarbageCollection {
     }
 
     public void waitFor() {
-        waitFor(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(1)));
+        waitFor(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2)));
     }
 
     public void waitFor(PollWithRetries poll) {

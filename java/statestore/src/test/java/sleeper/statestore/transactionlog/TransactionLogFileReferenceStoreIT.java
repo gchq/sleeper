@@ -711,7 +711,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", "root", List.of("oldFile"), newFile)));
+                    "job1", List.of("oldFile"), newFile)));
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(newFile);
@@ -737,8 +737,8 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1")),
                     assignJobOnPartitionToFiles("job2", "root", List.of("oldFile2"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "root", List.of("oldFile1"), newFile1),
-                    replaceJobFileReferences("job2", "root", List.of("oldFile2"), newFile2)));
+                    replaceJobFileReferences("job1", List.of("oldFile1"), newFile1),
+                    replaceJobFileReferences("job2", List.of("oldFile2"), newFile2)));
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(newFile1, newFile2);
@@ -761,11 +761,11 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", "root", List.of("oldFile"), newFile)));
+                    "job1", List.of("oldFile"), newFile)));
 
             // Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "root", List.of("oldFile"), newFile))))
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(newFile);
@@ -786,7 +786,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "root", List.of("oldFile"), newFile))))
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
         }
@@ -798,7 +798,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "root", List.of("oldFile"), newFile))))
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
@@ -816,7 +816,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "root", List.of("oldFile1", "oldFile2"), newFile))))
+                    replaceJobFileReferences("job1", List.of("oldFile1", "oldFile2"), newFile))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
@@ -834,7 +834,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "root", List.of("file"), factory.rootFile("file2", 100L)))))
+                    replaceJobFileReferences("job1", List.of("file"), factory.rootFile("file2", 100L)))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
@@ -851,7 +851,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "root", List.of("file1"), file))))
+                    replaceJobFileReferences("job1", List.of("file1"), file))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(NewReferenceSameAsOldReferenceException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
@@ -872,7 +872,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "L", List.of("oldFile"), newReference))))
+                    replaceJobFileReferences("job1", List.of("oldFile"), newReference))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
@@ -926,7 +926,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("splitFile"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", "L", List.of("splitFile"), compactionOutputFile)));
+                    "job1", List.of("splitFile"), compactionOutputFile)));
 
             // When / Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -950,8 +950,8 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "L", List.of("readyForGc"), leftOutputFile),
-                    replaceJobFileReferences("job2", "R", List.of("readyForGc"), rightOutputFile)));
+                    replaceJobFileReferences("job1", List.of("readyForGc"), leftOutputFile),
+                    replaceJobFileReferences("job2", List.of("readyForGc"), rightOutputFile)));
 
             // When / Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -982,10 +982,10 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
             store.fixFileUpdateTime(firstCompactionTime);
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", "L", List.of("readyForGc"), leftOutputFile)));
+                    "job1", List.of("readyForGc"), leftOutputFile)));
             store.fixFileUpdateTime(secondCompactionTime);
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job2", "R", List.of("readyForGc"), rightOutputFile)));
+                    "job2", List.of("readyForGc"), rightOutputFile)));
 
             // When / Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -1006,7 +1006,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", "root", List.of("oldFile"), newFile)));
+                    "job1", List.of("oldFile"), newFile)));
 
             // When
             store.deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
@@ -1031,8 +1031,8 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
                     assignJobOnPartitionToFiles("job1", "L", List.of("file")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", "L", List.of("file"), leftOutputFile),
-                    replaceJobFileReferences("job2", "R", List.of("file"), rightOutputFile)));
+                    replaceJobFileReferences("job1", List.of("file"), leftOutputFile),
+                    replaceJobFileReferences("job2", List.of("file"), rightOutputFile)));
 
             // When
             store.deleteGarbageCollectedFileReferenceCounts(List.of("file"));
@@ -1073,7 +1073,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", "L", List.of("file"), leftOutputFile)));
+                    "job1", List.of("file"), leftOutputFile)));
 
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("file")))
@@ -1090,7 +1090,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1", "oldFile2"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", "root", List.of("oldFile1", "oldFile2"), newFile)));
+                    "job1", List.of("oldFile1", "oldFile2"), newFile)));
 
             // When
             Iterator<String> iterator = store.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
@@ -1191,7 +1191,7 @@ public class TransactionLogFileReferenceStoreIT extends TransactionLogStateStore
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", "L", List.of("file"), outputFile)));
+                    "job1", List.of("file"), outputFile)));
 
             // When
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);

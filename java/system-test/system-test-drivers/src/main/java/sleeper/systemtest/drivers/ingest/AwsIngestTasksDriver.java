@@ -23,8 +23,8 @@ import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
-import sleeper.systemtest.dsl.ingest.WaitForIngestTasks;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
+import sleeper.systemtest.dsl.util.WaitForTasks;
 
 public class AwsIngestTasksDriver implements IngestTasksDriver {
 
@@ -37,9 +37,9 @@ public class AwsIngestTasksDriver implements IngestTasksDriver {
     }
 
     @Override
-    public WaitForIngestTasks waitForTasksForCurrentInstance() {
+    public WaitForTasks waitForTasksForCurrentInstance() {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        return new WaitForIngestTasks(statusStore);
+        return new WaitForTasks(statusStore);
     }
 }

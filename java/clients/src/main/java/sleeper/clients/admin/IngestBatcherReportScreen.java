@@ -40,17 +40,17 @@ public class IngestBatcherReportScreen {
     private final ConsoleHelper consoleHelper;
     private final TableIndex tableIndex;
     private final AdminClientPropertiesStore store;
-    private final AdminClientStatusStoreFactory statusStores;
+    private final AdminClientTrackerFactory trackers;
 
     public IngestBatcherReportScreen(
             ConsoleOutput out, ConsoleInput in,
-            TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores) {
+            TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientTrackerFactory trackers) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
         this.tableIndex = tableIndex;
         this.store = store;
-        this.statusStores = statusStores;
+        this.trackers = trackers;
     }
 
     public void chooseArgsAndPrint(String instanceId) throws InterruptedException {
@@ -58,7 +58,7 @@ public class IngestBatcherReportScreen {
 
         if (propertiesOpt.isPresent()) {
             InstanceProperties properties = propertiesOpt.get();
-            Optional<IngestBatcherStore> ingestBatcherStoreOpt = statusStores.loadIngestBatcherStatusStore(properties,
+            Optional<IngestBatcherStore> ingestBatcherStoreOpt = trackers.loadIngestBatcherStore(properties,
                     store.createTablePropertiesProvider(properties));
             if (ingestBatcherStoreOpt.isEmpty()) {
                 out.println("Ingest batcher stack not enabled. Please enable the optional stack IngestBatcherStack.");

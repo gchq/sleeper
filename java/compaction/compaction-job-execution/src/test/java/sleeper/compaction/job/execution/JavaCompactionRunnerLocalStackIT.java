@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
+import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -96,7 +96,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         instanceProperties.unset(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE);
         s3Client.createBucket(dataBucket);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDBClient);
     }
 
     @Test

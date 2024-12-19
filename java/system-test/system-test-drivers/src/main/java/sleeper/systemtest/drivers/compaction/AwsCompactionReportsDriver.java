@@ -24,12 +24,12 @@ import sleeper.clients.status.report.compaction.job.StandardCompactionJobStatusR
 import sleeper.clients.status.report.compaction.task.CompactionTaskQuery;
 import sleeper.clients.status.report.compaction.task.StandardCompactionTaskStatusReporter;
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
-import sleeper.compaction.core.task.CompactionTaskStatus;
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
-import sleeper.compaction.status.store.job.CompactionJobStatusStoreFactory;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
+import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
+import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.ReportingContext;
@@ -49,11 +49,11 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
 
     public SystemTestReport tasksAndJobsReport() {
         return (out, startTime) -> {
-            new CompactionTaskStatusReport(taskStore(),
+            new CompactionTaskStatusReport(taskTracker(),
                     new StandardCompactionTaskStatusReporter(out),
                     CompactionTaskQuery.forPeriod(startTime, Instant.MAX))
                     .run();
-            new CompactionJobStatusReport(jobStore(),
+            new CompactionJobStatusReport(jobTracker(),
                     new StandardCompactionJobStatusReporter(out),
                     new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX))
                     .run();
@@ -62,20 +62,20 @@ public class AwsCompactionReportsDriver implements CompactionReportsDriver {
 
     public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
         return new RangeJobsQuery(instance.getTableStatus(), reportingContext.getRecordingStartTime(), Instant.MAX)
-                .run(jobStore());
+                .run(jobTracker());
     }
 
     @Override
     public List<CompactionTaskStatus> tasks(ReportingContext reportingContext) {
         return CompactionTaskQuery.forPeriod(reportingContext.getRecordingStartTime(), Instant.MAX)
-                .run(taskStore());
+                .run(taskTracker());
     }
 
-    private CompactionJobStatusStore jobStore() {
-        return CompactionJobStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
+    private CompactionJobTracker jobTracker() {
+        return CompactionJobTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
     }
 
-    private CompactionTaskStatusStore taskStore() {
-        return CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
+    private CompactionTaskTracker taskTracker() {
+        return CompactionTaskTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
     }
 }

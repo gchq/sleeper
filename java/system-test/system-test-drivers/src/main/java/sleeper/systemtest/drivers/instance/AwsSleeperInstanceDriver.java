@@ -98,7 +98,6 @@ public class AwsSleeperInstanceDriver implements SleeperInstanceDriver {
         try {
             DeployNewInstance.builder().scriptsDirectory(parameters.getScriptsDirectory())
                     .deployInstanceConfiguration(deployConfig)
-                    .deployPaused(true)
                     .instanceType(InvokeCdkForInstance.Type.STANDARD)
                     .runCommand(ClientUtils::runCommandLogOutput)
                     .deployWithClients(s3, s3v2, dynamoDB, ecr);

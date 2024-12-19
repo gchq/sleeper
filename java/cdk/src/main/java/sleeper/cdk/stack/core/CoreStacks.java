@@ -24,7 +24,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.sqs.IQueue;
 
-import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
+import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
 import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
 
@@ -42,13 +42,13 @@ public class CoreStacks {
     private final TableDataStack dataStack;
     private final StateStoreCommitterStack stateStoreCommitterStack;
     private final IngestStatusStoreResources ingestStatusStore;
-    private final CompactionStatusStoreResources compactionStatusStore;
+    private final CompactionTrackerResources compactionTracker;
 
     public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
             IngestStatusStoreResources ingestStatusStore,
-            CompactionStatusStoreResources compactionStatusStore) {
+            CompactionTrackerResources compactionTracker) {
         this.loggingStack = loggingStack;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
@@ -57,7 +57,7 @@ public class CoreStacks {
         this.dataStack = dataStack;
         this.stateStoreCommitterStack = stateStoreCommitterStack;
         this.ingestStatusStore = ingestStatusStore;
-        this.compactionStatusStore = compactionStatusStore;
+        this.compactionTracker = compactionTracker;
     }
 
     public ILogGroup getLogGroup(LogGroupRef logGroupRef) {
@@ -132,7 +132,7 @@ public class CoreStacks {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
-        compactionStatusStore.grantWriteJobEvent(grantee);
+        compactionTracker.grantWriteJobEvent(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
@@ -143,8 +143,8 @@ public class CoreStacks {
         stateStoreStacks.grantReadPartitions(grantee);
         dataStack.grantReadWrite(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
-        compactionStatusStore.grantWriteJobEvent(grantee);
-        compactionStatusStore.grantWriteTaskEvent(grantee);
+        compactionTracker.grantWriteJobEvent(grantee);
+        compactionTracker.grantWriteTaskEvent(grantee);
     }
 
     public void grantSplitPartitions(IGrantable grantee) {

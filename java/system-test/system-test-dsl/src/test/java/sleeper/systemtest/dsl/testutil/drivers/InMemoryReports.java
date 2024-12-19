@@ -15,8 +15,8 @@
  */
 package sleeper.systemtest.dsl.testutil.drivers;
 
-import sleeper.compaction.core.job.status.CompactionJobStatus;
-import sleeper.compaction.core.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.ingest.core.job.status.IngestJobStatus;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
@@ -117,14 +117,14 @@ public class InMemoryReports {
 
         @Override
         public List<CompactionJobStatus> jobs(ReportingContext reportingContext) {
-            return compaction.jobStore().getJobsInTimePeriod(
+            return compaction.jobTracker().getJobsInTimePeriod(
                     instance.getTableStatus().getTableUniqueId(),
                     reportingContext.getRecordingStartTime(), Instant.MAX);
         }
 
         @Override
         public List<CompactionTaskStatus> tasks(ReportingContext reportingContext) {
-            return compaction.taskStore().getTasksInTimePeriod(
+            return compaction.taskTracker().getTasksInTimePeriod(
                     reportingContext.getRecordingStartTime(), Instant.MAX);
         }
     }

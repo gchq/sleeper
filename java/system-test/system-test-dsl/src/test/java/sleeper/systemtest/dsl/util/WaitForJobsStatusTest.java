@@ -19,9 +19,9 @@ package sleeper.systemtest.dsl.util;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.testutils.InMemoryCompactionJobStatusStore;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
@@ -31,10 +31,6 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.status.CompactionJobCommittedEvent.compactionJobCommitted;
-import static sleeper.compaction.core.job.status.CompactionJobCreatedEvent.compactionJobCreated;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
@@ -46,7 +42,7 @@ import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAc
 public class WaitForJobsStatusTest {
 
     private final TableStatus table = TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table");
-    private final InMemoryCompactionJobStatusStore store = new InMemoryCompactionJobStatusStore();
+    private final InMemoryCompactionJobTracker store = new InMemoryCompactionJobTracker();
 
     @Test
     void shouldReportSeveralBulkImportJobs() {
@@ -93,18 +89,18 @@ public class WaitForJobsStatusTest {
         store.fixUpdateTime(Instant.parse("2023-09-18T14:47:00Z"));
         jobsCreated(createdJob, startedJob, uncommittedJob, finishedJob);
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:03Z"));
-        store.jobStarted(compactionJobStarted(startedJob, Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").build());
-        store.jobStarted(compactionJobStarted(uncommittedJob, Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").build());
-        store.jobStarted(compactionJobStarted(finishedJob, Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").build());
+        store.jobStarted(startedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").build());
+        store.jobStarted(uncommittedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").build());
+        store.jobStarted(finishedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
-        store.jobFinished(compactionJobFinished(uncommittedJob,
+        store.jobFinished(uncommittedJob.finishedEventBuilder(
                 summary(Instant.parse("2023-09-18T14:48:01Z"), Instant.parse("2023-09-18T14:50:01Z"), 100L, 100L))
                 .taskId("finished-task-1").build());
-        store.jobFinished(compactionJobFinished(finishedJob,
+        store.jobFinished(finishedJob.finishedEventBuilder(
                 summary(Instant.parse("2023-09-18T14:48:02Z"), Instant.parse("2023-09-18T14:50:02Z"), 100L, 100L))
                 .taskId("finished-task-2").build());
         store.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
-        store.jobCommitted(compactionJobCommitted(finishedJob, Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").build());
+        store.jobCommitted(finishedJob.committedEventBuilder(Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").build());
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(store,
                 List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
@@ -247,30 +243,30 @@ public class WaitForJobsStatusTest {
 
     private void addCreatedJob(CompactionJob job, Instant createdTime) {
         store.fixUpdateTime(defaultUpdateTime(createdTime));
-        store.jobCreated(compactionJobCreated(job));
+        store.jobCreated(job.createCreatedEvent());
     }
 
     private void jobsCreated(CompactionJob... jobs) {
         for (CompactionJob job : jobs) {
-            store.jobCreated(compactionJobCreated(job));
+            store.jobCreated(job.createCreatedEvent());
         }
     }
 
     private void addUnfinishedRun(CompactionJob job, Instant startTime, String taskId) {
         store.fixUpdateTime(defaultUpdateTime(startTime));
-        store.jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
+        store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
     }
 
     private void addFinishedRun(CompactionJob job, Instant startTime, Instant finishTime, String taskId) {
         store.fixUpdateTime(defaultUpdateTime(startTime));
-        store.jobStarted(compactionJobStarted(job, startTime).taskId(taskId).build());
+        store.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
 
         store.fixUpdateTime(defaultUpdateTime(finishTime));
-        store.jobFinished(compactionJobFinished(job,
+        store.jobFinished(job.finishedEventBuilder(
                 summary(startTime, finishTime, 100L, 100L))
                 .taskId(taskId).build());
         Instant commitTime = finishTime.plus(Duration.ofMinutes(1));
         store.fixUpdateTime(defaultUpdateTime(commitTime));
-        store.jobCommitted(compactionJobCommitted(job, commitTime).taskId(taskId).build());
+        store.jobCommitted(job.committedEventBuilder(commitTime).taskId(taskId).build());
     }
 }

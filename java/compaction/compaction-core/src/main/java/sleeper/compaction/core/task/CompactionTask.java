@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.core.partition.Partition;
@@ -38,6 +37,10 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -48,9 +51,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static sleeper.compaction.core.job.status.CompactionJobFailedEvent.compactionJobFailed;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.metrics.MetricsLogger.METRICS_LOGGER;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_DELAY_BEFORE_RETRY_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
@@ -70,8 +70,8 @@ public class CompactionTask {
     private final Consumer<Duration> sleepForTime;
     private final MessageReceiver messageReceiver;
     private final CompactionRunnerFactory selector;
-    private final CompactionJobStatusStore jobStatusStore;
-    private final CompactionTaskStatusStore taskStatusStore;
+    private final CompactionJobTracker jobTracker;
+    private final CompactionTaskTracker taskTracker;
     private final CompactionJobCommitterOrSendToLambda jobCommitter;
     private final String taskId;
     private final Supplier<String> jobRunIdSupplier;
@@ -81,11 +81,11 @@ public class CompactionTask {
     public CompactionTask(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader, StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
-            CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobStatusStore jobStore,
-            CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector, String taskId) {
+            CompactionJobCommitterOrSendToLambda jobCommitter, CompactionJobTracker jobStore,
+            CompactionTaskTracker taskTracker, CompactionRunnerFactory selector, String taskId) {
         this(instanceProperties, tablePropertiesProvider, propertiesReloader, stateStoreProvider,
                 messageReceiver, waitForFiles, jobCommitter,
-                jobStore, taskStore, selector, taskId,
+                jobStore, taskTracker, selector, taskId,
                 () -> UUID.randomUUID().toString(), Instant::now, threadSleep());
     }
 
@@ -97,7 +97,7 @@ public class CompactionTask {
             StateStoreProvider stateStoreProvider,
             MessageReceiver messageReceiver, StateStoreWaitForFiles waitForFiles,
             CompactionJobCommitterOrSendToLambda jobCommitter,
-            CompactionJobStatusStore jobStore, CompactionTaskStatusStore taskStore, CompactionRunnerFactory selector,
+            CompactionJobTracker jobTracker, CompactionTaskTracker taskTracker, CompactionRunnerFactory selector,
             String taskId, Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier, Consumer<Duration> sleepForTime) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
@@ -107,8 +107,8 @@ public class CompactionTask {
         this.sleepForTime = sleepForTime;
         this.messageReceiver = messageReceiver;
         this.selector = selector;
-        this.jobStatusStore = jobStore;
-        this.taskStatusStore = taskStore;
+        this.jobTracker = jobTracker;
+        this.taskTracker = taskTracker;
         this.taskId = taskId;
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.jobCommitter = jobCommitter;
@@ -119,14 +119,14 @@ public class CompactionTask {
         Instant startTime = timeSupplier.get();
         CompactionTaskStatus.Builder taskStatusBuilder = CompactionTaskStatus.builder().taskId(taskId).startTime(startTime);
         LOGGER.info("Starting task {}", taskId);
-        taskStatusStore.taskStarted(taskStatusBuilder.build());
+        taskTracker.taskStarted(taskStatusBuilder.build());
         CompactionTaskFinishedStatus.Builder taskFinishedBuilder = CompactionTaskFinishedStatus.builder();
         Instant finishTime = handleMessages(startTime, taskFinishedBuilder);
         CompactionTaskStatus taskFinished = taskStatusBuilder.finished(finishTime, taskFinishedBuilder).build();
         LOGGER.info("Total number of messages processed = {}", taskFinished.getJobRuns());
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(startTime, finishTime));
 
-        taskStatusStore.taskFinished(taskFinished);
+        taskTracker.taskFinished(taskFinished);
     }
 
     private Instant handleMessages(Instant startTime, CompactionTaskFinishedStatus.Builder taskFinishedBuilder) throws IOException {
@@ -192,8 +192,8 @@ public class CompactionTask {
             commitCompaction(jobRunId, builder, message, idleTimeTracker, failureTracker, summary);
         } catch (Exception e) {
             Instant jobFinishTime = timeSupplier.get();
-            jobStatusStore.jobFailed(compactionJobFailed(message.getJob(),
-                    new ProcessRunTime(jobStartTime, jobFinishTime))
+            jobTracker.jobFailed(message.getJob()
+                    .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
                     .failure(e).taskId(taskId).jobRunId(jobRunId).build());
         }
     }
@@ -203,7 +203,7 @@ public class CompactionTask {
             IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker, RecordsProcessedSummary summary) throws Exception {
         CompactionJob job = message.getJob();
         try {
-            jobCommitter.commit(job, compactionJobFinished(job, summary).taskId(taskId).jobRunId(jobRunId).build());
+            jobCommitter.commit(job, job.finishedEventBuilder(summary).taskId(taskId).jobRunId(jobRunId).build());
             logMetrics(job, summary);
             builder.addJobSummary(summary);
             message.deleteFromQueue();
@@ -224,7 +224,7 @@ public class CompactionTask {
 
     private RecordsProcessedSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
-        jobStatusStore.jobStarted(compactionJobStarted(job, jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
+        jobTracker.jobStarted(job.startedEventBuilder(jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         CompactionRunner compactor = selector.createCompactor(job, tableProperties);
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);

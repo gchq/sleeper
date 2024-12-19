@@ -1,6 +1,0 @@
-Unreferenced files: 4
-Referenced files: 2
-File references: 2
-Partition at root:
-50 records in file 1
-50 records in file 2

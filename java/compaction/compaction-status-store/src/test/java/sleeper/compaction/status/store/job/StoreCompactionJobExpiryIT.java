@@ -19,12 +19,12 @@ package sleeper.compaction.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,11 +32,9 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.status.CompactionJobFinishedEvent.compactionJobFinished;
-import static sleeper.compaction.core.job.status.CompactionJobStartedEvent.compactionJobStarted;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
-public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStoreTestBase {
+public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTestBase {
 
     @Test
     public void shouldUpdateExpiryDateForCompactionJobStatusCreated() {
@@ -44,7 +42,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
         CompactionJob job = createCompactionJob();
         Duration timeToLive = Duration.ofDays(7);
         Instant createdTime = Instant.parse("2022-12-15T10:50:12.001Z");
-        CompactionJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
+        CompactionJobTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
 
         // When
         storeJobCreated(store, job);
@@ -61,12 +59,12 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
         Duration timeToLive = Duration.ofDays(7);
         Instant createdTime = Instant.parse("2022-12-15T10:50:12.001Z");
         Instant startedTime = Instant.parse("2022-12-15T10:51:12.001Z");
-        CompactionJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        CompactionJobTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultUpdateTime(createdTime), defaultUpdateTime(startedTime));
 
         // When
         storeJobCreated(store, job);
-        store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
+        store.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getJobStatus(store, job.getId()).getExpiryDate())
@@ -81,13 +79,13 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
         Instant createdTime = Instant.parse("2022-12-15T10:50:12.001Z");
         Instant startedTime = Instant.parse("2022-12-15T10:51:12.001Z");
         Instant finishedTime = Instant.parse("2022-12-15T10:52:12.001Z");
-        CompactionJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        CompactionJobTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultUpdateTime(createdTime), defaultUpdateTime(startedTime), defaultUpdateTime(finishedTime));
 
         // When
         storeJobCreated(store, job);
-        store.jobStarted(compactionJobStarted(job, startedTime).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(compactionJobFinished(job, new RecordsProcessedSummary(
+        store.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
+        store.jobFinished(job.finishedEventBuilder(new RecordsProcessedSummary(
                 new RecordsProcessed(60L, 60L), startedTime, finishedTime))
                 .taskId(DEFAULT_TASK_ID).build());
 
@@ -102,7 +100,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobStatusStore
         CompactionJob job = createCompactionJob();
         Duration timeToLive = Duration.ofDays(1);
         Instant createdTime = Instant.parse("2022-12-15T10:50:12.001Z");
-        CompactionJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
+        CompactionJobTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
 
         // When
         storeJobCreated(store, job);
