@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.bulkexport.model;
+package sleeper.bulkexport.core.model;
 
 import com.google.gson.JsonElement;
 
