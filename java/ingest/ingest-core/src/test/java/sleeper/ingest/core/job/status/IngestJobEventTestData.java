@@ -33,7 +33,7 @@ public class IngestJobEventTestData {
     private IngestJobEventTestData() {
     }
 
-    public static String DEFAULT_TABLE_ID = "test-table";
+    public static final String DEFAULT_TABLE_ID = "test-table";
 
     /**
      * Creates a builder for an ingest job started event when the job was not validated as a separate event.
