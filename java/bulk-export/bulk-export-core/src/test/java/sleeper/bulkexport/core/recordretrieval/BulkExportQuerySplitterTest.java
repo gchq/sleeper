@@ -85,7 +85,8 @@ public class BulkExportQuerySplitterTest {
         BulkExportQuerySplitter bulkExportQuerySplitter = executor();
 
         // When
-        List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter.execute(bulkExportQuery);
+        List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter
+                .splitIntoLeafPartitionQueries(bulkExportQuery);
 
         // That
         List<Record> records = getAllRecords(leafPartitionQueries);
@@ -116,7 +117,8 @@ public class BulkExportQuerySplitterTest {
         BulkExportQuerySplitter bulkExportQuerySplitter = executor();
 
         // When
-        List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter.execute(bulkExportQuery);
+        List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter
+                .splitIntoLeafPartitionQueries(bulkExportQuery);
 
         // That
         List<Record> records = getAllRecords(leafPartitionQueries);

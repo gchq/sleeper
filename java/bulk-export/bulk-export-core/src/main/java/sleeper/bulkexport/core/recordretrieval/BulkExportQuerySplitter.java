@@ -39,9 +39,7 @@ import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
- * Runs bulk export queries against a Sleeper table by querying the state store,
- * data files directly and splits up a BulkExportQuery into multiple
- * BulkExportLeafPartitionQuery.
+ * Splits up an export query into leaf partition export queries.
  */
 public class BulkExportQuerySplitter {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkExportQuerySplitter.class);
@@ -53,25 +51,10 @@ public class BulkExportQuerySplitter {
     private Map<String, List<String>> partitionToFiles;
     private Instant nextInitialiseTime;
 
-    /**
-     * Create a BulkExportQuerySplitter object to be used to split up an
-     * export query into leaf export queries.
-     *
-     * @param tableProperties table properties
-     * @param stateStore      state store object
-     */
     public BulkExportQuerySplitter(TableProperties tableProperties, StateStore stateStore) {
         this(stateStore, tableProperties, Instant.now());
     }
 
-    /**
-     * Create a BulkExportQuerySplitter object to be used to split up an
-     * export query into leaf export queries.
-     *
-     * @param tableProperties table properties
-     * @param stateStore      state store object
-     * @param timeNow         next intitialise time
-     */
     public BulkExportQuerySplitter(StateStore stateStore, TableProperties tableProperties, Instant timeNow) {
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
@@ -145,18 +128,6 @@ public class BulkExportQuerySplitter {
         nextInitialiseTime = now.plus(tableProperties.getInt(QUERY_PROCESSOR_CACHE_TIMEOUT), ChronoUnit.MINUTES);
         LOGGER.info("Loaded state for table {}. Found {} partitions. Next initialise time: {}",
                 tableProperties.getStatus(), partitions.size(), nextInitialiseTime);
-    }
-
-    /**
-     * Executes a bulk export query. This method first splits up the query into one
-     * or more BulkExportLeafPartitionQuery.
-     *
-     * @param bulkExportQuery the bulk export query
-     * @return a list of LeafPartitionQuery
-     */
-    public List<BulkExportLeafPartitionQuery> execute(BulkExportQuery bulkExportQuery) {
-        List<BulkExportLeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(bulkExportQuery);
-        return leafPartitionQueries;
     }
 
     /**
