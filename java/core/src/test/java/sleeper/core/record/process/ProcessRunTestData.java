@@ -18,6 +18,7 @@ package sleeper.core.record.process;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.record.process.status.ProcessRunFinishedUpdate;
 import sleeper.core.record.process.status.ProcessRunStartedUpdate;
+import sleeper.core.record.process.status.ProcessStatusUpdate;
 
 /**
  * A helper for creating runs for tests.
@@ -67,6 +68,21 @@ public class ProcessRunTestData {
         return ProcessRun.builder()
                 .startedStatus(validationStatus)
                 .build();
+    }
+
+    /**
+     * Creates a run with a started status that occurred on no task.
+     *
+     * @param  startedStatus the started status to set
+     * @param  updates       the other updates
+     * @return               the run
+     */
+    public static ProcessRun unfinishedRun(String taskId, ProcessRunStartedUpdate startedStatus, ProcessStatusUpdate... updates) {
+        ProcessRun.Builder builder = ProcessRun.builder().taskId(taskId).startedStatus(startedStatus);
+        for (ProcessStatusUpdate update : updates) {
+            builder.statusUpdate(update);
+        }
+        return builder.build();
     }
 
 }

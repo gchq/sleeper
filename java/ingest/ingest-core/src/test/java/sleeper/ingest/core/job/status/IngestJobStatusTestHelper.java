@@ -455,6 +455,17 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
+     * Creates an ingest job accepted status.
+     *
+     * @param  validationTime the validation time
+     * @param  inputFileCount the number of input files in the job
+     * @return                an ingest job accepted status
+     */
+    public static IngestJobAcceptedStatus ingestAcceptedStatus(Instant validationTime, int inputFileCount) {
+        return IngestJobAcceptedStatus.from(inputFileCount, validationTime, defaultUpdateTime(validationTime));
+    }
+
+    /**
      * Creates an ingest job started status.
      *
      * @param  startTime the start time

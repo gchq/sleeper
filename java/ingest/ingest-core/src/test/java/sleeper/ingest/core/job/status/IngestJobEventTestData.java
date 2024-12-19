@@ -56,11 +56,11 @@ public class IngestJobEventTestData {
      * @param  startTime the start time
      * @return           the builder
      */
-    public static IngestJobStartedEvent.Builder ingestJobStartedAfterValidationEventBuilder(Instant startTime) {
+    public static IngestJobStartedEvent.Builder ingestJobStartedAfterValidationEventBuilder(IngestJobValidatedEvent validatedEvent, Instant startTime) {
         return IngestJobStartedEvent.builder()
-                .jobId(UUID.randomUUID().toString())
-                .tableId(DEFAULT_TABLE_ID)
-                .fileCount(1)
+                .jobId(validatedEvent.getJobId())
+                .tableId(validatedEvent.getTableId())
+                .fileCount(validatedEvent.getFileCount())
                 .startTime(startTime)
                 .startOfRun(false);
     }
