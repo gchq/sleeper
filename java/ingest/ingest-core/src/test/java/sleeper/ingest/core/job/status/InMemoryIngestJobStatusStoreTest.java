@@ -340,7 +340,7 @@ public class InMemoryIngestJobStatusStoreTest {
         }
 
         // TODO looks like a bug here
-        // Bulk import validation events are reported with no task ID but ingest validation events have a task ID
+        // Validation events are reported with no task ID, but had a task ID set in tests previously
         @Test
         @Disabled("TODO")
         void shouldReportStartedJobWithNoValidationFailures() {
