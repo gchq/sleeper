@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -47,23 +48,23 @@ public class BulkExportQuerySplitterTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
 
+    private final List<Record> right = List.of(
+            new Record(Map.of("key", 2L)),
+            new Record(Map.of("key", 7L)));
+    private final List<Record> left = List.of(
+            new Record(Map.of("key", 8L)),
+            new Record(Map.of("key", 13L)));
+    private final List<Record> leftleft = List.of(
+            new Record(Map.of("key", 8L)),
+            new Record(Map.of("key", 13L)));
+    private final List<Record> leftright = List.of(
+            new Record(Map.of("key", 15)),
+            new Record(Map.of("key", 20L)));
+
     @Test
     public void shouldExportWholeTree() throws Exception {
         // Given
         BulkExportQuery bulkExportQuery = bulkExportQuery();
-        List<Record> right = List.of(
-                new Record(Map.of("key", 1L)),
-                new Record(Map.of("key", 4L)));
-        List<Record> left = List.of(
-                new Record(Map.of("key", 8L)),
-                new Record(Map.of("key", 13L)));
-        List<Record> leftleft = List.of(
-                new Record(Map.of("key", 8L)),
-                new Record(Map.of("key", 13L)));
-        List<Record> leftright = List.of(
-                new Record(Map.of("key", 15)),
-                new Record(Map.of("key", 20L)));
-
         stateStore.initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 5L)
@@ -89,13 +90,6 @@ public class BulkExportQuerySplitterTest {
     public void shouldProduceTwoBulkExportLeafPartitionQueries() throws Exception {
         // Given
         BulkExportQuery bulkExportQuery = bulkExportQuery();
-        List<Record> right = List.of(
-                new Record(Map.of("key", 2L)),
-                new Record(Map.of("key", 7L)));
-        List<Record> left = List.of(
-                new Record(Map.of("key", 8L)),
-                new Record(Map.of("key", 13L)));
-
         stateStore.initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 5L)
@@ -110,6 +104,42 @@ public class BulkExportQuerySplitterTest {
 
         // That
         assertThat(leafPartitionQueries).hasSize(2);
+    }
+
+    @Test
+    public void shouldReloadActiveFilesFromStateStoreWhenTimedOut() throws Exception {
+        // Given files are added after the executor is first initialised
+        BulkExportQuery bulkExportQuery = bulkExportQuery();
+        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+        BulkExportQuerySplitter bulkExportQuerySplitter = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
+        addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
+
+        // When the first initialisation has expired
+        bulkExportQuerySplitter.initIfNeeded(Instant.parse("2023-11-27T09:35:00Z"));
+
+        // Then active files are reloaded
+        List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter
+                .splitIntoLeafPartitionQueries(bulkExportQuery);
+
+        assertThat(leafPartitionQueries).hasSize(1);
+    }
+
+    @Test
+    public void shouldNotReloadActiveFilesBeforeTimeOut() throws Exception {
+        // Given files are added after the executor is first initialised
+        BulkExportQuery bulkExportQuery = bulkExportQuery();
+        tableProperties.set(QUERY_PROCESSOR_CACHE_TIMEOUT, "5");
+        BulkExportQuerySplitter bulkExportQuerySplitter = executorAtTime(Instant.parse("2023-11-27T09:30:00Z"));
+        addRootFile("file.parquet", List.of(new Record(Map.of("key", 123L))));
+
+        // When the first initialisation has not yet expired
+        bulkExportQuerySplitter.initIfNeeded(Instant.parse("2023-11-27T09:31:00Z"));
+
+        // Then the records that were added are not found
+        List<BulkExportLeafPartitionQuery> leafPartitionQueries = bulkExportQuerySplitter
+                .splitIntoLeafPartitionQueries(bulkExportQuery);
+
+        assertThat(leafPartitionQueries).isEmpty();
     }
 
     private BulkExportQuerySplitter executor() throws Exception {
