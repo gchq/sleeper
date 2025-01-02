@@ -32,18 +32,18 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cxx = { version = "1.0.135" } # Exception handling for Rust
+cxx = { version = "1.0.136" } # Exception handling for Rust
 libc = { version = "0.2.168" } # FFI type support
 log = { version = "0.4.22" } # Logging support
 arrow = { version = "53.3.0" } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
-datafusion = { version = "43.0.0", features = ["backtrace"] }
+datafusion = { version = "44.0.0", features = ["backtrace"] }
 object_store = { version = "0.11.0", features = [
     "aws",
 ] } # Remote cloud storage access
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
 tokio = { version = "1.42.0", features = ["full"] }
-aws-config = { version = "1.5.11" } # Credential loading
+aws-config = { version = "1.5.12" } # Credential loading
 aws-credential-types = { version = "1.2.1", features = ["hardcoded-credentials"] } # Credential provider types
 aws-types = { version = "1.3.3" } # for Region
 url = { version = "2.5.4" } # URL processing for S3
