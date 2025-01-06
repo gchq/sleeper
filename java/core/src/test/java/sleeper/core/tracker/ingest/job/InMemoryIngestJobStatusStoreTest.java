@@ -28,8 +28,6 @@ import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.table.TableStatus;
-import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
@@ -639,10 +637,6 @@ public class InMemoryIngestJobStatusStoreTest {
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
         }
-    }
-
-    private TableStatus createTable(String tableName) {
-        return TableStatusTestHelper.uniqueIdAndName(IngestJobEventTestData.DEFAULT_TABLE_ID, tableName);
     }
 
     private IngestJobStatus ingestJobStatus(IngestJobEvent job, ProcessRun... runs) {
