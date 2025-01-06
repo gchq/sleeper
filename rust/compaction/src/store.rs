@@ -32,7 +32,7 @@ use std::{
 pub const MULTIPART_BUF_SIZE: usize = 20 * 1024 * 1024;
 
 /// Simple struct for storing various statistics about the operation of the store.
-#[derive(Debug, Default, Eq, PartialOrd, Ord, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialOrd, Ord, PartialEq, Clone)]
 struct LoggingData {
     /// The number of GET requests logged.
     get_count: usize,
@@ -40,6 +40,16 @@ struct LoggingData {
     get_bytes_read: usize,
     /// Multipart upload buffer capacity
     capacity: usize,
+}
+
+impl Default for LoggingData {
+    fn default() -> Self {
+        Self {
+            get_count: Default::default(),
+            get_bytes_read: Default::default(),
+            capacity: MULTIPART_BUF_SIZE,
+        }
+    }
 }
 
 /// Allow setting a size hint for multipart uploads.
@@ -121,13 +131,6 @@ impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
         );
     }
 }
-
-// impl<T: MultipartSizeHintable> Deref for T {
-//     type Target = dyn ObjectStore;
-//     fn deref(&self) -> &Self::Target {
-//         self
-//     }
-// }
 
 impl<T: ObjectStore> MultipartSizeHintable for LoggingObjectStore<T> {
     fn set_multipart_size_hint(&self, capacity: usize) {
@@ -735,10 +738,48 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn put_multipart_log() -> Result<()> {
+    async fn put_multipart_log_with_capacity_default() -> Result<()> {
         // Given
         testing_logger::setup();
         let store = make_store();
+
+        // When
+        let mut part = store.put_multipart(&"test_file".into()).await?;
+        part.put_part("foo".into()).await?;
+        part.put_part("foo1".into()).await?;
+        part.put_part("foo12".into()).await?;
+        part.complete().await?;
+
+        // Then
+        testing_logger::validate(|captured_logs| {
+            assert_eq!(captured_logs.len(), 6);
+            assert_eq!(
+                captured_logs[0].body,
+                "TEST PUT MULTIPART request to test_file"
+            );
+            assert_eq!(captured_logs[0].level, Level::Info);
+            assert_eq!(captured_logs[1].body, "TEST multipart PUT of 3 bytes");
+            assert_eq!(captured_logs[1].level, Level::Info);
+            assert_eq!(captured_logs[2].body, "TEST multipart PUT of 4 bytes");
+            assert_eq!(captured_logs[2].level, Level::Info);
+            assert_eq!(captured_logs[3].body, "TEST multipart PUT of 5 bytes");
+            assert_eq!(captured_logs[3].level, Level::Info);
+            assert_eq!(captured_logs[4].body, "multipart COMPLETE");
+            assert_eq!(captured_logs[4].level, Level::Info);
+            assert_eq!(captured_logs[5].body, "TEST Uploading 12 bytes");
+            assert_eq!(captured_logs[5].level, Level::Info);
+        });
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn put_multipart_log_with_capacity_0() -> Result<()> {
+        // Given
+        testing_logger::setup();
+        let store = make_store();
+        // Disable multipart buffering
+        <LoggingObjectStore<_> as MultipartSizeHintable>::set_multipart_size_hint(&store, 0);
 
         // When
         let mut part = store.put_multipart(&"test_file".into()).await?;
@@ -769,6 +810,45 @@ mod tests {
             assert_eq!(captured_logs[6].level, Level::Info);
             assert_eq!(captured_logs[7].body, "multipart COMPLETE");
             assert_eq!(captured_logs[7].level, Level::Info);
+        });
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn put_multipart_log_with_capacity_10() -> Result<()> {
+        // Given
+        testing_logger::setup();
+        let store = make_store();
+        <LoggingObjectStore<_> as MultipartSizeHintable>::set_multipart_size_hint(&store, 10);
+
+        // When
+        let mut part = store.put_multipart(&"test_file".into()).await?;
+        part.put_part("12345678".into()).await?;
+        part.put_part("123456789".into()).await?;
+        part.put_part("foo".into()).await?;
+        part.complete().await?;
+
+        // Then
+        testing_logger::validate(|captured_logs| {
+            assert_eq!(captured_logs.len(), 7);
+            assert_eq!(
+                captured_logs[0].body,
+                "TEST PUT MULTIPART request to test_file"
+            );
+            assert_eq!(captured_logs[0].level, Level::Info);
+            assert_eq!(captured_logs[1].body, "TEST multipart PUT of 8 bytes");
+            assert_eq!(captured_logs[1].level, Level::Info);
+            assert_eq!(captured_logs[2].body, "TEST multipart PUT of 9 bytes");
+            assert_eq!(captured_logs[2].level, Level::Info);
+            assert_eq!(captured_logs[3].body, "TEST Uploading 17 bytes");
+            assert_eq!(captured_logs[3].level, Level::Info);
+            assert_eq!(captured_logs[4].body, "TEST multipart PUT of 3 bytes");
+            assert_eq!(captured_logs[4].level, Level::Info);
+            assert_eq!(captured_logs[5].body, "multipart COMPLETE");
+            assert_eq!(captured_logs[5].level, Level::Info);
+            assert_eq!(captured_logs[6].body, "TEST Uploading 3 bytes");
+            assert_eq!(captured_logs[6].level, Level::Info);
         });
 
         Ok(())
