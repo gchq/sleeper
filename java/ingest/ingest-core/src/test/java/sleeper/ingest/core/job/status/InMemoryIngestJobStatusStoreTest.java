@@ -53,7 +53,7 @@ import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithRe
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobAcceptedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFinishedEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobRejectedEvent;
+import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobRejectedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedAfterValidationEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobValidatedEventBuilder;
@@ -68,7 +68,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFin
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestRejectedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.validatedIngestStartedStatus;
 
 public class InMemoryIngestJobStatusStoreTest {
@@ -243,7 +242,7 @@ public class InMemoryIngestJobStatusStoreTest {
         void shouldGetInvalidJobsWithOneRejectedJob() {
             // Given
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-            IngestJobValidatedEvent job = ingestJobRejectedEvent(validationTime, List.of("Test validation reason"), 2);
+            IngestJobValidatedEvent job = ingestJobRejectedEventBuilder(validationTime, List.of("Test validation reason")).jsonMessage("invalid-json").build();
 
             // When
             tracker.jobValidated(job);
@@ -251,7 +250,7 @@ public class InMemoryIngestJobStatusStoreTest {
             // Then
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus(job,
-                            validationRun(ingestRejectedStatus(validationTime, List.of("Test validation reason"), 2))));
+                            validationRun(ingestRejectedStatus(validationTime, "invalid-json", List.of("Test validation reason"), 0))));
         }
 
         @Test
@@ -259,7 +258,7 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             Instant validationTime1 = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
-            IngestJobValidatedEvent job1 = ingestJobRejectedEvent(validationTime1, List.of("Test validation reason"), 2);
+            IngestJobValidatedEvent job1 = ingestJobRejectedEventBuilder(validationTime1, List.of("Test validation reason")).jsonMessage("invalid-json").build();
             IngestJobValidatedEvent job2 = ingestJobAcceptedEventBuilder(validationTime2, 3).build();
 
             // When
@@ -269,7 +268,7 @@ public class InMemoryIngestJobStatusStoreTest {
             // Then
             assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus(job1,
-                            validationRun(ingestRejectedStatus(validationTime1, List.of("Test validation reason"), 2))));
+                            validationRun(ingestRejectedStatus(validationTime1, "invalid-json", List.of("Test validation reason"), 0))));
         }
 
         @Test
@@ -361,32 +360,32 @@ public class InMemoryIngestJobStatusStoreTest {
         @Test
         void shouldReportJobWithOneValidationFailure() {
             // Given
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
+            String jobId = "test-job-1";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            tracker.jobValidated(job.createRejectedEvent(validationTime, List.of("Test validation reason")));
+            tracker.jobValidated(ingestJobRejectedEventBuilder(validationTime, List.of("Test validation reason"))
+                    .jobId(jobId).jsonMessage("test-json").fileCount(1).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, rejectedRun(job,
-                            validationTime, "Test validation reason")));
+                    .containsExactly(ingestJobStatus(jobId, validationRun(
+                            ingestRejectedStatus(validationTime, "test-json", List.of("Test validation reason"), 1))));
         }
 
         @Test
         void shouldReportJobWithMultipleValidationFailures() {
             // Given
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
             // When
-            tracker.jobValidated(job.createRejectedEvent(validationTime,
-                    List.of("Test validation reason 1", "Test validation reason 2")));
+            tracker.jobValidated(ingestJobRejectedEventBuilder(validationTime, List.of("Test validation reason 1", "Test validation reason 2"))
+                    .jobId("test-job-1").jsonMessage("test-json").fileCount(1).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, rejectedRun(job, validationTime,
-                            List.of("Test validation reason 1", "Test validation reason 2"))));
+                    .containsExactly(ingestJobStatus("test-job-1", validationRun(
+                            ingestRejectedStatus(validationTime, "test-json", List.of("Test validation reason 1", "Test validation reason 2"), 1))));
         }
 
         @Test
@@ -410,7 +409,7 @@ public class InMemoryIngestJobStatusStoreTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, unfinishedRun(null,
+                    .containsExactly(ingestJobStatus(job, validationRun(
                             ingestAcceptedStatus(validationTime, 1))));
         }
     }

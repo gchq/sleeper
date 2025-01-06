@@ -66,15 +66,14 @@ public class IngestJobEventTestData {
     }
 
     /**
-     * Creates an ingest job rejected event.
+     * Creates a builder for an ingest job rejected event.
      *
      * @param  validationTime the validation time
      * @param  reasons        the reasons the job was rejected
-     * @param  fileCount      the number of input files for the job
-     * @return                the event
+     * @return                the builder
      */
-    public static IngestJobValidatedEvent ingestJobRejectedEvent(Instant validationTime, List<String> reasons, int fileCount) {
-        return ingestJobValidatedEventBuilder(validationTime).reasons(reasons).fileCount(fileCount).build();
+    public static IngestJobValidatedEvent.Builder ingestJobRejectedEventBuilder(Instant validationTime, List<String> reasons) {
+        return ingestJobValidatedEventBuilder(validationTime).reasons(reasons);
     }
 
     /**
