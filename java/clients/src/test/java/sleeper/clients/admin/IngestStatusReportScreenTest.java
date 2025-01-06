@@ -58,9 +58,9 @@ import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.record.process.ProcessRunTestData.startedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.rejectedRun;
 import static sleeper.task.common.InMemoryQueueMessageCounts.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {

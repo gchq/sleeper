@@ -48,16 +48,16 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRunUncommitted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAcceptedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestRejectedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatusListFrom;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.failedIngestRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.finishedIngestRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.finishedIngestRunUncommitted;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestAcceptedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestRejectedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.jobStatusListFrom;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.singleJobStatusFrom;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.startedIngestRun;
 
 public class IngestJobStatusTest {
 
@@ -448,28 +448,28 @@ public class IngestJobStatusTest {
     }
 
     private IngestJobAcceptedStatus acceptedStatusUpdate(Instant validationTime) {
-        return IngestJobStatusTestHelper.ingestAcceptedStatus(validationTime);
+        return IngestJobStatusTestData.ingestAcceptedStatus(validationTime);
     }
 
     private IngestJobStartedStatus startedStatusUpdate(Instant startTime) {
-        return IngestJobStatusTestHelper.ingestStartedStatus(startTime, defaultUpdateTime(startTime));
+        return IngestJobStatusTestData.ingestStartedStatus(startTime, defaultUpdateTime(startTime));
     }
 
     private IngestJobStartedStatus startedStatusUpdateAfterValidation(Instant startTime) {
-        return IngestJobStatusTestHelper.validatedIngestStartedStatus(startTime);
+        return IngestJobStatusTestData.validatedIngestStartedStatus(startTime);
     }
 
     private IngestJobAddedFilesStatus filesAddedStatusUpdate(Instant writtenTime, int fileCount) {
-        return IngestJobStatusTestHelper.ingestAddedFilesStatus(writtenTime, fileCount);
+        return IngestJobStatusTestData.ingestAddedFilesStatus(writtenTime, fileCount);
     }
 
     private IngestJobFinishedStatus finishedStatusUpdate(Instant startTime, Instant finishTime) {
-        return IngestJobStatusTestHelper.ingestFinishedStatus(summary(startTime, finishTime), 2);
+        return IngestJobStatusTestData.ingestFinishedStatus(summary(startTime, finishTime), 2);
     }
 
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
             Instant startTime, Instant finishTime, int numFilesAddedByJob) {
-        return IngestJobStatusTestHelper.ingestFinishedStatusUncommitted(summary(startTime, finishTime), numFilesAddedByJob);
+        return IngestJobStatusTestData.ingestFinishedStatusUncommitted(summary(startTime, finishTime), numFilesAddedByJob);
     }
 
     private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {

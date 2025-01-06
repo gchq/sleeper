@@ -42,7 +42,7 @@ import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusTestHelper;
+import sleeper.ingest.core.job.status.IngestJobStatusTestData;
 import sleeper.parquet.utils.HadoopPathUtils;
 
 import java.time.Instant;
@@ -54,7 +54,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestJobStatus;
 
 @Testcontainers
 public class BulkImportStarterLambdaIT {
@@ -277,7 +277,7 @@ public class BulkImportStarterLambdaIT {
     }
 
     private static ProcessRun rejectedRun(String jobId, String json, Instant validationTime, String... reasons) {
-        return IngestJobStatusTestHelper.rejectedRun(jobId, json, validationTime, reasons);
+        return IngestJobStatusTestData.rejectedRun(jobId, json, validationTime, reasons);
     }
 
     private static BulkImportJob jobWithFiles(String... files) {

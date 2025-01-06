@@ -45,7 +45,7 @@ import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobRunOnNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forNoRunNoTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatusListFrom;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.jobStatusListFrom;
 
 public class StandardIngestJobStatusReporterDetailedQueryTest {
     @Test

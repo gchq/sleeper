@@ -47,8 +47,8 @@ import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.inge
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.rejectedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {

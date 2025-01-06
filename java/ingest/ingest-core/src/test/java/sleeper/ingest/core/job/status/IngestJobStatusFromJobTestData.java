@@ -34,7 +34,7 @@ import static sleeper.core.record.process.ProcessRunTestData.finishedRun;
 import static sleeper.core.record.process.ProcessRunTestData.startedRun;
 import static sleeper.core.record.process.ProcessRunTestData.validationRun;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 
 /**
  * A helper for creating ingest job statuses for tests.
@@ -52,7 +52,7 @@ public class IngestJobStatusFromJobTestData {
      * @return      an {@link IngestJobStatus}
      */
     public static IngestJobStatus ingestJobStatus(IngestJob job, ProcessRun... runs) {
-        return IngestJobStatusTestHelper.ingestJobStatus(job.getId(), runs);
+        return IngestJobStatusTestData.ingestJobStatus(job.getId(), runs);
     }
 
     /**
@@ -64,7 +64,7 @@ public class IngestJobStatusFromJobTestData {
      * @return           an {@link IngestJobStatus}
      */
     public static IngestJobStatus startedIngestJob(IngestJob job, String taskId, Instant startTime) {
-        return IngestJobStatusTestHelper.ingestJobStatus(job.getId(), startedIngestRun(job, taskId, startTime));
+        return IngestJobStatusTestData.ingestJobStatus(job.getId(), startedIngestRun(job, taskId, startTime));
     }
 
     /**
@@ -378,7 +378,7 @@ public class IngestJobStatusFromJobTestData {
      * @return           an ingest job started status
      */
     public static IngestJobStartedStatus ingestStartedStatus(IngestJob job, Instant startTime) {
-        return IngestJobStatusTestHelper.ingestStartedStatus(job.getFileCount(), startTime, defaultUpdateTime(startTime));
+        return IngestJobStatusTestData.ingestStartedStatus(job.getFileCount(), startTime, defaultUpdateTime(startTime));
     }
 
     /**
@@ -389,7 +389,7 @@ public class IngestJobStatusFromJobTestData {
      * @return           an ingest job started status
      */
     public static IngestJobStartedStatus validatedIngestStartedStatus(IngestJob job, Instant startTime) {
-        return IngestJobStatusTestHelper.validatedIngestStartedStatus(job.getFileCount(), startTime);
+        return IngestJobStatusTestData.validatedIngestStartedStatus(job.getFileCount(), startTime);
     }
 
 }

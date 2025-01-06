@@ -59,13 +59,13 @@ import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobRej
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedAfterValidationEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobValidatedEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAcceptedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestRejectedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.validatedIngestStartedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestAcceptedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestRejectedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.validatedIngestStartedStatus;
 
 public class InMemoryIngestJobStatusStoreTest {
 
@@ -647,10 +647,10 @@ public class InMemoryIngestJobStatusStoreTest {
     }
 
     private IngestJobStatus ingestJobStatus(IngestJobEvent job, ProcessRun... runs) {
-        return IngestJobStatusTestHelper.ingestJobStatus(job, runs);
+        return IngestJobStatusTestData.ingestJobStatus(job, runs);
     }
 
     private IngestJobStatus ingestJobStatus(String jobId, ProcessRun... runs) {
-        return IngestJobStatusTestHelper.ingestJobStatus(jobId, runs);
+        return IngestJobStatusTestData.ingestJobStatus(jobId, runs);
     }
 }

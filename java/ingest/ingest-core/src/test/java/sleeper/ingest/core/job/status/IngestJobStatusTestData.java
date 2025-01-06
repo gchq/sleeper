@@ -43,9 +43,9 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.f
 /**
  * A helper for creating ingest job statuses for tests.
  */
-public class IngestJobStatusTestHelper {
+public class IngestJobStatusTestData {
 
-    private IngestJobStatusTestHelper() {
+    private IngestJobStatusTestData() {
     }
 
     /**

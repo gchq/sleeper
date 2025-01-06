@@ -37,8 +37,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestData.rejectedRun;
 
 public class IngestJobMessageHandlerTest {
 
