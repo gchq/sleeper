@@ -559,7 +559,7 @@ mod tests {
                 "TEST GET request on test_file byte range 1 to 5 = 4 bytes"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(captured_logs[2].body, "LoggingObjectStore \"TEST\" made 1 GET requests and requested a total of 4 ranged bytes");
+            assert_eq!(captured_logs[2].body, "LoggingObjectStore \"TEST\" made 1 GET requests and requested a total of 4 bytes (range bounded)");
             assert_eq!(captured_logs[2].level, Level::Info);
         });
 
@@ -608,7 +608,7 @@ mod tests {
             assert_eq!(captured_logs.len(), 2);
             assert_eq!(
                 captured_logs[1].body,
-                "TEST GET request test_file for byte 3 to EOF"
+                "TEST GET request on test_file for byte 3 to EOF"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
         });
@@ -635,7 +635,7 @@ mod tests {
             assert_eq!(captured_logs.len(), 2);
             assert_eq!(
                 captured_logs[1].body,
-                "TEST GET request for last 3 bytes of object"
+                "TEST GET request on test_file for last 3 bytes of object"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
         });
@@ -659,7 +659,7 @@ mod tests {
             assert_eq!(captured_logs.len(), 2);
             assert_eq!(
                 captured_logs[1].body,
-                "TEST GET request on test_file complete file range"
+                "TEST GET request on test_file for complete file range"
             );
             assert_eq!(captured_logs[1].level, Level::Info);
         });
@@ -724,7 +724,10 @@ mod tests {
         // Then
         testing_logger::validate(|captured_logs| {
             assert_eq!(captured_logs.len(), 1);
-            assert_eq!(captured_logs[0].body, "TEST PUT request 3 bytes");
+            assert_eq!(
+                captured_logs[0].body,
+                "TEST PUT request to test_file of 3 bytes"
+            );
             assert_eq!(captured_logs[0].level, Level::Info);
         });
 
@@ -746,7 +749,7 @@ mod tests {
 
         // Then
         testing_logger::validate(|captured_logs| {
-            assert_eq!(captured_logs.len(), 5);
+            assert_eq!(captured_logs.len(), 8);
             assert_eq!(
                 captured_logs[0].body,
                 "TEST PUT MULTIPART request to test_file"
@@ -754,12 +757,18 @@ mod tests {
             assert_eq!(captured_logs[0].level, Level::Info);
             assert_eq!(captured_logs[1].body, "TEST multipart PUT of 3 bytes");
             assert_eq!(captured_logs[1].level, Level::Info);
-            assert_eq!(captured_logs[2].body, "TEST multipart PUT of 4 bytes");
+            assert_eq!(captured_logs[2].body, "TEST Uploading 3 bytes");
             assert_eq!(captured_logs[2].level, Level::Info);
-            assert_eq!(captured_logs[3].body, "TEST multipart PUT of 5 bytes");
+            assert_eq!(captured_logs[3].body, "TEST multipart PUT of 4 bytes");
             assert_eq!(captured_logs[3].level, Level::Info);
-            assert_eq!(captured_logs[4].body, "TEST multipart COMPLETE");
+            assert_eq!(captured_logs[4].body, "TEST Uploading 4 bytes");
             assert_eq!(captured_logs[4].level, Level::Info);
+            assert_eq!(captured_logs[5].body, "TEST multipart PUT of 5 bytes");
+            assert_eq!(captured_logs[5].level, Level::Info);
+            assert_eq!(captured_logs[6].body, "TEST Uploading 5 bytes");
+            assert_eq!(captured_logs[6].level, Level::Info);
+            assert_eq!(captured_logs[7].body, "multipart COMPLETE");
+            assert_eq!(captured_logs[7].level, Level::Info);
         });
 
         Ok(())
