@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::aws_s3::ObjectStoreFactory;
+use crate::s3::ObjectStoreFactory;
 use arrow::array::ArrayAccessor;
 use arrow::datatypes::DataType;
 use bytes::{Buf, BufMut};

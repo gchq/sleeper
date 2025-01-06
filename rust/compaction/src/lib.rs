@@ -21,9 +21,10 @@
  * limitations under the License.
  */
 
-mod aws_s3;
 mod datafusion;
 mod details;
+mod s3;
+mod store;
 
 use chrono::Local;
 use color_eyre::eyre::eyre;
