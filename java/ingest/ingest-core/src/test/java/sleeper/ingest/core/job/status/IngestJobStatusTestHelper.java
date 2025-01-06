@@ -37,7 +37,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static sleeper.core.record.process.ProcessRunTestData.finishedRun;
+import static sleeper.core.record.process.ProcessRunTestData.startedRun;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
 
 /**
  * A helper for creating ingest job statuses for tests.
@@ -249,18 +252,6 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
-     * Creates a process run for an ingest job that started.
-     *
-     * @param  taskId    the ingest task ID
-     * @param  startTime the start time
-     * @return           a {@link ProcessRun}
-     */
-    public static ProcessRun startedIngestRun(String taskId, Instant startTime) {
-        return ProcessRun.started(taskId,
-                ingestStartedStatus(1, startTime, defaultUpdateTime(startTime)));
-    }
-
-    /**
      * Creates a process run for an ingest job that finished.
      *
      * @param  job     the ingest job
@@ -354,6 +345,74 @@ public class IngestJobStatusTestHelper {
                 .finishedStatus(ProcessFailedStatus.timeAndReasons(
                         defaultUpdateTime(failureTime), new ProcessRunTime(failureTime, Duration.ZERO), failureReasons))
                 .build();
+    }
+
+    /**
+     * Creates a process run for an ingest job that started.
+     *
+     * @param  taskId    the ingest task ID
+     * @param  startTime the start time
+     * @return           a {@link ProcessRun}
+     */
+    public static ProcessRun startedIngestRun(String taskId, Instant startTime) {
+        return startedRun(taskId,
+                ingestStartedStatus(1, startTime, defaultUpdateTime(startTime)));
+    }
+
+    /**
+     * Creates a process run for an ingest job that finished.
+     *
+     * @param  taskId  the ingest task ID
+     * @param  summary the records processed summary
+     * @return         a {@link ProcessRun}
+     */
+    public static ProcessRun finishedIngestRun(String taskId, RecordsProcessedSummary summary) {
+        return finishedRun(taskId,
+                ingestStartedStatus(summary.getStartTime()),
+                ingestFinishedStatus(summary));
+    }
+
+    /**
+     * Creates a process run for an ingest job that finished.
+     *
+     * @param  taskId  the ingest task ID
+     * @param  summary the records processed summary
+     * @return         a {@link ProcessRun}
+     */
+    public static ProcessRun finishedIngestRunUncommitted(String taskId, RecordsProcessedSummary summary) {
+        return finishedRun(taskId,
+                ingestStartedStatus(summary.getStartTime()),
+                ingestFinishedStatusUncommitted(summary));
+    }
+
+    /**
+     * Creates a process run for an ingest job that failed.
+     *
+     * @param  taskId    the ingest task ID
+     * @param  startTime the time the job started
+     * @param  failTime  the time the job failed
+     * @param  reasons   the reasons the job failed
+     * @return           a {@link ProcessRun}
+     */
+    public static ProcessRun failedIngestRun(String taskId, Instant startTime, Instant failTime, List<String> reasons) {
+        return finishedRun(taskId,
+                ingestStartedStatus(startTime),
+                failedStatus(new ProcessRunTime(startTime, failTime), reasons));
+    }
+
+    /**
+     * Creates a process run for an ingest job that failed.
+     *
+     * @param  taskId    the ingest task ID
+     * @param  startTime the time the job started
+     * @param  duration  the duration after which the job failed
+     * @param  reasons   the reasons the job failed
+     * @return           a {@link ProcessRun}
+     */
+    public static ProcessRun failedIngestRun(String taskId, Instant startTime, Duration duration, List<String> reasons) {
+        return finishedRun(taskId,
+                ingestStartedStatus(startTime),
+                failedStatus(new ProcessRunTime(startTime, duration), reasons));
     }
 
     /**
@@ -518,6 +577,16 @@ public class IngestJobStatusTestHelper {
     /**
      * Creates an ingest job finished status where files are committed.
      *
+     * @param  summary the summary
+     * @return         an ingest job started status
+     */
+    public static IngestJobFinishedStatus ingestFinishedStatus(RecordsProcessedSummary summary) {
+        return ingestFinishedStatus(summary, 1);
+    }
+
+    /**
+     * Creates an ingest job finished status where files are committed.
+     *
      * @param  summary              the summary
      * @param  numFilesWrittenByJob the number of files written by the job
      * @return                      an ingest job started status
@@ -527,6 +596,16 @@ public class IngestJobStatusTestHelper {
                 .committedBySeparateFileUpdates(false)
                 .numFilesWrittenByJob(numFilesWrittenByJob)
                 .build();
+    }
+
+    /**
+     * Creates an ingest job finished status where files are uncommitted.
+     *
+     * @param  summary the summary
+     * @return         an ingest job started status
+     */
+    public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(RecordsProcessedSummary summary) {
+        return ingestFinishedStatusUncommitted(summary, 1);
     }
 
     /**

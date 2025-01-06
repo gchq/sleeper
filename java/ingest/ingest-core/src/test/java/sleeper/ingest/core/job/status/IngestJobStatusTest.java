@@ -29,13 +29,14 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
-import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.record.process.ProcessRunTestData.startedRun;
+import static sleeper.core.record.process.ProcessRunTestData.validationRun;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
@@ -47,19 +48,18 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
-import static sleeper.ingest.core.job.IngestJobTestData.createJobInDefaultTable;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRunUncommitted;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAcceptedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestRejectedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatusListFrom;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.singleJobStatusFrom;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
 
 public class IngestJobStatusTest {
-    private final IngestJob job = createJobInDefaultTable("test-job", "test.parquet", "test2.parquet");
 
     @Nested
     @DisplayName("Report when a job is unfinished")
@@ -70,7 +70,7 @@ public class IngestJobStatusTest {
             Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
             // When
-            IngestJobStatus status = ingestJobStatus(job, startedIngestRun(job, "test-task", startTime));
+            IngestJobStatus status = ingestJobStatus("test-job", startedRun("test-task", ingestStartedStatus(startTime)));
 
             // Then
             assertThat(status)
@@ -85,8 +85,7 @@ public class IngestJobStatusTest {
             Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
 
             // When
-            IngestJobStatus status = ingestJobStatus(job,
-                    finishedIngestRun(job, "test-task", summary(startTime, finishTime)));
+            IngestJobStatus status = ingestJobStatus("test-job", finishedIngestRun("test-task", summary(startTime, finishTime)));
 
             // Then
             assertThat(status)
@@ -100,7 +99,7 @@ public class IngestJobStatusTest {
             Instant validationTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
             // When
-            IngestJobStatus status = ingestJobStatus(job, acceptedRun(job, validationTime));
+            IngestJobStatus status = ingestJobStatus("test-job", validationRun(ingestAcceptedStatus(validationTime)));
 
             // Then
             assertThat(status)
@@ -114,7 +113,8 @@ public class IngestJobStatusTest {
             Instant validationTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
             // When
-            IngestJobStatus status = ingestJobStatus(job, rejectedRun(job, validationTime));
+            IngestJobStatus status = ingestJobStatus("test-job", validationRun(
+                    ingestRejectedStatus(validationTime, List.of("Test reason"), 1)));
 
             // Then
             assertThat(status)
@@ -129,9 +129,8 @@ public class IngestJobStatusTest {
             Instant failTime = Instant.parse("2022-09-22T13:34:10.001Z");
 
             // When
-            IngestJobStatus status = ingestJobStatus(job,
-                    failedIngestRun(job, "test-task", new ProcessRunTime(startTime, failTime),
-                            List.of("Failed reading input file", "Some IO failure")));
+            IngestJobStatus status = ingestJobStatus("test-job", failedIngestRun("test-task",
+                    startTime, failTime, List.of("Failed reading input file", "Some IO failure")));
 
             // Then
             assertThat(status)
@@ -147,11 +146,10 @@ public class IngestJobStatusTest {
             RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
 
             // When
-            IngestJobStatus status = ingestJobStatus(job,
-                    finishedIngestRun(job, "test-task", new RecordsProcessedSummary(
+            IngestJobStatus status = ingestJobStatus("test-job",
+                    finishedIngestRun("test-task", new RecordsProcessedSummary(
                             recordsProcessed, new ProcessRunTime(startTime2, Duration.ofMinutes(1)))),
-                    failedIngestRun(job, "test-task",
-                            new ProcessRunTime(startTime1, Duration.ofMinutes(1)),
+                    failedIngestRun("test-task", startTime1, Duration.ofMinutes(1),
                             List.of("Failed reading input file", "Some IO failure")));
 
             // Then
@@ -168,9 +166,9 @@ public class IngestJobStatusTest {
             RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
 
             // When
-            IngestJobStatus status = ingestJobStatus(job,
-                    startedIngestRun(job, "task-2", startTime2),
-                    finishedIngestRun(job, "task-1", new RecordsProcessedSummary(
+            IngestJobStatus status = ingestJobStatus("test-job",
+                    startedIngestRun("task-2", startTime2),
+                    finishedIngestRun("task-1", new RecordsProcessedSummary(
                             recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
@@ -187,10 +185,10 @@ public class IngestJobStatusTest {
             RecordsProcessed recordsProcessed = new RecordsProcessed(123L, 100L);
 
             // When
-            IngestJobStatus status = ingestJobStatus(job,
-                    startedIngestRun(job, "task-2", startTime2),
-                    finishedIngestRunUncommitted(job, "task-1", new RecordsProcessedSummary(
-                            recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1))), 1));
+            IngestJobStatus status = ingestJobStatus("test-job",
+                    startedIngestRun("task-2", startTime2),
+                    finishedIngestRunUncommitted("task-1", new RecordsProcessedSummary(
+                            recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
             assertThat(status)
@@ -429,9 +427,9 @@ public class IngestJobStatusTest {
             Instant finishExpiryTime = Instant.parse("2022-12-21T15:29:42.001Z");
 
             IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
-                    forJob(job.getId(), withExpiry(startExpiryTime,
+                    forJob("test-job", withExpiry(startExpiryTime,
                             startedStatusUpdate(startTime))),
-                    forJob(job.getId(), withExpiry(finishExpiryTime,
+                    forJob("test-job", withExpiry(finishExpiryTime,
                             finishedStatusUpdate(startTime, finishTime)))));
 
             assertThat(status.getExpiryDate()).isEqualTo(startExpiryTime);
@@ -443,7 +441,7 @@ public class IngestJobStatusTest {
             Instant finishTime = Instant.parse("2022-12-14T15:29:42.001Z");
 
             List<IngestJobStatus> statuses = jobStatusListFrom(records().fromUpdates(
-                    forJob(job.getId(), finishedStatusUpdate(startTime, finishTime))));
+                    forJob("test-job", finishedStatusUpdate(startTime, finishTime))));
 
             assertThat(statuses).isEmpty();
         }
