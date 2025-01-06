@@ -26,7 +26,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -44,7 +44,7 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
 
-public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class StoreIngestJobRunIdIT extends DynamoDBIngestJobTrackerTestBase {
     @Test
     void shouldReportAcceptedJob() {
         // Given

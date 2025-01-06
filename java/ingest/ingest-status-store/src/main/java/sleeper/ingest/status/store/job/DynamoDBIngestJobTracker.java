@@ -38,7 +38,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.util.LoggedDuration;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.status.store.IngestStatusStoreException;
+import sleeper.ingest.status.store.IngestTrackerException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -105,7 +105,7 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
         try {
             save(createJobValidatedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed saving validated event for job " + event.getJobId(), e);
+            throw new IngestTrackerException("Failed saving validated event for job " + event.getJobId(), e);
         }
     }
 
@@ -114,7 +114,7 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
         try {
             save(createJobStartedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed saving started event for job " + event.getJobId(), e);
+            throw new IngestTrackerException("Failed saving started event for job " + event.getJobId(), e);
         }
     }
 
@@ -123,7 +123,7 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
         try {
             save(createJobAddedFilesUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed saving added files event for job " + event.getJobId(), e);
+            throw new IngestTrackerException("Failed saving added files event for job " + event.getJobId(), e);
         }
     }
 
@@ -132,7 +132,7 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
         try {
             save(createJobFinishedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed saving finished event for job " + event.getJobId(), e);
+            throw new IngestTrackerException("Failed saving finished event for job " + event.getJobId(), e);
         }
     }
 
@@ -141,7 +141,7 @@ public class DynamoDBIngestJobTracker implements IngestJobTracker {
         try {
             save(createJobFailedUpdate(event, jobUpdateBuilder(event.getTableId(), event.getJobId())));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed saving failed event for job " + event.getJobId(), e);
+            throw new IngestTrackerException("Failed saving failed event for job " + event.getJobId(), e);
         }
     }
 

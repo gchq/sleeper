@@ -38,12 +38,12 @@ import java.util.List;
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-public class IngestStatusStoreStack extends NestedStack implements IngestStatusStoreResources {
+public class IngestTrackerStack extends NestedStack implements IngestTrackerResources {
     private final Table updatesTable;
     private final Table jobsTable;
     private final Table tasksTable;
 
-    public IngestStatusStoreStack(
+    public IngestTrackerStack(
             Construct scope, String id, InstanceProperties instanceProperties, ManagedPoliciesStack policiesStack) {
         super(scope, id);
         String instanceId = instanceProperties.get(ID);

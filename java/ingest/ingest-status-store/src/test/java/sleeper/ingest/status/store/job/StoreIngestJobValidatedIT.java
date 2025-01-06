@@ -19,7 +19,7 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,7 +31,7 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobSt
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
 
-public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class StoreIngestJobValidatedIT extends DynamoDBIngestJobTrackerTestBase {
     @Test
     void shouldReportUnstartedJobWithNoValidationFailures() {
         // Given

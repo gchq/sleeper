@@ -64,7 +64,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestReje
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedIngestStartedStatus;
 
-public class InMemoryIngestJobStatusStoreTest {
+public class InMemoryIngestJobTrackerTest {
 
     private final InMemoryIngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final String tableId = IngestJobEventTestData.DEFAULT_TABLE_ID;

@@ -18,7 +18,7 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Instant;
 
@@ -27,7 +27,7 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobSt
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestRun;
 
-public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobTrackerTestBase {
 
     @Test
     public void shouldReturnIngestJobsByTaskId() {

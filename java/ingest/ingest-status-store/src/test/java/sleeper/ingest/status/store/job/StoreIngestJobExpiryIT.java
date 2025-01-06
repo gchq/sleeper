@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -29,7 +29,7 @@ import java.time.temporal.ChronoField;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
-public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class StoreIngestJobExpiryIT extends DynamoDBIngestJobTrackerTestBase {
 
     @Test
     public void shouldSetExpiryDateForStartedJob() {

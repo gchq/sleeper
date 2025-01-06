@@ -133,8 +133,8 @@ public class IngestTaskTest {
     }
 
     @Nested
-    @DisplayName("Update status stores")
-    class UpdateStatusStores {
+    @DisplayName("Update trackers")
+    class UpdateTrackers {
         @Test
         void shouldSaveTaskAndJobWhenOneJobSucceeds() throws Exception {
             // Given
@@ -338,7 +338,7 @@ public class IngestTaskTest {
         }
 
         @Test
-        void shouldSetJobRunIdOnStatusStoreRecordsWhenFinished() throws Exception {
+        void shouldSetJobRunIdOnTrackerRecordsWhenFinished() throws Exception {
             // Given
             fixTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start
@@ -363,7 +363,7 @@ public class IngestTaskTest {
         }
 
         @Test
-        void shouldSetJobRunIdOnStatusStoreRecordsWhenFailed() throws Exception {
+        void shouldSetJobRunIdOnTrackerRecordsWhenFailed() throws Exception {
             // Given
             fixTimes(
                     Instant.parse("2024-02-22T13:50:00Z"), // Start

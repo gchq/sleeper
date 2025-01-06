@@ -64,11 +64,11 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobSt
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestRun;
-import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
-import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createSchema;
-import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createTableProperties;
+import static sleeper.ingest.status.store.testutils.IngestTrackerTestUtils.createInstanceProperties;
+import static sleeper.ingest.status.store.testutils.IngestTrackerTestUtils.createSchema;
+import static sleeper.ingest.status.store.testutils.IngestTrackerTestUtils.createTableProperties;
 
-public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
+public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate")

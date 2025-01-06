@@ -18,13 +18,13 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class StoreIngestJobStartedIT extends DynamoDBIngestJobTrackerTestBase {
 
     @Test
     public void shouldReportIngestJobStarted() {

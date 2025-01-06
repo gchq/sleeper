@@ -16,9 +16,9 @@
 
 package sleeper.ingest.status.store;
 
-public class IngestStatusStoreException extends RuntimeException {
+public class IngestTrackerException extends RuntimeException {
 
-    public IngestStatusStoreException(String message, Throwable cause) {
+    public IngestTrackerException(String message, Throwable cause) {
         super(message, cause);
     }
 }

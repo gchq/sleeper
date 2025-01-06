@@ -30,8 +30,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
-public class IngestStatusStoreTestUtils {
-    private IngestStatusStoreTestUtils() {
+public class IngestTrackerTestUtils {
+    private IngestTrackerTestUtils() {
     }
 
     public static Schema createSchema() {

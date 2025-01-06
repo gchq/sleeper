@@ -432,7 +432,7 @@ class EmrPlatformExecutorTest {
     }
 
     @Test
-    void shouldReportJobRunIdToStatusStore() {
+    void shouldReportJobRunIdToTracker() {
         // Given
         BulkImportJob myJob = singleFileJob();
         BulkImportExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));

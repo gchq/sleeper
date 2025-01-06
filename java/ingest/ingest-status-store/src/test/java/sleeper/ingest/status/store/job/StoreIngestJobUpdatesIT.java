@@ -24,7 +24,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -35,7 +35,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 
-public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobTrackerTestBase {
 
     @Test
     public void shouldReportIngestJobFinishedSeparatelyFromStarted() {

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Instant;
 import java.util.List;
@@ -31,7 +31,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRu
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 
-public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobTrackerTestBase {
     @Test
     public void shouldReturnInvalidIngestJobs() {
         // Given

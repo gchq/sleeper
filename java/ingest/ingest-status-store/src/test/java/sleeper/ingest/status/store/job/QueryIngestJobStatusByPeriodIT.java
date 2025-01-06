@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Instant;
 import java.time.Period;
@@ -27,7 +27,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class QueryIngestJobStatusByPeriodIT extends DynamoDBIngestJobTrackerTestBase {
 
     @Test
     public void shouldReturnIngestJobsInPeriod() {

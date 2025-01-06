@@ -1094,7 +1094,7 @@ sleeper.compaction.ec2.pool.maximum=75
 sleeper.compaction.ec2.root.size=50
 
 # Flag to enable/disable storage of tracking information for compaction jobs and tasks.
-sleeper.compaction.status.store.enabled=true
+sleeper.compaction.tracker.enabled=true
 
 # The time to live in seconds for compaction job updates in the status store. Default is 1 week.
 # The expiry time is fixed when an update is saved to the store, so changing this will only affect new
