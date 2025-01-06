@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.core.testutils;
-
-import sleeper.compaction.core.task.CompactionTaskStatus;
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
+package sleeper.core.tracker.compaction.task;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -26,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public class InMemoryCompactionTaskStatusStore implements CompactionTaskStatusStore {
+public class InMemoryCompactionTaskTracker implements CompactionTaskTracker {
     private final Map<String, CompactionTaskStatus> statusByTaskId = new LinkedHashMap<>();
 
     @Override

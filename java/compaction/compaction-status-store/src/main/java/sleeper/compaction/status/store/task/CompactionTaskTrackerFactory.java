@@ -18,21 +18,21 @@ package sleeper.compaction.status.store.task;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
 
-public class CompactionTaskStatusStoreFactory {
+public class CompactionTaskTrackerFactory {
 
-    private CompactionTaskStatusStoreFactory() {
+    private CompactionTaskTrackerFactory() {
     }
 
-    public static CompactionTaskStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public static CompactionTaskTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
-            return new DynamoDBCompactionTaskStatusStore(dynamoDB, properties);
+            return new DynamoDBCompactionTaskTracker(dynamoDB, properties);
         } else {
-            return CompactionTaskStatusStore.NONE;
+            return CompactionTaskTracker.NONE;
         }
     }
 }

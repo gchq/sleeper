@@ -17,12 +17,12 @@ package sleeper.clients.admin;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
+import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.IngestBatcherStoreFactory;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
@@ -36,13 +36,13 @@ public interface AdminClientTrackerFactory {
 
     CompactionJobTracker loadCompactionJobTracker(InstanceProperties instanceProperties);
 
-    CompactionTaskStatusStore loadCompactionTaskStatusStore(InstanceProperties instanceProperties);
+    CompactionTaskTracker loadCompactionTaskTracker(InstanceProperties instanceProperties);
 
     IngestJobStatusStore loadIngestJobStatusStore(InstanceProperties instanceProperties);
 
     IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties);
 
-    Optional<IngestBatcherStore> loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider);
+    Optional<IngestBatcherStore> loadIngestBatcherStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider);
 
     static AdminClientTrackerFactory from(AmazonDynamoDB dynamoDB) {
         return new AdminClientTrackerFactory() {
@@ -52,8 +52,8 @@ public interface AdminClientTrackerFactory {
             }
 
             @Override
-            public CompactionTaskStatusStore loadCompactionTaskStatusStore(InstanceProperties instanceProperties) {
-                return CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+            public CompactionTaskTracker loadCompactionTaskTracker(InstanceProperties instanceProperties) {
+                return CompactionTaskTrackerFactory.getTracker(dynamoDB, instanceProperties);
             }
 
             @Override
@@ -67,7 +67,7 @@ public interface AdminClientTrackerFactory {
             }
 
             @Override
-            public Optional<IngestBatcherStore> loadIngestBatcherStatusStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
+            public Optional<IngestBatcherStore> loadIngestBatcherStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider) {
                 return IngestBatcherStoreFactory.getStore(dynamoDB, properties, tablePropertiesProvider);
             }
         };

@@ -104,7 +104,7 @@ public class CompactionStatusReportScreen {
     }
 
     private void runCompactionTaskStatusReport(InstanceProperties properties, CompactionTaskQuery queryType) {
-        new CompactionTaskStatusReport(trackers.loadCompactionTaskStatusStore(properties),
+        new CompactionTaskStatusReport(trackers.loadCompactionTaskTracker(properties),
                 new StandardCompactionTaskStatusReporter(out.printStream()), queryType).run();
         confirmReturnToMainScreen(out, in);
     }

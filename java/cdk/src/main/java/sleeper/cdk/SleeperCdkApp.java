@@ -45,7 +45,6 @@ import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.DynamoDBStateStoreStack;
-import sleeper.cdk.stack.core.InstanceRolesStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
@@ -317,8 +316,8 @@ public class SleeperCdkApp extends Stack {
                     queryQueueStack);
         }
 
-        // Only create instance admin role after we know which policies are deployed in the instance
-        new InstanceRolesStack(this, "InstanceRoles", instanceProperties, policiesStack);
+        // Only create roles after we know which policies are deployed in the instance
+        policiesStack.createRoles();
 
         this.generateProperties();
         addTags(app);

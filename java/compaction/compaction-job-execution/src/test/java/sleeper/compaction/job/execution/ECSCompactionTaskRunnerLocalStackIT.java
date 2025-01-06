@@ -47,12 +47,11 @@ import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.task.CompactionTask;
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
+import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -77,6 +76,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -146,7 +146,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private final TableProperties tableProperties = createTable();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
-    private final CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+    private final CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoDB, instanceProperties);
 
     @AfterEach
     void tearDown() {
@@ -158,7 +158,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     @BeforeEach
     void setUp() {
         DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDB);
-        DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDB);
     }
 
     @TempDir
@@ -457,7 +457,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobTracker);
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
                 PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqs, instanceProperties),
-                waitForFiles, committer, jobTracker, taskStatusStore, selector, taskId,
+                waitForFiles, committer, jobTracker, taskTracker, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {
                 });
         return task;

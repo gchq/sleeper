@@ -25,11 +25,11 @@ import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
-import sleeper.compaction.core.task.CompactionTaskStatus;
-import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 
 import java.time.Instant;
 import java.util.List;
@@ -158,7 +158,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction task status report")
     class CompactionTaskStatusReport {
-        private final InMemoryCompactionTaskStatusStore compactionTaskStatusStore = new InMemoryCompactionTaskStatusStore();
+        private final InMemoryCompactionTaskTracker compactionTaskTracker = new InMemoryCompactionTaskTracker();
 
         private List<CompactionTaskStatus> exampleTaskStartedStatuses() {
             return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));
@@ -167,7 +167,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            exampleTaskStartedStatuses().forEach(compactionTaskStatusStore::taskStarted);
+            exampleTaskStartedStatuses().forEach(compactionTaskTracker::taskStarted);
 
             // When/Then
             String output = runCompactionTaskStatusReport()
@@ -189,7 +189,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            exampleTaskStartedStatuses().forEach(compactionTaskStatusStore::taskStarted);
+            exampleTaskStartedStatuses().forEach(compactionTaskTracker::taskStarted);
 
             // When/Then
             String output = runCompactionTaskStatusReport()
@@ -210,7 +210,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties);
             return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION, COMPACTION_TASK_STATUS_REPORT_OPTION)
-                    .tracker(compactionTaskStatusStore);
+                    .tracker(compactionTaskTracker);
         }
     }
 

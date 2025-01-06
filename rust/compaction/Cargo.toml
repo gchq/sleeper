@@ -32,18 +32,18 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cxx = { version = "1.0.135" } # Exception handling for Rust
-libc = { version = "0.2.168" } # FFI type support
+cxx = { version = "1.0.136" } # Exception handling for Rust
+libc = { version = "0.2.169" } # FFI type support
 log = { version = "0.4.22" } # Logging support
 arrow = { version = "53.3.0" } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
-datafusion = { version = "43.0.0", features = ["backtrace"] }
-object_store = { version = "0.11.1", features = [
+datafusion = { version = "44.0.0", features = ["backtrace"] }
+object_store = { version = "0.11.0", features = [
     "aws",
 ] } # Remote cloud storage access
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
 tokio = { version = "1.42.0", features = ["full"] }
-aws-config = { version = "1.5.10" } # Credential loading
+aws-config = { version = "1.5.13" } # Credential loading
 aws-credential-types = { version = "1.2.1", features = [
     "hardcoded-credentials",
 ] } # Credential provider types
@@ -52,11 +52,11 @@ url = { version = "2.5.4" } # URL processing for S3
 bytes = { version = "1.9.0" } # Byte buffer for S3 uploading
 num-format = { version = "0.4.4" } # Nicely formatted numbers
 tokio-test = { version = "0.4.2" } # Doc tests
-env_logger = { version = "0.11.5" }
+env_logger = { version = "0.11.6" }
 chrono = { version = "0.4.39" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
 
 [dev-dependencies]
-tempfile = { version = "3.14.0" }
+tempfile = { version = "3.15.0" }
 object_store = { version = "0.11.1", features = ["integration"] }
 testing_logger = { version = "0.1.1" }

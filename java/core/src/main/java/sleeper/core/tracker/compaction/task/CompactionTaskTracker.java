@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package sleeper.compaction.core.task;
+package sleeper.core.tracker.compaction.task;
 
 import java.time.Instant;
 import java.util.List;
 
-public interface CompactionTaskStatusStore {
+public interface CompactionTaskTracker {
 
-    CompactionTaskStatusStore NONE = new CompactionTaskStatusStore() {
+    CompactionTaskTracker NONE = new CompactionTaskTracker() {
     };
 
     default void taskStarted(CompactionTaskStatus taskStatus) {

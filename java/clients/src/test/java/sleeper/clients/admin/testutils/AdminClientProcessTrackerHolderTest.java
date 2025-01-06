@@ -17,11 +17,11 @@ package sleeper.clients.admin.testutils;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
-import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 
@@ -46,18 +46,18 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldSetCompactionTaskStatusStore() {
+    void shouldSetCompactionTaskTracker() {
         // Given
-        InMemoryCompactionTaskStatusStore store = new InMemoryCompactionTaskStatusStore();
+        InMemoryCompactionTaskTracker tracker = new InMemoryCompactionTaskTracker();
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().tracker(store);
+        RunAdminClient runner = runClient().tracker(tracker);
 
         // Then
-        assertThat(runner.trackers().loadCompactionTaskStatusStore(properties))
-                .isSameAs(store);
+        assertThat(runner.trackers().loadCompactionTaskTracker(properties))
+                .isSameAs(tracker);
     }
 
     @Test
@@ -102,14 +102,14 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnNoCompactionTaskStatusStore() {
+    void shouldReturnNoCompactionTaskTracker() {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().trackers().loadCompactionTaskStatusStore(properties))
-                .isSameAs(CompactionTaskStatusStore.NONE);
+        assertThat(runClient().trackers().loadCompactionTaskTracker(properties))
+                .isSameAs(CompactionTaskTracker.NONE);
     }
 
     @Test

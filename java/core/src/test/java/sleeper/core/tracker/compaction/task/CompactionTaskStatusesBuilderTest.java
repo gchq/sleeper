@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.task;
+package sleeper.core.tracker.compaction.task;
 
 import org.junit.jupiter.api.Test;
 
