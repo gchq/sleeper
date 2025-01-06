@@ -195,19 +195,6 @@ public class IngestJobStatusTestHelper {
     /**
      * Creates a process run for an ingest job that failed to validate.
      *
-     * @param  jobId          the ingest job ID
-     * @param  jsonMessage    the JSON string used in ingest job deserialisation
-     * @param  validationTime the validation time
-     * @param  reasons        the reasons
-     * @return                a {@link ProcessRun}
-     */
-    public static ProcessRun rejectedRun(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
-        return rejectedRun(IngestJob.builder().id(jobId).build(), jsonMessage, validationTime, List.of(reasons));
-    }
-
-    /**
-     * Creates a process run for an ingest job that failed to validate.
-     *
      * @param  job            the ingest job
      * @param  validationTime the validation time
      * @param  reasons        the list of reasons
@@ -282,21 +269,6 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
-     * Creates a process run for an ingest job that finished.
-     *
-     * @param  taskId               the ingest task ID
-     * @param  summary              the records processed summary
-     * @param  numFilesWrittenByJob the number of files written by the job
-     * @return                      a {@link ProcessRun}
-     */
-    public static ProcessRun finishedIngestRun(String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
-        return ProcessRun.finished(taskId,
-                ingestStartedStatus(1, summary.getStartTime(), defaultUpdateTime(summary.getStartTime())),
-                IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                        .numFilesWrittenByJob(numFilesWrittenByJob).build());
-    }
-
-    /**
      * Creates a process run for an ingest job that finished, but has not yet been committed to the state store.
      *
      * @param  job                  the ingest job
@@ -348,6 +320,26 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
+     * Creates a process run for an ingest job that failed to validate.
+     *
+     * @param  jobId          the ingest job ID
+     * @param  jsonMessage    the JSON string used in ingest job deserialisation
+     * @param  validationTime the validation time
+     * @param  reasons        the reasons
+     * @return                a {@link ProcessRun}
+     */
+    public static ProcessRun rejectedRun(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
+        return ProcessRun.builder()
+                .startedStatus(IngestJobRejectedStatus.builder()
+                        .validationTime(validationTime)
+                        .updateTime(defaultUpdateTime(validationTime))
+                        .reasons(List.of(reasons))
+                        .jsonMessage(jsonMessage)
+                        .build())
+                .build();
+    }
+
+    /**
      * Creates a process run for an ingest job that started.
      *
      * @param  taskId    the ingest task ID
@@ -370,6 +362,20 @@ public class IngestJobStatusTestHelper {
         return finishedRun(taskId,
                 ingestStartedStatus(summary.getStartTime()),
                 ingestFinishedStatus(summary));
+    }
+
+    /**
+     * Creates a process run for an ingest job that finished.
+     *
+     * @param  taskId               the ingest task ID
+     * @param  summary              the records processed summary
+     * @param  numFilesWrittenByJob the number of files written by the job
+     * @return                      a {@link ProcessRun}
+     */
+    public static ProcessRun finishedIngestRun(String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+        return finishedRun(taskId,
+                ingestStartedStatus(summary.getStartTime()),
+                ingestFinishedStatus(summary, numFilesWrittenByJob));
     }
 
     /**
