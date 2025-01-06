@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.core.job.status;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -52,7 +51,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobAcceptedEvent;
+import static sleeper.ingest.core.job.status.IngestJobEventTestData.bulkImportJobAcceptedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFinishedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobRejectedEvent;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedAfterValidationEventBuilder;
@@ -261,7 +260,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime1 = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
             IngestJobValidatedEvent job1 = ingestJobRejectedEvent(validationTime1, List.of("Test validation reason"), 2);
-            IngestJobValidatedEvent job2 = ingestJobAcceptedEvent(validationTime2, 3);
+            IngestJobValidatedEvent job2 = bulkImportJobAcceptedEventBuilder(validationTime2, 3).build();
 
             // When
             tracker.jobValidated(job1);
@@ -329,7 +328,7 @@ public class InMemoryIngestJobStatusStoreTest {
         void shouldReportUnstartedJobWithNoValidationFailures() {
             // Given
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-            IngestJobValidatedEvent job = ingestJobAcceptedEvent(validationTime, 1);
+            IngestJobValidatedEvent job = bulkImportJobAcceptedEventBuilder(validationTime, 1).jobRunId("test-run").build();
 
             // When
             tracker.jobValidated(job);
@@ -339,20 +338,18 @@ public class InMemoryIngestJobStatusStoreTest {
                     .containsExactly(ingestJobStatus(job, validationRun(ingestAcceptedStatus(validationTime, 1))));
         }
 
-        // TODO looks like a bug here
-        // Validation events are reported with no task ID, but had a task ID set in tests previously
         @Test
-        @Disabled("TODO")
         void shouldReportStartedJobWithNoValidationFailures() {
             // Given
             String taskId = "test-task";
+            String jobRunId = "test-run";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            IngestJobValidatedEvent job = ingestJobAcceptedEvent(validationTime, 1);
+            IngestJobValidatedEvent job = bulkImportJobAcceptedEventBuilder(validationTime, 1).jobRunId(jobRunId).build();
 
             // When
             tracker.jobValidated(job);
-            tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).taskId(taskId).build());
+            tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).taskId(taskId).jobRunId(jobRunId).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
@@ -390,6 +387,31 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, rejectedRun(job, validationTime,
                             List.of("Test validation reason 1", "Test validation reason 2"))));
+        }
+
+        @Test
+        void shouldFailToReportOnRunWhenJobRunIdIsNotSetAtValidationAndTaskIdIsOnlySetWhenStarted() {
+            // A bulk import job is validated in the bulk import job starter lambda. That lambda doesn't have a task ID,
+            // and you can imagine if it did it would be different to any task ID in the Spark cluster.
+            // For standard ingest, the task ID is used to correlate events on the same run of a job. For bulk import,
+            // we create a job run ID instead.
+            // Validation events are currently always associated with a specific run of the job. If a job is retried it
+            // will be revalidated.
+
+            // Given
+            String taskId = "test-task";
+            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+            Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
+            IngestJobValidatedEvent job = bulkImportJobAcceptedEventBuilder(validationTime, 1).build();
+
+            // When
+            tracker.jobValidated(job);
+            tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).taskId(taskId).build());
+
+            // Then
+            assertThat(tracker.getAllJobs(tableId))
+                    .containsExactly(ingestJobStatus(job, unfinishedRun(null,
+                            ingestAcceptedStatus(validationTime, 1))));
         }
     }
 

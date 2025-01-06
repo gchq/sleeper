@@ -78,14 +78,14 @@ public class IngestJobEventTestData {
     }
 
     /**
-     * Creates an ingest job accepted event.
+     * Creates a builder for an ingest job accepted event.
      *
      * @param  validationTime the validation time
      * @param  fileCount      the number of input files for the job
-     * @return                the event
+     * @return                the builder
      */
-    public static IngestJobValidatedEvent ingestJobAcceptedEvent(Instant validationTime, int fileCount) {
-        return ingestJobValidatedEventBuilder(validationTime).reasons(List.of()).fileCount(fileCount).build();
+    public static IngestJobValidatedEvent.Builder bulkImportJobAcceptedEventBuilder(Instant validationTime, int fileCount) {
+        return ingestJobValidatedEventBuilder(validationTime).reasons(List.of()).fileCount(fileCount);
     }
 
     /**
