@@ -73,18 +73,6 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
-     * Creates an ingest job status for a job that has started.
-     *
-     * @param  job       the ingest job
-     * @param  taskId    the ingest task ID
-     * @param  startTime the start time
-     * @return           an {@link IngestJobStatus}
-     */
-    public static IngestJobStatus startedIngestJob(IngestJob job, String taskId, Instant startTime) {
-        return ingestJobStatus(job.getId(), startedIngestRun(job, taskId, startTime));
-    }
-
-    /**
      * Creates an ingest job status for a job that has finished.
      *
      * @param  job                  the ingest job

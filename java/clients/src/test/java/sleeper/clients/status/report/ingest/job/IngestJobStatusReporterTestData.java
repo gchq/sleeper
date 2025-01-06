@@ -22,6 +22,7 @@ import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.ingest.core.job.IngestJob;
+import sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -47,7 +48,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedI
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
 
 public class IngestJobStatusReporterTestData {
@@ -128,7 +128,7 @@ public class IngestJobStatusReporterTestData {
                         .build()),
                 finishedIngestJobUncommitted(job5, task(3), summary(startTime5, Duration.ofMinutes(1), 600, 300), 3),
                 finishedIngestJob(job4, task(2), summary(startTime4, Duration.ofMinutes(1), 600, 300), 2),
-                startedIngestJob(job3, task(2), startTime3),
+                IngestJobStatusFromJobTestData.startedIngestJob(job3, task(2), startTime3),
                 finishedIngestJob(job2, task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300), 1),
                 failedIngestJob(job1, task(1),
                         new ProcessRunTime(startTime1, Duration.ofMinutes(1)),

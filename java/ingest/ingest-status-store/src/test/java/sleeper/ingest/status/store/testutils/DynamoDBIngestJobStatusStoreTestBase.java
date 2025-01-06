@@ -41,6 +41,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
+import sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -62,7 +63,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.inge
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createSchema;
@@ -153,7 +153,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobStartedStatus(IngestJob job, Instant startedTime) {
-        return startedIngestJob(job, DEFAULT_TASK_ID, startedTime);
+        return IngestJobStatusFromJobTestData.startedIngestJob(job, DEFAULT_TASK_ID, startedTime);
     }
 
     protected static IngestJobStatus defaultJobAddedFilesStatus(IngestJob job, Instant startedTime, Instant writtenTime, int fileCount) {

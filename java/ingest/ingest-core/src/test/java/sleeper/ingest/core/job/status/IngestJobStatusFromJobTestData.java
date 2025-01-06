@@ -45,7 +45,19 @@ public class IngestJobStatusFromJobTestData {
     }
 
     /**
-     * Creates an ingest job accepted status.
+     * Creates an ingest job status for a job that has started.
+     *
+     * @param  job       the ingest job
+     * @param  taskId    the ingest task ID
+     * @param  startTime the start time
+     * @return           an {@link IngestJobStatus}
+     */
+    public static IngestJobStatus startedIngestJob(IngestJob job, String taskId, Instant startTime) {
+        return IngestJobStatusTestHelper.ingestJobStatus(job.getId(), IngestJobStatusTestHelper.startedIngestRun(job, taskId, startTime));
+    }
+
+    /**
+     * Creates an ingest job accepted status update.
      *
      * @param  job            the ingest job
      * @param  validationTime the validation time
@@ -56,7 +68,7 @@ public class IngestJobStatusFromJobTestData {
     }
 
     /**
-     * Creates an ingest job started status.
+     * Creates an ingest job started status update.
      *
      * @param  job       the ingest job
      * @param  startTime the start time
@@ -67,7 +79,7 @@ public class IngestJobStatusFromJobTestData {
     }
 
     /**
-     * Creates an ingest job started status.
+     * Creates an ingest job started status update.
      *
      * @param  job       the ingest job
      * @param  startTime the start time
