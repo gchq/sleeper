@@ -84,7 +84,7 @@ public class IngestJobEventTestData {
      * @param  fileCount      the number of input files for the job
      * @return                the builder
      */
-    public static IngestJobValidatedEvent.Builder bulkImportJobAcceptedEventBuilder(Instant validationTime, int fileCount) {
+    public static IngestJobValidatedEvent.Builder ingestJobAcceptedEventBuilder(Instant validationTime, int fileCount) {
         return ingestJobValidatedEventBuilder(validationTime).reasons(List.of()).fileCount(fileCount);
     }
 

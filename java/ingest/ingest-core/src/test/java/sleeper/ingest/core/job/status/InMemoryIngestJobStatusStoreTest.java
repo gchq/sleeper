@@ -51,7 +51,7 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.bulkImportJobAcceptedEventBuilder;
+import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobAcceptedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFinishedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobRejectedEvent;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedAfterValidationEventBuilder;
@@ -260,7 +260,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime1 = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
             IngestJobValidatedEvent job1 = ingestJobRejectedEvent(validationTime1, List.of("Test validation reason"), 2);
-            IngestJobValidatedEvent job2 = bulkImportJobAcceptedEventBuilder(validationTime2, 3).build();
+            IngestJobValidatedEvent job2 = ingestJobAcceptedEventBuilder(validationTime2, 3).build();
 
             // When
             tracker.jobValidated(job1);
@@ -328,7 +328,7 @@ public class InMemoryIngestJobStatusStoreTest {
         void shouldReportUnstartedJobWithNoValidationFailures() {
             // Given
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-            IngestJobValidatedEvent job = bulkImportJobAcceptedEventBuilder(validationTime, 1).jobRunId("test-run").build();
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime, 1).jobRunId("test-run").build();
 
             // When
             tracker.jobValidated(job);
@@ -345,7 +345,7 @@ public class InMemoryIngestJobStatusStoreTest {
             String jobRunId = "test-run";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            IngestJobValidatedEvent job = bulkImportJobAcceptedEventBuilder(validationTime, 1).jobRunId(jobRunId).build();
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime, 1).jobRunId(jobRunId).build();
 
             // When
             tracker.jobValidated(job);
@@ -402,7 +402,7 @@ public class InMemoryIngestJobStatusStoreTest {
             String taskId = "test-task";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            IngestJobValidatedEvent job = bulkImportJobAcceptedEventBuilder(validationTime, 1).build();
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime, 1).build();
 
             // When
             tracker.jobValidated(job);
