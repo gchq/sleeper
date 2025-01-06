@@ -41,7 +41,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
-import sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
@@ -58,10 +57,11 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestStartedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestJob;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
@@ -153,7 +153,7 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobStartedStatus(IngestJob job, Instant startedTime) {
-        return IngestJobStatusFromJobTestData.startedIngestJob(job, DEFAULT_TASK_ID, startedTime);
+        return startedIngestJob(job, DEFAULT_TASK_ID, startedTime);
     }
 
     protected static IngestJobStatus defaultJobAddedFilesStatus(IngestJob job, Instant startedTime, Instant writtenTime, int fileCount) {

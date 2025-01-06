@@ -73,44 +73,6 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
-     * Creates an ingest job status for a job that has finished.
-     *
-     * @param  job                  the ingest job
-     * @param  taskId               the ingest task ID
-     * @param  summary              the records processed summary
-     * @param  numFilesWrittenByJob the number of files written by the job
-     * @return                      an {@link IngestJobStatus}
-     */
-    public static IngestJobStatus finishedIngestJob(IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
-        return IngestJobStatusFromJobTestData.ingestJobStatus(job, finishedIngestRun(job, taskId, summary, numFilesWrittenByJob));
-    }
-
-    /**
-     * Creates an ingest job status for a job that has finished, but has not yet been committed to the state store.
-     *
-     * @param  job     the ingest job
-     * @param  taskId  the ingest task ID
-     * @param  summary the records processed summary
-     * @return         an {@link IngestJobStatus}
-     */
-    public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, RecordsProcessedSummary summary) {
-        return finishedIngestJobUncommitted(job, taskId, summary, 1);
-    }
-
-    /**
-     * Creates an ingest job status for a job that has finished, but has not yet been committed to the state store.
-     *
-     * @param  job                  the ingest job
-     * @param  taskId               the ingest task ID
-     * @param  summary              the records processed summary
-     * @param  numFilesWrittenByJob the number of files written by the job
-     * @return                      an {@link IngestJobStatus}
-     */
-    public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
-        return IngestJobStatusFromJobTestData.ingestJobStatus(job, finishedIngestRunUncommitted(job, taskId, summary, numFilesWrittenByJob));
-    }
-
-    /**
      * Creates an ingest job status for a job that has failed.
      *
      * @param  job            the ingest job
