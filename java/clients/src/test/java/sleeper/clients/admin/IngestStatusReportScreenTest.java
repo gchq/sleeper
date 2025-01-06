@@ -28,7 +28,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
-import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.task.IngestTaskStatus;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.task.common.QueueMessageCount;
@@ -58,9 +57,10 @@ import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.record.process.ProcessRunTestData.startedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestJobStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
 import static sleeper.task.common.InMemoryQueueMessageCounts.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
@@ -210,8 +210,8 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private IngestJobStatus startedJobStatus(String jobId) {
-            return startedIngestJob(IngestJob.builder().id(jobId).files(List.of("test.parquet")).build(),
-                    "test-task", Instant.parse("2023-03-15T17:52:12.001Z"));
+            return ingestJobStatus(jobId, startedRun("test-task",
+                    ingestStartedStatus(Instant.parse("2023-03-15T17:52:12.001Z"), 1)));
         }
 
         private InstanceProperties createInstancePropertiesWithJobQueueUrl() {
