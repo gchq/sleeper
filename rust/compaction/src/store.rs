@@ -770,6 +770,16 @@ mod tests {
             assert_eq!(captured_logs[5].level, Level::Info);
         });
 
+        let retrieved_data = String::from_utf8(
+            store
+                .get(&"test_file".into())
+                .await?
+                .bytes()
+                .await?
+                .to_vec(),
+        )
+        .expect("String should be valid UTF-8");
+        assert_eq!(retrieved_data, "foofoo1foo12");
         Ok(())
     }
 
@@ -811,6 +821,16 @@ mod tests {
             assert_eq!(captured_logs[7].body, "multipart COMPLETE");
             assert_eq!(captured_logs[7].level, Level::Info);
         });
+        let retrieved_data = String::from_utf8(
+            store
+                .get(&"test_file".into())
+                .await?
+                .bytes()
+                .await?
+                .to_vec(),
+        )
+        .expect("String should be valid UTF-8");
+        assert_eq!(retrieved_data, "foofoo1foo12");
 
         Ok(())
     }
@@ -850,6 +870,16 @@ mod tests {
             assert_eq!(captured_logs[6].body, "TEST Uploading 3 bytes");
             assert_eq!(captured_logs[6].level, Level::Info);
         });
+        let retrieved_data = String::from_utf8(
+            store
+                .get(&"test_file".into())
+                .await?
+                .bytes()
+                .await?
+                .to_vec(),
+        )
+        .expect("String should be valid UTF-8");
+        assert_eq!(retrieved_data, "12345678123456789foo");
 
         Ok(())
     }
