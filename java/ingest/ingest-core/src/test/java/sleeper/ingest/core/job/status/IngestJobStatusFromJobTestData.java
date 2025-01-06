@@ -17,9 +17,11 @@ package sleeper.ingest.core.job.status;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.ingest.core.job.IngestJob;
 
@@ -108,6 +110,80 @@ public class IngestJobStatusFromJobTestData {
      */
     public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
         return ingestJobStatus(job, IngestJobStatusTestHelper.failedIngestRun(job, taskId, runTime, failureReasons));
+    }
+
+    /**
+     * Creates a process run for an ingest job that was validated and started.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  validationTime the validation time
+     * @param  startTime      the start time
+     * @return                a {@link ProcessRun}
+     */
+    public static ProcessRun acceptedRunWhichStarted(
+            IngestJob job, String taskId, Instant validationTime, Instant startTime) {
+        return ProcessRun.builder()
+                .taskId(taskId)
+                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
+                        validationTime, defaultUpdateTime(validationTime)))
+                .statusUpdate(
+                        IngestJobStartedStatus.withStartOfRun(false)
+                                .inputFileCount(job.getFileCount())
+                                .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
+                .build();
+    }
+
+    /**
+     * Creates a process run for an ingest job that was validated and finished.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  validationTime the validation time
+     * @param  summary        the records processed summary
+     * @return                a {@link ProcessRun}
+     */
+    public static ProcessRun acceptedRunWhichFinished(
+            IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+        return ProcessRun.builder()
+                .taskId(taskId)
+                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
+                        validationTime, defaultUpdateTime(validationTime)))
+                .statusUpdate(
+                        IngestJobStartedStatus.withStartOfRun(false)
+                                .inputFileCount(job.getFileCount())
+                                .startTime(summary.getStartTime())
+                                .updateTime(defaultUpdateTime(summary.getStartTime())).build())
+                .finishedStatus(IngestJobFinishedStatus
+                        .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                        .numFilesWrittenByJob(numFilesWrittenByJob).build())
+                .build();
+    }
+
+    /**
+     * Creates a process run for an ingest job that was validated and failed.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  validationTime the validation time
+     * @param  runTime        the process run time
+     * @param  failureReasons a list of failure reasons
+     * @return                a {@link ProcessRun}
+     */
+    public static ProcessRun acceptedRunWhichFailed(
+            IngestJob job, String taskId, Instant validationTime, ProcessRunTime runTime, List<String> failureReasons) {
+        return ProcessRun.builder()
+                .taskId(taskId)
+                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
+                        validationTime, defaultUpdateTime(validationTime)))
+                .statusUpdate(
+                        IngestJobStartedStatus.withStartOfRun(false)
+                                .inputFileCount(job.getFileCount())
+                                .startTime(runTime.getStartTime())
+                                .updateTime(defaultUpdateTime(runTime.getStartTime())).build())
+                .finishedStatus(ProcessFailedStatus
+                        .timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons))
+                .build();
     }
 
     /**
