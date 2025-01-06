@@ -52,7 +52,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId("test-run").build());
+        tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId("test-run").build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -70,8 +70,8 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
         // When
-        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
-        store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
+        tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
+        tracker.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -94,8 +94,8 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
                 fileFactory.rootFile("file2.parquet", 456)));
 
         // When
-        store.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(outputFiles).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
+        tracker.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(outputFiles).jobRunId(jobRunId).taskId(taskId).build());
+        tracker.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -122,9 +122,9 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
 
         // When
-        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
-        store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
+        tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
+        tracker.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
+        tracker.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -145,9 +145,9 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase 
         List<String> failureReasons = List.of("Something failed");
 
         // When
-        store.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
-        store.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-        store.jobFailed(job.failedEventBuilder(runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
+        tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
+        tracker.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
+        tracker.jobFailed(job.failedEventBuilder(runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
 
         // Then
         assertThat(getAllJobStatuses())

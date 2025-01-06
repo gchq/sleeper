@@ -59,7 +59,7 @@ public class IngestJobStatus {
 
     /**
      * Creates a stream of ingest job statuses from a stream of process status update records. The records passed into
-     * this method come from the underlying {@link IngestJobStatusStore}, and this constructor collects them, building
+     * this method come from the underlying {@link IngestJobTracker}, and this constructor collects them, building
      * them into a format used for reporting.
      *
      * @param  records the stream of {@link ProcessStatusUpdateRecord}s

@@ -24,8 +24,8 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportArguments;
 import sleeper.bulkimport.starter.executor.EmrServerlessPlatformExecutor;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.ingest.DirectBulkImportDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -50,7 +50,7 @@ public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
 
     public void sendJob(BulkImportJob job) {
         String jobRunId = UUID.randomUUID().toString();
-        jobStatusStore().jobValidated(job.toIngestJob().acceptedEventBuilder(Instant.now())
+        jobTracker().jobValidated(job.toIngestJob().acceptedEventBuilder(Instant.now())
                 .jobRunId(jobRunId).build());
         s3Client.putObject(instance.getInstanceProperties().get(BULK_IMPORT_BUCKET),
                 "bulk_import/" + job.getId() + "-" + jobRunId + ".json",
@@ -62,8 +62,8 @@ public class DirectEmrServerlessDriver implements DirectBulkImportDriver {
                 .build());
     }
 
-    private IngestJobStatusStore jobStatusStore() {
-        return IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instance.getInstanceProperties());
+    private IngestJobTracker jobTracker() {
+        return IngestJobTrackerFactory.getTracker(dynamoDBClient, instance.getInstanceProperties());
     }
 
     private EmrServerlessPlatformExecutor executor() {

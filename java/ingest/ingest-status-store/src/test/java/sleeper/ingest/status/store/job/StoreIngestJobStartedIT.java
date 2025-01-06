@@ -33,7 +33,7 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -48,7 +48,7 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -65,8 +65,8 @@ public class StoreIngestJobStartedIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant startedTime2 = Instant.parse("2022-12-14T13:56:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
-        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
+        tracker.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        tracker.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
         assertThat(getAllJobStatuses())

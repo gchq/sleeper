@@ -82,7 +82,7 @@ public interface IngestProperty {
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
 
-    UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = IngestProperty.Index.propertyBuilder("sleeper.ingest.status.store.enabled")
+    UserDefinedInstanceProperty INGEST_TRACKER_ENABLED = IngestProperty.Index.propertyBuilder("sleeper.ingest.tracker.enabled")
             .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.INGEST)

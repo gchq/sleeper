@@ -26,8 +26,8 @@ import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 
 import java.time.Instant;
@@ -41,7 +41,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRu
 public class BulkImportStarterLambdaTest {
     BulkImportExecutor executor = mock(BulkImportExecutor.class);
     TableIndex tableIndex = new InMemoryTableIndex();
-    IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    IngestJobTracker tracker = new InMemoryIngestJobTracker();
 
     @BeforeEach
     void setUp() {
@@ -63,7 +63,7 @@ public class BulkImportStarterLambdaTest {
         bulkImportStarter.handleRequest(event, mock(Context.class));
 
         // Then
-        assertThat(ingestJobStatusStore.getInvalidJobs())
+        assertThat(tracker.getInvalidJobs())
                 .containsExactly(ingestJobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
                                 "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
@@ -86,7 +86,7 @@ public class BulkImportStarterLambdaTest {
         bulkImportStarter.handleRequest(event, mock(Context.class));
 
         // Then
-        assertThat(ingestJobStatusStore.getInvalidJobs())
+        assertThat(tracker.getInvalidJobs())
                 .containsExactly(ingestJobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
                                 "Table not found")));
@@ -109,7 +109,7 @@ public class BulkImportStarterLambdaTest {
         bulkImportStarter.handleRequest(event, mock(Context.class));
 
         // Then
-        assertThat(ingestJobStatusStore.getInvalidJobs())
+        assertThat(tracker.getInvalidJobs())
                 .containsExactly(ingestJobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
                                 "Missing property \"files\"")));
@@ -130,7 +130,7 @@ public class BulkImportStarterLambdaTest {
         bulkImportStarter.handleRequest(event, mock(Context.class));
 
         // Then
-        assertThat(ingestJobStatusStore.getInvalidJobs())
+        assertThat(tracker.getInvalidJobs())
                 .containsExactly(ingestJobStatus("test-job-id",
                         rejectedRun("test-job-id", json, validationTime,
                                 "Missing property \"files\"",
@@ -140,7 +140,7 @@ public class BulkImportStarterLambdaTest {
     private IngestJobMessageHandler.Builder<BulkImportJob> messageHandlerBuilder() {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
-                .ingestJobStatusStore(ingestJobStatusStore)
+                .ingestJobTracker(tracker)
                 .expandDirectories(files -> files);
     }
 }

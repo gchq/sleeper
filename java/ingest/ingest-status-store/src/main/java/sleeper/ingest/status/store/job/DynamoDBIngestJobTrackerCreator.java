@@ -30,26 +30,26 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.EXPIRY_DATE;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_ID;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_ID_AND_UPDATE;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.JOB_LAST_VALIDATION_RESULT;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.TABLE_ID;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.VALIDATION_INDEX;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.jobLookupTableName;
-import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore.jobUpdatesTableName;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobTracker.EXPIRY_DATE;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobTracker.JOB_ID;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobTracker.JOB_ID_AND_UPDATE;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobTracker.JOB_LAST_VALIDATION_RESULT;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobTracker.TABLE_ID;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobTracker.VALIDATION_INDEX;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobTracker.jobLookupTableName;
+import static sleeper.ingest.status.store.job.DynamoDBIngestJobTracker.jobUpdatesTableName;
 
-public class DynamoDBIngestJobStatusStoreCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobStatusStoreCreator.class);
+public class DynamoDBIngestJobTrackerCreator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobTrackerCreator.class);
 
-    private DynamoDBIngestJobStatusStoreCreator() {
+    private DynamoDBIngestJobTrackerCreator() {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-        if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+        if (!properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return;
         }
         String updatesTableName = jobUpdatesTableName(properties.get(ID));
@@ -79,7 +79,7 @@ public class DynamoDBIngestJobStatusStoreCreator {
     }
 
     public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
-        if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+        if (!properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return;
         }
         String jobsTableName = jobLookupTableName(properties.get(ID));

@@ -26,8 +26,8 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.core.tracker.ingest.job.IngestJobStatusType;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.GsonConfig;
 
 import java.time.Duration;
@@ -62,7 +62,7 @@ public class WaitForJobsStatus {
         longestInProgressDuration = builder.longestInProgressDuration;
     }
 
-    public static WaitForJobsStatus forIngest(IngestJobStatusStore tracker, Collection<String> jobIds, Instant now) {
+    public static WaitForJobsStatus forIngest(IngestJobTracker tracker, Collection<String> jobIds, Instant now) {
         return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 

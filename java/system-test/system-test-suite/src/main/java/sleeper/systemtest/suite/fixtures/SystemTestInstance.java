@@ -51,7 +51,7 @@ import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPAC
 import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_PERIOD_IN_MINUTES;
-import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.core.properties.instance.IngestProperty.MAXIMUM_CONCURRENT_INGEST_TASKS;
 import static sleeper.core.properties.instance.LoggingLevelsProperty.LOGGING_LEVEL;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_TABLE_BATCH_SIZE;
@@ -253,7 +253,7 @@ public class SystemTestInstance {
         properties.setEnumList(OPTIONAL_STACKS, List.of(IngestStack, CompactionStack, GarbageCollectorStack,
                 EmrBulkImportStack, EmrServerlessBulkImportStack, IngestBatcherStack));
         properties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
-        properties.set(INGEST_STATUS_STORE_ENABLED, "false");
+        properties.set(INGEST_TRACKER_ENABLED, "false");
         setSystemTestTags(properties, "optionalFeaturesDisabled", "Sleeper Maven system test optional features disabled");
         return createInstanceConfiguration(properties);
     }

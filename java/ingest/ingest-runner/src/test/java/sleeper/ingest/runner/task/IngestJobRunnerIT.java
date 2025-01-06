@@ -52,8 +52,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
@@ -109,7 +109,7 @@ class IngestJobRunnerIT {
     private final String tableId = UUID.randomUUID().toString();
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private final String ingestSourceBucketName = "ingest-source-" + UUID.randomUUID().toString();
-    private final IngestJobStatusStore statusStore = new InMemoryIngestJobStatusStore();
+    private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     @TempDir
     public java.nio.file.Path localDir;
     private Supplier<Instant> timeSupplier = Instant::now;
@@ -258,7 +258,7 @@ class IngestJobRunnerIT {
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
         assertThat(SketchesDeciles.fromFileReferences(records1.sleeperSchema, actualFiles, hadoopConfiguration))
                 .isEqualTo(SketchesDeciles.from(records1.sleeperSchema, expectedRecords));
-        assertThat(statusStore.getAllJobs(tableId)).containsExactly(
+        assertThat(tracker.getAllJobs(tableId)).containsExactly(
                 ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId("test-task")
                         .startedStatus(ingestStartedStatus(ingestJob, Instant.parse("2024-06-20T15:33:01Z")))
@@ -340,7 +340,7 @@ class IngestJobRunnerIT {
             TableProperties tableProperties,
             StateStore stateStore,
             IngestJob job) throws Exception {
-        statusStore.jobStarted(job.startedEventBuilder(timeSupplier.get()).taskId("test-task").jobRunId("test-job-run").build());
+        tracker.jobStarted(job.startedEventBuilder(timeSupplier.get()).taskId("test-task").jobRunId("test-job-run").build());
         ingestJobRunner(instanceProperties, tableProperties, stateStore)
                 .ingest(job, "test-job-run");
     }
@@ -355,7 +355,7 @@ class IngestJobRunnerIT {
                 instanceProperties,
                 tablePropertiesProvider,
                 PropertiesReloader.neverReload(),
-                stateStoreProvider, statusStore,
+                stateStoreProvider, tracker,
                 "test-task",
                 localDir.toString(),
                 s3, s3Async, sqs,

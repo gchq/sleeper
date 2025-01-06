@@ -25,7 +25,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.task.common.QueueMessageCount;
@@ -135,23 +135,23 @@ public class RunAdminClient {
         return this;
     }
 
-    public RunAdminClient tracker(CompactionJobTracker store) {
-        trackers.setTracker(harness.getInstanceId(), store);
+    public RunAdminClient tracker(CompactionJobTracker tracker) {
+        trackers.setTracker(harness.getInstanceId(), tracker);
         return this;
     }
 
-    public RunAdminClient tracker(CompactionTaskTracker store) {
-        trackers.setTracker(harness.getInstanceId(), store);
+    public RunAdminClient tracker(CompactionTaskTracker tracker) {
+        trackers.setTracker(harness.getInstanceId(), tracker);
         return this;
     }
 
-    public RunAdminClient tracker(IngestJobStatusStore store) {
-        trackers.setTracker(harness.getInstanceId(), store);
+    public RunAdminClient tracker(IngestJobTracker tracker) {
+        trackers.setTracker(harness.getInstanceId(), tracker);
         return this;
     }
 
-    public RunAdminClient tracker(IngestTaskStatusStore store) {
-        trackers.setTracker(harness.getInstanceId(), store);
+    public RunAdminClient tracker(IngestTaskStatusStore tracker) {
+        trackers.setTracker(harness.getInstanceId(), tracker);
         return this;
     }
 

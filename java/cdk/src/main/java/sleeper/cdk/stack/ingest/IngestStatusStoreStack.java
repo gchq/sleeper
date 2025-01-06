@@ -29,7 +29,7 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobTracker;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 
@@ -52,42 +52,42 @@ public class IngestStatusStoreStack extends NestedStack implements IngestStatusS
 
         updatesTable = Table.Builder
                 .create(this, "DynamoDBIngestJobUpdatesTable")
-                .tableName(DynamoDBIngestJobStatusStore.jobUpdatesTableName(instanceId))
+                .tableName(DynamoDBIngestJobTracker.jobUpdatesTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusStore.TABLE_ID)
+                        .name(DynamoDBIngestJobTracker.TABLE_ID)
                         .type(AttributeType.STRING)
                         .build())
                 .sortKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusStore.JOB_ID_AND_UPDATE)
+                        .name(DynamoDBIngestJobTracker.JOB_ID_AND_UPDATE)
                         .type(AttributeType.STRING)
                         .build())
-                .timeToLiveAttribute(DynamoDBIngestJobStatusStore.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBIngestJobTracker.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
 
         jobsTable = Table.Builder
                 .create(this, "DynamoDBIngestJobLookupTable")
-                .tableName(DynamoDBIngestJobStatusStore.jobLookupTableName(instanceId))
+                .tableName(DynamoDBIngestJobTracker.jobLookupTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusStore.JOB_ID)
+                        .name(DynamoDBIngestJobTracker.JOB_ID)
                         .type(AttributeType.STRING)
                         .build())
-                .timeToLiveAttribute(DynamoDBIngestJobStatusStore.EXPIRY_DATE)
+                .timeToLiveAttribute(DynamoDBIngestJobTracker.EXPIRY_DATE)
                 .pointInTimeRecovery(false)
                 .build();
 
         jobsTable.addGlobalSecondaryIndex(GlobalSecondaryIndexProps.builder()
-                .indexName(DynamoDBIngestJobStatusStore.VALIDATION_INDEX)
+                .indexName(DynamoDBIngestJobTracker.VALIDATION_INDEX)
                 .partitionKey(Attribute.builder()
-                        .name(DynamoDBIngestJobStatusStore.JOB_LAST_VALIDATION_RESULT)
+                        .name(DynamoDBIngestJobTracker.JOB_LAST_VALIDATION_RESULT)
                         .type(AttributeType.STRING)
                         .build())
                 .projectionType(ProjectionType.INCLUDE)
-                .nonKeyAttributes(List.of(DynamoDBIngestJobStatusStore.TABLE_ID))
+                .nonKeyAttributes(List.of(DynamoDBIngestJobTracker.TABLE_ID))
                 .build());
 
         tasksTable = Table.Builder

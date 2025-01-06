@@ -31,7 +31,7 @@ import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
@@ -41,9 +41,9 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStore;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobTracker;
+import sleeper.ingest.status.store.job.DynamoDBIngestJobTrackerCreator;
+import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -77,18 +77,18 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
             .withIgnoredFields("expiryDate").build();
     public static final String DEFAULT_TASK_ID = "task-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String jobStatusTableName = DynamoDBIngestJobStatusStore.jobUpdatesTableName(instanceProperties.get(ID));
+    private final String jobStatusTableName = DynamoDBIngestJobTracker.jobUpdatesTableName(instanceProperties.get(ID));
     protected final Schema schema = createSchema();
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
 
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final TableStatus table = tableProperties.getStatus();
     protected final String tableId = tableProperties.get(TABLE_ID);
-    protected final IngestJobStatusStore store = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoDBClient);
     }
 
     @AfterEach
@@ -96,13 +96,13 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
         dynamoDBClient.deleteTable(jobStatusTableName);
     }
 
-    protected IngestJobStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+    protected IngestJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(INGEST_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
-        return storeWithUpdateTimes(updateTimes);
+        return trackerWithUpdateTimes(updateTimes);
     }
 
-    protected IngestJobStatusStore storeWithUpdateTimes(Instant... updateTimes) {
-        return IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties,
+    protected IngestJobTracker trackerWithUpdateTimes(Instant... updateTimes) {
+        return IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 
@@ -224,16 +224,16 @@ public class DynamoDBIngestJobStatusStoreTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJobStatus getJobStatus(String jobId) {
-        return getJobStatus(store, jobId);
+        return getJobStatus(tracker, jobId);
     }
 
-    protected IngestJobStatus getJobStatus(IngestJobStatusStore store, String jobId) {
-        return store.getJob(jobId)
+    protected IngestJobStatus getJobStatus(IngestJobTracker tracker, String jobId) {
+        return tracker.getJob(jobId)
                 .orElseThrow(() -> new IllegalStateException("Job not found: " + jobId));
     }
 
     protected List<IngestJobStatus> getAllJobStatuses() {
-        return store.getAllJobs(tableId);
+        return tracker.getAllJobs(tableId);
     }
 
     protected IngestJob jobWithFiles(String... filenames) {

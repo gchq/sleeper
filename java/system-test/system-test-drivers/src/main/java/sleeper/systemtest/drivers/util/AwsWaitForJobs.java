@@ -20,7 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
 import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
@@ -33,14 +33,14 @@ public class AwsWaitForJobs {
 
     public static WaitForJobs forIngest(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forIngest(instance,
-                properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
+                properties -> IngestJobTrackerFactory.getTracker(dynamoDBClient, properties),
                 properties -> IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
                 pollDriver);
     }
 
     public static WaitForJobs forBulkImport(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forBulkImport(instance,
-                properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
+                properties -> IngestJobTrackerFactory.getTracker(dynamoDBClient, properties),
                 pollDriver);
     }
 

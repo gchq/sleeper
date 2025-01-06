@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
@@ -61,7 +61,7 @@ public class IngestTaskTest {
     private final Queue<IngestJob> jobsOnQueue = new LinkedList<>();
     private final List<IngestJob> successfulJobs = new ArrayList<>();
     private final List<IngestJob> failedJobs = new ArrayList<>();
-    private final InMemoryIngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
+    private final InMemoryIngestJobTracker jobTracker = new InMemoryIngestJobTracker();
     private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
     private Supplier<Instant> timeSupplier = Instant::now;
     private Supplier<String> jobRunIdSupplier = () -> UUID.randomUUID().toString();
@@ -155,7 +155,7 @@ public class IngestTaskTest {
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     finishedIngestJobUncommitted(job, "test-task-1", summary(jobResult,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))));
@@ -181,7 +181,7 @@ public class IngestTaskTest {
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 5L));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     finishedIngestJobUncommitted(job, "test-task-1", summary(jobResult,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))));
@@ -218,7 +218,7 @@ public class IngestTaskTest {
                             summary(job2Result,
                                     Instant.parse("2024-02-22T13:50:03Z"),
                                     Instant.parse("2024-02-22T13:50:04Z"))));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
                     finishedIngestJobUncommitted(job1, "test-task-1", summary(job1Result,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))),
@@ -248,7 +248,7 @@ public class IngestTaskTest {
                     finishedNoJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:06Z")));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     failedIngestJob(job, "test-task-1",
                             new ProcessRunTime(
                                     Instant.parse("2024-02-22T13:50:01Z"),
@@ -282,7 +282,7 @@ public class IngestTaskTest {
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:06Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactlyInAnyOrder(
                     finishedIngestJobUncommitted(job1, "test-task-1", summary(job1Result,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))),
@@ -308,7 +308,7 @@ public class IngestTaskTest {
                     finishedNoJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z")));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).isEmpty();
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).isEmpty();
         }
 
         @Test
@@ -331,7 +331,7 @@ public class IngestTaskTest {
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 0L, 0L));
-            assertThat(jobStore.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     finishedIngestJobUncommitted(job, "test-task-1", summary(jobResult,
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z")), 0));
@@ -353,7 +353,7 @@ public class IngestTaskTest {
                     jobSucceeds(recordsReadAndWritten(10L, 10L))));
 
             // Then
-            assertThat(jobStore.streamTableRecords(DEFAULT_TABLE_ID))
+            assertThat(jobTracker.streamTableRecords(DEFAULT_TABLE_ID))
                     .extracting(
                             ProcessStatusUpdateRecord::getJobRunId,
                             record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
@@ -378,7 +378,7 @@ public class IngestTaskTest {
             runTask("test-task", processJobs(jobFails(failure)));
 
             // Then
-            assertThat(jobStore.streamTableRecords(DEFAULT_TABLE_ID))
+            assertThat(jobTracker.streamTableRecords(DEFAULT_TABLE_ID))
                     .extracting(
                             ProcessStatusUpdateRecord::getJobRunId,
                             record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
@@ -395,7 +395,7 @@ public class IngestTaskTest {
     private void runTask(
             String taskId,
             IngestJobHandler ingestRunner) throws Exception {
-        new IngestTask(jobRunIdSupplier, timeSupplier, pollQueue(), ingestRunner, jobStore, taskStore, taskId)
+        new IngestTask(jobRunIdSupplier, timeSupplier, pollQueue(), ingestRunner, jobTracker, taskStore, taskId)
                 .run();
     }
 

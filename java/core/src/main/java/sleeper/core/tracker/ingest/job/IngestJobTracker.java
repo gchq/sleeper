@@ -31,8 +31,8 @@ import java.util.stream.Stream;
 /**
  * Stores the status of ingest jobs.
  */
-public interface IngestJobStatusStore {
-    IngestJobStatusStore NONE = new IngestJobStatusStore() {
+public interface IngestJobTracker {
+    IngestJobTracker NONE = new IngestJobTracker() {
     };
 
     /**

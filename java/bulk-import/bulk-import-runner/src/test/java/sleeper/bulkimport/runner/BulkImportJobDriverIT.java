@@ -74,8 +74,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
-import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -148,7 +148,7 @@ class BulkImportJobDriverIT {
     private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
     private final Schema schema = getSchema();
-    private final IngestJobStatusStore statusStore = new InMemoryIngestJobStatusStore();
+    private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final String taskId = "test-bulk-import-spark-cluster";
     private final String jobRunId = "test-run";
     private final Instant validationTime = Instant.parse("2023-04-05T16:00:01Z");
@@ -218,7 +218,7 @@ class BulkImportJobDriverIT {
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
         IngestJob ingestJob = job.toIngestJob();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
@@ -267,7 +267,7 @@ class BulkImportJobDriverIT {
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
         IngestJob ingestJob = job.toIngestJob();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
@@ -309,7 +309,7 @@ class BulkImportJobDriverIT {
                         tuple(100L, leftPartition),
                         tuple(100L, rightPartition));
         IngestJob ingestJob = job.toIngestJob();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
@@ -380,7 +380,7 @@ class BulkImportJobDriverIT {
                     .forEach(read -> assertThat(read).isSortedAccordingTo(new RecordComparator(getSchema())));
         }
         IngestJob ingestJob = job.toIngestJob();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
@@ -417,7 +417,7 @@ class BulkImportJobDriverIT {
                         file -> readRecords(file.getFilename(), schema))
                 .containsExactly(tuple(200L, expectedPartitionId, records));
         IngestJob ingestJob = job.toIngestJob();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
@@ -468,7 +468,7 @@ class BulkImportJobDriverIT {
         sortRecords(readRecords);
         assertThat(readRecords).isEqualTo(expectedRecords);
         IngestJob ingestJob = job.toIngestJob();
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
@@ -512,7 +512,7 @@ class BulkImportJobDriverIT {
                             file -> readRecords(file.getFilename(), schema))
                     .containsExactly(tuple(200L, "root", expectedRecords));
         });
-        assertThat(statusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
                 .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
@@ -703,13 +703,13 @@ class BulkImportJobDriverIT {
     }
 
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job, Supplier<Instant> timeSupplier) throws IOException {
-        statusStore.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
+        tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         AddFilesAsynchronously addFilesAsync = BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties);
         BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
-                tablePropertiesProvider, stateStoreProvider, statusStore, addFilesAsync, timeSupplier);
+                tablePropertiesProvider, stateStoreProvider, tracker, addFilesAsync, timeSupplier);
         driver.run(job, jobRunId, taskId);
     }
 

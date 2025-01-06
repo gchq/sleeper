@@ -43,7 +43,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -156,7 +156,7 @@ public class StateStoreCommitterThroughputIT {
     private StateStoreCommitter committer() {
         return new StateStoreCommitter(
                 CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
-                IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties),
+                IngestJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
                 tablePropertiesProvider(),
                 stateStoreProvider(),
                 Instant::now);

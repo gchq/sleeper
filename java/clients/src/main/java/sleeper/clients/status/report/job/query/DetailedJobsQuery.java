@@ -18,7 +18,7 @@ package sleeper.clients.status.report.job.query;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.util.Arrays;
 import java.util.List;
@@ -40,7 +40,7 @@ public class DetailedJobsQuery implements JobQuery {
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobStatusStore tracker) {
+    public List<IngestJobStatus> run(IngestJobTracker tracker) {
         return run(tracker::getJob);
     }
 

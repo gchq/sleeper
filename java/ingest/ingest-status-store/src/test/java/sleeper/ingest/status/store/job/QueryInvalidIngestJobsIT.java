@@ -41,11 +41,11 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(job1.createRejectedEvent(validationTime1, List.of("Test reason 1")));
-        store.jobValidated(job2.createRejectedEvent(validationTime2, List.of("Test reason 2")));
+        tracker.jobValidated(job1.createRejectedEvent(validationTime1, List.of("Test reason 1")));
+        tracker.jobValidated(job2.createRejectedEvent(validationTime2, List.of("Test reason 2")));
 
         // Then
-        assertThat(store.getInvalidJobs())
+        assertThat(tracker.getInvalidJobs())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         ingestJobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")),
@@ -58,10 +58,10 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         String jobId = "invalid-job";
         String json = "{";
         Instant validationTime = Instant.parse("2023-11-06T10:36:00Z");
-        store.jobValidated(IngestJobValidatedEvent.ingestJobRejected(jobId, json, validationTime, "Test reason"));
+        tracker.jobValidated(IngestJobValidatedEvent.ingestJobRejected(jobId, json, validationTime, "Test reason"));
 
         // Then
-        assertThat(store.getInvalidJobs())
+        assertThat(tracker.getInvalidJobs())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         ingestJobStatus(jobId, rejectedRun(jobId, json, validationTime, "Test reason")));
@@ -75,11 +75,11 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(job.createRejectedEvent(validationTime1, List.of("Test reason 1")));
-        store.jobValidated(job.createRejectedEvent(validationTime2, List.of("Test reason 2")));
+        tracker.jobValidated(job.createRejectedEvent(validationTime1, List.of("Test reason 1")));
+        tracker.jobValidated(job.createRejectedEvent(validationTime2, List.of("Test reason 2")));
 
         // Then
-        assertThat(store.getInvalidJobs())
+        assertThat(tracker.getInvalidJobs())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         ingestJobStatus(job,
@@ -96,11 +96,11 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(job1.acceptedEventBuilder(validationTime1).build());
-        store.jobValidated(job2.createRejectedEvent(validationTime2, List.of("Test reason 2")));
+        tracker.jobValidated(job1.acceptedEventBuilder(validationTime1).build());
+        tracker.jobValidated(job2.createRejectedEvent(validationTime2, List.of("Test reason 2")));
 
         // Then
-        assertThat(store.getInvalidJobs())
+        assertThat(tracker.getInvalidJobs())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         ingestJobStatus(job2, rejectedRun(job2, validationTime2, "Test reason 2")));
@@ -114,10 +114,10 @@ public class QueryInvalidIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBa
         Instant validationTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobValidated(job.createRejectedEvent(validationTime1, List.of("Test reason 1")));
-        store.jobValidated(job.acceptedEventBuilder(validationTime2).build());
+        tracker.jobValidated(job.createRejectedEvent(validationTime1, List.of("Test reason 1")));
+        tracker.jobValidated(job.acceptedEventBuilder(validationTime2).build());
 
         // Then
-        assertThat(store.getInvalidJobs()).isEmpty();
+        assertThat(tracker.getInvalidJobs()).isEmpty();
     }
 }

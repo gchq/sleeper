@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
@@ -66,8 +66,8 @@ import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.crea
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobStartedUpdate;
 import static sleeper.ingest.status.store.job.DynamoDBIngestJobStatusFormat.createJobValidatedUpdate;
 
-public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobStatusStore.class);
+public class DynamoDBIngestJobTracker implements IngestJobTracker {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestJobTracker.class);
     public static final String TABLE_ID = DynamoDBIngestJobStatusFormat.TABLE_ID;
     public static final String JOB_ID = DynamoDBIngestJobStatusFormat.JOB_ID;
     public static final String JOB_ID_AND_UPDATE = DynamoDBIngestJobStatusFormat.JOB_ID_AND_UPDATE;
@@ -84,7 +84,7 @@ public class DynamoDBIngestJobStatusStore implements IngestJobStatusStore {
     private final int timeToLiveInSeconds;
     private final Supplier<Instant> getTimeNow;
 
-    DynamoDBIngestJobStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
+    DynamoDBIngestJobTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.updatesTableName = jobUpdatesTableName(properties.get(ID));
         this.jobsTableName = jobLookupTableName(properties.get(ID));

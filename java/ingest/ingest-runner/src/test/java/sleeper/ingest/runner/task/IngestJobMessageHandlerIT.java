@@ -34,8 +34,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 
@@ -60,9 +60,9 @@ public class IngestJobMessageHandlerIT {
     private final InstanceProperties properties = new InstanceProperties();
     private final Instant validationTime = Instant.parse("2023-10-17T14:15:00Z");
     private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final IngestJobMessageHandler<IngestJob> ingestJobMessageHandler = IngestJobQueueConsumer.messageHandler(
-            properties, createHadoopConfiguration(), tableIndex, ingestJobStatusStore)
+            properties, createHadoopConfiguration(), tableIndex, tracker)
             .jobIdSupplier(() -> "job-id")
             .timeSupplier(() -> validationTime)
             .build();
@@ -186,7 +186,7 @@ public class IngestJobMessageHandlerIT {
 
             // Then
             assertThat(job).isNotPresent();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
+            assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
                             rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }
@@ -208,7 +208,7 @@ public class IngestJobMessageHandlerIT {
 
             // Then
             assertThat(job).isNotPresent();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
+            assertThat(tracker.getInvalidJobs())
                     .containsExactly(ingestJobStatus("id",
                             rejectedRun("id", json, validationTime, "Could not find one or more files")));
         }

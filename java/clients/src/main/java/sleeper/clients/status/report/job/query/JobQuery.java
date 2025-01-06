@@ -20,7 +20,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Clock;
 import java.util.List;
@@ -30,7 +30,7 @@ public interface JobQuery {
 
     List<CompactionJobStatus> run(CompactionJobTracker tracker);
 
-    List<IngestJobStatus> run(IngestJobStatusStore tracker);
+    List<IngestJobStatus> run(IngestJobTracker tracker);
 
     Type getType();
 

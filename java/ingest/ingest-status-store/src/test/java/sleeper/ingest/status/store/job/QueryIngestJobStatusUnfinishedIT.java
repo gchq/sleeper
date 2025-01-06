@@ -40,11 +40,11 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
-        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
+        tracker.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        tracker.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         defaultJobStartedStatus(job2, startedTime2),
@@ -61,12 +61,12 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
-        store.jobFinished(defaultJobFinishedEvent(job1, startedTime1, finishedTime1));
-        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
+        tracker.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        tracker.jobFinished(defaultJobFinishedEvent(job1, startedTime1, finishedTime1));
+        tracker.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobStartedStatus(job2, startedTime2));
     }
@@ -80,11 +80,11 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
-        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
+        tracker.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        tracker.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobStartedStatus(job1, startedTime1));
     }
@@ -98,12 +98,12 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime1));
-        store.jobFinished(defaultJobFinishedEvent(job, startedTime1, finishedTime1));
-        store.jobStarted(defaultJobStartedEvent(job, startedTime2));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime1));
+        tracker.jobFinished(defaultJobFinishedEvent(job, startedTime1, finishedTime1));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime2));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(ingestJobStatus(job,
                         defaultJobStartedRun(job, startedTime2),
@@ -118,11 +118,11 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         Instant finishedTime = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
-        store.jobFinished(defaultJobFinishedButUncommittedEvent(job, startedTime, finishedTime, 1));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobFinished(defaultJobFinishedButUncommittedEvent(job, startedTime, finishedTime, 1));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         defaultJobFinishedButUncommittedStatus(job, startedTime, finishedTime, 1));
@@ -139,11 +139,11 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobStatusSto
         List<FileReference> outputFiles = List.of(fileFactory.rootFile(123L));
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
-        store.jobFinished(defaultJobFinishedButUncommittedEvent(job, startedTime, finishedTime, 1));
-        store.jobAddedFiles(defaultJobAddedFilesEvent(job, outputFiles, writtenTime));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobFinished(defaultJobFinishedButUncommittedEvent(job, startedTime, finishedTime, 1));
+        tracker.jobAddedFiles(defaultJobAddedFilesEvent(job, outputFiles, writtenTime));
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
+        assertThat(tracker.getUnfinishedJobs(tableId)).isEmpty();
     }
 }

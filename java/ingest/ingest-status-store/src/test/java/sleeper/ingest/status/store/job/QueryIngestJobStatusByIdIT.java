@@ -35,8 +35,8 @@ public class QueryIngestJobStatusByIdIT extends DynamoDBIngestJobStatusStoreTest
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
-        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
+        tracker.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        tracker.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
         assertThat(getJobStatus(job1.getId()))
@@ -52,8 +52,8 @@ public class QueryIngestJobStatusByIdIT extends DynamoDBIngestJobStatusStoreTest
         Instant finishedTime = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
-        store.jobFinished(defaultJobFinishedEvent(job, startedTime, finishedTime));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobFinished(defaultJobFinishedEvent(job, startedTime, finishedTime));
 
         // Then
         assertThat(getJobStatus(job.getId()))
@@ -64,6 +64,6 @@ public class QueryIngestJobStatusByIdIT extends DynamoDBIngestJobStatusStoreTest
     @Test
     public void shouldReturnNoIngestJobById() {
         // When / Then
-        assertThat(store.getJob("not-present")).isNotPresent();
+        assertThat(tracker.getJob("not-present")).isNotPresent();
     }
 }

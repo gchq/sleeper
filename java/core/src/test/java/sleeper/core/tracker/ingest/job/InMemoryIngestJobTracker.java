@@ -45,9 +45,9 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.d
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.REJECTED;
 
 /**
- * An in-memory implementation of the ingest job status store.
+ * An in-memory implementation of the ingest job tracker.
  */
-public class InMemoryIngestJobStatusStore implements IngestJobStatusStore {
+public class InMemoryIngestJobTracker implements IngestJobTracker {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();
 
     @Override

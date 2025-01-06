@@ -19,27 +19,27 @@ package sleeper.ingest.status.store.job;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Instant;
 import java.util.function.Supplier;
 
-import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
-public class IngestJobStatusStoreFactory {
+public class IngestJobTrackerFactory {
 
-    private IngestJobStatusStoreFactory() {
+    private IngestJobTrackerFactory() {
     }
 
-    public static IngestJobStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        return getStatusStore(dynamoDB, properties, Instant::now);
+    public static IngestJobTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+        return getTracker(dynamoDB, properties, Instant::now);
     }
 
-    public static IngestJobStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
-        if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
-            return new DynamoDBIngestJobStatusStore(dynamoDB, properties, getTimeNow);
+    public static IngestJobTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
+        if (properties.getBoolean(INGEST_TRACKER_ENABLED)) {
+            return new DynamoDBIngestJobTracker(dynamoDB, properties, getTimeNow);
         } else {
-            return IngestJobStatusStore.NONE;
+            return IngestJobTracker.NONE;
         }
     }
 }

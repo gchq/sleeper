@@ -22,7 +22,7 @@ import software.constructs.Construct;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
 public interface IngestStatusStoreResources {
 
@@ -33,7 +33,7 @@ public interface IngestStatusStoreResources {
     }
 
     static IngestStatusStoreResources from(Construct scope, String id, InstanceProperties properties, ManagedPoliciesStack policiesStack) {
-        if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+        if (properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return new IngestStatusStoreStack(scope, id, properties, policiesStack);
         } else {
             return none();

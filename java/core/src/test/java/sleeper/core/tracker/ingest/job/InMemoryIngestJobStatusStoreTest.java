@@ -66,7 +66,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedI
 
 public class InMemoryIngestJobStatusStoreTest {
 
-    private final InMemoryIngestJobStatusStore tracker = new InMemoryIngestJobStatusStore();
+    private final InMemoryIngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final String tableId = IngestJobEventTestData.DEFAULT_TABLE_ID;
 
     @Nested

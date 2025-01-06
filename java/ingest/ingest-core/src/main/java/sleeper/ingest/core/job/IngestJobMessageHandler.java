@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 
 import java.time.Instant;
@@ -38,14 +38,14 @@ import static sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent.ing
 
 /**
  * Deserialises and validates a JSON string to a type of ingest job. Any validation failures are recorded in the
- * {@link IngestJobStatusStore}.
+ * {@link IngestJobTracker}.
  *
  * @param <T> the type of ingest job
  */
 public class IngestJobMessageHandler<T> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IngestJobMessageHandler.class);
     private final TableIndex tableIndex;
-    private final IngestJobStatusStore ingestJobStatusStore;
+    private final IngestJobTracker ingestJobTracker;
     private final Function<String, T> deserialiser;
     private final Function<T, IngestJob> toIngestJob;
     private final BiFunction<T, IngestJob, T> applyIngestJobChanges;
@@ -55,7 +55,7 @@ public class IngestJobMessageHandler<T> {
 
     private IngestJobMessageHandler(Builder<T> builder) {
         tableIndex = Objects.requireNonNull(builder.tableIndex, "tableIndex must not be null");
-        ingestJobStatusStore = Objects.requireNonNull(builder.ingestJobStatusStore, "ingestJobStatusStore must not be null");
+        ingestJobTracker = Objects.requireNonNull(builder.ingestJobTracker, "ingestJobTracker must not be null");
         deserialiser = Objects.requireNonNull(builder.deserialiser, "deserialiser must not be null");
         toIngestJob = Objects.requireNonNull(builder.toIngestJob, "toIngestJob must not be null");
         applyIngestJobChanges = Objects.requireNonNull(builder.applyIngestJobChanges, "applyIngestJobChanges must not be null");
@@ -101,7 +101,7 @@ public class IngestJobMessageHandler<T> {
             LOGGER.info("Deserialised message to ingest job {}", job);
         } catch (RuntimeException e) {
             LOGGER.warn("Deserialisation failed for message: {}", message, e);
-            ingestJobStatusStore.jobValidated(
+            ingestJobTracker.jobValidated(
                     ingestJobRejected(jobIdSupplier.get(), message, timeSupplier.get(),
                             "Error parsing JSON. Reason: " + Optional.ofNullable(e.getCause()).orElse(e).getMessage()));
             return Optional.empty();
@@ -137,7 +137,7 @@ public class IngestJobMessageHandler<T> {
         }
         if (!validationFailures.isEmpty()) {
             LOGGER.warn("Validation failed: {}", validationFailures);
-            ingestJobStatusStore.jobValidated(
+            ingestJobTracker.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
                             .tableId(tableOpt.map(TableStatus::getTableUniqueId).orElse(null))
@@ -151,7 +151,7 @@ public class IngestJobMessageHandler<T> {
         List<String> expandedFiles = expandDirectories.apply(files);
         if (expandedFiles.isEmpty()) {
             LOGGER.warn("Could not find one or more files for job: {}", job);
-            ingestJobStatusStore.jobValidated(
+            ingestJobTracker.jobValidated(
                     refusedEventBuilder()
                             .jobId(jobId)
                             .tableId(table.getTableUniqueId())
@@ -193,7 +193,7 @@ public class IngestJobMessageHandler<T> {
      */
     public static final class Builder<T> {
         private TableIndex tableIndex;
-        private IngestJobStatusStore ingestJobStatusStore;
+        private IngestJobTracker ingestJobTracker;
         private Function<String, T> deserialiser;
         private Function<T, IngestJob> toIngestJob;
         private BiFunction<T, IngestJob, T> applyIngestJobChanges;
@@ -216,13 +216,13 @@ public class IngestJobMessageHandler<T> {
         }
 
         /**
-         * Sets the ingest job status store.
+         * Sets the ingest job tracker.
          *
-         * @param  ingestJobStatusStore the ingest job status store
-         * @return                      the builder
+         * @param  ingestJobTracker the ingest job tracker
+         * @return                  the builder
          */
-        public Builder<T> ingestJobStatusStore(IngestJobStatusStore ingestJobStatusStore) {
-            this.ingestJobStatusStore = ingestJobStatusStore;
+        public Builder<T> ingestJobTracker(IngestJobTracker ingestJobTracker) {
+            this.ingestJobTracker = ingestJobTracker;
             return this;
         }
 

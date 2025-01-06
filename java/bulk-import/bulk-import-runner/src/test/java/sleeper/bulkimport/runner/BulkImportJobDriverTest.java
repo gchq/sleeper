@@ -30,9 +30,9 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.StateStoreTestHelper;
-import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
@@ -67,7 +67,7 @@ class BulkImportJobDriverTest {
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
-    private final IngestJobStatusStore statusStore = new InMemoryIngestJobStatusStore();
+    private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<IngestAddFilesCommitRequest> commitRequestQueue = new ArrayList<>();
 
     @Test
@@ -226,7 +226,7 @@ class BulkImportJobDriverTest {
     private void runJob(
             BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
             BulkImportJobDriver driver) throws Exception {
-        statusStore.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
+        tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         driver.run(job, jobRunId, taskId);
     }
 
@@ -240,7 +240,7 @@ class BulkImportJobDriverTest {
         return new BulkImportJobDriver(sessionRunner,
                 new FixedTablePropertiesProvider(tableProperties),
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                statusStore, commitRequestQueue::add, timeSupplier);
+                tracker, commitRequestQueue::add, timeSupplier);
     }
 
     private BulkImportJobDriver.SessionRunner successfulWithOutput(List<FileReference> outputFiles) {
@@ -272,6 +272,6 @@ class BulkImportJobDriverTest {
     }
 
     private List<IngestJobStatus> allJobsReported() {
-        return statusStore.getAllJobs(tableProperties.get(TABLE_ID));
+        return tracker.getAllJobs(tableProperties.get(TABLE_ID));
     }
 }

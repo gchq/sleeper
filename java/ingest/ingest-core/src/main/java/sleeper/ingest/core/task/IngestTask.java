@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
@@ -39,7 +39,7 @@ public class IngestTask {
     private final Supplier<Instant> timeSupplier;
     private final MessageReceiver messageReceiver;
     private final IngestJobHandler ingester;
-    private final IngestJobStatusStore jobStatusStore;
+    private final IngestJobTracker jobTracker;
     private final IngestTaskStatusStore taskStatusStore;
     private final String taskId;
     private final IngestTaskStatus.Builder taskStatusBuilder;
@@ -48,12 +48,12 @@ public class IngestTask {
 
     public IngestTask(Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier,
             MessageReceiver messageReceiver, IngestJobHandler ingester,
-            IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
+            IngestJobTracker jobTracker, IngestTaskStatusStore taskStore, String taskId) {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.ingester = ingester;
-        this.jobStatusStore = jobStatusStore;
+        this.jobTracker = jobTracker;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
         this.taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId);
@@ -107,13 +107,13 @@ public class IngestTask {
             String jobRunId = jobRunIdSupplier.get();
             Instant jobStartTime = timeSupplier.get();
             try {
-                jobStatusStore.jobStarted(job.startedEventBuilder(jobStartTime)
+                jobTracker.jobStarted(job.startedEventBuilder(jobStartTime)
                         .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
                 IngestResult result = ingester.ingest(job, jobRunId);
                 LOGGER.info("{} records were written", result.getRecordsWritten());
                 Instant jobFinishTime = timeSupplier.get();
                 RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
-                jobStatusStore.jobFinished(job.finishedEventBuilder(summary)
+                jobTracker.jobFinished(job.finishedEventBuilder(summary)
                         .taskId(taskId).jobRunId(jobRunId)
                         .committedBySeparateFileUpdates(true)
                         .fileReferencesAddedByJob(result.getFileReferenceList())
@@ -125,7 +125,7 @@ public class IngestTask {
             } catch (Exception e) {
                 LOGGER.error("Failed processing ingest job, terminating task", e);
                 Instant jobFinishTime = timeSupplier.get();
-                jobStatusStore.jobFailed(job
+                jobTracker.jobFailed(job
                         .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
                         .taskId(taskId).jobRunId(jobRunId).failure(e)
                         .build());
