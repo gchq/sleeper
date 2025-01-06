@@ -17,6 +17,7 @@ package sleeper.ingest.core.job.status;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
@@ -99,6 +100,21 @@ public class IngestJobEventTestData {
                 .jobId(UUID.randomUUID().toString())
                 .tableId(DEFAULT_TABLE_ID)
                 .validationTime(validationTime);
+    }
+
+    /**
+     * Creates a builder for an ingest job added files event.
+     *
+     * @param  job         a previous event for the same job
+     * @param  writtenTime the time the files were written
+     * @return             the builder
+     */
+    public static IngestJobAddedFilesEvent.Builder ingestJobAddedFilesEventBuilder(IngestJobEvent job, Instant writtenTime) {
+        return IngestJobAddedFilesEvent.builder()
+                .jobId(job.getJobId())
+                .tableId(job.getTableId())
+                .taskId(job.getTaskId())
+                .writtenTime(writtenTime);
     }
 
     /**

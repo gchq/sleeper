@@ -35,7 +35,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
-import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -52,8 +51,8 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
-import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobAcceptedEventBuilder;
+import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobAddedFilesEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFailedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFinishedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobRejectedEventBuilder;
@@ -71,7 +70,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.validated
 public class InMemoryIngestJobStatusStoreTest {
 
     private final InMemoryIngestJobStatusStore tracker = new InMemoryIngestJobStatusStore();
-    private final TableStatus table = createTable("test-table");
     private final String tableId = IngestJobEventTestData.DEFAULT_TABLE_ID;
 
     @Nested
@@ -529,26 +527,26 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(2).jobRunId(jobRunId).taskId(taskId).build();
             Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
             FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
             List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(fileFactory.rootFile("file.parquet", 123)));
 
             // When
-            tracker.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-            tracker.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
+            tracker.jobStarted(job);
+            tracker.jobAddedFiles(ingestJobAddedFilesEventBuilder(job, writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, ProcessRun.builder()
                             .taskId(taskId)
-                            .startedStatus(ingestStartedStatus(startTime))
+                            .startedStatus(ingestStartedStatus(startTime, 2))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
                             .build()));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
-                    .containsExactly("test-run", "test-run");
+                    .containsExactly(jobRunId, jobRunId);
         }
 
         @Test
@@ -556,8 +554,8 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(1).jobRunId(jobRunId).taskId(taskId).build();
             Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
             FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key", new LongType()))
                     .rootFirst("root")
@@ -568,8 +566,8 @@ public class InMemoryIngestJobStatusStoreTest {
                     fileFactory.partitionFile("R", "file.parquet", 50)));
 
             // When
-            tracker.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-            tracker.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
+            tracker.jobStarted(job);
+            tracker.jobAddedFiles(ingestJobAddedFilesEventBuilder(job, writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
@@ -580,7 +578,7 @@ public class InMemoryIngestJobStatusStoreTest {
                             .build()));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
-                    .containsExactly("test-run", "test-run");
+                    .containsExactly(jobRunId, jobRunId);
         }
 
         @Test
@@ -588,8 +586,8 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(1).jobRunId(jobRunId).taskId(taskId).build();
             Instant writtenTime = Instant.parse("2024-06-19T14:50:30.000Z");
             FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
             List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
@@ -597,8 +595,8 @@ public class InMemoryIngestJobStatusStoreTest {
                     fileFactory.rootFile("file2.parquet", 456)));
 
             // When
-            tracker.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-            tracker.jobAddedFiles(job.addedFilesEventBuilder(writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
+            tracker.jobStarted(job);
+            tracker.jobAddedFiles(ingestJobAddedFilesEventBuilder(job, writtenTime).files(filesAdded).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
@@ -609,7 +607,7 @@ public class InMemoryIngestJobStatusStoreTest {
                             .build()));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
-                    .containsExactly("test-run", "test-run");
+                    .containsExactly(jobRunId, jobRunId);
         }
 
         @Test
@@ -617,16 +615,16 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant startTime = Instant.parse("2024-06-19T14:50:00.000Z");
+            IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(1).jobRunId(jobRunId).taskId(taskId).build();
             FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
             List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
                     fileFactory.rootFile("file1.parquet", 123)));
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(1), 123, 123);
 
             // When
-            tracker.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-            tracker.jobFinished(job.finishedEventBuilder(summary)
+            tracker.jobStarted(job);
+            tracker.jobFinished(ingestJobFinishedEventBuilder(job, summary)
                     .jobRunId(jobRunId).taskId(taskId)
                     .filesWrittenByJob(filesAdded).committedBySeparateFileUpdates(true)
                     .build());
@@ -640,16 +638,12 @@ public class InMemoryIngestJobStatusStoreTest {
                             .build()));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
-                    .containsExactly("test-run", "test-run");
+                    .containsExactly(jobRunId, jobRunId);
         }
     }
 
     private TableStatus createTable(String tableName) {
         return TableStatusTestHelper.uniqueIdAndName(IngestJobEventTestData.DEFAULT_TABLE_ID, tableName);
-    }
-
-    private IngestJobStatus ingestJobStatus(IngestJob job, ProcessRun... runs) {
-        return IngestJobStatusFromJobTestData.ingestJobStatus(job, runs);
     }
 
     private IngestJobStatus ingestJobStatus(IngestJobEvent job, ProcessRun... runs) {
