@@ -28,7 +28,7 @@ import sleeper.ingest.batcher.store.IngestBatcherStoreFactory;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskTracker;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
+import sleeper.ingest.status.store.task.IngestTaskTrackerFactory;
 
 import java.util.Optional;
 
@@ -63,7 +63,7 @@ public interface AdminClientTrackerFactory {
 
             @Override
             public IngestTaskTracker loadIngestTaskTracker(InstanceProperties instanceProperties) {
-                return IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
+                return IngestTaskTrackerFactory.getTracker(dynamoDB, instanceProperties);
             }
 
             @Override

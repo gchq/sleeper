@@ -23,12 +23,12 @@ import sleeper.ingest.core.task.IngestTaskTracker;
 
 import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
 
-public class IngestTaskStatusStoreFactory {
+public class IngestTaskTrackerFactory {
 
-    private IngestTaskStatusStoreFactory() {
+    private IngestTaskTrackerFactory() {
     }
 
-    public static IngestTaskTracker getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public static IngestTaskTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
             return new DynamoDBIngestTaskStatusStore(dynamoDB, properties);
         } else {

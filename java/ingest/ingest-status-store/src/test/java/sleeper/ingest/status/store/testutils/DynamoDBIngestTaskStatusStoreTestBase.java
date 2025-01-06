@@ -28,7 +28,7 @@ import sleeper.ingest.core.task.IngestTaskStatus;
 import sleeper.ingest.core.task.IngestTaskTracker;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
-import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
+import sleeper.ingest.status.store.task.IngestTaskTrackerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -50,7 +50,7 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
             .build();
     private final InstanceProperties instanceProperties = IngestStatusStoreTestUtils.createInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final IngestTaskTracker store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final IngestTaskTracker store = IngestTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
