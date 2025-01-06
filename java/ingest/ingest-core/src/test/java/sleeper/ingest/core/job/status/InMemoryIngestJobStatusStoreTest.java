@@ -387,31 +387,6 @@ public class InMemoryIngestJobStatusStoreTest {
                     .containsExactly(ingestJobStatus("test-job-1", validationRun(
                             ingestRejectedStatus(validationTime, "test-json", List.of("Test validation reason 1", "Test validation reason 2"), 1))));
         }
-
-        @Test
-        void shouldFailToReportOnRunWhenJobRunIdIsNotSetAtValidationAndTaskIdIsOnlySetWhenStarted() {
-            // A bulk import job is validated in the bulk import job starter lambda. That lambda doesn't have a task ID,
-            // and you can imagine if it did it would be different to any task ID in the Spark cluster.
-            // For standard ingest, the task ID is used to correlate events on the same run of a job. For bulk import,
-            // we create a job run ID instead.
-            // Validation events are currently always associated with a specific run of the job. If a job is retried it
-            // will be revalidated.
-
-            // Given
-            String taskId = "test-task";
-            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-            Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime, 1).build();
-
-            // When
-            tracker.jobValidated(job);
-            tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).taskId(taskId).build());
-
-            // Then
-            assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, validationRun(
-                            ingestAcceptedStatus(validationTime, 1))));
-        }
     }
 
     @Nested
@@ -524,6 +499,31 @@ public class InMemoryIngestJobStatusStoreTest {
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
                     .containsExactly("test-run", "test-run", "test-run");
+        }
+
+        @Test
+        void shouldFailToReportOnRunWhenJobRunIdIsNotSetAtValidationAndTaskIdIsOnlySetWhenStarted() {
+            // A bulk import job is validated in the bulk import job starter lambda. That lambda doesn't have a task ID,
+            // and you can imagine if it did it would be different to any task ID in the Spark cluster.
+            // For standard ingest, the task ID is used to correlate events on the same run of a job. For bulk import,
+            // we create a job run ID instead.
+            // Validation events are currently always associated with a specific run of the job. If a job is retried it
+            // will be revalidated.
+
+            // Given
+            String taskId = "test-task";
+            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
+            Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime, 1).build();
+
+            // When
+            tracker.jobValidated(job);
+            tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).taskId(taskId).build());
+
+            // Then
+            assertThat(tracker.getAllJobs(tableId))
+                    .containsExactly(ingestJobStatus(job, validationRun(
+                            ingestAcceptedStatus(validationTime, 1))));
         }
     }
 
