@@ -77,7 +77,7 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     }
 
     @Override
-    public IngestTaskTracker loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
+    public IngestTaskTracker loadIngestTaskTracker(InstanceProperties instanceProperties) {
         return Optional.ofNullable(ingestTaskStoreByInstance.get(instanceProperties.get(ID)))
                 .orElse(IngestTaskTracker.NONE);
     }

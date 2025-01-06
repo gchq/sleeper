@@ -86,7 +86,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         RunAdminClient runner = runClient().tracker(store);
 
         // Then
-        assertThat(runner.trackers().loadIngestTaskStatusStore(properties))
+        assertThat(runner.trackers().loadIngestTaskTracker(properties))
                 .isSameAs(store);
     }
 
@@ -130,7 +130,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().trackers().loadIngestTaskStatusStore(properties))
+        assertThat(runClient().trackers().loadIngestTaskTracker(properties))
                 .isSameAs(IngestTaskTracker.NONE);
     }
 }
