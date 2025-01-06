@@ -59,6 +59,23 @@ public class ProcessRunTestData {
     }
 
     /**
+     * Creates a run with a validated status, a started status and a finished status.
+     *
+     * @param  taskId         the task ID to set
+     * @param  startedStatus  the started status to set
+     * @param  finishedStatus the finished status to set
+     * @return                the run
+     */
+    public static ProcessRun validatedFinishedRun(String taskId, ProcessRunStartedUpdate validatedStatus, ProcessRunStartedUpdate startedStatus, ProcessRunFinishedUpdate finishedStatus) {
+        return ProcessRun.builder()
+                .taskId(taskId)
+                .startedStatus(validatedStatus)
+                .statusUpdate(startedStatus)
+                .finishedStatus(finishedStatus)
+                .build();
+    }
+
+    /**
      * Creates a run with a started status that occurred on no task.
      *
      * @param  validationStatus the started status to set

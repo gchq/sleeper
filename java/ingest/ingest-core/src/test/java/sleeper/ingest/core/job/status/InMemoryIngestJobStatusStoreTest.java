@@ -46,22 +46,20 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.record.process.ProcessRunTestData.finishedRun;
 import static sleeper.core.record.process.ProcessRunTestData.startedRun;
 import static sleeper.core.record.process.ProcessRunTestData.unfinishedRun;
+import static sleeper.core.record.process.ProcessRunTestData.validatedFinishedRun;
 import static sleeper.core.record.process.ProcessRunTestData.validationRun;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobAcceptedEventBuilder;
+import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFailedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFinishedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobRejectedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedAfterValidationEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedEventBuilder;
 import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobValidatedEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFailed;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichFinished;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAcceptedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatus;
@@ -259,7 +257,7 @@ public class InMemoryIngestJobStatusStoreTest {
             Instant validationTime1 = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant validationTime2 = Instant.parse("2022-09-22T12:02:10.000Z");
             IngestJobValidatedEvent job1 = ingestJobRejectedEventBuilder(validationTime1, List.of("Test validation reason")).jsonMessage("invalid-json").build();
-            IngestJobValidatedEvent job2 = ingestJobAcceptedEventBuilder(validationTime2, 3).build();
+            IngestJobValidatedEvent job2 = ingestJobAcceptedEventBuilder(validationTime2).fileCount(3).build();
 
             // When
             tracker.jobValidated(job1);
@@ -327,7 +325,7 @@ public class InMemoryIngestJobStatusStoreTest {
         void shouldReportUnstartedJobWithNoValidationFailures() {
             // Given
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime, 1).jobRunId("test-run").build();
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1).jobRunId("test-run").build();
 
             // When
             tracker.jobValidated(job);
@@ -344,7 +342,7 @@ public class InMemoryIngestJobStatusStoreTest {
             String jobRunId = "test-run";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime, 1).jobRunId(jobRunId).build();
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1).jobRunId(jobRunId).build();
 
             // When
             tracker.jobValidated(job);
@@ -392,43 +390,29 @@ public class InMemoryIngestJobStatusStoreTest {
     @Nested
     @DisplayName("Correlate runs by ID")
     class CorrelateRunsById {
-        @Test
-        void shouldReportAcceptedJob() {
-            // Given
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
-            Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
-
-            // When
-            tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId("test-run").build());
-
-            // Then
-            assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, acceptedRun(job, validationTime)));
-            assertThat(tracker.streamTableRecords(tableId))
-                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
-                    .containsExactly("test-run");
-        }
 
         @Test
         void shouldReportStartedJob() {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1)
+                    .jobId("test-job-1").jobRunId(jobRunId).build();
 
             // When
-            tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
-            tracker.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
+            tracker.jobValidated(job);
+            tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, acceptedRunWhichStarted(job, taskId,
-                            validationTime, startTime)));
+                    .containsExactly(ingestJobStatus(job, unfinishedRun(taskId,
+                            ingestAcceptedStatus(validationTime, 1),
+                            validatedIngestStartedStatus(1, startTime))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
-                    .containsExactly("test-run", "test-run");
+                    .containsExactly(jobRunId, jobRunId);
         }
 
         @Test
@@ -436,23 +420,26 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1)
+                    .jobId("test-job-1").jobRunId(jobRunId).build();
 
             // When
-            tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
-            tracker.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-            tracker.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
+            tracker.jobValidated(job);
+            tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            tracker.jobFinished(ingestJobFinishedEventBuilder(job, summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, acceptedRunWhichFinished(job, taskId,
-                            validationTime, summary, 2)));
+                    .containsExactly(ingestJobStatus(job, validatedFinishedRun(taskId,
+                            ingestAcceptedStatus(validationTime, 1),
+                            validatedIngestStartedStatus(1, startTime),
+                            ingestFinishedStatus(summary, 2))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
-                    .containsExactly("test-run", "test-run", "test-run");
+                    .containsExactly(jobRunId, jobRunId, jobRunId);
         }
 
         @Test
@@ -460,20 +447,23 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
             RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
+            IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(1)
+                    .jobId("test-job-1").jobRunId(jobRunId).taskId(taskId).build();
 
             // When
-            tracker.jobStarted(job.startedEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-            tracker.jobFinished(job.finishedEventBuilder(summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
+            tracker.jobStarted(job);
+            tracker.jobFinished(ingestJobFinishedEventBuilder(job, summary).jobRunId(jobRunId).taskId(taskId).numFilesWrittenByJob(2).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(finishedIngestJob(job, taskId, summary, 2));
+                    .containsExactly(ingestJobStatus(job, finishedRun(taskId,
+                            ingestStartedStatus(startTime, 1),
+                            ingestFinishedStatus(summary, 2))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
-                    .containsExactly("test-run", "test-run");
+                    .containsExactly(jobRunId, jobRunId);
         }
 
         @Test
@@ -481,24 +471,27 @@ public class InMemoryIngestJobStatusStoreTest {
             // Given
             String jobRunId = "test-run";
             String taskId = "test-task";
-            IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
             ProcessRunTime runTime = new ProcessRunTime(startTime, Duration.ofMinutes(10));
             List<String> failureReasons = List.of("Something went wrong");
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1)
+                    .jobId("test-job-1").jobRunId(jobRunId).build();
 
             // When
-            tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
-            tracker.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-            tracker.jobFailed(job.failedEventBuilder(runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
+            tracker.jobValidated(job);
+            tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
+            tracker.jobFailed(ingestJobFailedEventBuilder(job, runTime, failureReasons).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, acceptedRunWhichFailed(job, taskId,
-                            validationTime, runTime, failureReasons)));
+                    .containsExactly(ingestJobStatus(job, validatedFinishedRun(taskId,
+                            ingestAcceptedStatus(validationTime, 1),
+                            validatedIngestStartedStatus(1, startTime),
+                            failedStatus(runTime, failureReasons))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(ProcessStatusUpdateRecord::getJobRunId)
-                    .containsExactly("test-run", "test-run", "test-run");
+                    .containsExactly(jobRunId, jobRunId, jobRunId);
         }
 
         @Test
@@ -514,7 +507,7 @@ public class InMemoryIngestJobStatusStoreTest {
             String taskId = "test-task";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime, 1).build();
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1).build();
 
             // When
             tracker.jobValidated(job);

@@ -15,8 +15,10 @@
  */
 package sleeper.ingest.core.job.status;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
@@ -80,11 +82,10 @@ public class IngestJobEventTestData {
      * Creates a builder for an ingest job accepted event.
      *
      * @param  validationTime the validation time
-     * @param  fileCount      the number of input files for the job
      * @return                the builder
      */
-    public static IngestJobValidatedEvent.Builder ingestJobAcceptedEventBuilder(Instant validationTime, int fileCount) {
-        return ingestJobValidatedEventBuilder(validationTime).reasons(List.of()).fileCount(fileCount);
+    public static IngestJobValidatedEvent.Builder ingestJobAcceptedEventBuilder(Instant validationTime) {
+        return ingestJobValidatedEventBuilder(validationTime).reasons(List.of());
     }
 
     /**
@@ -113,6 +114,22 @@ public class IngestJobEventTestData {
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
                 .summary(summary);
+    }
+
+    /**
+     * Creates a builder for an ingest job failed event.
+     *
+     * @param  job     a previous event for the same job
+     * @param  runTime the runtime information
+     * @return         the builder
+     */
+    public static IngestJobFailedEvent.Builder ingestJobFailedEventBuilder(IngestJobEvent job, ProcessRunTime runTime, List<String> reasons) {
+        return IngestJobFailedEvent.builder()
+                .jobId(job.getJobId())
+                .tableId(job.getTableId())
+                .taskId(job.getTaskId())
+                .runTime(runTime)
+                .failureReasons(reasons);
     }
 
 }

@@ -101,6 +101,18 @@ public class ProcessStatusUpdateTestHelper {
     }
 
     /**
+     * Creates a process failed status.
+     *
+     * @param  runTime        the runtime information
+     * @param  failureReasons the reasons for the failure
+     * @return                a {@link ProcessFailedStatus}
+     */
+    public static ProcessFailedStatus failedStatus(
+            ProcessRunTime runTime, List<String> failureReasons) {
+        return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
+    }
+
+    /**
      * Creates a default update time based on a given time.
      *
      * @param  time the provided time
