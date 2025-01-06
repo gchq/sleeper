@@ -24,7 +24,7 @@ import static sleeper.ingest.core.task.IngestTaskStatusTestData.startedBuilderWi
 
 public class InMemoryIngestTaskStatusStoreTest {
 
-    private final IngestTaskStatusStore store = new InMemoryIngestTaskStatusStore();
+    private final IngestTaskTracker store = new InMemoryIngestTaskStatusStore();
 
     @Test
     public void shouldListOneStartedTaskWhenStored() {

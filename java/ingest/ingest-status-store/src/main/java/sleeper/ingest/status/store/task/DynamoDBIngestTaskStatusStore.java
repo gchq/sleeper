@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskTracker;
 import sleeper.ingest.status.store.IngestStatusStoreException;
 
 import java.time.Instant;
@@ -49,7 +49,7 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.UPDATE_TYPE;
 
-public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
+public class DynamoDBIngestTaskStatusStore implements IngestTaskTracker {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusStore.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;

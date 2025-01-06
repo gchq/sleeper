@@ -22,7 +22,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskTracker;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     private final Map<String, CompactionJobTracker> compactionJobTrackerByInstance = new HashMap<>();
     private final Map<String, CompactionTaskTracker> compactionTaskTrackerByInstance = new HashMap<>();
     private final Map<String, IngestJobStatusStore> ingestJobStoreByInstance = new HashMap<>();
-    private final Map<String, IngestTaskStatusStore> ingestTaskStoreByInstance = new HashMap<>();
+    private final Map<String, IngestTaskTracker> ingestTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestBatcherStore> ingestBatcherStoreByInstance = new HashMap<>();
 
     public void setTracker(String instanceId, CompactionJobTracker tracker) {
@@ -50,7 +50,7 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
         ingestJobStoreByInstance.put(instanceId, tracker);
     }
 
-    public void setTracker(String instanceId, IngestTaskStatusStore tracker) {
+    public void setTracker(String instanceId, IngestTaskTracker tracker) {
         ingestTaskStoreByInstance.put(instanceId, tracker);
     }
 
@@ -77,9 +77,9 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     }
 
     @Override
-    public IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
+    public IngestTaskTracker loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
         return Optional.ofNullable(ingestTaskStoreByInstance.get(instanceProperties.get(ID)))
-                .orElse(IngestTaskStatusStore.NONE);
+                .orElse(IngestTaskTracker.NONE);
     }
 
     @Override

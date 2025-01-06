@@ -62,7 +62,7 @@ public class IngestTaskTest {
     private final List<IngestJob> successfulJobs = new ArrayList<>();
     private final List<IngestJob> failedJobs = new ArrayList<>();
     private final InMemoryIngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
-    private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
+    private final IngestTaskTracker taskStore = new InMemoryIngestTaskStatusStore();
     private Supplier<Instant> timeSupplier = Instant::now;
     private Supplier<String> jobRunIdSupplier = () -> UUID.randomUUID().toString();
 

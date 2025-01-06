@@ -26,7 +26,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.store.IngestBatcherStoreFactory;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskTracker;
 import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 
@@ -40,7 +40,7 @@ public interface AdminClientTrackerFactory {
 
     IngestJobStatusStore loadIngestJobStatusStore(InstanceProperties instanceProperties);
 
-    IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties);
+    IngestTaskTracker loadIngestTaskStatusStore(InstanceProperties instanceProperties);
 
     Optional<IngestBatcherStore> loadIngestBatcherStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider);
 
@@ -62,7 +62,7 @@ public interface AdminClientTrackerFactory {
             }
 
             @Override
-            public IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
+            public IngestTaskTracker loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
                 return IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
             }
 

@@ -18,7 +18,7 @@ package sleeper.ingest.status.store.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskTracker;
 import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskStatusStoreTestBase;
 
 import java.time.Duration;
@@ -34,7 +34,7 @@ public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskStatusStoreTestBa
         // Given
         IngestTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        IngestTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        IngestTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
         store.taskStarted(taskStatus);
@@ -49,7 +49,7 @@ public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskStatusStoreTestBa
         // Given
         IngestTaskStatus taskStatus = finishedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        IngestTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        IngestTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultTaskStartTime(), defaultTaskFinishTime());
 
         // When
@@ -66,7 +66,7 @@ public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskStatusStoreTestBa
         // Given
         IngestTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(1);
-        IngestTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        IngestTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
         store.taskStarted(taskStatus);

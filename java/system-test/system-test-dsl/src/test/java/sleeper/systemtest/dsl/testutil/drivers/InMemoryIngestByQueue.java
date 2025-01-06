@@ -30,7 +30,7 @@ import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.InMemoryIngestTaskStatusStore;
 import sleeper.ingest.core.task.IngestTask;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskTracker;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -60,7 +60,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 public class InMemoryIngestByQueue {
     private final Queue<IngestJob> jobsQueue = new LinkedList<>();
     private final List<IngestTask> runningTasks = new ArrayList<>();
-    private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
+    private final IngestTaskTracker taskStore = new InMemoryIngestTaskStatusStore();
     private final IngestJobStatusStore jobStore = new InMemoryIngestJobStatusStore();
     private final InMemoryDataStore sourceFiles;
     private final InMemoryDataStore data;
@@ -137,7 +137,7 @@ public class InMemoryIngestByQueue {
         return jobStore;
     }
 
-    public IngestTaskStatusStore taskStore() {
+    public IngestTaskTracker taskStore() {
         return taskStore;
     }
 

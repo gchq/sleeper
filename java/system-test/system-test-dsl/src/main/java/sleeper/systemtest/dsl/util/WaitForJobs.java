@@ -24,7 +24,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.PollWithRetries;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskTracker;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Duration;
@@ -56,7 +56,7 @@ public class WaitForJobs {
     public static WaitForJobs forIngest(
             SystemTestInstanceContext instance,
             Function<InstanceProperties, IngestJobStatusStore> getJobTracker,
-            Function<InstanceProperties, IngestTaskStatusStore> getTaskTracker,
+            Function<InstanceProperties, IngestTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "ingest",
                 properties -> JobTracker.forIngest(getJobTracker.apply(properties)),
@@ -152,7 +152,7 @@ public class WaitForJobs {
     private interface TaskTracker {
         boolean hasRunningTasks();
 
-        static TaskTracker forIngest(IngestTaskStatusStore tracker) {
+        static TaskTracker forIngest(IngestTaskTracker tracker) {
             return () -> !tracker.getTasksInProgress().isEmpty();
         }
 

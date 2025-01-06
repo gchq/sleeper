@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.clients.status.report.IngestTaskStatusReport;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskTracker;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -35,7 +35,7 @@ import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
 public class IngestTaskStatusReportTest {
-    private final IngestTaskStatusStore store = mock(IngestTaskStatusStore.class);
+    private final IngestTaskTracker store = mock(IngestTaskTracker.class);
 
     @Test
     public void shouldReportNoIngestTasks() throws Exception {

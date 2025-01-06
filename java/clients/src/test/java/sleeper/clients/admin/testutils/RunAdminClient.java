@@ -27,7 +27,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.core.task.IngestTaskTracker;
 import sleeper.task.common.QueueMessageCount;
 
 import static org.mockito.Mockito.when;
@@ -150,7 +150,7 @@ public class RunAdminClient {
         return this;
     }
 
-    public RunAdminClient tracker(IngestTaskStatusStore store) {
+    public RunAdminClient tracker(IngestTaskTracker store) {
         trackers.setTracker(harness.getInstanceId(), store);
         return this;
     }

@@ -22,9 +22,9 @@ import java.util.List;
 /**
  * Stores ingest task statuses.
  */
-public interface IngestTaskStatusStore {
+public interface IngestTaskTracker {
 
-    IngestTaskStatusStore NONE = new IngestTaskStatusStore() {
+    IngestTaskTracker NONE = new IngestTaskTracker() {
     };
 
     /**

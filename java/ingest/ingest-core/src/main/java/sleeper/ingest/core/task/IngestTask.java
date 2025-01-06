@@ -44,7 +44,7 @@ public class IngestTask {
     private final MessageReceiver messageReceiver;
     private final IngestJobHandler ingester;
     private final IngestJobStatusStore jobStatusStore;
-    private final IngestTaskStatusStore taskStatusStore;
+    private final IngestTaskTracker taskStatusStore;
     private final String taskId;
     private final IngestTaskStatus.Builder taskStatusBuilder;
     private final IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
@@ -52,7 +52,7 @@ public class IngestTask {
 
     public IngestTask(Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier,
             MessageReceiver messageReceiver, IngestJobHandler ingester,
-            IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
+            IngestJobStatusStore jobStatusStore, IngestTaskTracker taskStore, String taskId) {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
