@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.record.process.status.ProcessStatusUpdate;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 
 import java.time.Instant;
@@ -30,10 +29,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.singleJobStatusFrom;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleJobStatusFrom;
 
 public class IngestJobStatusInPeriodTest {
 

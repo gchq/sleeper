@@ -34,10 +34,10 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
 import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;
@@ -45,8 +45,8 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
 
 @Testcontainers
 public class IngestJobMessageHandlerIT {

@@ -37,12 +37,12 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichFailed;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichFinished;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRunWhichFailed;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRunWhichFinished;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 
 public class StoreIngestJobRunIdIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test

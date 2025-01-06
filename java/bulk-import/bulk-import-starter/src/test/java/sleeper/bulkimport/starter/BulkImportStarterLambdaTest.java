@@ -26,17 +26,17 @@ import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
 import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static sleeper.bulkimport.starter.BulkImportStarterLambdaTestHelper.getSqsEvent;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
 
 public class BulkImportStarterLambdaTest {
     BulkImportExecutor executor = mock(BulkImportExecutor.class);

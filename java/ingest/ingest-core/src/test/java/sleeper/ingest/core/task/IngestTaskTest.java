@@ -22,11 +22,11 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
 import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTask.MessageHandle;
 import sleeper.ingest.core.task.IngestTask.MessageReceiver;
 
@@ -48,9 +48,9 @@ import static sleeper.core.tracker.ingest.job.IngestJobUpdateType.FINISHED_WHEN_
 import static sleeper.core.tracker.ingest.job.IngestJobUpdateType.STARTED;
 import static sleeper.ingest.core.IngestResultTestData.defaultFileIngestResult;
 import static sleeper.ingest.core.IngestResultTestData.defaultFileIngestResultReadAndWritten;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestJobUncommitted;
 import static sleeper.ingest.core.job.IngestJobTestData.DEFAULT_TABLE_ID;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.failedIngestJob;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestJobUncommitted;
 import static sleeper.ingest.core.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.ingest.core.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.ingest.core.task.IngestTaskStatusTestData.finishedOneJob;

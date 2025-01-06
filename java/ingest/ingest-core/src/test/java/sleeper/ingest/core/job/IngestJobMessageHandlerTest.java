@@ -25,9 +25,9 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,8 +37,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.rejectedRun;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
 
 public class IngestJobMessageHandlerTest {
 

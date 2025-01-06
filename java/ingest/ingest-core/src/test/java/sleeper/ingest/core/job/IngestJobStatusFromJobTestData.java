@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.core.job.status;
+package sleeper.ingest.core.job;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusTestData;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
-import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,7 +34,7 @@ import static sleeper.core.record.process.ProcessRunTestData.finishedRun;
 import static sleeper.core.record.process.ProcessRunTestData.startedRun;
 import static sleeper.core.record.process.ProcessRunTestData.validationRun;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 
 /**
  * A helper for creating ingest job statuses for tests.

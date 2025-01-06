@@ -33,8 +33,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
 import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,10 +50,10 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedAndFailedToStartIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.rejectedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedAndFailedToStartIngestRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 
 class BulkImportExecutorTest {
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()

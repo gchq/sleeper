@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,7 +30,6 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
@@ -51,21 +50,21 @@ import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summ
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobAcceptedEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobAddedFilesEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFailedEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobFinishedEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobRejectedEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedAfterValidationEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobStartedEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobEventTestData.ingestJobValidatedEventBuilder;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestAcceptedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestAddedFilesStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestRejectedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.validatedIngestStartedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobAcceptedEventBuilder;
+import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobAddedFilesEventBuilder;
+import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobFailedEventBuilder;
+import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobFinishedEventBuilder;
+import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobRejectedEventBuilder;
+import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobStartedAfterValidationEventBuilder;
+import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobStartedEventBuilder;
+import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobValidatedEventBuilder;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestRejectedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedIngestStartedStatus;
 
 public class InMemoryIngestJobStatusStoreTest {
 

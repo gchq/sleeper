@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.job.status;
+package sleeper.core.tracker.ingest.job;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +24,6 @@ import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
@@ -43,21 +42,21 @@ import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.failedIngestRun;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRun;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRunUncommitted;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestRejectedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.jobStatusListFrom;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleJobStatusFrom;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.startedIngestRun;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.ACCEPTED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.failedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.finishedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.finishedIngestRunUncommitted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestAcceptedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestRejectedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.jobStatusListFrom;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.singleJobStatusFrom;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.startedIngestRun;
 
 public class IngestJobStatusTest {
 

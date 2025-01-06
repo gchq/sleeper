@@ -35,20 +35,20 @@ import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.failedIngestJob;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.failedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestJob;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestJobUncommitted;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.rejectedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestJob;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestAddedFilesStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestJob;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestJobUncommitted;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestJob;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestRun;
 
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {

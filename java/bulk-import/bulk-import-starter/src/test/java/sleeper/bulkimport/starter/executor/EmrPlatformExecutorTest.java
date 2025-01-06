@@ -44,7 +44,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -75,9 +75,9 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.rejectedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 
 class EmrPlatformExecutorTest {
     private final EmrClient emr = mock(EmrClient.class);

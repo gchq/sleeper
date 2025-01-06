@@ -22,9 +22,9 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobStatusStore;
 import sleeper.core.tracker.ingest.job.IngestJobStatusStore;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
