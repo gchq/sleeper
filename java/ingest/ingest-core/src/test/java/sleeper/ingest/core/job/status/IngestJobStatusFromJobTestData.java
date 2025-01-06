@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.core.job.status;
 
+import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
@@ -23,6 +24,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Instant;
+import java.util.List;
 
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
@@ -93,6 +95,19 @@ public class IngestJobStatusFromJobTestData {
      */
     public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
         return ingestJobStatus(job, IngestJobStatusTestHelper.finishedIngestRunUncommitted(job, taskId, summary, numFilesWrittenByJob));
+    }
+
+    /**
+     * Creates an ingest job status for a job that has failed.
+     *
+     * @param  job            the ingest job
+     * @param  taskId         the ingest task ID
+     * @param  runTime        the process run time
+     * @param  failureReasons a list of failure reasons
+     * @return                an {@link IngestJobStatus}
+     */
+    public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
+        return ingestJobStatus(job, IngestJobStatusTestHelper.failedIngestRun(job, taskId, runTime, failureReasons));
     }
 
     /**

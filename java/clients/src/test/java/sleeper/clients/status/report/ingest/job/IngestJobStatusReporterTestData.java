@@ -35,6 +35,7 @@ import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.failedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestJobUncommitted;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
@@ -42,7 +43,6 @@ import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.inge
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunWhichStarted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;

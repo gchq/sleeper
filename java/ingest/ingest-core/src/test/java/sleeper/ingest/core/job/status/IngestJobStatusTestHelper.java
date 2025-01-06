@@ -73,19 +73,6 @@ public class IngestJobStatusTestHelper {
     }
 
     /**
-     * Creates an ingest job status for a job that has failed.
-     *
-     * @param  job            the ingest job
-     * @param  taskId         the ingest task ID
-     * @param  runTime        the process run time
-     * @param  failureReasons a list of failure reasons
-     * @return                an {@link IngestJobStatus}
-     */
-    public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
-        return IngestJobStatusFromJobTestData.ingestJobStatus(job, failedIngestRun(job, taskId, runTime, failureReasons));
-    }
-
-    /**
      * Creates a process run for an ingest job that was validated and started.
      *
      * @param  job            the ingest job
