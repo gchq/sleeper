@@ -26,10 +26,10 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRunOnTask;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRunOnTask;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.rejectedRun;
 
 public class StoreIngestJobValidatedIT extends DynamoDBIngestJobStatusStoreTestBase {
     @Test

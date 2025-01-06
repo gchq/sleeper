@@ -35,20 +35,20 @@ import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.failedIngestJob;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.failedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestJobUncommitted;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestStartedStatus;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.rejectedRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestJob;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.failedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestFinishedStatusUncommitted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
 
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {

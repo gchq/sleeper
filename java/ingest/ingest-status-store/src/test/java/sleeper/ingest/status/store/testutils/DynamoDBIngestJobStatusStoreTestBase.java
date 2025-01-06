@@ -59,11 +59,11 @@ import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.d
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.failedIngestJob;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestJob;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestStartedStatus;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestJob;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.startedIngestRun;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createInstanceProperties;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createSchema;
 import static sleeper.ingest.status.store.testutils.IngestStatusStoreTestUtils.createTableProperties;

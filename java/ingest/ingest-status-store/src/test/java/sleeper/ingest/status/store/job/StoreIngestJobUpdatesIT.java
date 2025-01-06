@@ -32,8 +32,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.finishedIngestRun;
 import static sleeper.ingest.core.job.status.IngestJobStatusFromJobTestData.ingestJobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
 
 public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBase {
 
