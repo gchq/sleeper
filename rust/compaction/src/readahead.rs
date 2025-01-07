@@ -369,8 +369,6 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             }
             total_live_streams += cache_ob.streams.len();
         }
-        // Remove all location with no objects
-        cache.retain(|_, cache_ob| !cache_ob.streams.is_empty());
         debug!(
             "Cache contains live streams {} across {} files",
             total_live_streams.to_formatted_string(&Locale::en),
@@ -521,6 +519,7 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
             if should_skip_readahead(&options) {
                 return self.inner.get_opts(location, options).await;
             }
+
             self.clean_cache();
 
             let start_pos = get_start_pos(options.range.as_ref());
