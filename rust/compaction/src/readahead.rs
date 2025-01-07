@@ -39,6 +39,7 @@ use thiserror::Error;
 
 /// Error type for [`ReadaheadStore`].
 #[derive(Error, Debug, Clone, Eq, PartialEq)]
+#[allow(clippy::module_name_repetitions)]
 pub enum ReadaheadError {
     #[error("position {index} is out of bounds, total size {size}")]
     RangeOutOfBounds { index: usize, size: usize },
@@ -202,6 +203,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .get_mut(location)
         {
             Some(cache_ob) => {
+                // Any cache entries between 0 and this position?
                 let Some(nearest_stream_pos) = cache_ob
                     .streams
                     .range(..=start_pos)

@@ -21,6 +21,7 @@ use std::{
     num::NonZero,
     pin::Pin,
     sync::Arc,
+    time::Duration,
 };
 
 use aws_config::{BehaviorVersion, Region};
@@ -156,11 +157,13 @@ impl ObjectStoreFactory {
         match src.scheme() {
             "s3" => Ok(self.connect_s3(src).map(|e| {
                 Arc::new(LoggingObjectStore::new(
-                    ReadaheadStore::new(e).with_max_live_streams(
-                        std::thread::available_parallelism()
-                            .unwrap_or(NonZero::new(2usize).unwrap())
-                            .get(),
-                    ),
+                    ReadaheadStore::new(e)
+                        .with_max_live_streams(
+                            std::thread::available_parallelism()
+                                .unwrap_or(NonZero::new(2usize).unwrap())
+                                .get(),
+                        )
+                        .with_max_stream_age(Duration::from_secs(60)),
                     "DataFusion",
                 ))
             })?),
