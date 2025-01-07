@@ -91,7 +91,7 @@ Kotlin Stdlib (org.jetbrains.kotlin:*:2.*)
 
 Logback (ch.qos.logback:logback-*:1.*)
 
-- Dual license (<https://logback.qos.ch/license.html>)
+- Dual license (https://logback.qos.ch/license.html)
 - Eclipse Public License 1.0
 - GNU Lesser General Public License, version 2.1
 
@@ -233,11 +233,11 @@ AWS Constructs (software.constructs:constructs:10.*)
 
 AWS Lambda Powertools (software.amazon.lambda:powertools-metrics:1.*)
 
-- MIT License (<https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE>)
+- MIT License (https://github.com/awslabs/aws-lambda-powertools-java/blob/master/LICENSE)
 
 Jersey Client (org.glassfish.jersey.core:jersey-client:2.*, org.glassfish.jersey.inject:jersey-hk2:2.*, org.glassfish.jersey.media:jersey-media-json-jackson:2.*)
 
-- Eclipse Public License 2.0 (<https://projects.eclipse.org/projects/ee4j.jersey>)
+- Eclipse Public License 2.0 (https://projects.eclipse.org/projects/ee4j.jersey)
 
 Jakarta RESTful WS API (jakarta.ws.rs:jakarta.ws.rs-api:2.*)
 
@@ -250,7 +250,7 @@ Netty (io.netty:*:4.*)
 
 Eclipse Jetty (org.eclipse.jetty:*:9.*, org.eclipse.jetty.http2:*:9.*, org.eclipse.jetty.websocket:*:9.*)
 
-- Dual license (<https://eclipse.dev/jetty/licenses.php>)
+- Dual license (https://eclipse.dev/jetty/licenses.php)
 - Apache License, Version 2.0
 - Eclipse Public License 1.0
 
@@ -280,7 +280,7 @@ Jungrapht Visualization (jungrapht) (com.github.tomnelson:jungrapht-*:1.*)
 
 JGraphT (org.jgrapht:*:1.*, org.jgrapht:jgrapht-core:0.* - Trino uses an older version)
 
-- May be used under either of two licenses (<https://github.com/jgrapht/jgrapht>)
+- May be used under either of two licenses (https://github.com/jgrapht/jgrapht)
 - GNU Lesser General Public License (LGPL) 2.1
 - Eclipse Public License (EPL) 2.0
 
@@ -320,8 +320,12 @@ Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
 
 - Apache License, Version 2.0
 
+
+
 The file java/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
 on ArrayOfStringsSerDe from the Apache DataSketches library, licensed under the Apache License, Version 2.0.
+
+
 
 Sleeper also contains a Python module. This has the following dependencies.
 
@@ -337,154 +341,158 @@ s3fs:
 
 - The 3-Clause BSD License
 
+
+
 Sleeper contains Rust code. This has the following dependencies.
 
-Rust Object Store (<https://github.com/apache/arrow-rs/tree/master/object_store>)
+Rust Object Store (https://github.com/apache/arrow-rs/tree/master/object_store)
 
 - Apache License, Version 2.0
 
-color-eyre (<https://github.com/yaahc/color-eyre>)
+color-eyre (https://github.com/yaahc/color-eyre)
 
 - Apache License, Version 2.0
 
-Tokio (<https://github.com/tokio-rs/tokio>)
+Tokio (https://github.com/tokio-rs/tokio)
 
 - MIT License
 
-owo-colors (<https://github.com/jam1garner/owo-colors>)
+owo-colors (https://github.com/jam1garner/owo-colors)
 
 - MIT License
 
-thiserror (<https://github.com/dtolnay/thiserror>)
+thiserror (https://github.com/dtolnay/thiserror)
 
 - Apache License, Version 2.0
 
-log (<https://github.com/rust-lang/log>)
+log (https://github.com/rust-lang/log)
 
 - Apache License, Version 2.0
 
-env_logger (<https://github.com/rust-cli/env_logger/>)
+env_logger (https://github.com/rust-cli/env_logger/)
 
 - Apache License, Version 2.0
 
-human-panic (<https://github.com/rust-cli/human-panic>)
+human-panic (https://github.com/rust-cli/human-panic)
 
 - Apache License, Version 2.0
 
-clap (<https://github.com/clap-rs/clap>)
+clap (https://github.com/clap-rs/clap)
 
 - Apache License, Version 2.0
 
-libc (<https://github.com/rust-lang/libc>)
+libc (https://github.com/rust-lang/libc)
 
 - Apache License, Version 2.0
 
-arrow (<https://github.com/apache/arrow-rs>)
+arrow (https://github.com/apache/arrow-rs)
 
 - Apache License, Version 2.0
 
-futures (<https://github.com/rust-lang/futures-rs>)
+futures (https://github.com/rust-lang/futures-rs)
 
 - MIT License
 
-itertools (<https://github.com/rust-itertools/itertools>)
+itertools (https://github.com/rust-itertools/itertools)
 
 - Apache License, Version 2.0
 
-object_store (<https://github.com/apache/arrow-rs/tree/master/object_store>)
+object_store (https://github.com/apache/arrow-rs/tree/master/object_store)
 
 - Apache License, Version 2.0
 
-aws-config (<https://github.com/awslabs/smithy-rs>)
+aws-config (https://github.com/awslabs/smithy-rs)
 
 - Apache License, Version 2.0
 
-aws-credentials (<https://github.com/awslabs/smithy-rs>)
+aws-credentials (https://github.com/awslabs/smithy-rs)
 
 - Apache License, Version 2.0
 
-aws-types (<https://github.com/awslabs/smithy-rs>)
+aws-types (https://github.com/awslabs/smithy-rs)
 
 - Apache License, Version 2.0
 
-url (<https://github.com/servo/rust-url>)
+url (https://github.com/servo/rust-url)
 
 - Apache License, Version 2.0
 
-bytes (<https://github.com/tokio-rs/bytes>)
+bytes (https://github.com/tokio-rs/bytes)
 
 - MIT License
 
-tokio-test (<https://github.com/tokio-rs/tokio>)
+tokio-test (https://github.com/tokio-rs/tokio)
 
 - MIT License
 
-chrono (<https://github.com/chronotope/chrono>)
+chrono (https://github.com/chronotope/chrono)
 
 - Apache License, Version 2.0
 
-num-format (<https://github.com/bcmyers/num-format>)
+num-format (https://github.com/bcmyers/num-format)
 
 - Apache License, Version 2.0
 
-cxx (<https://github.com/dtolnay/cxx>)
+cxx (https://github.com/dtolnay/cxx)
 
 - Apache 2 License
 
-datasketches-cpp (<https://github.com/apache/datasketches-cpp>)
+datasketches-cpp (https://github.com/apache/datasketches-cpp)
 
 - Apache 2 License
 
-git2 (<https://github.com/rust-lang/git2-rs>)
+git2 (https://github.com/rust-lang/git2-rs)
 
 - Apache 2 License
 
-datafusion (<https://github.com/apache/datafusion>)
+datafusion (https://github.com/apache/datafusion)
 
 - Apache 2 License
 
-tempfile (<https://github.com/Stebalien/tempfile>)
+tempfile (https://github.com/Stebalien/tempfile)
 
 - Apache 2 License
 
-testing_logger (<https://github.com/brucechapman/rust_testing_logger>)
+testing_logger (https://github.com/brucechapman/rust_testing_logger)
 
-- MIT License
+- The 3-Clause BSD License
+
+
 
 The build pipeline uses the following GitHub Actions from the marketplace.
 
-ScaCap/action-surefire-report (<https://github.com/marketplace/actions/surefire-report>)
+ScaCap/action-surefire-report (https://github.com/marketplace/actions/surefire-report)
 
 - Apache License, Version 2.0
 
-jwgmeligmeyling/checkstyle-github-action (<https://github.com/marketplace/actions/push-checkstyle-report>)
+jwgmeligmeyling/checkstyle-github-action (https://github.com/marketplace/actions/push-checkstyle-report)
 
 - MIT License
 
-jwgmeligmeyling/spotbugs-github-action (<https://github.com/marketplace/actions/push-spotbugs-report>)
+jwgmeligmeyling/spotbugs-github-action (https://github.com/marketplace/actions/push-spotbugs-report)
 
 - MIT License
 
-dtolnay/rust-toolchain (<https://github.com/marketplace/actions/rustup-toolchain-install>)
+dtolnay/rust-toolchain (https://github.com/marketplace/actions/rustup-toolchain-install)
 
 - MIT License
 
-mozilla-actions/sccache-action (<https://github.com/marketplace/actions/sccache-action>)
+mozilla-actions/sccache-action (https://github.com/marketplace/actions/sccache-action)
 
 - Apache License, Version 2.0
 
-docker/setup-qemu-action (<https://github.com/marketplace/actions/docker-setup-qemu>)
+docker/setup-qemu-action (https://github.com/marketplace/actions/docker-setup-qemu)
 
 - Apache License, Version 2.0
 
-docker/setup-buildx-action (<https://github.com/marketplace/actions/docker-setup-buildx>)
+docker/setup-buildx-action (https://github.com/marketplace/actions/docker-setup-buildx)
 
 - Apache License, Version 2.0
 
-docker/login-action (<https://github.com/marketplace/actions/docker-login>)
+docker/login-action (https://github.com/marketplace/actions/docker-login)
 
 - Apache License, Version 2.0
 
-docker/build-push-action (<https://github.com/marketplace/actions/build-and-push-docker-images>)
+docker/build-push-action (https://github.com/marketplace/actions/build-and-push-docker-images)
 
 - Apache License, Version 2.0

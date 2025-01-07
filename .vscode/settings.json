@@ -83,5 +83,11 @@
   "java.configuration.updateBuildConfiguration": "interactive",
   "java.codeGeneration.hashCodeEquals.useJava7Objects": true,
   "java.codeGeneration.hashCodeEquals.useInstanceof": true,
-  "java.codeGeneration.toString.template": "${object.className}{${member.name()}=${member.value}, ${otherMembers}}"
+  "java.codeGeneration.toString.template": "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
+  "files.associations": {
+    "NOTICES": "notices"
+  },
+  "[notices]": {
+    "editor.formatOnSave": false
+  }
 }
