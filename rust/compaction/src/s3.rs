@@ -33,7 +33,10 @@ use object_store::{
 };
 use url::Url;
 
-use crate::store::{LoggingObjectStore, MultipartSizeHintable};
+use crate::{
+    readahead::ReadaheadStore,
+    store::{LoggingObjectStore, MultipartSizeHintable},
+};
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
@@ -155,7 +158,7 @@ impl ObjectStoreFactory {
         match src.scheme() {
             "s3" => Ok(self
                 .connect_s3(src)
-                .map(|e| Arc::new(LoggingObjectStore::new(e, "S3")))?),
+                .map(|e| Arc::new(LoggingObjectStore::new(ReadaheadStore::new(e), "S3")))?),
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
                 "LOCAL",

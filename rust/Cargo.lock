@@ -1076,6 +1076,7 @@ dependencies = [
  "rust_sketch",
  "tempfile",
  "testing_logger",
+ "thiserror",
  "tokio",
  "tokio-test",
  "url",
