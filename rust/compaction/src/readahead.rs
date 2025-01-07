@@ -296,6 +296,7 @@ impl<T: ObjectStore> ReadaheadStore<T> {
             .underlying_gets
             .lock()
             .expect("ReadaheadStore lock poisoned") += 1;
+        info!("ReadaheadStore GET request to {}", location);
 
         let stop_pos = get_stop_pos(original_range.as_ref(), meta.size);
         let payload = match payload {

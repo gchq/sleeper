@@ -18,6 +18,7 @@ use std::{
     cell::RefCell,
     collections::{hash_map::Entry, HashMap},
     future::ready,
+    num::NonZero,
     pin::Pin,
     sync::Arc,
 };
@@ -156,12 +157,19 @@ impl ObjectStoreFactory {
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
     fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn MultipartSizeHintable>> {
         match src.scheme() {
-            "s3" => Ok(self
-                .connect_s3(src)
-                .map(|e| Arc::new(LoggingObjectStore::new(ReadaheadStore::new(e), "S3")))?),
+            "s3" => Ok(self.connect_s3(src).map(|e| {
+                Arc::new(LoggingObjectStore::new(
+                    ReadaheadStore::new(e).with_max_live_streams(
+                        std::thread::available_parallelism()
+                            .unwrap_or(NonZero::new(2usize).unwrap())
+                            .get(),
+                    ),
+                    "DataFusion",
+                ))
+            })?),
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
-                "LOCAL",
+                "Local",
             ))),
             _ => Err(eyre!("no object store for given schema")),
         }
