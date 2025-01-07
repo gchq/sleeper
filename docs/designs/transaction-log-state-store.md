@@ -134,13 +134,13 @@ DynamoDB state store, but use a snapshot ID instead of the table ID.
 If we want this view to be 100% up to date, then when we perform a query we could still read the latest transactions
 that have happened since the snapshot, and include that data in the result.
 
-#### Status stores for reporting
+#### Job trackers for reporting
 
 If we capture events related to jobs as transactions in the log, that would allow us to produce a separate model from
 the same transactions that can show what jobs have occurred, and every detail we track about them in the state store.
 
-This could unify some updates to jobs that are currently done in a separate reporting status store, which we would
-ideally like to happen simultaneously with some change in the state store, eg. a compaction job finishing.
+This could unify some updates to jobs that are currently done in a separate reporting store, which we would ideally like
+to happen simultaneously with some change in the state store, eg. a compaction job finishing.
 
 #### Update models
 
