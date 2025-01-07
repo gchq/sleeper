@@ -32,7 +32,7 @@ import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusF
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat.UPDATE_TIME;
 import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskTracker.taskStatusTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
@@ -43,7 +43,7 @@ public class DynamoDBCompactionTaskTrackerCreator {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+        if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return;
         }
         String tableName = taskStatusTableName(properties.get(ID));
@@ -58,7 +58,7 @@ public class DynamoDBCompactionTaskTrackerCreator {
     }
 
     public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
-        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+        if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return;
         }
         String tableName = taskStatusTableName(properties.get(ID));

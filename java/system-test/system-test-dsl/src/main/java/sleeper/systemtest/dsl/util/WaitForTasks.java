@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -36,7 +36,7 @@ public class WaitForTasks {
 
     private final JobTracker jobTracker;
 
-    public WaitForTasks(IngestJobStatusStore jobTracker) {
+    public WaitForTasks(IngestJobTracker jobTracker) {
         this.jobTracker = JobTracker.forIngest(jobTracker);
     }
 
@@ -78,7 +78,7 @@ public class WaitForTasks {
     private interface JobTracker {
         Stream<ProcessRun> findRunsOfJobs(Collection<String> jobIds);
 
-        static JobTracker forIngest(IngestJobStatusStore tracker) {
+        static JobTracker forIngest(IngestJobTracker tracker) {
             return jobIds -> jobIds.stream().parallel()
                     .flatMap(jobId -> tracker.getJob(jobId).stream())
                     .flatMap(job -> job.getJobRuns().stream());

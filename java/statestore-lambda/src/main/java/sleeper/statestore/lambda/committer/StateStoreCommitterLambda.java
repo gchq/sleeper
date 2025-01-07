@@ -38,7 +38,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
@@ -82,7 +82,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key));
         committer = new StateStoreCommitter(
                 CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
-                IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties),
+                IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
                 tablePropertiesProvider, stateStoreProvider,
                 Instant::now);
         throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));

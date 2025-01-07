@@ -21,7 +21,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 
-import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
 public class IngestTaskStatusStoreFactory {
 
@@ -29,7 +29,7 @@ public class IngestTaskStatusStoreFactory {
     }
 
     public static IngestTaskStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+        if (properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return new DynamoDBIngestTaskStatusStore(dynamoDB, properties);
         } else {
             return IngestTaskStatusStore.NONE;

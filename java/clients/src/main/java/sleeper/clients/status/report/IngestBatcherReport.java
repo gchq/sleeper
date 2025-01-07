@@ -104,7 +104,7 @@ public class IngestBatcherReport {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            IngestBatcherStore statusStore = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
+            IngestBatcherStore store = new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties,
                     S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient));
             IngestBatcherReporter reporter;
             switch (reporterType) {
@@ -115,7 +115,7 @@ public class IngestBatcherReport {
                 default:
                     reporter = new StandardIngestBatcherReporter();
             }
-            new IngestBatcherReport(statusStore, reporter, queryType,
+            new IngestBatcherReport(store, reporter, queryType,
                     new TableStatusProvider(new DynamoDBTableIndex(instanceProperties, dynamoDBClient)))
                     .run();
         } finally {

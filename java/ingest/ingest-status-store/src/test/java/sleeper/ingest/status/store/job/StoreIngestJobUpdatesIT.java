@@ -24,7 +24,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,12 +32,10 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.finishedIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 
-public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobTrackerTestBase {
 
     @Test
     public void shouldReportIngestJobFinishedSeparatelyFromStarted() {
@@ -47,8 +45,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
-        store.jobFinished(defaultJobFinishedEvent(job, startedTime, finishedTime));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobFinished(defaultJobFinishedEvent(job, startedTime, finishedTime));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -65,8 +63,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         List<String> failureReasons = List.of("Something went wrong");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
-        store.jobFailed(defaultJobFailedEvent(job, startedTime, finishedTime, failureReasons));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobFailed(defaultJobFailedEvent(job, startedTime, finishedTime, failureReasons));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -86,15 +84,15 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         String taskId2 = "second-task";
 
         // When
-        store.jobStarted(ingestJobStarted(job, startTime1).taskId(taskId1).build());
-        store.jobStarted(ingestJobStarted(job, startTime2).taskId(taskId2).build());
-        store.jobFinished(ingestJobFinished(job, defaultSummary(startTime1, finishTime1)).taskId(taskId1).numFilesWrittenByJob(1).build());
-        store.jobFinished(ingestJobFinished(job, defaultSummary(startTime2, finishTime2)).taskId(taskId2).numFilesWrittenByJob(2).build());
+        tracker.jobStarted(job.startedEventBuilder(startTime1).taskId(taskId1).build());
+        tracker.jobStarted(job.startedEventBuilder(startTime2).taskId(taskId2).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary(startTime1, finishTime1)).taskId(taskId1).numFilesWrittenByJob(1).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary(startTime2, finishTime2)).taskId(taskId2).numFilesWrittenByJob(2).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job,
+                .containsExactly(ingestJobStatus(job,
                         finishedIngestRun(job, taskId2, defaultSummary(startTime2, finishTime2), 2),
                         finishedIngestRun(job, taskId1, defaultSummary(startTime1, finishTime1), 1)));
     }
@@ -111,8 +109,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
                 startedTime, finishedTime, timeInProcess);
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
-        store.jobFinished(defaultJobFinishedEvent(job, summary));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobFinished(defaultJobFinishedEvent(job, summary));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -132,8 +130,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         List<String> failureReasons = List.of("Some reason");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
-        store.jobFailed(defaultJobFailedEvent(job, runTime, failureReasons));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobFailed(defaultJobFailedEvent(job, runTime, failureReasons));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -153,8 +151,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
                 fileFactory.rootFile("file2.parquet", 456));
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
-        store.jobAddedFiles(defaultJobAddedFilesEvent(job, files, writtenTime));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobAddedFiles(defaultJobAddedFilesEvent(job, files, writtenTime));
 
         // Then
         assertThat(getAllJobStatuses())
@@ -170,8 +168,8 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobStatusStoreTestBas
         Instant writtenTime = Instant.parse("2022-12-14T13:51:42.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job, startedTime));
-        store.jobFinished(defaultJobFinishedButUncommittedEvent(job, startedTime, writtenTime, 2));
+        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
+        tracker.jobFinished(defaultJobFinishedButUncommittedEvent(job, startedTime, writtenTime, 2));
 
         // Then
         assertThat(getAllJobStatuses())

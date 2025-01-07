@@ -18,9 +18,9 @@ package sleeper.ingest.status.store.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -29,7 +29,7 @@ import java.time.temporal.ChronoField;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
-public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class StoreIngestJobExpiryIT extends DynamoDBIngestJobTrackerTestBase {
 
     @Test
     public void shouldSetExpiryDateForStartedJob() {
@@ -38,11 +38,11 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
         Instant startTime = Instant.parse("2022-12-15T11:32:42.001Z");
         Duration timeToLive = Duration.ofDays(7);
 
-        IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
-        store.jobStarted(defaultJobStartedEvent(job, startTime));
+        IngestJobTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
+        tracker.jobStarted(defaultJobStartedEvent(job, startTime));
 
         // When/Then
-        assertThat(getJobStatus(store, job.getId()).getExpiryDate())
+        assertThat(getJobStatus(tracker, job.getId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(startTime, timeToLive));
     }
 
@@ -54,13 +54,13 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
         Instant finishTime = Instant.parse("2022-12-15T11:33:42.001Z");
         Duration timeToLive = Duration.ofDays(7);
 
-        IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        IngestJobTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultUpdateTime(startTime), defaultUpdateTime(finishTime));
-        store.jobStarted(defaultJobStartedEvent(job, startTime));
-        store.jobFinished(defaultJobFinishedEvent(job, startTime, finishTime));
+        tracker.jobStarted(defaultJobStartedEvent(job, startTime));
+        tracker.jobFinished(defaultJobFinishedEvent(job, startTime, finishTime));
 
         // When/Then
-        assertThat(getJobStatus(store, job.getId()).getExpiryDate())
+        assertThat(getJobStatus(tracker, job.getId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(startTime, timeToLive));
     }
 
@@ -71,11 +71,11 @@ public class StoreIngestJobExpiryIT extends DynamoDBIngestJobStatusStoreTestBase
         Instant startTime = Instant.parse("2022-12-15T11:32:42.001Z");
         Duration timeToLive = Duration.ofDays(1);
 
-        IngestJobStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
-        store.jobStarted(defaultJobStartedEvent(job, startTime));
+        IngestJobTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(startTime));
+        tracker.jobStarted(defaultJobStartedEvent(job, startTime));
 
         // When/Then
-        assertThat(getJobStatus(store, job.getId()).getExpiryDate())
+        assertThat(getJobStatus(tracker, job.getId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(startTime, timeToLive));
     }
 
