@@ -119,19 +119,19 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict between 1.6.0 and 3.0.0 within Spark, and 1.17.2 in Trino.
         -->
-        <okio.version>3.9.1</okio.version>
+        <okio.version>3.10.0</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.16</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.29.45</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.29.46</aws-java-sdk-v2.version>
         <aws-crt.version>0.33.7</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-codec.version>1.17.1</commons-codec.version>
+        <commons-codec.version>1.17.2</commons-codec.version>
         <commons-io.version>2.18.0</commons-io.version>
         <commons-configuration.version>2.11.0</commons-configuration.version>
         <commons-compress.version>1.27.1</commons-compress.version>
@@ -182,7 +182,7 @@
         <testcontainers.version>1.20.4</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.27.2</assertj.version>
-        <approvaltests.version>24.12.0</approvaltests.version>
+        <approvaltests.version>24.13.0</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.0</xmlunit.version>
         <jsonunit.version>4.1.0</jsonunit.version>

@@ -26,10 +26,10 @@ import sleeper.clients.status.report.ingest.job.StandardIngestJobStatusReporter;
 import sleeper.clients.status.report.ingest.task.IngestTaskQuery;
 import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporter;
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -66,7 +66,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     }
 
     public SystemTestReport jobsReport() {
-        return (out, startTime) -> new IngestJobStatusReport(jobStore(),
+        return (out, startTime) -> new IngestJobStatusReport(jobTracker(),
                 new RangeJobsQuery(instance.getTableStatus(), startTime, Instant.MAX),
                 new StandardIngestJobStatusReporter(out), queueMessages, instance.getInstanceProperties(),
                 PersistentEMRStepCount.byStatus(instance.getInstanceProperties(), emr))
@@ -75,11 +75,11 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
 
     public List<IngestJobStatus> jobs(ReportingContext reportingContext) {
         return new RangeJobsQuery(instance.getTableStatus(), reportingContext.getRecordingStartTime(), Instant.MAX)
-                .run(jobStore());
+                .run(jobTracker());
     }
 
-    private IngestJobStatusStore jobStore() {
-        return IngestJobStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
+    private IngestJobTracker jobTracker() {
+        return IngestJobTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
     }
 
     private IngestTaskStatusStore taskStore() {

@@ -70,7 +70,7 @@ public class CompactionDataFusionPerformanceST {
                 .waitForTotalFileReferences(110);
 
         // When
-        sleeper.compaction().putTableOnlineWaitForJobCreation(10).waitForTasks(10)
+        sleeper.compaction().putTableOnlineUntilJobsAreCreated(10).waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)));
 
         // Then

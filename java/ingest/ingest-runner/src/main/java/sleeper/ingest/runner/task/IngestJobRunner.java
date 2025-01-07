@@ -35,11 +35,11 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -69,7 +69,7 @@ public class IngestJobRunner implements IngestJobHandler {
     private final Configuration hadoopConfiguration;
     private final String taskId;
     private final StateStoreProvider stateStoreProvider;
-    private final IngestJobStatusStore statusStore;
+    private final IngestJobTracker tracker;
     private final AmazonS3 s3Client;
     private final AmazonSQS sqsClient;
     private final IngestFactory ingestFactory;
@@ -82,7 +82,7 @@ public class IngestJobRunner implements IngestJobHandler {
             TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader,
             StateStoreProvider stateStoreProvider,
-            IngestJobStatusStore statusStore,
+            IngestJobTracker tracker,
             String taskId,
             String localDir,
             AmazonS3 s3Client,
@@ -97,7 +97,7 @@ public class IngestJobRunner implements IngestJobHandler {
         this.hadoopConfiguration = hadoopConfiguration;
         this.taskId = taskId;
         this.stateStoreProvider = stateStoreProvider;
-        this.statusStore = statusStore;
+        this.tracker = tracker;
         this.s3Client = s3Client;
         this.sqsClient = sqsClient;
         this.timeSupplier = timeSupplier;
@@ -160,8 +160,8 @@ public class IngestJobRunner implements IngestJobHandler {
             return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties,
                     requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         } else {
-            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), statusStore,
-                    updateBuilder -> updateBuilder.job(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
+            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), tracker,
+                    job.addedFilesEventBuilder(timeSupplier.get()).taskId(taskId).jobRunId(jobRunId));
         }
     }
 }

@@ -25,10 +25,10 @@ import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusType;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.GsonConfig;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusType;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -62,7 +62,7 @@ public class WaitForJobsStatus {
         longestInProgressDuration = builder.longestInProgressDuration;
     }
 
-    public static WaitForJobsStatus forIngest(IngestJobStatusStore tracker, Collection<String> jobIds, Instant now) {
+    public static WaitForJobsStatus forIngest(IngestJobTracker tracker, Collection<String> jobIds, Instant now) {
         return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 

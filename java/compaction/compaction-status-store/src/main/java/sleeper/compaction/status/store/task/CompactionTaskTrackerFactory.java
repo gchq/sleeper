@@ -21,7 +21,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 
 public class CompactionTaskTrackerFactory {
 
@@ -29,7 +29,7 @@ public class CompactionTaskTrackerFactory {
     }
 
     public static CompactionTaskTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
-        if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+        if (properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return new DynamoDBCompactionTaskTracker(dynamoDB, properties);
         } else {
             return CompactionTaskTracker.NONE;
