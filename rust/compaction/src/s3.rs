@@ -36,7 +36,7 @@ use url::Url;
 
 use crate::{
     readahead::ReadaheadStore,
-    store::{LoggingObjectStore, MultipartSizeHintable},
+    store::{LoggingObjectStore, SizeHintableStore},
 };
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
@@ -105,7 +105,7 @@ pub async fn default_creds_store() -> color_eyre::Result<AmazonS3Builder> {
 /// object store.
 pub struct ObjectStoreFactory {
     s3_config: Option<AmazonS3Builder>,
-    store_map: RefCell<HashMap<String, Arc<dyn MultipartSizeHintable>>>,
+    store_map: RefCell<HashMap<String, Arc<dyn SizeHintableStore>>>,
 }
 
 impl ObjectStoreFactory {
@@ -128,10 +128,7 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    pub fn get_object_store(
-        &self,
-        src: &Url,
-    ) -> color_eyre::Result<Arc<dyn MultipartSizeHintable>> {
+    pub fn get_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
         let scheme = src.scheme();
         let mut borrow = self.store_map.borrow_mut();
         // Perform a single lookup into the cache map
@@ -155,7 +152,7 @@ impl ObjectStoreFactory {
     /// # Errors
     ///
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
-    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn MultipartSizeHintable>> {
+    fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
         match src.scheme() {
             "s3" => Ok(self.connect_s3(src).map(|e| {
                 Arc::new(LoggingObjectStore::new(

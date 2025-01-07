@@ -48,7 +48,7 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
             .withComparatorForFields(Comparator.naturalOrder(),
                     "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
             .build();
-    private final InstanceProperties instanceProperties = IngestStatusStoreTestUtils.createInstanceProperties();
+    private final InstanceProperties instanceProperties = IngestTrackerTestUtils.createInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
     protected final IngestTaskStatusStore store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 

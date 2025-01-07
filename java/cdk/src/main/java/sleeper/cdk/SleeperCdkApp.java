@@ -61,7 +61,7 @@ import sleeper.cdk.stack.core.VpcStack;
 import sleeper.cdk.stack.ingest.IngestBatcherStack;
 import sleeper.cdk.stack.ingest.IngestStack;
 import sleeper.cdk.stack.ingest.IngestStacks;
-import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
+import sleeper.cdk.stack.ingest.IngestTrackerResources;
 import sleeper.cdk.stack.query.KeepLambdaWarmStack;
 import sleeper.cdk.stack.query.QueryQueueStack;
 import sleeper.cdk.stack.query.QueryStack;
@@ -142,8 +142,8 @@ public class SleeperCdkApp extends Stack {
                 new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
                 transactionLogStateStoreStack, policiesStack);
-        IngestStatusStoreResources ingestStatusStore = IngestStatusStoreResources.from(
-                this, "IngestStatusStore", instanceProperties, policiesStack);
+        IngestTrackerResources ingestTracker = IngestTrackerResources.from(
+                this, "IngestTracker", instanceProperties, policiesStack);
         CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
                 this, "CompactionTracker", instanceProperties, policiesStack);
         ConfigBucketStack configBucketStack = new ConfigBucketStack(this, "Configuration", instanceProperties, loggingStack, policiesStack, jars);
@@ -151,11 +151,11 @@ public class SleeperCdkApp extends Stack {
         StateStoreCommitterStack stateStoreCommitterStack = new StateStoreCommitterStack(this, "StateStoreCommitter",
                 instanceProperties, jars,
                 loggingStack, configBucketStack, tableIndexStack,
-                stateStoreStacks, ingestStatusStore, compactionTracker,
+                stateStoreStacks, ingestTracker, compactionTracker,
                 policiesStack, topicStack.getTopic(), errorMetrics);
         coreStacks = new CoreStacks(
                 loggingStack, configBucketStack, tableIndexStack, policiesStack, stateStoreStacks, dataStack,
-                stateStoreCommitterStack, ingestStatusStore, compactionTracker);
+                stateStoreCommitterStack, ingestTracker, compactionTracker);
 
         new TransactionLogSnapshotStack(this, "TransactionLogSnapshot",
                 instanceProperties, jars, coreStacks, transactionLogStateStoreStack, topicStack.getTopic(), errorMetrics);

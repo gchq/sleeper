@@ -21,7 +21,7 @@ use crate::{
     datafusion::{sketch::serialise_sketches, udf::SketchUDF},
     details::create_sketch_path,
     s3::ObjectStoreFactory,
-    store::MultipartSizeHintable,
+    store::SizeHintableStore,
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
 use arrow::util::pretty::pretty_format_batches;
@@ -199,7 +199,7 @@ pub async fn compact(
 /// The given store is queried for the size of each object.
 async fn calculate_input_size(
     input_paths: &[Url],
-    store: &Arc<dyn MultipartSizeHintable>,
+    store: &Arc<dyn SizeHintableStore>,
 ) -> Result<usize, DataFusionError> {
     let mut total_input = 0usize;
     for path in input_paths {
@@ -461,7 +461,7 @@ fn register_store(
     input_paths: &[Url],
     output_path: &Url,
     ctx: &SessionContext,
-) -> Result<Arc<dyn MultipartSizeHintable>, DataFusionError> {
+) -> Result<Arc<dyn SizeHintableStore>, DataFusionError> {
     let in_store = store_factory
         .get_object_store(&input_paths[0])
         .map_err(|e| DataFusionError::External(e.into()))?;

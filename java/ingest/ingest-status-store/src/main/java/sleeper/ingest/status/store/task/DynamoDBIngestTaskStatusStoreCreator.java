@@ -28,7 +28,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.Arrays;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
@@ -43,7 +43,7 @@ public class DynamoDBIngestTaskStatusStoreCreator {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-        if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+        if (!properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return;
         }
         String tableName = taskStatusTableName(properties.get(ID));
@@ -58,7 +58,7 @@ public class DynamoDBIngestTaskStatusStoreCreator {
     }
 
     public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
-        if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+        if (!properties.getBoolean(INGEST_TRACKER_ENABLED)) {
             return;
         }
         String tableName = taskStatusTableName(properties.get(ID));

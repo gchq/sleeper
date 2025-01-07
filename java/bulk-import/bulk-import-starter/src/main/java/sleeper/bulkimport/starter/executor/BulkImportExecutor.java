@@ -26,8 +26,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.ingest.core.job.status.IngestJobFailedEvent;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -38,9 +37,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobAccepted;
-import static sleeper.ingest.core.job.status.IngestJobValidatedEvent.ingestJobRejected;
-
 public class BulkImportExecutor {
     private static final Logger LOGGER = LoggerFactory.getLogger(BulkImportExecutor.class);
     private static final Predicate<String> LOWER_ALPHANUMERICS_AND_DASHES = Pattern.compile("^[a-z0-9-]+$").asPredicate();
@@ -48,19 +44,19 @@ public class BulkImportExecutor {
     protected final InstanceProperties instanceProperties;
     protected final TablePropertiesProvider tablePropertiesProvider;
     protected final StateStoreProvider stateStoreProvider;
-    protected final IngestJobStatusStore ingestJobStatusStore;
+    protected final IngestJobTracker ingestJobTracker;
     protected final WriteJobToBucket writeJobToBucket;
     protected final PlatformExecutor platformExecutor;
     protected final Supplier<Instant> validationTimeSupplier;
 
     public BulkImportExecutor(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider, IngestJobStatusStore ingestJobStatusStore,
+            StateStoreProvider stateStoreProvider, IngestJobTracker ingestJobTracker,
             WriteJobToBucket writeJobToBucket, PlatformExecutor platformExecutor, Supplier<Instant> validationTimeSupplier) {
         this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.ingestJobStatusStore = ingestJobStatusStore;
+        this.ingestJobTracker = ingestJobTracker;
         this.writeJobToBucket = writeJobToBucket;
         this.platformExecutor = platformExecutor;
         this.validationTimeSupplier = validationTimeSupplier;
@@ -79,8 +75,8 @@ public class BulkImportExecutor {
         if (!validateJob(bulkImportJob)) {
             return;
         }
-        ingestJobStatusStore.jobValidated(ingestJobAccepted(
-                bulkImportJob.toIngestJob(), validationTimeSupplier.get())
+        ingestJobTracker.jobValidated(bulkImportJob.toIngestJob()
+                .acceptedEventBuilder(validationTimeSupplier.get())
                 .jobRunId(jobRunId).build());
         try {
             LOGGER.info("Writing job with id {} to JSON file", bulkImportJob.getId());
@@ -94,8 +90,8 @@ public class BulkImportExecutor {
         } catch (RuntimeException e) {
             LOGGER.error("Failed submitting job with id {} for table {}",
                     bulkImportJob.getId(), bulkImportJob.getTableId(), e);
-            ingestJobStatusStore.jobFailed(IngestJobFailedEvent.ingestJobFailed(bulkImportJob.toIngestJob(),
-                    new ProcessRunTime(validationTimeSupplier.get(), Duration.ZERO))
+            ingestJobTracker.jobFailed(bulkImportJob.toIngestJob()
+                    .failedEventBuilder(new ProcessRunTime(validationTimeSupplier.get(), Duration.ZERO))
                     .jobRunId(jobRunId).failure(e)
                     .build());
             throw e;
@@ -124,8 +120,8 @@ public class BulkImportExecutor {
             String errorMessage = "The bulk import job failed validation with the following checks failing: \n"
                     + String.join("\n", failedChecks);
             LOGGER.warn(errorMessage);
-            ingestJobStatusStore.jobValidated(ingestJobRejected(
-                    bulkImportJob.toIngestJob(), validationTimeSupplier.get(), failedChecks));
+            ingestJobTracker.jobValidated(bulkImportJob.toIngestJob()
+                    .createRejectedEvent(validationTimeSupplier.get(), failedChecks));
             return false;
         } else {
             return true;

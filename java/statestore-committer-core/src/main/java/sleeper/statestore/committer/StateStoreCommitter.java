@@ -33,10 +33,9 @@ import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.List;
@@ -52,19 +51,19 @@ public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
     private final CompactionJobTracker compactionJobTracker;
-    private final IngestJobStatusStore ingestJobStatusStore;
+    private final IngestJobTracker ingestJobTracker;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
             CompactionJobTracker compactionJobTracker,
-            IngestJobStatusStore ingestJobStatusStore,
+            IngestJobTracker ingestJobTracker,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             Supplier<Instant> timeSupplier) {
         this.compactionJobTracker = compactionJobTracker;
-        this.ingestJobStatusStore = ingestJobStatusStore;
+        this.ingestJobTracker = ingestJobTracker;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.timeSupplier = timeSupplier;
@@ -155,7 +154,7 @@ public class StateStoreCommitter {
         stateStore.addFilesWithReferences(files);
         IngestJob job = request.getJob();
         if (job != null) {
-            ingestJobStatusStore.jobAddedFiles(IngestJobAddedFilesEvent.ingestJobAddedFiles(job, files, request.getWrittenTime())
+            ingestJobTracker.jobAddedFiles(job.addedFilesEventBuilder(request.getWrittenTime()).files(files)
                     .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
             LOGGER.debug("Successfully committed new files for ingest job {}", job.getId());
         } else {

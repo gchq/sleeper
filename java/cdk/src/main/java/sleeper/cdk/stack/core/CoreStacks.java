@@ -26,7 +26,7 @@ import software.amazon.awscdk.services.sqs.IQueue;
 
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
+import sleeper.cdk.stack.ingest.IngestTrackerResources;
 
 import javax.annotation.Nullable;
 
@@ -41,13 +41,13 @@ public class CoreStacks {
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
     private final StateStoreCommitterStack stateStoreCommitterStack;
-    private final IngestStatusStoreResources ingestStatusStore;
+    private final IngestTrackerResources ingestTracker;
     private final CompactionTrackerResources compactionTracker;
 
     public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
-            IngestStatusStoreResources ingestStatusStore,
+            IngestTrackerResources ingestTracker,
             CompactionTrackerResources compactionTracker) {
         this.loggingStack = loggingStack;
         this.configBucketStack = configBucketStack;
@@ -56,7 +56,7 @@ public class CoreStacks {
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
         this.stateStoreCommitterStack = stateStoreCommitterStack;
-        this.ingestStatusStore = ingestStatusStore;
+        this.ingestTracker = ingestTracker;
         this.compactionTracker = compactionTracker;
     }
 
@@ -106,7 +106,7 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitions(grantee);
         policiesStack.grantReadIngestSources(grantee);
-        ingestStatusStore.grantWriteJobEvent(grantee);
+        ingestTracker.grantWriteJobEvent(grantee);
     }
 
     public void grantIngest(IRole grantee) {
@@ -116,8 +116,8 @@ public class CoreStacks {
         dataStack.grantReadWrite(grantee);
         policiesStack.grantReadIngestSources(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
-        ingestStatusStore.grantWriteJobEvent(grantee);
-        ingestStatusStore.grantWriteTaskEvent(grantee);
+        ingestTracker.grantWriteJobEvent(grantee);
+        ingestTracker.grantWriteTaskEvent(grantee);
     }
 
     public void grantGarbageCollection(IGrantable grantee) {

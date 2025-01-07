@@ -33,8 +33,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,10 +50,10 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedAndFailedToStartIngestRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedAndFailedToStartIngestRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 
 class BulkImportExecutorTest {
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
@@ -65,7 +65,7 @@ class BulkImportExecutorTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
     private final String bucketName = UUID.randomUUID().toString();
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<BulkImportJob> jobsInBucket = new ArrayList<>();
     private final List<String> jobRunIdsOfJobsInBucket = new ArrayList<>();
     private final List<BulkImportJob> jobsRun = new ArrayList<>();
@@ -94,9 +94,9 @@ class BulkImportExecutorTest {
             // Then
             assertThat(jobsInBucket).isEmpty();
             assertThat(jobsRun).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                    .containsExactly(jobStatus(importJob.toIngestJob(),
+                    .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), validationTime,
                                     "The input files must be set to a non-null and non-empty value.")));
         }
@@ -116,9 +116,9 @@ class BulkImportExecutorTest {
             // Then
             assertThat(jobsInBucket).isEmpty();
             assertThat(jobsRun).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                    .containsExactly(jobStatus(importJob.toIngestJob(),
+                    .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), validationTime,
                                     "Job IDs are only allowed to be up to 63 characters long.")));
         }
@@ -138,9 +138,9 @@ class BulkImportExecutorTest {
             // Then
             assertThat(jobsInBucket).isEmpty();
             assertThat(jobsRun).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                    .containsExactly(jobStatus(importJob.toIngestJob(),
+                    .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                             rejectedRun(importJob.toIngestJob(), validationTime,
                                     "Job Ids must only contain lowercase alphanumerics and dashes.")));
         }
@@ -166,9 +166,9 @@ class BulkImportExecutorTest {
         assertThat(jobRunIdsOfJobsInBucket).containsExactly("job-run-id");
         assertThat(jobsRun).containsExactly(importJob);
         assertThat(jobRunIdsOfJobsRun).containsExactly("job-run-id");
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
+        assertThat(tracker.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(importJob.toIngestJob(),
+                .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                         acceptedRun(importJob.toIngestJob(), validationTime)));
     }
 
@@ -189,9 +189,9 @@ class BulkImportExecutorTest {
         assertThat(jobRunIdsOfJobsInBucket).containsExactly("job-run-id");
         assertThat(jobsRun).containsExactly(importJob);
         assertThat(jobRunIdsOfJobsRun).containsExactly("job-run-id");
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
+        assertThat(tracker.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(importJob.toIngestJob(),
+                .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                         acceptedRun(importJob.toIngestJob(), validationTime)));
     }
 
@@ -227,9 +227,9 @@ class BulkImportExecutorTest {
                 .runJob(importJob, "some-job-run"))
                 .isSameAs(failure);
         assertThat(jobsRun).isEmpty();
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
+        assertThat(tracker.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(importJob.toIngestJob(),
+                .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                         acceptedAndFailedToStartIngestRun(importJob.toIngestJob(), validationTime, failureTime,
                                 List.of("Unexpected failure", "Some cause", "Some root cause"))));
     }
@@ -256,9 +256,9 @@ class BulkImportExecutorTest {
                 .runJob(importJob, "some-job-run"))
                 .isSameAs(failure);
         assertThat(jobsInBucket).contains(importJob);
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
+        assertThat(tracker.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(importJob.toIngestJob(),
+                .containsExactly(ingestJobStatus(importJob.toIngestJob(),
                         acceptedAndFailedToStartIngestRun(importJob.toIngestJob(), validationTime, failureTime,
                                 List.of("Unexpected failure", "Some cause", "Some root cause"))));
     }
@@ -277,7 +277,7 @@ class BulkImportExecutorTest {
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
                 inMemoryStateStoreWithFixedSinglePartition(SCHEMA));
         return new BulkImportExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
-                ingestJobStatusStore, writeJobToBucket, platformExecutor, timeSupplier);
+                tracker, writeJobToBucket, platformExecutor, timeSupplier);
     }
 
     private WriteJobToBucket writeJobToBucketFails(RuntimeException failure) {

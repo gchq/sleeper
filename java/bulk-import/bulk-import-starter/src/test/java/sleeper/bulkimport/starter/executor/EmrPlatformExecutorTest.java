@@ -44,7 +44,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -75,9 +75,9 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 
 class EmrPlatformExecutorTest {
     private final EmrClient emr = mock(EmrClient.class);
@@ -85,7 +85,7 @@ class EmrPlatformExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final InMemoryIngestJobTracker tracker = new InMemoryIngestJobTracker();
 
     @BeforeEach
     public void setUpEmr() {
@@ -425,14 +425,14 @@ class EmrPlatformExecutorTest {
         // Then
         assertThat(requested.get())
                 .isNull();
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+        assertThat(tracker.getAllJobs(tableId))
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
 
     @Test
-    void shouldReportJobRunIdToStatusStore() {
+    void shouldReportJobRunIdToTracker() {
         // Given
         BulkImportJob myJob = singleFileJob();
         BulkImportExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
@@ -441,10 +441,10 @@ class EmrPlatformExecutorTest {
         executor.runJob(myJob, "test-job-run");
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+        assertThat(tracker.getAllJobs(tableId))
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         acceptedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
-        assertThat(ingestJobStatusStore.streamTableRecords(tableId))
+        assertThat(tracker.streamTableRecords(tableId))
                 .extracting(ProcessStatusUpdateRecord::getJobRunId)
                 .containsExactly("test-job-run");
     }
@@ -467,7 +467,7 @@ class EmrPlatformExecutorTest {
         return new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new FixedStateStoreProvider(tableProperties,
                         inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema())),
-                ingestJobStatusStore, (job, jobRunId) -> {
+                tracker, (job, jobRunId) -> {
                 },
                 new EmrPlatformExecutor(emr, instanceProperties, tablePropertiesProvider, configuration),
                 validationTimeSupplier);
