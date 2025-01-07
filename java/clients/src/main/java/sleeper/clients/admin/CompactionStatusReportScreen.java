@@ -64,7 +64,7 @@ public class CompactionStatusReportScreen {
             InstanceProperties properties = propertiesOpt.get();
             if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
                 out.println("");
-                out.println("Compaction status store not enabled. Please enable in instance properties to access this screen");
+                out.println("Compaction tracker not enabled. Please enable in instance properties to access this screen");
                 confirmReturnToMainScreen(out, in);
             } else {
                 out.clearScreen("");
