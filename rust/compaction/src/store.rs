@@ -18,17 +18,14 @@ use bytes::{Bytes, BytesMut};
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use futures::{stream::BoxStream, Future};
+use futures::stream::BoxStream;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     path::Path, GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta,
     ObjectStore, PutMultipartOpts, PutOptions, PutPayload, PutResult, Result, UploadPart,
 };
-use std::{
-    pin::Pin,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 pub const MULTIPART_BUF_SIZE: usize = 20 * 1024 * 1024;
 
