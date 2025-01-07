@@ -53,7 +53,8 @@ impl Default for LoggingData {
 }
 
 /// Allow setting a size hint for multipart uploads.
-pub trait MultipartSizeHintableObjectStore: ObjectStore {
+#[allow(clippy::module_name_repetitions)]
+pub trait SizeHintableStore: ObjectStore {
     /// Set the buffer capacity hint for multipart uploading.
     ///
     /// In multipart uploads, data will be buffered until `capacity`
@@ -134,7 +135,7 @@ impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
     }
 }
 
-impl<T: ObjectStore> MultipartSizeHintableObjectStore for LoggingObjectStore<T> {
+impl<T: ObjectStore> SizeHintableStore for LoggingObjectStore<T> {
     fn set_multipart_size_hint(&self, capacity: usize) {
         self.internal
             .lock()
@@ -791,9 +792,7 @@ mod tests {
         testing_logger::setup();
         let store = make_store();
         // Disable multipart buffering
-        <LoggingObjectStore<_> as MultipartSizeHintableObjectStore>::set_multipart_size_hint(
-            &store, 0,
-        );
+        <LoggingObjectStore<_> as SizeHintableStore>::set_multipart_size_hint(&store, 0);
 
         // When
         let mut part = store.put_multipart(&"test_file".into()).await?;
@@ -844,9 +843,7 @@ mod tests {
         // Given
         testing_logger::setup();
         let store = make_store();
-        <LoggingObjectStore<_> as MultipartSizeHintableObjectStore>::set_multipart_size_hint(
-            &store, 10,
-        );
+        <LoggingObjectStore<_> as SizeHintableStore>::set_multipart_size_hint(&store, 10);
 
         // When
         let mut part = store.put_multipart(&"test_file".into()).await?;
