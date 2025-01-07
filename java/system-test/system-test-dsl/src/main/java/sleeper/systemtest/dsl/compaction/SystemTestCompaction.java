@@ -64,6 +64,12 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction putTableOnlineUntilJobsAreCreated(int expectedJobs) {
+        putTablesOnlineWaitForJobCreation(expectedJobs);
+        instance.updateTableProperties(Map.of(TABLE_ONLINE, "false"));
+        return this;
+    }
+
     public SystemTestCompaction putTableOnlineWaitForJobCreation(int expectedJobs) {
         return putTablesOnlineWaitForJobCreation(expectedJobs);
     }

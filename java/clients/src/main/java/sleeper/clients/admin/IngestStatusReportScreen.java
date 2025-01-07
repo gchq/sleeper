@@ -40,7 +40,7 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
-import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
 public class IngestStatusReportScreen {
     private final ConsoleOutput out;
@@ -69,7 +69,7 @@ public class IngestStatusReportScreen {
         Optional<InstanceProperties> propertiesOpt = tryLoadInstanceProperties(out, in, store, instanceId);
         if (propertiesOpt.isPresent()) {
             InstanceProperties properties = propertiesOpt.get();
-            if (!properties.getBoolean(INGEST_STATUS_STORE_ENABLED)) {
+            if (!properties.getBoolean(INGEST_TRACKER_ENABLED)) {
                 out.println("");
                 out.println("Ingest status store not enabled. Please enable in instance properties to access this screen");
                 confirmReturnToMainScreen(out, in);
@@ -108,7 +108,7 @@ public class IngestStatusReportScreen {
 
     private void runIngestJobStatusReport(InstanceProperties properties, TableStatus table,
             JobQuery.Type queryType, String queryParameters) {
-        new IngestJobStatusReport(trackers.loadIngestJobStatusStore(properties), table, queryType, queryParameters,
+        new IngestJobStatusReport(trackers.loadIngestJobTracker(properties), table, queryType, queryParameters,
                 new StandardIngestJobStatusReporter(out.printStream()),
                 queueClient, properties, getStepCount.apply(properties)).run();
         confirmReturnToMainScreen(out, in);

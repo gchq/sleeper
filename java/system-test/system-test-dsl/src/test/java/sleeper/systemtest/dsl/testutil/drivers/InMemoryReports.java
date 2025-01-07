@@ -17,7 +17,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.reporting.CompactionReportsDriver;
 import sleeper.systemtest.dsl.reporting.IngestReportsDriver;
@@ -52,7 +52,7 @@ public class InMemoryReports {
     }
 
     public PartitionReportDriver partitions(SystemTestInstanceContext instance) {
-        return new Partitions(instance);
+        return new Partitions();
     }
 
     public void setIngestTasksReport(SystemTestReport ingestTasksReport) {
@@ -96,7 +96,7 @@ public class InMemoryReports {
 
         @Override
         public List<IngestJobStatus> jobs(ReportingContext reportingContext) {
-            return ingest.jobStore().getJobsInTimePeriod(
+            return ingest.jobTracker().getJobsInTimePeriod(
                     instance.getTableStatus().getTableUniqueId(),
                     reportingContext.getRecordingStartTime(), Instant.MAX);
         }
@@ -130,12 +130,6 @@ public class InMemoryReports {
     }
 
     private class Partitions implements PartitionReportDriver {
-
-        private final SystemTestInstanceContext instance;
-
-        private Partitions(SystemTestInstanceContext instance) {
-            this.instance = instance;
-        }
 
         @Override
         public SystemTestReport statusReport() {

@@ -18,13 +18,13 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class QueryAllIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class QueryAllIngestJobsIT extends DynamoDBIngestJobTrackerTestBase {
 
     @Test
     public void shouldReturnMultipleIngestJobsSortedMostRecentFirst() {
@@ -37,12 +37,12 @@ public class QueryAllIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
         Instant startedTime3 = Instant.parse("2022-12-14T13:53:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
-        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
-        store.jobStarted(defaultJobStartedEvent(job3, startedTime3));
+        tracker.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        tracker.jobStarted(defaultJobStartedEvent(job2, startedTime2));
+        tracker.jobStarted(defaultJobStartedEvent(job3, startedTime3));
 
         // Then
-        assertThat(store.getAllJobs(tableId))
+        assertThat(tracker.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         defaultJobStartedStatus(job3, startedTime3),
@@ -59,11 +59,11 @@ public class QueryAllIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(defaultJobStartedEvent(job1, startedTime1));
-        store.jobStarted(defaultJobStartedEvent(job2, startedTime2));
+        tracker.jobStarted(defaultJobStartedEvent(job1, startedTime1));
+        tracker.jobStarted(defaultJobStartedEvent(job2, startedTime2));
 
         // Then
-        assertThat(store.getAllJobs(tableId))
+        assertThat(tracker.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobStartedStatus(job1, startedTime1));
     }
@@ -72,6 +72,6 @@ public class QueryAllIngestJobsIT extends DynamoDBIngestJobStatusStoreTestBase {
     public void shouldReturnNoIngestJobs() {
 
         // When / Then
-        assertThat(store.getAllJobs(tableId)).isEmpty();
+        assertThat(tracker.getAllJobs(tableId)).isEmpty();
     }
 }

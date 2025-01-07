@@ -261,7 +261,7 @@ public interface CompactionProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .build();
-    UserDefinedInstanceProperty COMPACTION_STATUS_STORE_ENABLED = Index.propertyBuilder("sleeper.compaction.status.store.enabled")
+    UserDefinedInstanceProperty COMPACTION_TRACKER_ENABLED = Index.propertyBuilder("sleeper.compaction.tracker.enabled")
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMPACTION)

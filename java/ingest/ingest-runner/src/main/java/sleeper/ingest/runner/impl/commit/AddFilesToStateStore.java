@@ -27,10 +27,10 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
-import sleeper.ingest.core.job.status.IngestJobAddedFilesEvent;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.util.List;
 import java.util.UUID;
@@ -49,15 +49,11 @@ public interface AddFilesToStateStore {
     }
 
     static AddFilesToStateStore synchronous(
-            StateStore stateStore, IngestJobStatusStore statusStore,
-            Consumer<IngestJobAddedFilesEvent.Builder> statusUpdateConfig) {
+            StateStore stateStore, IngestJobTracker tracker, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
             stateStore.addFilesWithReferences(files);
-            IngestJobAddedFilesEvent.Builder statusUpdateBuilder = IngestJobAddedFilesEvent.builder()
-                    .files(files);
-            statusUpdateConfig.accept(statusUpdateBuilder);
-            statusStore.jobAddedFiles(statusUpdateBuilder.build());
+            tracker.jobAddedFiles(statusUpdateBuilder.files(files).build());
         };
     }
 

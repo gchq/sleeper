@@ -20,8 +20,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
 
 import java.util.HashMap;
@@ -34,7 +34,7 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
 
     private final Map<String, CompactionJobTracker> compactionJobTrackerByInstance = new HashMap<>();
     private final Map<String, CompactionTaskTracker> compactionTaskTrackerByInstance = new HashMap<>();
-    private final Map<String, IngestJobStatusStore> ingestJobStoreByInstance = new HashMap<>();
+    private final Map<String, IngestJobTracker> ingestJobTrackerByInstance = new HashMap<>();
     private final Map<String, IngestTaskStatusStore> ingestTaskStoreByInstance = new HashMap<>();
     private final Map<String, IngestBatcherStore> ingestBatcherStoreByInstance = new HashMap<>();
 
@@ -46,8 +46,8 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
         compactionTaskTrackerByInstance.put(instanceId, tracker);
     }
 
-    public void setTracker(String instanceId, IngestJobStatusStore tracker) {
-        ingestJobStoreByInstance.put(instanceId, tracker);
+    public void setTracker(String instanceId, IngestJobTracker tracker) {
+        ingestJobTrackerByInstance.put(instanceId, tracker);
     }
 
     public void setTracker(String instanceId, IngestTaskStatusStore tracker) {
@@ -71,9 +71,9 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     }
 
     @Override
-    public IngestJobStatusStore loadIngestJobStatusStore(InstanceProperties instanceProperties) {
-        return Optional.ofNullable(ingestJobStoreByInstance.get(instanceProperties.get(ID)))
-                .orElse(IngestJobStatusStore.NONE);
+    public IngestJobTracker loadIngestJobTracker(InstanceProperties instanceProperties) {
+        return Optional.ofNullable(ingestJobTrackerByInstance.get(instanceProperties.get(ID)))
+                .orElse(IngestJobTracker.NONE);
     }
 
     @Override

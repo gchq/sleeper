@@ -51,7 +51,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 
 class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
@@ -215,10 +215,10 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnToMainMenuIfCompactionStatusStoreNotEnabled() throws Exception {
+    void shouldReturnToMainMenuIfCompactionTrackerNotEnabled() throws Exception {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
-        properties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
+        properties.set(COMPACTION_TRACKER_ENABLED, "false");
         setInstanceProperties(properties);
 
         // When

@@ -38,9 +38,9 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.parquet.utils.HadoopPathUtils;
 import sleeper.statestore.StateStoreFactory;
@@ -68,15 +68,15 @@ public class BulkImportStarterLambda implements RequestHandler<SQSEvent, Void> {
         PlatformExecutor platformExecutor = PlatformExecutor.fromEnvironment(
                 instanceProperties, tablePropertiesProvider);
         Configuration hadoopConfig = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
-        IngestJobStatusStore ingestJobStatusStore = IngestJobStatusStoreFactory.getStatusStore(dynamo, instanceProperties);
+        IngestJobTracker ingestJobTracker = IngestJobTrackerFactory.getTracker(dynamo, instanceProperties);
         executor = new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 StateStoreFactory.createProvider(instanceProperties, s3, dynamo, hadoopConfig),
-                ingestJobStatusStore, new BulkImportJobWriterToS3(instanceProperties, s3),
+                ingestJobTracker, new BulkImportJobWriterToS3(instanceProperties, s3),
                 platformExecutor, Instant::now);
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3, instanceProperties, tablePropertiesProvider);
         ingestJobMessageHandler = messageHandlerBuilder()
                 .tableIndex(new DynamoDBTableIndex(instanceProperties, dynamo))
-                .ingestJobStatusStore(ingestJobStatusStore)
+                .ingestJobTracker(ingestJobTracker)
                 .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, hadoopConfig, instanceProperties))
                 .build();
     }

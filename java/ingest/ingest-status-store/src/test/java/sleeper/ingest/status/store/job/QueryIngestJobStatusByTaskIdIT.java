@@ -18,17 +18,16 @@ package sleeper.ingest.status.store.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestJobStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestJobTrackerTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestJob;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestRun;
 
-public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStoreTestBase {
+public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobTrackerTestBase {
 
     @Test
     public void shouldReturnIngestJobsByTaskId() {
@@ -40,11 +39,11 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(job1, startedTime1).taskId(searchingTaskId).build());
-        store.jobStarted(ingestJobStarted(job2, startedTime2).taskId("another-task").build());
+        tracker.jobStarted(job1.startedEventBuilder(startedTime1).taskId(searchingTaskId).build());
+        tracker.jobStarted(job2.startedEventBuilder(startedTime2).taskId("another-task").build());
 
         // Then
-        assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
+        assertThat(tracker.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(startedIngestJob(job1, searchingTaskId, startedTime1));
     }
@@ -61,14 +60,14 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
         Instant startedTime3 = Instant.parse("2022-12-14T13:53:12.001Z");
 
         // When
-        store.jobStarted(ingestJobStarted(job, startedTime1).taskId(taskId1).build());
-        store.jobStarted(ingestJobStarted(job, startedTime2).taskId(searchingTaskId).build());
-        store.jobStarted(ingestJobStarted(job, startedTime3).taskId(taskId3).build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime1).taskId(taskId1).build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime2).taskId(searchingTaskId).build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime3).taskId(taskId3).build());
 
         // Then
-        assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
+        assertThat(tracker.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(jobStatus(job,
+                .containsExactly(ingestJobStatus(job,
                         startedIngestRun(job, taskId3, startedTime3),
                         startedIngestRun(job, searchingTaskId, startedTime2),
                         startedIngestRun(job, taskId1, startedTime1)));
@@ -77,6 +76,6 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobStatusStore
     @Test
     public void shouldReturnNoIngestJobsByTaskId() {
         // When / Then
-        assertThat(store.getJobsByTaskId(tableId, "not-present")).isNullOrEmpty();
+        assertThat(tracker.getJobsByTaskId(tableId, "not-present")).isNullOrEmpty();
     }
 }

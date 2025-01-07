@@ -53,9 +53,9 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 
@@ -91,10 +91,9 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestAddedFilesStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.ingestStartedStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
 
 public class StateStoreCommitterTest {
     private static final Instant DEFAULT_FILE_UPDATE_TIME = FilesReportTestHelper.DEFAULT_UPDATE_TIME;
@@ -102,7 +101,7 @@ public class StateStoreCommitterTest {
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
     private final InMemoryCompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
-    private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final InMemoryIngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Map<String, TableProperties> propertiesByTableId = new LinkedHashMap<>();
     private final Map<String, StateStore> stateStoreByTableId = new LinkedHashMap<>();
@@ -332,7 +331,7 @@ public class StateStoreCommitterTest {
                     .writtenTime(writtenTime)
                     .build();
 
-            ingestJobStatusStore.jobStarted(ingestJobStarted(ingestJob, startTime)
+            ingestJobTracker.jobStarted(ingestJob.startedEventBuilder(startTime)
                     .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
             // When
@@ -340,8 +339,8 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
-            assertThat(ingestJobStatusStore.getAllJobs("test-table"))
-                    .containsExactly(jobStatus(ingestJob, ProcessRun.builder()
+            assertThat(ingestJobTracker.getAllJobs("test-table"))
+                    .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
                             .taskId("test-task-id")
                             .startedStatus(ingestStartedStatus(ingestJob, startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
@@ -363,7 +362,7 @@ public class StateStoreCommitterTest {
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
-            assertThat(ingestJobStatusStore.getAllJobs("test-table")).isEmpty();
+            assertThat(ingestJobTracker.getAllJobs("test-table")).isEmpty();
         }
     }
 
@@ -618,7 +617,7 @@ public class StateStoreCommitterTest {
     }
 
     private StateStoreCommitter committerWithTimes(Supplier<Instant> timeSupplier) {
-        return new StateStoreCommitter(compactionJobTracker, ingestJobStatusStore,
+        return new StateStoreCommitter(compactionJobTracker, ingestJobTracker,
                 new FixedTablePropertiesProvider(propertiesByTableId.values()),
                 new StateStoreProvider(instanceProperties, this::stateStoreForCommitter),
                 timeSupplier);
