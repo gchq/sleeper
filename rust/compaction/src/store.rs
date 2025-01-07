@@ -53,13 +53,15 @@ impl Default for LoggingData {
 }
 
 /// Allow setting a size hint for multipart uploads.
-pub trait MultipartSizeHintable: ObjectStore {
+pub trait MultipartSizeHintableObjectStore: ObjectStore {
     /// Set the buffer capacity hint for multipart uploading.
     ///
     /// In multipart uploads, data will be buffered until `capacity`
     /// bytes have been put. This is a hint and the implementation may
     /// choose how it uses this hint, if at all.
     fn set_multipart_size_hint(&self, capacity: usize);
+
+    // Convenience function for trait upcasting.
     fn as_object_store(self: Arc<Self>) -> Arc<dyn ObjectStore>;
 }
 
@@ -132,7 +134,7 @@ impl<T: ObjectStore> Drop for LoggingObjectStore<T> {
     }
 }
 
-impl<T: ObjectStore> MultipartSizeHintable for LoggingObjectStore<T> {
+impl<T: ObjectStore> MultipartSizeHintableObjectStore for LoggingObjectStore<T> {
     fn set_multipart_size_hint(&self, capacity: usize) {
         self.internal
             .lock()
@@ -789,7 +791,9 @@ mod tests {
         testing_logger::setup();
         let store = make_store();
         // Disable multipart buffering
-        <LoggingObjectStore<_> as MultipartSizeHintable>::set_multipart_size_hint(&store, 0);
+        <LoggingObjectStore<_> as MultipartSizeHintableObjectStore>::set_multipart_size_hint(
+            &store, 0,
+        );
 
         // When
         let mut part = store.put_multipart(&"test_file".into()).await?;
@@ -840,7 +844,9 @@ mod tests {
         // Given
         testing_logger::setup();
         let store = make_store();
-        <LoggingObjectStore<_> as MultipartSizeHintable>::set_multipart_size_hint(&store, 10);
+        <LoggingObjectStore<_> as MultipartSizeHintableObjectStore>::set_multipart_size_hint(
+            &store, 10,
+        );
 
         // When
         let mut part = store.put_multipart(&"test_file".into()).await?;
