@@ -31,9 +31,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.table.TableIndex;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.core.task.IngestTask.MessageHandle;
 import sleeper.ingest.core.task.IngestTask.MessageReceiver;
 import sleeper.job.common.action.ActionException;
@@ -66,24 +66,24 @@ public class IngestJobQueueConsumer implements MessageReceiver {
             InstanceProperties instanceProperties,
             Configuration configuration,
             TableIndex tableIndex,
-            IngestJobStatusStore ingestJobStatusStore) {
+            IngestJobTracker ingestJobTracker) {
         this.sqsClient = sqsClient;
         this.cloudWatchClient = cloudWatchClient;
         this.instanceProperties = instanceProperties;
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
         this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
-        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobStatusStore).build();
+        this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobTracker).build();
     }
 
     public static IngestJobMessageHandler.Builder<IngestJob> messageHandler(
             InstanceProperties instanceProperties,
             Configuration configuration,
             TableIndex tableIndex,
-            IngestJobStatusStore ingestJobStatusStore) {
+            IngestJobTracker ingestJobTracker) {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
-                .ingestJobStatusStore(ingestJobStatusStore)
+                .ingestJobTracker(ingestJobTracker)
                 .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, configuration, instanceProperties));
     }
 

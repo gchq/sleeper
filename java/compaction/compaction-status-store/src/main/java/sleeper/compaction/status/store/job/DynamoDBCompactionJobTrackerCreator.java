@@ -33,7 +33,7 @@ import static sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker.T
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker.jobLookupTableName;
 import static sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker.jobUpdatesTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.dynamodb.tools.DynamoDBUtils.configureTimeToLive;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
@@ -44,7 +44,7 @@ public class DynamoDBCompactionJobTrackerCreator {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+        if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return;
         }
         String updatesTableName = jobUpdatesTableName(properties.get(ID));
@@ -66,7 +66,7 @@ public class DynamoDBCompactionJobTrackerCreator {
     }
 
     public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDBClient) {
-        if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+        if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return;
         }
         String jobsTableName = jobLookupTableName(properties.get(ID));

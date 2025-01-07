@@ -20,19 +20,15 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import static sleeper.ingest.core.job.status.IngestJobFailedEvent.ingestJobFailed;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.ingestJobStarted;
 
 /**
  * Runs an ingest task. Executes jobs from a queue, updating the status stores with progress of the task.
@@ -43,7 +39,7 @@ public class IngestTask {
     private final Supplier<Instant> timeSupplier;
     private final MessageReceiver messageReceiver;
     private final IngestJobHandler ingester;
-    private final IngestJobStatusStore jobStatusStore;
+    private final IngestJobTracker jobTracker;
     private final IngestTaskStatusStore taskStatusStore;
     private final String taskId;
     private final IngestTaskStatus.Builder taskStatusBuilder;
@@ -52,12 +48,12 @@ public class IngestTask {
 
     public IngestTask(Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier,
             MessageReceiver messageReceiver, IngestJobHandler ingester,
-            IngestJobStatusStore jobStatusStore, IngestTaskStatusStore taskStore, String taskId) {
+            IngestJobTracker jobTracker, IngestTaskStatusStore taskStore, String taskId) {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.ingester = ingester;
-        this.jobStatusStore = jobStatusStore;
+        this.jobTracker = jobTracker;
         this.taskStatusStore = taskStore;
         this.taskId = taskId;
         this.taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId);
@@ -111,13 +107,13 @@ public class IngestTask {
             String jobRunId = jobRunIdSupplier.get();
             Instant jobStartTime = timeSupplier.get();
             try {
-                jobStatusStore.jobStarted(ingestJobStarted(job, jobStartTime)
+                jobTracker.jobStarted(job.startedEventBuilder(jobStartTime)
                         .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
                 IngestResult result = ingester.ingest(job, jobRunId);
                 LOGGER.info("{} records were written", result.getRecordsWritten());
                 Instant jobFinishTime = timeSupplier.get();
                 RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
-                jobStatusStore.jobFinished(ingestJobFinished(job, summary)
+                jobTracker.jobFinished(job.finishedEventBuilder(summary)
                         .taskId(taskId).jobRunId(jobRunId)
                         .committedBySeparateFileUpdates(true)
                         .fileReferencesAddedByJob(result.getFileReferenceList())
@@ -129,7 +125,8 @@ public class IngestTask {
             } catch (Exception e) {
                 LOGGER.error("Failed processing ingest job, terminating task", e);
                 Instant jobFinishTime = timeSupplier.get();
-                jobStatusStore.jobFailed(ingestJobFailed(job, new ProcessRunTime(jobStartTime, jobFinishTime))
+                jobTracker.jobFailed(job
+                        .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
                         .taskId(taskId).jobRunId(jobRunId).failure(e)
                         .build());
                 message.failed();

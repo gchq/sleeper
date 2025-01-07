@@ -27,7 +27,7 @@ import sleeper.dynamodb.test.DynamoDBTestBase;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
@@ -50,7 +50,7 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
     @Test
     public void shouldNotCreateStoreIfDisabled() {
         // Given
-        instanceProperties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
+        instanceProperties.set(COMPACTION_TRACKER_ENABLED, "false");
 
         // When
         DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDBClient);

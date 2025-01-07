@@ -37,7 +37,7 @@ import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
+import sleeper.cdk.stack.ingest.IngestTrackerResources;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -72,7 +72,7 @@ public class StateStoreCommitterStack extends NestedStack {
             ConfigBucketStack configBucketStack,
             TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks,
-            IngestStatusStoreResources ingestStatusStore,
+            IngestTrackerResources ingestTracker,
             CompactionTrackerResources compactionTracker,
             ManagedPoliciesStack policiesStack,
             Topic topic,
@@ -86,7 +86,7 @@ public class StateStoreCommitterStack extends NestedStack {
         lambdaToCommitStateStoreUpdates(
                 loggingStack, policiesStack, lambdaCode,
                 configBucketStack, tableIndexStack, stateStoreStacks,
-                compactionTracker, ingestStatusStore);
+                compactionTracker, ingestTracker);
     }
 
     private Queue sqsQueueForStateStoreCommitter(ManagedPoliciesStack policiesStack, Topic topic, List<IMetric> errorMetrics) {
@@ -127,7 +127,7 @@ public class StateStoreCommitterStack extends NestedStack {
             LoggingStack loggingStack, ManagedPoliciesStack policiesStack, LambdaCode lambdaCode,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
             CompactionTrackerResources compactionTracker,
-            IngestStatusStoreResources ingestStatusStore) {
+            IngestTrackerResources ingestTracker) {
         Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = String.join("-", "sleeper",
@@ -168,7 +168,7 @@ public class StateStoreCommitterStack extends NestedStack {
         tableIndexStack.grantRead(handlerFunction);
         stateStoreStacks.grantReadWriteAllFilesAndPartitions(handlerFunction);
         compactionTracker.grantWriteJobEvent(handlerFunction);
-        ingestStatusStore.grantWriteJobEvent(handlerFunction);
+        ingestTracker.grantWriteJobEvent(handlerFunction);
     }
 
     public void grantSendCommits(IGrantable grantee) {

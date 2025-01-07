@@ -33,7 +33,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.task.IngestTaskStatus;
 import sleeper.ingest.core.task.IngestTaskStatusStore;
-import sleeper.ingest.status.store.IngestStatusStoreException;
+import sleeper.ingest.status.store.IngestTrackerException;
 
 import java.time.Instant;
 import java.util.List;
@@ -76,7 +76,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
         try {
             putItem(format.createTaskStartedRecord(taskStatus));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in taskStarted for task " + taskStatus.getTaskId(), e);
+            throw new IngestTrackerException("Failed putItem in taskStarted for task " + taskStatus.getTaskId(), e);
         }
     }
 
@@ -85,7 +85,7 @@ public class DynamoDBIngestTaskStatusStore implements IngestTaskStatusStore {
         try {
             putItem(format.createTaskFinishedRecord(taskStatus));
         } catch (RuntimeException e) {
-            throw new IngestStatusStoreException("Failed putItem in taskFinished for task " + taskStatus.getTaskId(), e);
+            throw new IngestTrackerException("Failed putItem in taskFinished for task " + taskStatus.getTaskId(), e);
         }
     }
 

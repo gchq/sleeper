@@ -37,8 +37,8 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
 import sleeper.task.common.QueueMessageCount;
 
 import java.time.Clock;
@@ -59,8 +59,8 @@ public class IngestJobStatusReport {
         REPORTERS.put("JSON", new JsonIngestJobStatusReporter());
     }
 
-    private final IngestJobStatusStore statusStore;
-    private final IngestJobStatusReporter ingestJobStatusReporter;
+    private final IngestJobTracker tracker;
+    private final IngestJobStatusReporter reporter;
     private final QueueMessageCount.Client queueClient;
     private final InstanceProperties properties;
     private final JobQuery.Type queryType;
@@ -68,23 +68,23 @@ public class IngestJobStatusReport {
     private final Map<String, Integer> persistentEmrStepCount;
 
     public IngestJobStatusReport(
-            IngestJobStatusStore ingestJobStatusStore,
+            IngestJobTracker tracker,
             TableStatus table, JobQuery.Type queryType, String queryParameters,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
-        this(ingestJobStatusStore, JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
+        this(tracker, JobQuery.fromParametersOrPrompt(table, queryType, queryParameters,
                 Clock.systemUTC(), new ConsoleInput(System.console()), Map.of("n", new RejectedJobsQuery())),
                 reporter, queueClient, properties, persistentEmrStepCount);
     }
 
     public IngestJobStatusReport(
-            IngestJobStatusStore ingestJobStatusStore, JobQuery query,
+            IngestJobTracker tracker, JobQuery query,
             IngestJobStatusReporter reporter, QueueMessageCount.Client queueClient, InstanceProperties properties,
             Map<String, Integer> persistentEmrStepCount) {
-        this.statusStore = ingestJobStatusStore;
+        this.tracker = tracker;
         this.query = query;
         this.queryType = query.getType();
-        this.ingestJobStatusReporter = reporter;
+        this.reporter = reporter;
         this.queueClient = queueClient;
         this.properties = properties;
         this.persistentEmrStepCount = persistentEmrStepCount;
@@ -94,8 +94,8 @@ public class IngestJobStatusReport {
         if (query == null) {
             return;
         }
-        ingestJobStatusReporter.report(
-                query.run(statusStore), queryType,
+        reporter.report(
+                query.run(tracker), queryType,
                 IngestQueueMessages.from(properties, queueClient),
                 persistentEmrStepCount);
     }
@@ -119,8 +119,8 @@ public class IngestJobStatusReport {
                 DynamoDBTableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
                 TableStatus table = tableIndex.getTableByName(tableName)
                         .orElseThrow(() -> new IllegalArgumentException("Table does not exist: " + tableName));
-                IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-                new IngestJobStatusReport(statusStore, table, queryType, queryParameters,
+                IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+                new IngestJobStatusReport(tracker, table, queryType, queryParameters,
                         reporter, QueueMessageCount.withSqsClient(sqsClient), instanceProperties,
                         PersistentEMRStepCount.byStatus(instanceProperties, emrClient)).run();
             } finally {
