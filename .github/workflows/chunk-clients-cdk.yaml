@@ -40,7 +40,7 @@ on:
       - 'java/compaction/compaction-core/**'
       - 'java/statestore/**'
       - 'java/common/common-job/**'
-      - 'java/ingest/ingest-status-store/**'
+      - 'java/ingest/ingest-tracker/**'
       - 'java/sketches/**'
       - 'java/parquet/**'
       - 'java/ingest/ingest-core/**'

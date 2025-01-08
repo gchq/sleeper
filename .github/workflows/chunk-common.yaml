@@ -19,7 +19,7 @@ on:
       - 'java/metrics/**'
       - 'java/compaction/compaction-status-store/**'
       - 'java/compaction/compaction-core/**'
-      - 'java/ingest/ingest-status-store/**'
+      - 'java/ingest/ingest-tracker/**'
       - 'java/ingest/ingest-core/**'
       - 'java/common/common-job/**'
       - 'java/common/common-task/**'

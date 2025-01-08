@@ -59,7 +59,7 @@ chunks:
     workflow: chunk-ingest.yaml
     modules:
       - ingest/ingest-core
-      - ingest/ingest-status-store
+      - ingest/ingest-tracker
       - ingest/ingest-starter
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store

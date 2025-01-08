@@ -24,7 +24,7 @@ on:
       - 'java/common/common-invoke-tables/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-job/**'
-      - 'java/ingest/ingest-status-store/**'
+      - 'java/ingest/ingest-tracker/**'
       - 'java/ingest/ingest-core/**'
       - 'java/sketches/**'
       - 'java/statestore/**'
