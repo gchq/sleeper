@@ -138,7 +138,7 @@ public class IngestTaskStatus {
      *
      * @return a {@link JobRun} object
      */
-    public JobRun asJobRun() {
+    public JobRun asAggregatedJobRun() {
         return JobRun.builder().taskId(taskId)
                 .startedStatus(IngestTaskStartedStatus.startTime(getStartTime()))
                 .finishedStatus(asProcessFinishedStatus())

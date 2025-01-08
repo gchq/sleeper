@@ -40,7 +40,7 @@ public class CompactionTaskStatusTest {
 
         // Then
         assertThat(status).extracting("finishedStatus").isNull();
-        assertThat(status.asJobRun()).extracting("taskId", "startTime", "finishTime", "finishedSummary")
+        assertThat(status.asAggregatedJobRun()).extracting("taskId", "startTime", "finishTime", "finishedSummary")
                 .containsExactly("test-task-id", taskStartedTime, null, null);
     }
 
@@ -65,7 +65,7 @@ public class CompactionTaskStatusTest {
         // Then
         assertThat(status).extracting("finishedStatus.totalJobRuns", "finishedStatus.timeSpentOnJobs")
                 .containsExactly(3, Duration.ofSeconds(30));
-        assertThat(status.asJobRun()).extracting("taskId",
+        assertThat(status.asAggregatedJobRun()).extracting("taskId",
                 "startTime", "finishTime", "finishedSummary.duration",
                 "finishedSummary.recordsRead", "finishedSummary.recordsWritten",
                 "finishedSummary.recordsReadPerSecond", "finishedSummary.recordsWrittenPerSecond")

@@ -87,7 +87,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
 
     private static AverageRecordRate recordRate(List<CompactionTaskStatus> tasks) {
         return AverageRecordRate.of(tasks.stream()
-                .map(CompactionTaskStatus::asJobRun));
+                .map(CompactionTaskStatus::asAggregatedJobRun));
     }
 
     private void writeRow(CompactionTaskStatus task, TableRow.Builder builder) {
@@ -95,6 +95,6 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
                 .value(JOB_RUNS, task.getJobRunsOrNull())
                 .value(JOB_DURATION, StandardJobRunReporter.getOrNull(task.getFinishedStatus(),
                         status -> StandardJobRunReporter.formatDurationString(status.getTimeSpentOnJobs())));
-        jobRunReporter.writeRunFields(task.asJobRun(), builder);
+        jobRunReporter.writeRunFields(task.asAggregatedJobRun(), builder);
     }
 }

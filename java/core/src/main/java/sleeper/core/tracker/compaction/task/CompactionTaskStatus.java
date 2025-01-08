@@ -108,7 +108,7 @@ public class CompactionTaskStatus {
      *
      * @return a {@link JobRun} object
      */
-    public JobRun asJobRun() {
+    public JobRun asAggregatedJobRun() {
         return JobRun.builder().taskId(taskId)
                 .startedStatus(CompactionTaskStartedStatus.startTime(getStartTime()))
                 .finishedStatus(asProcessFinishedStatus())
