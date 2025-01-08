@@ -19,13 +19,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
 import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
 import sleeper.ingest.core.job.IngestJob;

@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 
 import java.time.Instant;
 import java.util.Objects;

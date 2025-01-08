@@ -16,7 +16,7 @@
 package sleeper.compaction.core.job.commit;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.Objects;

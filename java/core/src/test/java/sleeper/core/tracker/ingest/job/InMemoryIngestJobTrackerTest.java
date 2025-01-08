@@ -20,11 +20,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -32,6 +27,11 @@ import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -39,13 +39,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.record.process.ProcessRunTestData.finishedRun;
-import static sleeper.core.record.process.ProcessRunTestData.startedRun;
-import static sleeper.core.record.process.ProcessRunTestData.unfinishedRun;
-import static sleeper.core.record.process.ProcessRunTestData.validatedFinishedRun;
-import static sleeper.core.record.process.ProcessRunTestData.validationRun;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobAcceptedEventBuilder;
@@ -63,6 +56,13 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFini
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestRejectedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedIngestStartedStatus;
+import static sleeper.core.tracker.job.ProcessRunTestData.finishedRun;
+import static sleeper.core.tracker.job.ProcessRunTestData.startedRun;
+import static sleeper.core.tracker.job.ProcessRunTestData.unfinishedRun;
+import static sleeper.core.tracker.job.ProcessRunTestData.validatedFinishedRun;
+import static sleeper.core.tracker.job.ProcessRunTestData.validationRun;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.failedStatus;
 
 public class InMemoryIngestJobTrackerTest {
 

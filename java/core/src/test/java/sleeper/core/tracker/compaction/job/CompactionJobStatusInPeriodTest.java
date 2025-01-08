@@ -17,18 +17,18 @@ package sleeper.core.tracker.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.RecordsProcessedSummaryTestHelper;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 
 public class CompactionJobStatusInPeriodTest {
 

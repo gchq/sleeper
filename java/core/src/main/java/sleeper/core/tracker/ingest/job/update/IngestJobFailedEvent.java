@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.ingest.job.update;
 
-import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.tracker.job.ProcessRunTime;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.record.process.status.ProcessRunStartedUpdate;
+import sleeper.core.tracker.job.status.ProcessRunStartedUpdate;
 
 /**
  * An ingest job process started update that has information about the input files.

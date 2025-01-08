@@ -20,7 +20,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.tracker.job.ProcessRunTime;
 
 public class JsonProcessRunTime {
 

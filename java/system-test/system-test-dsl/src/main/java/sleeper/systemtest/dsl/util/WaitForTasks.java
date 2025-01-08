@@ -18,9 +18,9 @@ package sleeper.systemtest.dsl.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;

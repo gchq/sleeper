@@ -24,7 +24,6 @@ import sleeper.compaction.core.job.commit.CompactionJobCommitter;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -34,6 +33,7 @@ import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 

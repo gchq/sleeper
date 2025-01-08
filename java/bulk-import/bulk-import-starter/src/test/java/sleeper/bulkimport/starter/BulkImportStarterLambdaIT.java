@@ -35,13 +35,13 @@ import sleeper.bulkimport.core.job.BulkImportJobSerDe;
 import sleeper.bulkimport.starter.executor.BulkImportExecutor;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobStatusTestData;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
 import sleeper.parquet.utils.HadoopPathUtils;
 

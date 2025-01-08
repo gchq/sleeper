@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.ingest.job;
 
-import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.util.Collection;
 

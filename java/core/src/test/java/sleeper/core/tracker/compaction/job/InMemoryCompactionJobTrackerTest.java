@@ -19,22 +19,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.committedEventBuilder;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEventForTable;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.failedEventBuilder;
@@ -46,6 +41,11 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJobOnTask;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.records;
 
 class InMemoryCompactionJobTrackerTest {
 

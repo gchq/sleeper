@@ -17,8 +17,8 @@ package sleeper.core.tracker.compaction.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.time.Period;

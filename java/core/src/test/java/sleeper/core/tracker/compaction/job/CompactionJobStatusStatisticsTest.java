@@ -23,10 +23,10 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
 
 public class CompactionJobStatusStatisticsTest {
 

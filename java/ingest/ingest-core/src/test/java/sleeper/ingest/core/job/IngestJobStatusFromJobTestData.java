@@ -15,26 +15,26 @@
  */
 package sleeper.ingest.core.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatusTestData;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-import static sleeper.core.record.process.ProcessRunTestData.finishedRun;
-import static sleeper.core.record.process.ProcessRunTestData.startedRun;
-import static sleeper.core.record.process.ProcessRunTestData.validationRun;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.core.tracker.job.ProcessRunTestData.finishedRun;
+import static sleeper.core.tracker.job.ProcessRunTestData.startedRun;
+import static sleeper.core.tracker.job.ProcessRunTestData.validationRun;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
 /**
  * A helper for creating ingest job statuses for tests.

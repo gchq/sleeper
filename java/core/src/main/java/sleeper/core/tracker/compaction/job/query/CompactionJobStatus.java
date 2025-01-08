@@ -15,11 +15,11 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.record.process.status.JobStatusUpdates;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
-import sleeper.core.record.process.status.TimeWindowQuery;
+import sleeper.core.tracker.job.status.JobStatusUpdates;
+import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.status.ProcessRuns;
+import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.job.status.TimeWindowQuery;
 import sleeper.core.util.DurationStatistics;
 
 import java.time.Duration;

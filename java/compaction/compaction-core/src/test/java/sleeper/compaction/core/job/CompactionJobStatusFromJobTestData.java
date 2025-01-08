@@ -15,9 +15,9 @@
  */
 package sleeper.compaction.core.job;
 
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.CompactionJobStatusTestData;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.time.Instant;
 

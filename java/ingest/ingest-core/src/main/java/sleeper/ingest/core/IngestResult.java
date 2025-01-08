@@ -16,8 +16,8 @@
 
 package sleeper.ingest.core;
 
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.tracker.job.RecordsProcessed;
 
 import java.util.Collections;
 import java.util.List;

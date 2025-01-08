@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,10 +34,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
 
 public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 

@@ -26,12 +26,12 @@ import sleeper.clients.status.report.job.JsonProcessRunTime;
 import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessRuns;
 
 import java.io.PrintStream;
 import java.util.List;

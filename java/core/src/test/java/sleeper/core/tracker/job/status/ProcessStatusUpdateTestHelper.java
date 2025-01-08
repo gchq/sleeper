@@ -1,0 +1,124 @@
+/*
+ * Copyright 2022-2024 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package sleeper.core.tracker.job.status;
+
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoField;
+import java.util.List;
+
+/**
+ * A helper for creating process status updates in tests.
+ */
+public class ProcessStatusUpdateTestHelper {
+
+    private ProcessStatusUpdateTestHelper() {
+    }
+
+    /**
+     * Creates a process started status.
+     *
+     * @param  startTime the start time
+     * @return           a {@link ProcessStartedStatus}
+     */
+    public static ProcessStartedStatus startedStatus(Instant startTime) {
+        return ProcessStartedStatus.updateAndStartTime(defaultUpdateTime(startTime), startTime);
+    }
+
+    /**
+     * Creates a process finished status.
+     *
+     * @param  startedStatus  the {@link ProcessStartedStatus}
+     * @param  runDuration    the duration
+     * @param  recordsRead    the number of records read
+     * @param  recordsWritten the number of records written
+     * @return                a {@link ProcessFinishedStatus}
+     */
+    public static ProcessFinishedStatus finishedStatus(
+            ProcessRunStartedUpdate startedStatus, Duration runDuration, long recordsRead, long recordsWritten) {
+        return finishedStatus(startedStatus.getStartTime(), runDuration, recordsRead, recordsWritten);
+    }
+
+    /**
+     * Creates a process finished status.
+     *
+     * @param  startTime      the start time
+     * @param  runDuration    the duration
+     * @param  recordsRead    the number of records read
+     * @param  recordsWritten the number of records written
+     * @return                a {@link ProcessFinishedStatus}
+     */
+    public static ProcessFinishedStatus finishedStatus(
+            Instant startTime, Duration runDuration, long recordsRead, long recordsWritten) {
+        Instant finishTime = startTime.plus(runDuration);
+        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+                new RecordsProcessed(recordsRead, recordsWritten), startTime, finishTime);
+        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
+    }
+
+    /**
+     * Creates a process failed status.
+     *
+     * @param  startedStatus  the {@link ProcessStartedStatus}
+     * @param  runDuration    the duration
+     * @param  failureReasons the reasons for the failure
+     * @return                a {@link ProcessFailedStatus}
+     */
+    public static ProcessFailedStatus failedStatus(
+            ProcessRunStartedUpdate startedStatus, Duration runDuration, List<String> failureReasons) {
+        return failedStatus(startedStatus.getStartTime(), runDuration, failureReasons);
+    }
+
+    /**
+     * Creates a process failed status.
+     *
+     * @param  startTime      the start time
+     * @param  runDuration    the duration
+     * @param  failureReasons the reasons for the failure
+     * @return                a {@link ProcessFailedStatus}
+     */
+    public static ProcessFailedStatus failedStatus(
+            Instant startTime, Duration runDuration, List<String> failureReasons) {
+        ProcessRunTime runTime = new ProcessRunTime(startTime, runDuration);
+        return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
+    }
+
+    /**
+     * Creates a process failed status.
+     *
+     * @param  runTime        the runtime information
+     * @param  failureReasons the reasons for the failure
+     * @return                a {@link ProcessFailedStatus}
+     */
+    public static ProcessFailedStatus failedStatus(
+            ProcessRunTime runTime, List<String> failureReasons) {
+        return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
+    }
+
+    /**
+     * Creates a default update time based on a given time.
+     *
+     * @param  time the provided time
+     * @return      the provided time with milliseconds set to 123
+     */
+    public static Instant defaultUpdateTime(Instant time) {
+        return time.with(ChronoField.MILLI_OF_SECOND, 123);
+    }
+}

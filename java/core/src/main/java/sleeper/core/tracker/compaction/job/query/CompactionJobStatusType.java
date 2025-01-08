@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.util.Collection;
 

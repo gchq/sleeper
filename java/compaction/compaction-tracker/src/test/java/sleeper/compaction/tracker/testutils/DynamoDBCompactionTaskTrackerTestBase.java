@@ -23,11 +23,11 @@ import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTracker;
 import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Duration;

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.process.ProcessRunTime;
+import sleeper.core.tracker.job.ProcessRunTime;
 
 import java.time.Instant;
 import java.util.LinkedList;

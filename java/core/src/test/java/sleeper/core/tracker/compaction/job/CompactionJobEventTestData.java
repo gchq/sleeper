@@ -15,13 +15,13 @@
  */
 package sleeper.core.tracker.compaction.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.UUID;

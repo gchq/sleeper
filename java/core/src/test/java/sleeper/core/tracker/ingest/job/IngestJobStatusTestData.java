@@ -15,11 +15,6 @@
  */
 package sleeper.core.tracker.ingest.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
@@ -27,6 +22,11 @@ import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.status.ProcessRuns;
+import sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,10 +34,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.core.record.process.ProcessRunTestData.finishedRun;
-import static sleeper.core.record.process.ProcessRunTestData.startedRun;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.failedStatus;
+import static sleeper.core.tracker.job.ProcessRunTestData.finishedRun;
+import static sleeper.core.tracker.job.ProcessRunTestData.startedRun;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.failedStatus;
 
 /**
  * A helper for creating ingest job statuses for tests.

@@ -18,25 +18,25 @@ package sleeper.core.tracker.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.time.Duration;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
 
 public class CompactionJobRunTest {
 

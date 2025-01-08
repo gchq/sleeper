@@ -28,7 +28,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -37,6 +36,7 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
+import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 

@@ -27,14 +27,14 @@ import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.record.process.AverageRecordRate;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.ingest.job.IngestJobFilesWrittenAndAdded;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatusType;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
+import sleeper.core.tracker.job.AverageRecordRate;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.io.PrintStream;
 import java.util.List;

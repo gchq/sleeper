@@ -20,28 +20,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessFailedStatus;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.ProcessRunTestData.startedRun;
-import static sleeper.core.record.process.ProcessRunTestData.validationRun;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.failedIngestRun;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRunUncommitted;
@@ -57,6 +49,14 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
+import static sleeper.core.tracker.job.ProcessRunTestData.startedRun;
+import static sleeper.core.tracker.job.ProcessRunTestData.validationRun;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forRunOnTask;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.withExpiry;
 
 public class IngestJobStatusTest {
 

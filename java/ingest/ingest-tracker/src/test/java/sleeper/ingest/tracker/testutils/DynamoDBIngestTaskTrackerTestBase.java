@@ -20,11 +20,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;

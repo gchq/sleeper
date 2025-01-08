@@ -23,10 +23,10 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.job.ProcessRunTime;
 
 import java.time.Duration;
 import java.time.Instant;

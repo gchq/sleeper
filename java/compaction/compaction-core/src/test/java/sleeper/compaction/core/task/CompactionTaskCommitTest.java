@@ -23,14 +23,14 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.time.Instant;
 import java.util.Iterator;
@@ -44,7 +44,6 @@ import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.com
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
@@ -52,6 +51,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
 
 public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     private final TableProperties table1 = createTable("test-table-1-id", "test-table-1");

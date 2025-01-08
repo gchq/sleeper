@@ -29,9 +29,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AssignJobIdRequest;
@@ -54,6 +51,9 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.statestore.StateStoreFactory;
@@ -81,7 +81,6 @@ import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_U
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
@@ -92,6 +91,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
 

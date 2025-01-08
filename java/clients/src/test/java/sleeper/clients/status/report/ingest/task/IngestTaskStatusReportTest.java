@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
 
 public class IngestTaskStatusReportTest {
     private final IngestTaskTracker tracker = mock(IngestTaskTracker.class);

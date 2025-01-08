@@ -18,13 +18,13 @@ package sleeper.ingest.tracker.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
 
@@ -33,10 +33,10 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichFailed;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichFinished;

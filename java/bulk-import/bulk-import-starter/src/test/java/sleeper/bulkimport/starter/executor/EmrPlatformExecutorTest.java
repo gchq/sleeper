@@ -42,9 +42,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.HashMap;

@@ -21,10 +21,10 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -38,13 +38,13 @@ import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
 
 public abstract class CompactionJobStatusReporterTestBase {
 

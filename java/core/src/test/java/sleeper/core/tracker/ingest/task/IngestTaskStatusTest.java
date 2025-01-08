@@ -18,14 +18,14 @@ package sleeper.core.tracker.ingest.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
 
 public class IngestTaskStatusTest {
 

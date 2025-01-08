@@ -24,11 +24,11 @@ import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.record.process.AverageRecordRate;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
+import sleeper.core.tracker.job.AverageRecordRate;
+import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.util.DurationStatistics;
 
 import java.io.PrintStream;

@@ -15,10 +15,6 @@
  */
 package sleeper.core.tracker.compaction.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
@@ -29,6 +25,10 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
 public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();

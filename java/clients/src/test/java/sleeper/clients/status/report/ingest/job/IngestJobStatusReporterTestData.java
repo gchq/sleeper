@@ -16,11 +16,11 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -33,10 +33,10 @@ import java.util.stream.IntStream;
 
 import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;

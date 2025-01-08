@@ -16,27 +16,27 @@
 
 package sleeper.core.tracker.compaction.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
-import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.records;
 
 public class CompactionJobStatusTestData {
     private CompactionJobStatusTestData() {

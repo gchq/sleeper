@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.compaction.job.update;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.util.Objects;
 

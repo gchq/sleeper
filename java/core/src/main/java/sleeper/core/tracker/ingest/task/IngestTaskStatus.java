@@ -16,9 +16,9 @@
 
 package sleeper.core.tracker.ingest.task;
 
-import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.TimeWindowQuery;
+import sleeper.core.tracker.job.status.ProcessFinishedStatus;
+import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.status.TimeWindowQuery;
 
 import java.time.Duration;
 import java.time.Instant;

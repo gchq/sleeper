@@ -21,12 +21,6 @@ import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
@@ -38,6 +32,12 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
+import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 

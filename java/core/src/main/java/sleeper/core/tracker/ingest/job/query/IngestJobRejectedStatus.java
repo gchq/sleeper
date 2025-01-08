@@ -16,8 +16,8 @@
 
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRunFinishedUpdate;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessRunFinishedUpdate;
 
 import java.time.Instant;
 import java.util.List;

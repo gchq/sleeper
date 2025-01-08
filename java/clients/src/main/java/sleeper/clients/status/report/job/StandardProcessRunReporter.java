@@ -19,11 +19,11 @@ package sleeper.clients.status.report.job;
 import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessRunFinishedUpdate;
-import sleeper.core.record.process.status.ProcessRunStartedUpdate;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.status.ProcessRunFinishedUpdate;
+import sleeper.core.tracker.job.status.ProcessRunStartedUpdate;
+import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 
 import java.io.PrintStream;
 import java.time.Duration;

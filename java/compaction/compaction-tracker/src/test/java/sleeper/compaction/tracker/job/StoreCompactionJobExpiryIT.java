@@ -21,10 +21,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,7 +32,7 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 
 public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTestBase {
 

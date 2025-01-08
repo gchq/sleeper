@@ -22,9 +22,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessRuns;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.status.ProcessRuns;
+import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 
 import java.util.List;
 import java.util.function.Function;

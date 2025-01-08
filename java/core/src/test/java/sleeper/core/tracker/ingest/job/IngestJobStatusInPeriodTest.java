@@ -20,19 +20,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleJobStatusFrom;
+import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.records;
 
 public class IngestJobStatusInPeriodTest {
 

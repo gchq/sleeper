@@ -20,8 +20,8 @@ import sleeper.clients.status.report.job.StandardProcessRunReporter;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.job.AverageRecordRate;
 
 import java.io.PrintStream;
 import java.util.List;

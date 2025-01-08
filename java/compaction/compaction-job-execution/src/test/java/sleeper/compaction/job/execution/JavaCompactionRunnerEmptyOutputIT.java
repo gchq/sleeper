@@ -21,10 +21,10 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;

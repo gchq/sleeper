@@ -29,9 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.table.TableIndex;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
 import sleeper.ingest.core.job.IngestJob;

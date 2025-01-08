@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.compaction.task;
 
-import sleeper.core.record.process.status.ProcessRunStartedUpdate;
+import sleeper.core.tracker.job.status.ProcessRunStartedUpdate;
 
 import java.time.Instant;
 import java.util.Objects;

@@ -21,8 +21,8 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.util.List;
 

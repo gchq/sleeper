@@ -15,9 +15,9 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 
 /**
  * Defines the types of updates during a run of a compaction job. A job may be run multiple times. Can also find the
