@@ -1,6 +1,7 @@
 //! This module contains a wrapper for an [`ObjectStore`] that adds logging functionality and customised multipart upload
 //! buffering size.
 //!
+use async_trait::async_trait;
 use bytes::{Bytes, BytesMut};
 /*
  * Copyright 2022-2024 Crown Copyright
@@ -17,17 +18,14 @@ use bytes::{Bytes, BytesMut};
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use futures::{stream::BoxStream, Future};
+use futures::stream::BoxStream;
 use log::info;
 use num_format::{Locale, ToFormattedString};
 use object_store::{
     path::Path, GetOptions, GetRange, GetResult, ListResult, MultipartUpload, ObjectMeta,
     ObjectStore, PutMultipartOpts, PutOptions, PutPayload, PutResult, Result, UploadPart,
 };
-use std::{
-    pin::Pin,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 pub const MULTIPART_BUF_SIZE: usize = 20 * 1024 * 1024;
 
@@ -148,28 +146,14 @@ impl<T: ObjectStore> SizeHintableStore for LoggingObjectStore<T> {
     }
 }
 
+#[async_trait]
 impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
-    fn get_opts<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
-        options: GetOptions,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<GetResult>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        let stats = &mut *self
-            .internal
-            .lock()
-            .expect("LoggingObjectStore stats lock poisoned");
+    async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
         if !options.head {
+            let stats = &mut *self
+                .internal
+                .lock()
+                .expect("LoggingObjectStore stats lock poisoned");
             stats.get_count += 1;
             match &options.range {
                 Some(GetRange::Bounded(get_range)) => {
@@ -207,40 +191,16 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
                 }
             }
         }
-        self.store.get_opts(location, options)
+        self.store.get_opts(location, options).await
     }
 
-    fn head<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<ObjectMeta>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
+    async fn head(&self, location: &Path) -> Result<ObjectMeta> {
         info!("{} HEAD request {}", self.prefix, location);
-        self.store.head(location)
+        self.store.head(location).await
     }
 
-    fn delete<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
-    ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.store.delete(location)
+    async fn delete(&self, location: &Path) -> Result<()> {
+        self.store.delete(location).await
     }
 
     fn list(&self, prefix: Option<&Path>) -> BoxStream<'_, Result<ObjectMeta>> {
@@ -248,106 +208,53 @@ impl<T: ObjectStore> ObjectStore for LoggingObjectStore<T> {
         self.store.list(prefix)
     }
 
-    fn list_with_delimiter<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        prefix: Option<&'life1 Path>,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<ListResult>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.store.list_with_delimiter(prefix)
+    async fn list_with_delimiter(&self, prefix: Option<&Path>) -> Result<ListResult> {
+        self.store.list_with_delimiter(prefix).await
     }
 
-    fn copy<'life0, 'life1, 'life2, 'async_trait>(
-        &'life0 self,
-        from: &'life1 Path,
-        to: &'life2 Path,
-    ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        'life2: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.store.copy(from, to)
+    async fn copy(&self, from: &Path, to: &Path) -> Result<()> {
+        self.store.copy(from, to).await
     }
 
-    fn copy_if_not_exists<'life0, 'life1, 'life2, 'async_trait>(
-        &'life0 self,
-        from: &'life1 Path,
-        to: &'life2 Path,
-    ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        'life2: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.store.copy_if_not_exists(from, to)
+    async fn copy_if_not_exists(&self, from: &Path, to: &Path) -> Result<()> {
+        self.store.copy_if_not_exists(from, to).await
     }
 
-    fn put_opts<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
+    async fn put_opts(
+        &self,
+        location: &Path,
         payload: PutPayload,
         opts: PutOptions,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<PutResult>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
+    ) -> Result<PutResult> {
         info!(
             "{} PUT request to {} of {} bytes",
             self.prefix,
             location,
             payload.content_length().to_formatted_string(&Locale::en)
         );
-        self.store.put_opts(location, payload, opts)
+        self.store.put_opts(location, payload, opts).await
     }
 
-    fn put_multipart_opts<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
+    async fn put_multipart_opts(
+        &self,
+        location: &Path,
         opts: PutMultipartOpts,
-    ) -> Pin<Box<dyn Future<Output = Result<Box<dyn MultipartUpload>>> + Send + 'async_trait>>
-    where
-        Self: 'async_trait,
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-    {
-        let stats = self
-            .internal
-            .lock()
-            .expect("LoggingObjectStore stats lock poisoned");
-        let capacity = stats.capacity;
-        Box::pin(async move {
-            info!("{} PUT MULTIPART request to {}", self.prefix, location);
-            let part_upload = self.store.put_multipart_opts(location, opts).await?;
-            Ok(Box::new(LoggingMultipartUpload::new_with_capacity(
-                part_upload,
-                &self.prefix,
-                capacity,
-            )) as Box<dyn MultipartUpload>)
-        })
+    ) -> Result<Box<dyn MultipartUpload>> {
+        let capacity: usize;
+        {
+            let stats = self
+                .internal
+                .lock()
+                .expect("LoggingObjectStore stats lock poisoned");
+            capacity = stats.capacity;
+        }
+        info!("{} PUT MULTIPART request to {}", self.prefix, location);
+        let part_upload = self.store.put_multipart_opts(location, opts).await?;
+        Ok(Box::new(LoggingMultipartUpload::new_with_capacity(
+            part_upload,
+            &self.prefix,
+            capacity,
+        )) as Box<dyn MultipartUpload>)
     }
 }
 
