@@ -28,7 +28,7 @@ import sleeper.clients.status.report.ingest.task.StandardIngestTaskStatusReporte
 import sleeper.clients.status.report.job.query.RangeJobsQuery;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -82,7 +82,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
         return IngestJobTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
     }
 
-    private IngestTaskStatusStore taskStore() {
+    private IngestTaskTracker taskStore() {
         return IngestTaskStatusStoreFactory.getStatusStore(dynamoDB, instance.getInstanceProperties());
     }
 }

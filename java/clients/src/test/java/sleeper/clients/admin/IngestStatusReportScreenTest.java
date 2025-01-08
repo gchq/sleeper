@@ -29,7 +29,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
-import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.task.common.QueueMessageCount;
 
 import java.time.Instant;
@@ -224,7 +224,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest task status report")
     @Nested
     class IngestTaskStatusReport {
-        private final IngestTaskStatusStore ingestTaskStatusStore = mock(IngestTaskStatusStore.class);
+        private final IngestTaskTracker ingestTaskStatusStore = mock(IngestTaskTracker.class);
 
         private List<IngestTaskStatus> exampleTaskStatuses() {
             return List.of(

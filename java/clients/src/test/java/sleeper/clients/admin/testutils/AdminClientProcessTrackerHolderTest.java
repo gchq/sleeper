@@ -23,7 +23,7 @@ import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -78,7 +78,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     @Test
     void shouldSetIngestTaskStatusStore() {
         // Given
-        IngestTaskStatusStore store = mock(IngestTaskStatusStore.class);
+        IngestTaskTracker store = mock(IngestTaskTracker.class);
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
@@ -131,6 +131,6 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
 
         // When / Then
         assertThat(runClient().trackers().loadIngestTaskStatusStore(properties))
-                .isSameAs(IngestTaskStatusStore.NONE);
+                .isSameAs(IngestTaskTracker.NONE);
     }
 }

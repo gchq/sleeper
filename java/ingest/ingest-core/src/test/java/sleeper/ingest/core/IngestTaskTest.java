@@ -24,8 +24,8 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
-import sleeper.core.tracker.ingest.task.InMemoryIngestTaskStatusStore;
-import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
 import sleeper.ingest.core.job.IngestJob;
@@ -63,7 +63,7 @@ public class IngestTaskTest {
     private final List<IngestJob> successfulJobs = new ArrayList<>();
     private final List<IngestJob> failedJobs = new ArrayList<>();
     private final InMemoryIngestJobTracker jobTracker = new InMemoryIngestJobTracker();
-    private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
+    private final IngestTaskTracker taskStore = new InMemoryIngestTaskTracker();
     private Supplier<Instant> timeSupplier = Instant::now;
     private Supplier<String> jobRunIdSupplier = () -> UUID.randomUUID().toString();
 

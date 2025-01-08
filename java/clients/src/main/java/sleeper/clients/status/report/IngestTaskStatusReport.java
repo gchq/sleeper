@@ -25,19 +25,19 @@ import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportArguments
 import sleeper.clients.status.report.ingest.task.IngestTaskStatusReporter;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 public class IngestTaskStatusReport {
-    private final IngestTaskStatusStore statusStore;
+    private final IngestTaskTracker statusStore;
 
     private final IngestTaskStatusReporter reporter;
     private final IngestTaskQuery query;
 
     public IngestTaskStatusReport(
-            IngestTaskStatusStore statusStore,
+            IngestTaskTracker statusStore,
             IngestTaskStatusReporter reporter,
             IngestTaskQuery query) {
         this.statusStore = statusStore;
@@ -64,7 +64,7 @@ public class IngestTaskStatusReport {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, arguments.getInstanceId());
-            IngestTaskStatusStore statusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+            IngestTaskTracker statusStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
             new IngestTaskStatusReport(statusStore, arguments.getReporter(), arguments.getQuery()).run();
         } finally {
             s3Client.shutdown();

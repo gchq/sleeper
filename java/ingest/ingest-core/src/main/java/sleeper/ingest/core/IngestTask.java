@@ -23,7 +23,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
-import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
@@ -42,7 +42,7 @@ public class IngestTask {
     private final MessageReceiver messageReceiver;
     private final IngestJobHandler ingester;
     private final IngestJobTracker jobTracker;
-    private final IngestTaskStatusStore taskStatusStore;
+    private final IngestTaskTracker taskStatusStore;
     private final String taskId;
     private final IngestTaskStatus.Builder taskStatusBuilder;
     private final IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
@@ -50,7 +50,7 @@ public class IngestTask {
 
     public IngestTask(Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier,
             MessageReceiver messageReceiver, IngestJobHandler ingester,
-            IngestJobTracker jobTracker, IngestTaskStatusStore taskStore, String taskId) {
+            IngestJobTracker jobTracker, IngestTaskTracker taskStore, String taskId) {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;

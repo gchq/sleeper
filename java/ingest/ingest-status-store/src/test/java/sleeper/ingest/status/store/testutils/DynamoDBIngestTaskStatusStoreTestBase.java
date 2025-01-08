@@ -24,7 +24,7 @@ import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
-import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
@@ -50,7 +50,7 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
             .build();
     private final InstanceProperties instanceProperties = IngestTrackerTestUtils.createInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final IngestTaskStatusStore store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final IngestTaskTracker store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
@@ -62,7 +62,7 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
         dynamoDBClient.deleteTable(taskStatusTableName);
     }
 
-    protected IngestTaskStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+    protected IngestTaskTracker storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(INGEST_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
         return new DynamoDBIngestTaskStatusStore(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
