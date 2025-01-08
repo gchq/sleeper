@@ -102,7 +102,13 @@ public class CompactionTaskStatus {
         }
     }
 
-    public JobRun asProcessRun() {
+    /**
+     * Creates an object to represent this task as a run of a job. Treats the task as though it is a job to run
+     * compaction jobs. Includes aggregated statistics from the compaction job runs that occur in this task.
+     *
+     * @return a {@link JobRun} object
+     */
+    public JobRun asJobRun() {
         return JobRun.builder().taskId(taskId)
                 .startedStatus(CompactionTaskStartedStatus.startTime(getStartTime()))
                 .finishedStatus(asProcessFinishedStatus())

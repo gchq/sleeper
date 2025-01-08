@@ -42,10 +42,10 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
     private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.WRITE_RATE);
     private static final TableWriterFactory TABLE_WRITER_FACTORY = TABLE_FACTORY_BUILDER.build();
     private final PrintStream out;
-    private final StandardJobRunReporter processRunReporter;
+    private final StandardJobRunReporter jobRunReporter;
 
     public StandardCompactionTaskStatusReporter(PrintStream out) {
-        this.processRunReporter = new StandardJobRunReporter(out);
+        this.jobRunReporter = new StandardJobRunReporter(out);
         this.out = out;
     }
 
@@ -87,7 +87,7 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
 
     private static AverageRecordRate recordRate(List<CompactionTaskStatus> tasks) {
         return AverageRecordRate.of(tasks.stream()
-                .map(CompactionTaskStatus::asProcessRun));
+                .map(CompactionTaskStatus::asJobRun));
     }
 
     private void writeRow(CompactionTaskStatus task, TableRow.Builder builder) {
@@ -95,6 +95,6 @@ public class StandardCompactionTaskStatusReporter implements CompactionTaskStatu
                 .value(JOB_RUNS, task.getJobRunsOrNull())
                 .value(JOB_DURATION, StandardJobRunReporter.getOrNull(task.getFinishedStatus(),
                         status -> StandardJobRunReporter.formatDurationString(status.getTimeSpentOnJobs())));
-        processRunReporter.writeRunFields(task.asProcessRun(), builder);
+        jobRunReporter.writeRunFields(task.asJobRun(), builder);
     }
 }
