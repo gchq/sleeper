@@ -188,9 +188,9 @@ public class CompactionJobStatus {
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
         if (isUnstartedOrInProgress()) {
-            return timeWindowQuery.isUnfinishedProcessInWindow(createUpdateTime);
+            return timeWindowQuery.isUnfinishedJobInWindow(createUpdateTime);
         } else {
-            return timeWindowQuery.isFinishedProcessInWindow(
+            return timeWindowQuery.isFinishedJobInWindow(
                     createUpdateTime, jobRuns.lastTime().orElseThrow());
         }
     }

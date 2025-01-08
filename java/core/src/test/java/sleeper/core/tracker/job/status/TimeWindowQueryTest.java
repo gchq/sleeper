@@ -36,7 +36,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z"));
 
-            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+            assertThat(timeWindowQuery.isUnfinishedJobInWindow(startTime))
                     .isTrue();
         }
 
@@ -47,7 +47,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z"));
 
-            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+            assertThat(timeWindowQuery.isUnfinishedJobInWindow(startTime))
                     .isTrue();
         }
 
@@ -58,7 +58,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z"));
 
-            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+            assertThat(timeWindowQuery.isUnfinishedJobInWindow(startTime))
                     .isFalse();
         }
     }
@@ -74,7 +74,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z"));
 
-            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+            assertThat(timeWindowQuery.isFinishedJobInWindow(startTime, endTime))
                     .isTrue();
         }
 
@@ -86,7 +86,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z"));
 
-            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+            assertThat(timeWindowQuery.isFinishedJobInWindow(startTime, endTime))
                     .isFalse();
         }
 
@@ -98,7 +98,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z"));
 
-            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+            assertThat(timeWindowQuery.isFinishedJobInWindow(startTime, endTime))
                     .isFalse();
         }
 
@@ -110,7 +110,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z"));
 
-            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+            assertThat(timeWindowQuery.isFinishedJobInWindow(startTime, endTime))
                     .isTrue();
         }
 
@@ -122,7 +122,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z"));
 
-            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+            assertThat(timeWindowQuery.isFinishedJobInWindow(startTime, endTime))
                     .isTrue();
         }
 
@@ -134,7 +134,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T12:00:00Z"),
                     Instant.parse("2023-08-16T13:00:00Z"));
 
-            assertThat(timeWindowQuery.isFinishedProcessInWindow(startTime, endTime))
+            assertThat(timeWindowQuery.isFinishedJobInWindow(startTime, endTime))
                     .isTrue();
         }
     }
@@ -152,7 +152,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T13:00:00Z"),
                     maxRuntime);
 
-            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+            assertThat(timeWindowQuery.isUnfinishedJobInWindow(startTime))
                     .isFalse();
         }
 
@@ -165,7 +165,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T13:00:00Z"),
                     maxRuntime);
 
-            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+            assertThat(timeWindowQuery.isUnfinishedJobInWindow(startTime))
                     .isTrue();
         }
 
@@ -178,7 +178,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T13:00:00Z"),
                     maxRuntime);
 
-            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+            assertThat(timeWindowQuery.isUnfinishedJobInWindow(startTime))
                     .isTrue();
         }
 
@@ -191,7 +191,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T13:00:00Z"),
                     maxRuntime);
 
-            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+            assertThat(timeWindowQuery.isUnfinishedJobInWindow(startTime))
                     .isTrue();
         }
 
@@ -204,7 +204,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T13:00:00Z"),
                     maxRuntime);
 
-            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+            assertThat(timeWindowQuery.isUnfinishedJobInWindow(startTime))
                     .isTrue();
         }
 
@@ -217,7 +217,7 @@ public class TimeWindowQueryTest {
                     Instant.parse("2023-08-16T13:00:00Z"),
                     maxRuntime);
 
-            assertThat(timeWindowQuery.isUnfinishedProcessInWindow(startTime))
+            assertThat(timeWindowQuery.isUnfinishedJobInWindow(startTime))
                     .isFalse();
         }
     }

@@ -62,9 +62,9 @@ public class IngestTaskStatus {
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
         if (isFinished()) {
-            return timeWindowQuery.isFinishedProcessInWindow(startTime, finishedStatus.getFinishTime());
+            return timeWindowQuery.isFinishedJobInWindow(startTime, finishedStatus.getFinishTime());
         } else {
-            return timeWindowQuery.isUnfinishedProcessInWindow(startTime);
+            return timeWindowQuery.isUnfinishedJobInWindow(startTime);
         }
     }
 

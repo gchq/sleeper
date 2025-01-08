@@ -144,9 +144,9 @@ public class IngestJobStatus {
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
         if (isUnfinishedOrAnyRunInProgress()) {
-            return timeWindowQuery.isUnfinishedProcessInWindow(jobRuns.firstTime().orElseThrow());
+            return timeWindowQuery.isUnfinishedJobInWindow(jobRuns.firstTime().orElseThrow());
         } else {
-            return timeWindowQuery.isFinishedProcessInWindow(
+            return timeWindowQuery.isFinishedJobInWindow(
                     jobRuns.firstTime().orElseThrow(), jobRuns.lastTime().orElseThrow());
         }
     }
