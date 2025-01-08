@@ -17,7 +17,7 @@
 package sleeper.clients.status.report.compaction.job;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
-import sleeper.clients.status.report.job.StandardProcessRunReporter;
+import sleeper.clients.status.report.job.StandardJobRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableFieldDefinition;
@@ -37,8 +37,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.clients.status.report.job.StandardProcessRunReporter.formatDurationString;
-import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
+import static sleeper.clients.status.report.job.StandardJobRunReporter.formatDurationString;
+import static sleeper.clients.status.report.job.StandardJobRunReporter.printUpdateType;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
@@ -47,7 +47,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private final TableField jobIdField;
     private final TableField partitionIdField;
     private final TableField inputFilesCount;
-    private final StandardProcessRunReporter runReporter;
+    private final StandardJobRunReporter runReporter;
     private final TableField commitTimeField;
     private final List<TableFieldDefinition> finishedFields;
     private final TableWriterFactory tableFactory;
@@ -66,7 +66,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         partitionIdField = tableFactoryBuilder.addField("PARTITION_ID");
-        StandardProcessRunReporter.Builder runReporterBuilder = StandardProcessRunReporter.withTable(tableFactoryBuilder)
+        StandardJobRunReporter.Builder runReporterBuilder = StandardJobRunReporter.withTable(tableFactoryBuilder)
                 .addProgressFields();
         commitTimeField = tableFactoryBuilder.addField(commitTimeFieldDef);
         runReporter = runReporterBuilder.addResultsFields().build(out);

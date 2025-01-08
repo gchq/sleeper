@@ -29,8 +29,8 @@ import sleeper.core.tracker.job.status.JobStatusUpdate;
 import java.util.List;
 import java.util.function.Function;
 
-public class JsonProcessRunReporter {
-    private JsonProcessRunReporter() {
+public class JsonJobRunReporter {
+    private JsonJobRunReporter() {
     }
 
     public static JsonSerializer<JobRuns> processRunsJsonSerializer(Function<JobStatusUpdate, Object> getType) {

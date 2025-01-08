@@ -18,8 +18,8 @@ package sleeper.clients.status.report.compaction.job;
 
 import com.google.gson.Gson;
 
-import sleeper.clients.status.report.job.JsonProcessRunTime;
-import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
+import sleeper.clients.status.report.job.JsonJobRunSummary;
+import sleeper.clients.status.report.job.JsonJobRunTime;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
@@ -31,12 +31,12 @@ import sleeper.core.tracker.job.run.JobRuns;
 import java.io.PrintStream;
 import java.util.List;
 
-import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRunsJsonSerializer;
+import static sleeper.clients.status.report.job.JsonJobRunReporter.processRunsJsonSerializer;
 
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
-            .registerTypeAdapter(JobRunSummary.class, JsonRecordsProcessedSummary.serializer())
-            .registerTypeAdapter(JobRunTime.class, JsonProcessRunTime.serializer())
+            .registerTypeAdapter(JobRunSummary.class, JsonJobRunSummary.serializer())
+            .registerTypeAdapter(JobRunTime.class, JsonJobRunTime.serializer())
             .registerTypeAdapter(JobRuns.class, processRunsJsonSerializer(CompactionJobUpdateTypeInRun::typeOfUpdateInRun))
             .create();
     private final PrintStream out;

@@ -29,7 +29,7 @@ public class FormatDurationStringTest {
         Duration durationMillis = Duration.ofMillis(123);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(durationMillis);
+        String formattedString = StandardJobRunReporter.formatDurationString(durationMillis);
 
         // Then
         assertThat(formattedString).isEqualTo("0.123s");
@@ -41,7 +41,7 @@ public class FormatDurationStringTest {
         Duration durationSecondsOnly = Duration.ofMillis(1000);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(durationSecondsOnly);
+        String formattedString = StandardJobRunReporter.formatDurationString(durationSecondsOnly);
 
         // Then
         assertThat(formattedString).isEqualTo("1s");
@@ -53,7 +53,7 @@ public class FormatDurationStringTest {
         Duration durationMinutesOnly = Duration.ofMillis(300000);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(durationMinutesOnly);
+        String formattedString = StandardJobRunReporter.formatDurationString(durationMinutesOnly);
 
         // Then
         assertThat(formattedString).isEqualTo("5m");
@@ -65,7 +65,7 @@ public class FormatDurationStringTest {
         Duration durationHoursOnly = Duration.ofMillis(7200000);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(durationHoursOnly);
+        String formattedString = StandardJobRunReporter.formatDurationString(durationHoursOnly);
 
         // Then
         assertThat(formattedString).isEqualTo("2h");
@@ -77,7 +77,7 @@ public class FormatDurationStringTest {
         Duration durationAllUnits = Duration.ofMillis(12345678);
 
         // When
-        String formattedString = StandardProcessRunReporter.formatDurationString(durationAllUnits);
+        String formattedString = StandardJobRunReporter.formatDurationString(durationAllUnits);
 
         // Then
         assertThat(formattedString).isEqualTo("3h 25m 45.678s");

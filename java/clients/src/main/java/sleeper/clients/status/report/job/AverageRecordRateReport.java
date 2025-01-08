@@ -19,7 +19,7 @@ import sleeper.core.tracker.job.run.AverageRecordRate;
 
 import java.io.PrintStream;
 
-import static sleeper.clients.status.report.job.StandardProcessRunReporter.formatDecimal;
+import static sleeper.clients.status.report.job.StandardJobRunReporter.formatDecimal;
 
 public class AverageRecordRateReport {
 

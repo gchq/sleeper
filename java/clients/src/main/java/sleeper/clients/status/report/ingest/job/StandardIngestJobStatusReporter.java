@@ -21,7 +21,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
-import sleeper.clients.status.report.job.StandardProcessRunReporter;
+import sleeper.clients.status.report.job.StandardJobRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
@@ -40,8 +40,8 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
-import static sleeper.clients.status.report.job.StandardProcessRunReporter.updatePrinters;
+import static sleeper.clients.status.report.job.StandardJobRunReporter.printUpdateType;
+import static sleeper.clients.status.report.job.StandardJobRunReporter.updatePrinters;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
@@ -51,7 +51,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private final TableField inputFilesCount;
     private final TableField addedFilesCount;
     private final TableWriterFactory tableFactory;
-    private final StandardProcessRunReporter runReporter;
+    private final StandardJobRunReporter runReporter;
 
     private final PrintStream out;
 
@@ -66,7 +66,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         addedFilesCount = tableFactoryBuilder.addNumericField("ADDED_FILES");
-        runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
+        runReporter = new StandardJobRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
 

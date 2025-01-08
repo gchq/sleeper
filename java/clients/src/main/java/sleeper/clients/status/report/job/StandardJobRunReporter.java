@@ -36,7 +36,7 @@ import java.util.function.Function;
 import static sleeper.core.util.NumberFormatUtils.countWithCommas;
 import static sleeper.core.util.NumberFormatUtils.decimalWithCommas;
 
-public class StandardProcessRunReporter {
+public class StandardJobRunReporter {
 
     public static final TableFieldDefinition TASK_ID = TableFieldDefinition.field("TASK_ID");
     public static final TableFieldDefinition START_TIME = TableFieldDefinition.field("START_TIME");
@@ -53,14 +53,14 @@ public class StandardProcessRunReporter {
         return new Builder(tableBuilder);
     }
 
-    public StandardProcessRunReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
+    public StandardJobRunReporter(PrintStream out, TableWriterFactory.Builder tableBuilder) {
         this(out);
         tableBuilder.addFields(
                 TASK_ID, START_TIME, FINISH_TIME, DURATION,
                 RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
-    public StandardProcessRunReporter(PrintStream out) {
+    public StandardJobRunReporter(PrintStream out) {
         this.out = out;
     }
 
@@ -207,8 +207,8 @@ public class StandardProcessRunReporter {
             return this;
         }
 
-        public StandardProcessRunReporter build(PrintStream out) {
-            return new StandardProcessRunReporter(out);
+        public StandardJobRunReporter build(PrintStream out) {
+            return new StandardJobRunReporter(out);
         }
     }
 }
