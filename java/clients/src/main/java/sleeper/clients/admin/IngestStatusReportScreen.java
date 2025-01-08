@@ -71,7 +71,7 @@ public class IngestStatusReportScreen {
             InstanceProperties properties = propertiesOpt.get();
             if (!properties.getBoolean(INGEST_TRACKER_ENABLED)) {
                 out.println("");
-                out.println("Ingest status store not enabled. Please enable in instance properties to access this screen");
+                out.println("Ingest tracker not enabled. Please enable in instance properties to access this screen");
                 confirmReturnToMainScreen(out, in);
             } else {
                 out.clearScreen("");

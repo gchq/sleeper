@@ -267,13 +267,13 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_JOB_STATUS_TTL_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.status.ttl")
-            .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week.\n" +
+            .description("The time to live in seconds for compaction job updates in the job tracker. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_STATUS_TTL_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.status.ttl")
-            .description("The time to live in seconds for compaction task updates in the status store. Default is 1 week.\n" +
+            .description("The time to live in seconds for compaction task updates in the job tracker. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)

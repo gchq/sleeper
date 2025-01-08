@@ -88,13 +88,13 @@ public interface IngestProperty {
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_JOB_STATUS_TTL_IN_SECONDS = IngestProperty.Index.propertyBuilder("sleeper.ingest.job.status.ttl")
-            .description("The time to live in seconds for ingest job updates in the status store. Default is 1 week.\n" +
+            .description("The time to live in seconds for ingest job updates in the job tracker. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_TASK_STATUS_TTL_IN_SECONDS = IngestProperty.Index.propertyBuilder("sleeper.ingest.task.status.ttl")
-            .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week.\n" +
+            .description("The time to live in seconds for ingest task updates in the job tracker. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
