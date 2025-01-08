@@ -33,7 +33,9 @@ pub struct PositionedStream {
     inner: BoxStream<'static, Result<Bytes>>,
     // Absolute position in stream of object
     pos: usize,
+    // Absolute position for where to stop this stream (exclusive)
     stop_pos: usize,
+    // Function to run when this instance is destructed
     des_func: Option<BoxFunc>,
 }
 
@@ -49,7 +51,7 @@ impl Debug for PositionedStream {
 }
 
 impl Drop for PositionedStream {
-    /// Implemented to ensure underlying byte stream goes into the cache (if it still exists).
+    /// Call the destruction function (if present) when an instance is dropped.
     fn drop(&mut self) {
         if let Some(func) = self.des_func.take() {
             (func)(self);
@@ -58,7 +60,7 @@ impl Drop for PositionedStream {
 }
 
 impl PositionedStream {
-    /// Wrap the given byte stream with a given function to call when instance is dropped.
+    /// Wrap the given byte stream.
     #[allow(dead_code)]
     pub fn new(inner: BoxStream<'static, Result<Bytes>>, pos: usize, stop_pos: usize) -> Self {
         Self::new_with_disposal(inner, pos, stop_pos, None::<fn(&mut PositionedStream)>)
@@ -164,6 +166,7 @@ impl PositionedStream {
         self.stop_pos
     }
 
+    /// Retrieve the inner byte stream.
     pub fn inner(&mut self) -> &mut BoxStream<'static, Result<Bytes>> {
         &mut self.inner
     }
