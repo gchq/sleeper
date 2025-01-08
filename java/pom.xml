@@ -119,12 +119,12 @@
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict between 1.6.0 and 3.0.0 within Spark, and 1.17.2 in Trino.
         -->
-        <okio.version>3.10.0</okio.version>
+        <okio.version>3.10.1</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.16</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.29.46</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.29.47</aws-java-sdk-v2.version>
         <aws-crt.version>0.33.7</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
@@ -145,7 +145,7 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.0-jre</guava.version>
-        <cdk.version>2.174.0</cdk.version>
+        <cdk.version>2.174.1</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.4.2</constructs.version>
         <gson.version>2.11.0</gson.version>

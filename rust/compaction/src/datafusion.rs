@@ -18,9 +18,10 @@
 * limitations under the License.
 */
 use crate::{
-    aws_s3::{ExtendedObjectStore, ObjectStoreFactory},
     datafusion::{sketch::serialise_sketches, udf::SketchUDF},
     details::create_sketch_path,
+    s3::ObjectStoreFactory,
+    store::SizeHintableStore,
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
 use arrow::util::pretty::pretty_format_batches;
@@ -87,15 +88,13 @@ pub async fn compact(
         })
         .inspect_err(|e| warn!("Error getting total input size {e}"));
     let multipart_size = std::cmp::max(
-        crate::aws_s3::MULTIPART_BUF_SIZE,
+        crate::store::MULTIPART_BUF_SIZE,
         input_size.unwrap_or_default() / 5000,
     );
-
     store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?
         .set_multipart_size_hint(multipart_size);
-
     info!(
         "Setting multipart size hint to {} bytes.",
         multipart_size.to_formatted_string(&Locale::en)
@@ -166,8 +165,6 @@ pub async fn compact(
     // Write the frame out and collect stats
     let stats = collect_stats(frame.clone(), output_path, pqo, input_schema).await?;
 
-    show_store_stats(&store);
-
     // Write sketches out to file in Sleeper compatible way
     let binding = sketch_func.inner();
     let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
@@ -202,7 +199,7 @@ pub async fn compact(
 /// The given store is queried for the size of each object.
 async fn calculate_input_size(
     input_paths: &[Url],
-    store: &Arc<dyn ExtendedObjectStore>,
+    store: &Arc<dyn SizeHintableStore>,
 ) -> Result<usize, DataFusionError> {
     let mut total_input = 0usize;
     for path in input_paths {
@@ -301,22 +298,6 @@ impl ExecutionPlanVisitor for RowCounts {
         }
         Ok(true)
     }
-}
-
-/// Show some basic statistics from the [`ExtendedObjectStore`].
-///
-fn show_store_stats(store: &Arc<dyn ExtendedObjectStore>) {
-    info!(
-        "Object store read {} bytes from {} GETs",
-        store
-            .get_bytes_read()
-            .unwrap_or(0)
-            .to_formatted_string(&Locale::en),
-        store
-            .get_count()
-            .unwrap_or(0)
-            .to_formatted_string(&Locale::en)
-    );
 }
 
 /// Create the `DataFusion` filtering expression from a Sleeper region.
@@ -480,7 +461,7 @@ fn register_store(
     input_paths: &[Url],
     output_path: &Url,
     ctx: &SessionContext,
-) -> Result<Arc<dyn ExtendedObjectStore>, DataFusionError> {
+) -> Result<Arc<dyn SizeHintableStore>, DataFusionError> {
     let in_store = store_factory
         .get_object_store(&input_paths[0])
         .map_err(|e| DataFusionError::External(e.into()))?;

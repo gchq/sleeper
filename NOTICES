@@ -321,6 +321,7 @@ Maven Plugins (org.apache.maven.plugins:maven-*-plugin:3.*)
 - Apache License, Version 2.0
 
 
+
 The file java/sketches/src/main/java/sleeper/sketches/SketchSerialiser.java contains code that is heavily based
 on ArrayOfStringsSerDe from the Apache DataSketches library, licensed under the Apache License, Version 2.0.
 
@@ -443,6 +444,19 @@ datasketches-cpp (https://github.com/apache/datasketches-cpp)
 git2 (https://github.com/rust-lang/git2-rs)
 
 - Apache 2 License
+
+datafusion (https://github.com/apache/datafusion)
+
+- Apache 2 License
+
+tempfile (https://github.com/Stebalien/tempfile)
+
+- Apache 2 License
+
+testing_logger (https://github.com/brucechapman/rust_testing_logger)
+
+- The 3-Clause BSD License
+
 
 
 The build pipeline uses the following GitHub Actions from the marketplace.
