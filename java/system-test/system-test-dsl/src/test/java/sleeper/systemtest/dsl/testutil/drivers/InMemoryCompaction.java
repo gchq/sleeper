@@ -41,7 +41,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -161,7 +161,7 @@ public class InMemoryCompaction {
             TableProperties tableProperties = tablesProvider.getById(job.getTableId());
             CompactionJobStatus status = jobTracker.getJob(job.getId()).orElseThrow();
             ProcessRun run = status.getJobRuns().stream().findFirst().orElseThrow();
-            RecordsProcessedSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), run);
+            JobRunSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), run);
             jobTracker.jobFinished(job.finishedEventBuilder(summary).taskId(run.getTaskId()).build());
             jobTracker.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).build());
         }
@@ -179,14 +179,14 @@ public class InMemoryCompaction {
         runningTasks.clear();
     }
 
-    private RecordsProcessedSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, ProcessRun run) {
+    private JobRunSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, ProcessRun run) {
         Instant startTime = run.getStartTime();
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         CompactionJobCommitter.updateStateStoreSuccess(job, recordsProcessed.getRecordsWritten(), stateStore);
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
-        return new RecordsProcessedSummary(recordsProcessed, startTime, finishTime);
+        return new JobRunSummary(recordsProcessed, startTime, finishTime);
     }
 
     private static Partition getPartitionForJob(StateStore stateStore, CompactionJob job) {

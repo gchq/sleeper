@@ -16,7 +16,7 @@
 package sleeper.core.tracker.job.status;
 
 import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -55,8 +55,8 @@ public class ProcessFailedStatus implements ProcessRunFinishedUpdate {
     }
 
     @Override
-    public RecordsProcessedSummary getSummary() {
-        return RecordsProcessedSummary.noRecordsProcessed(runTime);
+    public JobRunSummary getSummary() {
+        return JobRunSummary.noRecordsProcessed(runTime);
     }
 
     @Override

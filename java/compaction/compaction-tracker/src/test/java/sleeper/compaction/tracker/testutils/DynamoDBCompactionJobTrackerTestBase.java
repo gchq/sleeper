@@ -36,7 +36,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
@@ -156,8 +156,8 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
         return Instant.parse("2022-09-23T10:53:00.001Z");
     }
 
-    protected static RecordsProcessedSummary defaultSummary() {
-        return new RecordsProcessedSummary(
+    protected static JobRunSummary defaultSummary() {
+        return new JobRunSummary(
                 new RecordsProcessed(200L, 100L),
                 defaultRunTime());
     }
@@ -181,7 +181,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
         return finishedThenCommittedStatusWithDefaults(job, defaultSummary());
     }
 
-    protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job, RecordsProcessedSummary summary) {
+    protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job, JobRunSummary summary) {
         return compactionJobCreated(job, ignoredUpdateTime(),
                 ProcessRun.builder().taskId(DEFAULT_TASK_ID)
                         .startedStatus(compactionStartedStatus(summary.getStartTime()))

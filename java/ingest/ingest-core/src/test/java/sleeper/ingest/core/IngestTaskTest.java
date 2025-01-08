@@ -23,8 +23,8 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
 import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
@@ -445,8 +445,8 @@ public class IngestTaskTest {
         return defaultFileIngestResultReadAndWritten("test-file", recordsRead, recordsWritten);
     }
 
-    private RecordsProcessedSummary summary(IngestResult result, Instant startTime, Instant finishTime) {
-        return new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
+    private JobRunSummary summary(IngestResult result, Instant startTime, Instant finishTime) {
+        return new JobRunSummary(result.asRecordsProcessed(), startTime, finishTime);
     }
 
     private IngestJobHandler jobsSucceed(int numJobs) {
@@ -521,7 +521,7 @@ public class IngestTaskTest {
         public void close() {
         }
 
-        public void completed(RecordsProcessedSummary summary) {
+        public void completed(JobRunSummary summary) {
         }
 
         public void failed() {

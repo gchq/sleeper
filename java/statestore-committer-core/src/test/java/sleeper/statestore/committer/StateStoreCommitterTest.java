@@ -51,8 +51,8 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
@@ -91,7 +91,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
-import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
 
@@ -119,7 +119,7 @@ public class StateStoreCommitterTest {
             StateStore stateStore = createTableGetStateStore("test-table");
             Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
-            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
+            JobRunSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
             Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             stateStore.addFile(inputFile);
@@ -149,7 +149,7 @@ public class StateStoreCommitterTest {
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
-            RecordsProcessedSummary summary = summary(startTime, finishTime, 123, 123);
+            JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             stateStore.addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
@@ -185,7 +185,7 @@ public class StateStoreCommitterTest {
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
-            RecordsProcessedSummary summary = summary(startTime, finishTime, 123, 123);
+            JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             CompactionJobCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
@@ -219,7 +219,7 @@ public class StateStoreCommitterTest {
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
-            RecordsProcessedSummary summary = summary(startTime, finishTime, 123, 123);
+            JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             CompactionJobCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
@@ -682,7 +682,7 @@ public class StateStoreCommitterTest {
     }
 
     private CompactionJobCommitRequest createAndFinishCompaction(
-            CompactionJob job, Instant createTime, Instant startTime, RecordsProcessedSummary summary) throws Exception {
+            CompactionJob job, Instant createTime, Instant startTime, JobRunSummary summary) throws Exception {
         List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
                 job.getId(), job.getPartitionId(), job.getInputFiles()));
         stateStore(job.getTableId()).assignJobIds(assignIdRequests);

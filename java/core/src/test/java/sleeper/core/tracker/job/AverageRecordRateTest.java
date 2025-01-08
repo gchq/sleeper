@@ -36,7 +36,7 @@ public class AverageRecordRateTest {
     @Test
     public void shouldCalculateAverageOfSingleFinishedProcess() {
         // Given / When
-        AverageRecordRate rate = rateFrom(new RecordsProcessedSummary(
+        AverageRecordRate rate = rateFrom(new JobRunSummary(
                 new RecordsProcessed(100L, 100L),
                 Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
@@ -51,10 +51,10 @@ public class AverageRecordRateTest {
     public void shouldCalculateAverageOfTwoFinishedProcesses() {
         // Given / When
         AverageRecordRate rate = rateFrom(
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(100L, 100L), // rate 10/s
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(50L, 50L), // rate 5/s
                         Instant.parse("2022-10-13T10:19:00.000Z"), Duration.ofSeconds(10)));
 
@@ -69,10 +69,10 @@ public class AverageRecordRateTest {
     public void shouldCalculateAverageOfTwoFinishedProcessesWithDifferentDurations() {
         // Given / When
         AverageRecordRate rate = rateFrom(
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(900L, 900L), // rate 10/s
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(90)),
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(50L, 50L), // rate 5/s
                         Instant.parse("2022-10-13T10:19:00.000Z"), Duration.ofSeconds(10)));
 
@@ -100,7 +100,7 @@ public class AverageRecordRateTest {
         // Given / When
         AverageRecordRate rate = AverageRecordRate.builder()
                 .startTime(Instant.parse("2022-10-13T10:17:55.000Z"))
-                .summary(new RecordsProcessedSummary(
+                .summary(new JobRunSummary(
                         new RecordsProcessed(100L, 100L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)))
                 .finishTime(Instant.parse("2022-10-13T10:18:15.000Z"))
@@ -116,10 +116,10 @@ public class AverageRecordRateTest {
     @Test
     void shouldExcludeARunWithNoRecordsProcessedFromAverageRateCalculation() {
         AverageRecordRate rate = rateFrom(
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(0L, 0L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
@@ -132,10 +132,10 @@ public class AverageRecordRateTest {
     @Test
     void shouldExcludeARunWithNoRecordsReadFromAverageReadRateCalculation() {
         AverageRecordRate rate = rateFrom(
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(0L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
@@ -148,10 +148,10 @@ public class AverageRecordRateTest {
     @Test
     void shouldExcludeARunWithNoRecordsWrittenFromAverageWriteRateCalculation() {
         AverageRecordRate rate = rateFrom(
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(10L, 0L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)),
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
@@ -164,10 +164,10 @@ public class AverageRecordRateTest {
     @Test
     void shouldExcludeARunWithZeroDurationFromAverageRateCalculation() {
         AverageRecordRate rate = rateFrom(
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(0)),
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(10L, 10L),
                         Instant.parse("2022-10-13T10:18:00.000Z"), Duration.ofSeconds(10)));
 
@@ -192,7 +192,7 @@ public class AverageRecordRateTest {
                 .containsExactly(0, 0L, 0L, Duration.ofSeconds(0));
     }
 
-    private static AverageRecordRate rateFrom(RecordsProcessedSummary... summaries) {
+    private static AverageRecordRate rateFrom(JobRunSummary... summaries) {
         return AverageRecordRate.of(Stream.of(summaries)
                 .map(summary -> ProcessRun.finished(DEFAULT_TASK_ID,
                         ProcessStatusUpdateTestHelper.startedStatus(summary.getStartTime()),

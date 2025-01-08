@@ -136,10 +136,10 @@ public class AverageRecordRate {
         /**
          * Calculates the average record rate from a stream of records processed summaries.
          *
-         * @param  summaries the stream of {@link RecordsProcessedSummary}s
+         * @param  summaries the stream of {@link JobRunSummary}s
          * @return           the builder
          */
-        public Builder summaries(Stream<RecordsProcessedSummary> summaries) {
+        public Builder summaries(Stream<JobRunSummary> summaries) {
             summaries.forEach(this::summary);
             return this;
         }
@@ -147,10 +147,10 @@ public class AverageRecordRate {
         /**
          * Calculates and updates the average record rate from a records processed summary.
          *
-         * @param  summary a {@link RecordsProcessedSummary}
+         * @param  summary a {@link JobRunSummary}
          * @return         the builder
          */
-        public Builder summary(RecordsProcessedSummary summary) {
+        public Builder summary(JobRunSummary summary) {
             runCount++;
             recordsRead += summary.getRecordsRead();
             recordsWritten += summary.getRecordsWritten();

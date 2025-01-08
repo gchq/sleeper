@@ -17,8 +17,8 @@
 package sleeper.core.tracker.compaction.task;
 
 import sleeper.core.tracker.job.AverageRecordRate;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -76,8 +76,8 @@ public class CompactionTaskFinishedStatus {
         return recordsWrittenPerSecond;
     }
 
-    public RecordsProcessedSummary asSummary(Instant startTime) {
-        return new RecordsProcessedSummary(
+    public JobRunSummary asSummary(Instant startTime) {
+        return new JobRunSummary(
                 new RecordsProcessed(totalRecordsRead, totalRecordsWritten),
                 startTime, finishTime, timeSpentOnJobs);
     }
@@ -167,12 +167,12 @@ public class CompactionTaskFinishedStatus {
             return this;
         }
 
-        public Builder addJobSummary(RecordsProcessedSummary jobSummary) {
+        public Builder addJobSummary(JobRunSummary jobSummary) {
             rateBuilder.summary(jobSummary);
             return this;
         }
 
-        public Builder jobSummaries(Stream<RecordsProcessedSummary> jobSummaries) {
+        public Builder jobSummaries(Stream<JobRunSummary> jobSummaries) {
             rateBuilder.summaries(jobSummaries);
             return this;
         }

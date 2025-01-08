@@ -20,28 +20,28 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A representation of a number of records processed over a defined time.
+ * A summary of a run of a job, including the number of records processed over a defined time.
  */
-public class RecordsProcessedSummary {
+public class JobRunSummary {
 
     private final RecordsProcessed recordsProcessed;
     private final ProcessRunTime runTime;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
 
-    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Duration duration) {
+    public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Duration duration) {
         this(recordsProcessed, startTime, startTime.plus(duration), duration);
     }
 
-    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
+    public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime) {
         this(recordsProcessed, startTime, finishTime, Duration.between(startTime, finishTime));
     }
 
-    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
+    public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
         this(recordsProcessed, new ProcessRunTime(startTime, finishTime, timeInProcess));
     }
 
-    public RecordsProcessedSummary(RecordsProcessed recordsProcessed, ProcessRunTime runTime) {
+    public JobRunSummary(RecordsProcessed recordsProcessed, ProcessRunTime runTime) {
         this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
         this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
         double secondsInProcess = runTime.getTimeInProcessInSeconds();
@@ -55,8 +55,8 @@ public class RecordsProcessedSummary {
      * @param  startTime the start time
      * @return           an instance of this class
      */
-    public static RecordsProcessedSummary noProcessingDoneAtTime(Instant startTime) {
-        return new RecordsProcessedSummary(
+    public static JobRunSummary noProcessingDoneAtTime(Instant startTime) {
+        return new JobRunSummary(
                 new RecordsProcessed(0, 0),
                 startTime, Duration.ZERO);
     }
@@ -67,8 +67,8 @@ public class RecordsProcessedSummary {
      * @param  runTime the run time
      * @return         an instance of this class
      */
-    public static RecordsProcessedSummary noRecordsProcessed(ProcessRunTime runTime) {
-        return new RecordsProcessedSummary(new RecordsProcessed(0, 0), runTime);
+    public static JobRunSummary noRecordsProcessed(ProcessRunTime runTime) {
+        return new JobRunSummary(new RecordsProcessed(0, 0), runTime);
     }
 
     public long getRecordsRead() {
@@ -123,7 +123,7 @@ public class RecordsProcessedSummary {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        RecordsProcessedSummary that = (RecordsProcessedSummary) o;
+        JobRunSummary that = (JobRunSummary) o;
         return recordsProcessed.equals(that.recordsProcessed) && runTime.equals(that.runTime);
     }
 
@@ -134,7 +134,7 @@ public class RecordsProcessedSummary {
 
     @Override
     public String toString() {
-        return "RecordsProcessedSummary{" +
+        return "JobRunSummary{" +
                 "recordsProcessed=" + recordsProcessed +
                 ", runTime=" + runTime +
                 ", recordsReadPerSecond=" + recordsReadPerSecond +

@@ -20,8 +20,8 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -126,7 +126,7 @@ public class IngestJob {
      * @param  summary a summary of the time spent on the job and records processed
      * @return         the builder
      */
-    public IngestJobFinishedEvent.Builder finishedEventBuilder(RecordsProcessedSummary summary) {
+    public IngestJobFinishedEvent.Builder finishedEventBuilder(JobRunSummary summary) {
         return IngestJobFinishedEvent.builder().jobId(id).tableId(tableId).summary(summary);
     }
 

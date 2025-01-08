@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.status.ProcessRunFinishedUpdate;
 
 import java.time.Instant;
@@ -27,7 +27,7 @@ import java.util.Objects;
 public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
-    private final RecordsProcessedSummary summary;
+    private final JobRunSummary summary;
 
     private CompactionJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
@@ -41,7 +41,7 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
      * @param  summary    the records processed summary to set
      * @return            a builder
      */
-    public static Builder updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
+    public static Builder updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
         return builder().updateTime(updateTime).summary(summary);
     }
 
@@ -55,7 +55,7 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
     }
 
     @Override
-    public RecordsProcessedSummary getSummary() {
+    public JobRunSummary getSummary() {
         return summary;
     }
 
@@ -83,7 +83,7 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
 
     public static class Builder {
         private Instant updateTime;
-        private RecordsProcessedSummary summary;
+        private JobRunSummary summary;
 
         private Builder() {
         }
@@ -93,7 +93,7 @@ public class CompactionJobFinishedStatus implements ProcessRunFinishedUpdate {
             return this;
         }
 
-        public Builder summary(RecordsProcessedSummary summary) {
+        public Builder summary(JobRunSummary summary) {
             this.summary = summary;
             return this;
         }

@@ -18,7 +18,7 @@ package sleeper.core.tracker.compaction.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 
 import java.time.Instant;
 import java.time.Period;
@@ -143,7 +143,7 @@ public class CompactionTaskStatusInPeriodTest {
     private static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
         return taskBuilder(startTime)
                 .finished(finishTime, CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(new RecordsProcessedSummary(
+                        .addJobSummary(new JobRunSummary(
                                 new RecordsProcessed(200, 100),
                                 startTime, finishTime)))
                 .build();

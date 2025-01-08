@@ -17,8 +17,8 @@ package sleeper.core.tracker.ingest.task;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.time.Period;
@@ -143,7 +143,7 @@ public class IngestTaskStatusInPeriodTest {
     private static IngestTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
         return taskBuilder(startTime)
                 .finished(finishTime, IngestTaskFinishedStatus.builder()
-                        .addJobSummary(new RecordsProcessedSummary(
+                        .addJobSummary(new JobRunSummary(
                                 new RecordsProcessed(200, 100),
                                 startTime, finishTime)))
                 .build();

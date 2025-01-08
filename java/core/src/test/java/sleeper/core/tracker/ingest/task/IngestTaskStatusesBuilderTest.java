@@ -17,8 +17,8 @@ package sleeper.core.tracker.ingest.task;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -33,7 +33,7 @@ public class IngestTaskStatusesBuilderTest {
         String taskId = "test-task";
         Instant startTime = Instant.parse("2022-10-12T15:45:00.001Z");
         IngestTaskFinishedStatus finishedStatus = IngestTaskFinishedStatus.builder()
-                .addJobSummary(new RecordsProcessedSummary(
+                .addJobSummary(new JobRunSummary(
                         new RecordsProcessed(300L, 200L),
                         Instant.parse("2022-10-12T15:45:01.001Z"),
                         Instant.parse("2022-10-12T15:46:01.001Z")))
@@ -92,7 +92,7 @@ public class IngestTaskStatusesBuilderTest {
         // Given
         String taskId = "test-task";
         IngestTaskFinishedStatus finishedStatus = IngestTaskFinishedStatus.builder()
-                .addJobSummary(new RecordsProcessedSummary(
+                .addJobSummary(new JobRunSummary(
                         new RecordsProcessed(300L, 200L),
                         Instant.parse("2022-10-12T15:45:01.001Z"),
                         Instant.parse("2022-10-12T15:46:01.001Z")))

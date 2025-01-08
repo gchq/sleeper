@@ -21,8 +21,8 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.core.tracker.job.status.ProcessFailedStatus;
 import sleeper.core.tracker.job.status.ProcessRun;
 
@@ -76,7 +76,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  numFilesWrittenByJob the number of files written by the job
      * @return                      an {@link IngestJobStatus}
      */
-    public static IngestJobStatus finishedIngestJob(IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+    public static IngestJobStatus finishedIngestJob(IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
         return ingestJobStatus(job, finishedIngestRun(job, taskId, summary, numFilesWrittenByJob));
     }
 
@@ -88,7 +88,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  summary the records processed summary
      * @return         an {@link IngestJobStatus}
      */
-    public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, RecordsProcessedSummary summary) {
+    public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, JobRunSummary summary) {
         return finishedIngestJobUncommitted(job, taskId, summary, 1);
     }
 
@@ -101,7 +101,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  numFilesWrittenByJob the number of files written by the job
      * @return                      an {@link IngestJobStatus}
      */
-    public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+    public static IngestJobStatus finishedIngestJobUncommitted(IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
         return ingestJobStatus(job, finishedIngestRunUncommitted(job, taskId, summary, numFilesWrittenByJob));
     }
 
@@ -150,7 +150,7 @@ public class IngestJobStatusFromJobTestData {
      * @return                a {@link ProcessRun}
      */
     public static ProcessRun acceptedRunWhichFinished(
-            IngestJob job, String taskId, Instant validationTime, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+            IngestJob job, String taskId, Instant validationTime, JobRunSummary summary, int numFilesWrittenByJob) {
         return ProcessRun.builder()
                 .taskId(taskId)
                 .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
@@ -287,7 +287,7 @@ public class IngestJobStatusFromJobTestData {
      * @return         a {@link ProcessRun}
      */
     public static ProcessRun finishedIngestRun(
-            IngestJob job, String taskId, RecordsProcessedSummary summary) {
+            IngestJob job, String taskId, JobRunSummary summary) {
         return finishedIngestRun(job, taskId, summary, 1);
     }
 
@@ -301,7 +301,7 @@ public class IngestJobStatusFromJobTestData {
      * @return                      a {@link ProcessRun}
      */
     public static ProcessRun finishedIngestRun(
-            IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+            IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
         return finishedRun(taskId,
                 ingestStartedStatus(job, summary.getStartTime()),
                 IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
@@ -318,7 +318,7 @@ public class IngestJobStatusFromJobTestData {
      * @return                      a {@link ProcessRun}
      */
     public static ProcessRun finishedIngestRunUncommitted(
-            IngestJob job, String taskId, RecordsProcessedSummary summary, int numFilesWrittenByJob) {
+            IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
         return finishedRun(taskId,
                 ingestStartedStatus(job, summary.getStartTime()),
                 ingestFinishedStatusUncommitted(summary, numFilesWrittenByJob));

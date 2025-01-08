@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.status.ProcessRunFinishedUpdate;
 
 import java.time.Instant;
@@ -70,8 +70,8 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, Proces
     }
 
     @Override
-    public RecordsProcessedSummary getSummary() {
-        return RecordsProcessedSummary.noProcessingDoneAtTime(validationTime);
+    public JobRunSummary getSummary() {
+        return JobRunSummary.noProcessingDoneAtTime(validationTime);
     }
 
     @Override

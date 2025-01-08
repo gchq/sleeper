@@ -15,8 +15,8 @@
  */
 package sleeper.core.tracker.ingest.task;
 
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -84,7 +84,7 @@ public class IngestTaskStatusTestData {
             long recordsRead, long recordsWritten) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
                 .finished(finishTaskTime, IngestTaskFinishedStatus.builder().jobSummaries(Stream.of(
-                        new RecordsProcessedSummary(
+                        new JobRunSummary(
                                 new RecordsProcessed(recordsRead, recordsWritten),
                                 startJobTime, finishJobTime))))
                 .build();
@@ -100,12 +100,12 @@ public class IngestTaskStatusTestData {
      * @return                an ingest task status that finished with multiple jobs
      */
     public static IngestTaskStatus finishedMultipleJobs(
-            String taskId, Instant startTaskTime, Instant finishTaskTime, RecordsProcessedSummary... summaries) {
+            String taskId, Instant startTaskTime, Instant finishTaskTime, JobRunSummary... summaries) {
         return finishedMultipleJobs(taskId, startTaskTime, finishTaskTime, Stream.of(summaries));
     }
 
     private static IngestTaskStatus finishedMultipleJobs(
-            String taskId, Instant startTaskTime, Instant finishTaskTime, Stream<RecordsProcessedSummary> summaries) {
+            String taskId, Instant startTaskTime, Instant finishTaskTime, Stream<JobRunSummary> summaries) {
         return IngestTaskStatus.builder().taskId(taskId).startTime(startTaskTime)
                 .finished(finishTaskTime, IngestTaskFinishedStatus.builder().jobSummaries(summaries))
                 .build();

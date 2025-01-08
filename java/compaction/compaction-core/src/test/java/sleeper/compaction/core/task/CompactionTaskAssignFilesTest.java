@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -37,7 +37,7 @@ import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMI
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
-import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
 
 public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
 
@@ -198,7 +198,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
                 timePassesAMinuteAtATimeFrom(Instant.parse("2024-10-28T11:50:00Z")));
 
         // Then
-        RecordsProcessedSummary expectedSummary = summary(
+        JobRunSummary expectedSummary = summary(
                 Instant.parse("2024-10-28T11:51:00Z"), Duration.ofMinutes(1), 10, 5);
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobsOnQueue).isEmpty();

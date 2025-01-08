@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.time.Duration;
@@ -41,7 +41,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
-import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJob;
 import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJobOnTask;
@@ -150,7 +150,7 @@ class InMemoryCompactionJobTrackerTest {
             Instant finishTime = Instant.parse("2023-03-29T12:28:43Z");
             String taskId = "test-task";
 
-            RecordsProcessedSummary summary = summary(startedTime, finishTime, 100L, 100L);
+            JobRunSummary summary = summary(startedTime, finishTime, 100L, 100L);
             CompactionJobCreatedEvent job = defaultJob();
             store.jobCreated(job, createdTime);
             store.jobStarted(startedEventBuilder(job, startedTime).taskId(taskId).build());
@@ -346,11 +346,11 @@ class InMemoryCompactionJobTrackerTest {
             Instant startedTime1 = Instant.parse("2024-07-01T10:41:00Z");
             Instant finishedTime1 = Instant.parse("2024-07-01T10:43:00Z");
             Instant committedTime1 = Instant.parse("2024-07-01T10:44:10Z");
-            RecordsProcessedSummary summary1 = summary(startedTime1, finishedTime1, 100L, 100L);
+            JobRunSummary summary1 = summary(startedTime1, finishedTime1, 100L, 100L);
             Instant startedTime2 = Instant.parse("2024-07-01T10:41:10Z");
             Instant finishedTime2 = Instant.parse("2024-07-01T10:42:10Z");
             Instant committedTime2 = Instant.parse("2024-07-01T10:42:20Z");
-            RecordsProcessedSummary summary2 = summary(startedTime2, finishedTime2, 100L, 100L);
+            JobRunSummary summary2 = summary(startedTime2, finishedTime2, 100L, 100L);
             String taskId1 = "test-task-1";
             String taskId2 = "test-task-2";
             CompactionJobCreatedEvent job = defaultJob();
@@ -411,7 +411,7 @@ class InMemoryCompactionJobTrackerTest {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
-            RecordsProcessedSummary summary = summary(
+            JobRunSummary summary = summary(
                     startedTime, Duration.ofMinutes(1), 100, 100);
             String taskId = "test-task";
             CompactionJobCreatedEvent job = addFinishedJobUncommitted(createdTime, summary, taskId);
@@ -431,7 +431,7 @@ class InMemoryCompactionJobTrackerTest {
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
             Instant committedTime = Instant.parse("2023-03-29T12:30:00Z");
-            RecordsProcessedSummary summary = summary(
+            JobRunSummary summary = summary(
                     startedTime, Duration.ofMinutes(1), 100, 100);
             String taskId = "test-task";
             CompactionJobCreatedEvent job = addFinishedJobCommitted(createdTime, summary, committedTime, taskId);
@@ -451,11 +451,11 @@ class InMemoryCompactionJobTrackerTest {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:00Z");
             Instant startedTime1 = Instant.parse("2023-03-29T12:27:10Z");
-            RecordsProcessedSummary summary1 = summary(
+            JobRunSummary summary1 = summary(
                     startedTime1, Duration.ofMinutes(1), 100, 100);
             Instant committedTime1 = Instant.parse("2023-03-29T12:28:11Z");
             Instant startedTime2 = Instant.parse("2023-03-29T12:28:15Z");
-            RecordsProcessedSummary summary2 = summary(
+            JobRunSummary summary2 = summary(
                     startedTime2, Duration.ofMinutes(1), 100, 100);
             String taskId = "test-task";
             String runId1 = "test-run-1";
@@ -504,14 +504,14 @@ class InMemoryCompactionJobTrackerTest {
         return job;
     }
 
-    private CompactionJobCreatedEvent addFinishedJobUncommitted(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
+    private CompactionJobCreatedEvent addFinishedJobUncommitted(Instant createdTime, JobRunSummary summary, String taskId) {
         CompactionJobCreatedEvent job = addStartedJob(createdTime, summary.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
         store.jobFinished(finishedEventBuilder(job, summary).taskId(taskId).build());
         return job;
     }
 
-    private CompactionJobCreatedEvent addFinishedJobCommitted(Instant createdTime, RecordsProcessedSummary summary, Instant committedTime, String taskId) {
+    private CompactionJobCreatedEvent addFinishedJobCommitted(Instant createdTime, JobRunSummary summary, Instant committedTime, String taskId) {
         CompactionJobCreatedEvent job = addFinishedJobUncommitted(createdTime, summary, taskId);
         store.fixUpdateTime(defaultUpdateTime(committedTime));
         store.jobCommitted(committedEventBuilder(job, committedTime).taskId(taskId).build());

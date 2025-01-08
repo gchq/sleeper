@@ -24,9 +24,9 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.core.tracker.job.status.ProcessFailedStatus;
 
 import java.time.Duration;
@@ -146,7 +146,7 @@ public class IngestJobStatusTest {
 
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
-                    finishedIngestRun("test-task", new RecordsProcessedSummary(
+                    finishedIngestRun("test-task", new JobRunSummary(
                             recordsProcessed, new ProcessRunTime(startTime2, Duration.ofMinutes(1)))),
                     failedIngestRun("test-task", startTime1, Duration.ofMinutes(1),
                             List.of("Failed reading input file", "Some IO failure")));
@@ -167,7 +167,7 @@ public class IngestJobStatusTest {
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
                     startedIngestRun("task-2", startTime2),
-                    finishedIngestRun("task-1", new RecordsProcessedSummary(
+                    finishedIngestRun("task-1", new JobRunSummary(
                             recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
@@ -186,7 +186,7 @@ public class IngestJobStatusTest {
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
                     startedIngestRun("task-2", startTime2),
-                    finishedIngestRunUncommitted("task-1", new RecordsProcessedSummary(
+                    finishedIngestRunUncommitted("task-1", new JobRunSummary(
                             recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
@@ -477,8 +477,8 @@ public class IngestJobStatusTest {
                 List.of("Something went wrong"));
     }
 
-    private RecordsProcessedSummary summary(Instant startTime, Instant finishTime) {
-        return new RecordsProcessedSummary(
+    private JobRunSummary summary(Instant startTime, Instant finishTime) {
+        return new JobRunSummary(
                 new RecordsProcessed(450L, 300L), startTime, finishTime);
     }
 }

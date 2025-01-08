@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
 
@@ -104,7 +104,7 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobTrackerTestBase {
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
         Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
         Duration timeInProcess = Duration.ofSeconds(20);
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+        JobRunSummary summary = new JobRunSummary(
                 new RecordsProcessed(123L, 45L),
                 startedTime, finishedTime, timeInProcess);
 

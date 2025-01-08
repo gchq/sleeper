@@ -22,7 +22,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -124,7 +124,7 @@ public class IngestJobEventTestData {
      * @param  summary the summary
      * @return         the builder
      */
-    public static IngestJobFinishedEvent.Builder ingestJobFinishedEventBuilder(IngestJobEvent job, RecordsProcessedSummary summary) {
+    public static IngestJobFinishedEvent.Builder ingestJobFinishedEventBuilder(IngestJobEvent job, JobRunSummary summary) {
         return IngestJobFinishedEvent.builder()
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())

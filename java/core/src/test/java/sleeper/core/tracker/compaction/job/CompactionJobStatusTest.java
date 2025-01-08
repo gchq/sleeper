@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -78,7 +78,7 @@ class CompactionJobStatusTest {
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
         Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
         Instant commitTime = Instant.parse("2022-09-22T13:34:20.001Z");
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+        JobRunSummary summary = new JobRunSummary(
                 new RecordsProcessed(450L, 300L), startTime, finishTime);
 
         // When
@@ -110,7 +110,7 @@ class CompactionJobStatusTest {
     @Test
     void shouldBuildCompactionJobFinishedAndInProgress() {
         // Given
-        RecordsProcessedSummary run1Summary = new RecordsProcessedSummary(
+        JobRunSummary run1Summary = new JobRunSummary(
                 new RecordsProcessed(450L, 300L),
                 Instant.parse("2022-09-22T13:33:10.001Z"), Duration.ofMinutes(1));
         Instant commitTime1 = Instant.parse("2022-09-22T13:34:15.001Z");

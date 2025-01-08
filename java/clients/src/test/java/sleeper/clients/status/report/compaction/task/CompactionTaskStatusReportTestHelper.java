@@ -19,7 +19,7 @@ package sleeper.clients.status.report.compaction.task;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -44,7 +44,7 @@ public class CompactionTaskStatusReportTestHelper {
     }
 
     public static CompactionTaskStatus finishedTask(
-            String taskId, String startTime, String finishTime, RecordsProcessedSummary... summaries) {
+            String taskId, String startTime, String finishTime, JobRunSummary... summaries) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime), CompactionTaskFinishedStatus.builder().jobSummaries(Stream.of(summaries)))
                 .build();
@@ -68,9 +68,9 @@ public class CompactionTaskStatusReportTestHelper {
                 .addJobSummary(createSummary(startTime, finishTime, recordsRead, recordsWritten));
     }
 
-    private static RecordsProcessedSummary createSummary(
+    private static JobRunSummary createSummary(
             String startTime, String finishTime, long recordsRead, long recordsWritten) {
-        return new RecordsProcessedSummary(
+        return new JobRunSummary(
                 new RecordsProcessed(recordsRead, recordsWritten),
                 Instant.parse(startTime), Instant.parse(finishTime));
     }

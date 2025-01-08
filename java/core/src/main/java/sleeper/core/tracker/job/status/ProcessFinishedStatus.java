@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -26,9 +26,9 @@ import java.util.Objects;
 public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
-    private final RecordsProcessedSummary summary;
+    private final JobRunSummary summary;
 
-    private ProcessFinishedStatus(Instant updateTime, RecordsProcessedSummary summary) {
+    private ProcessFinishedStatus(Instant updateTime, JobRunSummary summary) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.summary = Objects.requireNonNull(summary, "summary must not be null");
     }
@@ -40,7 +40,7 @@ public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
      * @param  summary    the records processed summary to set
      * @return            an instance of this class
      */
-    public static ProcessFinishedStatus updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
+    public static ProcessFinishedStatus updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
         return new ProcessFinishedStatus(updateTime, summary);
     }
 
@@ -48,7 +48,7 @@ public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
         return updateTime;
     }
 
-    public RecordsProcessedSummary getSummary() {
+    public JobRunSummary getSummary() {
         return summary;
     }
 

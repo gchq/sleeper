@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -45,7 +45,7 @@ public class CompactionJobCommitRequestSerDeTest {
                 .partitionId("test-partition-id")
                 .build();
         CompactionJobCommitRequest commit = new CompactionJobCommitRequest(job, "test-task", "test-job-run",
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(120, 100),
                         Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1)));
 

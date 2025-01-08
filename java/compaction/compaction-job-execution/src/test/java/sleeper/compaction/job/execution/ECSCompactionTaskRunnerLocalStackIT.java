@@ -76,7 +76,7 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -346,7 +346,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .extracting(Message::getBody, this::getMessageGroupId)
                 .containsExactly(tuple(
                         commitRequestOnQueue(job, "task-id", "job-run-id",
-                                new RecordsProcessedSummary(new RecordsProcessed(100, 100),
+                                new JobRunSummary(new RecordsProcessed(100, 100),
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))),
                         tableId));
@@ -524,7 +524,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .outputFile(tempDir + "/" + outputFilename).build();
     }
 
-    private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, RecordsProcessedSummary summary) {
+    private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, JobRunSummary summary) {
         return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, jobRunId, summary));
     }
 

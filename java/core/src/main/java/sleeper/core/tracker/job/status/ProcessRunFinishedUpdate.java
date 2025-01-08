@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 
 import java.util.List;
 
@@ -30,7 +30,7 @@ public interface ProcessRunFinishedUpdate extends ProcessStatusUpdate {
      *
      * @return the summary
      */
-    RecordsProcessedSummary getSummary();
+    JobRunSummary getSummary();
 
     default boolean isSuccessful() {
         return true;

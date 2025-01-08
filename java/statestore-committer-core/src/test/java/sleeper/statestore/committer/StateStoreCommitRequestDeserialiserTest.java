@@ -36,8 +36,8 @@ import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -74,7 +74,7 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .build();
         CompactionJobCommitRequest compactionJobCommitRequest = new CompactionJobCommitRequest(
                 job, "test-task", "test-job-run",
-                new RecordsProcessedSummary(
+                new JobRunSummary(
                         new RecordsProcessed(120, 100),
                         Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1)));
         String jsonString = new CompactionJobCommitRequestSerDe().toJson(compactionJobCommitRequest);

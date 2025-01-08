@@ -26,7 +26,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.CustomProcessStatus.notPartOfRunWithUpdateTime;
 import static sleeper.core.tracker.job.status.CustomProcessStatus.partOfRunWithUpdateTime;
 import static sleeper.core.tracker.job.status.ProcessRunsTestHelper.runsFromUpdates;

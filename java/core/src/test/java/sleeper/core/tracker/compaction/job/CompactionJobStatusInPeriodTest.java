@@ -18,8 +18,8 @@ package sleeper.core.tracker.compaction.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
-import sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper;
+import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.JobRunSummaryTestHelper;
 
 import java.time.Instant;
 
@@ -32,8 +32,8 @@ import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.DEF
 
 public class CompactionJobStatusInPeriodTest {
 
-    private static RecordsProcessedSummary startAndFinishTime(Instant startTime, Instant finishTime) {
-        return RecordsProcessedSummaryTestHelper.summary(startTime, finishTime, 200, 100);
+    private static JobRunSummary startAndFinishTime(Instant startTime, Instant finishTime) {
+        return JobRunSummaryTestHelper.summary(startTime, finishTime, 200, 100);
     }
 
     @Test

@@ -15,9 +15,9 @@
  */
 package sleeper.core.tracker.job.status;
 
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -68,7 +68,7 @@ public class ProcessStatusUpdateTestHelper {
     public static ProcessFinishedStatus finishedStatus(
             Instant startTime, Duration runDuration, long recordsRead, long recordsWritten) {
         Instant finishTime = startTime.plus(runDuration);
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+        JobRunSummary summary = new JobRunSummary(
                 new RecordsProcessed(recordsRead, recordsWritten), startTime, finishTime);
         return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
     }

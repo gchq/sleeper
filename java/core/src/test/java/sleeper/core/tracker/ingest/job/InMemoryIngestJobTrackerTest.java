@@ -27,9 +27,9 @@ import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 
@@ -56,12 +56,12 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFini
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestRejectedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedIngestStartedStatus;
+import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.ProcessRunTestData.finishedRun;
 import static sleeper.core.tracker.job.ProcessRunTestData.startedRun;
 import static sleeper.core.tracker.job.ProcessRunTestData.unfinishedRun;
 import static sleeper.core.tracker.job.ProcessRunTestData.validatedFinishedRun;
 import static sleeper.core.tracker.job.ProcessRunTestData.validationRun;
-import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.failedStatus;
 
 public class InMemoryIngestJobTrackerTest {
@@ -100,7 +100,7 @@ public class InMemoryIngestJobTrackerTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
             IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).taskId(taskId).fileCount(2).build();
-            RecordsProcessedSummary summary = new RecordsProcessedSummary(
+            JobRunSummary summary = new JobRunSummary(
                     new RecordsProcessed(200L, 200L), startTime, finishTime);
 
             tracker.jobStarted(job);
@@ -117,7 +117,7 @@ public class InMemoryIngestJobTrackerTest {
             Instant startTime = Instant.parse("2022-09-22T12:00:14.000Z");
             Instant finishTime = Instant.parse("2022-09-22T12:00:44.000Z");
             IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).taskId(taskId).fileCount(2).build();
-            RecordsProcessedSummary summary = new RecordsProcessedSummary(
+            JobRunSummary summary = new JobRunSummary(
                     new RecordsProcessed(200L, 200L), startTime, finishTime);
 
             IngestJobFinishedEvent event = ingestJobFinishedEventBuilder(job, summary)
@@ -132,9 +132,9 @@ public class InMemoryIngestJobTrackerTest {
             String jobId = "test-job";
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
-            RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
+            JobRunSummary summary1 = new JobRunSummary(
                     new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
-            RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
+            JobRunSummary summary2 = new JobRunSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
             IngestJobStartedEvent run1 = ingestJobStartedEventBuilder(startTime1).jobId(jobId).taskId(taskId).fileCount(2).build();
             IngestJobStartedEvent run2 = ingestJobStartedEventBuilder(startTime2).jobId(jobId).taskId(taskId).fileCount(2).build();
@@ -154,9 +154,9 @@ public class InMemoryIngestJobTrackerTest {
             String taskId = "test-task";
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
-            RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
+            JobRunSummary summary1 = new JobRunSummary(
                     new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
-            RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
+            JobRunSummary summary2 = new JobRunSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
             IngestJobStartedEvent job1 = ingestJobStartedEventBuilder(startTime1).taskId(taskId).fileCount(1).build();
             IngestJobStartedEvent job2 = ingestJobStartedEventBuilder(startTime2).taskId(taskId).fileCount(2).build();
@@ -179,9 +179,9 @@ public class InMemoryIngestJobTrackerTest {
             String taskId = "test-task";
             Instant startTime1 = Instant.parse("2022-09-22T12:00:15.000Z");
             Instant startTime2 = Instant.parse("2022-09-22T12:00:31.000Z");
-            RecordsProcessedSummary summary1 = new RecordsProcessedSummary(
+            JobRunSummary summary1 = new JobRunSummary(
                     new RecordsProcessed(100L, 100L), startTime1, Duration.ofSeconds(15));
-            RecordsProcessedSummary summary2 = new RecordsProcessedSummary(
+            JobRunSummary summary2 = new JobRunSummary(
                     new RecordsProcessed(200L, 200L), startTime2, Duration.ofSeconds(30));
             IngestJobStartedEvent job1 = ingestJobStartedEventBuilder(startTime1).taskId(taskId).tableId(tableId1).fileCount(1).build();
             IngestJobStartedEvent job2 = ingestJobStartedEventBuilder(startTime2).taskId(taskId).tableId(tableId2).fileCount(2).build();
@@ -417,7 +417,7 @@ public class InMemoryIngestJobTrackerTest {
             String taskId = "test-task";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
+            JobRunSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
             IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1)
                     .jobId("test-job-1").jobRunId(jobRunId).build();
 
@@ -443,7 +443,7 @@ public class InMemoryIngestJobTrackerTest {
             String jobRunId = "test-run";
             String taskId = "test-task";
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
+            JobRunSummary summary = summary(startTime, Duration.ofMinutes(10), 100L, 100L);
             IngestJobStartedEvent job = ingestJobStartedEventBuilder(startTime).fileCount(1)
                     .jobId("test-job-1").jobRunId(jobRunId).taskId(taskId).build();
 
@@ -617,7 +617,7 @@ public class InMemoryIngestJobTrackerTest {
             FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree());
             List<AllReferencesToAFile> filesAdded = filesWithReferences(List.of(
                     fileFactory.rootFile("file1.parquet", 123)));
-            RecordsProcessedSummary summary = summary(startTime, Duration.ofMinutes(1), 123, 123);
+            JobRunSummary summary = summary(startTime, Duration.ofMinutes(1), 123, 123);
 
             // When
             tracker.jobStarted(job);

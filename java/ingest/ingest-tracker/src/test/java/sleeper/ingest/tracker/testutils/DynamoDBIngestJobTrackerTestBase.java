@@ -36,7 +36,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.core.job.IngestJob;
@@ -106,8 +106,8 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
                 Arrays.stream(updateTimes).iterator()::next);
     }
 
-    protected static RecordsProcessedSummary defaultSummary(Instant startTime, Instant finishTime) {
-        return new RecordsProcessedSummary(
+    protected static JobRunSummary defaultSummary(Instant startTime, Instant finishTime) {
+        return new JobRunSummary(
                 new RecordsProcessed(200L, 100L),
                 startTime, finishTime);
     }
@@ -128,7 +128,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
         return defaultJobFinishedEvent(job, defaultSummary(startedTime, finishedTime));
     }
 
-    protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, RecordsProcessedSummary summary) {
+    protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, JobRunSummary summary) {
         return job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
     }
 
@@ -172,7 +172,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
         return defaultJobFinishedStatus(job, defaultSummary(startedTime, finishedTime));
     }
 
-    protected static IngestJobStatus defaultJobFinishedStatus(IngestJob job, RecordsProcessedSummary summary) {
+    protected static IngestJobStatus defaultJobFinishedStatus(IngestJob job, JobRunSummary summary) {
         return finishedIngestJob(job, DEFAULT_TASK_ID, summary, 2);
     }
 
@@ -219,7 +219,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
         return defaultJobFinishedRun(job, defaultSummary(startedTime, finishedTime));
     }
 
-    protected static ProcessRun defaultJobFinishedRun(IngestJob job, RecordsProcessedSummary summary) {
+    protected static ProcessRun defaultJobFinishedRun(IngestJob job, JobRunSummary summary) {
         return finishedIngestRun(job, DEFAULT_TASK_ID, summary, 2);
     }
 

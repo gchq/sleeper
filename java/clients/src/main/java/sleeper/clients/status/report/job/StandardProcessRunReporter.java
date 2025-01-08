@@ -19,7 +19,7 @@ package sleeper.clients.status.report.job;
 import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.ProcessRunFinishedUpdate;
 import sleeper.core.tracker.job.status.ProcessRunStartedUpdate;
@@ -69,7 +69,7 @@ public class StandardProcessRunReporter {
                 .value(START_TIME, run.getStartTime())
                 .value(FINISH_TIME, run.getFinishTime());
         if (run.isFinished()) {
-            RecordsProcessedSummary summary = run.getFinishedSummary();
+            JobRunSummary summary = run.getFinishedSummary();
             builder.value(DURATION, getDurationString(summary))
                     .value(RECORDS_READ, getRecordsRead(summary))
                     .value(RECORDS_WRITTEN, getRecordsWritten(summary))
@@ -132,7 +132,7 @@ public class StandardProcessRunReporter {
     }
 
     public void printProcessFinished(ProcessRunFinishedUpdate update) {
-        RecordsProcessedSummary summary = update.getSummary();
+        JobRunSummary summary = update.getSummary();
         out.printf("Finish time: %s%n", summary.getFinishTime());
         out.printf("Finish update time: %s%n", update.getUpdateTime());
         out.printf("Duration: %s%n", getDurationString(summary)); // Duration from job started in driver or job accepted in executor?
@@ -152,23 +152,23 @@ public class StandardProcessRunReporter {
         return Arrays.asList(FINISH_TIME, DURATION, RECORDS_READ, RECORDS_WRITTEN, READ_RATE, WRITE_RATE);
     }
 
-    private static String getDurationString(RecordsProcessedSummary summary) {
+    private static String getDurationString(JobRunSummary summary) {
         return formatDurationString(summary.getDuration());
     }
 
-    private static String getRecordsRead(RecordsProcessedSummary summary) {
+    private static String getRecordsRead(JobRunSummary summary) {
         return countWithCommas(summary.getRecordsRead());
     }
 
-    private static String getRecordsWritten(RecordsProcessedSummary summary) {
+    private static String getRecordsWritten(JobRunSummary summary) {
         return countWithCommas(summary.getRecordsWritten());
     }
 
-    private static String getRecordsReadPerSecond(RecordsProcessedSummary summary) {
+    private static String getRecordsReadPerSecond(JobRunSummary summary) {
         return formatDecimal(summary.getRecordsReadPerSecond());
     }
 
-    private static String getRecordsWrittenPerSecond(RecordsProcessedSummary summary) {
+    private static String getRecordsWrittenPerSecond(JobRunSummary summary) {
         return formatDecimal(summary.getRecordsWrittenPerSecond());
     }
 

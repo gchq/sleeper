@@ -21,7 +21,7 @@ import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RecordsProcessedSummaryTest {
+public class JobRunSummaryTest {
 
     @Test
     public void shouldReturnInputs() {
@@ -29,7 +29,7 @@ public class RecordsProcessedSummaryTest {
         long recordsWritten = 100L;
         Instant startTime = Instant.parse("2022-09-22T09:44:00.000Z");
         Instant finishTime = Instant.parse("2022-09-22T09:45:00.000Z");
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+        JobRunSummary summary = new JobRunSummary(
                 new RecordsProcessed(recordsRead, recordsWritten),
                 startTime, finishTime);
 
@@ -39,7 +39,7 @@ public class RecordsProcessedSummaryTest {
 
     @Test
     public void shouldCalculateDuration() {
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+        JobRunSummary summary = new JobRunSummary(
                 new RecordsProcessed(100L, 100L),
                 Instant.parse("2022-09-22T09:44:00.000Z"),
                 Instant.parse("2022-09-22T09:45:00.000Z"));
@@ -49,7 +49,7 @@ public class RecordsProcessedSummaryTest {
 
     @Test
     public void shouldCalculateRecordRate() {
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+        JobRunSummary summary = new JobRunSummary(
                 new RecordsProcessed(450L, 300L),
                 Instant.parse("2022-09-22T09:44:00.000Z"),
                 Instant.parse("2022-09-22T09:45:00.000Z"));

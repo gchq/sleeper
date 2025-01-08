@@ -22,9 +22,9 @@ import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -131,8 +131,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
         Instant finishTime2 = Instant.parse("2022-10-03T15:19:32.001Z");
         Instant commitTime2 = Instant.parse("2022-10-03T15:19:42.001Z");
         RecordsProcessed processed = new RecordsProcessed(100L, 100L);
-        RecordsProcessedSummary summary1 = new RecordsProcessedSummary(processed, startTime1, finishTime1);
-        RecordsProcessedSummary summary2 = new RecordsProcessedSummary(processed, startTime2, finishTime2);
+        JobRunSummary summary1 = new JobRunSummary(processed, startTime1, finishTime1);
+        JobRunSummary summary2 = new JobRunSummary(processed, startTime2, finishTime2);
 
         // When
         storeJobCreated(job);
@@ -147,9 +147,9 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, ignoredUpdateTime(),
-                        finishedCompactionRun(DEFAULT_TASK_ID_2, new RecordsProcessedSummary(processed, startTime2, finishTime2),
+                        finishedCompactionRun(DEFAULT_TASK_ID_2, new JobRunSummary(processed, startTime2, finishTime2),
                                 commitTime2),
-                        finishedCompactionRun(DEFAULT_TASK_ID, new RecordsProcessedSummary(processed, startTime1, finishTime1),
+                        finishedCompactionRun(DEFAULT_TASK_ID, new JobRunSummary(processed, startTime1, finishTime1),
                                 commitTime1)));
     }
 
@@ -164,7 +164,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
         Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
         Duration timeInProcess = Duration.ofSeconds(20);
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(
+        JobRunSummary summary = new JobRunSummary(
                 new RecordsProcessed(123L, 45L),
                 startedTime, finishedTime, timeInProcess);
 

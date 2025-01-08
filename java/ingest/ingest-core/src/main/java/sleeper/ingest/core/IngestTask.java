@@ -22,8 +22,8 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
@@ -114,7 +114,7 @@ public class IngestTask {
                 IngestResult result = ingester.ingest(job, jobRunId);
                 LOGGER.info("{} records were written", result.getRecordsWritten());
                 Instant jobFinishTime = timeSupplier.get();
-                RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
+                JobRunSummary summary = new JobRunSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
                 jobTracker.jobFinished(job.finishedEventBuilder(summary)
                         .taskId(taskId).jobRunId(jobRunId)
                         .committedBySeparateFileUpdates(true)
@@ -168,7 +168,7 @@ public class IngestTask {
          *
          * @param summary the records processed summary for the finished job
          */
-        void completed(RecordsProcessedSummary summary);
+        void completed(JobRunSummary summary);
 
         /**
          * Called when a job fails. This will return the message to the queue to be retried.

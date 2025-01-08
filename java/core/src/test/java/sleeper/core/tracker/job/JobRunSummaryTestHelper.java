@@ -21,50 +21,50 @@ import java.time.Duration;
 import java.time.Instant;
 
 /**
- * Helper methods for creating a records processed summary.
+ * Helper methods for creating a summary of a run of a job.
  */
-public class RecordsProcessedSummaryTestHelper {
+public class JobRunSummaryTestHelper {
 
-    private RecordsProcessedSummaryTestHelper() {
+    private JobRunSummaryTestHelper() {
     }
 
     /**
-     * Creates a record processed summary.
+     * Creates a job run summary.
      *
      * @param  startedUpdate  the started status update
      * @param  duration       the duration
      * @param  recordsRead    the number of records read
      * @param  recordsWritten the number of records written
-     * @return                a {@link RecordsProcessedSummary}
+     * @return                a {@link JobRunSummary}
      */
-    public static RecordsProcessedSummary summary(ProcessRunStartedUpdate startedUpdate, Duration duration, long recordsRead, long recordsWritten) {
+    public static JobRunSummary summary(ProcessRunStartedUpdate startedUpdate, Duration duration, long recordsRead, long recordsWritten) {
         return summary(startedUpdate.getStartTime(), duration, recordsRead, recordsWritten);
     }
 
     /**
-     * Creates a record processed summary.
+     * Creates a job run summary.
      *
      * @param  startTime      the start time
      * @param  duration       the duration
      * @param  recordsRead    the number of records read
      * @param  recordsWritten the number of records written
-     * @return                a {@link RecordsProcessedSummary}
+     * @return                a {@link JobRunSummary}
      */
-    public static RecordsProcessedSummary summary(Instant startTime, Duration duration, long recordsRead, long recordsWritten) {
+    public static JobRunSummary summary(Instant startTime, Duration duration, long recordsRead, long recordsWritten) {
         return summary(startTime, startTime.plus(duration), recordsRead, recordsWritten);
     }
 
     /**
-     * Creates a record processed summary.
+     * Creates a job run summary.
      *
      * @param  startTime      the start time
      * @param  finishTime     the finish time
      * @param  recordsRead    the number of records read
      * @param  recordsWritten the number of records written
-     * @return                a {@link RecordsProcessedSummary}
+     * @return                a {@link JobRunSummary}
      */
-    public static RecordsProcessedSummary summary(Instant startTime, Instant finishTime, long recordsRead, long recordsWritten) {
-        return new RecordsProcessedSummary(
+    public static JobRunSummary summary(Instant startTime, Instant finishTime, long recordsRead, long recordsWritten) {
+        return new JobRunSummary(
                 new RecordsProcessed(recordsRead, recordsWritten),
                 startTime, finishTime);
     }

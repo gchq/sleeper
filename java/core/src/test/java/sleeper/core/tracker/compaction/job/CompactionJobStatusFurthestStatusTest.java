@@ -38,7 +38,7 @@ import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.FINISHED;
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.UNCOMMITTED;
-import static sleeper.core.tracker.job.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.failedStatus;
 
 public class CompactionJobStatusFurthestStatusTest {

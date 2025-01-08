@@ -33,7 +33,7 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.status.ProcessFailedStatus;
 import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
@@ -113,7 +113,7 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
             CompactionJobFinishedEvent event, DynamoDBRecordBuilder builder) {
-        RecordsProcessedSummary summary = event.getSummary();
+        JobRunSummary summary = event.getSummary();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
@@ -197,7 +197,7 @@ class DynamoDBCompactionJobStatusFormat {
             case UPDATE_TYPE_FINISHED:
                 return CompactionJobFinishedStatus.updateTimeAndSummary(
                         getInstantAttribute(item, UPDATE_TIME),
-                        new RecordsProcessedSummary(new RecordsProcessed(
+                        new JobRunSummary(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                 getRunTime(item)))

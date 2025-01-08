@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.RecordsProcessedSummary;
+import sleeper.core.tracker.job.JobRunSummary;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -145,7 +145,7 @@ public class ProcessRun {
      *
      * @return the finished summary, or null if the run has not finished
      */
-    public RecordsProcessedSummary getFinishedSummary() {
+    public JobRunSummary getFinishedSummary() {
         if (isFinished()) {
             return getFinishedStatus().getSummary();
         } else {
