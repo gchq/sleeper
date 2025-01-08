@@ -41,7 +41,7 @@ chunks:
       - compaction/compaction-task-creation
       - compaction/compaction-job-creation
       - compaction/compaction-job-creation-lambda
-      - compaction/compaction-status-store
+      - compaction/compaction-tracker
       - compaction/compaction-core
       - splitter/splitter-core
       - splitter/splitter-lambda

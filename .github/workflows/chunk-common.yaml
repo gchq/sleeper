@@ -17,7 +17,7 @@ on:
       - 'java/statestore-committer-core/**'
       - 'java/statestore-lambda/**'
       - 'java/metrics/**'
-      - 'java/compaction/compaction-status-store/**'
+      - 'java/compaction/compaction-tracker/**'
       - 'java/compaction/compaction-core/**'
       - 'java/ingest/ingest-tracker/**'
       - 'java/ingest/ingest-core/**'

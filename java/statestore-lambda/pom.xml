@@ -64,7 +64,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>compaction-status-store</artifactId>
+            <artifactId>compaction-tracker</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
