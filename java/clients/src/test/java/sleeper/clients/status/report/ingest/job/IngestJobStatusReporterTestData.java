@@ -20,7 +20,7 @@ import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -36,7 +36,7 @@ import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
@@ -75,12 +75,12 @@ public class IngestJobStatusReporterTestData {
         Instant startTime5 = Instant.parse("2022-09-22T13:34:12.001Z");
 
         return Arrays.asList(
-                ingestJobStatus(job5, ProcessRun.builder()
+                ingestJobStatus(job5, JobRun.builder()
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job5, startTime5))
                         .statusUpdate(ingestAddedFilesStatus(startTime5.plus(Duration.ofMinutes(1)), 2))
                         .build()),
-                ingestJobStatus(job4, ProcessRun.builder()
+                ingestJobStatus(job4, JobRun.builder()
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job4, startTime4))
                         .finishedStatus(ingestFinishedStatusUncommitted(summary(startTime4, Duration.ofMinutes(1), 600, 300), 1))
@@ -115,13 +115,13 @@ public class IngestJobStatusReporterTestData {
         Instant startTime7 = Instant.parse("2022-09-27T13:34:12.001Z");
 
         return Arrays.asList(
-                ingestJobStatus(job7, ProcessRun.builder()
+                ingestJobStatus(job7, JobRun.builder()
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job7, startTime7))
                         .statusUpdate(ingestAddedFilesStatus(startTime7.plus(Duration.ofSeconds(55)), 2))
                         .finishedStatus(ingestFinishedStatusUncommitted(summary(startTime7, Duration.ofMinutes(1), 600, 300), 2))
                         .build()),
-                ingestJobStatus(job6, ProcessRun.builder()
+                ingestJobStatus(job6, JobRun.builder()
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job6, startTime6))
                         .statusUpdate(ingestAddedFilesStatus(startTime6.plus(Duration.ofMinutes(1)), 1))

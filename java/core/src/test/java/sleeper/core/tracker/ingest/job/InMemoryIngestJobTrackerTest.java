@@ -30,8 +30,8 @@ import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
-import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -57,12 +57,12 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestReje
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedIngestStartedStatus;
 import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.ProcessRunTestData.finishedRun;
-import static sleeper.core.tracker.job.ProcessRunTestData.startedRun;
-import static sleeper.core.tracker.job.ProcessRunTestData.unfinishedRun;
-import static sleeper.core.tracker.job.ProcessRunTestData.validatedFinishedRun;
-import static sleeper.core.tracker.job.ProcessRunTestData.validationRun;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.failedStatus;
+import static sleeper.core.tracker.job.run.JobRunTestData.finishedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.unfinishedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.validatedFinishedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 
 public class InMemoryIngestJobTrackerTest {
 
@@ -536,7 +536,7 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(job, JobRun.builder()
                             .taskId(taskId)
                             .startedStatus(ingestStartedStatus(startTime, 2))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
@@ -568,7 +568,7 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(job, JobRun.builder()
                             .taskId(taskId)
                             .startedStatus(ingestStartedStatus(startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
@@ -597,7 +597,7 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(job, JobRun.builder()
                             .taskId(taskId)
                             .startedStatus(ingestStartedStatus(startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 2))
@@ -628,7 +628,7 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(job, JobRun.builder()
                             .taskId(taskId)
                             .startedStatus(ingestStartedStatus(startTime))
                             .statusUpdate(ingestFinishedStatusUncommitted(summary, 1))
@@ -639,11 +639,11 @@ public class InMemoryIngestJobTrackerTest {
         }
     }
 
-    private IngestJobStatus ingestJobStatus(IngestJobEvent job, ProcessRun... runs) {
+    private IngestJobStatus ingestJobStatus(IngestJobEvent job, JobRun... runs) {
         return IngestJobStatusTestData.ingestJobStatus(job, runs);
     }
 
-    private IngestJobStatus ingestJobStatus(String jobId, ProcessRun... runs) {
+    private IngestJobStatus ingestJobStatus(String jobId, JobRun... runs) {
         return IngestJobStatusTestData.ingestJobStatus(jobId, runs);
     }
 }

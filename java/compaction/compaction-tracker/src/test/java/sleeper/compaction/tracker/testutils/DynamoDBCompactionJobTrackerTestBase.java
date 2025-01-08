@@ -37,7 +37,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Duration;
@@ -183,7 +183,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
 
     protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job, JobRunSummary summary) {
         return compactionJobCreated(job, ignoredUpdateTime(),
-                ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                JobRun.builder().taskId(DEFAULT_TASK_ID)
                         .startedStatus(compactionStartedStatus(summary.getStartTime()))
                         .finishedStatus(compactionFinishedStatus(summary))
                         .statusUpdate(compactionCommittedStatus(defaultCommitTime()))

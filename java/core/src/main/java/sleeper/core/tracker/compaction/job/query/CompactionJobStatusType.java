@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.util.Collection;
 
@@ -58,7 +58,7 @@ public enum CompactionJobStatusType {
      * @param  run the run
      * @return     the status type
      */
-    public static CompactionJobStatusType statusTypeOfJobRun(ProcessRun run) {
+    public static CompactionJobStatusType statusTypeOfJobRun(JobRun run) {
         return CompactionJobUpdateTypeInRun.typeOfFurthestUpdateInRun(run).getJobStatusTypeAfterUpdate();
     }
 

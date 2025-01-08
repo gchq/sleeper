@@ -17,8 +17,8 @@ package sleeper.core.tracker.ingest.job;
 
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
-import sleeper.core.tracker.job.status.ProcessRun;
 
 /**
  * Tracks how many files were tracked as written and added to the state store.
@@ -55,7 +55,7 @@ public class IngestJobFilesWrittenAndAdded {
      * @param  run the run
      * @return     the count of files
      */
-    public static IngestJobFilesWrittenAndAdded from(ProcessRun run) {
+    public static IngestJobFilesWrittenAndAdded from(JobRun run) {
         int filesWritten = 0;
         int filesAdded = 0;
         boolean committedBySeparateFileUpdates = true;

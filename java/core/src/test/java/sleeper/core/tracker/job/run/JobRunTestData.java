@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.tracker.job;
+package sleeper.core.tracker.job.run;
 
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
-import sleeper.core.tracker.job.status.ProcessRun;
 
 /**
- * A helper for creating runs for tests.
+ * A helper for creating job runs for tests.
  */
-public class ProcessRunTestData {
+public class JobRunTestData {
 
-    private ProcessRunTestData() {
+    private JobRunTestData() {
     }
 
     /**
@@ -35,8 +34,8 @@ public class ProcessRunTestData {
      * @param  startedStatus the started status to set
      * @return               the run
      */
-    public static ProcessRun startedRun(String taskId, JobRunStartedUpdate startedStatus) {
-        return ProcessRun.builder()
+    public static JobRun startedRun(String taskId, JobRunStartedUpdate startedStatus) {
+        return JobRun.builder()
                 .taskId(taskId)
                 .startedStatus(startedStatus)
                 .build();
@@ -50,8 +49,8 @@ public class ProcessRunTestData {
      * @param  finishedStatus the finished status to set
      * @return                the run
      */
-    public static ProcessRun finishedRun(String taskId, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
-        return ProcessRun.builder()
+    public static JobRun finishedRun(String taskId, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
+        return JobRun.builder()
                 .taskId(taskId)
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedStatus)
@@ -66,8 +65,8 @@ public class ProcessRunTestData {
      * @param  finishedStatus the finished status to set
      * @return                the run
      */
-    public static ProcessRun validatedFinishedRun(String taskId, JobRunStartedUpdate validatedStatus, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
-        return ProcessRun.builder()
+    public static JobRun validatedFinishedRun(String taskId, JobRunStartedUpdate validatedStatus, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
+        return JobRun.builder()
                 .taskId(taskId)
                 .startedStatus(validatedStatus)
                 .statusUpdate(startedStatus)
@@ -81,8 +80,8 @@ public class ProcessRunTestData {
      * @param  validationStatus the started status to set
      * @return                  the run
      */
-    public static ProcessRun validationRun(JobRunStartedUpdate validationStatus) {
-        return ProcessRun.builder()
+    public static JobRun validationRun(JobRunStartedUpdate validationStatus) {
+        return JobRun.builder()
                 .startedStatus(validationStatus)
                 .build();
     }
@@ -94,8 +93,8 @@ public class ProcessRunTestData {
      * @param  updates       the other updates
      * @return               the run
      */
-    public static ProcessRun unfinishedRun(String taskId, JobRunStartedUpdate startedStatus, JobStatusUpdate... updates) {
-        ProcessRun.Builder builder = ProcessRun.builder().taskId(taskId).startedStatus(startedStatus);
+    public static JobRun unfinishedRun(String taskId, JobRunStartedUpdate startedStatus, JobStatusUpdate... updates) {
+        JobRun.Builder builder = JobRun.builder().taskId(taskId).startedStatus(startedStatus);
         for (JobStatusUpdate update : updates) {
             builder.statusUpdate(update);
         }

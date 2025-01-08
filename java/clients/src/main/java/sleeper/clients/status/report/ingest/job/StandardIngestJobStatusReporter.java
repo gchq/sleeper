@@ -34,7 +34,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
 import sleeper.core.tracker.job.AverageRecordRate;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -124,12 +124,12 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         out.printf("Details for job %s:%n", status.getJobId());
         out.printf("State: %s%n", status.getFurthestRunStatusType());
         out.printf("Number of input files: %d%n", status.getInputFilesCount());
-        for (ProcessRun run : status.getJobRuns()) {
+        for (JobRun run : status.getJobRuns()) {
             printProcessJobRun(run);
         }
     }
 
-    private void printProcessJobRun(ProcessRun run) {
+    private void printProcessJobRun(JobRun run) {
         runReporter.printProcessJobRunWithUpdatePrinter(run, updatePrinters(
                 printUpdateType(IngestJobValidatedStatus.class, this::printValidation),
                 printUpdateType(IngestJobAddedFilesStatus.class, this::printAddedFiles)));

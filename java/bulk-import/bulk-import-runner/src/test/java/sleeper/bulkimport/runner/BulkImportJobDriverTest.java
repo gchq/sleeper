@@ -32,7 +32,7 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
@@ -87,7 +87,7 @@ class BulkImportJobDriverTest {
         // Then
         IngestJob ingestJob = job.toIngestJob();
         assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId("test-task")
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
@@ -207,7 +207,7 @@ class BulkImportJobDriverTest {
         // Then
         IngestJob ingestJob = job.toIngestJob();
         assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId("test-task")
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))

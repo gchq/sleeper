@@ -23,12 +23,12 @@ import java.util.Objects;
 /**
  * An implementation of a process update that is both the start and finish of a job run. Only used in tests.
  */
-public class ProcessStartedAndFinishedStatus implements JobRunStartedUpdate, JobRunEndUpdate {
+public class TestJobStartedAndFinishedStatus implements JobRunStartedUpdate, JobRunEndUpdate {
 
     private final Instant updateTime;
     private final JobRunSummary summary;
 
-    private ProcessStartedAndFinishedStatus(Instant updateTime, JobRunSummary summary) {
+    private TestJobStartedAndFinishedStatus(Instant updateTime, JobRunSummary summary) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
         this.summary = Objects.requireNonNull(summary, "summary may not be null");
     }
@@ -40,8 +40,8 @@ public class ProcessStartedAndFinishedStatus implements JobRunStartedUpdate, Job
      * @param  summary    the records processed summary
      * @return            an instance of this class
      */
-    public static ProcessStartedAndFinishedStatus updateAndSummary(Instant updateTime, JobRunSummary summary) {
-        return new ProcessStartedAndFinishedStatus(updateTime, summary);
+    public static TestJobStartedAndFinishedStatus updateAndSummary(Instant updateTime, JobRunSummary summary) {
+        return new TestJobStartedAndFinishedStatus(updateTime, summary);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class ProcessStartedAndFinishedStatus implements JobRunStartedUpdate, Job
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ProcessStartedAndFinishedStatus that = (ProcessStartedAndFinishedStatus) o;
+        TestJobStartedAndFinishedStatus that = (TestJobStartedAndFinishedStatus) o;
         return updateTime.equals(that.updateTime) && summary.equals(that.summary);
     }
 
@@ -83,7 +83,7 @@ public class ProcessStartedAndFinishedStatus implements JobRunStartedUpdate, Job
 
     @Override
     public String toString() {
-        return "ProcessStartedAndFinishedStatus{" +
+        return "TestJobStartedAndFinishedStatus{" +
                 "updateTime=" + updateTime +
                 ", summary=" + summary +
                 '}';

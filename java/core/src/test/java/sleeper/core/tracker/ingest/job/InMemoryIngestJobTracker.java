@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.REJECTED;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
 /**
  * An in-memory implementation of the ingest job tracker.

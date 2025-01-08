@@ -17,10 +17,10 @@
 package sleeper.core.tracker.ingest.job;
 
 import sleeper.core.tracker.ingest.job.query.IngestJobInfoStatus;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRuns;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.core.tracker.job.status.JobStatusUpdates;
-import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessRuns;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
 
 import java.time.Instant;
@@ -38,7 +38,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
  */
 public class IngestJobStatus {
     private final String jobId;
-    private final ProcessRuns jobRuns;
+    private final JobRuns jobRuns;
     private final transient Set<IngestJobStatusType> runStatusTypes;
     private final transient IngestJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
@@ -73,7 +73,7 @@ public class IngestJobStatus {
     }
 
     private static Optional<IngestJobStatus> from(JobStatusUpdates statusUpdates) {
-        ProcessRuns runs = statusUpdates.getRuns();
+        JobRuns runs = statusUpdates.getRuns();
         if (!runs.isStarted()) {
             return Optional.empty();
         }
@@ -90,7 +90,7 @@ public class IngestJobStatus {
 
     public int getInputFilesCount() {
         return jobRuns.getLatestRun()
-                .map(ProcessRun::getStartedStatus)
+                .map(JobRun::getStartedStatus)
                 .filter(startedUpdate -> startedUpdate instanceof IngestJobInfoStatus)
                 .map(startedUpdate -> (IngestJobInfoStatus) startedUpdate)
                 .map(IngestJobInfoStatus::getInputFileCount)
@@ -111,7 +111,7 @@ public class IngestJobStatus {
         return jobRuns.isTaskIdAssigned(taskId);
     }
 
-    public List<ProcessRun> getJobRuns() {
+    public List<JobRun> getJobRuns() {
         return jobRuns.getRunsLatestFirst();
     }
 
@@ -192,7 +192,7 @@ public class IngestJobStatus {
      */
     public static final class Builder {
         private String jobId;
-        private ProcessRuns jobRuns;
+        private JobRuns jobRuns;
         private Instant expiryDate;
 
         private Builder() {
@@ -215,7 +215,7 @@ public class IngestJobStatus {
          * @param  jobRuns the job runs
          * @return         the builder
          */
-        public Builder jobRuns(ProcessRuns jobRuns) {
+        public Builder jobRuns(JobRuns jobRuns) {
             this.jobRuns = jobRuns;
             return this;
         }

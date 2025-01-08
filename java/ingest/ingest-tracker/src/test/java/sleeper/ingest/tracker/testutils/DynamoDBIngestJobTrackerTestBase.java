@@ -37,7 +37,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
@@ -56,7 +56,7 @@ import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_STATUS_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestRun;
@@ -157,7 +157,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobAddedFilesStatus(IngestJob job, Instant startedTime, Instant writtenTime, int fileCount) {
-        return ingestJobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, JobRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .statusUpdate(IngestJobAddedFilesStatus.builder()
@@ -177,7 +177,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedButUncommittedStatus(IngestJob job, Instant startedTime, Instant finishedTime, int numFiles) {
-        return ingestJobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, JobRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
@@ -188,7 +188,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedAndCommittedStatus(IngestJob job, Instant startedTime, Instant writtenTime, Instant finishedTime, int numFiles) {
-        return ingestJobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, JobRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
@@ -211,15 +211,15 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
         return failedIngestJob(job, DEFAULT_TASK_ID, runTime, failureReasons);
     }
 
-    protected static ProcessRun defaultJobStartedRun(IngestJob job, Instant startedTime) {
+    protected static JobRun defaultJobStartedRun(IngestJob job, Instant startedTime) {
         return startedIngestRun(job, DEFAULT_TASK_ID, startedTime);
     }
 
-    protected static ProcessRun defaultJobFinishedRun(IngestJob job, Instant startedTime, Instant finishedTime) {
+    protected static JobRun defaultJobFinishedRun(IngestJob job, Instant startedTime, Instant finishedTime) {
         return defaultJobFinishedRun(job, defaultSummary(startedTime, finishedTime));
     }
 
-    protected static ProcessRun defaultJobFinishedRun(IngestJob job, JobRunSummary summary) {
+    protected static JobRun defaultJobFinishedRun(IngestJob job, JobRunSummary summary) {
         return finishedIngestRun(job, DEFAULT_TASK_ID, summary, 2);
     }
 

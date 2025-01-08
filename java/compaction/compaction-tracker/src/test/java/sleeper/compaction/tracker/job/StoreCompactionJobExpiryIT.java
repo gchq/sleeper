@@ -32,7 +32,7 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
 public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTestBase {
 

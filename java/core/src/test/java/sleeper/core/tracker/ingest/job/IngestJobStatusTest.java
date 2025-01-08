@@ -49,14 +49,14 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
-import static sleeper.core.tracker.job.ProcessRunTestData.startedRun;
-import static sleeper.core.tracker.job.ProcessRunTestData.validationRun;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJob;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forRunOnTask;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.withExpiry;
+import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnNoTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.withExpiry;
 
 public class IngestJobStatusTest {
 

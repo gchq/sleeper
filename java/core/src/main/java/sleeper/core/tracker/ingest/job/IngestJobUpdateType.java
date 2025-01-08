@@ -20,9 +20,9 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
-import sleeper.core.tracker.job.status.ProcessRun;
 
 /**
  * Defines the types of updates during an ingest job. Can also find the furthest update in a run of an ingest job,
@@ -52,7 +52,7 @@ public enum IngestJobUpdateType {
      * @param  run the run
      * @return     the update type
      */
-    public static IngestJobUpdateType typeOfFurthestUpdateInRun(ProcessRun run) {
+    public static IngestJobUpdateType typeOfFurthestUpdateInRun(JobRun run) {
         FurthestUpdateTracker furthestUpdate = new FurthestUpdateTracker();
         for (JobStatusUpdate update : run.getStatusUpdates()) {
             furthestUpdate.setIfFurther(typeOfUpdate(update));
@@ -66,7 +66,7 @@ public enum IngestJobUpdateType {
      * @param  run the run
      * @return     the status type
      */
-    public IngestJobStatusType statusTypeAfterThisInRun(ProcessRun run) {
+    public IngestJobStatusType statusTypeAfterThisInRun(JobRun run) {
         if (this == FINISHED_WHEN_FILES_COMMITTED) {
             return IngestJobFilesWrittenAndAdded.from(run).haveAllFilesBeenAdded()
                     ? IngestJobStatusType.FINISHED

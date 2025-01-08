@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.ingest.job;
 
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.util.Collection;
 
@@ -67,7 +67,7 @@ public enum IngestJobStatusType {
      * @param  run the run
      * @return     the status type
      */
-    public static IngestJobStatusType statusTypeOfJobRun(ProcessRun run) {
+    public static IngestJobStatusType statusTypeOfJobRun(JobRun run) {
         return IngestJobUpdateType.typeOfFurthestUpdateInRun(run)
                 .statusTypeAfterThisInRun(run);
     }

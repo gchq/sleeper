@@ -22,9 +22,9 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRuns;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
-import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessRuns;
 
 import java.util.List;
 import java.util.function.Function;
@@ -33,21 +33,21 @@ public class JsonProcessRunReporter {
     private JsonProcessRunReporter() {
     }
 
-    public static JsonSerializer<ProcessRuns> processRunsJsonSerializer(Function<JobStatusUpdate, Object> getType) {
+    public static JsonSerializer<JobRuns> processRunsJsonSerializer(Function<JobStatusUpdate, Object> getType) {
         return ((processRuns, type, context) -> createProcessRunsJson(processRuns, context, getType));
     }
 
     private static JsonElement createProcessRunsJson(
-            ProcessRuns runs, JsonSerializationContext context, Function<JobStatusUpdate, Object> getType) {
+            JobRuns runs, JsonSerializationContext context, Function<JobStatusUpdate, Object> getType) {
         JsonArray jsonArray = new JsonArray();
-        for (ProcessRun run : runs.getRunsLatestFirst()) {
+        for (JobRun run : runs.getRunsLatestFirst()) {
             jsonArray.add(createProcessRunJson(run, context, getType));
         }
         return jsonArray;
     }
 
     private static JsonElement createProcessRunJson(
-            ProcessRun run, JsonSerializationContext context, Function<JobStatusUpdate, Object> getType) {
+            JobRun run, JsonSerializationContext context, Function<JobStatusUpdate, Object> getType) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("taskId", run.getTaskId());
         jsonObject.add("updates", createStatusUpdatesJson(run.getStatusUpdates(), context, getType));

@@ -27,7 +27,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatusType;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.util.GsonConfig;
 
 import java.time.Duration;
@@ -103,10 +103,10 @@ public class WaitForJobsStatus {
     }
 
     private static class JobStatus {
-        private final List<ProcessRun> runsLatestFirst;
+        private final List<JobRun> runsLatestFirst;
         private final String furthestStatusType;
         private final boolean finished;
-        private final Predicate<ProcessRun> isRunFinished;
+        private final Predicate<JobRun> isRunFinished;
 
         JobStatus(IngestJobStatus status) {
             IngestJobStatusType statusType = status.getFurthestRunStatusType();
@@ -149,12 +149,12 @@ public class WaitForJobsStatus {
         }
 
         public void addJob(JobStatus status) {
-            List<ProcessRun> runsLatestFirst = status.runsLatestFirst;
+            List<JobRun> runsLatestFirst = status.runsLatestFirst;
             if (runsLatestFirst.isEmpty()) {
                 numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
                 numUnfinished++;
             } else if (!status.finished) {
-                for (ProcessRun run : runsLatestFirst) {
+                for (JobRun run : runsLatestFirst) {
                     if (status.isRunFinished.test(run)) {
                         continue;
                     }

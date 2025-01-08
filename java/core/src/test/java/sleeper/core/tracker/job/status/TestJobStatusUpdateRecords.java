@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  * and create a list of records that would appear in the job tracker for those updates. This can be used to test any
  * code that requires records from the job tracker.
  */
-public class TestProcessStatusUpdateRecords {
+public class TestJobStatusUpdateRecords {
 
     public static final String DEFAULT_JOB_ID = "test-job-id";
     public static final String DEFAULT_TASK_ID = "test-task-id";
@@ -41,8 +41,8 @@ public class TestProcessStatusUpdateRecords {
      *
      * @return an instance of this class with no process status updates
      */
-    public static TestProcessStatusUpdateRecords records() {
-        return new TestProcessStatusUpdateRecords();
+    public static TestJobStatusUpdateRecords records() {
+        return new TestJobStatusUpdateRecords();
     }
 
     /**
@@ -51,7 +51,7 @@ public class TestProcessStatusUpdateRecords {
      * @param  taskUpdates a collection of {@link TaskUpdates}
      * @return             this instance for chaining
      */
-    public TestProcessStatusUpdateRecords fromUpdates(TaskUpdates... taskUpdates) {
+    public TestJobStatusUpdateRecords fromUpdates(TaskUpdates... taskUpdates) {
         Stream.of(taskUpdates)
                 .flatMap(TaskUpdates::records)
                 .forEach(updates::add);
@@ -64,7 +64,7 @@ public class TestProcessStatusUpdateRecords {
      * @param  statusUpdates a collection of {@link JobStatusUpdate}
      * @return               this instance for chaining
      */
-    public TestProcessStatusUpdateRecords fromUpdates(JobStatusUpdate... statusUpdates) {
+    public TestJobStatusUpdateRecords fromUpdates(JobStatusUpdate... statusUpdates) {
         return fromUpdates(forJobOnTask(DEFAULT_JOB_ID, DEFAULT_TASK_ID, statusUpdates));
     }
 

@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package sleeper.core.tracker.job.status;
+package sleeper.core.tracker.job.run;
 
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.status.JobRunEndUpdate;
+import sleeper.core.tracker.job.status.JobRunStartedUpdate;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,13 +31,13 @@ import java.util.Optional;
 /**
  * Information about a single run of a job that was tracked.
  */
-public class ProcessRun {
+public class JobRun {
     private final String taskId;
     private final JobRunStartedUpdate startedStatus;
     private final JobRunEndUpdate finishedStatus;
     private final List<JobStatusUpdate> statusUpdates;
 
-    private ProcessRun(Builder builder) {
+    private JobRun(Builder builder) {
         taskId = builder.taskId;
         startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
@@ -52,7 +55,7 @@ public class ProcessRun {
      * @param  startedStatus the started status to set
      * @return               an instance of this class
      */
-    public static ProcessRun started(String taskId, JobRunStartedUpdate startedStatus) {
+    public static JobRun started(String taskId, JobRunStartedUpdate startedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .build();
@@ -66,7 +69,7 @@ public class ProcessRun {
      * @param  finishedStatus the finished status to set
      * @return                an instance of this class
      */
-    public static ProcessRun finished(String taskId, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
+    public static JobRun finished(String taskId, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedStatus)
@@ -181,7 +184,7 @@ public class ProcessRun {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ProcessRun that = (ProcessRun) o;
+        JobRun that = (JobRun) o;
         return Objects.equals(taskId, that.taskId) && Objects.equals(statusUpdates, that.statusUpdates);
     }
 
@@ -192,7 +195,7 @@ public class ProcessRun {
 
     @Override
     public String toString() {
-        return "ProcessRun{" +
+        return "JobRun{" +
                 "taskId='" + taskId + '\'' +
                 ", statusUpdates=" + statusUpdates +
                 '}';
@@ -260,8 +263,8 @@ public class ProcessRun {
             return this;
         }
 
-        public ProcessRun build() {
-            return new ProcessRun(this);
+        public JobRun build() {
+            return new JobRun(this);
         }
     }
 }

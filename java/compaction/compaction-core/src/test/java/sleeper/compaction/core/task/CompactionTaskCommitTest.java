@@ -30,7 +30,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.time.Instant;
 import java.util.Iterator;
@@ -90,7 +90,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     Instant.parse("2024-02-22T13:50:02Z"))));
             assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
-                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                            JobRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10, 5)))
                                     .build()));
@@ -130,14 +130,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             new JobRunSummary(job2Records, startTime2, finishTime2)));
             assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
-                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                            JobRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime1))
                                     .finishedStatus(compactionFinishedStatus(
                                             new JobRunSummary(job1Records, startTime1, finishTime1)))
                                     .build()));
             assertThat(jobTracker.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
-                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                            JobRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime2))
                                     .finishedStatus(compactionFinishedStatus(
                                             new JobRunSummary(job2Records, startTime2, finishTime2)))
@@ -177,14 +177,14 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     commitRequestFor(job1, new JobRunSummary(job1Records, startTime1, finishTime1)));
             assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
-                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                            JobRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime1))
                                     .finishedStatus(compactionFinishedStatus(
                                             new JobRunSummary(job1Records, startTime1, finishTime1)))
                                     .build()));
             assertThat(jobTracker.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
-                            ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                            JobRun.builder().taskId(DEFAULT_TASK_ID)
                                     .startedStatus(compactionStartedStatus(startTime2))
                                     .finishedStatus(compactionFinishedStatus(
                                             new JobRunSummary(job2Records, startTime2, finishTime2)))
@@ -228,7 +228,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             // Then
             assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job, DEFAULT_CREATED_TIME,
-                            ProcessRun.builder().taskId("test-task")
+                            JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime2))
                                     .statusUpdate(compactionFinishedStatus(
                                             new JobRunSummary(recordsProcessed, startTime2, finishTime2)))
@@ -236,7 +236,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                             new JobRunTime(startTime2, commitFailTime),
                                             List.of("Could not commit same job twice")))
                                     .build(),
-                            ProcessRun.builder().taskId("test-task")
+                            JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime1))
                                     .finishedStatus(compactionFinishedStatus(
                                             new JobRunSummary(recordsProcessed, startTime1, finishTime1)))
@@ -292,7 +292,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             // Then
             assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
-                            ProcessRun.builder().taskId("test-task")
+                            JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime1))
                                     .finishedStatus(compactionFinishedStatus(
                                             new JobRunSummary(recordsProcessed, startTime1, finishTime1)))
@@ -300,7 +300,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     .build()));
             assertThat(jobTracker.getAllJobs(table2.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job2, DEFAULT_CREATED_TIME,
-                            ProcessRun.builder().taskId("test-task")
+                            JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime2))
                                     .finishedStatus(compactionFinishedStatus(
                                             new JobRunSummary(recordsProcessed, startTime2, finishTime2)))

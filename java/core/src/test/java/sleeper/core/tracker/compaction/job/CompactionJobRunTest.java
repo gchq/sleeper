@@ -23,7 +23,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -36,7 +36,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
 import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
 
 public class CompactionJobRunTest {
 
@@ -65,7 +65,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID, started, null));
         assertThat(status.isUnstartedOrInProgress()).isTrue();
@@ -82,7 +82,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID, started, finished));
         assertThat(status.isUnstartedOrInProgress()).isTrue();
@@ -100,7 +100,7 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(ProcessRun::getTaskId, ProcessRun::getStartedStatus, ProcessRun::getFinishedStatus)
+                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
                 .containsExactly(
                         tuple(DEFAULT_TASK_ID, started, finished));
         assertThat(status.isUnstartedOrInProgress()).isFalse();

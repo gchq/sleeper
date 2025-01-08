@@ -25,27 +25,27 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 
 /**
- * A helper for creating process status updates in tests.
+ * A helper for creating job status updates in tests.
  */
-public class ProcessStatusUpdateTestHelper {
+public class JobStatusUpdateTestHelper {
 
-    private ProcessStatusUpdateTestHelper() {
+    private JobStatusUpdateTestHelper() {
     }
 
     /**
      * Creates a process started status.
      *
      * @param  startTime the start time
-     * @return           a {@link ProcessStartedStatus}
+     * @return           a {@link TestJobStartedStatus}
      */
-    public static ProcessStartedStatus startedStatus(Instant startTime) {
-        return ProcessStartedStatus.updateAndStartTime(defaultUpdateTime(startTime), startTime);
+    public static TestJobStartedStatus startedStatus(Instant startTime) {
+        return TestJobStartedStatus.updateAndStartTime(defaultUpdateTime(startTime), startTime);
     }
 
     /**
      * Creates a process finished status.
      *
-     * @param  startedStatus  the {@link ProcessStartedStatus}
+     * @param  startedStatus  the {@link TestJobStartedStatus}
      * @param  runDuration    the duration
      * @param  recordsRead    the number of records read
      * @param  recordsWritten the number of records written
@@ -76,7 +76,7 @@ public class ProcessStatusUpdateTestHelper {
     /**
      * Creates a process failed status.
      *
-     * @param  startedStatus  the {@link ProcessStartedStatus}
+     * @param  startedStatus  the {@link TestJobStartedStatus}
      * @param  runDuration    the duration
      * @param  failureReasons the reasons for the failure
      * @return                a {@link JobRunFailedStatus}

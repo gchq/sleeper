@@ -17,10 +17,10 @@ package sleeper.core.tracker.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobRunFinishedStatus;
-import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper;
+import sleeper.core.tracker.job.status.JobStatusUpdateTestHelper;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.DEFAULT_TASK_ID;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
 
 public class AverageRecordRateTest {
 
@@ -183,8 +183,8 @@ public class AverageRecordRateTest {
         Instant finishTime = Instant.parse("2022-10-13T10:19:00.000Z");
 
         assertThat(AverageRecordRate.of(Stream.of(
-                ProcessRun.finished(DEFAULT_TASK_ID,
-                        ProcessStatusUpdateTestHelper.startedStatus(startTime),
+                JobRun.finished(DEFAULT_TASK_ID,
+                        JobStatusUpdateTestHelper.startedStatus(startTime),
                         JobRunFailedStatus.timeAndReasons(defaultUpdateTime(finishTime),
                                 new JobRunTime(startTime, finishTime),
                                 List.of("Unexpected failure", "Some IO problem"))))))
@@ -194,8 +194,8 @@ public class AverageRecordRateTest {
 
     private static AverageRecordRate rateFrom(JobRunSummary... summaries) {
         return AverageRecordRate.of(Stream.of(summaries)
-                .map(summary -> ProcessRun.finished(DEFAULT_TASK_ID,
-                        ProcessStatusUpdateTestHelper.startedStatus(summary.getStartTime()),
+                .map(summary -> JobRun.finished(DEFAULT_TASK_ID,
+                        JobStatusUpdateTestHelper.startedStatus(summary.getStartTime()),
                         JobRunFinishedStatus.updateTimeAndSummary(summary.getFinishTime(), summary))));
     }
 

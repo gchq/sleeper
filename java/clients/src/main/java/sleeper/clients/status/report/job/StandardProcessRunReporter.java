@@ -20,10 +20,10 @@ import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
-import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -64,7 +64,7 @@ public class StandardProcessRunReporter {
         this.out = out;
     }
 
-    public void writeRunFields(ProcessRun run, TableRow.Builder builder) {
+    public void writeRunFields(JobRun run, TableRow.Builder builder) {
         builder.value(TASK_ID, run.getTaskId())
                 .value(START_TIME, run.getStartTime())
                 .value(FINISH_TIME, run.getFinishTime());
@@ -78,7 +78,7 @@ public class StandardProcessRunReporter {
         }
     }
 
-    public void printProcessJobRunWithUpdatePrinter(ProcessRun run, UpdatePrinter updatePrinter) {
+    public void printProcessJobRunWithUpdatePrinter(JobRun run, UpdatePrinter updatePrinter) {
         printProcessJobRun(run, updatePrinters(updatePrinter, defaultUpdatePrinter()));
     }
 
@@ -88,7 +88,7 @@ public class StandardProcessRunReporter {
                 printUpdateType(JobRunEndUpdate.class, this::printProcessFinished));
     }
 
-    private void printProcessJobRun(ProcessRun run, UpdatePrinter updatePrinter) {
+    private void printProcessJobRun(JobRun run, UpdatePrinter updatePrinter) {
         out.println();
         if (run.getTaskId() != null) {
             out.printf("Run on task %s%n", run.getTaskId());

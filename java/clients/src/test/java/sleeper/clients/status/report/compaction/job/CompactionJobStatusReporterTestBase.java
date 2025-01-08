@@ -24,7 +24,7 @@ import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -78,14 +78,14 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobStatus status4 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(4), partition("D")),
                 Instant.parse("2022-09-20T13:33:12.001Z"),
-                ProcessRun.builder().taskId(task(1))
+                JobRun.builder().taskId(task(1))
                         .startedStatus(compactionStartedStatus(Instant.parse("2022-09-20T13:34:12.001Z")))
                         .finishedStatus(compactionFinishedStatus(summary(Instant.parse("2022-09-20T13:34:12.001Z"), Duration.ofMinutes(1), 600, 300)))
                         .build());
         CompactionJobStatus status5 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(5), partition("E")),
                 Instant.parse("2022-09-21T13:33:12.001Z"),
-                ProcessRun.builder().taskId(task(1))
+                JobRun.builder().taskId(task(1))
                         .startedStatus(compactionStartedStatus(Instant.parse("2022-09-21T13:34:12.001Z")))
                         .finishedStatus(compactionFinishedStatus(summary(Instant.parse("2022-09-21T13:34:12.001Z"), Duration.ofMinutes(1), 600, 300)))
                         .statusUpdate(compactionCommittedStatus(Instant.parse("2022-09-21T13:36:12.001Z")))
@@ -93,7 +93,7 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobStatus status6 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(6), partition("F")),
                 Instant.parse("2022-09-22T13:33:12.001Z"),
-                ProcessRun.builder().taskId(task(1))
+                JobRun.builder().taskId(task(1))
                         .startedStatus(compactionStartedStatus(Instant.parse("2022-09-22T13:34:12.001Z")))
                         .statusUpdate(compactionCommittedStatus(Instant.parse("2022-09-22T13:36:12.001Z")))
                         .build());

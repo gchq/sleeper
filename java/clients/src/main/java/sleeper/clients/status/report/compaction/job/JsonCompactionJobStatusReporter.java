@@ -26,7 +26,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobUpdateTypeInRun;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessRuns;
+import sleeper.core.tracker.job.run.JobRuns;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -37,7 +37,7 @@ public class JsonCompactionJobStatusReporter implements CompactionJobStatusRepor
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(JobRunSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(JobRunTime.class, JsonProcessRunTime.serializer())
-            .registerTypeAdapter(ProcessRuns.class, processRunsJsonSerializer(CompactionJobUpdateTypeInRun::typeOfUpdateInRun))
+            .registerTypeAdapter(JobRuns.class, processRunsJsonSerializer(CompactionJobUpdateTypeInRun::typeOfUpdateInRun))
             .create();
     private final PrintStream out;
 

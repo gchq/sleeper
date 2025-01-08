@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package sleeper.core.tracker.job.status;
+package sleeper.core.tracker.job.run;
+
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -27,10 +29,10 @@ import java.util.Optional;
  * Information about runs of a job that were tracked. A job may be run multiple times, potentially in parallel on
  * different tasks. These are detected by correlating updates stored in the job tracker.
  */
-public class ProcessRuns {
-    private final List<ProcessRun> latestFirst;
+public class JobRuns {
+    private final List<JobRun> latestFirst;
 
-    ProcessRuns(List<ProcessRun> latestFirst) {
+    JobRuns(List<JobRun> latestFirst) {
         this.latestFirst = Collections.unmodifiableList(Objects.requireNonNull(latestFirst, "latestFirst must not be null"));
     }
 
@@ -41,8 +43,8 @@ public class ProcessRuns {
      * @param  latestFirst the sorted list of runs
      * @return             an instance of this class
      */
-    public static ProcessRuns latestFirst(List<ProcessRun> latestFirst) {
-        return new ProcessRuns(latestFirst);
+    public static JobRuns latestFirst(List<JobRun> latestFirst) {
+        return new JobRuns(latestFirst);
     }
 
     /**
@@ -52,8 +54,8 @@ public class ProcessRuns {
      * @param  recordList the list of records sorted by latest first
      * @return            an instance of this class
      */
-    public static ProcessRuns fromRecordsLatestFirst(List<JobStatusUpdateRecord> recordList) {
-        ProcessRunsBuilder builder = new ProcessRunsBuilder();
+    public static JobRuns fromRecordsLatestFirst(List<JobStatusUpdateRecord> recordList) {
+        JobRunsBuilder builder = new JobRunsBuilder();
         for (int i = recordList.size() - 1; i >= 0; i--) {
             builder.add(recordList.get(i));
         }
@@ -80,7 +82,7 @@ public class ProcessRuns {
      * @return the update time, or an empty optional if there are no runs
      */
     public Optional<Instant> lastTime() {
-        return latestFirst.stream().map(ProcessRun::getLatestUpdateTime).max(Comparator.naturalOrder());
+        return latestFirst.stream().map(JobRun::getLatestUpdateTime).max(Comparator.naturalOrder());
     }
 
     /**
@@ -89,10 +91,10 @@ public class ProcessRuns {
      * @return the update time, or an empty optional if there are no runs
      */
     public Optional<Instant> firstTime() {
-        return getFirstRun().map(ProcessRun::getStartUpdateTime);
+        return getFirstRun().map(JobRun::getStartUpdateTime);
     }
 
-    public Optional<ProcessRun> getLatestRun() {
+    public Optional<JobRun> getLatestRun() {
         return latestFirst.stream().findFirst();
     }
 
@@ -101,14 +103,14 @@ public class ProcessRuns {
      *
      * @return the oldest process run, or an empty optional if there are no runs
      */
-    public Optional<ProcessRun> getFirstRun() {
+    public Optional<JobRun> getFirstRun() {
         if (latestFirst.isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(latestFirst.get(latestFirst.size() - 1));
     }
 
-    public List<ProcessRun> getRunsLatestFirst() {
+    public List<JobRun> getRunsLatestFirst() {
         return latestFirst;
     }
 
@@ -120,7 +122,7 @@ public class ProcessRuns {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ProcessRuns that = (ProcessRuns) o;
+        JobRuns that = (JobRuns) o;
         return latestFirst.equals(that.latestFirst);
     }
 
@@ -131,7 +133,7 @@ public class ProcessRuns {
 
     @Override
     public String toString() {
-        return "ProcessRuns{" +
+        return "JobRuns{" +
                 "latestFirst=" + latestFirst +
                 '}';
     }

@@ -15,9 +15,9 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
-import sleeper.core.tracker.job.status.ProcessRun;
 
 /**
  * Defines the types of updates during a run of a compaction job. A job may be run multiple times. Can also find the
@@ -44,7 +44,7 @@ public enum CompactionJobUpdateTypeInRun {
      * @param  run the run
      * @return     the update type
      */
-    public static CompactionJobUpdateTypeInRun typeOfFurthestUpdateInRun(ProcessRun run) {
+    public static CompactionJobUpdateTypeInRun typeOfFurthestUpdateInRun(JobRun run) {
         FurthestUpdateTracker furthestUpdate = new FurthestUpdateTracker();
         for (JobStatusUpdate update : run.getStatusUpdates()) {
             furthestUpdate.setIfFurther(typeOfUpdateInRun(update));

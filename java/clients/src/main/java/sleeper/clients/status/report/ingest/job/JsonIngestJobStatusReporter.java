@@ -31,7 +31,7 @@ import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessRuns;
+import sleeper.core.tracker.job.run.JobRuns;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -43,7 +43,7 @@ public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(JobRunSummary.class, JsonRecordsProcessedSummary.serializer())
             .registerTypeAdapter(JobRunTime.class, JsonProcessRunTime.serializer())
-            .registerTypeAdapter(ProcessRuns.class, processRunsJsonSerializer(IngestJobUpdateType::typeOfUpdate))
+            .registerTypeAdapter(JobRuns.class, processRunsJsonSerializer(IngestJobUpdateType::typeOfUpdate))
             .registerTypeAdapter(IngestJobStartedStatus.class, ingestJobStartedStatusJsonSerializer())
             .create();
     private final PrintStream out;

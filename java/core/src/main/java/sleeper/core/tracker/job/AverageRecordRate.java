@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.job;
 
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -54,13 +54,13 @@ public class AverageRecordRate {
     /**
      * Creates an instance of this class from a stream of job runs.
      *
-     * @param  runs the stream of {@link ProcessRun}s
+     * @param  runs the stream of {@link JobRun}s
      * @return      an instance of this class
      */
-    public static AverageRecordRate of(Stream<ProcessRun> runs) {
+    public static AverageRecordRate of(Stream<JobRun> runs) {
         return builder().summaries(runs
-                .filter(ProcessRun::isFinishedSuccessfully)
-                .map(ProcessRun::getFinishedSummary)).build();
+                .filter(JobRun::isFinishedSuccessfully)
+                .map(JobRun::getFinishedSummary)).build();
     }
 
     public static Builder builder() {

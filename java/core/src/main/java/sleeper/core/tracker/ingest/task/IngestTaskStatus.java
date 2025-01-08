@@ -16,8 +16,8 @@
 
 package sleeper.core.tracker.ingest.task;
 
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobRunFinishedStatus;
-import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
 
 import java.time.Duration;
@@ -135,10 +135,10 @@ public class IngestTaskStatus {
     /**
      * Creates a process run object from this task.
      *
-     * @return a {@link ProcessRun} object
+     * @return a {@link JobRun} object
      */
-    public ProcessRun asProcessRun() {
-        return ProcessRun.builder().taskId(taskId)
+    public JobRun asProcessRun() {
+        return JobRun.builder().taskId(taskId)
                 .startedStatus(IngestTaskStartedStatus.startTime(getStartTime()))
                 .finishedStatus(asProcessFinishedStatus())
                 .build();

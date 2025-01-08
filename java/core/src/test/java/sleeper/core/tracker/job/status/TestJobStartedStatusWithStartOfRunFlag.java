@@ -19,19 +19,19 @@ package sleeper.core.tracker.job.status;
 import java.time.Instant;
 import java.util.Objects;
 
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
 /**
  * A test implementation of process run started update. This class allows for setting the
  * {@link JobRunStartedUpdate#isStartOfRun} flag.
  */
-public class ProcessStartedStatusWithStartOfRunFlag implements JobRunStartedUpdate {
+public class TestJobStartedStatusWithStartOfRunFlag implements JobRunStartedUpdate {
 
     private final Instant updateTime;
     private final Instant startTime;
     private final boolean isStartOfRun;
 
-    private ProcessStartedStatusWithStartOfRunFlag(Instant updateTime, Instant startTime, boolean isStartOfRun) {
+    private TestJobStartedStatusWithStartOfRunFlag(Instant updateTime, Instant startTime, boolean isStartOfRun) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
         this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
         this.isStartOfRun = isStartOfRun;
@@ -43,8 +43,8 @@ public class ProcessStartedStatusWithStartOfRunFlag implements JobRunStartedUpda
      * @param  startTime the start time
      * @return           an instance of this class that is not marked as being the start of a job run
      */
-    public static ProcessStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun(Instant startTime) {
-        return new ProcessStartedStatusWithStartOfRunFlag(defaultUpdateTime(startTime), startTime, false);
+    public static TestJobStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun(Instant startTime) {
+        return new TestJobStartedStatusWithStartOfRunFlag(defaultUpdateTime(startTime), startTime, false);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ProcessStartedStatusWithStartOfRunFlag implements JobRunStartedUpda
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ProcessStartedStatusWithStartOfRunFlag that = (ProcessStartedStatusWithStartOfRunFlag) o;
+        TestJobStartedStatusWithStartOfRunFlag that = (TestJobStartedStatusWithStartOfRunFlag) o;
         return isStartOfRun == that.isStartOfRun && Objects.equals(updateTime, that.updateTime) && Objects.equals(startTime, that.startTime);
     }
 
@@ -81,7 +81,7 @@ public class ProcessStartedStatusWithStartOfRunFlag implements JobRunStartedUpda
 
     @Override
     public String toString() {
-        return "ProcessStartedStatusWithStartOfRunFlag{" +
+        return "TestJobStartedStatusWithStartOfRunFlag{" +
                 "updateTime=" + updateTime +
                 ", startTime=" + startTime +
                 ", isStartOfRun=" + isStartOfRun +

@@ -40,7 +40,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
 public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     private final Map<String, TableJobs> tableIdToJobs = new HashMap<>();

@@ -24,9 +24,9 @@ import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessRuns;
-import sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRuns;
+import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,10 +34,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.core.tracker.job.ProcessRunTestData.finishedRun;
-import static sleeper.core.tracker.job.ProcessRunTestData.startedRun;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.failedStatus;
+import static sleeper.core.tracker.job.run.JobRunTestData.finishedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 
 /**
  * A helper for creating ingest job statuses for tests.
@@ -54,10 +54,10 @@ public class IngestJobStatusTestData {
      * @param  runs  the process runs
      * @return       an {@link IngestJobStatus}
      */
-    public static IngestJobStatus ingestJobStatus(String jobId, ProcessRun... runs) {
+    public static IngestJobStatus ingestJobStatus(String jobId, JobRun... runs) {
         return IngestJobStatus.builder()
                 .jobId(jobId)
-                .jobRuns(ProcessRuns.latestFirst(Arrays.asList(runs)))
+                .jobRuns(JobRuns.latestFirst(Arrays.asList(runs)))
                 .build();
     }
 
@@ -68,7 +68,7 @@ public class IngestJobStatusTestData {
      * @param  runs the process runs
      * @return      an {@link IngestJobStatus}
      */
-    public static IngestJobStatus ingestJobStatus(IngestJobEvent job, ProcessRun... runs) {
+    public static IngestJobStatus ingestJobStatus(IngestJobEvent job, JobRun... runs) {
         return ingestJobStatus(job.getJobId(), runs);
     }
 
@@ -79,10 +79,10 @@ public class IngestJobStatusTestData {
      * @param  jsonMessage    the JSON string used in ingest job deserialisation
      * @param  validationTime the validation time
      * @param  reasons        the reasons
-     * @return                a {@link ProcessRun}
+     * @return                a {@link JobRun}
      */
-    public static ProcessRun rejectedRun(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
-        return ProcessRun.builder()
+    public static JobRun rejectedRun(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
+        return JobRun.builder()
                 .startedStatus(IngestJobRejectedStatus.builder()
                         .validationTime(validationTime)
                         .updateTime(defaultUpdateTime(validationTime))
@@ -97,9 +97,9 @@ public class IngestJobStatusTestData {
      *
      * @param  taskId    the ingest task ID
      * @param  startTime the start time
-     * @return           a {@link ProcessRun}
+     * @return           a {@link JobRun}
      */
-    public static ProcessRun startedIngestRun(String taskId, Instant startTime) {
+    public static JobRun startedIngestRun(String taskId, Instant startTime) {
         return startedRun(taskId,
                 ingestStartedStatus(1, startTime, defaultUpdateTime(startTime)));
     }
@@ -109,9 +109,9 @@ public class IngestJobStatusTestData {
      *
      * @param  taskId  the ingest task ID
      * @param  summary the records processed summary
-     * @return         a {@link ProcessRun}
+     * @return         a {@link JobRun}
      */
-    public static ProcessRun finishedIngestRun(String taskId, JobRunSummary summary) {
+    public static JobRun finishedIngestRun(String taskId, JobRunSummary summary) {
         return finishedRun(taskId,
                 ingestStartedStatus(summary.getStartTime()),
                 ingestFinishedStatus(summary));
@@ -123,9 +123,9 @@ public class IngestJobStatusTestData {
      * @param  taskId               the ingest task ID
      * @param  summary              the records processed summary
      * @param  numFilesWrittenByJob the number of files written by the job
-     * @return                      a {@link ProcessRun}
+     * @return                      a {@link JobRun}
      */
-    public static ProcessRun finishedIngestRun(String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
+    public static JobRun finishedIngestRun(String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
         return finishedRun(taskId,
                 ingestStartedStatus(summary.getStartTime()),
                 ingestFinishedStatus(summary, numFilesWrittenByJob));
@@ -136,9 +136,9 @@ public class IngestJobStatusTestData {
      *
      * @param  taskId  the ingest task ID
      * @param  summary the records processed summary
-     * @return         a {@link ProcessRun}
+     * @return         a {@link JobRun}
      */
-    public static ProcessRun finishedIngestRunUncommitted(String taskId, JobRunSummary summary) {
+    public static JobRun finishedIngestRunUncommitted(String taskId, JobRunSummary summary) {
         return finishedRun(taskId,
                 ingestStartedStatus(summary.getStartTime()),
                 ingestFinishedStatusUncommitted(summary));
@@ -151,9 +151,9 @@ public class IngestJobStatusTestData {
      * @param  startTime the time the job started
      * @param  failTime  the time the job failed
      * @param  reasons   the reasons the job failed
-     * @return           a {@link ProcessRun}
+     * @return           a {@link JobRun}
      */
-    public static ProcessRun failedIngestRun(String taskId, Instant startTime, Instant failTime, List<String> reasons) {
+    public static JobRun failedIngestRun(String taskId, Instant startTime, Instant failTime, List<String> reasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(startTime),
                 failedStatus(new JobRunTime(startTime, failTime), reasons));
@@ -166,9 +166,9 @@ public class IngestJobStatusTestData {
      * @param  startTime the time the job started
      * @param  duration  the duration after which the job failed
      * @param  reasons   the reasons the job failed
-     * @return           a {@link ProcessRun}
+     * @return           a {@link JobRun}
      */
-    public static ProcessRun failedIngestRun(String taskId, Instant startTime, Duration duration, List<String> reasons) {
+    public static JobRun failedIngestRun(String taskId, Instant startTime, Duration duration, List<String> reasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(startTime),
                 failedStatus(new JobRunTime(startTime, duration), reasons));
@@ -177,21 +177,21 @@ public class IngestJobStatusTestData {
     /**
      * Creates a list of ingest job statuses from a stream of process update records.
      *
-     * @param  records the {@link TestProcessStatusUpdateRecords} object
+     * @param  records the {@link TestJobStatusUpdateRecords} object
      * @return         a list of ingest job statuses
      */
-    public static List<IngestJobStatus> jobStatusListFrom(TestProcessStatusUpdateRecords records) {
+    public static List<IngestJobStatus> jobStatusListFrom(TestJobStatusUpdateRecords records) {
         return IngestJobStatus.streamFrom(records.stream()).collect(Collectors.toList());
     }
 
     /**
      * Creates one ingest job status from a stream of process update records.
      *
-     * @param  records               the {@link TestProcessStatusUpdateRecords} object
+     * @param  records               the {@link TestJobStatusUpdateRecords} object
      * @return                       an ingest job status
      * @throws IllegalStateException if there was not exactly 1 job
      */
-    public static IngestJobStatus singleJobStatusFrom(TestProcessStatusUpdateRecords records) {
+    public static IngestJobStatus singleJobStatusFrom(TestJobStatusUpdateRecords records) {
         List<IngestJobStatus> jobs = jobStatusListFrom(records);
         if (jobs.size() != 1) {
             throw new IllegalStateException("Expected single job, found " + jobs.size());

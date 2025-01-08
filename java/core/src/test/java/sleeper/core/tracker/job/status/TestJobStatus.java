@@ -13,33 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.core.tracker.job.status;
 
 import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A test implementation of process run started update. Only used in tests.
+ * A test implementation of a job status update.
  */
-public class ProcessStartedStatus implements JobRunStartedUpdate {
-
+public class TestJobStatus implements JobStatusUpdate {
     private final Instant updateTime;
-    private final Instant startTime;
+    private final boolean isPartOfRun;
 
-    private ProcessStartedStatus(Instant updateTime, Instant startTime) {
-        this.updateTime = Objects.requireNonNull(updateTime, "updateTime may not be null");
-        this.startTime = Objects.requireNonNull(startTime, "startTime may not be null");
+    private TestJobStatus(Instant updateTime, boolean isPartOfRun) {
+        this.updateTime = updateTime;
+        this.isPartOfRun = isPartOfRun;
     }
 
     /**
-     * Creates an instance of this class.
+     * Creates an instance of this class that is marked as part of a job run.
      *
      * @param  updateTime the update time
-     * @param  startTime  the start time
-     * @return            an instance of this class
+     * @return            an instance of this class that is marked as part of a job run
      */
-    public static ProcessStartedStatus updateAndStartTime(Instant updateTime, Instant startTime) {
-        return new ProcessStartedStatus(updateTime, startTime);
+    public static TestJobStatus partOfRunWithUpdateTime(Instant updateTime) {
+        return new TestJobStatus(updateTime, true);
+    }
+
+    /**
+     * Creates an instance of this class that is not marked as part of a job run.
+     *
+     * @param  updateTime the update time
+     * @return            an instance of this class that is not marked as part of a job run
+     */
+    public static TestJobStatus notPartOfRunWithUpdateTime(Instant updateTime) {
+        return new TestJobStatus(updateTime, false);
     }
 
     @Override
@@ -48,8 +57,8 @@ public class ProcessStartedStatus implements JobRunStartedUpdate {
     }
 
     @Override
-    public Instant getStartTime() {
-        return startTime;
+    public boolean isPartOfRun() {
+        return isPartOfRun;
     }
 
     @Override
@@ -60,20 +69,19 @@ public class ProcessStartedStatus implements JobRunStartedUpdate {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ProcessStartedStatus that = (ProcessStartedStatus) o;
-        return updateTime.equals(that.updateTime) && startTime.equals(that.startTime);
+        TestJobStatus that = (TestJobStatus) o;
+        return Objects.equals(updateTime, that.updateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, startTime);
+        return Objects.hash(updateTime);
     }
 
     @Override
     public String toString() {
-        return "ProcessStartedStatus{" +
+        return "TestJobStatus{" +
                 "updateTime=" + updateTime +
-                ", startTime=" + startTime +
                 '}';
     }
 }

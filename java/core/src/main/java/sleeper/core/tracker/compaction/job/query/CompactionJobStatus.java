@@ -15,10 +15,10 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRuns;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.core.tracker.job.status.JobStatusUpdates;
-import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessRuns;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
 import sleeper.core.util.DurationStatistics;
 
@@ -46,7 +46,7 @@ public class CompactionJobStatus {
     private final String partitionId;
     private final Integer inputFilesCount;
     private final Instant createUpdateTime;
-    private final ProcessRuns jobRuns;
+    private final JobRuns jobRuns;
     private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
     private final transient CompactionJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
@@ -153,7 +153,7 @@ public class CompactionJobStatus {
                 .flatMap(run -> delayBetweenFinishAndCommit(run).stream());
     }
 
-    private Optional<Duration> delayBetweenFinishAndCommit(ProcessRun run) {
+    private Optional<Duration> delayBetweenFinishAndCommit(JobRun run) {
         return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
                 .flatMap(committedStatus -> run.getLastStatusOfType(CompactionJobFinishedStatus.class)
                         .map(finishedStatus -> Duration.between(
@@ -195,7 +195,7 @@ public class CompactionJobStatus {
         }
     }
 
-    public List<ProcessRun> getJobRuns() {
+    public List<JobRun> getJobRuns() {
         return jobRuns.getRunsLatestFirst();
     }
 
@@ -206,7 +206,7 @@ public class CompactionJobStatus {
     public static final class Builder {
         private String jobId;
         private CompactionJobCreatedStatus createdStatus;
-        private ProcessRuns jobRuns;
+        private JobRuns jobRuns;
         private Instant expiryDate;
 
         private Builder() {
@@ -222,15 +222,15 @@ public class CompactionJobStatus {
             return this;
         }
 
-        public Builder singleJobRun(ProcessRun jobRun) {
+        public Builder singleJobRun(JobRun jobRun) {
             return jobRunsLatestFirst(Collections.singletonList(jobRun));
         }
 
-        public Builder jobRunsLatestFirst(List<ProcessRun> jobRunList) {
-            return jobRuns(ProcessRuns.latestFirst(jobRunList));
+        public Builder jobRunsLatestFirst(List<JobRun> jobRunList) {
+            return jobRuns(JobRuns.latestFirst(jobRunList));
         }
 
-        public Builder jobRuns(ProcessRuns jobRuns) {
+        public Builder jobRuns(JobRuns jobRuns) {
             this.jobRuns = jobRuns;
             return this;
         }

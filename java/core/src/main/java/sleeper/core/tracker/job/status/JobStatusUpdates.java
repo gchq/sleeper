@@ -15,6 +15,8 @@
  */
 package sleeper.core.tracker.job.status;
 
+import sleeper.core.tracker.job.run.JobRuns;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -29,10 +31,10 @@ public class JobStatusUpdates {
 
     private final String jobId;
     private final List<JobStatusUpdateRecord> recordsLatestFirst;
-    private final ProcessRuns runs;
+    private final JobRuns runs;
 
     private JobStatusUpdates(
-            String jobId, List<JobStatusUpdateRecord> recordsLatestFirst, ProcessRuns runs) {
+            String jobId, List<JobStatusUpdateRecord> recordsLatestFirst, JobRuns runs) {
         this.jobId = jobId;
         this.recordsLatestFirst = recordsLatestFirst;
         this.runs = runs;
@@ -48,7 +50,7 @@ public class JobStatusUpdates {
      */
     public static JobStatusUpdates from(String jobId, List<JobStatusUpdateRecord> records) {
         List<JobStatusUpdateRecord> recordsLatestFirst = orderLatestFirst(records);
-        ProcessRuns runs = ProcessRuns.fromRecordsLatestFirst(recordsLatestFirst);
+        JobRuns runs = JobRuns.fromRecordsLatestFirst(recordsLatestFirst);
         return new JobStatusUpdates(jobId, recordsLatestFirst, runs);
     }
 
@@ -94,7 +96,7 @@ public class JobStatusUpdates {
         return Optional.empty();
     }
 
-    public ProcessRuns getRuns() {
+    public JobRuns getRuns() {
         return runs;
     }
 

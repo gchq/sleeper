@@ -24,19 +24,19 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.finishedStatus;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.startedStatus;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJob;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.finishedStatus;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.startedStatus;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class JobStatusesBuilderTest {
 
     @Test
     public void shouldBuildJobStatusesFromIndividualUpdates() {
         // Given
-        ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
+        TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
         JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
-        ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
+        TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
@@ -54,7 +54,7 @@ public class JobStatusesBuilderTest {
                         tuple("job1", started1, finished1));
     }
 
-    private static List<JobStatusUpdates> jobStatusListFrom(TestProcessStatusUpdateRecords records) {
+    private static List<JobStatusUpdates> jobStatusListFrom(TestJobStatusUpdateRecords records) {
         return JobStatusUpdates.streamFrom(records.stream()).collect(Collectors.toList());
     }
 }

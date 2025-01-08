@@ -13,28 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.tracker.job.status;
+package sleeper.core.tracker.job.run;
+
+import sleeper.core.tracker.job.status.JobStatusUpdate;
+import sleeper.core.tracker.job.status.JobStatusUpdates;
+import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 /**
- * A test helper for creating process runs objects.
+ * A test helper for creating job runs objects.
  */
-public class ProcessRunsTestHelper {
+public class JobRunsTestHelper {
 
-    private ProcessRunsTestHelper() {
+    private JobRunsTestHelper() {
     }
 
     /**
      * Creates a process runs object from a collection of process status updates.
      *
      * @param  updates the process status updates
-     * @return         a {@link ProcessRuns} object
+     * @return         a {@link JobRuns} object
      */
-    public static ProcessRuns runsFromUpdates(JobStatusUpdate... updates) {
+    public static JobRuns runsFromUpdates(JobStatusUpdate... updates) {
         return runsFrom(records().fromUpdates(updates));
     }
 
@@ -42,14 +46,14 @@ public class ProcessRunsTestHelper {
      * Creates a process runs object from a collection of task updates.
      *
      * @param  taskUpdates the task updates
-     * @return             a {@link ProcessRuns} object
+     * @return             a {@link JobRuns} object
      */
-    public static ProcessRuns runsFromUpdates(
-            TestProcessStatusUpdateRecords.TaskUpdates... taskUpdates) {
+    public static JobRuns runsFromUpdates(
+            TestJobStatusUpdateRecords.TaskUpdates... taskUpdates) {
         return runsFrom(records().fromUpdates(taskUpdates));
     }
 
-    private static ProcessRuns runsFrom(TestProcessStatusUpdateRecords records) {
+    private static JobRuns runsFrom(TestJobStatusUpdateRecords records) {
         List<JobStatusUpdates> built = JobStatusUpdates.streamFrom(records.stream())
                 .collect(Collectors.toList());
         if (built.size() != 1) {

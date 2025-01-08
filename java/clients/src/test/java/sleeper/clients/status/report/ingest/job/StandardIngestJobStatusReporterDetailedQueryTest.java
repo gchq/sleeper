@@ -43,9 +43,9 @@ import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTe
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.jobStatusListFrom;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJobRunOnNoTask;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forNoRunNoTask;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnNoTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forNoRunNoTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class StandardIngestJobStatusReporterDetailedQueryTest {
     @Test

@@ -18,8 +18,8 @@ package sleeper.clients.status.report.compaction.task;
 
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.RecordsProcessed;
 
 import java.time.Instant;
 import java.util.stream.Stream;

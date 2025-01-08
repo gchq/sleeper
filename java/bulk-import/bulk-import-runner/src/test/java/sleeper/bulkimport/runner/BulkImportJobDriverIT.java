@@ -75,7 +75,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
@@ -219,7 +219,7 @@ class BulkImportJobDriverIT {
         assertThat(readRecords).isEqualTo(expectedRecords);
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
@@ -268,7 +268,7 @@ class BulkImportJobDriverIT {
         assertThat(readRecords).isEqualTo(expectedRecords);
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
@@ -310,7 +310,7 @@ class BulkImportJobDriverIT {
                         tuple(100L, rightPartition));
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
@@ -381,7 +381,7 @@ class BulkImportJobDriverIT {
         }
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
@@ -418,7 +418,7 @@ class BulkImportJobDriverIT {
                 .containsExactly(tuple(200L, expectedPartitionId, records));
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
@@ -469,7 +469,7 @@ class BulkImportJobDriverIT {
         assertThat(readRecords).isEqualTo(expectedRecords);
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
@@ -513,7 +513,7 @@ class BulkImportJobDriverIT {
                     .containsExactly(tuple(200L, "root", expectedRecords));
         });
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId(taskId)
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))

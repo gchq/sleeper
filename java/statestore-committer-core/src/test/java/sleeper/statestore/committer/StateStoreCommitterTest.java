@@ -53,7 +53,7 @@ import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.statestore.StateStoreFactory;
@@ -134,7 +134,7 @@ public class StateStoreCommitterTest {
                     fileFactory.rootFile(job.getOutputFile(), 123L));
             assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
                     compactionJobCreated(job, createdTime,
-                            ProcessRun.builder().taskId("test-task")
+                            JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .finishedStatus(compactionFinishedStatus(summary))
                                     .statusUpdate(compactionCommittedStatus(commitTime))
@@ -167,7 +167,7 @@ public class StateStoreCommitterTest {
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
                     compactionJobCreated(job, createdTime,
-                            ProcessRun.builder().taskId("test-task")
+                            JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
                                     .finishedStatus(compactionFailedStatus(
@@ -201,7 +201,7 @@ public class StateStoreCommitterTest {
             assertThat(failures).singleElement().isSameAs(failure);
             assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
                     compactionJobCreated(request.getJob(), createdTime,
-                            ProcessRun.builder().taskId("test-task")
+                            JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
                                     .finishedStatus(compactionFailedStatus(
@@ -237,7 +237,7 @@ public class StateStoreCommitterTest {
                     .isSameAs(failure));
             assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
                     compactionJobCreated(job, createdTime,
-                            ProcessRun.builder().taskId("test-task")
+                            JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
                                     .finishedStatus(compactionFailedStatus(
@@ -340,7 +340,7 @@ public class StateStoreCommitterTest {
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
             assertThat(ingestJobTracker.getAllJobs("test-table"))
-                    .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                    .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                             .taskId("test-task-id")
                             .startedStatus(ingestStartedStatus(ingestJob, startTime))
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))

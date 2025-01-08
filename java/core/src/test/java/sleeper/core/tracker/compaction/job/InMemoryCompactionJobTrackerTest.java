@@ -23,7 +23,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -42,10 +42,10 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJob;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.forJobOnTask;
-import static sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords.records;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobOnTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 class InMemoryCompactionJobTrackerTest {
 
@@ -474,11 +474,11 @@ class InMemoryCompactionJobTrackerTest {
             // Then
             assertThat(store.streamAllJobs(tableId))
                     .containsExactly(compactionJobCreated(job, createdTime,
-                            ProcessRun.builder().taskId(taskId)
+                            JobRun.builder().taskId(taskId)
                                     .startedStatus(compactionStartedStatus(startedTime2))
                                     .finishedStatus(compactionFailedStatus(summary2.getRunTime(), List.of("Could not commit same compaction twice")))
                                     .build(),
-                            ProcessRun.builder().taskId(taskId)
+                            JobRun.builder().taskId(taskId)
                                     .startedStatus(compactionStartedStatus(startedTime1))
                                     .finishedStatus(compactionFinishedStatus(summary1))
                                     .statusUpdate(compactionCommittedStatus(committedTime1))

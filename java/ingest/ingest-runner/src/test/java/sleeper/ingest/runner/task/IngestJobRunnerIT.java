@@ -53,7 +53,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.status.ProcessRun;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
@@ -259,7 +259,7 @@ class IngestJobRunnerIT {
         assertThat(SketchesDeciles.fromFileReferences(records1.sleeperSchema, actualFiles, hadoopConfiguration))
                 .isEqualTo(SketchesDeciles.from(records1.sleeperSchema, expectedRecords));
         assertThat(tracker.getAllJobs(tableId)).containsExactly(
-                ingestJobStatus(ingestJob, ProcessRun.builder()
+                ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId("test-task")
                         .startedStatus(ingestStartedStatus(ingestJob, Instant.parse("2024-06-20T15:33:01Z")))
                         .statusUpdate(ingestAddedFilesStatus(Instant.parse("2024-06-20T15:33:10Z"), 1))

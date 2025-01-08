@@ -16,8 +16,8 @@
 
 package sleeper.core.tracker.compaction.task;
 
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobRunFinishedStatus;
-import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
 
 import java.time.Duration;
@@ -102,8 +102,8 @@ public class CompactionTaskStatus {
         }
     }
 
-    public ProcessRun asProcessRun() {
-        return ProcessRun.builder().taskId(taskId)
+    public JobRun asProcessRun() {
+        return JobRun.builder().taskId(taskId)
                 .startedStatus(CompactionTaskStartedStatus.startTime(getStartTime()))
                 .finishedStatus(asProcessFinishedStatus())
                 .build();

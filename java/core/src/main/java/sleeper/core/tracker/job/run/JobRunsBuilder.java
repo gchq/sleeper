@@ -13,7 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.tracker.job.status;
+package sleeper.core.tracker.job.run;
+
+import sleeper.core.tracker.job.status.JobRunEndUpdate;
+import sleeper.core.tracker.job.status.JobRunStartedUpdate;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +30,7 @@ import java.util.stream.Collectors;
 
 /**
  * Gathers job tracker records and correlates which updates occurred in the same run of a job. Creates a
- * {@link ProcessRuns} object with the detected runs.
+ * {@link JobRuns} object with the detected runs.
  * <p>
  * Records are processed in order of update time. A run is detected based on the type of the update. Some updates mark
  * the start of a run. Once a run has started, further updates on the same task are assumed to be part of that run,
@@ -37,12 +42,12 @@ import java.util.stream.Collectors;
  * ignored.
  * <p>
  * Some updates do not occur on any run, particularly ones which do not occur on a task. Those updates will not appear
- * in the resulting {@link ProcessRuns} object, and must be handled separately.
+ * in the resulting {@link JobRuns} object, and must be handled separately.
  */
-class ProcessRunsBuilder {
-    private final Map<String, ProcessRun.Builder> builderByJobRunId = new HashMap<>();
-    private final Map<String, ProcessRun.Builder> builderByTaskId = new HashMap<>();
-    private final List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
+class JobRunsBuilder {
+    private final Map<String, JobRun.Builder> builderByJobRunId = new HashMap<>();
+    private final Map<String, JobRun.Builder> builderByTaskId = new HashMap<>();
+    private final List<JobRun.Builder> orderedBuilders = new ArrayList<>();
 
     void add(JobStatusUpdateRecord record) {
         if (!record.getStatusUpdate().isPartOfRun()) {
@@ -52,14 +57,14 @@ class ProcessRunsBuilder {
                 .ifPresent(builder -> addToBuilder(record, builder));
     }
 
-    private Optional<ProcessRun.Builder> getBuilderIfCorrelatable(JobStatusUpdateRecord record) {
+    private Optional<JobRun.Builder> getBuilderIfCorrelatable(JobStatusUpdateRecord record) {
         String jobRunId = record.getJobRunId();
         String taskId = record.getTaskId();
         JobStatusUpdate statusUpdate = record.getStatusUpdate();
         if (jobRunId != null) {
             return Optional.of(builderByJobRunId.computeIfAbsent(jobRunId, id -> createOrderedBuilder()));
         } else if (isStartedUpdateAndStartOfRun(statusUpdate)) {
-            ProcessRun.Builder builder = createOrderedBuilder();
+            JobRun.Builder builder = createOrderedBuilder();
             builderByTaskId.put(taskId, builder);
             return Optional.of(builder);
         } else {
@@ -67,13 +72,13 @@ class ProcessRunsBuilder {
         }
     }
 
-    private ProcessRun.Builder createOrderedBuilder() {
-        ProcessRun.Builder builder = ProcessRun.builder();
+    private JobRun.Builder createOrderedBuilder() {
+        JobRun.Builder builder = JobRun.builder();
         orderedBuilders.add(builder);
         return builder;
     }
 
-    private void addToBuilder(JobStatusUpdateRecord record, ProcessRun.Builder builder) {
+    private void addToBuilder(JobStatusUpdateRecord record, JobRun.Builder builder) {
         JobStatusUpdate statusUpdate = record.getStatusUpdate();
         if (isStartedUpdateAndStartOfRun(statusUpdate)) {
             builder.startedStatus((JobRunStartedUpdate) statusUpdate);
@@ -87,12 +92,12 @@ class ProcessRunsBuilder {
         }
     }
 
-    ProcessRuns build() {
-        List<ProcessRun> jobRuns = orderedBuilders.stream()
-                .map(ProcessRun.Builder::build)
+    JobRuns build() {
+        List<JobRun> jobRuns = orderedBuilders.stream()
+                .map(JobRun.Builder::build)
                 .collect(Collectors.toList());
         Collections.reverse(jobRuns);
-        return new ProcessRuns(jobRuns);
+        return new JobRuns(jobRuns);
     }
 
     private static boolean isStartedUpdateAndStartOfRun(JobStatusUpdate statusUpdate) {
