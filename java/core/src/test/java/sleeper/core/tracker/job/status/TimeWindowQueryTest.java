@@ -27,8 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class TimeWindowQueryTest {
     @Nested
-    @DisplayName("Process started")
-    class ProcessStarted {
+    @DisplayName("Job started")
+    class JobStarted {
         @Test
         void shouldBeInPeriodWhereStartTimeIsBeforePeriodStartTime() {
             Instant startTime = Instant.parse("2023-08-16T11:00:00Z");
@@ -64,10 +64,10 @@ public class TimeWindowQueryTest {
     }
 
     @Nested
-    @DisplayName("Process finished")
-    class ProcessFinished {
+    @DisplayName("Job finished")
+    class JobFinished {
         @Test
-        void shouldBeInPeriodWhenProcessStartsAndFinishesInsidePeriod() {
+        void shouldBeInPeriodWhenJobStartsAndFinishesInsidePeriod() {
             Instant startTime = Instant.parse("2023-08-16T12:20:00Z");
             Instant endTime = Instant.parse("2023-08-16T12:40:00Z");
             TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
@@ -79,7 +79,7 @@ public class TimeWindowQueryTest {
         }
 
         @Test
-        void shouldNotBeInPeriodWhenProcessFinishesBeforePeriod() {
+        void shouldNotBeInPeriodWhenJobFinishesBeforePeriod() {
             Instant startTime = Instant.parse("2023-08-16T11:20:00Z");
             Instant endTime = Instant.parse("2023-08-16T11:40:00Z");
             TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
@@ -91,7 +91,7 @@ public class TimeWindowQueryTest {
         }
 
         @Test
-        void shouldNotBeInPeriodWhenProcessStartsAfterPeriod() {
+        void shouldNotBeInPeriodWhenJobStartsAfterPeriod() {
             Instant startTime = Instant.parse("2023-08-16T13:20:00Z");
             Instant endTime = Instant.parse("2023-08-16T13:40:00Z");
             TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
@@ -103,7 +103,7 @@ public class TimeWindowQueryTest {
         }
 
         @Test
-        void shouldBeInPeriodWhenProcessOverlapsEndOfPeriod() {
+        void shouldBeInPeriodWhenJobOverlapsEndOfPeriod() {
             Instant startTime = Instant.parse("2023-08-16T12:40:00Z");
             Instant endTime = Instant.parse("2023-08-16T13:20:00Z");
             TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
@@ -115,7 +115,7 @@ public class TimeWindowQueryTest {
         }
 
         @Test
-        void shouldBeInPeriodWhenProcessOverlapsStartOfPeriod() {
+        void shouldBeInPeriodWhenJobOverlapsStartOfPeriod() {
             Instant startTime = Instant.parse("2023-08-16T11:40:00Z");
             Instant endTime = Instant.parse("2023-08-16T12:20:00Z");
             TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
@@ -127,7 +127,7 @@ public class TimeWindowQueryTest {
         }
 
         @Test
-        void shouldBeInPeriodWhenProcessContainsWindowPeriod() {
+        void shouldBeInPeriodWhenJobContainsWindowPeriod() {
             Instant startTime = Instant.parse("2023-08-16T11:00:00Z");
             Instant endTime = Instant.parse("2023-08-16T14:00:00Z");
             TimeWindowQuery timeWindowQuery = new TimeWindowQuery(
@@ -140,8 +140,8 @@ public class TimeWindowQueryTest {
     }
 
     @Nested
-    @DisplayName("Process run time can be limited")
-    class ProcessRuntimeLimited {
+    @DisplayName("Job run time can be limited")
+    class JobRuntimeLimited {
 
         @Test
         void shouldNotBeInPeriodWhenMaxRuntimeIsMetBeforeWindow() {
