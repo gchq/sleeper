@@ -38,7 +38,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
-import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;

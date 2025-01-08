@@ -30,8 +30,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.ingest.runner.testutils.RecordGenerator;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobTrackerCreator;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskTrackerCreator;
+import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
+import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;

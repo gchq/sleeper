@@ -38,7 +38,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.task.common.QueueMessageCount;
 
 import java.time.Clock;

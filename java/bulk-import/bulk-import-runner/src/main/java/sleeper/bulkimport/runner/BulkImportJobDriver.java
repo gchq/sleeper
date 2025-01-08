@@ -49,7 +49,7 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
-import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 

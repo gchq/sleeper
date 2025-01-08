@@ -29,9 +29,9 @@ import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobTracker;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskTracker;
+import sleeper.ingest.tracker.job.DynamoDBIngestJobTracker;
+import sleeper.ingest.tracker.task.DynamoDBIngestTaskStatusFormat;
+import sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker;
 
 import java.util.List;
 
