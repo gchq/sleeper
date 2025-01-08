@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.compaction.job.update;
 
-import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.util.Objects;
 

@@ -16,7 +16,6 @@
 
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;

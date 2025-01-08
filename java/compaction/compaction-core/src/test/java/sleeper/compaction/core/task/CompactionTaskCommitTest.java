@@ -27,10 +27,10 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
 import java.util.Iterator;

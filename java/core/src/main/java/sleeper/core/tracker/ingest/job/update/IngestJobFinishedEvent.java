@@ -18,7 +18,7 @@ package sleeper.core.tracker.ingest.job.update;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.util.List;
 import java.util.Objects;

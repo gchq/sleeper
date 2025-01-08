@@ -18,7 +18,7 @@ package sleeper.compaction.core.job;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.io.IOException;
 

@@ -31,8 +31,8 @@ import sleeper.core.statestore.testutils.StateStoreTestHelper;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 

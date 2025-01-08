@@ -23,8 +23,8 @@ import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.io.PrintStream;
 import java.time.Duration;

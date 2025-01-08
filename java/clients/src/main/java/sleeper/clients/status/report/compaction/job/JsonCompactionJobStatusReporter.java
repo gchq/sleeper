@@ -24,8 +24,8 @@ import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.ClientsGsonConfig;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobUpdateTypeInRun;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.JobRuns;
 
 import java.io.PrintStream;

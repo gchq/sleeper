@@ -29,7 +29,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;

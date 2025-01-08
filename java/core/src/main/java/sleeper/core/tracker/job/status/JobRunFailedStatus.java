@@ -15,8 +15,8 @@
  */
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;

@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;

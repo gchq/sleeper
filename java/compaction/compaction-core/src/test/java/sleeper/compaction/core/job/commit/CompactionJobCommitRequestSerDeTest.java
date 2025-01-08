@@ -20,8 +20,8 @@ import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;

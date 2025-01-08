@@ -17,7 +17,11 @@ package sleeper.core.tracker.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.tracker.job.run.AverageRecordRate;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobRunFinishedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdateTestHelper;

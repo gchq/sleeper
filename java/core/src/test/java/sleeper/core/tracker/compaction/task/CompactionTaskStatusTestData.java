@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.compaction.task;
 
-import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.time.Duration;
 import java.time.Instant;

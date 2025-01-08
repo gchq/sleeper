@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Duration;
 import java.time.Instant;

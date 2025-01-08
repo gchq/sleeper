@@ -21,9 +21,9 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 
 import java.time.Duration;

@@ -15,7 +15,7 @@
  */
 package sleeper.clients.status.report.job;
 
-import sleeper.core.tracker.job.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRecordRate;
 
 import java.io.PrintStream;
 

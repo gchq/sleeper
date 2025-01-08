@@ -19,8 +19,8 @@ package sleeper.clients.status.report.ingest.job;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
-import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;

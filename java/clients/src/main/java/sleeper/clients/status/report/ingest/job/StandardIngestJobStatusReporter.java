@@ -33,7 +33,7 @@ import sleeper.core.tracker.ingest.job.IngestJobStatusType;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
-import sleeper.core.tracker.job.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRecordRate;
 import sleeper.core.tracker.job.run.JobRun;
 
 import java.io.PrintStream;

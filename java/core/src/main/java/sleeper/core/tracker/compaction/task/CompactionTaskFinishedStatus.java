@@ -16,9 +16,9 @@
 
 package sleeper.core.tracker.compaction.task;
 
-import sleeper.core.tracker.job.AverageRecordRate;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;

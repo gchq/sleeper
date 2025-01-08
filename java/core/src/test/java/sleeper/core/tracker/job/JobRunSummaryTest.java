@@ -17,6 +17,9 @@ package sleeper.core.tracker.job;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
+
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;

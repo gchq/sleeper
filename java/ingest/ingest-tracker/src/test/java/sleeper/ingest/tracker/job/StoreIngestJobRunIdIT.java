@@ -22,9 +22,9 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
 

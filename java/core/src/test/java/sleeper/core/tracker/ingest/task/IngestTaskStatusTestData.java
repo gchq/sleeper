@@ -15,8 +15,8 @@
  */
 package sleeper.core.tracker.ingest.task;
 
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
 import java.util.stream.Stream;

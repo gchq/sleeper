@@ -27,7 +27,7 @@ import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
-import sleeper.core.tracker.job.AverageRecordRate;
+import sleeper.core.tracker.job.run.AverageRecordRate;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.util.DurationStatistics;
 

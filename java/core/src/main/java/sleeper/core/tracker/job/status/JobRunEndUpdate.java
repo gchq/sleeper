@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.util.List;
 

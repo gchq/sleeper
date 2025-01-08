@@ -34,10 +34,10 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Duration;

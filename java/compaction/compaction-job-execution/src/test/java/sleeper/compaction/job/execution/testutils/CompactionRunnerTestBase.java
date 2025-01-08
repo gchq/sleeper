@@ -31,7 +31,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;

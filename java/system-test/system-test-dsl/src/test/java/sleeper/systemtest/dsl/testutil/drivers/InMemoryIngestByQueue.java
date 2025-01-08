@@ -25,7 +25,7 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
-import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.IngestTask;
 import sleeper.ingest.core.job.IngestJob;

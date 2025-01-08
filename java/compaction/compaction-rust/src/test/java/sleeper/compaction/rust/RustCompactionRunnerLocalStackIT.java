@@ -40,7 +40,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableFilePaths;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.record.RecordReadSupport;

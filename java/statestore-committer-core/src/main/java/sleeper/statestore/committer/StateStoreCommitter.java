@@ -33,7 +33,7 @@ import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.JobRunTime;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 

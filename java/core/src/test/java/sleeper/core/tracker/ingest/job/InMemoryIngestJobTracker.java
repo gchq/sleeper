@@ -26,8 +26,8 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 

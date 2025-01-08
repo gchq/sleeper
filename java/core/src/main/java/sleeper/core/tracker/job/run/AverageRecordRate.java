@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.tracker.job;
-
-import sleeper.core.tracker.job.run.JobRun;
+package sleeper.core.tracker.job.run;
 
 import java.time.Duration;
 import java.time.Instant;

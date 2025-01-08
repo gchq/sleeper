@@ -23,8 +23,8 @@ import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;

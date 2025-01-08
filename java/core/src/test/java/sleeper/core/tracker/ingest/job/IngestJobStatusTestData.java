@@ -22,9 +22,9 @@ import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.JobRuns;
 import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
 

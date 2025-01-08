@@ -36,7 +36,7 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 

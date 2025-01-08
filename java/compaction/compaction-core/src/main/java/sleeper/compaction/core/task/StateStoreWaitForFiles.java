@@ -24,7 +24,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
-import sleeper.core.tracker.job.JobRunTime;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;

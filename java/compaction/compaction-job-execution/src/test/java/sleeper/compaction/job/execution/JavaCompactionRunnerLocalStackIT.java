@@ -41,7 +41,7 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;

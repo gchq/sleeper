@@ -34,7 +34,7 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.record.ParquetReaderIterator;

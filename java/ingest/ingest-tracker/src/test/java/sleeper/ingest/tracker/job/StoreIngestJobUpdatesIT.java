@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
 
