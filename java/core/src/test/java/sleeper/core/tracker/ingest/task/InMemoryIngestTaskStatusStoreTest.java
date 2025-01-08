@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.core.task;
+package sleeper.core.tracker.ingest.task;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.ingest.core.task.IngestTaskStatusTestData.finishedNoJobsDefault;
-import static sleeper.ingest.core.task.IngestTaskStatusTestData.startedBuilderWithDefaults;
+import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.finishedNoJobsDefault;
+import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.startedBuilderWithDefaults;
 
 public class InMemoryIngestTaskStatusStoreTest {
 

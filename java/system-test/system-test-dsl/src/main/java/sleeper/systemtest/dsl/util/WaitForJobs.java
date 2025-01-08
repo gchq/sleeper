@@ -23,8 +23,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Duration;

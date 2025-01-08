@@ -23,7 +23,7 @@ import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

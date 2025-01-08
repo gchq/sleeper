@@ -26,8 +26,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.task.common.QueueMessageCount;
 
 import static org.mockito.Mockito.when;

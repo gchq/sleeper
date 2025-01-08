@@ -21,8 +21,8 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskStatusStore;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
 
 import java.util.HashMap;
 import java.util.Map;

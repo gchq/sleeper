@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.task;
+package sleeper.core.tracker.ingest.task;
 
 import java.time.Instant;
 import java.util.List;
