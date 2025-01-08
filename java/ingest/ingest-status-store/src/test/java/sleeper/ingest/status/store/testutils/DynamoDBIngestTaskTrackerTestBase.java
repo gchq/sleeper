@@ -26,9 +26,9 @@ import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.dynamodb.test.DynamoDBTestBase;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
-import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskTracker;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskTrackerCreator;
+import sleeper.ingest.status.store.task.IngestTaskTrackerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -38,9 +38,9 @@ import java.util.UUID;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
-import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore.taskStatusTableName;
+import static sleeper.ingest.status.store.task.DynamoDBIngestTaskTracker.taskStatusTableName;
 
-public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
+public class DynamoDBIngestTaskTrackerTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate")
@@ -50,11 +50,11 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
             .build();
     private final InstanceProperties instanceProperties = IngestTrackerTestUtils.createInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final IngestTaskTracker store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final IngestTaskTracker store = IngestTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
     }
 
     @AfterEach
@@ -64,7 +64,7 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
 
     protected IngestTaskTracker storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(INGEST_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
-        return new DynamoDBIngestTaskStatusStore(dynamoDBClient, instanceProperties,
+        return new DynamoDBIngestTaskTracker(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

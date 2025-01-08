@@ -27,14 +27,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.ingest.status.store.testutils.IngestTrackerTestUtils.createInstanceProperties;
 
-public class DynamoDBIngestTaskStatusStoreCreatorIT extends DynamoDBTestBase {
+public class DynamoDBIngestTaskTrackerCreatorIT extends DynamoDBTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final String tableName = DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceProperties.get(ID));
+    private final String tableName = DynamoDBIngestTaskTracker.taskStatusTableName(instanceProperties.get(ID));
 
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
 
         // Then
         assertThat(dynamoDBClient.describeTable(tableName))
@@ -43,6 +43,6 @@ public class DynamoDBIngestTaskStatusStoreCreatorIT extends DynamoDBTestBase {
 
     @AfterEach
     public void tearDown() {
-        DynamoDBIngestTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDBClient);
+        DynamoDBIngestTaskTrackerCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 }

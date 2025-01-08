@@ -40,7 +40,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBCompactionTaskStatusStoreTestBase extends DynamoDBTestBase {
+public class DynamoDBCompactionTaskTrackerTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate").build();

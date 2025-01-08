@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -27,7 +27,7 @@ import java.time.temporal.ChronoField;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskStatusStoreTestBase {
+public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskTrackerTestBase {
 
     @Test
     public void shouldUpdateExpiryDateForCompactionTaskStatusStarted() {

@@ -18,13 +18,13 @@ package sleeper.ingest.status.store.task;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskStatusStoreTestBase;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskTrackerTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class QueryIngestTasksInProgressIT extends DynamoDBIngestTaskStatusStoreTestBase {
+public class QueryIngestTasksInProgressIT extends DynamoDBIngestTaskTrackerTestBase {
 
     @Test
     public void shouldIncludeUnfinishedTask() {

@@ -17,14 +17,14 @@ package sleeper.compaction.status.store.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskTrackerTestBase;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class QueryAllCompactionTasksIT extends DynamoDBCompactionTaskStatusStoreTestBase {
+public class QueryAllCompactionTasksIT extends DynamoDBCompactionTaskTrackerTestBase {
 
     @Test
     public void shouldReportMultipleCompactionTasksSortedMostRecentFirst() {

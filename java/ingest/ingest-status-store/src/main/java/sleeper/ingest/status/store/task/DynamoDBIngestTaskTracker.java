@@ -49,17 +49,17 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.UPDATE_TYPE;
 
-public class DynamoDBIngestTaskStatusStore implements IngestTaskTracker {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusStore.class);
+public class DynamoDBIngestTaskTracker implements IngestTaskTracker {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskTracker.class);
     private final AmazonDynamoDB dynamoDB;
     private final String statusTableName;
     private final DynamoDBIngestTaskStatusFormat format;
 
-    public DynamoDBIngestTaskStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public DynamoDBIngestTaskTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         this(dynamoDB, properties, Instant::now);
     }
 
-    public DynamoDBIngestTaskStatusStore(
+    public DynamoDBIngestTaskTracker(
             AmazonDynamoDB dynamoDB, InstanceProperties properties, Supplier<Instant> getTimeNow) {
         this.dynamoDB = dynamoDB;
         this.statusTableName = taskStatusTableName(properties.get(ID));

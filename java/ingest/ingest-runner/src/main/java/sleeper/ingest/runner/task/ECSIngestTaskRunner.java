@@ -46,7 +46,7 @@ import sleeper.core.util.ObjectFactoryException;
 import sleeper.ingest.core.IngestTask;
 import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
 import sleeper.ingest.status.store.job.IngestJobTrackerFactory;
-import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
+import sleeper.ingest.status.store.task.IngestTaskTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
@@ -110,7 +110,7 @@ public class ECSIngestTaskRunner {
             S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConfiguration);
-        IngestTaskTracker taskStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        IngestTaskTracker taskStore = IngestTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         IngestJobTracker jobTracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(
                 s3Client, instanceProperties, tablePropertiesProvider);

@@ -31,7 +31,7 @@ import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobTracker;
 import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskTracker;
 
 import java.util.List;
 
@@ -92,7 +92,7 @@ public class IngestTrackerStack extends NestedStack implements IngestTrackerReso
 
         tasksTable = Table.Builder
                 .create(this, "DynamoDBIngestTaskStatusTable")
-                .tableName(DynamoDBIngestTaskStatusStore.taskStatusTableName(instanceId))
+                .tableName(DynamoDBIngestTaskTracker.taskStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
