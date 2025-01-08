@@ -19,7 +19,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Represents a record held in a status store, containing a status update for a job.
+ * Represents a record held in a job tracker, containing a status update for a job.
  */
 public class ProcessStatusUpdateRecord {
 

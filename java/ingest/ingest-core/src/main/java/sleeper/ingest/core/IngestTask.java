@@ -33,7 +33,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Runs an ingest task. Executes jobs from a queue, updating the status stores with progress of the task.
+ * Runs an ingest task. Executes jobs from a queue, updating the job and task trackers with progress.
  */
 public class IngestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);
@@ -62,7 +62,7 @@ public class IngestTask {
     }
 
     /**
-     * Executes jobs from a queue, updating the status stores with progress of the task.
+     * Executes jobs from a queue, updating the job and task trackers with progress of the task.
      */
     public void run() {
         start();
