@@ -18,6 +18,7 @@
  */
 mod stream;
 
+use async_trait::async_trait;
 use bytes::Bytes;
 use futures::stream::{empty, BoxStream};
 use log::debug;
@@ -457,160 +458,74 @@ impl<T: ObjectStore> Display for ReadaheadStore<T> {
     }
 }
 
+#[async_trait]
 impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
-    fn put_opts<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
+    async fn put_opts(
+        &self,
+        location: &Path,
         payload: PutPayload,
         opts: PutOptions,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<PutResult>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.inner.put_opts(location, payload, opts)
+    ) -> Result<PutResult> {
+        self.inner.put_opts(location, payload, opts).await
     }
 
-    fn put_multipart_opts<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
+    async fn put_multipart_opts(
+        &self,
+        location: &Path,
         opts: PutMultipartOpts,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<Box<dyn MultipartUpload>>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.inner.put_multipart_opts(location, opts)
+    ) -> Result<Box<dyn MultipartUpload>> {
+        self.inner.put_multipart_opts(location, opts).await
     }
 
-    fn get_opts<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
-        options: GetOptions,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<GetResult>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        Box::pin(async move {
-            // If this an options head or full request (no range) or a suffix range, then pass it through, don't try
-            // to do anything with it
-            if should_skip_readahead(&options) {
-                return self.inner.get_opts(location, options).await;
-            }
+    async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
+        // If this an options head or full request (no range) or a suffix range, then pass it through, don't try
+        // to do anything with it
+        if should_skip_readahead(&options) {
+            return self.inner.get_opts(location, options).await;
+        }
 
-            self.clean_cache();
+        self.clean_cache();
 
-            let start_pos = get_start_pos(options.range.as_ref());
-            let cached = self
-                .get_cached_stream(location, options.range.as_ref())
-                .await?;
-            // If cache hit
-            match cached {
-                Some((meta, attributes, stream)) => {
-                    let stop_pos = get_stop_pos(options.range.as_ref(), meta.size);
-                    Ok(GetResult {
-                        payload: object_store::GetResultPayload::Stream(Box::pin(stream)),
-                        range: start_pos..stop_pos,
-                        meta,
-                        attributes,
-                    })
-                }
-                None => {
-                    // Make request and cache stream
-                    self.make_get_request(location, options).await
-                }
+        let start_pos = get_start_pos(options.range.as_ref());
+        let cached = self
+            .get_cached_stream(location, options.range.as_ref())
+            .await?;
+        // If cache hit
+        match cached {
+            Some((meta, attributes, stream)) => {
+                let stop_pos = get_stop_pos(options.range.as_ref(), meta.size);
+                Ok(GetResult {
+                    payload: object_store::GetResultPayload::Stream(Box::pin(stream)),
+                    range: start_pos..stop_pos,
+                    meta,
+                    attributes,
+                })
             }
-        })
+            None => {
+                // Make request and cache stream
+                self.make_get_request(location, options).await
+            }
+        }
     }
 
-    fn delete<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        location: &'life1 Path,
-    ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.inner.delete(location)
+    async fn delete(&self, location: &Path) -> Result<()> {
+        self.inner.delete(location).await
     }
 
     fn list(&self, prefix: Option<&Path>) -> BoxStream<'_, Result<ObjectMeta>> {
         self.inner.list(prefix)
     }
 
-    fn list_with_delimiter<'life0, 'life1, 'async_trait>(
-        &'life0 self,
-        prefix: Option<&'life1 Path>,
-    ) -> ::core::pin::Pin<
-        Box<
-            dyn ::core::future::Future<Output = Result<ListResult>>
-                + ::core::marker::Send
-                + 'async_trait,
-        >,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.inner.list_with_delimiter(prefix)
+    async fn list_with_delimiter(&self, prefix: Option<&Path>) -> Result<ListResult> {
+        self.inner.list_with_delimiter(prefix).await
     }
 
-    fn copy<'life0, 'life1, 'life2, 'async_trait>(
-        &'life0 self,
-        from: &'life1 Path,
-        to: &'life2 Path,
-    ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        'life2: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.inner.copy(from, to)
+    async fn copy(&self, from: &Path, to: &Path) -> Result<()> {
+        self.inner.copy(from, to).await
     }
 
-    fn copy_if_not_exists<'life0, 'life1, 'life2, 'async_trait>(
-        &'life0 self,
-        from: &'life1 Path,
-        to: &'life2 Path,
-    ) -> ::core::pin::Pin<
-        Box<dyn ::core::future::Future<Output = Result<()>> + ::core::marker::Send + 'async_trait>,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        'life2: 'async_trait,
-        Self: 'async_trait,
-    {
-        self.inner.copy_if_not_exists(from, to)
+    async fn copy_if_not_exists(&self, from: &Path, to: &Path) -> Result<()> {
+        self.inner.copy_if_not_exists(from, to).await
     }
 }
 
