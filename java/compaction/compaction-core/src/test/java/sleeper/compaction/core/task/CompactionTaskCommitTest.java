@@ -28,7 +28,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.status.ProcessRun;
 
@@ -221,7 +221,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             // And the commits are saved to the job tracker
             jobTracker.jobCommitted(job.committedEventBuilder(commitTime)
                     .taskId("test-task").jobRunId("test-job-run-1").build());
-            jobTracker.jobFailed(job.failedEventBuilder(new ProcessRunTime(startTime2, commitFailTime))
+            jobTracker.jobFailed(job.failedEventBuilder(new JobRunTime(startTime2, commitFailTime))
                     .failureReasons(List.of("Could not commit same job twice"))
                     .taskId("test-task").jobRunId("test-job-run-2").build());
 
@@ -233,7 +233,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     .statusUpdate(compactionFinishedStatus(
                                             new JobRunSummary(recordsProcessed, startTime2, finishTime2)))
                                     .finishedStatus(compactionFailedStatus(
-                                            new ProcessRunTime(startTime2, commitFailTime),
+                                            new JobRunTime(startTime2, commitFailTime),
                                             List.of("Could not commit same job twice")))
                                     .build(),
                             ProcessRun.builder().taskId("test-task")
@@ -474,7 +474,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job, DEFAULT_CREATED_TIME,
                             failedCompactionRun("test-task-1",
-                                    new ProcessRunTime(
+                                    new JobRunTime(
                                             Instant.parse("2024-02-22T13:50:01Z"),
                                             Instant.parse("2024-02-22T13:50:05Z")),
                                     List.of("Something went wrong", "Details of cause", "Root failure"))));

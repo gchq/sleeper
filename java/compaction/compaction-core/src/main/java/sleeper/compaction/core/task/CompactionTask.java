@@ -39,7 +39,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.util.LoggedDuration;
 
@@ -193,7 +193,7 @@ public class CompactionTask {
         } catch (Exception e) {
             Instant jobFinishTime = timeSupplier.get();
             jobTracker.jobFailed(message.getJob()
-                    .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
+                    .failedEventBuilder(new JobRunTime(jobStartTime, jobFinishTime))
                     .failure(e).taskId(taskId).jobRunId(jobRunId).build());
         }
     }

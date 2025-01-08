@@ -21,8 +21,8 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
-import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;
@@ -139,7 +139,7 @@ public class IngestJobEventTestData {
      * @param  runTime the runtime information
      * @return         the builder
      */
-    public static IngestJobFailedEvent.Builder ingestJobFailedEventBuilder(IngestJobEvent job, ProcessRunTime runTime, List<String> reasons) {
+    public static IngestJobFailedEvent.Builder ingestJobFailedEventBuilder(IngestJobEvent job, JobRunTime runTime, List<String> reasons) {
         return IngestJobFailedEvent.builder()
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())

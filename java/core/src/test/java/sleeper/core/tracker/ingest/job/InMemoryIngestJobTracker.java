@@ -26,8 +26,8 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
-import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessFailedStatus;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 
@@ -109,7 +109,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
 
     @Override
     public void jobFailed(IngestJobFailedEvent event) {
-        ProcessRunTime runTime = event.getRunTime();
+        JobRunTime runTime = event.getRunTime();
         existingJobRecords(event.getTableId(), event.getJobId())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())

@@ -23,7 +23,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.ProcessRuns;
 import sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords;
@@ -156,7 +156,7 @@ public class IngestJobStatusTestData {
     public static ProcessRun failedIngestRun(String taskId, Instant startTime, Instant failTime, List<String> reasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(startTime),
-                failedStatus(new ProcessRunTime(startTime, failTime), reasons));
+                failedStatus(new JobRunTime(startTime, failTime), reasons));
     }
 
     /**
@@ -171,7 +171,7 @@ public class IngestJobStatusTestData {
     public static ProcessRun failedIngestRun(String taskId, Instant startTime, Duration duration, List<String> reasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(startTime),
-                failedStatus(new ProcessRunTime(startTime, duration), reasons));
+                failedStatus(new JobRunTime(startTime, duration), reasons));
     }
 
     /**

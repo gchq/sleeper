@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.compaction.job.update;
 
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +29,7 @@ public class CompactionJobFailedEvent {
     private final String tableId;
     private final String taskId;
     private final String jobRunId;
-    private final ProcessRunTime runTime;
+    private final JobRunTime runTime;
     private final List<String> failureReasons;
 
     private CompactionJobFailedEvent(Builder builder) {
@@ -61,7 +61,7 @@ public class CompactionJobFailedEvent {
         return jobRunId;
     }
 
-    public ProcessRunTime getRunTime() {
+    public JobRunTime getRunTime() {
         return runTime;
     }
 
@@ -101,7 +101,7 @@ public class CompactionJobFailedEvent {
         private String tableId;
         private String jobRunId;
         private String taskId;
-        private ProcessRunTime runTime;
+        private JobRunTime runTime;
         private List<String> failureReasons;
 
         /**
@@ -154,7 +154,7 @@ public class CompactionJobFailedEvent {
          * @param  runTime the run time
          * @return         the builder
          */
-        public Builder runTime(ProcessRunTime runTime) {
+        public Builder runTime(JobRunTime runTime) {
             this.runTime = runTime;
             return this;
         }

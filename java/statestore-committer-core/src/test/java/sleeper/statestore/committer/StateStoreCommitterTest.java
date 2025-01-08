@@ -52,7 +52,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
@@ -171,7 +171,7 @@ public class StateStoreCommitterTest {
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
                                     .finishedStatus(compactionFailedStatus(
-                                            new ProcessRunTime(finishTime, failedTime),
+                                            new JobRunTime(finishTime, failedTime),
                                             List.of("1 replace file reference requests failed to update the state store", "File not found: input.parquet")))
                                     .build()));
         }
@@ -205,7 +205,7 @@ public class StateStoreCommitterTest {
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
                                     .finishedStatus(compactionFailedStatus(
-                                            new ProcessRunTime(finishTime, failedTime),
+                                            new JobRunTime(finishTime, failedTime),
                                             List.of("Unexpected failure")))
                                     .build()));
         }
@@ -241,7 +241,7 @@ public class StateStoreCommitterTest {
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
                                     .finishedStatus(compactionFailedStatus(
-                                            new ProcessRunTime(finishTime, failedTime),
+                                            new JobRunTime(finishTime, failedTime),
                                             List.of("1 replace file reference requests failed to update the state store", "Unexpected failure")))
                                     .build()));
         }

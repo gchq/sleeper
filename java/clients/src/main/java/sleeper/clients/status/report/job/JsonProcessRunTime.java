@@ -20,18 +20,18 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 
 public class JsonProcessRunTime {
 
     private JsonProcessRunTime() {
     }
 
-    public static JsonSerializer<ProcessRunTime> serializer() {
+    public static JsonSerializer<JobRunTime> serializer() {
         return (runTime, type, context) -> createRunTimeJson(runTime, context);
     }
 
-    private static JsonElement createRunTimeJson(ProcessRunTime runTime, JsonSerializationContext context) {
+    private static JsonElement createRunTimeJson(JobRunTime runTime, JsonSerializationContext context) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("startTime", context.serialize(runTime.getStartTime()));
         jsonObject.add("finishTime", context.serialize(runTime.getFinishTime()));

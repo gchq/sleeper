@@ -15,8 +15,8 @@
  */
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.ProcessRunTime;
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,10 +28,10 @@ import java.util.Objects;
 public class ProcessFailedStatus implements ProcessRunFinishedUpdate {
 
     private final Instant updateTime;
-    private final ProcessRunTime runTime;
+    private final JobRunTime runTime;
     private final List<String> failureReasons;
 
-    private ProcessFailedStatus(Instant updateTime, ProcessRunTime runTime, List<String> failureReasons) {
+    private ProcessFailedStatus(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
         this.failureReasons = Objects.requireNonNull(failureReasons, "failureReasons must not be null");
@@ -45,7 +45,7 @@ public class ProcessFailedStatus implements ProcessRunFinishedUpdate {
      * @param  failureReasons reasons the process failed
      * @return                the status update
      */
-    public static ProcessFailedStatus timeAndReasons(Instant updateTime, ProcessRunTime runTime, List<String> failureReasons) {
+    public static ProcessFailedStatus timeAndReasons(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
         return new ProcessFailedStatus(updateTime, runTime, failureReasons);
     }
 

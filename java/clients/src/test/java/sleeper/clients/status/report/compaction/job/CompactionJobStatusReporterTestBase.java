@@ -23,7 +23,7 @@ import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.io.PrintStream;
@@ -73,7 +73,7 @@ public abstract class CompactionJobStatusReporterTestBase {
                 dataHelper.singleFileCompaction(job(3), partition("C")),
                 Instant.parse("2022-09-19T13:33:12.001Z"),
                 failedCompactionRun(task(1),
-                        new ProcessRunTime(Instant.parse("2022-09-19T13:34:12.001Z"), Duration.ofMinutes(1)),
+                        new JobRunTime(Instant.parse("2022-09-19T13:34:12.001Z"), Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
         CompactionJobStatus status4 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(4), partition("D")),
@@ -111,7 +111,7 @@ public abstract class CompactionJobStatusReporterTestBase {
 
         CompactionJobStatus succeededThenFailed = compactionJobCreated(dataHelper.singleFileCompaction(job(1)),
                 Instant.parse("2022-10-10T10:00:00.001Z"),
-                failedCompactionRun(task(2), new ProcessRunTime(
+                failedCompactionRun(task(2), new JobRunTime(
                         Instant.parse("2022-10-10T10:01:15.001Z"), Duration.ofSeconds(30)),
                         List.of("Compaction has already been committed", "Failed database update")),
                 finishedCompactionRun(task(1), summary(
@@ -121,7 +121,7 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobStatus failedThenInProgress = compactionJobCreated(dataHelper.singleFileCompaction(job(2)),
                 Instant.parse("2022-10-11T10:00:00.001Z"),
                 startedCompactionRun(task(1), Instant.parse("2022-10-11T10:02:00.001Z")),
-                failedCompactionRun(task(2), new ProcessRunTime(
+                failedCompactionRun(task(2), new JobRunTime(
                         Instant.parse("2022-10-11T10:01:00.001Z"), Duration.ofSeconds(30)),
                         List.of("Unexpected failure reading input file", "Some temporary IO problem")));
 

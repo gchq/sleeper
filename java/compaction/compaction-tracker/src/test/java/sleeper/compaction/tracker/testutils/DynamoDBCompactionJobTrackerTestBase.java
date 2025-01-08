@@ -34,9 +34,9 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.JobRunTime;
+import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
@@ -162,8 +162,8 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
                 defaultRunTime());
     }
 
-    protected static ProcessRunTime defaultRunTime() {
-        return new ProcessRunTime(
+    protected static JobRunTime defaultRunTime() {
+        return new JobRunTime(
                 defaultStartTime(), Instant.parse("2022-09-23T10:52:00.001Z"));
     }
 
@@ -194,7 +194,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
         return failedStatusWithDefaults(job, defaultRunTime(), failureReasons);
     }
 
-    protected static CompactionJobStatus failedStatusWithDefaults(CompactionJob job, ProcessRunTime runTime, List<String> failureReasons) {
+    protected static CompactionJobStatus failedStatusWithDefaults(CompactionJob job, JobRunTime runTime, List<String> failureReasons) {
         return compactionJobCreated(job, ignoredUpdateTime(),
                 failedCompactionRun(DEFAULT_TASK_ID, runTime, failureReasons));
     }

@@ -25,7 +25,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.status.ProcessFailedStatus;
 
@@ -147,7 +147,7 @@ public class IngestJobStatusTest {
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
                     finishedIngestRun("test-task", new JobRunSummary(
-                            recordsProcessed, new ProcessRunTime(startTime2, Duration.ofMinutes(1)))),
+                            recordsProcessed, new JobRunTime(startTime2, Duration.ofMinutes(1)))),
                     failedIngestRun("test-task", startTime1, Duration.ofMinutes(1),
                             List.of("Failed reading input file", "Some IO failure")));
 
@@ -168,7 +168,7 @@ public class IngestJobStatusTest {
             IngestJobStatus status = ingestJobStatus("test-job",
                     startedIngestRun("task-2", startTime2),
                     finishedIngestRun("task-1", new JobRunSummary(
-                            recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
+                            recordsProcessed, new JobRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
             assertThat(status)
@@ -187,7 +187,7 @@ public class IngestJobStatusTest {
             IngestJobStatus status = ingestJobStatus("test-job",
                     startedIngestRun("task-2", startTime2),
                     finishedIngestRunUncommitted("task-1", new JobRunSummary(
-                            recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
+                            recordsProcessed, new JobRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
             assertThat(status)
@@ -473,7 +473,7 @@ public class IngestJobStatusTest {
 
     private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
         return ProcessFailedStatus.timeAndReasons(
-                defaultUpdateTime(finishTime), new ProcessRunTime(startTime, finishTime),
+                defaultUpdateTime(finishTime), new JobRunTime(startTime, finishTime),
                 List.of("Something went wrong"));
     }
 

@@ -23,7 +23,7 @@ import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
@@ -128,7 +128,7 @@ public class IngestTask {
                 LOGGER.error("Failed processing ingest job, terminating task", e);
                 Instant jobFinishTime = timeSupplier.get();
                 jobTracker.jobFailed(job
-                        .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
+                        .failedEventBuilder(new JobRunTime(jobStartTime, jobFinishTime))
                         .taskId(taskId).jobRunId(jobRunId).failure(e)
                         .build());
                 message.failed();

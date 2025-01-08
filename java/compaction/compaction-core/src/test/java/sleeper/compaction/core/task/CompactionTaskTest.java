@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 
 import java.time.Instant;
 import java.util.LinkedList;
@@ -104,10 +104,10 @@ public class CompactionTaskTest extends CompactionTaskTestBase {
         assertThat(jobsOnQueue).isEmpty();
         assertThat(jobTracker.getAllJobs(table.get(TABLE_ID))).containsExactlyInAnyOrder(
                 compactionJobCreated(job1, DEFAULT_CREATED_TIME,
-                        failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(startTime1, finishTime1), List.of(
+                        failedCompactionRun(DEFAULT_TASK_ID, new JobRunTime(startTime1, finishTime1), List.of(
                                 "Table not found with ID \"" + table.get(TABLE_ID) + "\""))),
                 compactionJobCreated(job2, DEFAULT_CREATED_TIME,
-                        failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(startTime2, finishTime2), List.of(
+                        failedCompactionRun(DEFAULT_TASK_ID, new JobRunTime(startTime2, finishTime2), List.of(
                                 "Table not found with ID \"" + table.get(TABLE_ID) + "\""))));
     }
 }

@@ -23,7 +23,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessFailedStatus;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.ProcessStatusUpdate;
@@ -72,7 +72,7 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
-    public static ProcessRun failedCompactionRun(String taskId, ProcessRunTime runTime, List<String> failureReasons) {
+    public static ProcessRun failedCompactionRun(String taskId, JobRunTime runTime, List<String> failureReasons) {
         return ProcessRun.finished(taskId,
                 compactionStartedStatus(runTime.getStartTime()),
                 compactionFailedStatus(runTime, failureReasons));
@@ -82,7 +82,7 @@ public class CompactionJobStatusTestData {
         return ProcessRun.builder().taskId(taskId)
                 .startedStatus(compactionStartedStatus(startTime))
                 .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)))
-                .statusUpdate(compactionFailedStatus(new ProcessRunTime(startTime, failureTime), failureReasons))
+                .statusUpdate(compactionFailedStatus(new JobRunTime(startTime, failureTime), failureReasons))
                 .build();
     }
 
@@ -98,7 +98,7 @@ public class CompactionJobStatusTestData {
         return CompactionJobCommittedStatus.commitAndUpdateTime(committedTime, defaultUpdateTime(committedTime));
     }
 
-    public static ProcessFailedStatus compactionFailedStatus(ProcessRunTime runTime, List<String> failureReasons) {
+    public static ProcessFailedStatus compactionFailedStatus(JobRunTime runTime, List<String> failureReasons) {
         return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 

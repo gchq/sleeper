@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.time.Duration;
@@ -131,7 +131,7 @@ class InMemoryCompactionJobTrackerTest {
             String taskId = "test-task";
             List<String> failureReasons = List.of("Something went wrong");
             CompactionJobCreatedEvent job = addFailedJob(createdTime,
-                    new ProcessRunTime(startedTime, finishedTime), taskId, failureReasons);
+                    new JobRunTime(startedTime, finishedTime), taskId, failureReasons);
 
             // When / Then
             assertThat(store.streamAllJobs(tableId))
@@ -139,7 +139,7 @@ class InMemoryCompactionJobTrackerTest {
                             forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getJobId(), taskId,
                                     compactionStartedStatus(startedTime),
-                                    compactionFailedStatus(new ProcessRunTime(startedTime, finishedTime), failureReasons)))));
+                                    compactionFailedStatus(new JobRunTime(startedTime, finishedTime), failureReasons)))));
         }
 
         @Test
@@ -518,7 +518,7 @@ class InMemoryCompactionJobTrackerTest {
         return job;
     }
 
-    private CompactionJobCreatedEvent addFailedJob(Instant createdTime, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
+    private CompactionJobCreatedEvent addFailedJob(Instant createdTime, JobRunTime runTime, String taskId, List<String> failureReasons) {
         CompactionJobCreatedEvent job = addStartedJob(createdTime, runTime.getStartTime(), taskId);
         store.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
         store.jobFailed(failedEventBuilder(job, runTime).failureReasons(failureReasons).taskId(taskId).build());

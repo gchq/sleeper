@@ -16,7 +16,7 @@
 package sleeper.core.tracker.job.status;
 
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 
 import java.time.Duration;
@@ -96,7 +96,7 @@ public class ProcessStatusUpdateTestHelper {
      */
     public static ProcessFailedStatus failedStatus(
             Instant startTime, Duration runDuration, List<String> failureReasons) {
-        ProcessRunTime runTime = new ProcessRunTime(startTime, runDuration);
+        JobRunTime runTime = new JobRunTime(startTime, runDuration);
         return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 
@@ -108,7 +108,7 @@ public class ProcessStatusUpdateTestHelper {
      * @return                a {@link ProcessFailedStatus}
      */
     public static ProcessFailedStatus failedStatus(
-            ProcessRunTime runTime, List<String> failureReasons) {
+            JobRunTime runTime, List<String> failureReasons) {
         return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 

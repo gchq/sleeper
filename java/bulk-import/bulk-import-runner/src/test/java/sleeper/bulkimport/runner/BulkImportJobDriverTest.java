@@ -31,7 +31,7 @@ import sleeper.core.statestore.testutils.StateStoreTestHelper;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
@@ -121,7 +121,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(ingestJobStatus(job.toIngestJob(), acceptedRunWhichFailed(
                         job.toIngestJob(), "test-task", validationTime,
-                        new ProcessRunTime(startTime, finishTime),
+                        new JobRunTime(startTime, finishTime),
                         List.of("Failed running job", "Some cause", "Root cause"))));
         assertThat(stateStore.getFileReferences()).isEmpty();
         assertThat(commitRequestQueue).isEmpty();
@@ -150,7 +150,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(ingestJobStatus(job.toIngestJob(), acceptedRunWhichFailed(
                         job.toIngestJob(), "test-task", validationTime,
-                        new ProcessRunTime(startTime, finishTime),
+                        new JobRunTime(startTime, finishTime),
                         List.of("Failed updating files"))));
         verify(stateStore).addFiles(outputFiles);
         verifyNoMoreInteractions(stateStore);
@@ -180,7 +180,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(ingestJobStatus(job.toIngestJob(), acceptedRunWhichFailed(
                         job.toIngestJob(), "test-task", validationTime,
-                        new ProcessRunTime(startTime, finishTime),
+                        new JobRunTime(startTime, finishTime),
                         List.of("Failed updating files"))));
         verify(stateStore).addFiles(outputFiles);
         verifyNoMoreInteractions(stateStore);

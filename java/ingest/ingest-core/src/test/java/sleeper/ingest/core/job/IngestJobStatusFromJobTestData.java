@@ -22,7 +22,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessFailedStatus;
 import sleeper.core.tracker.job.status.ProcessRun;
 
@@ -114,7 +114,7 @@ public class IngestJobStatusFromJobTestData {
      * @param  failureReasons a list of failure reasons
      * @return                an {@link IngestJobStatus}
      */
-    public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
+    public static IngestJobStatus failedIngestJob(IngestJob job, String taskId, JobRunTime runTime, List<String> failureReasons) {
         return ingestJobStatus(job, failedIngestRun(job, taskId, runTime, failureReasons));
     }
 
@@ -177,7 +177,7 @@ public class IngestJobStatusFromJobTestData {
      * @return                a {@link ProcessRun}
      */
     public static ProcessRun acceptedRunWhichFailed(
-            IngestJob job, String taskId, Instant validationTime, ProcessRunTime runTime, List<String> failureReasons) {
+            IngestJob job, String taskId, Instant validationTime, JobRunTime runTime, List<String> failureReasons) {
         return ProcessRun.builder()
                 .taskId(taskId)
                 .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
@@ -334,7 +334,7 @@ public class IngestJobStatusFromJobTestData {
      * @return                a {@link ProcessRun}
      */
     public static ProcessRun failedIngestRun(
-            IngestJob job, String taskId, ProcessRunTime runTime, List<String> failureReasons) {
+            IngestJob job, String taskId, JobRunTime runTime, List<String> failureReasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(job, runTime.getStartTime()),
                 ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
@@ -355,7 +355,7 @@ public class IngestJobStatusFromJobTestData {
                 .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)))
                 .finishedStatus(ProcessFailedStatus.timeAndReasons(
-                        defaultUpdateTime(failureTime), new ProcessRunTime(failureTime, Duration.ZERO), failureReasons))
+                        defaultUpdateTime(failureTime), new JobRunTime(failureTime, Duration.ZERO), failureReasons))
                 .build();
     }
 

@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 
 import java.time.Duration;
@@ -99,7 +99,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         // Then
         assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 compactionJobCreated(job, DEFAULT_CREATED_TIME,
-                        failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
+                        failedCompactionRun(DEFAULT_TASK_ID, new JobRunTime(waitForFilesTime, failTime), List.of(
                                 "Too many retries waiting for input files to be assigned to job in state store"))));
     }
 
@@ -124,7 +124,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 compactionJobCreated(job, DEFAULT_CREATED_TIME,
-                        failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
+                        failedCompactionRun(DEFAULT_TASK_ID, new JobRunTime(waitForFilesTime, failTime), List.of(
                                 "File reference not found in partition root, filename " + job.getInputFiles().get(0)))));
     }
 
@@ -148,7 +148,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(jobsReturnedToQueue).isEmpty();
         assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 compactionJobCreated(job, DEFAULT_CREATED_TIME,
-                        failedCompactionRun(DEFAULT_TASK_ID, new ProcessRunTime(waitForFilesTime, failTime), List.of(
+                        failedCompactionRun(DEFAULT_TASK_ID, new JobRunTime(waitForFilesTime, failTime), List.of(
                                 "Reference to file is already assigned to job job2, in partition root, filename " + job.getInputFiles().get(0)))));
     }
 

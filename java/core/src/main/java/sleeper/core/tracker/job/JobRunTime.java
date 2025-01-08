@@ -20,24 +20,24 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Records the time spent on a process. The time in process can be different from the duration if the process is split
- * over several invocations.
+ * Records the time spent on a run of a job. The time in process can be different from the duration if the job run was
+ * split over several processes.
  */
-public class ProcessRunTime {
+public class JobRunTime {
     private final Instant startTime;
     private final Instant finishTime;
     private final Duration duration;
     private final Duration timeInProcess;
 
-    public ProcessRunTime(Instant startTime, Duration duration) {
+    public JobRunTime(Instant startTime, Duration duration) {
         this(startTime, startTime.plus(duration), duration);
     }
 
-    public ProcessRunTime(Instant startTime, Instant finishTime) {
+    public JobRunTime(Instant startTime, Instant finishTime) {
         this(startTime, finishTime, Duration.between(startTime, finishTime));
     }
 
-    public ProcessRunTime(Instant startTime, Instant finishTime, Duration timeInProcess) {
+    public JobRunTime(Instant startTime, Instant finishTime, Duration timeInProcess) {
         this.startTime = Objects.requireNonNull(startTime, "startTime must not be null");
         this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
         this.timeInProcess = Objects.requireNonNull(timeInProcess, "timeInProcess must not be null");
@@ -78,16 +78,16 @@ public class ProcessRunTime {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof ProcessRunTime)) {
+        if (!(obj instanceof JobRunTime)) {
             return false;
         }
-        ProcessRunTime other = (ProcessRunTime) obj;
+        JobRunTime other = (JobRunTime) obj;
         return Objects.equals(startTime, other.startTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(timeInProcess, other.timeInProcess);
     }
 
     @Override
     public String toString() {
-        return "ProcessRunTime{startTime=" + startTime + ", endTime=" + finishTime + ", timeInProcess=" + timeInProcess + "}";
+        return "JobRunTime{startTime=" + startTime + ", endTime=" + finishTime + ", timeInProcess=" + timeInProcess + "}";
     }
 
 }

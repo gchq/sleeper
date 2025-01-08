@@ -31,9 +31,9 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
-import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.JobRunTime;
+import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.status.ProcessFailedStatus;
 import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
@@ -138,7 +138,7 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFailedUpdate(
             CompactionJobFailedEvent event, DynamoDBRecordBuilder builder) {
-        ProcessRunTime runTime = event.getRunTime();
+        JobRunTime runTime = event.getRunTime();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
                 .number(START_TIME, runTime.getStartTime().toEpochMilli())
@@ -217,13 +217,13 @@ class DynamoDBCompactionJobStatusFormat {
         }
     }
 
-    private static ProcessRunTime getRunTime(Map<String, AttributeValue> item) {
+    private static JobRunTime getRunTime(Map<String, AttributeValue> item) {
         Instant startTime = getInstantAttribute(item, START_TIME);
         Instant finishTime = getInstantAttribute(item, FINISH_TIME);
         long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
         Duration timeInProcess = millisInProcess > -1
                 ? Duration.ofMillis(millisInProcess)
                 : Duration.between(startTime, finishTime);
-        return new ProcessRunTime(startTime, finishTime, timeInProcess);
+        return new JobRunTime(startTime, finishTime, timeInProcess);
     }
 }

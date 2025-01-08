@@ -19,7 +19,7 @@ package sleeper.clients.status.report.ingest.job;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.ingest.core.job.IngestJob;
 
@@ -86,7 +86,7 @@ public class IngestJobStatusReporterTestData {
                         .finishedStatus(ingestFinishedStatusUncommitted(summary(startTime4, Duration.ofMinutes(1), 600, 300), 1))
                         .build()),
                 ingestJobStatus(job3, failedIngestRun(job3, task(2),
-                        new ProcessRunTime(startTime3, Duration.ofSeconds(30)),
+                        new JobRunTime(startTime3, Duration.ofSeconds(30)),
                         List.of("Unexpected failure", "Some IO problem"))),
                 ingestJobStatus(job2, startedIngestRun(job2, task(1), startTime2)),
                 ingestJobStatus(job1, acceptedRun(job1, startTime1)));
@@ -131,7 +131,7 @@ public class IngestJobStatusReporterTestData {
                 startedIngestJob(job3, task(2), startTime3),
                 finishedIngestJob(job2, task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300), 1),
                 failedIngestJob(job1, task(1),
-                        new ProcessRunTime(startTime1, Duration.ofMinutes(1)),
+                        new JobRunTime(startTime1, Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
     }
 

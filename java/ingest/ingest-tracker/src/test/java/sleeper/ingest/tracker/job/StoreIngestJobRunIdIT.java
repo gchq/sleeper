@@ -23,7 +23,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
@@ -141,7 +141,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobTrackerTestBase {
         IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-        ProcessRunTime runTime = new ProcessRunTime(startTime, Duration.ofMinutes(10));
+        JobRunTime runTime = new JobRunTime(startTime, Duration.ofMinutes(10));
         List<String> failureReasons = List.of("Something failed");
 
         // When

@@ -18,7 +18,7 @@ package sleeper.core.tracker.compaction.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.JobRunSummary;
 
@@ -95,7 +95,7 @@ class CompactionJobStatusTest {
         // Given
         Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
         Instant finishTime = Instant.parse("2022-09-22T13:34:10.001Z");
-        ProcessRunTime runTime = new ProcessRunTime(startTime, finishTime);
+        JobRunTime runTime = new JobRunTime(startTime, finishTime);
         List<String> failureReasons = List.of("Could not read input file", "Some IO failure");
 
         // When

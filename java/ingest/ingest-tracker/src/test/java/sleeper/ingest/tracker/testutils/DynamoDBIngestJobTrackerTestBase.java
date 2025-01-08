@@ -34,9 +34,9 @@ import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
-import sleeper.core.tracker.job.ProcessRunTime;
-import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.JobRunTime;
+import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.core.job.IngestJob;
@@ -143,11 +143,11 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
             IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {
-        return defaultJobFailedEvent(job, new ProcessRunTime(startedTime, finishedTime), failureReasons);
+        return defaultJobFailedEvent(job, new JobRunTime(startedTime, finishedTime), failureReasons);
     }
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
-            IngestJob job, ProcessRunTime runTime, List<String> failureReasons) {
+            IngestJob job, JobRunTime runTime, List<String> failureReasons) {
         return job.failedEventBuilder(runTime)
                 .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build();
     }
@@ -204,10 +204,10 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {
-        return defaultJobFailedStatus(job, new ProcessRunTime(startedTime, finishedTime), failureReasons);
+        return defaultJobFailedStatus(job, new JobRunTime(startedTime, finishedTime), failureReasons);
     }
 
-    protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, ProcessRunTime runTime, List<String> failureReasons) {
+    protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, JobRunTime runTime, List<String> failureReasons) {
         return failedIngestJob(job, DEFAULT_TASK_ID, runTime, failureReasons);
     }
 

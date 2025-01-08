@@ -24,7 +24,7 @@ import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
 import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
@@ -251,7 +251,7 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:06Z")));
             assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     failedIngestJob(job, "test-task-1",
-                            new ProcessRunTime(
+                            new JobRunTime(
                                     Instant.parse("2024-02-22T13:50:01Z"),
                                     Instant.parse("2024-02-22T13:50:05Z")),
                             List.of("Something went wrong", "Failure cause details", "Root cause details")));
@@ -288,7 +288,7 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))),
                     failedIngestJob(job2, "test-task-1",
-                            new ProcessRunTime(
+                            new JobRunTime(
                                     Instant.parse("2024-02-22T13:50:03Z"),
                                     Instant.parse("2024-02-22T13:50:05Z")),
                             List.of("Something went wrong")));

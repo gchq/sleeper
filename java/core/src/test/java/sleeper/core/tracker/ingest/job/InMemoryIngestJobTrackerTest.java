@@ -28,7 +28,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
@@ -468,7 +468,7 @@ public class InMemoryIngestJobTrackerTest {
             String taskId = "test-task";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            ProcessRunTime runTime = new ProcessRunTime(startTime, Duration.ofMinutes(10));
+            JobRunTime runTime = new JobRunTime(startTime, Duration.ofMinutes(10));
             List<String> failureReasons = List.of("Something went wrong");
             IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1)
                     .jobId("test-job-1").jobRunId(jobRunId).build();

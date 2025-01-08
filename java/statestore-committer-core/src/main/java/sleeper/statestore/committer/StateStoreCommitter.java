@@ -33,7 +33,7 @@ import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
@@ -136,7 +136,7 @@ public class StateStoreCommitter {
             CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(), stateStore);
         } catch (Exception e) {
             compactionJobTracker.jobFailed(job
-                    .failedEventBuilder(new ProcessRunTime(request.getFinishTime(), timeSupplier.get()))
+                    .failedEventBuilder(new JobRunTime(request.getFinishTime(), timeSupplier.get()))
                     .failure(e)
                     .taskId(request.getTaskId())
                     .jobRunId(request.getJobRunId())

@@ -43,7 +43,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.util.LoggedDuration;
@@ -109,7 +109,7 @@ public class BulkImportJobDriver {
             output = sessionRunner.run(job);
         } catch (RuntimeException e) {
             tracker.jobFailed(job.toIngestJob()
-                    .failedEventBuilder(new ProcessRunTime(startTime, getTime.get()))
+                    .failedEventBuilder(new JobRunTime(startTime, getTime.get()))
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw e;
         }
@@ -133,7 +133,7 @@ public class BulkImportJobDriver {
             }
         } catch (RuntimeException e) {
             tracker.jobFailed(job.toIngestJob()
-                    .failedEventBuilder(new ProcessRunTime(startTime, getTime.get()))
+                    .failedEventBuilder(new JobRunTime(startTime, getTime.get()))
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);

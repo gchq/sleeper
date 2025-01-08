@@ -23,7 +23,7 @@ import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.ProcessRunTime;
+import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 
 import java.time.Duration;
@@ -191,7 +191,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
         Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
         Duration timeInProcess = Duration.ofSeconds(20);
-        ProcessRunTime runTime = new ProcessRunTime(
+        JobRunTime runTime = new JobRunTime(
                 startedTime, finishedTime, timeInProcess);
         List<String> failureReasons = List.of("Something went wrong", "More details");
 

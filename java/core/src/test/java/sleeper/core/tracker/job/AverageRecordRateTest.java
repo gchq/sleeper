@@ -186,7 +186,7 @@ public class AverageRecordRateTest {
                 ProcessRun.finished(DEFAULT_TASK_ID,
                         ProcessStatusUpdateTestHelper.startedStatus(startTime),
                         ProcessFailedStatus.timeAndReasons(defaultUpdateTime(finishTime),
-                                new ProcessRunTime(startTime, finishTime),
+                                new JobRunTime(startTime, finishTime),
                                 List.of("Unexpected failure", "Some IO problem"))))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
                 .containsExactly(0, 0L, 0L, Duration.ofSeconds(0));

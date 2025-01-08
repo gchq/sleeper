@@ -25,7 +25,7 @@ import java.util.Objects;
 public class JobRunSummary {
 
     private final RecordsProcessed recordsProcessed;
-    private final ProcessRunTime runTime;
+    private final JobRunTime runTime;
     private final double recordsReadPerSecond;
     private final double recordsWrittenPerSecond;
 
@@ -38,10 +38,10 @@ public class JobRunSummary {
     }
 
     public JobRunSummary(RecordsProcessed recordsProcessed, Instant startTime, Instant finishTime, Duration timeInProcess) {
-        this(recordsProcessed, new ProcessRunTime(startTime, finishTime, timeInProcess));
+        this(recordsProcessed, new JobRunTime(startTime, finishTime, timeInProcess));
     }
 
-    public JobRunSummary(RecordsProcessed recordsProcessed, ProcessRunTime runTime) {
+    public JobRunSummary(RecordsProcessed recordsProcessed, JobRunTime runTime) {
         this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
         this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
         double secondsInProcess = runTime.getTimeInProcessInSeconds();
@@ -67,7 +67,7 @@ public class JobRunSummary {
      * @param  runTime the run time
      * @return         an instance of this class
      */
-    public static JobRunSummary noRecordsProcessed(ProcessRunTime runTime) {
+    public static JobRunSummary noRecordsProcessed(JobRunTime runTime) {
         return new JobRunSummary(new RecordsProcessed(0, 0), runTime);
     }
 
@@ -83,7 +83,7 @@ public class JobRunSummary {
         return recordsProcessed;
     }
 
-    public ProcessRunTime getRunTime() {
+    public JobRunTime getRunTime() {
         return runTime;
     }
 
