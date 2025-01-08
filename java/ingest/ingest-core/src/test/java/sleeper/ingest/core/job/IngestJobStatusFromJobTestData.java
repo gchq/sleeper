@@ -23,7 +23,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.ProcessRun;
 
 import java.time.Duration;
@@ -187,7 +187,7 @@ public class IngestJobStatusFromJobTestData {
                                 .inputFileCount(job.getFileCount())
                                 .startTime(runTime.getStartTime())
                                 .updateTime(defaultUpdateTime(runTime.getStartTime())).build())
-                .finishedStatus(ProcessFailedStatus
+                .finishedStatus(JobRunFailedStatus
                         .timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons))
                 .build();
     }
@@ -337,7 +337,7 @@ public class IngestJobStatusFromJobTestData {
             IngestJob job, String taskId, JobRunTime runTime, List<String> failureReasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(job, runTime.getStartTime()),
-                ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
+                JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
     }
 
     /**
@@ -354,7 +354,7 @@ public class IngestJobStatusFromJobTestData {
         return ProcessRun.builder()
                 .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)))
-                .finishedStatus(ProcessFailedStatus.timeAndReasons(
+                .finishedStatus(JobRunFailedStatus.timeAndReasons(
                         defaultUpdateTime(failureTime), new JobRunTime(failureTime, Duration.ZERO), failureReasons))
                 .build();
     }

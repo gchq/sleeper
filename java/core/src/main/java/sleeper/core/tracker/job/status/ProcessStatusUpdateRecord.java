@@ -24,7 +24,7 @@ import java.util.Objects;
 public class ProcessStatusUpdateRecord {
 
     private final String jobId;
-    private final ProcessStatusUpdate statusUpdate;
+    private final JobStatusUpdate statusUpdate;
     private final String jobRunId;
     private final String taskId;
     private final Instant expiryDate;
@@ -45,7 +45,7 @@ public class ProcessStatusUpdateRecord {
         return jobId;
     }
 
-    public ProcessStatusUpdate getStatusUpdate() {
+    public JobStatusUpdate getStatusUpdate() {
         return statusUpdate;
     }
 
@@ -117,7 +117,7 @@ public class ProcessStatusUpdateRecord {
      */
     public static final class Builder {
         private String jobId;
-        private ProcessStatusUpdate statusUpdate;
+        private JobStatusUpdate statusUpdate;
         private String jobRunId;
         private String taskId;
         private Instant expiryDate;
@@ -142,7 +142,7 @@ public class ProcessStatusUpdateRecord {
          * @param  statusUpdate the status update to set
          * @return              the builder
          */
-        public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {
+        public Builder statusUpdate(JobStatusUpdate statusUpdate) {
             this.statusUpdate = statusUpdate;
             return this;
         }

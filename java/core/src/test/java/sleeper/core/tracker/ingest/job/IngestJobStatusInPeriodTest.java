@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
-import sleeper.core.tracker.job.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
 
@@ -220,15 +220,15 @@ public class IngestJobStatusInPeriodTest {
                 ingestFinishedStatusUncommitted(summary(startTime, finishTime, 100, 100), 2));
     }
 
-    private IngestJobStatus statusFromUpdates(ProcessStatusUpdate... updates) {
+    private IngestJobStatus statusFromUpdates(JobStatusUpdate... updates) {
         return singleJobStatusFrom(records().fromUpdates(updates));
     }
 
-    private ProcessStatusUpdate startedRun(Instant startedTime) {
+    private JobStatusUpdate startedRun(Instant startedTime) {
         return IngestJobStatusTestData.ingestStartedStatus(startedTime, defaultUpdateTime(startedTime));
     }
 
-    private ProcessStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {
+    private JobStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {
         return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime),
                 summary(startedTime, finishedTime, 100, 100))
                 .numFilesWrittenByJob(2).build();

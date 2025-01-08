@@ -23,9 +23,9 @@ import static sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper.defa
 
 /**
  * A test implementation of process run started update. This class allows for setting the
- * {@link ProcessRunStartedUpdate#isStartOfRun} flag.
+ * {@link JobRunStartedUpdate#isStartOfRun} flag.
  */
-public class ProcessStartedStatusWithStartOfRunFlag implements ProcessRunStartedUpdate {
+public class ProcessStartedStatusWithStartOfRunFlag implements JobRunStartedUpdate {
 
     private final Instant updateTime;
     private final Instant startTime;

@@ -34,7 +34,7 @@ public class ProcessRunsTestHelper {
      * @param  updates the process status updates
      * @return         a {@link ProcessRuns} object
      */
-    public static ProcessRuns runsFromUpdates(ProcessStatusUpdate... updates) {
+    public static ProcessRuns runsFromUpdates(JobStatusUpdate... updates) {
         return runsFrom(records().fromUpdates(updates));
     }
 

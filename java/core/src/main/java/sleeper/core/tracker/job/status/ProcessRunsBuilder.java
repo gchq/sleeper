@@ -55,7 +55,7 @@ class ProcessRunsBuilder {
     private Optional<ProcessRun.Builder> getBuilderIfCorrelatable(ProcessStatusUpdateRecord record) {
         String jobRunId = record.getJobRunId();
         String taskId = record.getTaskId();
-        ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
+        JobStatusUpdate statusUpdate = record.getStatusUpdate();
         if (jobRunId != null) {
             return Optional.of(builderByJobRunId.computeIfAbsent(jobRunId, id -> createOrderedBuilder()));
         } else if (isStartedUpdateAndStartOfRun(statusUpdate)) {
@@ -74,11 +74,11 @@ class ProcessRunsBuilder {
     }
 
     private void addToBuilder(ProcessStatusUpdateRecord record, ProcessRun.Builder builder) {
-        ProcessStatusUpdate statusUpdate = record.getStatusUpdate();
+        JobStatusUpdate statusUpdate = record.getStatusUpdate();
         if (isStartedUpdateAndStartOfRun(statusUpdate)) {
-            builder.startedStatus((ProcessRunStartedUpdate) statusUpdate);
-        } else if (statusUpdate instanceof ProcessRunFinishedUpdate) {
-            builder.finishedStatus((ProcessRunFinishedUpdate) statusUpdate);
+            builder.startedStatus((JobRunStartedUpdate) statusUpdate);
+        } else if (statusUpdate instanceof JobRunEndUpdate) {
+            builder.finishedStatus((JobRunEndUpdate) statusUpdate);
         } else {
             builder.statusUpdate(statusUpdate);
         }
@@ -95,8 +95,8 @@ class ProcessRunsBuilder {
         return new ProcessRuns(jobRuns);
     }
 
-    private static boolean isStartedUpdateAndStartOfRun(ProcessStatusUpdate statusUpdate) {
-        return statusUpdate instanceof ProcessRunStartedUpdate
-                && ((ProcessRunStartedUpdate) statusUpdate).isStartOfRun();
+    private static boolean isStartedUpdateAndStartOfRun(JobStatusUpdate statusUpdate) {
+        return statusUpdate instanceof JobRunStartedUpdate
+                && ((JobRunStartedUpdate) statusUpdate).isStartOfRun();
     }
 }

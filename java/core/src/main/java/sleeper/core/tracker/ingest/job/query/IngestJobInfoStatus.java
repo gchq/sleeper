@@ -16,12 +16,12 @@
 
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.status.ProcessRunStartedUpdate;
+import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 
 /**
  * An ingest job process started update that has information about the input files.
  */
-public interface IngestJobInfoStatus extends ProcessRunStartedUpdate {
+public interface IngestJobInfoStatus extends JobRunStartedUpdate {
     /**
      * Gets the input file count for the ingest job.
      *

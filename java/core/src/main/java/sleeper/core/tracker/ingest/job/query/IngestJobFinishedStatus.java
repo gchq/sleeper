@@ -16,7 +16,7 @@
 package sleeper.core.tracker.ingest.job.query;
 
 import sleeper.core.tracker.job.JobRunSummary;
-import sleeper.core.tracker.job.status.ProcessRunFinishedUpdate;
+import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -24,7 +24,7 @@ import java.util.Objects;
 /**
  * A status update for when an ingest job has finished.
  */
-public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
+public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
     private final JobRunSummary summary;

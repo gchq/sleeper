@@ -20,10 +20,10 @@ import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.tracker.job.JobRunSummary;
+import sleeper.core.tracker.job.status.JobRunEndUpdate;
+import sleeper.core.tracker.job.status.JobRunStartedUpdate;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessRunFinishedUpdate;
-import sleeper.core.tracker.job.status.ProcessRunStartedUpdate;
-import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -84,8 +84,8 @@ public class StandardProcessRunReporter {
 
     private UpdatePrinter defaultUpdatePrinter() {
         return updatePrinters(
-                printUpdateType(ProcessRunStartedUpdate.class, this::printProcessStarted),
-                printUpdateType(ProcessRunFinishedUpdate.class, this::printProcessFinished));
+                printUpdateType(JobRunStartedUpdate.class, this::printProcessStarted),
+                printUpdateType(JobRunEndUpdate.class, this::printProcessFinished));
     }
 
     private void printProcessJobRun(ProcessRun run, UpdatePrinter updatePrinter) {
@@ -93,14 +93,14 @@ public class StandardProcessRunReporter {
         if (run.getTaskId() != null) {
             out.printf("Run on task %s%n", run.getTaskId());
         }
-        for (ProcessStatusUpdate update : run.getStatusUpdates()) {
+        for (JobStatusUpdate update : run.getStatusUpdates()) {
             if (!updatePrinter.print(update)) {
                 out.printf("Unknown update type: %s%n", update.getClass().getSimpleName());
             }
         }
     }
 
-    public static <T extends ProcessStatusUpdate> UpdatePrinter printUpdateType(Class<T> type, Consumer<T> printer) {
+    public static <T extends JobStatusUpdate> UpdatePrinter printUpdateType(Class<T> type, Consumer<T> printer) {
         return update -> {
             if (type.isInstance(update)) {
                 printer.accept(type.cast(update));
@@ -123,15 +123,15 @@ public class StandardProcessRunReporter {
     }
 
     public interface UpdatePrinter {
-        boolean print(ProcessStatusUpdate update);
+        boolean print(JobStatusUpdate update);
     }
 
-    public void printProcessStarted(ProcessRunStartedUpdate update) {
+    public void printProcessStarted(JobRunStartedUpdate update) {
         out.printf("Start time: %s%n", update.getStartTime());
         out.printf("Start update time: %s%n", update.getUpdateTime());
     }
 
-    public void printProcessFinished(ProcessRunFinishedUpdate update) {
+    public void printProcessFinished(JobRunEndUpdate update) {
         JobRunSummary summary = update.getSummary();
         out.printf("Finish time: %s%n", summary.getFinishTime());
         out.printf("Finish update time: %s%n", update.getUpdateTime());

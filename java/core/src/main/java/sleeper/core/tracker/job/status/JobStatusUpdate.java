@@ -20,7 +20,7 @@ import java.time.Instant;
 /**
  * Interface representing a status update for a job.
  */
-public interface ProcessStatusUpdate {
+public interface JobStatusUpdate {
 
     /**
      * Gets the update time for this status update.

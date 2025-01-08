@@ -27,7 +27,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -471,8 +471,8 @@ public class IngestJobStatusTest {
         return IngestJobStatusTestData.ingestFinishedStatusUncommitted(summary(startTime, finishTime), numFilesAddedByJob);
     }
 
-    private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
-        return ProcessFailedStatus.timeAndReasons(
+    private JobRunFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
+        return JobRunFailedStatus.timeAndReasons(
                 defaultUpdateTime(finishTime), new JobRunTime(startTime, finishTime),
                 List.of("Something went wrong"));
     }

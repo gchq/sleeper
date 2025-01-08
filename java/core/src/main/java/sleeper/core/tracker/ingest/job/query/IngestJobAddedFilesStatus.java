@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * A status update for when an ingest job has committed files to the state store.
  */
-public class IngestJobAddedFilesStatus implements ProcessStatusUpdate {
+public class IngestJobAddedFilesStatus implements JobStatusUpdate {
 
     private final Instant writtenTime;
     private final Instant updateTime;

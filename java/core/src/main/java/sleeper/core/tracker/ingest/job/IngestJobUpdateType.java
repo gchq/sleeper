@@ -20,9 +20,9 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
-import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 
 /**
  * Defines the types of updates during an ingest job. Can also find the furthest update in a run of an ingest job,
@@ -54,7 +54,7 @@ public enum IngestJobUpdateType {
      */
     public static IngestJobUpdateType typeOfFurthestUpdateInRun(ProcessRun run) {
         FurthestUpdateTracker furthestUpdate = new FurthestUpdateTracker();
-        for (ProcessStatusUpdate update : run.getStatusUpdates()) {
+        for (JobStatusUpdate update : run.getStatusUpdates()) {
             furthestUpdate.setIfFurther(typeOfUpdate(update));
         }
         return furthestUpdate.get();
@@ -83,12 +83,12 @@ public enum IngestJobUpdateType {
      * @return                          the type of the update
      * @throws IllegalArgumentException if the update is not of a type expected during an ingest job
      */
-    public static IngestJobUpdateType typeOfUpdate(ProcessStatusUpdate update) {
+    public static IngestJobUpdateType typeOfUpdate(JobStatusUpdate update) {
         if (update instanceof IngestJobRejectedStatus) {
             return REJECTED;
         } else if (update instanceof IngestJobAcceptedStatus) {
             return ACCEPTED;
-        } else if (update instanceof ProcessFailedStatus) {
+        } else if (update instanceof JobRunFailedStatus) {
             return FAILED;
         } else if (update instanceof IngestJobStartedStatus) {
             return STARTED;

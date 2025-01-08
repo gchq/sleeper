@@ -24,9 +24,9 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 import sleeper.core.tracker.job.status.TestProcessStatusUpdateRecords;
 
 import java.time.Instant;
@@ -98,11 +98,11 @@ public class CompactionJobStatusTestData {
         return CompactionJobCommittedStatus.commitAndUpdateTime(committedTime, defaultUpdateTime(committedTime));
     }
 
-    public static ProcessFailedStatus compactionFailedStatus(JobRunTime runTime, List<String> failureReasons) {
-        return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
+    public static JobRunFailedStatus compactionFailedStatus(JobRunTime runTime, List<String> failureReasons) {
+        return JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 
-    public static CompactionJobStatus jobStatusFromUpdates(ProcessStatusUpdate... updates) {
+    public static CompactionJobStatus jobStatusFromUpdates(JobStatusUpdate... updates) {
         return jobStatusFrom(records().fromUpdates(updates));
     }
 

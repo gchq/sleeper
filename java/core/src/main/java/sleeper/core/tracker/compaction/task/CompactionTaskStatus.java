@@ -16,7 +16,7 @@
 
 package sleeper.core.tracker.compaction.task;
 
-import sleeper.core.tracker.job.status.ProcessFinishedStatus;
+import sleeper.core.tracker.job.status.JobRunFinishedStatus;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
 
@@ -109,11 +109,11 @@ public class CompactionTaskStatus {
                 .build();
     }
 
-    private ProcessFinishedStatus asProcessFinishedStatus() {
+    private JobRunFinishedStatus asProcessFinishedStatus() {
         if (finishedStatus == null) {
             return null;
         }
-        return ProcessFinishedStatus.updateTimeAndSummary(
+        return JobRunFinishedStatus.updateTimeAndSummary(
                 finishedStatus.getFinishTime(),
                 finishedStatus.asSummary(getStartTime()));
     }

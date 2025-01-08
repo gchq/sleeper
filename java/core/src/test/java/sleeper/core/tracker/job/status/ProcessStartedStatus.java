@@ -21,7 +21,7 @@ import java.util.Objects;
 /**
  * A test implementation of process run started update. Only used in tests.
  */
-public class ProcessStartedStatus implements ProcessRunStartedUpdate {
+public class ProcessStartedStatus implements JobRunStartedUpdate {
 
     private final Instant updateTime;
     private final Instant startTime;

@@ -15,9 +15,9 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessStatusUpdate;
 
 /**
  * Defines the types of updates during a run of a compaction job. A job may be run multiple times. Can also find the
@@ -46,20 +46,20 @@ public enum CompactionJobUpdateTypeInRun {
      */
     public static CompactionJobUpdateTypeInRun typeOfFurthestUpdateInRun(ProcessRun run) {
         FurthestUpdateTracker furthestUpdate = new FurthestUpdateTracker();
-        for (ProcessStatusUpdate update : run.getStatusUpdates()) {
+        for (JobStatusUpdate update : run.getStatusUpdates()) {
             furthestUpdate.setIfFurther(typeOfUpdateInRun(update));
         }
         return furthestUpdate.get();
     }
 
-    public static CompactionJobUpdateTypeInRun typeOfUpdateInRun(ProcessStatusUpdate update) {
+    public static CompactionJobUpdateTypeInRun typeOfUpdateInRun(JobStatusUpdate update) {
         if (update instanceof CompactionJobStartedStatus) {
             return STARTED;
         } else if (update instanceof CompactionJobFinishedStatus) {
             return FINISHED_WHEN_COMMITTED;
         } else if (update instanceof CompactionJobCommittedStatus) {
             return COMMITTED;
-        } else if (update instanceof ProcessFailedStatus) {
+        } else if (update instanceof JobRunFailedStatus) {
             return FAILED;
         } else {
             throw new IllegalArgumentException("Unrecognised update type: " + update.getClass().getSimpleName());

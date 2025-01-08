@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.ingest.task;
 
-import sleeper.core.tracker.job.status.ProcessRunStartedUpdate;
+import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * A status for ingest tasks that have started.
  */
-public class IngestTaskStartedStatus implements ProcessRunStartedUpdate {
+public class IngestTaskStartedStatus implements JobRunStartedUpdate {
 
     private final Instant startTime;
 

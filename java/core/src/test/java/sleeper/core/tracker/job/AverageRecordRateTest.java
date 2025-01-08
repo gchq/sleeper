@@ -17,8 +17,8 @@ package sleeper.core.tracker.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.tracker.job.status.ProcessFailedStatus;
-import sleeper.core.tracker.job.status.ProcessFinishedStatus;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
+import sleeper.core.tracker.job.status.JobRunFinishedStatus;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateTestHelper;
 
@@ -185,7 +185,7 @@ public class AverageRecordRateTest {
         assertThat(AverageRecordRate.of(Stream.of(
                 ProcessRun.finished(DEFAULT_TASK_ID,
                         ProcessStatusUpdateTestHelper.startedStatus(startTime),
-                        ProcessFailedStatus.timeAndReasons(defaultUpdateTime(finishTime),
+                        JobRunFailedStatus.timeAndReasons(defaultUpdateTime(finishTime),
                                 new JobRunTime(startTime, finishTime),
                                 List.of("Unexpected failure", "Some IO problem"))))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
@@ -196,7 +196,7 @@ public class AverageRecordRateTest {
         return AverageRecordRate.of(Stream.of(summaries)
                 .map(summary -> ProcessRun.finished(DEFAULT_TASK_ID,
                         ProcessStatusUpdateTestHelper.startedStatus(summary.getStartTime()),
-                        ProcessFinishedStatus.updateTimeAndSummary(summary.getFinishTime(), summary))));
+                        JobRunFinishedStatus.updateTimeAndSummary(summary.getFinishTime(), summary))));
     }
 
 }

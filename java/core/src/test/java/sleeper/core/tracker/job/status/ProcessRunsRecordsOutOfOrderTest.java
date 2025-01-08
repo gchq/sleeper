@@ -35,7 +35,7 @@ public class ProcessRunsRecordsOutOfOrderTest {
     public void shouldReportRunWhenJobFinishedReturnedFromDatabaseOutOfOrder() {
         // Given
         ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
+        JobRunFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = runsFromUpdates(finished, started);
@@ -72,7 +72,7 @@ public class ProcessRunsRecordsOutOfOrderTest {
         ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
         ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-25T09:23:30.001Z"));
         ProcessStartedStatus started3 = startedStatus(Instant.parse("2022-09-26T09:23:30.001Z"));
-        ProcessFinishedStatus finished = finishedStatus(started3, Duration.ofSeconds(30), 450L, 300L);
+        JobRunFinishedStatus finished = finishedStatus(started3, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = runsFromUpdates(started3, finished, started1, started2);
@@ -90,9 +90,9 @@ public class ProcessRunsRecordsOutOfOrderTest {
     public void shouldReportRunsOnDifferentTasksWhenJobFinishedFromDatabaseOutOfOrder() {
         // Given
         ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-22T09:23:30.001Z"));
-        ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+        JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
         ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-22T09:23:31.001Z"));
-        ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+        JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         ProcessRuns runs = runsFromUpdates(

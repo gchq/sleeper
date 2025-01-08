@@ -61,10 +61,10 @@ public class TestProcessStatusUpdateRecords {
     /**
      * Adds the process status updates to this class.
      *
-     * @param  statusUpdates a collection of {@link ProcessStatusUpdate}
+     * @param  statusUpdates a collection of {@link JobStatusUpdate}
      * @return               this instance for chaining
      */
-    public TestProcessStatusUpdateRecords fromUpdates(ProcessStatusUpdate... statusUpdates) {
+    public TestProcessStatusUpdateRecords fromUpdates(JobStatusUpdate... statusUpdates) {
         return fromUpdates(forJobOnTask(DEFAULT_JOB_ID, DEFAULT_TASK_ID, statusUpdates));
     }
 
@@ -77,7 +77,7 @@ public class TestProcessStatusUpdateRecords {
      * @return         a {@link TaskUpdates} instance
      */
     public static TaskUpdates forJobOnTask(
-            String jobId, String taskId, ProcessStatusUpdate... updates) {
+            String jobId, String taskId, JobStatusUpdate... updates) {
         return forJobRunOnTask(jobId, null, taskId, updates);
     }
 
@@ -91,7 +91,7 @@ public class TestProcessStatusUpdateRecords {
      * @return          a {@link TaskUpdates} instance
      */
     public static TaskUpdates forJobRunOnTask(
-            String jobId, String jobRunId, String taskId, ProcessStatusUpdate... updates) {
+            String jobId, String jobRunId, String taskId, JobStatusUpdate... updates) {
         return new TaskUpdates(jobId, jobRunId, taskId,
                 Stream.of(updates)
                         .map(update -> new UpdateWithExpiry(update, DEFAULT_EXPIRY))
@@ -111,7 +111,7 @@ public class TestProcessStatusUpdateRecords {
      * @return         a {@link TaskUpdates} instance
      */
     public static TaskUpdates forJob(
-            String jobId, ProcessStatusUpdate... updates) {
+            String jobId, JobStatusUpdate... updates) {
         return forJobOnTask(jobId, DEFAULT_TASK_ID, updates);
     }
 
@@ -135,7 +135,7 @@ public class TestProcessStatusUpdateRecords {
      * @return         a {@link TaskUpdates} instance
      */
     public static TaskUpdates onTask(
-            String taskId, ProcessStatusUpdate... updates) {
+            String taskId, JobStatusUpdate... updates) {
         return forJobOnTask(DEFAULT_JOB_ID, taskId, updates);
     }
 
@@ -145,7 +145,7 @@ public class TestProcessStatusUpdateRecords {
      * @param  updates the process status updates
      * @return         a {@link TaskUpdates} instance
      */
-    public static TaskUpdates onNoTask(ProcessStatusUpdate... updates) {
+    public static TaskUpdates onNoTask(JobStatusUpdate... updates) {
         return forJobOnTask(DEFAULT_JOB_ID, null, updates);
     }
 
@@ -157,7 +157,7 @@ public class TestProcessStatusUpdateRecords {
      * @param  updates  the process status updates
      * @return          a {@link TaskUpdates} instance
      */
-    public static TaskUpdates forRunOnTask(String jobRunId, String taskId, ProcessStatusUpdate... updates) {
+    public static TaskUpdates forRunOnTask(String jobRunId, String taskId, JobStatusUpdate... updates) {
         return forJobRunOnTask(DEFAULT_JOB_ID, jobRunId, taskId, updates);
     }
 
@@ -168,7 +168,7 @@ public class TestProcessStatusUpdateRecords {
      * @param  updates  the process status updates
      * @return          a {@link TaskUpdates} instance
      */
-    public static TaskUpdates forRunOnNoTask(String jobRunId, ProcessStatusUpdate... updates) {
+    public static TaskUpdates forRunOnNoTask(String jobRunId, JobStatusUpdate... updates) {
         return forJobRunOnTask(DEFAULT_JOB_ID, jobRunId, null, updates);
     }
 
@@ -180,7 +180,7 @@ public class TestProcessStatusUpdateRecords {
      * @param  updates  the process status updates
      * @return          a {@link TaskUpdates} instance
      */
-    public static TaskUpdates forJobRunOnNoTask(String jobId, String jobRunId, ProcessStatusUpdate... updates) {
+    public static TaskUpdates forJobRunOnNoTask(String jobId, String jobRunId, JobStatusUpdate... updates) {
         return forJobRunOnTask(jobId, jobRunId, null, updates);
     }
 
@@ -191,7 +191,7 @@ public class TestProcessStatusUpdateRecords {
      * @param  updates the process status updates
      * @return         a {@link TaskUpdates} instance
      */
-    public static TaskUpdates forNoRunNoTask(String jobId, ProcessStatusUpdate... updates) {
+    public static TaskUpdates forNoRunNoTask(String jobId, JobStatusUpdate... updates) {
         return forJobRunOnTask(jobId, null, null, updates);
     }
 
@@ -202,7 +202,7 @@ public class TestProcessStatusUpdateRecords {
      * @param  update     the process status update
      * @return            an instance of {@link UpdateWithExpiry}
      */
-    public static UpdateWithExpiry withExpiry(Instant expiryTime, ProcessStatusUpdate update) {
+    public static UpdateWithExpiry withExpiry(Instant expiryTime, JobStatusUpdate update) {
         return new UpdateWithExpiry(update, expiryTime);
     }
 
@@ -253,10 +253,10 @@ public class TestProcessStatusUpdateRecords {
      * A class representing a process status update with an expiry time.
      */
     public static class UpdateWithExpiry {
-        private final ProcessStatusUpdate statusUpdate;
+        private final JobStatusUpdate statusUpdate;
         private final Instant expiryTime;
 
-        private UpdateWithExpiry(ProcessStatusUpdate statusUpdate, Instant expiryTime) {
+        private UpdateWithExpiry(JobStatusUpdate statusUpdate, Instant expiryTime) {
             this.statusUpdate = statusUpdate;
             this.expiryTime = expiryTime;
         }

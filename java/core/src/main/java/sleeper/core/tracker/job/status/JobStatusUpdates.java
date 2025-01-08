@@ -84,9 +84,9 @@ public class JobStatusUpdates {
      * @param  updateType the class defining the type of update to look for
      * @return            the first status update, or an empty optional if there is no update of the given type
      */
-    public <T extends ProcessStatusUpdate> Optional<T> getFirstStatusUpdateOfType(Class<T> updateType) {
+    public <T extends JobStatusUpdate> Optional<T> getFirstStatusUpdateOfType(Class<T> updateType) {
         for (int i = recordsLatestFirst.size() - 1; i >= 0; i--) {
-            ProcessStatusUpdate update = recordsLatestFirst.get(i).getStatusUpdate();
+            JobStatusUpdate update = recordsLatestFirst.get(i).getStatusUpdate();
             if (updateType.isInstance(update)) {
                 return Optional.of(updateType.cast(update));
             }

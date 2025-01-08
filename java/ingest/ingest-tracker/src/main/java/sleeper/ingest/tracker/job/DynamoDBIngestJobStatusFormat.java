@@ -35,8 +35,8 @@ import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
-import sleeper.core.tracker.job.status.ProcessFailedStatus;
-import sleeper.core.tracker.job.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
@@ -208,7 +208,7 @@ class DynamoDBIngestJobStatusFormat {
                 .build();
     }
 
-    private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
+    private static JobStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case UPDATE_TYPE_VALIDATED:
                 boolean accepted = !Objects.equals(VALIDATION_REJECTED_VALUE, getStringAttribute(item, VALIDATION_RESULT));
@@ -248,7 +248,7 @@ class DynamoDBIngestJobStatusFormat {
                         .numFilesWrittenByJob(getNullableIntAttribute(item, FILES_WRITTEN_COUNT))
                         .build();
             case UPDATE_TYPE_FAILED:
-                return ProcessFailedStatus.timeAndReasons(
+                return JobRunFailedStatus.timeAndReasons(
                         getInstantAttribute(item, UPDATE_TIME),
                         getRunTime(item),
                         getStringListAttribute(item, FAILURE_REASONS));

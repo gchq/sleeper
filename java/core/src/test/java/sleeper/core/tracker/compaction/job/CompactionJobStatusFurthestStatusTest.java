@@ -22,7 +22,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -129,7 +129,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 .build();
         CompactionJobStartedStatus started = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:36:03Z"));
-        ProcessFailedStatus failed = failedStatus(started, Duration.ofSeconds(30), List.of("Some failure"));
+        JobRunFailedStatus failed = failedStatus(started, Duration.ofSeconds(30), List.of("Some failure"));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(filesAssigned, started, failed);
@@ -154,7 +154,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 Instant.parse("2023-03-22T15:36:35Z"));
         CompactionJobStartedStatus started2 = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:37:01Z"));
-        ProcessFailedStatus failed = failedStatus(started2, Duration.ofSeconds(30), List.of("Some failure"));
+        JobRunFailedStatus failed = failedStatus(started2, Duration.ofSeconds(30), List.of("Some failure"));
 
         // When
         CompactionJobStatus status = jobStatusFromUpdates(filesAssigned, started1, finished, committed, started2, failed);
@@ -173,7 +173,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 .build();
         CompactionJobStartedStatus started1 = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:36:03Z"));
-        ProcessFailedStatus failed = failedStatus(started1, Duration.ofSeconds(30), List.of("Some failure"));
+        JobRunFailedStatus failed = failedStatus(started1, Duration.ofSeconds(30), List.of("Some failure"));
         CompactionJobStartedStatus started2 = compactionStartedStatus(
                 Instant.parse("2023-03-22T15:37:01Z"));
 

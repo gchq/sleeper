@@ -30,9 +30,9 @@ import java.util.Optional;
  */
 public class ProcessRun {
     private final String taskId;
-    private final ProcessRunStartedUpdate startedStatus;
-    private final ProcessRunFinishedUpdate finishedStatus;
-    private final List<ProcessStatusUpdate> statusUpdates;
+    private final JobRunStartedUpdate startedStatus;
+    private final JobRunEndUpdate finishedStatus;
+    private final List<JobStatusUpdate> statusUpdates;
 
     private ProcessRun(Builder builder) {
         taskId = builder.taskId;
@@ -52,7 +52,7 @@ public class ProcessRun {
      * @param  startedStatus the started status to set
      * @return               an instance of this class
      */
-    public static ProcessRun started(String taskId, ProcessRunStartedUpdate startedStatus) {
+    public static ProcessRun started(String taskId, JobRunStartedUpdate startedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .build();
@@ -66,7 +66,7 @@ public class ProcessRun {
      * @param  finishedStatus the finished status to set
      * @return                an instance of this class
      */
-    public static ProcessRun finished(String taskId, ProcessRunStartedUpdate startedStatus, ProcessRunFinishedUpdate finishedStatus) {
+    public static ProcessRun finished(String taskId, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
         return builder().taskId(taskId)
                 .startedStatus(startedStatus)
                 .finishedStatus(finishedStatus)
@@ -77,11 +77,11 @@ public class ProcessRun {
         return taskId;
     }
 
-    public ProcessRunStartedUpdate getStartedStatus() {
+    public JobRunStartedUpdate getStartedStatus() {
         return startedStatus;
     }
 
-    public ProcessRunFinishedUpdate getFinishedStatus() {
+    public JobRunEndUpdate getFinishedStatus() {
         return finishedStatus;
     }
 
@@ -94,11 +94,11 @@ public class ProcessRun {
     }
 
     public Instant getStartTime() {
-        return Optional.ofNullable(startedStatus).map(ProcessRunStartedUpdate::getStartTime).orElse(null);
+        return Optional.ofNullable(startedStatus).map(JobRunStartedUpdate::getStartTime).orElse(null);
     }
 
     public Instant getStartUpdateTime() {
-        return Optional.ofNullable(startedStatus).map(ProcessRunStartedUpdate::getUpdateTime).orElse(null);
+        return Optional.ofNullable(startedStatus).map(JobRunStartedUpdate::getUpdateTime).orElse(null);
     }
 
     /**
@@ -136,7 +136,7 @@ public class ProcessRun {
         return getLatestUpdate().getUpdateTime();
     }
 
-    public ProcessStatusUpdate getLatestUpdate() {
+    public JobStatusUpdate getLatestUpdate() {
         return statusUpdates.get(statusUpdates.size() - 1);
     }
 
@@ -153,7 +153,7 @@ public class ProcessRun {
         }
     }
 
-    public List<ProcessStatusUpdate> getStatusUpdates() {
+    public List<JobStatusUpdate> getStatusUpdates() {
         return statusUpdates;
     }
 
@@ -164,7 +164,7 @@ public class ProcessRun {
      * @param  updateType the class defining the type of update to look for
      * @return            the last status update, or an empty optional if there is no update of the given type
      */
-    public <T extends ProcessStatusUpdate> Optional<T> getLastStatusOfType(Class<T> updateType) {
+    public <T extends JobStatusUpdate> Optional<T> getLastStatusOfType(Class<T> updateType) {
         for (int i = statusUpdates.size() - 1; i >= 0; i--) {
             if (updateType.isInstance(statusUpdates.get(i))) {
                 return Optional.of(updateType.cast(statusUpdates.get(i)));
@@ -203,9 +203,9 @@ public class ProcessRun {
      */
     public static final class Builder {
         private String taskId;
-        private ProcessRunStartedUpdate startedStatus;
-        private ProcessRunFinishedUpdate finishedStatus;
-        private final List<ProcessStatusUpdate> statusUpdates = new ArrayList<>();
+        private JobRunStartedUpdate startedStatus;
+        private JobRunEndUpdate finishedStatus;
+        private final List<JobStatusUpdate> statusUpdates = new ArrayList<>();
 
         private Builder() {
         }
@@ -228,10 +228,10 @@ public class ProcessRun {
          * @param  startedStatus the started status to set
          * @return               the builder
          */
-        public Builder startedStatus(ProcessRunStartedUpdate startedStatus) {
+        public Builder startedStatus(JobRunStartedUpdate startedStatus) {
             this.startedStatus = startedStatus;
-            if (startedStatus instanceof ProcessRunFinishedUpdate) {
-                this.finishedStatus = (ProcessRunFinishedUpdate) startedStatus;
+            if (startedStatus instanceof JobRunEndUpdate) {
+                this.finishedStatus = (JobRunEndUpdate) startedStatus;
             }
             this.statusUpdates.add(startedStatus);
             return this;
@@ -243,7 +243,7 @@ public class ProcessRun {
          * @param  finishedStatus the update to set
          * @return                the builder
          */
-        public Builder finishedStatus(ProcessRunFinishedUpdate finishedStatus) {
+        public Builder finishedStatus(JobRunEndUpdate finishedStatus) {
             this.finishedStatus = finishedStatus;
             this.statusUpdates.add(finishedStatus);
             return this;
@@ -255,7 +255,7 @@ public class ProcessRun {
          * @param  statusUpdate the status update to add
          * @return              the builder
          */
-        public Builder statusUpdate(ProcessStatusUpdate statusUpdate) {
+        public Builder statusUpdate(JobStatusUpdate statusUpdate) {
             this.statusUpdates.add(statusUpdate);
             return this;
         }

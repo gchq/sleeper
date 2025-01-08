@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * An implementation of a process update that is both the start and finish of a job run. Only used in tests.
  */
-public class ProcessStartedAndFinishedStatus implements ProcessRunStartedUpdate, ProcessRunFinishedUpdate {
+public class ProcessStartedAndFinishedStatus implements JobRunStartedUpdate, JobRunEndUpdate {
 
     private final Instant updateTime;
     private final JobRunSummary summary;

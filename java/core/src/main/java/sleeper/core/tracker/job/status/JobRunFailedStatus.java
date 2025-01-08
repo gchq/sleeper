@@ -23,15 +23,15 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Represents a process failing.
+ * Represents a job failing.
  */
-public class ProcessFailedStatus implements ProcessRunFinishedUpdate {
+public class JobRunFailedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
     private final JobRunTime runTime;
     private final List<String> failureReasons;
 
-    private ProcessFailedStatus(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
+    private JobRunFailedStatus(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
         this.failureReasons = Objects.requireNonNull(failureReasons, "failureReasons must not be null");
@@ -45,8 +45,8 @@ public class ProcessFailedStatus implements ProcessRunFinishedUpdate {
      * @param  failureReasons reasons the process failed
      * @return                the status update
      */
-    public static ProcessFailedStatus timeAndReasons(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
-        return new ProcessFailedStatus(updateTime, runTime, failureReasons);
+    public static JobRunFailedStatus timeAndReasons(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
+        return new JobRunFailedStatus(updateTime, runTime, failureReasons);
     }
 
     @Override
@@ -79,10 +79,10 @@ public class ProcessFailedStatus implements ProcessRunFinishedUpdate {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof ProcessFailedStatus)) {
+        if (!(obj instanceof JobRunFailedStatus)) {
             return false;
         }
-        ProcessFailedStatus other = (ProcessFailedStatus) obj;
+        JobRunFailedStatus other = (JobRunFailedStatus) obj;
         return Objects.equals(updateTime, other.updateTime) && Objects.equals(runTime, other.runTime) && Objects.equals(failureReasons, other.failureReasons);
     }
 

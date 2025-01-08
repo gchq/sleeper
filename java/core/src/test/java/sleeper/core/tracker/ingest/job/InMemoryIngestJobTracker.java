@@ -28,7 +28,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessFailedStatus;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 
 import java.time.Instant;
@@ -113,7 +113,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
         existingJobRecords(event.getTableId(), event.getJobId())
                 .add(ProcessStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, event.getFailureReasons()))
+                        .statusUpdate(JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, event.getFailureReasons()))
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());

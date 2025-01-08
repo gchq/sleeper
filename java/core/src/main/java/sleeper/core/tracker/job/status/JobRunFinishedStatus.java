@@ -21,14 +21,14 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Represents a process finishing, and stores the records processed summary.
+ * Represents a job finishing, and stores the records processed summary.
  */
-public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
+public class JobRunFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
     private final JobRunSummary summary;
 
-    private ProcessFinishedStatus(Instant updateTime, JobRunSummary summary) {
+    private JobRunFinishedStatus(Instant updateTime, JobRunSummary summary) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.summary = Objects.requireNonNull(summary, "summary must not be null");
     }
@@ -40,8 +40,8 @@ public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
      * @param  summary    the records processed summary to set
      * @return            an instance of this class
      */
-    public static ProcessFinishedStatus updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return new ProcessFinishedStatus(updateTime, summary);
+    public static JobRunFinishedStatus updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
+        return new JobRunFinishedStatus(updateTime, summary);
     }
 
     public Instant getUpdateTime() {
@@ -60,7 +60,7 @@ public class ProcessFinishedStatus implements ProcessRunFinishedUpdate {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ProcessFinishedStatus that = (ProcessFinishedStatus) o;
+        JobRunFinishedStatus that = (JobRunFinishedStatus) o;
         return updateTime.equals(that.updateTime) && summary.equals(that.summary);
     }
 

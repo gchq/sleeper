@@ -35,9 +35,9 @@ public class JobStatusesBuilderTest {
     public void shouldBuildJobStatusesFromIndividualUpdates() {
         // Given
         ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-        ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
+        JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
         ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-        ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+        JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         List<JobStatusUpdates> statuses = jobStatusListFrom(records().fromUpdates(

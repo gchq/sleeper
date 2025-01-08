@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.job;
 
-import sleeper.core.tracker.job.status.ProcessRunStartedUpdate;
+import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -37,7 +37,7 @@ public class JobRunSummaryTestHelper {
      * @param  recordsWritten the number of records written
      * @return                a {@link JobRunSummary}
      */
-    public static JobRunSummary summary(ProcessRunStartedUpdate startedUpdate, Duration duration, long recordsRead, long recordsWritten) {
+    public static JobRunSummary summary(JobRunStartedUpdate startedUpdate, Duration duration, long recordsRead, long recordsWritten) {
         return summary(startedUpdate.getStartTime(), duration, recordsRead, recordsWritten);
     }
 

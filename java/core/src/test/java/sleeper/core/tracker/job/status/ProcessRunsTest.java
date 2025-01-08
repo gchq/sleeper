@@ -68,7 +68,7 @@ class ProcessRunsTest {
         void shouldReportRunWhenJobFinished() {
             // Given
             ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
+            JobRunFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             ProcessRuns runs = runsFromUpdates(started, finished);
@@ -84,8 +84,8 @@ class ProcessRunsTest {
         void shouldIncludeExtraFinishedStatus() {
             // Given
             ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            ProcessFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
-            ProcessFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
+            JobRunFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
+            JobRunFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
 
             // When
             ProcessRuns runs = runsFromUpdates(started, finished1, finished2);
@@ -100,7 +100,7 @@ class ProcessRunsTest {
         @Test
         void shouldReportRunFailedBeforeStart() {
             // Given
-            ProcessFailedStatus failed = failedStatus(Instant.parse("2022-09-24T09:23:30.001Z"), Duration.ofSeconds(30), List.of("Job could not be started"));
+            JobRunFailedStatus failed = failedStatus(Instant.parse("2022-09-24T09:23:30.001Z"), Duration.ofSeconds(30), List.of("Job could not be started"));
 
             // When
             ProcessRuns runs = runsFromUpdates(forJobRunOnTask("some-job", "some-run", "some-task", failed));
@@ -138,9 +138,9 @@ class ProcessRunsTest {
         void shouldReportTwoRunsWhenJobFinishedMultipleTimesSameTask() {
             // Given
             ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+            JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
             ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+            JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             ProcessRuns runs = runsFromUpdates(started1, finished1, started2, finished2);
@@ -180,9 +180,9 @@ class ProcessRunsTest {
         void shouldReportTwoTasksWithOneFinishedRunEach() {
             // Given
             ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+            JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
             ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+            JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             ProcessRuns runs = runsFromUpdates(
@@ -202,8 +202,8 @@ class ProcessRunsTest {
             // Given
             ProcessStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:00.001Z"));
             ProcessStartedStatus started2 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            ProcessFinishedStatus finished1 = finishedStatus(started1, Duration.ofMinutes(2), 450L, 300L);
-            ProcessFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+            JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofMinutes(2), 450L, 300L);
+            JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             ProcessRuns runs = runsFromUpdates(
@@ -287,8 +287,8 @@ class ProcessRunsTest {
         void shouldIncludeExtraFinishedStatus() {
             // Given
             ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            ProcessFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
-            ProcessFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
+            JobRunFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
+            JobRunFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
 
             // When
             ProcessRuns runs = runsFromUpdates(
@@ -329,7 +329,7 @@ class ProcessRunsTest {
             // Given
             ProcessStartedStatus started = startedStatus(
                     Instant.parse("2024-06-19T13:26:00Z"));
-            ProcessFinishedStatus finished = finishedStatus(
+            JobRunFinishedStatus finished = finishedStatus(
                     started, Duration.ofMinutes(1), 123, 123);
             CustomProcessStatus update = partOfRunWithUpdateTime(
                     Instant.parse("2024-06-19T13:28:00Z"));
@@ -416,7 +416,7 @@ class ProcessRunsTest {
         @Test
         void shouldNotCreateProcessRunIfStatusUpdateNotFlaggedAsStartOfRun() {
             // Given
-            ProcessStatusUpdate notStartedUpdate = () -> Instant.parse("2022-09-24T09:23:30.001Z");
+            JobStatusUpdate notStartedUpdate = () -> Instant.parse("2022-09-24T09:23:30.001Z");
 
             // When
             ProcessRuns runs = runsFromUpdates(notStartedUpdate);
@@ -553,7 +553,7 @@ class ProcessRunsTest {
                     Instant.parse("2022-09-24T09:23:30.123Z"),
                     summary(Instant.parse("2022-09-24T09:23:30Z"), Duration.ZERO, 0L, 0L));
             ProcessStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:24:00.001Z"));
-            ProcessFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
+            JobRunFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             ProcessRuns runs = runsFromUpdates(startedAndFinished, started, finished);
@@ -612,7 +612,7 @@ class ProcessRunsTest {
 
             // Then
             assertThat(runs.getLatestRun()
-                    .flatMap(latestRun -> latestRun.getLastStatusOfType(ProcessRunStartedUpdate.class)))
+                    .flatMap(latestRun -> latestRun.getLastStatusOfType(JobRunStartedUpdate.class)))
                     .get().isEqualTo(startedStatusNotStartOfRun);
         }
     }

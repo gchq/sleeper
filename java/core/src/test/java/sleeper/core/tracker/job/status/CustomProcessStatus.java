@@ -22,7 +22,7 @@ import java.util.Objects;
 /**
  * A test implementation of process status update.
  */
-public class CustomProcessStatus implements ProcessStatusUpdate {
+public class CustomProcessStatus implements JobStatusUpdate {
     private final Instant updateTime;
     private final boolean isPartOfRun;
 

@@ -49,10 +49,10 @@ public class ProcessStatusUpdateTestHelper {
      * @param  runDuration    the duration
      * @param  recordsRead    the number of records read
      * @param  recordsWritten the number of records written
-     * @return                a {@link ProcessFinishedStatus}
+     * @return                a {@link JobRunFinishedStatus}
      */
-    public static ProcessFinishedStatus finishedStatus(
-            ProcessRunStartedUpdate startedStatus, Duration runDuration, long recordsRead, long recordsWritten) {
+    public static JobRunFinishedStatus finishedStatus(
+            JobRunStartedUpdate startedStatus, Duration runDuration, long recordsRead, long recordsWritten) {
         return finishedStatus(startedStatus.getStartTime(), runDuration, recordsRead, recordsWritten);
     }
 
@@ -63,14 +63,14 @@ public class ProcessStatusUpdateTestHelper {
      * @param  runDuration    the duration
      * @param  recordsRead    the number of records read
      * @param  recordsWritten the number of records written
-     * @return                a {@link ProcessFinishedStatus}
+     * @return                a {@link JobRunFinishedStatus}
      */
-    public static ProcessFinishedStatus finishedStatus(
+    public static JobRunFinishedStatus finishedStatus(
             Instant startTime, Duration runDuration, long recordsRead, long recordsWritten) {
         Instant finishTime = startTime.plus(runDuration);
         JobRunSummary summary = new JobRunSummary(
                 new RecordsProcessed(recordsRead, recordsWritten), startTime, finishTime);
-        return ProcessFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
+        return JobRunFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
     }
 
     /**
@@ -79,10 +79,10 @@ public class ProcessStatusUpdateTestHelper {
      * @param  startedStatus  the {@link ProcessStartedStatus}
      * @param  runDuration    the duration
      * @param  failureReasons the reasons for the failure
-     * @return                a {@link ProcessFailedStatus}
+     * @return                a {@link JobRunFailedStatus}
      */
-    public static ProcessFailedStatus failedStatus(
-            ProcessRunStartedUpdate startedStatus, Duration runDuration, List<String> failureReasons) {
+    public static JobRunFailedStatus failedStatus(
+            JobRunStartedUpdate startedStatus, Duration runDuration, List<String> failureReasons) {
         return failedStatus(startedStatus.getStartTime(), runDuration, failureReasons);
     }
 
@@ -92,12 +92,12 @@ public class ProcessStatusUpdateTestHelper {
      * @param  startTime      the start time
      * @param  runDuration    the duration
      * @param  failureReasons the reasons for the failure
-     * @return                a {@link ProcessFailedStatus}
+     * @return                a {@link JobRunFailedStatus}
      */
-    public static ProcessFailedStatus failedStatus(
+    public static JobRunFailedStatus failedStatus(
             Instant startTime, Duration runDuration, List<String> failureReasons) {
         JobRunTime runTime = new JobRunTime(startTime, runDuration);
-        return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
+        return JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 
     /**
@@ -105,11 +105,11 @@ public class ProcessStatusUpdateTestHelper {
      *
      * @param  runTime        the runtime information
      * @param  failureReasons the reasons for the failure
-     * @return                a {@link ProcessFailedStatus}
+     * @return                a {@link JobRunFailedStatus}
      */
-    public static ProcessFailedStatus failedStatus(
+    public static JobRunFailedStatus failedStatus(
             JobRunTime runTime, List<String> failureReasons) {
-        return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
+        return JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 
     /**

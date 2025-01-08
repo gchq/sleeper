@@ -13,23 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package sleeper.core.tracker.job.status;
 
-import java.time.Instant;
+import sleeper.core.tracker.job.JobRunSummary;
+
+import java.util.List;
 
 /**
- * Interface for a status update that marks the start of a process run.
+ * Interface for a status update that marks the end of a process run.
  */
-public interface ProcessRunStartedUpdate extends ProcessStatusUpdate {
-    /**
-     * Get the start time of this run.
-     *
-     * @return the start time
-     */
-    Instant getStartTime();
+public interface JobRunEndUpdate extends JobStatusUpdate {
 
-    default boolean isStartOfRun() {
+    /**
+     * Gets a summary of records processed by this run.
+     *
+     * @return the summary
+     */
+    JobRunSummary getSummary();
+
+    default boolean isSuccessful() {
         return true;
+    }
+
+    default List<String> getFailureReasons() {
+        return List.of();
     }
 
     default boolean isPartOfRun() {
