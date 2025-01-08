@@ -33,7 +33,7 @@ public class JobRunsTestHelper {
     }
 
     /**
-     * Creates a process runs object from a collection of process status updates.
+     * Creates a job runs object from a collection of job status updates.
      *
      * @param  updates the process status updates
      * @return         a {@link JobRuns} object
@@ -43,7 +43,7 @@ public class JobRunsTestHelper {
     }
 
     /**
-     * Creates a process runs object from a collection of task updates.
+     * Creates a job runs object from a collection of job status updates organised by task.
      *
      * @param  taskUpdates the task updates
      * @return             a {@link JobRuns} object
