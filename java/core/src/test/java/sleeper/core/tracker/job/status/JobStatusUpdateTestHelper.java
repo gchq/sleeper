@@ -33,7 +33,7 @@ public class JobStatusUpdateTestHelper {
     }
 
     /**
-     * Creates a process started status.
+     * Creates a job started status.
      *
      * @param  startTime the start time
      * @return           a {@link TestJobStartedStatus}
@@ -43,7 +43,7 @@ public class JobStatusUpdateTestHelper {
     }
 
     /**
-     * Creates a process finished status.
+     * Creates a job finished status.
      *
      * @param  startedStatus  the {@link TestJobStartedStatus}
      * @param  runDuration    the duration
@@ -57,7 +57,7 @@ public class JobStatusUpdateTestHelper {
     }
 
     /**
-     * Creates a process finished status.
+     * Creates a job finished status.
      *
      * @param  startTime      the start time
      * @param  runDuration    the duration
@@ -74,7 +74,7 @@ public class JobStatusUpdateTestHelper {
     }
 
     /**
-     * Creates a process failed status.
+     * Creates a job failed status.
      *
      * @param  startedStatus  the {@link TestJobStartedStatus}
      * @param  runDuration    the duration
@@ -87,7 +87,7 @@ public class JobStatusUpdateTestHelper {
     }
 
     /**
-     * Creates a process failed status.
+     * Creates a job failed status.
      *
      * @param  startTime      the start time
      * @param  runDuration    the duration
@@ -101,7 +101,7 @@ public class JobStatusUpdateTestHelper {
     }
 
     /**
-     * Creates a process failed status.
+     * Creates a job failed status.
      *
      * @param  runTime        the runtime information
      * @param  failureReasons the reasons for the failure

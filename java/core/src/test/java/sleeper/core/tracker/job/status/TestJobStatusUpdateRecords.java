@@ -37,16 +37,16 @@ public class TestJobStatusUpdateRecords {
     private final List<JobStatusUpdateRecord> updates = new ArrayList<>();
 
     /**
-     * Creates an instance of this class with no process status updates.
+     * Creates an instance of this class with no job status updates.
      *
-     * @return an instance of this class with no process status updates
+     * @return an instance of this class with no job status updates
      */
     public static TestJobStatusUpdateRecords records() {
         return new TestJobStatusUpdateRecords();
     }
 
     /**
-     * Adds the process status updates for the provided task updates to this class.
+     * Adds the job status updates for the provided task updates to this class.
      *
      * @param  taskUpdates a collection of {@link TaskUpdates}
      * @return             this instance for chaining
@@ -59,7 +59,7 @@ public class TestJobStatusUpdateRecords {
     }
 
     /**
-     * Adds the process status updates to this class.
+     * Adds the job status updates to this class.
      *
      * @param  statusUpdates a collection of {@link JobStatusUpdate}
      * @return               this instance for chaining
@@ -73,7 +73,7 @@ public class TestJobStatusUpdateRecords {
      *
      * @param  jobId   the job ID
      * @param  taskId  the task ID
-     * @param  updates the process status updates
+     * @param  updates the job status updates
      * @return         a {@link TaskUpdates} instance
      */
     public static TaskUpdates forJobOnTask(
@@ -87,7 +87,7 @@ public class TestJobStatusUpdateRecords {
      * @param  jobId    the job ID
      * @param  jobRunId the job run ID
      * @param  taskId   the task ID
-     * @param  updates  the process status updates
+     * @param  updates  the job status updates
      * @return          a {@link TaskUpdates} instance
      */
     public static TaskUpdates forJobRunOnTask(
@@ -107,7 +107,7 @@ public class TestJobStatusUpdateRecords {
      * Creates an instance of task updates with the default task ID.
      *
      * @param  jobId   the job ID
-     * @param  updates the process status updates
+     * @param  updates the job status updates
      * @return         a {@link TaskUpdates} instance
      */
     public static TaskUpdates forJob(
@@ -131,7 +131,7 @@ public class TestJobStatusUpdateRecords {
      * Creates an instance of task updates with the default job ID.
      *
      * @param  taskId  the task ID
-     * @param  updates the process status updates
+     * @param  updates the job status updates
      * @return         a {@link TaskUpdates} instance
      */
     public static TaskUpdates onTask(
@@ -142,7 +142,7 @@ public class TestJobStatusUpdateRecords {
     /**
      * Creates an instance of task updates with the default job ID and no task ID.
      *
-     * @param  updates the process status updates
+     * @param  updates the job status updates
      * @return         a {@link TaskUpdates} instance
      */
     public static TaskUpdates onNoTask(JobStatusUpdate... updates) {
@@ -154,7 +154,7 @@ public class TestJobStatusUpdateRecords {
      *
      * @param  jobRunId the job run ID
      * @param  taskId   the task ID
-     * @param  updates  the process status updates
+     * @param  updates  the job status updates
      * @return          a {@link TaskUpdates} instance
      */
     public static TaskUpdates forRunOnTask(String jobRunId, String taskId, JobStatusUpdate... updates) {
@@ -165,7 +165,7 @@ public class TestJobStatusUpdateRecords {
      * Creates an instance of task updates with the default job ID and no task ID.
      *
      * @param  jobRunId the job run ID
-     * @param  updates  the process status updates
+     * @param  updates  the job status updates
      * @return          a {@link TaskUpdates} instance
      */
     public static TaskUpdates forRunOnNoTask(String jobRunId, JobStatusUpdate... updates) {
@@ -177,7 +177,7 @@ public class TestJobStatusUpdateRecords {
      *
      * @param  jobId    the job ID
      * @param  jobRunId the job run ID
-     * @param  updates  the process status updates
+     * @param  updates  the job status updates
      * @return          a {@link TaskUpdates} instance
      */
     public static TaskUpdates forJobRunOnNoTask(String jobId, String jobRunId, JobStatusUpdate... updates) {
@@ -188,7 +188,7 @@ public class TestJobStatusUpdateRecords {
      * Creates an instance of task updates with no run ID and no task ID.
      *
      * @param  jobId   the job ID
-     * @param  updates the process status updates
+     * @param  updates the job status updates
      * @return         a {@link TaskUpdates} instance
      */
     public static TaskUpdates forNoRunNoTask(String jobId, JobStatusUpdate... updates) {
@@ -199,7 +199,7 @@ public class TestJobStatusUpdateRecords {
      * Creates an update with expiry instance.
      *
      * @param  expiryTime the expiry time
-     * @param  update     the process status update
+     * @param  update     the job status update
      * @return            an instance of {@link UpdateWithExpiry}
      */
     public static UpdateWithExpiry withExpiry(Instant expiryTime, JobStatusUpdate update) {
@@ -207,7 +207,7 @@ public class TestJobStatusUpdateRecords {
     }
 
     /**
-     * Streams the process status update records.
+     * Streams the job status update records.
      *
      * @return a stream of {@link JobStatusUpdateRecord}
      */
@@ -236,9 +236,9 @@ public class TestJobStatusUpdateRecords {
         }
 
         /**
-         * Creates a stream of process update records.
+         * Creates a stream of job status update records.
          *
-         * @return a stream of process update records
+         * @return a stream of job status update records
          */
         public Stream<JobStatusUpdateRecord> records() {
             return statusUpdates.stream()
@@ -250,7 +250,7 @@ public class TestJobStatusUpdateRecords {
     }
 
     /**
-     * A class representing a process status update with an expiry time.
+     * A class representing a job status update with an expiry time.
      */
     public static class UpdateWithExpiry {
         private final JobStatusUpdate statusUpdate;

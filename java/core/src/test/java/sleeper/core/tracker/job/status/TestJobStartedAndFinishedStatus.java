@@ -21,7 +21,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * An implementation of a process update that is both the start and finish of a job run. Only used in tests.
+ * An implementation of a job status update that is both the start and finish of a job run. Only used in tests.
  */
 public class TestJobStartedAndFinishedStatus implements JobRunStartedUpdate, JobRunEndUpdate {
 
@@ -37,7 +37,7 @@ public class TestJobStartedAndFinishedStatus implements JobRunStartedUpdate, Job
      * Creates an instance of this class.
      *
      * @param  updateTime the update time
-     * @param  summary    the records processed summary
+     * @param  summary    the job run summary
      * @return            an instance of this class
      */
     public static TestJobStartedAndFinishedStatus updateAndSummary(Instant updateTime, JobRunSummary summary) {

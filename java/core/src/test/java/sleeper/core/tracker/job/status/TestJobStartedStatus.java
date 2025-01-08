@@ -19,7 +19,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A test implementation of process run started update. Only used in tests.
+ * A test implementation of job run started update. Only used in tests.
  */
 public class TestJobStartedStatus implements JobRunStartedUpdate {
 

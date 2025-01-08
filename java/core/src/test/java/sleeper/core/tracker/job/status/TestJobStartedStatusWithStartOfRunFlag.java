@@ -22,7 +22,7 @@ import java.util.Objects;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
 /**
- * A test implementation of process run started update. This class allows for setting the
+ * A test implementation of a job run started update. This class allows for setting the
  * {@link JobRunStartedUpdate#isStartOfRun} flag.
  */
 public class TestJobStartedStatusWithStartOfRunFlag implements JobRunStartedUpdate {
