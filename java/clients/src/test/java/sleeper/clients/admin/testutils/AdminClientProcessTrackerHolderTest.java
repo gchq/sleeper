@@ -76,7 +76,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldSetIngestTaskStatusStore() {
+    void shouldSetIngestTaskTracker() {
         // Given
         IngestTaskTracker tracker = mock(IngestTaskTracker.class);
         InstanceProperties properties = createValidInstanceProperties();
@@ -124,7 +124,7 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnNoIngestTaskStatusStore() {
+    void shouldReturnNoIngestTaskTracker() {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
