@@ -224,7 +224,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest task status report")
     @Nested
     class IngestTaskStatusReport {
-        private final IngestTaskTracker ingestTaskStatusStore = mock(IngestTaskTracker.class);
+        private final IngestTaskTracker tracker = mock(IngestTaskTracker.class);
 
         private List<IngestTaskStatus> exampleTaskStatuses() {
             return List.of(
@@ -234,7 +234,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunIngestTaskStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            when(ingestTaskStatusStore.getAllTasks())
+            when(tracker.getAllTasks())
                     .thenReturn(exampleTaskStatuses());
 
             // When/Then
@@ -257,7 +257,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunIngestTaskStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            when(ingestTaskStatusStore.getTasksInProgress())
+            when(tracker.getTasksInProgress())
                     .thenReturn(exampleTaskStatuses());
 
             // When/Then
@@ -279,7 +279,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             setInstanceProperties(createValidInstanceProperties());
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
                     INGEST_TASK_STATUS_REPORT_OPTION)
-                    .tracker(ingestTaskStatusStore);
+                    .tracker(tracker);
         }
     }
 

@@ -63,7 +63,7 @@ public class IngestTaskTest {
     private final List<IngestJob> successfulJobs = new ArrayList<>();
     private final List<IngestJob> failedJobs = new ArrayList<>();
     private final InMemoryIngestJobTracker jobTracker = new InMemoryIngestJobTracker();
-    private final IngestTaskTracker taskStore = new InMemoryIngestTaskTracker();
+    private final IngestTaskTracker taskTracker = new InMemoryIngestTaskTracker();
     private Supplier<Instant> timeSupplier = Instant::now;
     private Supplier<String> jobRunIdSupplier = () -> UUID.randomUUID().toString();
 
@@ -152,7 +152,7 @@ public class IngestTaskTest {
                     jobSucceeds(jobResult)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
@@ -178,7 +178,7 @@ public class IngestTaskTest {
                     jobSucceeds(jobResult)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 5L));
@@ -209,7 +209,7 @@ public class IngestTaskTest {
                     jobSucceeds(job2Result)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedMultipleJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z"),
@@ -245,7 +245,7 @@ public class IngestTaskTest {
             runTask("test-task-1", processJobs(jobFails(failure)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedNoJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:06Z")));
@@ -279,7 +279,7 @@ public class IngestTaskTest {
                     jobFails(failure)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:06Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
@@ -305,7 +305,7 @@ public class IngestTaskTest {
             runTask("test-task-1", processNoJobs());
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedNoJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z")));
@@ -328,7 +328,7 @@ public class IngestTaskTest {
                     jobSucceeds(jobResult)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 0L, 0L));
@@ -396,7 +396,7 @@ public class IngestTaskTest {
     private void runTask(
             String taskId,
             IngestJobHandler ingestRunner) throws Exception {
-        new IngestTask(jobRunIdSupplier, timeSupplier, pollQueue(), ingestRunner, jobTracker, taskStore, taskId)
+        new IngestTask(jobRunIdSupplier, timeSupplier, pollQueue(), ingestRunner, jobTracker, taskTracker, taskId)
                 .run();
     }
 

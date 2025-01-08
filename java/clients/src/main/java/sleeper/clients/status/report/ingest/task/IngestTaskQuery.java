@@ -26,7 +26,7 @@ public interface IngestTaskQuery {
     IngestTaskQuery ALL = IngestTaskTracker::getAllTasks;
     IngestTaskQuery UNFINISHED = IngestTaskTracker::getTasksInProgress;
 
-    List<IngestTaskStatus> run(IngestTaskTracker store);
+    List<IngestTaskStatus> run(IngestTaskTracker tracker);
 
     static IngestTaskQuery from(String type) {
         switch (type) {

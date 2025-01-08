@@ -40,7 +40,7 @@ public interface AdminClientTrackerFactory {
 
     IngestJobTracker loadIngestJobTracker(InstanceProperties instanceProperties);
 
-    IngestTaskTracker loadIngestTaskStatusStore(InstanceProperties instanceProperties);
+    IngestTaskTracker loadIngestTaskTracker(InstanceProperties instanceProperties);
 
     Optional<IngestBatcherStore> loadIngestBatcherStore(InstanceProperties properties, TablePropertiesProvider tablePropertiesProvider);
 
@@ -62,7 +62,7 @@ public interface AdminClientTrackerFactory {
             }
 
             @Override
-            public IngestTaskTracker loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
+            public IngestTaskTracker loadIngestTaskTracker(InstanceProperties instanceProperties) {
                 return IngestTaskTrackerFactory.getTracker(dynamoDB, instanceProperties);
             }
 

@@ -35,7 +35,7 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     private final Map<String, CompactionJobTracker> compactionJobTrackerByInstance = new HashMap<>();
     private final Map<String, CompactionTaskTracker> compactionTaskTrackerByInstance = new HashMap<>();
     private final Map<String, IngestJobTracker> ingestJobTrackerByInstance = new HashMap<>();
-    private final Map<String, IngestTaskTracker> ingestTaskStoreByInstance = new HashMap<>();
+    private final Map<String, IngestTaskTracker> ingestTaskTrackerByInstance = new HashMap<>();
     private final Map<String, IngestBatcherStore> ingestBatcherStoreByInstance = new HashMap<>();
 
     public void setTracker(String instanceId, CompactionJobTracker tracker) {
@@ -51,7 +51,7 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     }
 
     public void setTracker(String instanceId, IngestTaskTracker tracker) {
-        ingestTaskStoreByInstance.put(instanceId, tracker);
+        ingestTaskTrackerByInstance.put(instanceId, tracker);
     }
 
     public void setBatcherStore(String instanceId, IngestBatcherStore store) {
@@ -77,8 +77,8 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     }
 
     @Override
-    public IngestTaskTracker loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
-        return Optional.ofNullable(ingestTaskStoreByInstance.get(instanceProperties.get(ID)))
+    public IngestTaskTracker loadIngestTaskTracker(InstanceProperties instanceProperties) {
+        return Optional.ofNullable(ingestTaskTrackerByInstance.get(instanceProperties.get(ID)))
                 .orElse(IngestTaskTracker.NONE);
     }
 

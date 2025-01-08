@@ -42,7 +42,7 @@ public class IngestTask {
     private final MessageReceiver messageReceiver;
     private final IngestJobHandler ingester;
     private final IngestJobTracker jobTracker;
-    private final IngestTaskTracker taskStatusStore;
+    private final IngestTaskTracker taskTracker;
     private final String taskId;
     private final IngestTaskStatus.Builder taskStatusBuilder;
     private final IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
@@ -50,13 +50,13 @@ public class IngestTask {
 
     public IngestTask(Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier,
             MessageReceiver messageReceiver, IngestJobHandler ingester,
-            IngestJobTracker jobTracker, IngestTaskTracker taskStore, String taskId) {
+            IngestJobTracker jobTracker, IngestTaskTracker taskTracker, String taskId) {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.ingester = ingester;
         this.jobTracker = jobTracker;
-        this.taskStatusStore = taskStore;
+        this.taskTracker = taskTracker;
         this.taskId = taskId;
         this.taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId);
     }
@@ -79,7 +79,7 @@ public class IngestTask {
      */
     public void start() {
         LOGGER.info("Starting task {}", taskId);
-        taskStatusStore.taskStarted(taskStatusBuilder.startTime(timeSupplier.get()).build());
+        taskTracker.taskStarted(taskStatusBuilder.startTime(timeSupplier.get()).build());
     }
 
     /**
@@ -87,7 +87,7 @@ public class IngestTask {
      */
     public void finish() {
         IngestTaskStatus taskFinished = taskStatusBuilder.finished(timeSupplier.get(), taskFinishedBuilder).build();
-        taskStatusStore.taskFinished(taskFinished);
+        taskTracker.taskFinished(taskFinished);
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(taskFinished.getDuration()));
     }

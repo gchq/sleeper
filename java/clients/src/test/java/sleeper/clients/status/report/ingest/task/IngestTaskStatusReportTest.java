@@ -35,7 +35,7 @@ import static sleeper.clients.testutil.ClientTestUtils.example;
 import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 
 public class IngestTaskStatusReportTest {
-    private final IngestTaskTracker store = mock(IngestTaskTracker.class);
+    private final IngestTaskTracker tracker = mock(IngestTaskTracker.class);
 
     @Test
     public void shouldReportNoIngestTasks() throws Exception {
@@ -53,7 +53,7 @@ public class IngestTaskStatusReportTest {
         IngestTaskStatus unfinished = IngestTaskStatusReportTestHelper.startedTask("unfinished-task", "2022-10-06T12:17:00.001Z");
         IngestTaskStatus finished = IngestTaskStatusReportTestHelper.finishedTask("finished-task", "2022-10-06T12:20:00.001Z",
                 "2022-10-06T12:20:30.001Z", 200L, 100L);
-        when(store.getAllTasks()).thenReturn(Arrays.asList(finished, unfinished));
+        when(tracker.getAllTasks()).thenReturn(Arrays.asList(finished, unfinished));
 
         // When / Then
         assertThat(getStandardReport(IngestTaskQuery.ALL)).hasToString(
@@ -77,7 +77,7 @@ public class IngestTaskStatusReportTest {
                 summary(Instant.parse("2022-10-06T12:22:12.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:22:23.001Z"), Duration.ofSeconds(10), 400, 200),
                 summary(Instant.parse("2022-10-06T12:22:34.001Z"), Duration.ofSeconds(10), 400, 200));
-        when(store.getAllTasks()).thenReturn(Arrays.asList(finished2, finished1));
+        when(tracker.getAllTasks()).thenReturn(Arrays.asList(finished2, finished1));
 
         // When / Then
         assertThat(getStandardReport(IngestTaskQuery.ALL)).hasToString(
@@ -92,7 +92,7 @@ public class IngestTaskStatusReportTest {
         IngestTaskStatus unfinished1 = IngestTaskStatusReportTestHelper.startedTask("A", "2022-10-06T12:17:00.001Z");
         IngestTaskStatus unfinished2 = IngestTaskStatusReportTestHelper.startedTask("B", "2022-10-06T12:20:00.001Z");
 
-        when(store.getTasksInProgress()).thenReturn(Arrays.asList(unfinished2, unfinished1));
+        when(tracker.getTasksInProgress()).thenReturn(Arrays.asList(unfinished2, unfinished1));
 
         // When / Then
         assertThat(getStandardReport(IngestTaskQuery.UNFINISHED)).hasToString(
@@ -111,7 +111,7 @@ public class IngestTaskStatusReportTest {
 
     private String getReport(IngestTaskQuery query, Function<PrintStream, IngestTaskStatusReporter> getReporter) {
         ToStringConsoleOutput output = new ToStringConsoleOutput();
-        new IngestTaskStatusReport(store,
+        new IngestTaskStatusReport(tracker,
                 getReporter.apply(output.getPrintStream()), query).run();
         return output.toString();
     }

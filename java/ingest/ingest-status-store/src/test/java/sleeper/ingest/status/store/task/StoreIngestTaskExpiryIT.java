@@ -34,13 +34,13 @@ public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskTrackerTestBase {
         // Given
         IngestTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        IngestTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        IngestTaskTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
-        store.taskStarted(taskStatus);
+        tracker.taskStarted(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+        assertThat(tracker.getTask(taskStatus.getTaskId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 
@@ -49,15 +49,15 @@ public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskTrackerTestBase {
         // Given
         IngestTaskStatus taskStatus = finishedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        IngestTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        IngestTaskTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultTaskStartTime(), defaultTaskFinishTime());
 
         // When
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
+        tracker.taskStarted(taskStatus);
+        tracker.taskFinished(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+        assertThat(tracker.getTask(taskStatus.getTaskId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 
@@ -66,13 +66,13 @@ public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskTrackerTestBase {
         // Given
         IngestTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(1);
-        IngestTaskTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        IngestTaskTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
-        store.taskStarted(taskStatus);
+        tracker.taskStarted(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+        assertThat(tracker.getTask(taskStatus.getTaskId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 

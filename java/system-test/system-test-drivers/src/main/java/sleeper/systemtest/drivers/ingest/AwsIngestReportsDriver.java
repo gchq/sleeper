@@ -59,7 +59,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
     }
 
     public SystemTestReport tasksReport() {
-        return (out, startTime) -> new IngestTaskStatusReport(taskStore(),
+        return (out, startTime) -> new IngestTaskStatusReport(taskTracker(),
                 new StandardIngestTaskStatusReporter(out),
                 IngestTaskQuery.forPeriod(startTime, Instant.MAX))
                 .run();
@@ -82,7 +82,7 @@ public class AwsIngestReportsDriver implements IngestReportsDriver {
         return IngestJobTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
     }
 
-    private IngestTaskTracker taskStore() {
+    private IngestTaskTracker taskTracker() {
         return IngestTaskTrackerFactory.getTracker(dynamoDB, instance.getInstanceProperties());
     }
 }

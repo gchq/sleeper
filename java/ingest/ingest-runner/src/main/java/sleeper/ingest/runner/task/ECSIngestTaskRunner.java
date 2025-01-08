@@ -110,7 +110,7 @@ public class ECSIngestTaskRunner {
             S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConfiguration);
-        IngestTaskTracker taskStore = IngestTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+        IngestTaskTracker taskTracker = IngestTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         IngestJobTracker jobTracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(
                 s3Client, instanceProperties, tablePropertiesProvider);
@@ -121,7 +121,7 @@ public class ECSIngestTaskRunner {
                 sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
                 new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobTracker);
         return new IngestTask(() -> UUID.randomUUID().toString(), Instant::now,
-                queueConsumer, ingestJobRunner, jobTracker, taskStore, taskId);
+                queueConsumer, ingestJobRunner, jobTracker, taskTracker, taskId);
     }
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {
