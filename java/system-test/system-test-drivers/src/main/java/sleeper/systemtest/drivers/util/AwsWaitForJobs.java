@@ -18,8 +18,8 @@ package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
-import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;

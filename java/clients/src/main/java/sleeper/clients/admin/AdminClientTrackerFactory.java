@@ -17,8 +17,8 @@ package sleeper.clients.admin;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
-import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;

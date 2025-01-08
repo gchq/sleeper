@@ -19,8 +19,8 @@ package sleeper.clients.docker.stack;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskTrackerCreator;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
