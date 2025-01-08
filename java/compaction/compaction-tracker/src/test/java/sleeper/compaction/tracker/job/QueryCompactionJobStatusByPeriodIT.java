@@ -49,7 +49,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobTra
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
-        assertThat(store.getJobsInTimePeriod(tableId, epochStart, farFuture))
+        assertThat(tracker.getJobsInTimePeriod(tableId, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         compactionJobCreated(job2, ignoredUpdateTime()),
@@ -71,7 +71,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobTra
         // Then
         Instant periodStart = Instant.now().minus(Period.ofDays(2));
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
-        assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd)).isEmpty();
+        assertThat(tracker.getJobsInTimePeriod(tableId, periodStart, periodEnd)).isEmpty();
     }
 
     @Test
@@ -92,7 +92,7 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobTra
         // Then
         Instant epochStart = Instant.ofEpochMilli(0);
         Instant farFuture = epochStart.plus(Period.ofDays(999999999));
-        assertThat(store.getJobsInTimePeriod(tableId, epochStart, farFuture))
+        assertThat(tracker.getJobsInTimePeriod(tableId, epochStart, farFuture))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(compactionJobCreated(job1, ignoredUpdateTime()));
     }
@@ -109,15 +109,15 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobTra
         // When
         Instant periodStart = Instant.now().minus(Period.ofDays(1));
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
         Thread.sleep(1);
         Instant periodEnd = Instant.now();
         Thread.sleep(1);
-        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
-        assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))
+        assertThat(tracker.getJobsInTimePeriod(tableId, periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(finishedThenCommittedStatusWithDefaults(job));
     }
@@ -136,13 +136,13 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobTra
         Thread.sleep(1);
         Instant periodStart = Instant.now();
         Thread.sleep(1);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
 
         // Then
-        assertThat(store.getJobsInTimePeriod(tableId, periodStart, periodEnd))
+        assertThat(tracker.getJobsInTimePeriod(tableId, periodStart, periodEnd))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(finishedThenCommittedStatusWithDefaults(job));
     }

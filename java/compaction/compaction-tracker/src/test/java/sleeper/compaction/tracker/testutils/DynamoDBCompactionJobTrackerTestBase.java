@@ -77,7 +77,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
 
     protected final String tableId = tableProperties.get(TABLE_ID);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    protected final CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+    protected final CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
@@ -89,16 +89,16 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
         dynamoDBClient.deleteTable(jobStatusTableName);
     }
 
-    protected CompactionJobTracker storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+    protected CompactionJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
         instanceProperties.set(COMPACTION_JOB_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
-        return storeWithUpdateTimes(updateTimes);
+        return trackerWithUpdateTimes(updateTimes);
     }
 
-    protected CompactionJobTracker storeWithUpdateTime(Instant updateTime) {
-        return storeWithUpdateTimes(updateTime);
+    protected CompactionJobTracker trackerWithUpdateTime(Instant updateTime) {
+        return trackerWithUpdateTimes(updateTime);
     }
 
-    protected CompactionJobTracker storeWithUpdateTimes(Instant... updateTimes) {
+    protected CompactionJobTracker trackerWithUpdateTimes(Instant... updateTimes) {
         return new DynamoDBCompactionJobTracker(dynamoDBClient, instanceProperties,
                 true, Arrays.stream(updateTimes).iterator()::next);
     }
@@ -133,7 +133,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected void storeJobCreated(CompactionJob job) {
-        store.jobCreated(job.createCreatedEvent());
+        tracker.jobCreated(job.createCreatedEvent());
     }
 
     protected void storeJobCreated(CompactionJobTracker store, CompactionJob job) {
@@ -141,7 +141,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected void storeJobCreatedAtTime(Instant updateTime, CompactionJob job) {
-        storeWithUpdateTime(updateTime).jobCreated(job.createCreatedEvent());
+        trackerWithUpdateTime(updateTime).jobCreated(job.createCreatedEvent());
     }
 
     protected static Instant ignoredUpdateTime() {
@@ -200,7 +200,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected CompactionJobStatus getJobStatus(String jobId) {
-        return getJobStatus(store, jobId);
+        return getJobStatus(tracker, jobId);
     }
 
     protected CompactionJobStatus getJobStatus(CompactionJobTracker store, String jobId) {
@@ -208,6 +208,6 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected List<CompactionJobStatus> getAllJobStatuses() {
-        return store.getAllJobs(tableId);
+        return tracker.getAllJobs(tableId);
     }
 }

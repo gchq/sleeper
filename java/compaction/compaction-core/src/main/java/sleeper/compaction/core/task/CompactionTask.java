@@ -58,7 +58,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
 
 /**
- * Runs a compaction task. Executes jobs from a queue, updating the status stores with progress of the task.
+ * Runs a compaction task. Executes jobs from a queue, updating the job and task trackers with progress.
  */
 public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);

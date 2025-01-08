@@ -42,13 +42,13 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTest
         CompactionJob job = createCompactionJob();
         Duration timeToLive = Duration.ofDays(7);
         Instant createdTime = Instant.parse("2022-12-15T10:50:12.001Z");
-        CompactionJobTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
+        CompactionJobTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
 
         // When
-        storeJobCreated(store, job);
+        storeJobCreated(tracker, job);
 
         // Then
-        assertThat(getJobStatus(store, job.getId()).getExpiryDate())
+        assertThat(getJobStatus(tracker, job.getId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(createdTime, timeToLive));
     }
 
@@ -59,15 +59,15 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTest
         Duration timeToLive = Duration.ofDays(7);
         Instant createdTime = Instant.parse("2022-12-15T10:50:12.001Z");
         Instant startedTime = Instant.parse("2022-12-15T10:51:12.001Z");
-        CompactionJobTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        CompactionJobTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultUpdateTime(createdTime), defaultUpdateTime(startedTime));
 
         // When
-        storeJobCreated(store, job);
-        store.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
+        storeJobCreated(tracker, job);
+        tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
 
         // Then
-        assertThat(getJobStatus(store, job.getId()).getExpiryDate())
+        assertThat(getJobStatus(tracker, job.getId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(createdTime, timeToLive));
     }
 
@@ -79,18 +79,18 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTest
         Instant createdTime = Instant.parse("2022-12-15T10:50:12.001Z");
         Instant startedTime = Instant.parse("2022-12-15T10:51:12.001Z");
         Instant finishedTime = Instant.parse("2022-12-15T10:52:12.001Z");
-        CompactionJobTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        CompactionJobTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultUpdateTime(createdTime), defaultUpdateTime(startedTime), defaultUpdateTime(finishedTime));
 
         // When
-        storeJobCreated(store, job);
-        store.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job.finishedEventBuilder(new RecordsProcessedSummary(
+        storeJobCreated(tracker, job);
+        tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(new RecordsProcessedSummary(
                 new RecordsProcessed(60L, 60L), startedTime, finishedTime))
                 .taskId(DEFAULT_TASK_ID).build());
 
         // Then
-        assertThat(getJobStatus(store, job.getId()).getExpiryDate())
+        assertThat(getJobStatus(tracker, job.getId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(createdTime, timeToLive));
     }
 
@@ -100,13 +100,13 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTest
         CompactionJob job = createCompactionJob();
         Duration timeToLive = Duration.ofDays(1);
         Instant createdTime = Instant.parse("2022-12-15T10:50:12.001Z");
-        CompactionJobTracker store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
+        CompactionJobTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultUpdateTime(createdTime));
 
         // When
-        storeJobCreated(store, job);
+        storeJobCreated(tracker, job);
 
         // Then
-        assertThat(getJobStatus(store, job.getId()).getExpiryDate())
+        assertThat(getJobStatus(tracker, job.getId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(createdTime, timeToLive));
     }
 

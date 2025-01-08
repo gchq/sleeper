@@ -48,7 +48,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobT
         storeJobsCreated(job1, job2);
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         compactionJobCreated(job2, ignoredUpdateTime()),
@@ -66,11 +66,11 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobT
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         compactionJobCreated(job, ignoredUpdateTime(),
@@ -91,12 +91,12 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobT
 
         // When
         storeJobsCreated(job1, job2);
-        store.jobStarted(job2.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job2.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(job2.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job2.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job2.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobCommitted(job2.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(compactionJobCreated(job1, ignoredUpdateTime()));
     }
@@ -117,7 +117,7 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobT
         storeJobsCreated(job1, job2);
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(compactionJobCreated(job1, ignoredUpdateTime()));
     }
@@ -133,13 +133,13 @@ public class QueryCompactionJobStatusUnfinishedIT extends DynamoDBCompactionJobT
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
-        assertThat(store.getUnfinishedJobs(tableId))
+        assertThat(tracker.getUnfinishedJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(compactionJobCreated(job, ignoredUpdateTime(),
                         startedCompactionRun(DEFAULT_TASK_ID, defaultStartTime()),

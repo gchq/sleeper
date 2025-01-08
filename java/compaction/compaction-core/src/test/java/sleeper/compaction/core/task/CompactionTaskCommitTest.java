@@ -218,7 +218,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     jobSucceeds(recordsProcessed),
                     jobSucceeds(recordsProcessed)),
                     jobRunIds::poll, timesInTask::poll);
-            // And the commits are saved to the status store
+            // And the commits are saved to the job tracker
             jobTracker.jobCommitted(job.committedEventBuilder(commitTime)
                     .taskId("test-task").jobRunId("test-job-run-1").build());
             jobTracker.jobFailed(job.failedEventBuilder(new ProcessRunTime(startTime2, commitFailTime))

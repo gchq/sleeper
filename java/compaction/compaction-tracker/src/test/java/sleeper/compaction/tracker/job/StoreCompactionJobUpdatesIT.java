@@ -46,7 +46,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -65,8 +65,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -85,9 +85,9 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -107,8 +107,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        store.jobFailed(job.failedEventBuilder(defaultRunTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFailed(job.failedEventBuilder(defaultRunTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -136,12 +136,12 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(startTime1).taskId(DEFAULT_TASK_ID).build());
-        store.jobStarted(job.startedEventBuilder(startTime2).taskId(DEFAULT_TASK_ID_2).build());
-        store.jobFinished(job.finishedEventBuilder(summary1).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job.finishedEventBuilder(summary2).taskId(DEFAULT_TASK_ID_2).build());
-        store.jobCommitted(job.committedEventBuilder(commitTime1).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(job.committedEventBuilder(commitTime2).taskId(DEFAULT_TASK_ID_2).build());
+        tracker.jobStarted(job.startedEventBuilder(startTime1).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(startTime2).taskId(DEFAULT_TASK_ID_2).build());
+        tracker.jobFinished(job.finishedEventBuilder(summary1).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(summary2).taskId(DEFAULT_TASK_ID_2).build());
+        tracker.jobCommitted(job.committedEventBuilder(commitTime1).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobCommitted(job.committedEventBuilder(commitTime2).taskId(DEFAULT_TASK_ID_2).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -170,9 +170,9 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
-        store.jobFinished(job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).build());
-        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -197,8 +197,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
-        store.jobFailed(job.failedEventBuilder(runTime).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFailed(job.failedEventBuilder(runTime).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
 
         // Then
         assertThat(getAllJobStatuses())

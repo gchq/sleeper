@@ -48,7 +48,7 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobTrackerTestBa
         storeJobsCreated(job1, job2, job3);
 
         // Then
-        assertThat(store.getAllJobs(tableId))
+        assertThat(tracker.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(
                         compactionJobCreated(job3, ignoredUpdateTime()),
@@ -72,7 +72,7 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobTrackerTestBa
         storeJobsCreated(job1, job2);
 
         // Then
-        assertThat(store.getAllJobs(tableId))
+        assertThat(tracker.getAllJobs(tableId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(compactionJobCreated(job1, ignoredUpdateTime()));
     }
@@ -80,6 +80,6 @@ public class QueryAllCompactionJobsIT extends DynamoDBCompactionJobTrackerTestBa
     @Test
     public void shouldReturnNoCompactionJobs() {
         // When / Then
-        assertThat(store.getAllJobs(tableId)).isEmpty();
+        assertThat(tracker.getAllJobs(tableId)).isEmpty();
     }
 }

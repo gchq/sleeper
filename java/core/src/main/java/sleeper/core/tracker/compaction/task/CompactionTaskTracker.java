@@ -31,18 +31,18 @@ public interface CompactionTaskTracker {
     }
 
     default CompactionTaskStatus getTask(String taskId) {
-        throw new UnsupportedOperationException("Instance has no compaction task status store");
+        throw new UnsupportedOperationException("Instance has no compaction task tracker");
     }
 
     default List<CompactionTaskStatus> getAllTasks() {
-        throw new UnsupportedOperationException("Instance has no compaction task status store");
+        throw new UnsupportedOperationException("Instance has no compaction task tracker");
     }
 
     default List<CompactionTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
-        throw new UnsupportedOperationException("Instance has no compaction task status store");
+        throw new UnsupportedOperationException("Instance has no compaction task tracker");
     }
 
     default List<CompactionTaskStatus> getTasksInProgress() {
-        throw new UnsupportedOperationException("Instance has no compaction task status store");
+        throw new UnsupportedOperationException("Instance has no compaction task tracker");
     }
 }

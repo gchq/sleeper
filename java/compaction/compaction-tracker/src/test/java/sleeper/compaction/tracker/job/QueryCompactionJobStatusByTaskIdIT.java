@@ -45,11 +45,11 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobTra
 
         // When
         storeJobsCreated(job1, job2);
-        store.jobStarted(job1.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).build());
-        store.jobStarted(job2.startedEventBuilder(defaultStartTime()).taskId("another-task").build());
+        tracker.jobStarted(job1.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).build());
+        tracker.jobStarted(job2.startedEventBuilder(defaultStartTime()).taskId("another-task").build());
 
         // Then
-        assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
+        assertThat(tracker.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(compactionJobCreated(job1, ignoredUpdateTime(),
                         startedCompactionRun(searchingTaskId, defaultStartTime())));
@@ -69,12 +69,12 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobTra
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId1).build());
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).build());
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId3).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId1).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId3).build());
 
         // Then
-        assertThat(store.getJobsByTaskId(tableId, searchingTaskId))
+        assertThat(tracker.getJobsByTaskId(tableId, searchingTaskId))
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(compactionJobCreated(job, ignoredUpdateTime(),
                         startedCompactionRun(taskId3, defaultStartTime()),
@@ -85,6 +85,6 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobTra
     @Test
     public void shouldReturnNoCompactionJobsByTaskId() {
         // When / Then
-        assertThat(store.getJobsByTaskId(tableId, "not-present")).isNullOrEmpty();
+        assertThat(tracker.getJobsByTaskId(tableId, "not-present")).isNullOrEmpty();
     }
 }

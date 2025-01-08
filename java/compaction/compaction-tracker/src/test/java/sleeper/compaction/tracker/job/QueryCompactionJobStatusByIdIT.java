@@ -62,9 +62,9 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobTracker
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId("test-task").build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId("test-task").build());
-        store.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId("test-task").build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId("test-task").build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId("test-task").build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId("test-task").build());
 
         // Then
         assertThat(getJobStatus(job.getId()))
@@ -76,6 +76,6 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobTracker
     @Test
     public void shouldReturnNoCompactionJobById() {
         // When / Then
-        assertThat(store.getJob("not-present")).isNotPresent();
+        assertThat(tracker.getJob("not-present")).isNotPresent();
     }
 }

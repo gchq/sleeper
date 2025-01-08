@@ -44,7 +44,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestB
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime())
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then
@@ -64,9 +64,9 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestB
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime())
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary())
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then
@@ -86,11 +86,11 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestB
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime())
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary())
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        store.jobCommitted(job.committedEventBuilder(defaultCommitTime())
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then
@@ -110,9 +110,9 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestB
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime())
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        store.jobFailed(job.failedEventBuilder(defaultRunTime()).failure(new RuntimeException("Failed"))
+        tracker.jobFailed(job.failedEventBuilder(defaultRunTime()).failure(new RuntimeException("Failed"))
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then
@@ -132,17 +132,17 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestB
 
         // When
         storeJobCreated(job);
-        store.jobStarted(job.startedEventBuilder(defaultStartTime())
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId("test-task").jobRunId("test-run-1").build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary())
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary())
                 .taskId("test-task").jobRunId("test-run-1").build());
-        store.jobStarted(job.startedEventBuilder(defaultStartTime())
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId("test-task").jobRunId("test-run-2").build());
-        store.jobFinished(job.finishedEventBuilder(defaultSummary())
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary())
                 .taskId("test-task").jobRunId("test-run-2").build());
-        store.jobCommitted(job.committedEventBuilder(defaultCommitTime())
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime())
                 .taskId("test-task").jobRunId("test-run-1").build());
-        store.jobCommitted(job.committedEventBuilder(defaultCommitTime())
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime())
                 .taskId("test-task").jobRunId("test-run-2").build());
 
         // Then
