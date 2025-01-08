@@ -1,6 +1,46 @@
 //! An [`ObjectStore`] implementation that uses [`ObjectStore`]'s implementations for most calls
 //! but delegates to a custom GET implementation. This allows it to implement a readahead mechanism
 //! to reduce the number of GET calls.
+//!
+//! When a ranged get request is made, [`ReadaheadStore`] will convert the [`GetRange::Bounded`] range to a
+//! [`GetRange::Offset`] range when the request is made to the underlying store so that we can read beyond the
+//! original range requested. A [`PositionedStream`] is returned which honours the original bounded range. The returned
+//! stream has a link to a [`CacheInserter`] object such that when the client has finished with the stream and drops it,
+//! the cache inserter will place the underlying data stream in [`ReadaheadStore`]'s cache. When a client makes a
+//! subsequent get request on the same object, we check the cache to see if we already have a cached open stream that is
+//! positioned close to where the new request starts. If the most closest positioned cached stream is within the readahead
+//! limit of the new request, we remove that stream from the cache, skip the requisite number of bytes (and discard
+//! them) to arrive at the new desired position and then return a new [`PositionedStream`] to the client.
+//!
+//! We don't attempt (see [`should_skip_readahead`]) to cache if:
+//! * the underlying object resides on the local file system
+//! * if no range was specified
+//! * if a [`GetRange::Suffix`] range is requested
+//! * the request was only for the object's HEADer data.
+//!
+//!
+//! # Example
+//! Assume the object `test_file` is 100 bytes long. This store may operate as follows.
+//!
+//! 1. Client makes a request via [`ObjectStore::get_opts`] or [`ObjectStore::get_range`] for byte range 20-30 of
+//! `test_file`.
+//!     1. [`ReadaheadStore`] will make a request to the underlying store for byte range 20-...
+//!     2. A [`PositionedStream`] is returned to the client for range 20-30.
+//! 2. Client reads some data then drops the stream at position 28.
+//!     1. The [`CacheInserter`] caches the stream at position 28.
+//! 3. Some time later...
+//! 4. Client makes a request for `test_file` byte range 35-45.
+//!     1. [`ReadaheadStore`] checks the cache entries for `test_file` and finds an entry with a stream at position 28.
+//!     This is within the readahead limit, so the stream is removed from the cache.
+//!     2. The stream is skipped (35 - 28) = 7 bytes ahead.
+//!     3. A [`PositionedStream`] is returned to the client for range 35-45.
+//!     4. *We have avoided making a second GET request on the underlying [`ObjectStore`]!*
+//! 5. Client uses and drops stream and it will be returned to the cache.
+//! 6. Some more time passes...
+//! 7. Client makes a request for `test_file` for the whole file.
+//!     1. As the request matches one of the trigger conditions above, [`ReadaheadStore`] simply passes the request
+//! through to the underlying store.
+//!
 /*
  * Copyright 2022-2024 Crown Copyright
  *

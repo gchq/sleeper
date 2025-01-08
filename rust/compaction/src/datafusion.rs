@@ -55,7 +55,7 @@ mod udf;
 
 /// Starts a Sleeper compaction.
 ///
-/// The object store factory must be able to produce an [`ObjectStore`] capable of reading
+/// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
 /// from the input URLs and writing to the output URL. A sketch file will be produced for
 /// the output file.
 pub async fn compact(
@@ -211,7 +211,7 @@ async fn calculate_input_size(
 
 /// Write the frame out to the output path and collect statistics.
 ///
-/// The rows read and written are returned in the [`RowCount`] object.
+/// The rows read and written are returned in the [`RowCounts`] object.
 /// These are read from different stages in the physical plan, rows read
 /// are determined by the number of filtered rows, output rows are determined
 /// from the number of rows coalsced before being written.
@@ -448,13 +448,13 @@ fn sort_order(input_data: &CompactionInput) -> Vec<SortExpr> {
 }
 
 /// Takes the first Url in `input_paths` list and `output_path`
-/// and registers the appropriate [`ObjectStore`] for it.
+/// and registers the appropriate [`object_store::ObjectStore`] for it.
 ///
 /// `DataFusion` doesn't seem to like loading a single file set from different object stores
 /// so we only register the first one.
 ///
 /// # Errors
-/// If we can't create an [`ObjectStore`] for a known URL then this will fail.
+/// If we can't create an [`object_store::ObjectStore`] for a known URL then this will fail.
 ///
 fn register_store(
     store_factory: &ObjectStoreFactory,

@@ -71,7 +71,7 @@ impl CredentialProvider for CredentialsFromConfigProvider {
     }
 }
 
-/// Create an [`ObjectStore`] builder for AWS S3 for the given region and with provided credentials.
+/// Create an [`object_store::ObjectStore`] builder for AWS S3 for the given region and with provided credentials.
 pub fn config_for_s3_module(
     creds: &aws_credential_types::Credentials,
     region: &Region,
@@ -102,7 +102,7 @@ pub async fn default_creds_store() -> color_eyre::Result<AmazonS3Builder> {
     Ok(config_for_s3_module(&creds, region))
 }
 
-/// Creates [`ObjectStore`] implementations from a URL and loads credentials into the S3
+/// Creates [`object_store::ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
 pub struct ObjectStoreFactory {
     s3_config: Option<AmazonS3Builder>,
@@ -118,10 +118,10 @@ impl ObjectStoreFactory {
         }
     }
 
-    /// Retrieves the appropriate [`ObjectStore`] for a given URL.
+    /// Retrieves the appropriate [`object_store::ObjectStore`] for a given URL.
     ///
     /// The object returned will be the same for each subsequent call to this method for a given URL scheme.
-    /// This method uses an internal cache to store the created [`ObjectStore`]s. The object will only
+    /// This method uses an internal cache to store the created [`object_store::ObjectStore`]s. The object will only
     /// be created the first time it is needed.
     ///
     /// The loaded credentials will also be set in the builder to enable authentication with S3.
@@ -146,7 +146,7 @@ impl ObjectStoreFactory {
         }
     }
 
-    /// Creates the appropriate [`ObjectStore`] for a given URL.
+    /// Creates the appropriate [`object_store::ObjectStore`] for a given URL.
     ///
     /// The loaded credentials will also be set in the builder to enable authentication with S3.
     ///
