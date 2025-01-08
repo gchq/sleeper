@@ -15,10 +15,10 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.core.tracker.job.status.JobStatusUpdates;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.ProcessRuns;
-import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
 import sleeper.core.util.DurationStatistics;
 
@@ -73,11 +73,11 @@ public class CompactionJobStatus {
         return new Builder();
     }
 
-    public static List<CompactionJobStatus> listFrom(Stream<ProcessStatusUpdateRecord> records) {
+    public static List<CompactionJobStatus> listFrom(Stream<JobStatusUpdateRecord> records) {
         return streamFrom(records).collect(Collectors.toList());
     }
 
-    public static Stream<CompactionJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
+    public static Stream<CompactionJobStatus> streamFrom(Stream<JobStatusUpdateRecord> records) {
         return JobStatusUpdates.streamFrom(records)
                 .map(CompactionJobStatus::from);
     }

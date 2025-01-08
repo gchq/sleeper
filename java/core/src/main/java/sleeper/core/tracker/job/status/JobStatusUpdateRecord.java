@@ -21,7 +21,7 @@ import java.util.Objects;
 /**
  * Represents a record held in a job tracker, containing a status update for a job.
  */
-public class ProcessStatusUpdateRecord {
+public class JobStatusUpdateRecord {
 
     private final String jobId;
     private final JobStatusUpdate statusUpdate;
@@ -29,7 +29,7 @@ public class ProcessStatusUpdateRecord {
     private final String taskId;
     private final Instant expiryDate;
 
-    private ProcessStatusUpdateRecord(Builder builder) {
+    private JobStatusUpdateRecord(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         statusUpdate = Objects.requireNonNull(builder.statusUpdate, "statusUpdate must not be null");
         jobRunId = builder.jobRunId;
@@ -74,7 +74,7 @@ public class ProcessStatusUpdateRecord {
             return false;
         }
 
-        ProcessStatusUpdateRecord that = (ProcessStatusUpdateRecord) o;
+        JobStatusUpdateRecord that = (JobStatusUpdateRecord) o;
 
         if (!jobId.equals(that.jobId)) {
             return false;
@@ -180,8 +180,8 @@ public class ProcessStatusUpdateRecord {
             return this;
         }
 
-        public ProcessStatusUpdateRecord build() {
-            return new ProcessStatusUpdateRecord(this);
+        public JobStatusUpdateRecord build() {
+            return new JobStatusUpdateRecord(this);
         }
     }
 }

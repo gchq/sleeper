@@ -44,7 +44,7 @@ class ProcessRunsBuilder {
     private final Map<String, ProcessRun.Builder> builderByTaskId = new HashMap<>();
     private final List<ProcessRun.Builder> orderedBuilders = new ArrayList<>();
 
-    void add(ProcessStatusUpdateRecord record) {
+    void add(JobStatusUpdateRecord record) {
         if (!record.getStatusUpdate().isPartOfRun()) {
             return;
         }
@@ -52,7 +52,7 @@ class ProcessRunsBuilder {
                 .ifPresent(builder -> addToBuilder(record, builder));
     }
 
-    private Optional<ProcessRun.Builder> getBuilderIfCorrelatable(ProcessStatusUpdateRecord record) {
+    private Optional<ProcessRun.Builder> getBuilderIfCorrelatable(JobStatusUpdateRecord record) {
         String jobRunId = record.getJobRunId();
         String taskId = record.getTaskId();
         JobStatusUpdate statusUpdate = record.getStatusUpdate();
@@ -73,7 +73,7 @@ class ProcessRunsBuilder {
         return builder;
     }
 
-    private void addToBuilder(ProcessStatusUpdateRecord record, ProcessRun.Builder builder) {
+    private void addToBuilder(JobStatusUpdateRecord record, ProcessRun.Builder builder) {
         JobStatusUpdate statusUpdate = record.getStatusUpdate();
         if (isStartedUpdateAndStartOfRun(statusUpdate)) {
             builder.startedStatus((JobRunStartedUpdate) statusUpdate);

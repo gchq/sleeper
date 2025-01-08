@@ -34,7 +34,7 @@ public class TestProcessStatusUpdateRecords {
     public static final String TASK_ID_1 = "task-id-1";
     public static final String TASK_ID_2 = "task-id-2";
     public static final Instant DEFAULT_EXPIRY = Instant.ofEpochSecond(999999999);
-    private final List<ProcessStatusUpdateRecord> updates = new ArrayList<>();
+    private final List<JobStatusUpdateRecord> updates = new ArrayList<>();
 
     /**
      * Creates an instance of this class with no process status updates.
@@ -209,9 +209,9 @@ public class TestProcessStatusUpdateRecords {
     /**
      * Streams the process status update records.
      *
-     * @return a stream of {@link ProcessStatusUpdateRecord}
+     * @return a stream of {@link JobStatusUpdateRecord}
      */
-    public Stream<ProcessStatusUpdateRecord> stream() {
+    public Stream<JobStatusUpdateRecord> stream() {
         return updates.stream();
     }
 
@@ -240,9 +240,9 @@ public class TestProcessStatusUpdateRecords {
          *
          * @return a stream of process update records
          */
-        public Stream<ProcessStatusUpdateRecord> records() {
+        public Stream<JobStatusUpdateRecord> records() {
             return statusUpdates.stream()
-                    .map(update -> ProcessStatusUpdateRecord.builder()
+                    .map(update -> JobStatusUpdateRecord.builder()
                             .jobId(jobId).statusUpdate(update.statusUpdate)
                             .jobRunId(jobRunId).taskId(taskId).expiryDate(update.expiryTime)
                             .build());

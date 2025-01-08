@@ -44,7 +44,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
-import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -445,7 +445,7 @@ class EmrPlatformExecutorTest {
                 .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         acceptedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
         assertThat(tracker.streamTableRecords(tableId))
-                .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                .extracting(JobStatusUpdateRecord::getJobRunId)
                 .containsExactly("test-job-run");
     }
 

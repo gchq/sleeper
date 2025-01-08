@@ -36,7 +36,7 @@ import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
-import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -172,8 +172,8 @@ class DynamoDBCompactionJobStatusFormat {
                 .map(DynamoDBCompactionJobStatusFormat::getStatusUpdateRecord));
     }
 
-    private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
-        return ProcessStatusUpdateRecord.builder()
+    private static JobStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
+        return JobStatusUpdateRecord.builder()
                 .jobId(getStringAttribute(item, JOB_ID))
                 .statusUpdate(getStatusUpdate(item))
                 .taskId(getStringAttribute(item, TASK_ID))

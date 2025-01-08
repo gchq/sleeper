@@ -17,10 +17,10 @@
 package sleeper.core.tracker.ingest.job;
 
 import sleeper.core.tracker.ingest.job.query.IngestJobInfoStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.core.tracker.job.status.JobStatusUpdates;
 import sleeper.core.tracker.job.status.ProcessRun;
 import sleeper.core.tracker.job.status.ProcessRuns;
-import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
 
 import java.time.Instant;
@@ -62,10 +62,10 @@ public class IngestJobStatus {
      * this method come from the underlying {@link IngestJobTracker}, and this constructor collects them, building
      * them into a format used for reporting.
      *
-     * @param  records the stream of {@link ProcessStatusUpdateRecord}s
+     * @param  records the stream of {@link JobStatusUpdateRecord}s
      * @return         a stream of ingest job statuses
      */
-    public static Stream<IngestJobStatus> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
+    public static Stream<IngestJobStatus> streamFrom(Stream<JobStatusUpdateRecord> records) {
         return JobStatusUpdates.streamFrom(records)
                 .map(IngestJobStatus::from)
                 .filter(Optional::isPresent)

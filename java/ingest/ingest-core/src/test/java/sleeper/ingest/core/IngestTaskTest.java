@@ -25,7 +25,7 @@ import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
-import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
 import sleeper.ingest.core.job.IngestJob;
@@ -356,7 +356,7 @@ public class IngestTaskTest {
             // Then
             assertThat(jobTracker.streamTableRecords(DEFAULT_TABLE_ID))
                     .extracting(
-                            ProcessStatusUpdateRecord::getJobRunId,
+                            JobStatusUpdateRecord::getJobRunId,
                             record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
                     .containsExactly(
                             tuple("test-job-run", STARTED),
@@ -381,7 +381,7 @@ public class IngestTaskTest {
             // Then
             assertThat(jobTracker.streamTableRecords(DEFAULT_TABLE_ID))
                     .extracting(
-                            ProcessStatusUpdateRecord::getJobRunId,
+                            JobStatusUpdateRecord::getJobRunId,
                             record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
                     .containsExactly(
                             tuple("test-job-run", STARTED),

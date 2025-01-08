@@ -28,11 +28,11 @@ import java.util.stream.Stream;
 public class JobStatusUpdates {
 
     private final String jobId;
-    private final List<ProcessStatusUpdateRecord> recordsLatestFirst;
+    private final List<JobStatusUpdateRecord> recordsLatestFirst;
     private final ProcessRuns runs;
 
     private JobStatusUpdates(
-            String jobId, List<ProcessStatusUpdateRecord> recordsLatestFirst, ProcessRuns runs) {
+            String jobId, List<JobStatusUpdateRecord> recordsLatestFirst, ProcessRuns runs) {
         this.jobId = jobId;
         this.recordsLatestFirst = recordsLatestFirst;
         this.runs = runs;
@@ -46,8 +46,8 @@ public class JobStatusUpdates {
      * @param  records the list of status update records for the job
      * @return         an instance of this class
      */
-    public static JobStatusUpdates from(String jobId, List<ProcessStatusUpdateRecord> records) {
-        List<ProcessStatusUpdateRecord> recordsLatestFirst = orderLatestFirst(records);
+    public static JobStatusUpdates from(String jobId, List<JobStatusUpdateRecord> records) {
+        List<JobStatusUpdateRecord> recordsLatestFirst = orderLatestFirst(records);
         ProcessRuns runs = ProcessRuns.fromRecordsLatestFirst(recordsLatestFirst);
         return new JobStatusUpdates(jobId, recordsLatestFirst, runs);
     }
@@ -59,7 +59,7 @@ public class JobStatusUpdates {
      * @param  records the list of status update records
      * @return         a stream of instances of this class, each for a different job
      */
-    public static Stream<JobStatusUpdates> streamFrom(Stream<ProcessStatusUpdateRecord> records) {
+    public static Stream<JobStatusUpdates> streamFrom(Stream<JobStatusUpdateRecord> records) {
         JobStatusesBuilder builder = new JobStatusesBuilder();
         records.forEach(builder::update);
         return builder.stream();
@@ -69,11 +69,11 @@ public class JobStatusUpdates {
         return jobId;
     }
 
-    public ProcessStatusUpdateRecord getFirstRecord() {
+    public JobStatusUpdateRecord getFirstRecord() {
         return recordsLatestFirst.get(recordsLatestFirst.size() - 1);
     }
 
-    public ProcessStatusUpdateRecord getLastRecord() {
+    public JobStatusUpdateRecord getLastRecord() {
         return recordsLatestFirst.get(0);
     }
 
@@ -98,9 +98,9 @@ public class JobStatusUpdates {
         return runs;
     }
 
-    private static List<ProcessStatusUpdateRecord> orderLatestFirst(List<ProcessStatusUpdateRecord> records) {
+    private static List<JobStatusUpdateRecord> orderLatestFirst(List<JobStatusUpdateRecord> records) {
         return records.stream()
-                .sorted(Comparator.comparing(ProcessStatusUpdateRecord::getUpdateTime).reversed())
+                .sorted(Comparator.comparing(JobStatusUpdateRecord::getUpdateTime).reversed())
                 .collect(Collectors.toList());
     }
 }

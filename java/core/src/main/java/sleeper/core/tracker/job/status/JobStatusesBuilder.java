@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  */
 public class JobStatusesBuilder {
 
-    private final Map<String, List<ProcessStatusUpdateRecord>> updatesByJobId = new HashMap<>();
+    private final Map<String, List<JobStatusUpdateRecord>> updatesByJobId = new HashMap<>();
 
     /**
      * Adds the update to the existing list of updates for the job.
@@ -36,7 +36,7 @@ public class JobStatusesBuilder {
      * @param  update the status update to add
      * @return        the builder
      */
-    public JobStatusesBuilder update(ProcessStatusUpdateRecord update) {
+    public JobStatusesBuilder update(JobStatusUpdateRecord update) {
         updatesByJobId.computeIfAbsent(update.getJobId(), id -> new ArrayList<>())
                 .add(update);
         return this;

@@ -28,7 +28,7 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
-import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -68,7 +68,7 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     }
 
     public void jobCreated(CompactionJobCreatedEvent event, Instant assignedTime) {
-        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+        add(event.getTableId(), JobStatusUpdateRecord.builder()
                 .jobId(event.getJobId())
                 .statusUpdate(CompactionJobCreatedStatus.from(event, assignedTime))
                 .build());
@@ -76,7 +76,7 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
 
     @Override
     public void jobStarted(CompactionJobStartedEvent event) {
-        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+        add(event.getTableId(), JobStatusUpdateRecord.builder()
                 .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(CompactionJobStartedStatus.startAndUpdateTime(
                         event.getStartTime(), getUpdateTimeOrDefault(() -> defaultUpdateTime(event.getStartTime()))))
@@ -87,7 +87,7 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     public void jobFinished(CompactionJobFinishedEvent event) {
         JobRunSummary summary = event.getSummary();
         Instant eventTime = summary.getFinishTime();
-        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+        add(event.getTableId(), JobStatusUpdateRecord.builder()
                 .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(CompactionJobFinishedStatus.updateTimeAndSummary(
                         getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), summary)
@@ -97,7 +97,7 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
 
     @Override
     public void jobCommitted(CompactionJobCommittedEvent event) {
-        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+        add(event.getTableId(), JobStatusUpdateRecord.builder()
                 .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(CompactionJobCommittedStatus.commitAndUpdateTime(event.getCommitTime(),
                         getUpdateTimeOrDefault(() -> defaultUpdateTime(event.getCommitTime()))))
@@ -108,7 +108,7 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     public void jobFailed(CompactionJobFailedEvent event) {
         JobRunTime runTime = event.getRunTime();
         Instant eventTime = runTime.getFinishTime();
-        add(event.getTableId(), ProcessStatusUpdateRecord.builder()
+        add(event.getTableId(), JobStatusUpdateRecord.builder()
                 .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(JobRunFailedStatus.timeAndReasons(
                         getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), runTime, event.getFailureReasons()))
@@ -129,14 +129,14 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
         return CompactionJobStatus.streamFrom(streamRecordsByTableId(tableId));
     }
 
-    private void add(String tableId, ProcessStatusUpdateRecord record) {
+    private void add(String tableId, JobStatusUpdateRecord record) {
         TableJobs table = tableIdToJobs.computeIfAbsent(tableId, id -> new TableJobs());
         table.jobIdToUpdateRecords
                 .computeIfAbsent(record.getJobId(), jobId -> new ArrayList<>())
                 .add(record);
     }
 
-    private Stream<ProcessStatusUpdateRecord> streamRecordsByTableId(String tableId) {
+    private Stream<JobStatusUpdateRecord> streamRecordsByTableId(String tableId) {
         return jobsByTableId(tableId)
                 .map(TableJobs::streamAllRecords)
                 .orElse(Stream.empty());
@@ -147,9 +147,9 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
     }
 
     private static class TableJobs {
-        private final Map<String, List<ProcessStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
+        private final Map<String, List<JobStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
 
-        private Stream<ProcessStatusUpdateRecord> streamAllRecords() {
+        private Stream<JobStatusUpdateRecord> streamAllRecords() {
             return jobIdToUpdateRecords.values().stream().flatMap(List::stream);
         }
     }

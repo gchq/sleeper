@@ -52,7 +52,7 @@ public class ProcessRuns {
      * @param  recordList the list of records sorted by latest first
      * @return            an instance of this class
      */
-    public static ProcessRuns fromRecordsLatestFirst(List<ProcessStatusUpdateRecord> recordList) {
+    public static ProcessRuns fromRecordsLatestFirst(List<JobStatusUpdateRecord> recordList) {
         ProcessRunsBuilder builder = new ProcessRunsBuilder();
         for (int i = recordList.size() - 1; i >= 0; i--) {
             builder.add(recordList.get(i));

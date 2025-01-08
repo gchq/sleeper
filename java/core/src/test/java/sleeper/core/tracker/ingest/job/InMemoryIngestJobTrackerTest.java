@@ -30,8 +30,8 @@ import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.JobRunSummary;
 import sleeper.core.tracker.job.JobRunTime;
 import sleeper.core.tracker.job.RecordsProcessed;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.core.tracker.job.status.ProcessRun;
-import sleeper.core.tracker.job.status.ProcessStatusUpdateRecord;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -406,7 +406,7 @@ public class InMemoryIngestJobTrackerTest {
                             ingestAcceptedStatus(validationTime, 1),
                             validatedIngestStartedStatus(1, startTime))));
             assertThat(tracker.streamTableRecords(tableId))
-                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
         }
 
@@ -433,7 +433,7 @@ public class InMemoryIngestJobTrackerTest {
                             validatedIngestStartedStatus(1, startTime),
                             ingestFinishedStatus(summary, 2))));
             assertThat(tracker.streamTableRecords(tableId))
-                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId, jobRunId);
         }
 
@@ -457,7 +457,7 @@ public class InMemoryIngestJobTrackerTest {
                             ingestStartedStatus(startTime, 1),
                             ingestFinishedStatus(summary, 2))));
             assertThat(tracker.streamTableRecords(tableId))
-                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
         }
 
@@ -485,7 +485,7 @@ public class InMemoryIngestJobTrackerTest {
                             validatedIngestStartedStatus(1, startTime),
                             failedStatus(runTime, failureReasons))));
             assertThat(tracker.streamTableRecords(tableId))
-                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId, jobRunId);
         }
 
@@ -542,7 +542,7 @@ public class InMemoryIngestJobTrackerTest {
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
                             .build()));
             assertThat(tracker.streamTableRecords(tableId))
-                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
         }
 
@@ -574,7 +574,7 @@ public class InMemoryIngestJobTrackerTest {
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
                             .build()));
             assertThat(tracker.streamTableRecords(tableId))
-                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
         }
 
@@ -603,7 +603,7 @@ public class InMemoryIngestJobTrackerTest {
                             .statusUpdate(ingestAddedFilesStatus(writtenTime, 2))
                             .build()));
             assertThat(tracker.streamTableRecords(tableId))
-                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
         }
 
@@ -634,7 +634,7 @@ public class InMemoryIngestJobTrackerTest {
                             .statusUpdate(ingestFinishedStatusUncommitted(summary, 1))
                             .build()));
             assertThat(tracker.streamTableRecords(tableId))
-                    .extracting(ProcessStatusUpdateRecord::getJobRunId)
+                    .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
         }
     }
