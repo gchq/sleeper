@@ -31,13 +31,13 @@ import sleeper.core.tracker.job.run.JobRuns;
 import java.io.PrintStream;
 import java.util.List;
 
-import static sleeper.clients.status.report.job.JsonJobRunReporter.processRunsJsonSerializer;
+import static sleeper.clients.status.report.job.JsonJobRunReporter.jobRunsJsonSerializer;
 
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(JobRunSummary.class, JsonJobRunSummary.serializer())
             .registerTypeAdapter(JobRunTime.class, JsonJobRunTime.serializer())
-            .registerTypeAdapter(JobRuns.class, processRunsJsonSerializer(CompactionJobUpdateTypeInRun::typeOfUpdateInRun))
+            .registerTypeAdapter(JobRuns.class, jobRunsJsonSerializer(CompactionJobUpdateTypeInRun::typeOfUpdateInRun))
             .create();
     private final PrintStream out;
 

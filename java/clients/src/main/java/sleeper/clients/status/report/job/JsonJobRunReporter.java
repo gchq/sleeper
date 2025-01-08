@@ -33,20 +33,20 @@ public class JsonJobRunReporter {
     private JsonJobRunReporter() {
     }
 
-    public static JsonSerializer<JobRuns> processRunsJsonSerializer(Function<JobStatusUpdate, Object> getType) {
-        return ((processRuns, type, context) -> createProcessRunsJson(processRuns, context, getType));
+    public static JsonSerializer<JobRuns> jobRunsJsonSerializer(Function<JobStatusUpdate, Object> getType) {
+        return ((processRuns, type, context) -> createJobRunsJson(processRuns, context, getType));
     }
 
-    private static JsonElement createProcessRunsJson(
+    private static JsonElement createJobRunsJson(
             JobRuns runs, JsonSerializationContext context, Function<JobStatusUpdate, Object> getType) {
         JsonArray jsonArray = new JsonArray();
         for (JobRun run : runs.getRunsLatestFirst()) {
-            jsonArray.add(createProcessRunJson(run, context, getType));
+            jsonArray.add(createJobRunJson(run, context, getType));
         }
         return jsonArray;
     }
 
-    private static JsonElement createProcessRunJson(
+    private static JsonElement createJobRunJson(
             JobRun run, JsonSerializationContext context, Function<JobStatusUpdate, Object> getType) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("taskId", run.getTaskId());

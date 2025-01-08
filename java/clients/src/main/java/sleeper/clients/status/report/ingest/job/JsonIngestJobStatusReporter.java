@@ -37,13 +37,13 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.clients.status.report.job.JsonJobRunReporter.processRunsJsonSerializer;
+import static sleeper.clients.status.report.job.JsonJobRunReporter.jobRunsJsonSerializer;
 
 public class JsonIngestJobStatusReporter implements IngestJobStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
             .registerTypeAdapter(JobRunSummary.class, JsonJobRunSummary.serializer())
             .registerTypeAdapter(JobRunTime.class, JsonJobRunTime.serializer())
-            .registerTypeAdapter(JobRuns.class, processRunsJsonSerializer(IngestJobUpdateType::typeOfUpdate))
+            .registerTypeAdapter(JobRuns.class, jobRunsJsonSerializer(IngestJobUpdateType::typeOfUpdate))
             .registerTypeAdapter(IngestJobStartedStatus.class, ingestJobStartedStatusJsonSerializer())
             .create();
     private final PrintStream out;
