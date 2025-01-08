@@ -33,7 +33,7 @@ import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT
 public class AverageRecordRateTest {
 
     @Test
-    public void shouldCalculateAverageOfSingleFinishedProcess() {
+    public void shouldCalculateAverageOfSingleFinishedJob() {
         // Given / When
         AverageRecordRate rate = rateFrom(new JobRunSummary(
                 new RecordsProcessed(100L, 100L),
@@ -47,7 +47,7 @@ public class AverageRecordRateTest {
     }
 
     @Test
-    public void shouldCalculateAverageOfTwoFinishedProcesses() {
+    public void shouldCalculateAverageOfTwoFinishedJobs() {
         // Given / When
         AverageRecordRate rate = rateFrom(
                 new JobRunSummary(
@@ -65,7 +65,7 @@ public class AverageRecordRateTest {
     }
 
     @Test
-    public void shouldCalculateAverageOfTwoFinishedProcessesWithDifferentDurations() {
+    public void shouldCalculateAverageOfTwoFinishedJobsWithDifferentDurations() {
         // Given / When
         AverageRecordRate rate = rateFrom(
                 new JobRunSummary(
@@ -83,7 +83,7 @@ public class AverageRecordRateTest {
     }
 
     @Test
-    public void shouldReportNoProcesses() {
+    public void shouldReportNoJobs() {
         // Given
         AverageRecordRate rate = rateFrom();
 
