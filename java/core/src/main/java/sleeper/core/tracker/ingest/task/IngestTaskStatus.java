@@ -133,11 +133,12 @@ public class IngestTaskStatus {
     }
 
     /**
-     * Creates a process run object from this task.
+     * Creates an object to represent this task as a run of a job. Treats the task as though it is a job to run
+     * ingest jobs. Includes aggregated statistics from the ingest job runs that occur in this task.
      *
      * @return a {@link JobRun} object
      */
-    public JobRun asProcessRun() {
+    public JobRun asJobRun() {
         return JobRun.builder().taskId(taskId)
                 .startedStatus(IngestTaskStartedStatus.startTime(getStartTime()))
                 .finishedStatus(asProcessFinishedStatus())

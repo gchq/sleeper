@@ -45,11 +45,11 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
     private static final TableWriterFactory TABLE_FACTORY = TABLE_FACTORY_BUILDER.build();
 
     private final PrintStream out;
-    private final StandardJobRunReporter processRunReporter;
+    private final StandardJobRunReporter jobRunReporter;
 
     public StandardIngestTaskStatusReporter(PrintStream out) {
         this.out = out;
-        processRunReporter = new StandardJobRunReporter(out);
+        jobRunReporter = new StandardJobRunReporter(out);
     }
 
     @Override
@@ -90,7 +90,7 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
 
     private static AverageRecordRate recordRate(List<IngestTaskStatus> tasks) {
         return AverageRecordRate.of(tasks.stream()
-                .map(IngestTaskStatus::asProcessRun));
+                .map(IngestTaskStatus::asJobRun));
     }
 
     private void writeRow(IngestTaskStatus task, TableRow.Builder builder) {
@@ -98,6 +98,6 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
                 .value(JOB_RUNS, task.getJobRunsOrNull())
                 .value(JOB_DURATION, StandardJobRunReporter.getOrNull(task.getFinishedStatus(),
                         status -> StandardJobRunReporter.formatDurationString(status.getTimeSpentOnJobs())));
-        processRunReporter.writeRunFields(task.asProcessRun(), builder);
+        jobRunReporter.writeRunFields(task.asJobRun(), builder);
     }
 }
