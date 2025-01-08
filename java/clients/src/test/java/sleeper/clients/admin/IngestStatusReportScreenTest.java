@@ -42,8 +42,8 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_REPORT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_TASK_STATUS_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_TRACKER_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_RANGE_OPTION;
@@ -298,7 +298,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         // Then
         assertThat(output)
                 .isEqualTo(DISPLAY_MAIN_SCREEN +
-                        INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE +
+                        INGEST_TRACKER_NOT_ENABLED_MESSAGE +
                         PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         verifyWithNumberOfPromptsBeforeExit(1);
     }

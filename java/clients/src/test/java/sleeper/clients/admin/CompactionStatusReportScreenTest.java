@@ -37,8 +37,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_REPORT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_TASK_STATUS_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_TRACKER_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
@@ -229,7 +229,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         // Then
         assertThat(output)
                 .isEqualTo(DISPLAY_MAIN_SCREEN +
-                        COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE +
+                        COMPACTION_TRACKER_NOT_ENABLED_MESSAGE +
                         PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         verifyWithNumberOfPromptsBeforeExit(1);
     }
