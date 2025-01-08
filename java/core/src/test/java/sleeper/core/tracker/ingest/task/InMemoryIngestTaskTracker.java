@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.core.task;
+package sleeper.core.tracker.ingest.task;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -24,9 +24,9 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * An in-memory ingest task status store backed by a map.
+ * An in-memory ingest task tracker backed by a map.
  */
-public class InMemoryIngestTaskStatusStore implements IngestTaskStatusStore {
+public class InMemoryIngestTaskTracker implements IngestTaskTracker {
 
     private final Map<String, IngestTaskStatus> statusByTaskId = new LinkedHashMap<>();
 

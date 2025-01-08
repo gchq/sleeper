@@ -21,8 +21,8 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     private final Map<String, CompactionJobTracker> compactionJobTrackerByInstance = new HashMap<>();
     private final Map<String, CompactionTaskTracker> compactionTaskTrackerByInstance = new HashMap<>();
     private final Map<String, IngestJobTracker> ingestJobTrackerByInstance = new HashMap<>();
-    private final Map<String, IngestTaskStatusStore> ingestTaskStoreByInstance = new HashMap<>();
+    private final Map<String, IngestTaskTracker> ingestTaskTrackerByInstance = new HashMap<>();
     private final Map<String, IngestBatcherStore> ingestBatcherStoreByInstance = new HashMap<>();
 
     public void setTracker(String instanceId, CompactionJobTracker tracker) {
@@ -50,8 +50,8 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
         ingestJobTrackerByInstance.put(instanceId, tracker);
     }
 
-    public void setTracker(String instanceId, IngestTaskStatusStore tracker) {
-        ingestTaskStoreByInstance.put(instanceId, tracker);
+    public void setTracker(String instanceId, IngestTaskTracker tracker) {
+        ingestTaskTrackerByInstance.put(instanceId, tracker);
     }
 
     public void setBatcherStore(String instanceId, IngestBatcherStore store) {
@@ -77,9 +77,9 @@ public class AdminClientProcessTrackerHolder implements AdminClientTrackerFactor
     }
 
     @Override
-    public IngestTaskStatusStore loadIngestTaskStatusStore(InstanceProperties instanceProperties) {
-        return Optional.ofNullable(ingestTaskStoreByInstance.get(instanceProperties.get(ID)))
-                .orElse(IngestTaskStatusStore.NONE);
+    public IngestTaskTracker loadIngestTaskTracker(InstanceProperties instanceProperties) {
+        return Optional.ofNullable(ingestTaskTrackerByInstance.get(instanceProperties.get(ID)))
+                .orElse(IngestTaskTracker.NONE);
     }
 
     @Override

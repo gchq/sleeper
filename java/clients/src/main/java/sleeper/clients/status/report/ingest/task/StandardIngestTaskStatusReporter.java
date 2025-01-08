@@ -21,7 +21,7 @@ import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.record.process.AverageRecordRate;
-import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 
 import java.io.PrintStream;
 import java.util.List;

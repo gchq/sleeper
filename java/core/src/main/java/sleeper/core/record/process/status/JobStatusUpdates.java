@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Updates held in the status store for a job. These are sorted by the latest update first, and are organised by
- * correlating updates that occur in the same run of a job. The raw records from the status store are also kept.
+ * Updates held in a job tracker for a job. These are sorted by the latest update first, and are organised by
+ * correlating updates that occur in the same run of a job. The raw records from the job tracker are also kept.
  */
 public class JobStatusUpdates {
 

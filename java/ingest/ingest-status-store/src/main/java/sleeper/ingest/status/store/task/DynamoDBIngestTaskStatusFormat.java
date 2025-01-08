@@ -20,10 +20,10 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskStatusesBuilder;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
-import sleeper.ingest.core.task.IngestTaskFinishedStatus;
-import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.core.task.IngestTaskStatusesBuilder;
 
 import java.time.Duration;
 import java.time.Instant;

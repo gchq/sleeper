@@ -23,7 +23,7 @@ import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -76,18 +76,18 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldSetIngestTaskStatusStore() {
+    void shouldSetIngestTaskTracker() {
         // Given
-        IngestTaskStatusStore store = mock(IngestTaskStatusStore.class);
+        IngestTaskTracker tracker = mock(IngestTaskTracker.class);
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().tracker(store);
+        RunAdminClient runner = runClient().tracker(tracker);
 
         // Then
-        assertThat(runner.trackers().loadIngestTaskStatusStore(properties))
-                .isSameAs(store);
+        assertThat(runner.trackers().loadIngestTaskTracker(properties))
+                .isSameAs(tracker);
     }
 
     @Test
@@ -124,13 +124,13 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnNoIngestTaskStatusStore() {
+    void shouldReturnNoIngestTaskTracker() {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().trackers().loadIngestTaskStatusStore(properties))
-                .isSameAs(IngestTaskStatusStore.NONE);
+        assertThat(runClient().trackers().loadIngestTaskTracker(properties))
+                .isSameAs(IngestTaskTracker.NONE);
     }
 }

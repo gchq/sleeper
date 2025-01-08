@@ -20,7 +20,7 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import java.util.Objects;
 
 /**
- * An event for when a compaction job was finished. Used in the compaction job status store.
+ * An event for when a compaction job was finished. Used in the compaction job tracker.
  */
 public class CompactionJobFinishedEvent {
     private final String jobId;

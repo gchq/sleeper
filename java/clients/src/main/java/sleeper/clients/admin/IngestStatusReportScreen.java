@@ -115,7 +115,7 @@ public class IngestStatusReportScreen {
     }
 
     private void runIngestTaskStatusReport(InstanceProperties properties, IngestTaskQuery queryType) {
-        new IngestTaskStatusReport(trackers.loadIngestTaskStatusStore(properties),
+        new IngestTaskStatusReport(trackers.loadIngestTaskTracker(properties),
                 new StandardIngestTaskStatusReporter(out.printStream()), queryType).run();
         confirmReturnToMainScreen(out, in);
     }

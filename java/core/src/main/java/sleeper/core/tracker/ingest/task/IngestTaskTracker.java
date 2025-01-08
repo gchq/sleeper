@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.ingest.core.task;
+package sleeper.core.tracker.ingest.task;
 
 import java.time.Instant;
 import java.util.List;
@@ -22,9 +22,9 @@ import java.util.List;
 /**
  * Stores ingest task statuses.
  */
-public interface IngestTaskStatusStore {
+public interface IngestTaskTracker {
 
-    IngestTaskStatusStore NONE = new IngestTaskStatusStore() {
+    IngestTaskTracker NONE = new IngestTaskTracker() {
     };
 
     /**

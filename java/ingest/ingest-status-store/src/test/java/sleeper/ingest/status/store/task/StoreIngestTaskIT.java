@@ -18,22 +18,22 @@ package sleeper.ingest.status.store.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskStatusStoreTestBase;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskTrackerTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StoreIngestTaskIT extends DynamoDBIngestTaskStatusStoreTestBase {
+public class StoreIngestTaskIT extends DynamoDBIngestTaskTrackerTestBase {
     @Test
     public void shouldReportIngestTaskStarted() {
         // Given
         IngestTaskStatus taskStatus = startedTaskWithDefaults();
 
         // When
-        store.taskStarted(taskStatus);
+        tracker.taskStarted(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
+        assertThat(tracker.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
@@ -44,11 +44,11 @@ public class StoreIngestTaskIT extends DynamoDBIngestTaskStatusStoreTestBase {
         IngestTaskStatus taskStatus = finishedTaskWithDefaults();
 
         // When
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
+        tracker.taskStarted(taskStatus);
+        tracker.taskFinished(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
+        assertThat(tracker.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
@@ -59,11 +59,11 @@ public class StoreIngestTaskIT extends DynamoDBIngestTaskStatusStoreTestBase {
         IngestTaskStatus taskStatus = finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber();
 
         // When
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
+        tracker.taskStarted(taskStatus);
+        tracker.taskFinished(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
+        assertThat(tracker.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }
@@ -74,7 +74,7 @@ public class StoreIngestTaskIT extends DynamoDBIngestTaskStatusStoreTestBase {
         IngestTaskStatus taskStatus = startedTaskWithDefaults();
 
         // When/Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
+        assertThat(tracker.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isNull();
     }
@@ -85,11 +85,11 @@ public class StoreIngestTaskIT extends DynamoDBIngestTaskStatusStoreTestBase {
         IngestTaskStatus taskStatus = finishedTaskWithNoJobsAndZeroDuration();
 
         // When
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
+        tracker.taskStarted(taskStatus);
+        tracker.taskFinished(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()))
+        assertThat(tracker.getTask(taskStatus.getTaskId()))
                 .usingRecursiveComparison(IGNORE_EXPIRY_DATE)
                 .isEqualTo(taskStatus);
     }

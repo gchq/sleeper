@@ -13,48 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.status.store.testutils;
+package sleeper.compaction.status.store.testutils;
 
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
+import sleeper.compaction.status.store.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskTracker;
+import sleeper.compaction.status.store.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.dynamodb.test.DynamoDBTestBase;
-import sleeper.ingest.core.task.IngestTaskFinishedStatus;
-import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
-import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.UUID;
 
+import static sleeper.compaction.status.store.task.DynamoDBCompactionTaskTracker.taskStatusTableName;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_STATUS_TTL_IN_SECONDS;
-import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore.taskStatusTableName;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
+public class DynamoDBCompactionTaskTrackerTestBase extends DynamoDBTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
-            .withIgnoredFields("expiryDate")
-            // For some reason, default Double comparator compares NaNs as object references instead of their double values
-            .withComparatorForFields(Comparator.naturalOrder(),
-                    "finishedStatus.recordsReadPerSecond", "finishedStatus.recordsWrittenPerSecond")
-            .build();
-    private final InstanceProperties instanceProperties = IngestTrackerTestUtils.createInstanceProperties();
+            .withIgnoredFields("expiryDate").build();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String taskStatusTableName = taskStatusTableName(instanceProperties.get(ID));
-    protected final IngestTaskStatusStore store = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+    protected final CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
     }
 
     @AfterEach
@@ -62,9 +58,9 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
         dynamoDBClient.deleteTable(taskStatusTableName);
     }
 
-    protected IngestTaskStatusStore storeWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
-        instanceProperties.set(INGEST_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
-        return new DynamoDBIngestTaskStatusStore(dynamoDBClient, instanceProperties,
+    protected CompactionTaskTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
+        instanceProperties.set(COMPACTION_TASK_STATUS_TTL_IN_SECONDS, "" + timeToLive.getSeconds());
+        return new DynamoDBCompactionTaskTracker(dynamoDBClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 
@@ -94,49 +90,44 @@ public class DynamoDBIngestTaskStatusStoreTestBase extends DynamoDBTestBase {
                 defaultJobStartTime(), defaultJobFinishTime());
     }
 
-    protected static IngestTaskStatus startedTaskWithDefaults() {
+    protected static CompactionTaskStatus startedTaskWithDefaults() {
         return startedTaskWithDefaultsBuilder().build();
     }
 
-    protected static IngestTaskStatus.Builder startedTaskWithDefaultsBuilder() {
-        return IngestTaskStatus.builder().taskId(UUID.randomUUID().toString()).startTime(defaultTaskStartTime());
+    protected static CompactionTaskStatus.Builder startedTaskWithDefaultsBuilder() {
+        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString()).startTime(defaultTaskStartTime());
     }
 
-    protected static IngestTaskStatus finishedTaskWithDefaults() {
+    protected static CompactionTaskStatus finishedTaskWithDefaults() {
         return startedTaskWithDefaultsBuilder().finished(
-                defaultTaskFinishTime(), IngestTaskFinishedStatus.builder()
+                defaultTaskFinishTime(), CompactionTaskFinishedStatus.builder()
                         .addJobSummary(defaultJobSummary()))
                 .build();
     }
 
-    protected static IngestTaskStatus finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber() {
+    protected static CompactionTaskStatus finishedTaskWithDefaultsAndDurationInSecondsNotAWholeNumber() {
         return startedTaskWithDefaultsBuilder().finished(
-                taskFinishTimeWithDurationInSecondsNotAWholeNumber(), IngestTaskFinishedStatus.builder()
+                taskFinishTimeWithDurationInSecondsNotAWholeNumber(), CompactionTaskFinishedStatus.builder()
                         .addJobSummary(defaultJobSummary()))
                 .build();
     }
 
-    protected static IngestTaskStatus finishedTaskWithNoJobsAndZeroDuration() {
-        return startedTaskWithDefaultsBuilder().finished(
-                defaultTaskStartTime(), IngestTaskFinishedStatus.builder()).build();
-    }
-
-    protected static IngestTaskStatus taskWithStartTime(Instant startTime) {
+    protected static CompactionTaskStatus taskWithStartTime(Instant startTime) {
         return taskBuilder().startTime(startTime).build();
     }
 
-    protected static IngestTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
+    protected static CompactionTaskStatus taskWithStartAndFinishTime(Instant startTime, Instant finishTime) {
         return buildWithStartAndFinishTime(taskBuilder(), startTime, finishTime);
     }
 
-    private static IngestTaskStatus.Builder taskBuilder() {
-        return IngestTaskStatus.builder().taskId(UUID.randomUUID().toString());
+    private static CompactionTaskStatus.Builder taskBuilder() {
+        return CompactionTaskStatus.builder().taskId(UUID.randomUUID().toString());
     }
 
-    private static IngestTaskStatus buildWithStartAndFinishTime(
-            IngestTaskStatus.Builder builder, Instant startTime, Instant finishTime) {
+    private static CompactionTaskStatus buildWithStartAndFinishTime(
+            CompactionTaskStatus.Builder builder, Instant startTime, Instant finishTime) {
         return builder.startTime(startTime)
-                .finished(finishTime, IngestTaskFinishedStatus.builder()
+                .finished(finishTime, CompactionTaskFinishedStatus.builder()
                         .addJobSummary(new RecordsProcessedSummary(
                                 new RecordsProcessed(200, 100),
                                 startTime, finishTime)))

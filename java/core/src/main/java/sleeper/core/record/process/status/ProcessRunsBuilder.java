@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * Gathers status store records and correlates which updates occurred in the same run of a job. Creates a
+ * Gathers job tracker records and correlates which updates occurred in the same run of a job. Creates a
  * {@link ProcessRuns} object with the detected runs.
  * <p>
  * Records are processed in order of update time. A run is detected based on the type of the update. Some updates mark

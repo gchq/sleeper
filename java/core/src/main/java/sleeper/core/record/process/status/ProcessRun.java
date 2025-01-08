@@ -26,7 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Information about a single run of a job that was tracked in a status store.
+ * Information about a single run of a job that was tracked.
  */
 public class ProcessRun {
     private final String taskId;
@@ -115,7 +115,7 @@ public class ProcessRun {
     }
 
     /**
-     * Gets the finish update time for this run. This is the time that the status store was updated.
+     * Gets the finish update time for this run. This is the time that the tracker was updated.
      *
      * @return the finish update time, or null if the run has not finished
      */

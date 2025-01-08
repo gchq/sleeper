@@ -18,8 +18,8 @@ package sleeper.clients.status.report.ingest.task;
 
 import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.ingest.core.task.IngestTaskFinishedStatus;
-import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 
 import java.time.Instant;
 import java.util.stream.Stream;

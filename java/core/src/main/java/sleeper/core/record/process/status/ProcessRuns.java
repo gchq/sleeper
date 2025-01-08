@@ -24,8 +24,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Information about runs of a job that were tracked in a status store. A job may be run multiple times, potentially in
- * parallel on different tasks. These are detected by correlating updates stored in the status store.
+ * Information about runs of a job that were tracked. A job may be run multiple times, potentially in parallel on
+ * different tasks. These are detected by correlating updates stored in the job tracker.
  */
 public class ProcessRuns {
     private final List<ProcessRun> latestFirst;
@@ -46,7 +46,7 @@ public class ProcessRuns {
     }
 
     /**
-     * Creates an instance of this class from records in a status store. The records must be sorted by the time of the
+     * Creates an instance of this class from records in a job tracker. The records must be sorted by the time of the
      * update, most recent first. These will be correlated to find which updates occurred in the same run.
      *
      * @param  recordList the list of records sorted by latest first

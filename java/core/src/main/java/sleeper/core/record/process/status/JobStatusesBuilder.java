@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 /**
- * Builds job status objects. Gathers records from a status store into a list for each job that has updates, then
+ * Builds job status objects. Gathers records from a job tracker into a list for each job that has updates, then
  * creates a {@link JobStatusUpdates} object for each job.
  */
 public class JobStatusesBuilder {

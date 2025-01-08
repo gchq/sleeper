@@ -17,14 +17,14 @@ package sleeper.ingest.status.store.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskStatusStoreTestBase;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskTrackerTestBase;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class QueryAllIngestTasksIT extends DynamoDBIngestTaskStatusStoreTestBase {
+public class QueryAllIngestTasksIT extends DynamoDBIngestTaskTrackerTestBase {
 
     @Test
     public void shouldReportMultipleIngestTasksSortedMostRecentFirst() {
@@ -41,15 +41,15 @@ public class QueryAllIngestTasksIT extends DynamoDBIngestTaskStatusStoreTestBase
                 Instant.parse("2022-10-06T11:22:00.001Z"));
 
         // When
-        store.taskStarted(task1);
-        store.taskStarted(task2);
-        store.taskStarted(task3);
-        store.taskFinished(task2);
-        store.taskStarted(task4);
-        store.taskFinished(task4);
+        tracker.taskStarted(task1);
+        tracker.taskStarted(task2);
+        tracker.taskStarted(task3);
+        tracker.taskFinished(task2);
+        tracker.taskStarted(task4);
+        tracker.taskFinished(task4);
 
         // Then
-        assertThat(store.getAllTasks())
+        assertThat(tracker.getAllTasks())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_EXPIRY_DATE)
                 .containsExactly(task4, task3, task2, task1);
     }
@@ -57,6 +57,6 @@ public class QueryAllIngestTasksIT extends DynamoDBIngestTaskStatusStoreTestBase
     @Test
     public void shouldReportNoIngestTasks() {
         // When / Then
-        assertThat(store.getAllTasks()).isEmpty();
+        assertThat(tracker.getAllTasks()).isEmpty();
     }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.core.task;
+package sleeper.ingest.core;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +21,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 
@@ -31,7 +33,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Runs an ingest task. Executes jobs from a queue, updating the status stores with progress of the task.
+ * Runs an ingest task. Executes jobs from a queue, updating the job and task trackers with progress.
  */
 public class IngestTask {
     public static final Logger LOGGER = LoggerFactory.getLogger(IngestTask.class);
@@ -40,7 +42,7 @@ public class IngestTask {
     private final MessageReceiver messageReceiver;
     private final IngestJobHandler ingester;
     private final IngestJobTracker jobTracker;
-    private final IngestTaskStatusStore taskStatusStore;
+    private final IngestTaskTracker taskTracker;
     private final String taskId;
     private final IngestTaskStatus.Builder taskStatusBuilder;
     private final IngestTaskFinishedStatus.Builder taskFinishedBuilder = IngestTaskFinishedStatus.builder();
@@ -48,19 +50,19 @@ public class IngestTask {
 
     public IngestTask(Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier,
             MessageReceiver messageReceiver, IngestJobHandler ingester,
-            IngestJobTracker jobTracker, IngestTaskStatusStore taskStore, String taskId) {
+            IngestJobTracker jobTracker, IngestTaskTracker taskTracker, String taskId) {
         this.jobRunIdSupplier = jobRunIdSupplier;
         this.timeSupplier = timeSupplier;
         this.messageReceiver = messageReceiver;
         this.ingester = ingester;
         this.jobTracker = jobTracker;
-        this.taskStatusStore = taskStore;
+        this.taskTracker = taskTracker;
         this.taskId = taskId;
         this.taskStatusBuilder = IngestTaskStatus.builder().taskId(taskId);
     }
 
     /**
-     * Executes jobs from a queue, updating the status stores with progress of the task.
+     * Executes jobs from a queue, updating the job and task trackers with progress of the task.
      */
     public void run() {
         start();
@@ -77,7 +79,7 @@ public class IngestTask {
      */
     public void start() {
         LOGGER.info("Starting task {}", taskId);
-        taskStatusStore.taskStarted(taskStatusBuilder.startTime(timeSupplier.get()).build());
+        taskTracker.taskStarted(taskStatusBuilder.startTime(timeSupplier.get()).build());
     }
 
     /**
@@ -85,7 +87,7 @@ public class IngestTask {
      */
     public void finish() {
         IngestTaskStatus taskFinished = taskStatusBuilder.finished(timeSupplier.get(), taskFinishedBuilder).build();
-        taskStatusStore.taskFinished(taskFinished);
+        taskTracker.taskFinished(taskFinished);
         LOGGER.info("Total number of messages processed = {}", totalNumberOfMessagesProcessed);
         LOGGER.info("Total run time = {}", LoggedDuration.withFullOutput(taskFinished.getDuration()));
     }

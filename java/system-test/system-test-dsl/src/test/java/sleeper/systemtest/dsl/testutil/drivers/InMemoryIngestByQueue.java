@@ -24,13 +24,13 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableIndex;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.ingest.core.IngestResult;
+import sleeper.ingest.core.IngestTask;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.ingest.core.task.InMemoryIngestTaskStatusStore;
-import sleeper.ingest.core.task.IngestTask;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -60,7 +60,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 public class InMemoryIngestByQueue {
     private final Queue<IngestJob> jobsQueue = new LinkedList<>();
     private final List<IngestTask> runningTasks = new ArrayList<>();
-    private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
+    private final IngestTaskTracker taskTracker = new InMemoryIngestTaskTracker();
     private final IngestJobTracker jobTracker = new InMemoryIngestJobTracker();
     private final InMemoryDataStore sourceFiles;
     private final InMemoryDataStore data;
@@ -99,7 +99,7 @@ public class InMemoryIngestByQueue {
 
     private IngestTask newTask(SystemTestContext context, String taskId) {
         return new IngestTask(() -> UUID.randomUUID().toString(), timeSupplier,
-                messageReceiver(context), ingester(context, taskId), jobTracker, taskStore, taskId);
+                messageReceiver(context), ingester(context, taskId), jobTracker, taskTracker, taskId);
     }
 
     private IngestTask.MessageReceiver messageReceiver(SystemTestContext context) {
@@ -122,7 +122,7 @@ public class InMemoryIngestByQueue {
             finishJobsOn(randomRunningTask());
             finishTasks();
             return jobTracker;
-        }, properties -> taskStore, pollDriver);
+        }, properties -> taskTracker, pollDriver);
     }
 
     public WaitForJobs waitForBulkImport(SystemTestContext context, PollWithRetriesDriver pollDriver) {
@@ -137,8 +137,8 @@ public class InMemoryIngestByQueue {
         return jobTracker;
     }
 
-    public IngestTaskStatusStore taskStore() {
-        return taskStore;
+    public IngestTaskTracker taskTracker() {
+        return taskTracker;
     }
 
     private void finishJobsOn(Supplier<IngestTask> taskSupplier) {

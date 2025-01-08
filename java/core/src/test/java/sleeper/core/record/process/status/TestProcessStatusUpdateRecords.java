@@ -23,9 +23,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A test helper to simulate the contents of a status store. This will specify status updates for jobs running on tasks,
- * and create a list of records that would appear in the status store for those updates. This can be used to test any
- * code that requires records from the status store.
+ * A test helper to simulate the contents of a job tracker. This will specify status updates for jobs running on tasks,
+ * and create a list of records that would appear in the job tracker for those updates. This can be used to test any
+ * code that requires records from the job tracker.
  */
 public class TestProcessStatusUpdateRecords {
 

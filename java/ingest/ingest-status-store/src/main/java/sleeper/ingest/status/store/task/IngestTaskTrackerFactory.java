@@ -19,20 +19,20 @@ package sleeper.ingest.status.store.task;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 
-public class IngestTaskStatusStoreFactory {
+public class IngestTaskTrackerFactory {
 
-    private IngestTaskStatusStoreFactory() {
+    private IngestTaskTrackerFactory() {
     }
 
-    public static IngestTaskStatusStore getStatusStore(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
+    public static IngestTaskTracker getTracker(AmazonDynamoDB dynamoDB, InstanceProperties properties) {
         if (properties.getBoolean(INGEST_TRACKER_ENABLED)) {
-            return new DynamoDBIngestTaskStatusStore(dynamoDB, properties);
+            return new DynamoDBIngestTaskTracker(dynamoDB, properties);
         } else {
-            return IngestTaskStatusStore.NONE;
+            return IngestTaskTracker.NONE;
         }
     }
 }

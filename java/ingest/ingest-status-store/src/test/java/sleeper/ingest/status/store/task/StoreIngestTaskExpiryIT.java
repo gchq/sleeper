@@ -17,9 +17,9 @@ package sleeper.ingest.status.store.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
-import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskStatusStoreTestBase;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.ingest.status.store.testutils.DynamoDBIngestTaskTrackerTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -27,20 +27,20 @@ import java.time.temporal.ChronoField;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskStatusStoreTestBase {
+public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskTrackerTestBase {
 
     @Test
     public void shouldUpdateExpiryDateForCompactionTaskStatusStarted() {
         // Given
         IngestTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        IngestTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        IngestTaskTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
-        store.taskStarted(taskStatus);
+        tracker.taskStarted(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+        assertThat(tracker.getTask(taskStatus.getTaskId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 
@@ -49,15 +49,15 @@ public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskStatusStoreTestBa
         // Given
         IngestTaskStatus taskStatus = finishedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(7);
-        IngestTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive,
+        IngestTaskTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive,
                 defaultTaskStartTime(), defaultTaskFinishTime());
 
         // When
-        store.taskStarted(taskStatus);
-        store.taskFinished(taskStatus);
+        tracker.taskStarted(taskStatus);
+        tracker.taskFinished(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+        assertThat(tracker.getTask(taskStatus.getTaskId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 
@@ -66,13 +66,13 @@ public class StoreIngestTaskExpiryIT extends DynamoDBIngestTaskStatusStoreTestBa
         // Given
         IngestTaskStatus taskStatus = startedTaskWithDefaults();
         Duration timeToLive = Duration.ofDays(1);
-        IngestTaskStatusStore store = storeWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
+        IngestTaskTracker tracker = trackerWithTimeToLiveAndUpdateTimes(timeToLive, defaultTaskStartTime());
 
         // When
-        store.taskStarted(taskStatus);
+        tracker.taskStarted(taskStatus);
 
         // Then
-        assertThat(store.getTask(taskStatus.getTaskId()).getExpiryDate())
+        assertThat(tracker.getTask(taskStatus.getTaskId()).getExpiryDate())
                 .isEqualTo(timePlusDurationAsExpiry(defaultTaskStartTime(), timeToLive));
     }
 

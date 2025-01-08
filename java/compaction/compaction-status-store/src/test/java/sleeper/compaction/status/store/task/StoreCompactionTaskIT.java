@@ -18,12 +18,12 @@ package sleeper.compaction.status.store.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskTrackerTestBase;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StoreCompactionTaskIT extends DynamoDBCompactionTaskStatusStoreTestBase {
+public class StoreCompactionTaskIT extends DynamoDBCompactionTaskTrackerTestBase {
     @Test
     public void shouldReportCompactionTaskStarted() {
         // Given

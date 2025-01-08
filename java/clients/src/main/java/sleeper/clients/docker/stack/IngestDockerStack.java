@@ -21,7 +21,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.ingest.status.store.job.DynamoDBIngestJobTrackerCreator;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
+import sleeper.ingest.status.store.task.DynamoDBIngestTaskTrackerCreator;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -51,7 +51,7 @@ public class IngestDockerStack implements DockerStack {
 
     public void deploy() {
         DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoDB);
-        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoDB);
         String queueName = "sleeper-" + instanceProperties.get(ID) + "-IngestJobQ";
         String queueUrl = sqsClient.createQueue(request -> request.queueName(queueName)).queueUrl();
         instanceProperties.set(INGEST_JOB_QUEUE_URL, queueUrl);
@@ -59,7 +59,7 @@ public class IngestDockerStack implements DockerStack {
 
     public void tearDown() {
         DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoDB);
-        DynamoDBIngestTaskStatusStoreCreator.tearDown(instanceProperties, dynamoDB);
+        DynamoDBIngestTaskTrackerCreator.tearDown(instanceProperties, dynamoDB);
         sqsClient.deleteQueue(request -> request.queueUrl(instanceProperties.get(INGEST_JOB_QUEUE_URL)));
     }
 

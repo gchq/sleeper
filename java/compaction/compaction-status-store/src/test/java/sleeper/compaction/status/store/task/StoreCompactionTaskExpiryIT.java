@@ -17,7 +17,7 @@ package sleeper.compaction.status.store.task;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskStatusStoreTestBase;
+import sleeper.compaction.status.store.testutils.DynamoDBCompactionTaskTrackerTestBase;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 
@@ -27,7 +27,7 @@ import java.time.temporal.ChronoField;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskStatusStoreTestBase {
+public class StoreCompactionTaskExpiryIT extends DynamoDBCompactionTaskTrackerTestBase {
 
     @Test
     public void shouldUpdateExpiryDateForCompactionTaskStatusStarted() {

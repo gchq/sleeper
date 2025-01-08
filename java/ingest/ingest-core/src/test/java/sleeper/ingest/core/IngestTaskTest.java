@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.core.task;
+package sleeper.ingest.core;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,11 +24,12 @@ import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
-import sleeper.ingest.core.IngestResult;
+import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.ingest.core.IngestTask.MessageHandle;
+import sleeper.ingest.core.IngestTask.MessageReceiver;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
-import sleeper.ingest.core.task.IngestTask.MessageHandle;
-import sleeper.ingest.core.task.IngestTask.MessageReceiver;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -46,14 +47,14 @@ import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.tracker.ingest.job.IngestJobUpdateType.FAILED;
 import static sleeper.core.tracker.ingest.job.IngestJobUpdateType.FINISHED_WHEN_FILES_COMMITTED;
 import static sleeper.core.tracker.ingest.job.IngestJobUpdateType.STARTED;
+import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
+import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
+import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.finishedOneJob;
 import static sleeper.ingest.core.IngestResultTestData.defaultFileIngestResult;
 import static sleeper.ingest.core.IngestResultTestData.defaultFileIngestResultReadAndWritten;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestJobUncommitted;
 import static sleeper.ingest.core.job.IngestJobTestData.DEFAULT_TABLE_ID;
-import static sleeper.ingest.core.task.IngestTaskStatusTestData.finishedMultipleJobs;
-import static sleeper.ingest.core.task.IngestTaskStatusTestData.finishedNoJobs;
-import static sleeper.ingest.core.task.IngestTaskStatusTestData.finishedOneJob;
 
 public class IngestTaskTest {
     private static final String DEFAULT_TASK_ID = "test-task-id";
@@ -62,7 +63,7 @@ public class IngestTaskTest {
     private final List<IngestJob> successfulJobs = new ArrayList<>();
     private final List<IngestJob> failedJobs = new ArrayList<>();
     private final InMemoryIngestJobTracker jobTracker = new InMemoryIngestJobTracker();
-    private final IngestTaskStatusStore taskStore = new InMemoryIngestTaskStatusStore();
+    private final IngestTaskTracker taskTracker = new InMemoryIngestTaskTracker();
     private Supplier<Instant> timeSupplier = Instant::now;
     private Supplier<String> jobRunIdSupplier = () -> UUID.randomUUID().toString();
 
@@ -151,7 +152,7 @@ public class IngestTaskTest {
                     jobSucceeds(jobResult)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
@@ -177,7 +178,7 @@ public class IngestTaskTest {
                     jobSucceeds(jobResult)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 5L));
@@ -208,7 +209,7 @@ public class IngestTaskTest {
                     jobSucceeds(job2Result)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedMultipleJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z"),
@@ -244,7 +245,7 @@ public class IngestTaskTest {
             runTask("test-task-1", processJobs(jobFails(failure)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedNoJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:06Z")));
@@ -278,7 +279,7 @@ public class IngestTaskTest {
                     jobFails(failure)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:06Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 10L, 10L));
@@ -304,7 +305,7 @@ public class IngestTaskTest {
             runTask("test-task-1", processNoJobs());
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedNoJobs("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"),
                             Instant.parse("2024-02-22T13:50:05Z")));
@@ -327,7 +328,7 @@ public class IngestTaskTest {
                     jobSucceeds(jobResult)));
 
             // Then
-            assertThat(taskStore.getAllTasks()).containsExactly(
+            assertThat(taskTracker.getAllTasks()).containsExactly(
                     finishedOneJob("test-task-1",
                             Instant.parse("2024-02-22T13:50:00Z"), Instant.parse("2024-02-22T13:50:05Z"),
                             Instant.parse("2024-02-22T13:50:01Z"), Instant.parse("2024-02-22T13:50:02Z"), 0L, 0L));
@@ -395,7 +396,7 @@ public class IngestTaskTest {
     private void runTask(
             String taskId,
             IngestJobHandler ingestRunner) throws Exception {
-        new IngestTask(jobRunIdSupplier, timeSupplier, pollQueue(), ingestRunner, jobTracker, taskStore, taskId)
+        new IngestTask(jobRunIdSupplier, timeSupplier, pollQueue(), ingestRunner, jobTracker, taskTracker, taskId)
                 .run();
     }
 

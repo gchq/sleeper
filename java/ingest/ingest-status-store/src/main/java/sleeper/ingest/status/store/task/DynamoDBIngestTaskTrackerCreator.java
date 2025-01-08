@@ -34,12 +34,12 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.EXPIRY_DATE;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.TASK_ID;
 import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusFormat.UPDATE_TIME;
-import static sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStore.taskStatusTableName;
+import static sleeper.ingest.status.store.task.DynamoDBIngestTaskTracker.taskStatusTableName;
 
-public class DynamoDBIngestTaskStatusStoreCreator {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskStatusStoreCreator.class);
+public class DynamoDBIngestTaskTrackerCreator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBIngestTaskTrackerCreator.class);
 
-    private DynamoDBIngestTaskStatusStoreCreator() {
+    private DynamoDBIngestTaskTrackerCreator() {
     }
 
     public static void create(InstanceProperties properties, AmazonDynamoDB dynamoDB) {

@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.ingest.core.task;
+package sleeper.core.tracker.ingest.task;
 
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.ingest.core.task.IngestTaskStatusTestData.finishedNoJobsDefault;
-import static sleeper.ingest.core.task.IngestTaskStatusTestData.startedBuilderWithDefaults;
+import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.finishedNoJobsDefault;
+import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.startedBuilderWithDefaults;
 
-public class InMemoryIngestTaskStatusStoreTest {
+public class InMemoryIngestTaskTrackerTest {
 
-    private final IngestTaskStatusStore store = new InMemoryIngestTaskStatusStore();
+    private final IngestTaskTracker tracker = new InMemoryIngestTaskTracker();
 
     @Test
     public void shouldListOneStartedTaskWhenStored() {
@@ -32,10 +32,10 @@ public class InMemoryIngestTaskStatusStoreTest {
         IngestTaskStatus started = startedBuilderWithDefaults().build();
 
         // When
-        store.taskStarted(started);
+        tracker.taskStarted(started);
 
         // Then
-        assertThat(store.getAllTasks()).containsExactly(started);
+        assertThat(tracker.getAllTasks()).containsExactly(started);
     }
 
     @Test
@@ -46,21 +46,21 @@ public class InMemoryIngestTaskStatusStoreTest {
         IngestTaskStatus finished = finishedNoJobsDefault(builder);
 
         // When
-        store.taskStarted(started);
-        store.taskFinished(finished);
+        tracker.taskStarted(started);
+        tracker.taskFinished(finished);
 
         // Then
-        assertThat(store.getAllTasks()).containsExactly(finished);
+        assertThat(tracker.getAllTasks()).containsExactly(finished);
     }
 
     @Test
     public void shouldRefuseSameTaskStartedMultipleTimes() {
         // Given
         IngestTaskStatus started = startedBuilderWithDefaults().build();
-        store.taskStarted(started);
+        tracker.taskStarted(started);
 
         // When / Then
-        assertThatThrownBy(() -> store.taskStarted(started))
+        assertThatThrownBy(() -> tracker.taskStarted(started))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -70,7 +70,7 @@ public class InMemoryIngestTaskStatusStoreTest {
         IngestTaskStatus finished = finishedNoJobsDefault();
 
         // When / Then
-        assertThatThrownBy(() -> store.taskFinished(finished))
+        assertThatThrownBy(() -> tracker.taskFinished(finished))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -80,7 +80,7 @@ public class InMemoryIngestTaskStatusStoreTest {
         IngestTaskStatus finished = finishedNoJobsDefault();
 
         // When / Then
-        assertThatThrownBy(() -> store.taskStarted(finished))
+        assertThatThrownBy(() -> tracker.taskStarted(finished))
                 .isInstanceOf(IllegalStateException.class);
     }
 }
