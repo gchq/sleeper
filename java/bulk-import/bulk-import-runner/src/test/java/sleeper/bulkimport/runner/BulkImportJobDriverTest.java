@@ -56,7 +56,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRecords;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
-import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichFailed;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestAcceptedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;

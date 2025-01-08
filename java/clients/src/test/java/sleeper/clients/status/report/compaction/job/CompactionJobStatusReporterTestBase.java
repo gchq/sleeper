@@ -44,7 +44,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
-import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 
 public abstract class CompactionJobStatusReporterTestBase {
 

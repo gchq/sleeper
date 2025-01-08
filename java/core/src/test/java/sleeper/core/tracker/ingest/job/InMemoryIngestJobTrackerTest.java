@@ -56,7 +56,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFini
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestRejectedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedIngestStartedStatus;
-import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.finishedRun;
 import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
 import static sleeper.core.tracker.job.run.JobRunTestData.unfinishedRun;

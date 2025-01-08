@@ -25,7 +25,7 @@ import java.time.Instant;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 
 public class IngestTaskStatusTest {
 

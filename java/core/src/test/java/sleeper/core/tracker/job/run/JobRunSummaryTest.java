@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.tracker.job;
+package sleeper.core.tracker.job.run;
 
 import org.junit.jupiter.api.Test;
-
-import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
 

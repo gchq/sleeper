@@ -26,7 +26,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.finishedStatusBuilder;
 import static sleeper.core.tracker.compaction.task.CompactionTaskStatusTestData.startedStatusBuilder;
-import static sleeper.core.tracker.job.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 
 public class CompactionTaskStatusTest {
 

@@ -18,8 +18,8 @@ package sleeper.core.tracker.compaction.job;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.JobRunSummaryTestHelper;
 import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunSummaryTestHelper;
 
 import java.time.Instant;
 
