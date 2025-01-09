@@ -20,18 +20,16 @@ package sleeper.core.statestore.transactionlog;
  */
 public class AddTransactionRequest {
 
-    private final String bucketName;
-    private final String key;
+    private final TransactionBodyPointer bodyPointer;
     private final StateStoreTransaction<?> transaction;
 
-    private AddTransactionRequest(String bucketName, String key, StateStoreTransaction<?> transaction) {
-        this.bucketName = bucketName;
-        this.key = key;
+    private AddTransactionRequest(TransactionBodyPointer bodyPointer, StateStoreTransaction<?> transaction) {
+        this.bodyPointer = bodyPointer;
         this.transaction = transaction;
     }
 
     /**
-     * Creates a request to add file transaction that's held in S3.
+     * Creates a request to add a file transaction that's held in S3.
      *
      * @param  bucketName  the bucket
      * @param  key         the object key
@@ -39,7 +37,26 @@ public class AddTransactionRequest {
      * @return             the request
      */
     public static AddTransactionRequest fileTransactionInBucket(String bucketName, String key, FileReferenceTransaction transaction) {
-        return new AddTransactionRequest(bucketName, key, transaction);
+        return new AddTransactionRequest(new TransactionBodyPointer(bucketName, key), transaction);
     }
 
+    /**
+     * Creates a request to add a partition transaction that's held in S3.
+     *
+     * @param  bucketName  the bucket
+     * @param  key         the object key
+     * @param  transaction the transaction object
+     * @return             the request
+     */
+    public static AddTransactionRequest partitionTransactionInBucket(String bucketName, String key, PartitionTransaction transaction) {
+        return new AddTransactionRequest(new TransactionBodyPointer(bucketName, key), transaction);
+    }
+
+    public <T extends StateStoreTransaction<?>> T getTransaction() {
+        return (T) transaction;
+    }
+
+    public TransactionBodyPointer getBodyPointer() {
+        return bodyPointer;
+    }
 }

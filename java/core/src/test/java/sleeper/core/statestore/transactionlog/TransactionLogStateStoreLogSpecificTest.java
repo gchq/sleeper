@@ -16,7 +16,6 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,6 +33,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore.ThrowingRunnable;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -435,8 +435,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         private TransactionLogStateStore store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
 
         @Test
-        @Disabled("TODO")
-        void shouldAddTransactionWhoseBodyIsHeldInS3() {
+        void shouldAddFileTransactionWhoseBodyIsHeldInS3() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
@@ -448,6 +447,21 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(file);
+        }
+
+        @Test
+        void shouldAddPartitionTransactionWhoseBodyIsHeldInS3() {
+            // Given
+            PartitionTree tree = partitions.splitToNewChildren("root", "L", "R", "m").buildTree();
+            PartitionTransaction transaction = new InitialisePartitionsTransaction(tree.getAllPartitions());
+            String bucket = "test-data-bucket";
+            String key = "table/fileTransactions/myTransaction.json";
+
+            // When
+            store.addTransaction(AddTransactionRequest.partitionTransactionInBucket(bucket, key, transaction));
+
+            // Then
+            assertThat(store.getAllPartitions()).isEqualTo(tree.getAllPartitions());
         }
     }
 

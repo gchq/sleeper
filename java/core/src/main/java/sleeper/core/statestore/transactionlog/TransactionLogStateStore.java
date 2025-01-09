@@ -94,6 +94,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
      * @param request the request
      */
     public void addTransaction(AddTransactionRequest request) {
+        if (request.getTransaction() instanceof FileReferenceTransaction) {
+            files.addTransaction(request);
+        } else if (request.getTransaction() instanceof PartitionTransaction) {
+            partitions.addTransaction(request);
+        }
     }
 
     public static Builder builder() {
