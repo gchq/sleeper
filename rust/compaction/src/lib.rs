@@ -23,6 +23,7 @@
 
 mod datafusion;
 mod details;
+mod readahead;
 mod s3;
 mod store;
 

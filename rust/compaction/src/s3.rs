@@ -18,8 +18,10 @@ use std::{
     cell::RefCell,
     collections::{hash_map::Entry, HashMap},
     future::ready,
+    num::NonZero,
     pin::Pin,
     sync::Arc,
+    time::Duration,
 };
 
 use aws_config::{BehaviorVersion, Region};
@@ -33,7 +35,10 @@ use object_store::{
 };
 use url::Url;
 
-use crate::store::{LoggingObjectStore, SizeHintableStore};
+use crate::{
+    readahead::ReadaheadStore,
+    store::{LoggingObjectStore, SizeHintableStore},
+};
 
 /// A tuple struct to bridge AWS credentials obtained from the [`aws_config`] crate
 /// and the [`CredentialProvider`] trait in the [`object_store`] crate.
@@ -66,7 +71,7 @@ impl CredentialProvider for CredentialsFromConfigProvider {
     }
 }
 
-/// Create an [`ObjectStore`] builder for AWS S3 for the given region and with provided credentials.
+/// Create an [`object_store::ObjectStore`] builder for AWS S3 for the given region and with provided credentials.
 pub fn config_for_s3_module(
     creds: &aws_credential_types::Credentials,
     region: &Region,
@@ -97,7 +102,7 @@ pub async fn default_creds_store() -> color_eyre::Result<AmazonS3Builder> {
     Ok(config_for_s3_module(&creds, region))
 }
 
-/// Creates [`ObjectStore`] implementations from a URL and loads credentials into the S3
+/// Creates [`object_store::ObjectStore`] implementations from a URL and loads credentials into the S3
 /// object store.
 pub struct ObjectStoreFactory {
     s3_config: Option<AmazonS3Builder>,
@@ -113,10 +118,10 @@ impl ObjectStoreFactory {
         }
     }
 
-    /// Retrieves the appropriate [`ObjectStore`] for a given URL.
+    /// Retrieves the appropriate [`object_store::ObjectStore`] for a given URL.
     ///
     /// The object returned will be the same for each subsequent call to this method for a given URL scheme.
-    /// This method uses an internal cache to store the created [`ObjectStore`]s. The object will only
+    /// This method uses an internal cache to store the created [`object_store::ObjectStore`]s. The object will only
     /// be created the first time it is needed.
     ///
     /// The loaded credentials will also be set in the builder to enable authentication with S3.
@@ -141,7 +146,7 @@ impl ObjectStoreFactory {
         }
     }
 
-    /// Creates the appropriate [`ObjectStore`] for a given URL.
+    /// Creates the appropriate [`object_store::ObjectStore`] for a given URL.
     ///
     /// The loaded credentials will also be set in the builder to enable authentication with S3.
     ///
@@ -150,12 +155,21 @@ impl ObjectStoreFactory {
     /// If no credentials have been provided, then trying to access S3 URLs will fail.
     fn make_object_store(&self, src: &Url) -> color_eyre::Result<Arc<dyn SizeHintableStore>> {
         match src.scheme() {
-            "s3" => Ok(self
-                .connect_s3(src)
-                .map(|e| Arc::new(LoggingObjectStore::new(e, "S3")))?),
+            "s3" => Ok(self.connect_s3(src).map(|e| {
+                Arc::new(LoggingObjectStore::new(
+                    ReadaheadStore::new(e)
+                        .with_max_live_streams(
+                            std::thread::available_parallelism()
+                                .unwrap_or(NonZero::new(2usize).unwrap())
+                                .get(),
+                        )
+                        .with_max_stream_age(Duration::from_secs(60)),
+                    "DataFusion",
+                ))
+            })?),
             "file" => Ok(Arc::new(LoggingObjectStore::new(
                 LocalFileSystem::new(),
-                "LOCAL",
+                "Local",
             ))),
             _ => Err(eyre!("no object store for given schema")),
         }

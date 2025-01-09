@@ -96,7 +96,7 @@ fn get_row_key_types(schema: &DFSchema, row_keys: &[String]) -> Vec<DataType> {
 /// Create a vector of Data Sketches.
 ///
 /// This creates the appropriate data sketch implementations based on on the row key fields
-/// and the data types in the schema. Each type is wrapped in a [`SketchEnum`] variant type.
+/// and the data types in the schema. Each type is wrapped in a [`DataSketchVariant`] variant type.
 ///
 /// # Panics
 /// If a row key field can't be found in the schema.
