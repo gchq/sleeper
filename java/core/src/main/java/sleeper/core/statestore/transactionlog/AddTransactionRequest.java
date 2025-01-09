@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+
 import java.util.Optional;
 
 /**
@@ -61,6 +63,10 @@ public class AddTransactionRequest {
      */
     public <T extends StateStoreTransaction<?>> T getTransaction() {
         return (T) transaction;
+    }
+
+    public TransactionType getTransactionType() {
+        return TransactionType.getType(transaction);
     }
 
     public Optional<TransactionBodyPointer> getBodyPointer() {

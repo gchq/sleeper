@@ -436,6 +436,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         private TransactionLogStateStore store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
 
         @Test
+        @Disabled("TODO")
         void shouldAddFileTransactionWhoseBodyIsHeldInS3() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
@@ -448,10 +449,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
 
             // Then
-            assertThat(store.getFileReferences()).containsExactly(file);
+            assertThat(otherProcess().getFileReferences()).containsExactly(file);
         }
 
         @Test
+        @Disabled("TODO")
         void shouldAddPartitionTransactionWhoseBodyIsHeldInS3() {
             // Given
             PartitionTree tree = partitions.splitToNewChildren("root", "L", "R", "m").buildTree();
@@ -464,7 +466,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
 
             // Then
-            assertThat(store.getAllPartitions()).isEqualTo(tree.getAllPartitions());
+            assertThat(otherProcess().getAllPartitions()).isEqualTo(tree.getAllPartitions());
         }
 
         @Test

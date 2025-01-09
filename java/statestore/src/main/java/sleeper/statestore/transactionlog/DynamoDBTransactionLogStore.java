@@ -128,7 +128,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     @Override
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
         long transactionNumber = entry.getTransactionNumber();
-        StateStoreTransaction<?> transaction = entry.getTransaction();
+        StateStoreTransaction<?> transaction = entry.getTransaction().orElseThrow();
         try {
             dynamo.putItem(new PutItemRequest()
                     .withTableName(logTableName)
