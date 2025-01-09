@@ -23,7 +23,7 @@ time as it scans through the data in all the files.
 
 ## Possible failure states:
 
-### Once record doesn't fit into the whole batch buffer
+### One record doesn't fit into the whole batch buffer
 
 This would occur if the record itself is very large in size (batch buffer size is defined by `sleeper.ingest.arrow.batch.buffer.bytes`)
 An AssertionError is thrown during the execution of flushing the fille to local. [ArrowRecordBatch.flushToLocalArrowFileThenClear]
@@ -31,28 +31,23 @@ Resolution for this would primarily be through expanding the buffer size if poss
 break into more manageable chunks should allow avoidance of this issue.
 
 ### Vector of indexes doesn't fit in the working buffer
-Likely to occur when the records are small enough that when the batch buffer is full we would have too many requests.
-For example, if the record was a single integer, the vector to the indexes would likely be similar in length to that 
-of the batch buffer. An OutOfMemoryException would be thrown at the end of the sorting of the Vector contents.
-The likely resolution for this is to expand the the working buffer capacity.
+This is likely to occur when the records are small enough that when the batch buffer is full we would have too many integers 
+to fit in the working buffer as a vector of the indexes. For example, if the record was a single integer, the vector of the 
+indexes would likely be similar in length to that of the batch buffer. An OutOfMemoryException would be thrown at the 
+allocation of the vector of indexes. The likely resolution for this is to expand the working buffer capacity.
 
 ### Arrow record batch doesn't fit in the working buffer
 The batch size of the records is configured to provide the number for records to write to a local arrow file when storing.
-As such the above failure state could occur during either the writing or the reading of the file.
+As such this failure state could occur during either the writing or the reading of the file.
 
-Writing of the local file is performed with ArrowRecordBatch.sortArrowAndWriteToLocalFile, and as such one record batch at a time
-is held in smallBatchVectorSchemaRoot. This also needs to fit alongside the vector of indexes for the data.
-Meaning that it is possible for one of the following places to throw an exception for the fail state:
-
-    - smallBatchVectorSchemaRoot.allocateNew
-    - dstVector.copyFromSafe
-The exception thrown is likely to be an OutOfMemoryException.
+When writing to the local file, we hold one Arrow record batch at a time in the working buffer. This also needs to fit 
+alongside the vector of indexes for the data. Thre exception can be thrown either when we allocate the record batch or
+when we copy record data into the record batch. The exception thrown is likely to be an OutOfMemoryException.
 
 The reading of the batch file occurs within ArrowRecordBatch.createCloseableRecordIteratorForArrowFile. As part of this 
 process the ArrowStreamReader handles the allocation of the file and will hold one record batch within its ArrowReader.
 As it will also require memory for the MessageChannelReader during the process, all of this is likely to contribute to 
 the failure state.
-
 
 ## To explain
 sleeper.ingest.arrow.working.buffer.bytes
