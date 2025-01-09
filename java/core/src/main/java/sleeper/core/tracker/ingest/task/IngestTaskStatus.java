@@ -141,11 +141,11 @@ public class IngestTaskStatus {
     public JobRun asAggregatedJobRun() {
         return JobRun.builder().taskId(taskId)
                 .startedStatus(IngestTaskStartedStatus.startTime(getStartTime()))
-                .finishedStatus(asProcessFinishedStatus())
+                .finishedStatus(asFinishedStatus())
                 .build();
     }
 
-    private JobRunFinishedStatus asProcessFinishedStatus() {
+    private JobRunFinishedStatus asFinishedStatus() {
         if (finishedStatus == null) {
             return null;
         }

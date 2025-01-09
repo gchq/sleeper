@@ -111,11 +111,11 @@ public class CompactionTaskStatus {
     public JobRun asAggregatedJobRun() {
         return JobRun.builder().taskId(taskId)
                 .startedStatus(CompactionTaskStartedStatus.startTime(getStartTime()))
-                .finishedStatus(asProcessFinishedStatus())
+                .finishedStatus(asFinishedStatus())
                 .build();
     }
 
-    private JobRunFinishedStatus asProcessFinishedStatus() {
+    private JobRunFinishedStatus asFinishedStatus() {
         if (finishedStatus == null) {
             return null;
         }
