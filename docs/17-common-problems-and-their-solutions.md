@@ -6,9 +6,14 @@ These instructions will assume you start in the project root directory and Sleep
 
 ## Out of memory error from standard ingest tasks
 
-Presently the implementation is based on arrow ingest, whereas previously it was an arraylist based implementation and
+Presently the implementation is based on arrow ingest, whereas previously it was an array list based implementation and
 as such will work differently if that is used.
-For further details on this see the documentation on [Arrow Implementation](19-arrow-implementation.md)
+
+## Arrow implementation
+
+For further details on this see the documentation on [Arrow Implementation](19-arrow-implementation.md).
+
+## Array list implementation
 
 If standard ingest tasks fail with an out of memory error ("Exception in thread main java.lang.OutOfMemoryError: Java
 heap space") then this is likely due to the tasks not being able to store the specified number of records in memory.
@@ -34,7 +39,7 @@ results of queries. This is set in the `sleeper.retain.infra.after.destroy` inst
 the `cdk destroy` command partially failed due to there being some tasks running on ECS or EMR clusters. In this case
 the cluster cannot be destroyed until the tasks are completed or terminated.
 
-If there are some remnants present then attempting to deploy Sleeper again with the same instance id will fail as it
+If there are some remnants present, then attempting to deploy Sleeper again with the same instance id will fail as it
 will complain that some resources it needs to create already exist.
 
 If you want to recreate an instance with the same instance id as one that was previously deleted, then check
