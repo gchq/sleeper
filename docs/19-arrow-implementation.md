@@ -51,7 +51,7 @@ The exception thrown is likely to be an OutOfMemoryException.
 The reading of the batch file occurs within ArrowRecordBatch.createCloseableRecordIteratorForArrowFile. As part of this 
 process the ArrowStreamReader handles the allocation of the file and will hold one record batch within its ArrowReader.
 As it will also require memory for the MessageChannelReader during the process, all of this is likely to contribute to 
-the failure state
+the failure state.
 
 
 ## To explain

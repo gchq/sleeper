@@ -9,11 +9,11 @@ These instructions will assume you start in the project root directory and Sleep
 Presently the implementation is based on arrow ingest, whereas previously it was an array list based implementation and
 as such will work differently if that is used.
 
-## Arrow implementation
+### Arrow implementation
 
 For further details on this see the documentation on [Arrow Implementation](19-arrow-implementation.md).
 
-## Array list implementation
+### Array list implementation
 
 If standard ingest tasks fail with an out of memory error ("Exception in thread main java.lang.OutOfMemoryError: Java
 heap space") then this is likely due to the tasks not being able to store the specified number of records in memory.
