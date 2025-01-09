@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -31,6 +33,7 @@ import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore.ThrowingRunnable;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -422,6 +425,29 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
 
             // Then
             assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
+    }
+
+    @Nested
+    @DisplayName("Add a transaction that is already stored separately")
+    class AddStoredTransaction {
+
+        private TransactionLogStateStore store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
+
+        @Test
+        @Disabled("TODO")
+        void shouldAddTransactionWhoseBodyIsHeldInS3() {
+            // Given
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            String bucket = "test-data-bucket";
+            String key = "table/fileTransactions/myTransaction.json";
+
+            // When
+            store.addTransaction(AddTransactionRequest.fileTransactionInBucket(bucket, key, transaction));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(file);
         }
     }
 

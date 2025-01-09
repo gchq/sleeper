@@ -87,6 +87,15 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         partitions.updateFromLog();
     }
 
+    /**
+     * Adds a transaction to the transaction log. The transaction may or may not already be held in S3. If it is already
+     * held in S3, we don't need to write it to S3 again.
+     *
+     * @param request the request
+     */
+    public void addTransaction(AddTransactionRequest request) {
+    }
+
     public static Builder builder() {
         return new Builder();
     }
