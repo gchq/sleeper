@@ -141,7 +141,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     void addTransaction(AddTransactionRequest request) {
-        head.addTransaction(clock.instant(), request.getTransaction());
+        head.addTransaction(clock.instant(), request);
     }
 
     private StateStoreFiles files() throws StateStoreException {

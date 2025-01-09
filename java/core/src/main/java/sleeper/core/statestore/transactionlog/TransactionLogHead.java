@@ -76,14 +76,19 @@ class TransactionLogHead<T> {
         return new Builder<>();
     }
 
+    void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
+        addTransaction(updateTime, AddTransactionRequest.transaction(transaction));
+    }
+
     /**
      * Adds a transaction to the log. Brings the state as up to date as possible before writing to the log. Handles
      * conflicts with other processes writing to the log at the same time.
      *
      * @throws StateStoreException thrown if there's any failure reading or adding a transaction
      */
-    void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
+    void addTransaction(Instant updateTime, AddTransactionRequest request) throws StateStoreException {
         Instant startTime = Instant.now();
+        StateStoreTransaction<T> transaction = request.getTransaction();
         LOGGER.debug("Adding transaction of type {} to table {}",
                 transaction.getClass().getSimpleName(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");

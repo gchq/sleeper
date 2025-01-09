@@ -443,7 +443,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             String key = "table/fileTransactions/myTransaction.json";
 
             // When
-            store.addTransaction(AddTransactionRequest.fileTransactionInBucket(bucket, key, transaction));
+            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(file);
@@ -458,7 +458,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             String key = "table/fileTransactions/myTransaction.json";
 
             // When
-            store.addTransaction(AddTransactionRequest.partitionTransactionInBucket(bucket, key, transaction));
+            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
 
             // Then
             assertThat(store.getAllPartitions()).isEqualTo(tree.getAllPartitions());

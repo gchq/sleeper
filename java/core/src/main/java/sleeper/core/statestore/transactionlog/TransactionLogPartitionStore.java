@@ -91,7 +91,7 @@ class TransactionLogPartitionStore implements PartitionStore {
     }
 
     void addTransaction(AddTransactionRequest request) {
-        head.addTransaction(clock.instant(), request.getTransaction());
+        head.addTransaction(clock.instant(), request);
     }
 
     private Stream<Partition> partitions() throws StateStoreException {

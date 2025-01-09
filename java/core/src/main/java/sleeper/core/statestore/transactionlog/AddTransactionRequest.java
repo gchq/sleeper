@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import java.util.Optional;
+
 /**
  * Holds a transaction that should be added to the log. The transaction may or may not already be held in S3.
  */
@@ -29,34 +31,32 @@ public class AddTransactionRequest {
     }
 
     /**
-     * Creates a request to add a file transaction that's held in S3.
+     * Creates a request to add a transaction that's held in S3.
      *
      * @param  bucketName  the bucket
      * @param  key         the object key
      * @param  transaction the transaction object
      * @return             the request
      */
-    public static AddTransactionRequest fileTransactionInBucket(String bucketName, String key, FileReferenceTransaction transaction) {
+    public static AddTransactionRequest transactionInBucket(String bucketName, String key, StateStoreTransaction<?> transaction) {
         return new AddTransactionRequest(new TransactionBodyPointer(bucketName, key), transaction);
     }
 
     /**
-     * Creates a request to add a partition transaction that's held in S3.
+     * Creates a request to add a transaction that's not held in S3.
      *
-     * @param  bucketName  the bucket
-     * @param  key         the object key
      * @param  transaction the transaction object
      * @return             the request
      */
-    public static AddTransactionRequest partitionTransactionInBucket(String bucketName, String key, PartitionTransaction transaction) {
-        return new AddTransactionRequest(new TransactionBodyPointer(bucketName, key), transaction);
+    public static AddTransactionRequest transaction(StateStoreTransaction<?> transaction) {
+        return new AddTransactionRequest(null, transaction);
     }
 
     public <T extends StateStoreTransaction<?>> T getTransaction() {
         return (T) transaction;
     }
 
-    public TransactionBodyPointer getBodyPointer() {
-        return bodyPointer;
+    public Optional<TransactionBodyPointer> getBodyPointer() {
+        return Optional.ofNullable(bodyPointer);
     }
 }
