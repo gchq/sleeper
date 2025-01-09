@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -429,8 +430,8 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     }
 
     @Nested
-    @DisplayName("Add a transaction that is already stored separately")
-    class AddStoredTransaction {
+    @DisplayName("Store the body of a transaction separately")
+    class StoreTransactionBodySeparately {
 
         private TransactionLogStateStore store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
 
@@ -441,6 +442,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             String bucket = "test-data-bucket";
             String key = "table/fileTransactions/myTransaction.json";
+            transactionBodyStore.store(new TransactionBodyPointer(bucket, key), transaction);
 
             // When
             store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
@@ -456,12 +458,30 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             PartitionTransaction transaction = new InitialisePartitionsTransaction(tree.getAllPartitions());
             String bucket = "test-data-bucket";
             String key = "table/fileTransactions/myTransaction.json";
+            transactionBodyStore.store(new TransactionBodyPointer(bucket, key), transaction);
 
             // When
             store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
 
             // Then
             assertThat(store.getAllPartitions()).isEqualTo(tree.getAllPartitions());
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldFailIfTransactionBodyIsNotInStore() {
+            // Given
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            String bucket = "test-data-bucket";
+            String key = "table/fileTransactions/myTransaction.json";
+
+            // When
+            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
+
+            // Then
+            assertThatThrownBy(() -> otherProcess().getFileReferences())
+                    .isInstanceOf(StateStoreException.class);
         }
     }
 

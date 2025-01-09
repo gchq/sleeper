@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import java.util.Objects;
+
 /**
  * A pointer to where the body of a transaction is held. Currently this can only be S3.
  */
@@ -33,5 +35,27 @@ public class TransactionBodyPointer {
 
     public String getKey() {
         return key;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(bucketName, key);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof TransactionBodyPointer)) {
+            return false;
+        }
+        TransactionBodyPointer other = (TransactionBodyPointer) obj;
+        return Objects.equals(bucketName, other.bucketName) && Objects.equals(key, other.key);
+    }
+
+    @Override
+    public String toString() {
+        return "TransactionBodyPointer{bucketName=" + bucketName + ", key=" + key + "}";
     }
 }

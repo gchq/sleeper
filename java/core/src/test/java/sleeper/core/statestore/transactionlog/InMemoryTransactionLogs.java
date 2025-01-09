@@ -37,6 +37,7 @@ public class InMemoryTransactionLogs {
     private final InMemoryTransactionLogSnapshots filesSnapshots = new InMemoryTransactionLogSnapshots();
     private final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
     private final InMemoryTransactionLogSnapshots partitionsSnapshots = new InMemoryTransactionLogSnapshots();
+    private final InMemoryTransactionBodyStore transactionBodyStore = new InMemoryTransactionBodyStore();
     private final List<Duration> retryWaits = new ArrayList<>();
     private final ThreadSleep retryWaiter;
 
@@ -93,6 +94,10 @@ public class InMemoryTransactionLogs {
 
     public InMemoryTransactionLogSnapshots getPartitionsSnapshots() {
         return partitionsSnapshots;
+    }
+
+    public InMemoryTransactionBodyStore getTransactionBodyStore() {
+        return transactionBodyStore;
     }
 
     public List<Duration> getRetryWaits() {
