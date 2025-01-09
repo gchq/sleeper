@@ -523,15 +523,15 @@ impl<T: ObjectStore> ObjectStore for ReadaheadStore<T> {
         if should_skip_readahead(&options) {
             return self.inner.get_opts(location, options).await;
         }
-    
+
         let start_pos = get_start_pos(options.range.as_ref());
         let cached = self
-        .get_cached_stream(location, options.range.as_ref())
-        .await?;
+            .get_cached_stream(location, options.range.as_ref())
+            .await?;
 
         // Clean cache here so that we don't expire something we're just about to use, even if it is about to expire
         self.clean_cache();
-        
+
         // If cache hit
         match cached {
             Some((meta, attributes, stream)) => {
