@@ -52,6 +52,13 @@ public class AddTransactionRequest {
         return new AddTransactionRequest(null, transaction);
     }
 
+    /**
+     * Retrieves the transaction.
+     *
+     * @param  <T> the expected type of the transaction (e.g. {@link FileReferenceTransaction} or
+     *             {@link PartitionTransaction})
+     * @return     the transaction
+     */
     public <T extends StateStoreTransaction<?>> T getTransaction() {
         return (T) transaction;
     }

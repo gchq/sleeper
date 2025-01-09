@@ -469,7 +469,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
 
         @Test
         @Disabled("TODO")
-        void shouldFailIfTransactionBodyIsNotInStore() {
+        void shouldFailToLoadTransactionIfBodyIsNotInStore() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
