@@ -20,19 +20,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleJobStatusFrom;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class IngestJobStatusInPeriodTest {
 
@@ -220,15 +220,15 @@ public class IngestJobStatusInPeriodTest {
                 ingestFinishedStatusUncommitted(summary(startTime, finishTime, 100, 100), 2));
     }
 
-    private IngestJobStatus statusFromUpdates(ProcessStatusUpdate... updates) {
+    private IngestJobStatus statusFromUpdates(JobStatusUpdate... updates) {
         return singleJobStatusFrom(records().fromUpdates(updates));
     }
 
-    private ProcessStatusUpdate startedRun(Instant startedTime) {
+    private JobStatusUpdate startedRun(Instant startedTime) {
         return IngestJobStatusTestData.ingestStartedStatus(startedTime, defaultUpdateTime(startedTime));
     }
 
-    private ProcessStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {
+    private JobStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {
         return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime),
                 summary(startedTime, finishedTime, 100, 100))
                 .numFilesWrittenByJob(2).build();

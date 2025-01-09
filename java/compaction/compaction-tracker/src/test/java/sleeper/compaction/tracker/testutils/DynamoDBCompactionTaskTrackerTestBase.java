@@ -23,11 +23,11 @@ import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
 import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTracker;
 import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Duration;
@@ -84,8 +84,8 @@ public class DynamoDBCompactionTaskTrackerTestBase extends DynamoDBTestBase {
         return Instant.parse("2022-09-22T16:30:00.500Z");
     }
 
-    private static RecordsProcessedSummary defaultJobSummary() {
-        return new RecordsProcessedSummary(
+    private static JobRunSummary defaultJobSummary() {
+        return new JobRunSummary(
                 new RecordsProcessed(4800L, 2400L),
                 defaultJobStartTime(), defaultJobFinishTime());
     }
@@ -128,7 +128,7 @@ public class DynamoDBCompactionTaskTrackerTestBase extends DynamoDBTestBase {
             CompactionTaskStatus.Builder builder, Instant startTime, Instant finishTime) {
         return builder.startTime(startTime)
                 .finished(finishTime, CompactionTaskFinishedStatus.builder()
-                        .addJobSummary(new RecordsProcessedSummary(
+                        .addJobSummary(new JobRunSummary(
                                 new RecordsProcessed(200, 100),
                                 startTime, finishTime)))
                 .build();

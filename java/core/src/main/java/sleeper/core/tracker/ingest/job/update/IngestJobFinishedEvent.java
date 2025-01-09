@@ -16,9 +16,9 @@
 
 package sleeper.core.tracker.ingest.job.update;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,7 +29,7 @@ import java.util.Objects;
 public class IngestJobFinishedEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
-    private final RecordsProcessedSummary summary;
+    private final JobRunSummary summary;
     private final int numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
     private final String jobRunId;
@@ -57,7 +57,7 @@ public class IngestJobFinishedEvent implements IngestJobEvent {
         return tableId;
     }
 
-    public RecordsProcessedSummary getSummary() {
+    public JobRunSummary getSummary() {
         return summary;
     }
 
@@ -108,7 +108,7 @@ public class IngestJobFinishedEvent implements IngestJobEvent {
     public static final class Builder {
         private String jobId;
         private String tableId;
-        private RecordsProcessedSummary summary;
+        private JobRunSummary summary;
         private Integer numFilesWrittenByJob;
         private boolean committedBySeparateFileUpdates;
         private String jobRunId;
@@ -145,7 +145,7 @@ public class IngestJobFinishedEvent implements IngestJobEvent {
          * @param  summary the records processed summary
          * @return         the builder
          */
-        public Builder summary(RecordsProcessedSummary summary) {
+        public Builder summary(JobRunSummary summary) {
             this.summary = summary;
             return this;
         }

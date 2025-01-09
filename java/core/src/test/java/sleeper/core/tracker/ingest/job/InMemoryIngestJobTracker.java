@@ -15,10 +15,6 @@
  */
 package sleeper.core.tracker.ingest.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
@@ -30,6 +26,10 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -41,8 +41,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.REJECTED;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
 /**
  * An in-memory implementation of the ingest job tracker.
@@ -53,7 +53,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
     @Override
     public void jobValidated(IngestJobValidatedEvent event) {
         tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
-                .add(ProcessStatusUpdateRecord.builder()
+                .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
                         .statusUpdate(toStatusUpdate(event, defaultUpdateTime(event.getValidationTime())))
                         .jobRunId(event.getJobRunId())
@@ -64,7 +64,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
     @Override
     public void jobStarted(IngestJobStartedEvent event) {
         tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
-                .add(ProcessStatusUpdateRecord.builder()
+                .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
                         .statusUpdate(IngestJobStartedStatus.withStartOfRun(event.isStartOfRun())
                                 .inputFileCount(event.getFileCount())
@@ -79,7 +79,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
     @Override
     public void jobAddedFiles(IngestJobAddedFilesEvent event) {
         existingJobRecords(event.getTableId(), event.getJobId())
-                .add(ProcessStatusUpdateRecord.builder()
+                .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
                         .statusUpdate(IngestJobAddedFilesStatus.builder()
                                 .writtenTime(event.getWrittenTime())
@@ -93,9 +93,9 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
 
     @Override
     public void jobFinished(IngestJobFinishedEvent event) {
-        RecordsProcessedSummary summary = event.getSummary();
+        JobRunSummary summary = event.getSummary();
         existingJobRecords(event.getTableId(), event.getJobId())
-                .add(ProcessStatusUpdateRecord.builder()
+                .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
                         .statusUpdate(IngestJobFinishedStatus.updateTimeAndSummary(
                                 defaultUpdateTime(summary.getFinishTime()), summary)
@@ -109,11 +109,11 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
 
     @Override
     public void jobFailed(IngestJobFailedEvent event) {
-        ProcessRunTime runTime = event.getRunTime();
+        JobRunTime runTime = event.getRunTime();
         existingJobRecords(event.getTableId(), event.getJobId())
-                .add(ProcessStatusUpdateRecord.builder()
+                .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, event.getFailureReasons()))
+                        .statusUpdate(JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, event.getFailureReasons()))
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())
                         .build());
@@ -147,9 +147,9 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
      * Streams all process status update records for a table.
      *
      * @param  tableId the table ID
-     * @return         a stream of {@link ProcessStatusUpdateRecord}
+     * @return         a stream of {@link JobStatusUpdateRecord}
      */
-    public Stream<ProcessStatusUpdateRecord> streamTableRecords(String tableId) {
+    public Stream<JobStatusUpdateRecord> streamTableRecords(String tableId) {
         return tableJobs(tableId)
                 .map(TableJobs::streamAllRecords)
                 .orElse(Stream.empty());
@@ -159,7 +159,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
         return Optional.ofNullable(tableIdToJobs.get(tableId));
     }
 
-    private List<ProcessStatusUpdateRecord> existingJobRecords(String tableId, String jobId) {
+    private List<JobStatusUpdateRecord> existingJobRecords(String tableId, String jobId) {
         return tableJobs(tableId)
                 .map(jobs -> jobs.jobIdToUpdateRecords.get(jobId))
                 .orElseThrow(() -> new IllegalStateException("Job not started: " + jobId));
@@ -169,9 +169,9 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
      * Stores job updates by job ID in memory.
      */
     private static class TableJobs {
-        private final Map<String, List<ProcessStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
+        private final Map<String, List<JobStatusUpdateRecord>> jobIdToUpdateRecords = new HashMap<>();
 
-        private Stream<ProcessStatusUpdateRecord> streamAllRecords() {
+        private Stream<JobStatusUpdateRecord> streamAllRecords() {
             return jobIdToUpdateRecords.values().stream().flatMap(List::stream);
         }
     }

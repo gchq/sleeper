@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.compaction.job.update;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.util.Objects;
 
@@ -27,7 +27,7 @@ public class CompactionJobFinishedEvent {
     private final String tableId;
     private final String taskId;
     private final String jobRunId;
-    private final RecordsProcessedSummary summary;
+    private final JobRunSummary summary;
 
     private CompactionJobFinishedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
@@ -57,7 +57,7 @@ public class CompactionJobFinishedEvent {
         return jobRunId;
     }
 
-    public RecordsProcessedSummary getSummary() {
+    public JobRunSummary getSummary() {
         return summary;
     }
 
@@ -90,7 +90,7 @@ public class CompactionJobFinishedEvent {
     public static final class Builder {
         private String jobId;
         private String tableId;
-        private RecordsProcessedSummary summary;
+        private JobRunSummary summary;
         private String jobRunId;
         private String taskId;
 
@@ -125,7 +125,7 @@ public class CompactionJobFinishedEvent {
          * @param  summary the records processed summary
          * @return         the builder
          */
-        public Builder summary(RecordsProcessedSummary summary) {
+        public Builder summary(JobRunSummary summary) {
             this.summary = summary;
             return this;
         }

@@ -16,9 +16,9 @@
 
 package sleeper.core.tracker.ingest.task;
 
-import sleeper.core.record.process.status.ProcessFinishedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.TimeWindowQuery;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.status.JobRunFinishedStatus;
+import sleeper.core.tracker.job.status.TimeWindowQuery;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -62,9 +62,9 @@ public class IngestTaskStatus {
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
         TimeWindowQuery timeWindowQuery = new TimeWindowQuery(windowStartTime, windowEndTime);
         if (isFinished()) {
-            return timeWindowQuery.isFinishedProcessInWindow(startTime, finishedStatus.getFinishTime());
+            return timeWindowQuery.isFinishedJobInWindow(startTime, finishedStatus.getFinishTime());
         } else {
-            return timeWindowQuery.isUnfinishedProcessInWindow(startTime);
+            return timeWindowQuery.isUnfinishedJobInWindow(startTime);
         }
     }
 
@@ -133,22 +133,23 @@ public class IngestTaskStatus {
     }
 
     /**
-     * Creates a process run object from this task.
+     * Creates an object to represent this task as a run of a job. Treats the task as though it is a job to run
+     * ingest jobs. Includes aggregated statistics from the ingest job runs that occur in this task.
      *
-     * @return a {@link ProcessRun} object
+     * @return a {@link JobRun} object
      */
-    public ProcessRun asProcessRun() {
-        return ProcessRun.builder().taskId(taskId)
+    public JobRun asAggregatedJobRun() {
+        return JobRun.builder().taskId(taskId)
                 .startedStatus(IngestTaskStartedStatus.startTime(getStartTime()))
-                .finishedStatus(asProcessFinishedStatus())
+                .finishedStatus(asFinishedStatus())
                 .build();
     }
 
-    private ProcessFinishedStatus asProcessFinishedStatus() {
+    private JobRunFinishedStatus asFinishedStatus() {
         if (finishedStatus == null) {
             return null;
         }
-        return ProcessFinishedStatus.updateTimeAndSummary(
+        return JobRunFinishedStatus.updateTimeAndSummary(
                 finishedStatus.getFinishTime(),
                 finishedStatus.asSummary(getStartTime()));
     }

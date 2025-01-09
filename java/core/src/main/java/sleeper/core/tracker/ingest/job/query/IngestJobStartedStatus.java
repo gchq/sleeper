@@ -47,7 +47,7 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
      * For ingest jobs, the job is started when an ingest task retrieves it from an SQS queue.
      * For bulk import jobs, the job starts when the bulk import starter validates it and assigns it to a Spark cluster.
      * When a bulk import job starts in the Spark cluster, that needs to not count as the start of the run, else the
-     * {@link ProcessRunsBuilder} would detect that as multiple runs.
+     * {@link JobRunsBuilder} would detect that as multiple runs.
      *
      * @param  startOfRun whether this status marks the start of a job run
      * @return            the builder
@@ -159,7 +159,7 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
          * For bulk import jobs, the job starts when the bulk import starter validates it and assigns it to a Spark
          * cluster.
          * When a bulk import job starts in the Spark cluster, that needs to not count as the start of the run, else the
-         * {@link ProcessRunsBuilder} would detect that as multiple runs.
+         * {@link JobRunsBuilder} would detect that as multiple runs.
          *
          * @param  isStartOfRun whether this status represents the start of a job run
          * @return              the builder

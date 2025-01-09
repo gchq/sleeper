@@ -19,22 +19,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobOnTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.committedEventBuilder;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEventForTable;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.failedEventBuilder;
@@ -46,11 +41,16 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionJobCreated;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobOnTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 class InMemoryCompactionJobTrackerTest {
 
     private final String tableId = "some-table";
-    private final InMemoryCompactionJobTracker store = new InMemoryCompactionJobTracker();
+    private final InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
 
     @Nested
     @DisplayName("Store status updates")
@@ -63,7 +63,7 @@ class InMemoryCompactionJobTrackerTest {
             CompactionJobCreatedEvent job = addCreatedJob(createdTime);
 
             // When / Then
-            assertThat(store.streamAllJobs(tableId))
+            assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(compactionJobCreated(job, createdTime));
         }
 
@@ -76,7 +76,7 @@ class InMemoryCompactionJobTrackerTest {
             CompactionJobCreatedEvent job = addStartedJob(createdTime, startedTime, taskId);
 
             // When / Then
-            assertThat(store.streamAllJobs(tableId))
+            assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getJobId(), taskId, compactionStartedStatus(startedTime)))));
@@ -93,7 +93,7 @@ class InMemoryCompactionJobTrackerTest {
                     summary(startedTime, finishedTime, 100, 100), taskId);
 
             // When / Then
-            assertThat(store.streamAllJobs(tableId))
+            assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getJobId(), taskId,
@@ -113,7 +113,7 @@ class InMemoryCompactionJobTrackerTest {
                     summary(startedTime, finishedTime, 100, 100), committedTime, taskId);
 
             // When / Then
-            assertThat(store.streamAllJobs(tableId))
+            assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getJobId(), taskId,
@@ -131,15 +131,15 @@ class InMemoryCompactionJobTrackerTest {
             String taskId = "test-task";
             List<String> failureReasons = List.of("Something went wrong");
             CompactionJobCreatedEvent job = addFailedJob(createdTime,
-                    new ProcessRunTime(startedTime, finishedTime), taskId, failureReasons);
+                    new JobRunTime(startedTime, finishedTime), taskId, failureReasons);
 
             // When / Then
-            assertThat(store.streamAllJobs(tableId))
+            assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getJobId(), taskId,
                                     compactionStartedStatus(startedTime),
-                                    compactionFailedStatus(new ProcessRunTime(startedTime, finishedTime), failureReasons)))));
+                                    compactionFailedStatus(new JobRunTime(startedTime, finishedTime), failureReasons)))));
         }
 
         @Test
@@ -150,14 +150,14 @@ class InMemoryCompactionJobTrackerTest {
             Instant finishTime = Instant.parse("2023-03-29T12:28:43Z");
             String taskId = "test-task";
 
-            RecordsProcessedSummary summary = summary(startedTime, finishTime, 100L, 100L);
+            JobRunSummary summary = summary(startedTime, finishTime, 100L, 100L);
             CompactionJobCreatedEvent job = defaultJob();
-            store.jobCreated(job, createdTime);
-            store.jobStarted(startedEventBuilder(job, startedTime).taskId(taskId).build());
-            store.jobFinished(finishedEventBuilder(job, summary).taskId(taskId).build());
+            tracker.jobCreated(job, createdTime);
+            tracker.jobStarted(startedEventBuilder(job, startedTime).taskId(taskId).build());
+            tracker.jobFinished(finishedEventBuilder(job, summary).taskId(taskId).build());
 
             // When / Then
-            assertThat(store.streamAllJobs(tableId))
+            assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getJobId(), taskId,
@@ -176,7 +176,7 @@ class InMemoryCompactionJobTrackerTest {
             CompactionJobCreatedEvent job = addCreatedJob(storeTime);
 
             // When / Then
-            assertThat(store.getJob(job.getJobId()))
+            assertThat(tracker.getJob(job.getJobId()))
                     .contains(compactionJobCreated(job, storeTime));
         }
 
@@ -186,12 +186,12 @@ class InMemoryCompactionJobTrackerTest {
             addCreatedJob(Instant.parse("2023-03-29T12:27:42Z"));
 
             // When / Then
-            assertThat(store.getJob("not-a-job")).isEmpty();
+            assertThat(tracker.getJob("not-a-job")).isEmpty();
         }
 
         @Test
         void shouldFailToFindJobWhenNonePresent() {
-            assertThat(store.getJob("not-a-job")).isEmpty();
+            assertThat(tracker.getJob("not-a-job")).isEmpty();
         }
     }
 
@@ -210,7 +210,7 @@ class InMemoryCompactionJobTrackerTest {
             CompactionJobCreatedEvent job3 = addCreatedJob(time3);
 
             // When / Then
-            assertThat(store.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(
                             compactionJobCreated(job3, time3),
                             compactionJobCreated(job2, time2),
@@ -219,7 +219,7 @@ class InMemoryCompactionJobTrackerTest {
 
         @Test
         void shouldGetNoJobs() {
-            assertThat(store.getAllJobs("no-jobs-table"))
+            assertThat(tracker.getAllJobs("no-jobs-table"))
                     .isEmpty();
         }
     }
@@ -243,7 +243,7 @@ class InMemoryCompactionJobTrackerTest {
             addFinishedJobCommitted(createdTime2, summary(startedTime2, finishedTime2, 100, 100), committedTime2, taskId2);
 
             // When / Then
-            assertThat(store.getUnfinishedJobs(tableId))
+            assertThat(tracker.getUnfinishedJobs(tableId))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getJobId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
@@ -261,12 +261,12 @@ class InMemoryCompactionJobTrackerTest {
                     "test-task");
 
             // When / Then
-            assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
+            assertThat(tracker.getUnfinishedJobs(tableId)).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getUnfinishedJobs(tableId)).isEmpty();
+            assertThat(tracker.getUnfinishedJobs(tableId)).isEmpty();
         }
     }
 
@@ -287,7 +287,7 @@ class InMemoryCompactionJobTrackerTest {
             addStartedJob(createdTime2, startedTime2, taskId2);
 
             // When / Then
-            assertThat(store.getJobsByTaskId(tableId, taskId1))
+            assertThat(tracker.getJobsByTaskId(tableId, taskId1))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
                                     forJob(job1.getJobId(), CompactionJobCreatedStatus.from(job1, createdTime1)),
@@ -304,12 +304,12 @@ class InMemoryCompactionJobTrackerTest {
                     "test-task");
 
             // When / Then
-            assertThat(store.getJobsByTaskId(tableId, "other-task")).isEmpty();
+            assertThat(tracker.getJobsByTaskId(tableId, "other-task")).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getJobsByTaskId(tableId, "some-task")).isEmpty();
+            assertThat(tracker.getJobsByTaskId(tableId, "some-task")).isEmpty();
         }
     }
 
@@ -330,7 +330,7 @@ class InMemoryCompactionJobTrackerTest {
             addStartedJob(createdTime2, startedTime2, taskId2);
 
             // When / Then
-            assertThat(store.getJobsInTimePeriod(tableId,
+            assertThat(tracker.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T12:00:00Z"),
                     Instant.parse("2023-03-29T13:00:00Z")))
                     .containsExactly(
@@ -346,24 +346,24 @@ class InMemoryCompactionJobTrackerTest {
             Instant startedTime1 = Instant.parse("2024-07-01T10:41:00Z");
             Instant finishedTime1 = Instant.parse("2024-07-01T10:43:00Z");
             Instant committedTime1 = Instant.parse("2024-07-01T10:44:10Z");
-            RecordsProcessedSummary summary1 = summary(startedTime1, finishedTime1, 100L, 100L);
+            JobRunSummary summary1 = summary(startedTime1, finishedTime1, 100L, 100L);
             Instant startedTime2 = Instant.parse("2024-07-01T10:41:10Z");
             Instant finishedTime2 = Instant.parse("2024-07-01T10:42:10Z");
             Instant committedTime2 = Instant.parse("2024-07-01T10:42:20Z");
-            RecordsProcessedSummary summary2 = summary(startedTime2, finishedTime2, 100L, 100L);
+            JobRunSummary summary2 = summary(startedTime2, finishedTime2, 100L, 100L);
             String taskId1 = "test-task-1";
             String taskId2 = "test-task-2";
             CompactionJobCreatedEvent job = defaultJob();
-            store.jobCreated(job, createdTime);
-            store.jobStarted(startedEventBuilder(job, startedTime1).taskId(taskId1).build());
-            store.jobStarted(startedEventBuilder(job, startedTime2).taskId(taskId2).build());
-            store.jobFinished(finishedEventBuilder(job, summary2).taskId(taskId2).build());
-            store.jobCommitted(committedEventBuilder(job, committedTime2).taskId(taskId2).build());
-            store.jobFinished(finishedEventBuilder(job, summary1).taskId(taskId1).build());
-            store.jobCommitted(committedEventBuilder(job, committedTime1).taskId(taskId1).build());
+            tracker.jobCreated(job, createdTime);
+            tracker.jobStarted(startedEventBuilder(job, startedTime1).taskId(taskId1).build());
+            tracker.jobStarted(startedEventBuilder(job, startedTime2).taskId(taskId2).build());
+            tracker.jobFinished(finishedEventBuilder(job, summary2).taskId(taskId2).build());
+            tracker.jobCommitted(committedEventBuilder(job, committedTime2).taskId(taskId2).build());
+            tracker.jobFinished(finishedEventBuilder(job, summary1).taskId(taskId1).build());
+            tracker.jobCommitted(committedEventBuilder(job, committedTime1).taskId(taskId1).build());
 
             // When / Then
-            assertThat(store.getJobsInTimePeriod(tableId,
+            assertThat(tracker.getJobsInTimePeriod(tableId,
                     Instant.parse("2024-07-01T10:42:30Z"),
                     Instant.parse("2024-07-01T11:00:00Z")))
                     .containsExactly(
@@ -389,14 +389,14 @@ class InMemoryCompactionJobTrackerTest {
                     "test-task");
 
             // When / Then
-            assertThat(store.getJobsInTimePeriod(tableId,
+            assertThat(tracker.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T14:00:00Z"),
                     Instant.parse("2023-03-29T15:00:00Z"))).isEmpty();
         }
 
         @Test
         void shouldGetNoJobsWhenNonePresent() {
-            assertThat(store.getJobsInTimePeriod(tableId,
+            assertThat(tracker.getJobsInTimePeriod(tableId,
                     Instant.parse("2023-03-29T14:00:00Z"),
                     Instant.parse("2023-03-29T15:00:00Z"))).isEmpty();
         }
@@ -411,13 +411,13 @@ class InMemoryCompactionJobTrackerTest {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
-            RecordsProcessedSummary summary = summary(
+            JobRunSummary summary = summary(
                     startedTime, Duration.ofMinutes(1), 100, 100);
             String taskId = "test-task";
             CompactionJobCreatedEvent job = addFinishedJobUncommitted(createdTime, summary, taskId);
 
             // When / Then
-            assertThat(store.streamAllJobs(tableId))
+            assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getJobId(), taskId,
@@ -431,13 +431,13 @@ class InMemoryCompactionJobTrackerTest {
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
             Instant committedTime = Instant.parse("2023-03-29T12:30:00Z");
-            RecordsProcessedSummary summary = summary(
+            JobRunSummary summary = summary(
                     startedTime, Duration.ofMinutes(1), 100, 100);
             String taskId = "test-task";
             CompactionJobCreatedEvent job = addFinishedJobCommitted(createdTime, summary, committedTime, taskId);
 
             // When / Then
-            assertThat(store.streamAllJobs(tableId))
+            assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
                             forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getJobId(), taskId,
@@ -451,11 +451,11 @@ class InMemoryCompactionJobTrackerTest {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:00Z");
             Instant startedTime1 = Instant.parse("2023-03-29T12:27:10Z");
-            RecordsProcessedSummary summary1 = summary(
+            JobRunSummary summary1 = summary(
                     startedTime1, Duration.ofMinutes(1), 100, 100);
             Instant committedTime1 = Instant.parse("2023-03-29T12:28:11Z");
             Instant startedTime2 = Instant.parse("2023-03-29T12:28:15Z");
-            RecordsProcessedSummary summary2 = summary(
+            JobRunSummary summary2 = summary(
                     startedTime2, Duration.ofMinutes(1), 100, 100);
             String taskId = "test-task";
             String runId1 = "test-run-1";
@@ -463,22 +463,22 @@ class InMemoryCompactionJobTrackerTest {
 
             // When
             CompactionJobCreatedEvent job = defaultJob();
-            store.jobCreated(job, createdTime);
-            store.jobStarted(startedEventBuilder(job, startedTime1).taskId(taskId).jobRunId(runId1).build());
-            store.jobFinished(finishedEventBuilder(job, summary1).taskId(taskId).jobRunId(runId1).build());
-            store.jobCommitted(committedEventBuilder(job, committedTime1).taskId(taskId).jobRunId(runId1).build());
-            store.jobStarted(startedEventBuilder(job, startedTime2).taskId(taskId).jobRunId(runId2).build());
-            store.jobFailed(failedEventBuilder(job, summary2.getRunTime()).taskId(taskId).jobRunId(runId2)
+            tracker.jobCreated(job, createdTime);
+            tracker.jobStarted(startedEventBuilder(job, startedTime1).taskId(taskId).jobRunId(runId1).build());
+            tracker.jobFinished(finishedEventBuilder(job, summary1).taskId(taskId).jobRunId(runId1).build());
+            tracker.jobCommitted(committedEventBuilder(job, committedTime1).taskId(taskId).jobRunId(runId1).build());
+            tracker.jobStarted(startedEventBuilder(job, startedTime2).taskId(taskId).jobRunId(runId2).build());
+            tracker.jobFailed(failedEventBuilder(job, summary2.getRunTime()).taskId(taskId).jobRunId(runId2)
                     .failure(new RuntimeException("Could not commit same compaction twice")).build());
 
             // Then
-            assertThat(store.streamAllJobs(tableId))
+            assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(compactionJobCreated(job, createdTime,
-                            ProcessRun.builder().taskId(taskId)
+                            JobRun.builder().taskId(taskId)
                                     .startedStatus(compactionStartedStatus(startedTime2))
                                     .finishedStatus(compactionFailedStatus(summary2.getRunTime(), List.of("Could not commit same compaction twice")))
                                     .build(),
-                            ProcessRun.builder().taskId(taskId)
+                            JobRun.builder().taskId(taskId)
                                     .startedStatus(compactionStartedStatus(startedTime1))
                                     .finishedStatus(compactionFinishedStatus(summary1))
                                     .statusUpdate(compactionCommittedStatus(committedTime1))
@@ -488,8 +488,8 @@ class InMemoryCompactionJobTrackerTest {
 
     private CompactionJobCreatedEvent addCreatedJob(Instant createdTime) {
         CompactionJobCreatedEvent job = defaultJob();
-        store.fixUpdateTime(createdTime);
-        store.jobCreated(job);
+        tracker.fixUpdateTime(createdTime);
+        tracker.jobCreated(job);
         return job;
     }
 
@@ -499,29 +499,29 @@ class InMemoryCompactionJobTrackerTest {
 
     private CompactionJobCreatedEvent addStartedJob(Instant createdTime, Instant startedTime, String taskId) {
         CompactionJobCreatedEvent job = addCreatedJob(createdTime);
-        store.fixUpdateTime(defaultUpdateTime(startedTime));
-        store.jobStarted(startedEventBuilder(job, startedTime).taskId(taskId).build());
+        tracker.fixUpdateTime(defaultUpdateTime(startedTime));
+        tracker.jobStarted(startedEventBuilder(job, startedTime).taskId(taskId).build());
         return job;
     }
 
-    private CompactionJobCreatedEvent addFinishedJobUncommitted(Instant createdTime, RecordsProcessedSummary summary, String taskId) {
+    private CompactionJobCreatedEvent addFinishedJobUncommitted(Instant createdTime, JobRunSummary summary, String taskId) {
         CompactionJobCreatedEvent job = addStartedJob(createdTime, summary.getStartTime(), taskId);
-        store.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
-        store.jobFinished(finishedEventBuilder(job, summary).taskId(taskId).build());
+        tracker.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
+        tracker.jobFinished(finishedEventBuilder(job, summary).taskId(taskId).build());
         return job;
     }
 
-    private CompactionJobCreatedEvent addFinishedJobCommitted(Instant createdTime, RecordsProcessedSummary summary, Instant committedTime, String taskId) {
+    private CompactionJobCreatedEvent addFinishedJobCommitted(Instant createdTime, JobRunSummary summary, Instant committedTime, String taskId) {
         CompactionJobCreatedEvent job = addFinishedJobUncommitted(createdTime, summary, taskId);
-        store.fixUpdateTime(defaultUpdateTime(committedTime));
-        store.jobCommitted(committedEventBuilder(job, committedTime).taskId(taskId).build());
+        tracker.fixUpdateTime(defaultUpdateTime(committedTime));
+        tracker.jobCommitted(committedEventBuilder(job, committedTime).taskId(taskId).build());
         return job;
     }
 
-    private CompactionJobCreatedEvent addFailedJob(Instant createdTime, ProcessRunTime runTime, String taskId, List<String> failureReasons) {
+    private CompactionJobCreatedEvent addFailedJob(Instant createdTime, JobRunTime runTime, String taskId, List<String> failureReasons) {
         CompactionJobCreatedEvent job = addStartedJob(createdTime, runTime.getStartTime(), taskId);
-        store.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
-        store.jobFailed(failedEventBuilder(job, runTime).failureReasons(failureReasons).taskId(taskId).build());
+        tracker.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
+        tracker.jobFailed(failedEventBuilder(job, runTime).failureReasons(failureReasons).taskId(taskId).build());
         return job;
     }
 }

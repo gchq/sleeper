@@ -15,8 +15,8 @@
  */
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRunFinishedUpdate;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -24,10 +24,10 @@ import java.util.Objects;
 /**
  * A status update for when an ingest job has finished.
  */
-public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
+public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
-    private final RecordsProcessedSummary summary;
+    private final JobRunSummary summary;
     private final int numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
 
@@ -45,7 +45,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
      * @param  summary    the records processed summary to set
      * @return            a builder
      */
-    public static Builder updateTimeAndSummary(Instant updateTime, RecordsProcessedSummary summary) {
+    public static Builder updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
         return builder().updateTime(updateTime).summary(summary);
     }
 
@@ -59,7 +59,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
     }
 
     @Override
-    public RecordsProcessedSummary getSummary() {
+    public JobRunSummary getSummary() {
         return summary;
     }
 
@@ -101,7 +101,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
      */
     public static class Builder {
         private Instant updateTime;
-        private RecordsProcessedSummary summary;
+        private JobRunSummary summary;
         private int numFilesWrittenByJob;
         private boolean committedBySeparateFileUpdates;
 
@@ -125,7 +125,7 @@ public class IngestJobFinishedStatus implements ProcessRunFinishedUpdate {
          * @param  summary the summary
          * @return         the builder for chaining
          */
-        public Builder summary(RecordsProcessedSummary summary) {
+        public Builder summary(JobRunSummary summary) {
             this.summary = summary;
             return this;
         }

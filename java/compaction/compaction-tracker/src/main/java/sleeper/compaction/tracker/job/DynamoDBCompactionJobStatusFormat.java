@@ -20,12 +20,6 @@ import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
@@ -37,6 +31,12 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -113,7 +113,7 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
             CompactionJobFinishedEvent event, DynamoDBRecordBuilder builder) {
-        RecordsProcessedSummary summary = event.getSummary();
+        JobRunSummary summary = event.getSummary();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
                 .number(START_TIME, summary.getStartTime().toEpochMilli())
@@ -138,7 +138,7 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFailedUpdate(
             CompactionJobFailedEvent event, DynamoDBRecordBuilder builder) {
-        ProcessRunTime runTime = event.getRunTime();
+        JobRunTime runTime = event.getRunTime();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
                 .number(START_TIME, runTime.getStartTime().toEpochMilli())
@@ -172,8 +172,8 @@ class DynamoDBCompactionJobStatusFormat {
                 .map(DynamoDBCompactionJobStatusFormat::getStatusUpdateRecord));
     }
 
-    private static ProcessStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
-        return ProcessStatusUpdateRecord.builder()
+    private static JobStatusUpdateRecord getStatusUpdateRecord(Map<String, AttributeValue> item) {
+        return JobStatusUpdateRecord.builder()
                 .jobId(getStringAttribute(item, JOB_ID))
                 .statusUpdate(getStatusUpdate(item))
                 .taskId(getStringAttribute(item, TASK_ID))
@@ -182,7 +182,7 @@ class DynamoDBCompactionJobStatusFormat {
                 .build();
     }
 
-    private static ProcessStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
+    private static JobStatusUpdate getStatusUpdate(Map<String, AttributeValue> item) {
         switch (getStringAttribute(item, UPDATE_TYPE)) {
             case UPDATE_TYPE_CREATED:
                 return CompactionJobCreatedStatus.builder()
@@ -197,7 +197,7 @@ class DynamoDBCompactionJobStatusFormat {
             case UPDATE_TYPE_FINISHED:
                 return CompactionJobFinishedStatus.updateTimeAndSummary(
                         getInstantAttribute(item, UPDATE_TIME),
-                        new RecordsProcessedSummary(new RecordsProcessed(
+                        new JobRunSummary(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)),
                                 getRunTime(item)))
@@ -207,7 +207,7 @@ class DynamoDBCompactionJobStatusFormat {
                         getInstantAttribute(item, COMMIT_TIME),
                         getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_FAILED:
-                return ProcessFailedStatus.timeAndReasons(
+                return JobRunFailedStatus.timeAndReasons(
                         getInstantAttribute(item, UPDATE_TIME),
                         getRunTime(item),
                         getStringListAttribute(item, FAILURE_REASONS));
@@ -217,13 +217,13 @@ class DynamoDBCompactionJobStatusFormat {
         }
     }
 
-    private static ProcessRunTime getRunTime(Map<String, AttributeValue> item) {
+    private static JobRunTime getRunTime(Map<String, AttributeValue> item) {
         Instant startTime = getInstantAttribute(item, START_TIME);
         Instant finishTime = getInstantAttribute(item, FINISH_TIME);
         long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
         Duration timeInProcess = millisInProcess > -1
                 ? Duration.ofMillis(millisInProcess)
                 : Duration.between(startTime, finishTime);
-        return new ProcessRunTime(startTime, finishTime, timeInProcess);
+        return new JobRunTime(startTime, finishTime, timeInProcess);
     }
 }

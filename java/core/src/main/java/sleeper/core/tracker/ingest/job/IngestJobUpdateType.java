@@ -15,14 +15,14 @@
  */
 package sleeper.core.tracker.ingest.job;
 
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 /**
  * Defines the types of updates during an ingest job. Can also find the furthest update in a run of an ingest job,
@@ -52,9 +52,9 @@ public enum IngestJobUpdateType {
      * @param  run the run
      * @return     the update type
      */
-    public static IngestJobUpdateType typeOfFurthestUpdateInRun(ProcessRun run) {
+    public static IngestJobUpdateType typeOfFurthestUpdateInRun(JobRun run) {
         FurthestUpdateTracker furthestUpdate = new FurthestUpdateTracker();
-        for (ProcessStatusUpdate update : run.getStatusUpdates()) {
+        for (JobStatusUpdate update : run.getStatusUpdates()) {
             furthestUpdate.setIfFurther(typeOfUpdate(update));
         }
         return furthestUpdate.get();
@@ -66,7 +66,7 @@ public enum IngestJobUpdateType {
      * @param  run the run
      * @return     the status type
      */
-    public IngestJobStatusType statusTypeAfterThisInRun(ProcessRun run) {
+    public IngestJobStatusType statusTypeAfterThisInRun(JobRun run) {
         if (this == FINISHED_WHEN_FILES_COMMITTED) {
             return IngestJobFilesWrittenAndAdded.from(run).haveAllFilesBeenAdded()
                     ? IngestJobStatusType.FINISHED
@@ -83,12 +83,12 @@ public enum IngestJobUpdateType {
      * @return                          the type of the update
      * @throws IllegalArgumentException if the update is not of a type expected during an ingest job
      */
-    public static IngestJobUpdateType typeOfUpdate(ProcessStatusUpdate update) {
+    public static IngestJobUpdateType typeOfUpdate(JobStatusUpdate update) {
         if (update instanceof IngestJobRejectedStatus) {
             return REJECTED;
         } else if (update instanceof IngestJobAcceptedStatus) {
             return ACCEPTED;
-        } else if (update instanceof ProcessFailedStatus) {
+        } else if (update instanceof JobRunFailedStatus) {
             return FAILED;
         } else if (update instanceof IngestJobStartedStatus) {
             return STARTED;

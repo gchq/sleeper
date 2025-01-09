@@ -16,12 +16,12 @@
 package sleeper.clients.status.report.ingest.task;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
-import sleeper.clients.status.report.job.StandardProcessRunReporter;
+import sleeper.clients.status.report.job.StandardJobRunReporter;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.record.process.AverageRecordRate;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.core.tracker.job.run.AverageRecordRate;
 
 import java.io.PrintStream;
 import java.util.List;
@@ -31,25 +31,25 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
     private static final TableWriterFactory.Builder TABLE_FACTORY_BUILDER = TableWriterFactory.builder();
 
     private static final TableField STATE = TABLE_FACTORY_BUILDER.addField("STATE");
-    private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.TASK_ID);
-    private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.START_TIME);
-    private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.FINISH_TIME);
-    private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.DURATION);
+    private static final TableField TASK_ID = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.TASK_ID);
+    private static final TableField START_TIME = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.START_TIME);
+    private static final TableField FINISH_TIME = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.FINISH_TIME);
+    private static final TableField DURATION = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.DURATION);
     private static final TableField JOB_RUNS = TABLE_FACTORY_BUILDER.addNumericField("JOB_RUNS");
     private static final TableField JOB_DURATION = TABLE_FACTORY_BUILDER.addNumericField("JOB_DURATION");
-    private static final TableField RECORDS_READ = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.RECORDS_READ);
-    private static final TableField RECORDS_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.RECORDS_WRITTEN);
-    private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.READ_RATE);
-    private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField(StandardProcessRunReporter.WRITE_RATE);
+    private static final TableField RECORDS_READ = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.RECORDS_READ);
+    private static final TableField RECORDS_WRITTEN = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.RECORDS_WRITTEN);
+    private static final TableField READ_RATE = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.READ_RATE);
+    private static final TableField WRITE_RATE = TABLE_FACTORY_BUILDER.addField(StandardJobRunReporter.WRITE_RATE);
 
     private static final TableWriterFactory TABLE_FACTORY = TABLE_FACTORY_BUILDER.build();
 
     private final PrintStream out;
-    private final StandardProcessRunReporter processRunReporter;
+    private final StandardJobRunReporter jobRunReporter;
 
     public StandardIngestTaskStatusReporter(PrintStream out) {
         this.out = out;
-        processRunReporter = new StandardProcessRunReporter(out);
+        jobRunReporter = new StandardJobRunReporter(out);
     }
 
     @Override
@@ -90,14 +90,14 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
 
     private static AverageRecordRate recordRate(List<IngestTaskStatus> tasks) {
         return AverageRecordRate.of(tasks.stream()
-                .map(IngestTaskStatus::asProcessRun));
+                .map(IngestTaskStatus::asAggregatedJobRun));
     }
 
     private void writeRow(IngestTaskStatus task, TableRow.Builder builder) {
         builder.value(STATE, task.isFinished() ? "FINISHED" : "RUNNING")
                 .value(JOB_RUNS, task.getJobRunsOrNull())
-                .value(JOB_DURATION, StandardProcessRunReporter.getOrNull(task.getFinishedStatus(),
-                        status -> StandardProcessRunReporter.formatDurationString(status.getTimeSpentOnJobs())));
-        processRunReporter.writeRunFields(task.asProcessRun(), builder);
+                .value(JOB_DURATION, StandardJobRunReporter.getOrNull(task.getFinishedStatus(),
+                        status -> StandardJobRunReporter.formatDurationString(status.getTimeSpentOnJobs())));
+        jobRunReporter.writeRunFields(task.asAggregatedJobRun(), builder);
     }
 }

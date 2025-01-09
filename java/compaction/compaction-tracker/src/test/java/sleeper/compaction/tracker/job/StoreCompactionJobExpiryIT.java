@@ -21,10 +21,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -32,7 +32,7 @@ import java.time.temporal.ChronoField;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
 public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTestBase {
 
@@ -85,7 +85,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTest
         // When
         storeJobCreated(tracker, job);
         tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobFinished(job.finishedEventBuilder(new RecordsProcessedSummary(
+        tracker.jobFinished(job.finishedEventBuilder(new JobRunSummary(
                 new RecordsProcessed(60L, 60L), startedTime, finishedTime))
                 .taskId(DEFAULT_TASK_ID).build());
 

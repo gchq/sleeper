@@ -19,13 +19,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
 import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.ingest.core.IngestTask.MessageHandle;
 import sleeper.ingest.core.IngestTask.MessageReceiver;
 import sleeper.ingest.core.job.IngestJob;
@@ -251,7 +251,7 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:06Z")));
             assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     failedIngestJob(job, "test-task-1",
-                            new ProcessRunTime(
+                            new JobRunTime(
                                     Instant.parse("2024-02-22T13:50:01Z"),
                                     Instant.parse("2024-02-22T13:50:05Z")),
                             List.of("Something went wrong", "Failure cause details", "Root cause details")));
@@ -288,7 +288,7 @@ public class IngestTaskTest {
                             Instant.parse("2024-02-22T13:50:01Z"),
                             Instant.parse("2024-02-22T13:50:02Z"))),
                     failedIngestJob(job2, "test-task-1",
-                            new ProcessRunTime(
+                            new JobRunTime(
                                     Instant.parse("2024-02-22T13:50:03Z"),
                                     Instant.parse("2024-02-22T13:50:05Z")),
                             List.of("Something went wrong")));
@@ -356,7 +356,7 @@ public class IngestTaskTest {
             // Then
             assertThat(jobTracker.streamTableRecords(DEFAULT_TABLE_ID))
                     .extracting(
-                            ProcessStatusUpdateRecord::getJobRunId,
+                            JobStatusUpdateRecord::getJobRunId,
                             record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
                     .containsExactly(
                             tuple("test-job-run", STARTED),
@@ -381,7 +381,7 @@ public class IngestTaskTest {
             // Then
             assertThat(jobTracker.streamTableRecords(DEFAULT_TABLE_ID))
                     .extracting(
-                            ProcessStatusUpdateRecord::getJobRunId,
+                            JobStatusUpdateRecord::getJobRunId,
                             record -> IngestJobUpdateType.typeOfUpdate(record.getStatusUpdate()))
                     .containsExactly(
                             tuple("test-job-run", STARTED),
@@ -445,8 +445,8 @@ public class IngestTaskTest {
         return defaultFileIngestResultReadAndWritten("test-file", recordsRead, recordsWritten);
     }
 
-    private RecordsProcessedSummary summary(IngestResult result, Instant startTime, Instant finishTime) {
-        return new RecordsProcessedSummary(result.asRecordsProcessed(), startTime, finishTime);
+    private JobRunSummary summary(IngestResult result, Instant startTime, Instant finishTime) {
+        return new JobRunSummary(result.asRecordsProcessed(), startTime, finishTime);
     }
 
     private IngestJobHandler jobsSucceed(int numJobs) {
@@ -521,7 +521,7 @@ public class IngestTaskTest {
         public void close() {
         }
 
-        public void completed(RecordsProcessedSummary summary) {
+        public void completed(JobRunSummary summary) {
         }
 
         public void failed() {

@@ -16,13 +16,13 @@
 
 package sleeper.core.tracker.compaction.task;
 
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 
 public class CompactionTaskStatusTestData {
     private CompactionTaskStatusTestData() {
@@ -50,13 +50,13 @@ public class CompactionTaskStatusTestData {
     }
 
     public static CompactionTaskStatus finishedStatus(
-            String taskId, Instant startTime, Instant finishTime, RecordsProcessedSummary... summary) {
+            String taskId, Instant startTime, Instant finishTime, JobRunSummary... summary) {
         return startedStatusBuilder(startTime).taskId(taskId)
                 .finishedStatus(finishedStatusBuilder(summary).finish(finishTime).build())
                 .build();
     }
 
-    public static CompactionTaskFinishedStatus.Builder finishedStatusBuilder(RecordsProcessedSummary... jobSummaries) {
+    public static CompactionTaskFinishedStatus.Builder finishedStatusBuilder(JobRunSummary... jobSummaries) {
         return CompactionTaskFinishedStatus.builder().jobSummaries(Stream.of(jobSummaries));
     }
 }

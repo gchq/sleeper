@@ -16,9 +16,9 @@
 
 package sleeper.core.tracker.ingest.task;
 
-import sleeper.core.record.process.AverageRecordRate;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -85,8 +85,8 @@ public class IngestTaskFinishedStatus {
      * @param  startTime the start time
      * @return           a {@link RecordProcessedSummary}
      */
-    public RecordsProcessedSummary asSummary(Instant startTime) {
-        return new RecordsProcessedSummary(
+    public JobRunSummary asSummary(Instant startTime) {
+        return new JobRunSummary(
                 new RecordsProcessed(totalRecordsRead, totalRecordsWritten),
                 startTime, finishTime, timeSpentOnJobs);
     }
@@ -227,7 +227,7 @@ public class IngestTaskFinishedStatus {
          * @param  jobSummary the job summary
          * @return            the builder
          */
-        public Builder addJobSummary(RecordsProcessedSummary jobSummary) {
+        public Builder addJobSummary(JobRunSummary jobSummary) {
             rateBuilder.summary(jobSummary);
             return this;
         }
@@ -238,7 +238,7 @@ public class IngestTaskFinishedStatus {
          * @param  jobSummaries the job summaries
          * @return              the builder
          */
-        public Builder jobSummaries(Stream<RecordsProcessedSummary> jobSummaries) {
+        public Builder jobSummaries(Stream<JobRunSummary> jobSummaries) {
             rateBuilder.summaries(jobSummaries);
             return this;
         }

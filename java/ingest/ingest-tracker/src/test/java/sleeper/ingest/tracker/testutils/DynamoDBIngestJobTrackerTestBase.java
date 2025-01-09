@@ -21,10 +21,6 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableIdGenerator;
@@ -38,6 +34,10 @@ import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
@@ -55,8 +55,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestRun;
@@ -106,8 +106,8 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
                 Arrays.stream(updateTimes).iterator()::next);
     }
 
-    protected static RecordsProcessedSummary defaultSummary(Instant startTime, Instant finishTime) {
-        return new RecordsProcessedSummary(
+    protected static JobRunSummary defaultSummary(Instant startTime, Instant finishTime) {
+        return new JobRunSummary(
                 new RecordsProcessed(200L, 100L),
                 startTime, finishTime);
     }
@@ -128,7 +128,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
         return defaultJobFinishedEvent(job, defaultSummary(startedTime, finishedTime));
     }
 
-    protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, RecordsProcessedSummary summary) {
+    protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, JobRunSummary summary) {
         return job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
     }
 
@@ -143,11 +143,11 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
             IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {
-        return defaultJobFailedEvent(job, new ProcessRunTime(startedTime, finishedTime), failureReasons);
+        return defaultJobFailedEvent(job, new JobRunTime(startedTime, finishedTime), failureReasons);
     }
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
-            IngestJob job, ProcessRunTime runTime, List<String> failureReasons) {
+            IngestJob job, JobRunTime runTime, List<String> failureReasons) {
         return job.failedEventBuilder(runTime)
                 .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build();
     }
@@ -157,7 +157,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobAddedFilesStatus(IngestJob job, Instant startedTime, Instant writtenTime, int fileCount) {
-        return ingestJobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, JobRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .statusUpdate(IngestJobAddedFilesStatus.builder()
@@ -172,12 +172,12 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
         return defaultJobFinishedStatus(job, defaultSummary(startedTime, finishedTime));
     }
 
-    protected static IngestJobStatus defaultJobFinishedStatus(IngestJob job, RecordsProcessedSummary summary) {
+    protected static IngestJobStatus defaultJobFinishedStatus(IngestJob job, JobRunSummary summary) {
         return finishedIngestJob(job, DEFAULT_TASK_ID, summary, 2);
     }
 
     protected static IngestJobStatus defaultJobFinishedButUncommittedStatus(IngestJob job, Instant startedTime, Instant finishedTime, int numFiles) {
-        return ingestJobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, JobRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
@@ -188,7 +188,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedAndCommittedStatus(IngestJob job, Instant startedTime, Instant writtenTime, Instant finishedTime, int numFiles) {
-        return ingestJobStatus(job, ProcessRun.builder()
+        return ingestJobStatus(job, JobRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
                 .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
@@ -204,22 +204,22 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {
-        return defaultJobFailedStatus(job, new ProcessRunTime(startedTime, finishedTime), failureReasons);
+        return defaultJobFailedStatus(job, new JobRunTime(startedTime, finishedTime), failureReasons);
     }
 
-    protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, ProcessRunTime runTime, List<String> failureReasons) {
+    protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, JobRunTime runTime, List<String> failureReasons) {
         return failedIngestJob(job, DEFAULT_TASK_ID, runTime, failureReasons);
     }
 
-    protected static ProcessRun defaultJobStartedRun(IngestJob job, Instant startedTime) {
+    protected static JobRun defaultJobStartedRun(IngestJob job, Instant startedTime) {
         return startedIngestRun(job, DEFAULT_TASK_ID, startedTime);
     }
 
-    protected static ProcessRun defaultJobFinishedRun(IngestJob job, Instant startedTime, Instant finishedTime) {
+    protected static JobRun defaultJobFinishedRun(IngestJob job, Instant startedTime, Instant finishedTime) {
         return defaultJobFinishedRun(job, defaultSummary(startedTime, finishedTime));
     }
 
-    protected static ProcessRun defaultJobFinishedRun(IngestJob job, RecordsProcessedSummary summary) {
+    protected static JobRun defaultJobFinishedRun(IngestJob job, JobRunSummary summary) {
         return finishedIngestRun(job, DEFAULT_TASK_ID, summary, 2);
     }
 

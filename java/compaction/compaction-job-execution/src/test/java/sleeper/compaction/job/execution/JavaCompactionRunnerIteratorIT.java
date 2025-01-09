@@ -24,9 +24,9 @@ import sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils;
 import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.List;

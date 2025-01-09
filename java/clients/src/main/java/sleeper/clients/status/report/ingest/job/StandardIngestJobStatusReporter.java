@@ -21,27 +21,27 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
-import sleeper.clients.status.report.job.StandardProcessRunReporter;
+import sleeper.clients.status.report.job.StandardJobRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.record.process.AverageRecordRate;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.ingest.job.IngestJobFilesWrittenAndAdded;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatusType;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
+import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
 
-import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
-import static sleeper.clients.status.report.job.StandardProcessRunReporter.updatePrinters;
+import static sleeper.clients.status.report.job.StandardJobRunReporter.printUpdateType;
+import static sleeper.clients.status.report.job.StandardJobRunReporter.updatePrinters;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
@@ -51,7 +51,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
     private final TableField inputFilesCount;
     private final TableField addedFilesCount;
     private final TableWriterFactory tableFactory;
-    private final StandardProcessRunReporter runReporter;
+    private final StandardJobRunReporter runReporter;
 
     private final PrintStream out;
 
@@ -66,7 +66,7 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         addedFilesCount = tableFactoryBuilder.addNumericField("ADDED_FILES");
-        runReporter = new StandardProcessRunReporter(out, tableFactoryBuilder);
+        runReporter = new StandardJobRunReporter(out, tableFactoryBuilder);
         tableFactory = tableFactoryBuilder.build();
     }
 
@@ -124,12 +124,12 @@ public class StandardIngestJobStatusReporter implements IngestJobStatusReporter 
         out.printf("Details for job %s:%n", status.getJobId());
         out.printf("State: %s%n", status.getFurthestRunStatusType());
         out.printf("Number of input files: %d%n", status.getInputFilesCount());
-        for (ProcessRun run : status.getJobRuns()) {
+        for (JobRun run : status.getJobRuns()) {
             printProcessJobRun(run);
         }
     }
 
-    private void printProcessJobRun(ProcessRun run) {
+    private void printProcessJobRun(JobRun run) {
         runReporter.printProcessJobRunWithUpdatePrinter(run, updatePrinters(
                 printUpdateType(IngestJobValidatedStatus.class, this::printValidation),
                 printUpdateType(IngestJobAddedFilesStatus.class, this::printAddedFiles)));

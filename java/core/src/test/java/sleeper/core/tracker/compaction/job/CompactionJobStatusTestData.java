@@ -16,37 +16,37 @@
 
 package sleeper.core.tracker.compaction.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFailedStatus;
-import sleeper.core.record.process.status.ProcessRun;
-import sleeper.core.record.process.status.ProcessStatusUpdate;
-import sleeper.core.record.process.status.TestProcessStatusUpdateRecords;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
+import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
 
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class CompactionJobStatusTestData {
     private CompactionJobStatusTestData() {
     }
 
-    public static CompactionJobStatus compactionJobCreated(Instant createdTime, ProcessRun... runsLatestFirst) {
+    public static CompactionJobStatus compactionJobCreated(Instant createdTime, JobRun... runsLatestFirst) {
         return compactionJobCreated(defaultCompactionJobCreatedEvent(), createdTime, runsLatestFirst);
     }
 
-    public static CompactionJobStatus compactionJobCreated(CompactionJobCreatedEvent event, Instant createdTime, ProcessRun... runsLatestFirst) {
+    public static CompactionJobStatus compactionJobCreated(CompactionJobCreatedEvent event, Instant createdTime, JobRun... runsLatestFirst) {
         return CompactionJobStatus.builder()
                 .jobId(event.getJobId())
                 .createdStatus(CompactionJobCreatedStatus.from(event, createdTime))
@@ -54,35 +54,35 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
-    public static ProcessRun startedCompactionRun(String taskId, Instant startTime) {
-        return ProcessRun.started(taskId, compactionStartedStatus(startTime));
+    public static JobRun startedCompactionRun(String taskId, Instant startTime) {
+        return JobRun.started(taskId, compactionStartedStatus(startTime));
     }
 
-    public static ProcessRun uncommittedCompactionRun(String taskId, RecordsProcessedSummary summary) {
-        return ProcessRun.finished(taskId,
+    public static JobRun uncommittedCompactionRun(String taskId, JobRunSummary summary) {
+        return JobRun.finished(taskId,
                 compactionStartedStatus(summary.getStartTime()),
                 compactionFinishedStatus(summary));
     }
 
-    public static ProcessRun finishedCompactionRun(String taskId, RecordsProcessedSummary summary, Instant commitTime) {
-        return ProcessRun.builder().taskId(taskId)
+    public static JobRun finishedCompactionRun(String taskId, JobRunSummary summary, Instant commitTime) {
+        return JobRun.builder().taskId(taskId)
                 .startedStatus(compactionStartedStatus(summary.getStartTime()))
                 .finishedStatus(compactionFinishedStatus(summary))
                 .statusUpdate(compactionCommittedStatus(commitTime))
                 .build();
     }
 
-    public static ProcessRun failedCompactionRun(String taskId, ProcessRunTime runTime, List<String> failureReasons) {
-        return ProcessRun.finished(taskId,
+    public static JobRun failedCompactionRun(String taskId, JobRunTime runTime, List<String> failureReasons) {
+        return JobRun.finished(taskId,
                 compactionStartedStatus(runTime.getStartTime()),
                 compactionFailedStatus(runTime, failureReasons));
     }
 
-    public static ProcessRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
-        return ProcessRun.builder().taskId(taskId)
+    public static JobRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
+        return JobRun.builder().taskId(taskId)
                 .startedStatus(compactionStartedStatus(startTime))
                 .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)))
-                .statusUpdate(compactionFailedStatus(new ProcessRunTime(startTime, failureTime), failureReasons))
+                .statusUpdate(compactionFailedStatus(new JobRunTime(startTime, failureTime), failureReasons))
                 .build();
     }
 
@@ -90,7 +90,7 @@ public class CompactionJobStatusTestData {
         return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
 
-    public static CompactionJobFinishedStatus compactionFinishedStatus(RecordsProcessedSummary summary) {
+    public static CompactionJobFinishedStatus compactionFinishedStatus(JobRunSummary summary) {
         return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build();
     }
 
@@ -98,20 +98,20 @@ public class CompactionJobStatusTestData {
         return CompactionJobCommittedStatus.commitAndUpdateTime(committedTime, defaultUpdateTime(committedTime));
     }
 
-    public static ProcessFailedStatus compactionFailedStatus(ProcessRunTime runTime, List<String> failureReasons) {
-        return ProcessFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
+    public static JobRunFailedStatus compactionFailedStatus(JobRunTime runTime, List<String> failureReasons) {
+        return JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
     }
 
-    public static CompactionJobStatus jobStatusFromUpdates(ProcessStatusUpdate... updates) {
+    public static CompactionJobStatus jobStatusFromUpdates(JobStatusUpdate... updates) {
         return jobStatusFrom(records().fromUpdates(updates));
     }
 
     public static List<CompactionJobStatus> jobStatusListFromUpdates(
-            TestProcessStatusUpdateRecords.TaskUpdates... updates) {
+            TestJobStatusUpdateRecords.TaskUpdates... updates) {
         return CompactionJobStatus.listFrom(records().fromUpdates(updates).stream());
     }
 
-    public static CompactionJobStatus jobStatusFrom(TestProcessStatusUpdateRecords records) {
+    public static CompactionJobStatus jobStatusFrom(TestJobStatusUpdateRecords records) {
         List<CompactionJobStatus> built = CompactionJobStatus.listFrom(records.stream());
         if (built.size() != 1) {
             throw new IllegalStateException("Expected single status");

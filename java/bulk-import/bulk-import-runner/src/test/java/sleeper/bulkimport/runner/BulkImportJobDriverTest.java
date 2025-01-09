@@ -22,8 +22,6 @@ import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
@@ -33,6 +31,8 @@ import sleeper.core.statestore.testutils.StateStoreTestHelper;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
@@ -52,11 +52,11 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPartitionWithRecords;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichFailed;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestAcceptedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
@@ -87,7 +87,7 @@ class BulkImportJobDriverTest {
         // Then
         IngestJob ingestJob = job.toIngestJob();
         assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId("test-task")
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
@@ -121,7 +121,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(ingestJobStatus(job.toIngestJob(), acceptedRunWhichFailed(
                         job.toIngestJob(), "test-task", validationTime,
-                        new ProcessRunTime(startTime, finishTime),
+                        new JobRunTime(startTime, finishTime),
                         List.of("Failed running job", "Some cause", "Root cause"))));
         assertThat(stateStore.getFileReferences()).isEmpty();
         assertThat(commitRequestQueue).isEmpty();
@@ -150,7 +150,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(ingestJobStatus(job.toIngestJob(), acceptedRunWhichFailed(
                         job.toIngestJob(), "test-task", validationTime,
-                        new ProcessRunTime(startTime, finishTime),
+                        new JobRunTime(startTime, finishTime),
                         List.of("Failed updating files"))));
         verify(stateStore).addFiles(outputFiles);
         verifyNoMoreInteractions(stateStore);
@@ -180,7 +180,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(ingestJobStatus(job.toIngestJob(), acceptedRunWhichFailed(
                         job.toIngestJob(), "test-task", validationTime,
-                        new ProcessRunTime(startTime, finishTime),
+                        new JobRunTime(startTime, finishTime),
                         List.of("Failed updating files"))));
         verify(stateStore).addFiles(outputFiles);
         verifyNoMoreInteractions(stateStore);
@@ -207,7 +207,7 @@ class BulkImportJobDriverTest {
         // Then
         IngestJob ingestJob = job.toIngestJob();
         assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(ingestJob, ProcessRun.builder()
+                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                         .taskId("test-task")
                         .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
                         .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))

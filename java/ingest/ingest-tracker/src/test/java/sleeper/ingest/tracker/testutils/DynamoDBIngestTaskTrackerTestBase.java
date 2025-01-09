@@ -20,11 +20,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTracker;
 import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
@@ -88,8 +88,8 @@ public class DynamoDBIngestTaskTrackerTestBase extends DynamoDBTestBase {
         return Instant.parse("2022-09-22T16:30:00.500Z");
     }
 
-    private static RecordsProcessedSummary defaultJobSummary() {
-        return new RecordsProcessedSummary(
+    private static JobRunSummary defaultJobSummary() {
+        return new JobRunSummary(
                 new RecordsProcessed(4800L, 2400L),
                 defaultJobStartTime(), defaultJobFinishTime());
     }
@@ -137,7 +137,7 @@ public class DynamoDBIngestTaskTrackerTestBase extends DynamoDBTestBase {
             IngestTaskStatus.Builder builder, Instant startTime, Instant finishTime) {
         return builder.startTime(startTime)
                 .finished(finishTime, IngestTaskFinishedStatus.builder()
-                        .addJobSummary(new RecordsProcessedSummary(
+                        .addJobSummary(new JobRunSummary(
                                 new RecordsProcessed(200, 100),
                                 startTime, finishTime)))
                 .build();

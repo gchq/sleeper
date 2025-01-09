@@ -15,13 +15,13 @@
  */
 package sleeper.ingest.core.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;
@@ -126,7 +126,7 @@ public class IngestJob {
      * @param  summary a summary of the time spent on the job and records processed
      * @return         the builder
      */
-    public IngestJobFinishedEvent.Builder finishedEventBuilder(RecordsProcessedSummary summary) {
+    public IngestJobFinishedEvent.Builder finishedEventBuilder(JobRunSummary summary) {
         return IngestJobFinishedEvent.builder().jobId(id).tableId(tableId).summary(summary);
     }
 
@@ -136,7 +136,7 @@ public class IngestJob {
      * @param  runTime the time spent on the failed operation
      * @return         the builder
      */
-    public IngestJobFailedEvent.Builder failedEventBuilder(ProcessRunTime runTime) {
+    public IngestJobFailedEvent.Builder failedEventBuilder(JobRunTime runTime) {
         return IngestJobFailedEvent.builder().jobId(id).tableId(tableId).runTime(runTime);
     }
 

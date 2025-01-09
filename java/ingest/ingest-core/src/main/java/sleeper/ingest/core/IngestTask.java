@@ -18,12 +18,12 @@ package sleeper.ingest.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
@@ -114,7 +114,7 @@ public class IngestTask {
                 IngestResult result = ingester.ingest(job, jobRunId);
                 LOGGER.info("{} records were written", result.getRecordsWritten());
                 Instant jobFinishTime = timeSupplier.get();
-                RecordsProcessedSummary summary = new RecordsProcessedSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
+                JobRunSummary summary = new JobRunSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
                 jobTracker.jobFinished(job.finishedEventBuilder(summary)
                         .taskId(taskId).jobRunId(jobRunId)
                         .committedBySeparateFileUpdates(true)
@@ -128,7 +128,7 @@ public class IngestTask {
                 LOGGER.error("Failed processing ingest job, terminating task", e);
                 Instant jobFinishTime = timeSupplier.get();
                 jobTracker.jobFailed(job
-                        .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
+                        .failedEventBuilder(new JobRunTime(jobStartTime, jobFinishTime))
                         .taskId(taskId).jobRunId(jobRunId).failure(e)
                         .build());
                 message.failed();
@@ -168,7 +168,7 @@ public class IngestTask {
          *
          * @param summary the records processed summary for the finished job
          */
-        void completed(RecordsProcessedSummary summary);
+        void completed(JobRunSummary summary);
 
         /**
          * Called when a job fails. This will return the message to the queue to be retried.

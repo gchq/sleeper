@@ -29,15 +29,15 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import java.time.Duration;
@@ -156,14 +156,14 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
         return Instant.parse("2022-09-23T10:53:00.001Z");
     }
 
-    protected static RecordsProcessedSummary defaultSummary() {
-        return new RecordsProcessedSummary(
+    protected static JobRunSummary defaultSummary() {
+        return new JobRunSummary(
                 new RecordsProcessed(200L, 100L),
                 defaultRunTime());
     }
 
-    protected static ProcessRunTime defaultRunTime() {
-        return new ProcessRunTime(
+    protected static JobRunTime defaultRunTime() {
+        return new JobRunTime(
                 defaultStartTime(), Instant.parse("2022-09-23T10:52:00.001Z"));
     }
 
@@ -181,9 +181,9 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
         return finishedThenCommittedStatusWithDefaults(job, defaultSummary());
     }
 
-    protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job, RecordsProcessedSummary summary) {
+    protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job, JobRunSummary summary) {
         return compactionJobCreated(job, ignoredUpdateTime(),
-                ProcessRun.builder().taskId(DEFAULT_TASK_ID)
+                JobRun.builder().taskId(DEFAULT_TASK_ID)
                         .startedStatus(compactionStartedStatus(summary.getStartTime()))
                         .finishedStatus(compactionFinishedStatus(summary))
                         .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
@@ -194,7 +194,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
         return failedStatusWithDefaults(job, defaultRunTime(), failureReasons);
     }
 
-    protected static CompactionJobStatus failedStatusWithDefaults(CompactionJob job, ProcessRunTime runTime, List<String> failureReasons) {
+    protected static CompactionJobStatus failedStatusWithDefaults(CompactionJob job, JobRunTime runTime, List<String> failureReasons) {
         return compactionJobCreated(job, ignoredUpdateTime(),
                 failedCompactionRun(DEFAULT_TASK_ID, runTime, failureReasons));
     }

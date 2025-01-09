@@ -21,8 +21,8 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.util.List;
 
@@ -149,12 +149,12 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestB
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, ignoredUpdateTime(),
-                        ProcessRun.builder().taskId("test-task")
+                        JobRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
                                 .finishedStatus(compactionFinishedStatus(defaultSummary()))
                                 .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
                                 .build(),
-                        ProcessRun.builder().taskId("test-task")
+                        JobRun.builder().taskId("test-task")
                                 .startedStatus(compactionStartedStatus(defaultStartTime()))
                                 .finishedStatus(compactionFinishedStatus(defaultSummary()))
                                 .statusUpdate(compactionCommittedStatus(defaultCommitTime()))

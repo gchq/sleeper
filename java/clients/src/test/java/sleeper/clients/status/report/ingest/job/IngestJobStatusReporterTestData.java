@@ -16,11 +16,11 @@
 
 package sleeper.clients.status.report.ingest.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -33,10 +33,10 @@ import java.util.stream.IntStream;
 
 import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
@@ -75,18 +75,18 @@ public class IngestJobStatusReporterTestData {
         Instant startTime5 = Instant.parse("2022-09-22T13:34:12.001Z");
 
         return Arrays.asList(
-                ingestJobStatus(job5, ProcessRun.builder()
+                ingestJobStatus(job5, JobRun.builder()
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job5, startTime5))
                         .statusUpdate(ingestAddedFilesStatus(startTime5.plus(Duration.ofMinutes(1)), 2))
                         .build()),
-                ingestJobStatus(job4, ProcessRun.builder()
+                ingestJobStatus(job4, JobRun.builder()
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job4, startTime4))
                         .finishedStatus(ingestFinishedStatusUncommitted(summary(startTime4, Duration.ofMinutes(1), 600, 300), 1))
                         .build()),
                 ingestJobStatus(job3, failedIngestRun(job3, task(2),
-                        new ProcessRunTime(startTime3, Duration.ofSeconds(30)),
+                        new JobRunTime(startTime3, Duration.ofSeconds(30)),
                         List.of("Unexpected failure", "Some IO problem"))),
                 ingestJobStatus(job2, startedIngestRun(job2, task(1), startTime2)),
                 ingestJobStatus(job1, acceptedRun(job1, startTime1)));
@@ -115,13 +115,13 @@ public class IngestJobStatusReporterTestData {
         Instant startTime7 = Instant.parse("2022-09-27T13:34:12.001Z");
 
         return Arrays.asList(
-                ingestJobStatus(job7, ProcessRun.builder()
+                ingestJobStatus(job7, JobRun.builder()
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job7, startTime7))
                         .statusUpdate(ingestAddedFilesStatus(startTime7.plus(Duration.ofSeconds(55)), 2))
                         .finishedStatus(ingestFinishedStatusUncommitted(summary(startTime7, Duration.ofMinutes(1), 600, 300), 2))
                         .build()),
-                ingestJobStatus(job6, ProcessRun.builder()
+                ingestJobStatus(job6, JobRun.builder()
                         .taskId(task(3))
                         .startedStatus(ingestStartedStatus(job6, startTime6))
                         .statusUpdate(ingestAddedFilesStatus(startTime6.plus(Duration.ofMinutes(1)), 1))
@@ -131,7 +131,7 @@ public class IngestJobStatusReporterTestData {
                 startedIngestJob(job3, task(2), startTime3),
                 finishedIngestJob(job2, task(1), summary(startTime2, Duration.ofMinutes(1), 600, 300), 1),
                 failedIngestJob(job1, task(1),
-                        new ProcessRunTime(startTime1, Duration.ofMinutes(1)),
+                        new JobRunTime(startTime1, Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
     }
 

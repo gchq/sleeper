@@ -20,28 +20,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessFailedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.tracker.job.status.JobRunFailedStatus;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.record.process.ProcessRunTestData.startedRun;
-import static sleeper.core.record.process.ProcessRunTestData.validationRun;
-import static sleeper.core.record.process.status.ProcessStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJob;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnNoTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forRunOnTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.withExpiry;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.failedIngestRun;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRun;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRunUncommitted;
@@ -57,6 +49,14 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
+import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnNoTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.withExpiry;
 
 public class IngestJobStatusTest {
 
@@ -146,8 +146,8 @@ public class IngestJobStatusTest {
 
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
-                    finishedIngestRun("test-task", new RecordsProcessedSummary(
-                            recordsProcessed, new ProcessRunTime(startTime2, Duration.ofMinutes(1)))),
+                    finishedIngestRun("test-task", new JobRunSummary(
+                            recordsProcessed, new JobRunTime(startTime2, Duration.ofMinutes(1)))),
                     failedIngestRun("test-task", startTime1, Duration.ofMinutes(1),
                             List.of("Failed reading input file", "Some IO failure")));
 
@@ -167,8 +167,8 @@ public class IngestJobStatusTest {
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
                     startedIngestRun("task-2", startTime2),
-                    finishedIngestRun("task-1", new RecordsProcessedSummary(
-                            recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
+                    finishedIngestRun("task-1", new JobRunSummary(
+                            recordsProcessed, new JobRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
             assertThat(status)
@@ -186,8 +186,8 @@ public class IngestJobStatusTest {
             // When
             IngestJobStatus status = ingestJobStatus("test-job",
                     startedIngestRun("task-2", startTime2),
-                    finishedIngestRunUncommitted("task-1", new RecordsProcessedSummary(
-                            recordsProcessed, new ProcessRunTime(startTime1, Duration.ofMinutes(1)))));
+                    finishedIngestRunUncommitted("task-1", new JobRunSummary(
+                            recordsProcessed, new JobRunTime(startTime1, Duration.ofMinutes(1)))));
 
             // Then
             assertThat(status)
@@ -471,14 +471,14 @@ public class IngestJobStatusTest {
         return IngestJobStatusTestData.ingestFinishedStatusUncommitted(summary(startTime, finishTime), numFilesAddedByJob);
     }
 
-    private ProcessFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
-        return ProcessFailedStatus.timeAndReasons(
-                defaultUpdateTime(finishTime), new ProcessRunTime(startTime, finishTime),
+    private JobRunFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
+        return JobRunFailedStatus.timeAndReasons(
+                defaultUpdateTime(finishTime), new JobRunTime(startTime, finishTime),
                 List.of("Something went wrong"));
     }
 
-    private RecordsProcessedSummary summary(Instant startTime, Instant finishTime) {
-        return new RecordsProcessedSummary(
+    private JobRunSummary summary(Instant startTime, Instant finishTime) {
+        return new JobRunSummary(
                 new RecordsProcessed(450L, 300L), startTime, finishTime);
     }
 }
