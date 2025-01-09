@@ -82,7 +82,7 @@ public interface IngestJobTracker {
      * @return         a stream of ingest job statuses
      */
     default Stream<IngestJobStatus> streamAllJobs(String tableId) {
-        throw new UnsupportedOperationException("Instance has no ingest job status store");
+        throw new UnsupportedOperationException("Instance has no ingest job tracker");
     }
 
     /**
@@ -142,7 +142,7 @@ public interface IngestJobTracker {
      *               not exist
      */
     default Optional<IngestJobStatus> getJob(String jobId) {
-        throw new UnsupportedOperationException("Instance has no ingest job status store");
+        throw new UnsupportedOperationException("Instance has no ingest job tracker");
     }
 
     /**
@@ -151,6 +151,6 @@ public interface IngestJobTracker {
      * @return a list of all ingest job statuses that have failed validation
      */
     default List<IngestJobStatus> getInvalidJobs() {
-        throw new UnsupportedOperationException("Instance has no ingest job status store");
+        throw new UnsupportedOperationException("Instance has no ingest job tracker");
     }
 }

@@ -221,7 +221,7 @@ public class IngestJobStatus {
         }
 
         /**
-         * Sets the expiry date. This is the date after which the job status will be removed from the status store.
+         * Sets the expiry date. This is the date after which the job status will be removed from the tracker.
          *
          * @param  expiryDate the expiry date
          * @return            the builder

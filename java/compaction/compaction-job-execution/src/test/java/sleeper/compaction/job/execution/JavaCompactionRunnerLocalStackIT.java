@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;

@@ -50,7 +50,7 @@ public interface IngestTaskTracker {
      * @return        the ingest task status
      */
     default IngestTaskStatus getTask(String taskId) {
-        throw new UnsupportedOperationException("Instance has no ingest task status store");
+        throw new UnsupportedOperationException("Instance has no ingest task tracker");
     }
 
     /**
@@ -59,7 +59,7 @@ public interface IngestTaskTracker {
      * @return a list of all ingest task
      */
     default List<IngestTaskStatus> getAllTasks() {
-        throw new UnsupportedOperationException("Instance has no ingest task status store");
+        throw new UnsupportedOperationException("Instance has no ingest task tracker");
     }
 
     /**
@@ -70,7 +70,7 @@ public interface IngestTaskTracker {
      * @return           a list of all tasks that have occurred within a time window
      */
     default List<IngestTaskStatus> getTasksInTimePeriod(Instant startTime, Instant endTime) {
-        throw new UnsupportedOperationException("Instance has no ingest task status store");
+        throw new UnsupportedOperationException("Instance has no ingest task tracker");
     }
 
     /**
@@ -79,6 +79,6 @@ public interface IngestTaskTracker {
      * @return a list of all tasks that have not finished
      */
     default List<IngestTaskStatus> getTasksInProgress() {
-        throw new UnsupportedOperationException("Instance has no ingest task status store");
+        throw new UnsupportedOperationException("Instance has no ingest task tracker");
     }
 }

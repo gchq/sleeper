@@ -32,7 +32,7 @@
         <module>compaction-job-creation-lambda</module>
         <module>compaction-job-execution</module>
         <module>compaction-rust</module>
-        <module>compaction-status-store</module>
+        <module>compaction-tracker</module>
         <module>compaction-task-creation</module>
     </modules>
 </project>
