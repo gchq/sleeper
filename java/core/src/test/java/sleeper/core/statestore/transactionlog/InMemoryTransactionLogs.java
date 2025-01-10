@@ -75,6 +75,7 @@ public class InMemoryTransactionLogs {
                 .partitionsLogStore(partitionsLogStore)
                 .partitionsSnapshotLoader(partitionsSnapshots)
                 .maxAddTransactionAttempts(10)
+                .transactionBodyStore(transactionBodyStore)
                 .retryBackoff(new ExponentialBackoffWithJitter(
                         TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE,
                         constantJitterFraction(0.5), retryWaiter));

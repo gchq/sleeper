@@ -16,7 +16,6 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -436,7 +435,6 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         private TransactionLogStateStore store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
 
         @Test
-        @Disabled("TODO")
         void shouldAddFileTransactionWhoseBodyIsHeldInS3() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
@@ -453,7 +451,6 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        @Disabled("TODO")
         void shouldAddPartitionTransactionWhoseBodyIsHeldInS3() {
             // Given
             PartitionTree tree = partitions.splitToNewChildren("root", "L", "R", "m").buildTree();
@@ -470,7 +467,6 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        @Disabled("TODO")
         void shouldFailToLoadTransactionIfBodyIsNotInStore() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);

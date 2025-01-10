@@ -44,6 +44,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     private TransactionLogStateStore(Builder builder) {
         this(builder, TransactionLogHead.builder()
                 .sleeperTable(builder.sleeperTable)
+                .transactionBodyStore(builder.transactionBodyStore)
                 .updateLogBeforeAddTransaction(builder.updateLogBeforeAddTransaction)
                 .maxAddTransactionAttempts(builder.maxAddTransactionAttempts)
                 .timeBetweenSnapshotChecks(builder.timeBetweenSnapshotChecks)
@@ -113,6 +114,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         private Schema schema;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
+        private TransactionBodyStore transactionBodyStore;
         private long minTransactionsAheadToLoadSnapshot = DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
         private boolean updateLogBeforeAddTransaction = true;
         private int maxAddTransactionAttempts = DEFAULT_MAX_ADD_TRANSACTION_ATTEMPTS;
@@ -168,6 +170,17 @@ public class TransactionLogStateStore extends DelegatingStateStore {
          */
         public Builder partitionsLogStore(TransactionLogStore partitionsLogStore) {
             this.partitionsLogStore = partitionsLogStore;
+            return this;
+        }
+
+        /**
+         * Sets the transaction body store
+         * 
+         * @param  transactionBodyStore the store
+         * @return                      the builder
+         */
+        public Builder transactionBodyStore(TransactionBodyStore transactionBodyStore) {
+            this.transactionBodyStore = transactionBodyStore;
             return this;
         }
 

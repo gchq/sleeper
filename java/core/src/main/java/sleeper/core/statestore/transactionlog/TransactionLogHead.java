@@ -42,7 +42,7 @@ class TransactionLogHead<T> {
 
     private final TableStatus sleeperTable;
     private final TransactionLogStore logStore;
-    private final TransactionBodyStore bodyStore;
+    private final TransactionBodyStore transactionBodyStore;
     private final boolean updateLogBeforeAddTransaction;
     private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
@@ -60,7 +60,7 @@ class TransactionLogHead<T> {
     private TransactionLogHead(Builder<T> builder) {
         sleeperTable = builder.sleeperTable;
         logStore = builder.logStore;
-        bodyStore = builder.bodyStore;
+        transactionBodyStore = builder.transactionBodyStore;
         updateLogBeforeAddTransaction = builder.updateLogBeforeAddTransaction;
         maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
         retryBackoff = builder.retryBackoff;
@@ -257,7 +257,7 @@ class TransactionLogHead<T> {
                     entry.getTransactionType());
             return;
         }
-        transactionType.cast(entry.getTransactionOrLoadFromPointer(bodyStore))
+        transactionType.cast(entry.getTransactionOrLoadFromPointer(transactionBodyStore))
                 .apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }
@@ -278,7 +278,7 @@ class TransactionLogHead<T> {
     static class Builder<T> {
         private TableStatus sleeperTable;
         private TransactionLogStore logStore;
-        private TransactionBodyStore bodyStore;
+        private TransactionBodyStore transactionBodyStore;
         private boolean updateLogBeforeAddTransaction = true;
         private int maxAddTransactionAttempts;
         private ExponentialBackoffWithJitter retryBackoff;
@@ -304,8 +304,8 @@ class TransactionLogHead<T> {
             return this;
         }
 
-        public Builder<T> bodyStore(TransactionBodyStore bodyStore) {
-            this.bodyStore = bodyStore;
+        public Builder<T> transactionBodyStore(TransactionBodyStore transactionBodyStore) {
+            this.transactionBodyStore = transactionBodyStore;
             return this;
         }
 
