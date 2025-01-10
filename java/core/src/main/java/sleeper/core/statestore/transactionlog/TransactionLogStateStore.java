@@ -174,8 +174,8 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         }
 
         /**
-         * Sets the transaction body store
-         * 
+         * Sets the transaction body store.
+         *
          * @param  transactionBodyStore the store
          * @return                      the builder
          */
