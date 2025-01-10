@@ -70,6 +70,13 @@ public class TransactionLogEntry {
         return Optional.ofNullable(transaction);
     }
 
+    /**
+     * Returns the transaction object held in this entry. Loads it from a transaction body store if the entry is a
+     * pointer.
+     *
+     * @param  bodyStore the transaction body store
+     * @return           the transaction
+     */
     public StateStoreTransaction<?> getTransactionOrLoadFromPointer(TransactionBodyStore bodyStore) {
         if (transaction != null) {
             return transaction;
