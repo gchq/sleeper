@@ -42,6 +42,7 @@ class TransactionLogHead<T> {
 
     private final TableStatus sleeperTable;
     private final TransactionLogStore logStore;
+    private final TransactionBodyStore transactionBodyStore;
     private final boolean updateLogBeforeAddTransaction;
     private final int maxAddTransactionAttempts;
     private final ExponentialBackoffWithJitter retryBackoff;
@@ -59,6 +60,7 @@ class TransactionLogHead<T> {
     private TransactionLogHead(Builder<T> builder) {
         sleeperTable = builder.sleeperTable;
         logStore = builder.logStore;
+        transactionBodyStore = builder.transactionBodyStore;
         updateLogBeforeAddTransaction = builder.updateLogBeforeAddTransaction;
         maxAddTransactionAttempts = builder.maxAddTransactionAttempts;
         retryBackoff = builder.retryBackoff;
@@ -76,23 +78,27 @@ class TransactionLogHead<T> {
         return new Builder<>();
     }
 
+    void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
+        addTransaction(updateTime, AddTransactionRequest.transaction(transaction));
+    }
+
     /**
      * Adds a transaction to the log. Brings the state as up to date as possible before writing to the log. Handles
      * conflicts with other processes writing to the log at the same time.
      *
      * @throws StateStoreException thrown if there's any failure reading or adding a transaction
      */
-    void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
+    void addTransaction(Instant updateTime, AddTransactionRequest request) throws StateStoreException {
         Instant startTime = Instant.now();
         LOGGER.debug("Adding transaction of type {} to table {}",
-                transaction.getClass().getSimpleName(), sleeperTable);
+                request.getTransactionType(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
-            prepareAddTransactionAttempt(attempt, transaction);
+            prepareAddTransactionAttempt(attempt, request.getTransaction());
             try {
-                attemptAddTransaction(updateTime, transaction);
+                attemptAddTransaction(updateTime, request);
                 LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
-                        transaction.getClass().getSimpleName(), sleeperTable, attempt,
+                        request.getTransactionType(), sleeperTable, attempt,
                         LoggedDuration.withShortOutput(startTime, Instant.now()));
                 return;
             } catch (DuplicateTransactionNumberException e) {
@@ -108,13 +114,13 @@ class TransactionLogHead<T> {
 
     private void prepareAddTransactionAttempt(int attempt, StateStoreTransaction<T> transaction) throws StateStoreException {
         if (updateLogBeforeAddTransaction) {
-            forceUpdate();
-            validate(transaction);
             waitBeforeAttempt(attempt);
-        } else if (attempt > 1) {
             forceUpdate();
             validate(transaction);
+        } else if (attempt > 1) {
             waitBeforeAttempt(attempt - 1);
+            forceUpdate();
+            validate(transaction);
         } else {
             try {
                 validate(transaction);
@@ -141,14 +147,15 @@ class TransactionLogHead<T> {
         }
     }
 
-    private void attemptAddTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException, DuplicateTransactionNumberException {
+    private void attemptAddTransaction(Instant updateTime, AddTransactionRequest request) throws StateStoreException, DuplicateTransactionNumberException {
         long transactionNumber = lastTransactionNumber + 1;
         try {
-            logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, transaction));
+            logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, request));
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed adding transaction", e);
         }
         Instant startApplyTime = Instant.now();
+        StateStoreTransaction<T> transaction = request.getTransaction();
         transaction.apply(state, updateTime);
         lastTransactionNumber = transactionNumber;
         LOGGER.debug("Applied transaction {} in {}",
@@ -243,14 +250,14 @@ class TransactionLogHead<T> {
     }
 
     private void applyTransaction(TransactionLogEntry entry) {
-        if (!transactionType.isInstance(entry.getTransaction())) {
+        if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
             LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
                     sleeperTable, entry.getTransactionNumber(),
-                    transactionType.getClass().getName(),
-                    entry.getTransaction().getClass().getName());
+                    transactionType.getName(),
+                    entry.getTransactionType());
             return;
         }
-        transactionType.cast(entry.getTransaction())
+        transactionType.cast(entry.getTransactionOrLoadFromPointer(transactionBodyStore))
                 .apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }
@@ -271,6 +278,7 @@ class TransactionLogHead<T> {
     static class Builder<T> {
         private TableStatus sleeperTable;
         private TransactionLogStore logStore;
+        private TransactionBodyStore transactionBodyStore;
         private boolean updateLogBeforeAddTransaction = true;
         private int maxAddTransactionAttempts;
         private ExponentialBackoffWithJitter retryBackoff;
@@ -293,6 +301,11 @@ class TransactionLogHead<T> {
 
         public Builder<T> logStore(TransactionLogStore logStore) {
             this.logStore = logStore;
+            return this;
+        }
+
+        public Builder<T> transactionBodyStore(TransactionBodyStore transactionBodyStore) {
+            this.transactionBodyStore = transactionBodyStore;
             return this;
         }
 

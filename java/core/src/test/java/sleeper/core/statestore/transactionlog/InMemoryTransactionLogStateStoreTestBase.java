@@ -33,6 +33,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
     protected final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     protected final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
     protected final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
+    protected final InMemoryTransactionBodyStore transactionBodyStore = transactionLogs.getTransactionBodyStore();
     protected final List<Duration> retryWaits = transactionLogs.getRetryWaits();
     private PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
