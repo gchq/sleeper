@@ -14,36 +14,6 @@ copy that you built yourself.
 There are a number of dependencies for building Sleeper, and a few options to set up a development environment with
 these available.
 
-#### Sleeper CLI builder image
-
-If you installed the Sleeper CLI from GitHub as described in the [getting started guide](01-getting-started.md), you can
-use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed. Unless you're in an
-EC2 deployed with `sleeper environment`, you'll need to clone the repository in the container. You can use the commands
-below to do this:
-
-```bash
-sleeper builder
-git clone https://github.com/gchq/sleeper.git
-cd sleeper
-```
-
-Everything in the repository will be persisted between executions of `sleeper builder`.
-
-If you have AWS CLI installed in the host, the same configuration will be used in the builder container. Otherwise, any
-configuration you set in the container will be persisted in the host home directory. AWS authentication environment
-variables will be propagated to the container as well.
-
-The host Docker environment will be propagated to the container via the Docker socket.
-
-The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
-if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
-
-If you add a command on the end, you can run a specific script like this:
-
-```shell
-sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
-```
-
 #### Dev Containers
 
 The Sleeper Git repository includes configuration for a dev container based on the `sleeper builder` Docker image from
@@ -72,6 +42,40 @@ nix-shell ./shell.nix
 git clone https://github.com/gchq/sleeper.git
 cd sleeper
 git checkout --track origin/main
+```
+
+#### Sleeper CLI builder image
+
+If you installed the Sleeper CLI from GitHub as described in the [getting started guide](01-getting-started.md), you can
+use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed. This is the same
+container image that's used for the Dev Containers setup above. It may be useful if you want to work inside Docker
+without using Dev Containers.
+
+If you're in an EC2 deployed with `sleeper environment`, the Sleeper CLI was pre-installed and the repository was
+already checked out when you created the EC2. Otherwise, you'll need to clone the repository in the container. You can
+use the commands below to do this:
+
+```bash
+sleeper builder
+git clone https://github.com/gchq/sleeper.git
+cd sleeper
+```
+
+Everything in the repository will be persisted between executions of `sleeper builder`.
+
+If you have AWS CLI installed in the host, the same configuration will be used in the builder container. Otherwise, any
+configuration you set in the container will be persisted in the host home directory. AWS authentication environment
+variables will be propagated to the container as well.
+
+The host Docker environment will be propagated to the container via the Docker socket.
+
+The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
+if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
+
+If you add a command on the end, you can run a specific script like this:
+
+```shell
+sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
 ```
 
 #### Manual dependency installation
