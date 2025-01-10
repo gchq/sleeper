@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -32,7 +34,7 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
     }
 
     @Override
-    public <T extends StateStoreTransaction<?>> T getBody(TransactionBodyPointer pointer) {
+    public <T extends StateStoreTransaction<?>> T getBody(TransactionBodyPointer pointer, TransactionType transactionType) {
         return (T) Objects.requireNonNull(transactionByPointer.get(pointer));
     }
 

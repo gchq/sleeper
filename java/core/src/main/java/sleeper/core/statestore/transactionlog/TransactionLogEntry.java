@@ -81,7 +81,7 @@ public class TransactionLogEntry {
         if (transaction != null) {
             return transaction;
         } else {
-            return bodyStore.getBody(bodyPointer);
+            return bodyStore.getBody(bodyPointer, transactionType);
         }
     }
 

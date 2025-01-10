@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+
 /**
  * A store of the bodies of transactions that will be referenced in a transaction log. Used by
  * {@link TransactionLogStateStore} for transactions that are too large to be held directly in
@@ -36,5 +38,5 @@ public interface TransactionBodyStore {
      * @param  pointer a pointer to the location
      * @return         the transaction
      */
-    <T extends StateStoreTransaction<?>> T getBody(TransactionBodyPointer pointer);
+    <T extends StateStoreTransaction<?>> T getBody(TransactionBodyPointer pointer, TransactionType transactionType);
 }
