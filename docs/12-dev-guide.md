@@ -20,6 +20,22 @@ The Sleeper Git repository includes configuration for a dev container based on t
 the CLI. This includes all the same dependencies. If your IDE supports Dev Containers, it can work against this Docker
 image based on this configuration.
 
+The dev container configuration will mount any AWS CLI, Maven and SSH configuration from your host machine into the
+container.
+
+On Mac or Linux this should just work. On Windows it should be launched from inside Windows Subsystem for Linux (WSL).
+Working in WSL will also let you use the project's Bash scripts from Windows.
+
+Here are some example steps to set this up in Windows:
+
+1. Install Visual Studio Code in Windows
+2. Install Ubuntu from the Windows Store
+3. Clone the Git repository in an Ubuntu terminal
+4. Run `code` in an Ubuntu terminal, which will install a VS Code server and connect it to Windows
+5. In the VS Code window that opened, open the Git repository
+6. Click the prompt to open the dev container, or use ctrl+shift+P, Dev Containers: Reopen in Container
+7. The dev container will build, open, and install VS Code extensions
+
 #### Nix shell
 
 You can use the [Nix package manager](https://nixos.org/download.html) to get up to date versions of all the
