@@ -257,7 +257,7 @@ class TransactionLogHead<T> {
                     entry.getTransactionType());
             return;
         }
-        transactionType.cast(entry.getTransaction().orElseThrow())
+        transactionType.cast(entry.getTransactionOrLoadFromPointer(bodyStore))
                 .apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }

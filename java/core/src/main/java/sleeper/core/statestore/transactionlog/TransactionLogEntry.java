@@ -70,6 +70,14 @@ public class TransactionLogEntry {
         return Optional.ofNullable(transaction);
     }
 
+    public StateStoreTransaction<?> getTransactionOrLoadFromPointer(TransactionBodyStore bodyStore) {
+        if (transaction != null) {
+            return transaction;
+        } else {
+            return bodyStore.getBody(bodyPointer);
+        }
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(transactionNumber, transaction);
