@@ -27,6 +27,9 @@ import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
 
+/**
+ * Stores the body of transactions in an S3 bucket.
+ */
 public class S3TransactionBodyStore implements TransactionBodyStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(S3TransactionBodyStore.class);
     private final AmazonS3 s3Client;
@@ -40,6 +43,13 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
         //TODO expand functionality here
     }
 
+    /**
+     * Stores a transaction body that's already been serialised as a string.
+     *
+     * @param bucketName the name of the bucket
+     * @param key        the object key
+     * @param body       the transaction body
+     */
     public void store(String bucketName, String key, String body) {
         Instant startTime = Instant.now();
         s3Client.putObject(bucketName, key, body);
