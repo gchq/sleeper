@@ -19,9 +19,11 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyPointer;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.LoggedDuration;
 
@@ -33,9 +35,11 @@ import java.time.Instant;
 public class S3TransactionBodyStore implements TransactionBodyStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(S3TransactionBodyStore.class);
     private final AmazonS3 s3Client;
+    private final TransactionSerDe serDe;
 
-    public S3TransactionBodyStore(AmazonS3 s3Client) {
+    public S3TransactionBodyStore(TableProperties tableProperties, AmazonS3 s3Client) {
         this.s3Client = s3Client;
+        this.serDe = new TransactionSerDe(tableProperties.getSchema());
     }
 
     @Override
@@ -58,6 +62,12 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
 
     @Override
     public <T extends StateStoreTransaction<?>> T getBody(TransactionBodyPointer pointer, TransactionType transactionType) {
-        throw new UnsupportedOperationException("Unimplemented method 'getBody'");
+        LOGGER.debug("Reading large {} transaction from data bucket at {}", transactionType, pointer.getKey());
+        String body = s3Client.getObjectAsString(pointer.getBucketName(), pointer.getKey());
+        return (T) serDe.toTransaction(transactionType, body);
+    }
+
+    public void delete(TransactionBodyPointer pointer) {
+        s3Client.deleteObject(pointer.getBucketName(), pointer.getKey());
     }
 }

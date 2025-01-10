@@ -150,7 +150,7 @@ class TransactionLogHead<T> {
     private void attemptAddTransaction(Instant updateTime, AddTransactionRequest request) throws StateStoreException, DuplicateTransactionNumberException {
         long transactionNumber = lastTransactionNumber + 1;
         try {
-            logStore.addTransaction(new TransactionLogEntry(transactionNumber, updateTime, request));
+            logStore.addTransaction(TransactionLogEntry.fromRequest(transactionNumber, updateTime, request));
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed adding transaction", e);
         }
