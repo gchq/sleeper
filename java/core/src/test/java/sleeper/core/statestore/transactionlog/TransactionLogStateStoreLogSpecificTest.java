@@ -33,6 +33,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore.ThrowingRunnable;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
@@ -467,19 +468,35 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
 
         @Test
-        void shouldFailToLoadTransactionIfBodyIsNotInStore() {
+        void shouldFailToLoadTransactionIfBodyIsNotInBodyStore() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             String bucket = "test-data-bucket";
             String key = "table/fileTransactions/myTransaction.json";
-
-            // When
             store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
 
-            // Then
+            // When / Then
             assertThatThrownBy(() -> otherProcess().getFileReferences())
-                    .isInstanceOf(StateStoreException.class);
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Failed updating state from transactions");
+        }
+
+        @Test
+        void shouldFailToLoadTransactionIfTypeHeldInLogDoesNotMatchTypeInBodyStore() {
+            // Given
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            FileReferenceTransaction transactionInStore = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            FileReferenceTransaction transactionInLog = new ClearFilesTransaction();
+            String bucket = "test-data-bucket";
+            String key = "table/fileTransactions/myTransaction.json";
+            transactionBodyStore.store(new TransactionBodyPointer(bucket, key), transactionInStore);
+            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transactionInLog));
+
+            // When / Then
+            assertThatThrownBy(() -> otherProcess().getFileReferences())
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Failed updating state from transactions");
         }
     }
 

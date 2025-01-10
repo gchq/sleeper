@@ -35,7 +35,12 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
 
     @Override
     public <T extends StateStoreTransaction<?>> T getBody(TransactionBodyPointer pointer, TransactionType transactionType) {
-        return (T) Objects.requireNonNull(transactionByPointer.get(pointer));
+        T transaction = (T) Objects.requireNonNull(transactionByPointer.get(pointer));
+        Class<?> expectedClass = transactionType.getType();
+        if (!expectedClass.isInstance(transaction)) {
+            throw new IllegalArgumentException("Expected stored transaction to be of type " + expectedClass.getName() + ", found " + transaction.getClass().getName());
+        }
+        return transaction;
     }
 
     public Map<TransactionBodyPointer, StateStoreTransaction<?>> getTransactionByPointer() {
