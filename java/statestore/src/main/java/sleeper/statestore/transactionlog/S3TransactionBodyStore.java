@@ -67,6 +67,11 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
         return (T) serDe.toTransaction(transactionType, body);
     }
 
+    /**
+     * Deletes a transaction body from the bucket.
+     *
+     * @param pointer a pointer to the S3 object
+     */
     public void delete(TransactionBodyPointer pointer) {
         s3Client.deleteObject(pointer.getBucketName(), pointer.getKey());
     }
