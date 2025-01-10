@@ -123,7 +123,7 @@ impl ScalarUDFImpl for SketchUDF {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn name(&self) -> <&'static str> {
+    fn name(&self) -> &str {
         "sketch"
     }
     fn signature(&self) -> &Signature {
