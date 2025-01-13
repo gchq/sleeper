@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreException;
@@ -37,6 +40,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * This can be used to apply the results of a compaction.
  */
 public class ReplaceFileReferencesTransaction implements FileReferenceTransaction {
+    public static final Logger LOGGER = LoggerFactory.getLogger(ReplaceFileReferencesTransaction.class);
 
     private final List<ReplaceFileReferencesRequest> jobs;
 
@@ -64,6 +68,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
             try {
                 validateJob(stateStoreFiles, job);
             } catch (StateStoreException e) {
+                LOGGER.warn("Found invalid compaction commit for job {}", job.getJobId(), e);
                 continue;
             }
             for (String filename : job.getInputFiles()) {
