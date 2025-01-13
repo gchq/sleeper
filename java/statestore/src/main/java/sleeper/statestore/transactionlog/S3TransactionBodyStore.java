@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionBodyPointer;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
@@ -69,16 +68,6 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     /**
      * Stores a transaction body that's already been serialised as a string.
      *
-     * @param pointer the location to store the file
-     * @param body    the transaction body
-     */
-    public void store(TransactionBodyPointer pointer, String body) {
-        store(pointer.getKey(), body);
-    }
-
-    /**
-     * Stores a transaction body that's already been serialised as a string.
-     *
      * @param key  the object key in the data bucket to store the file in
      * @param body the transaction body
      */
@@ -98,9 +87,9 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     /**
      * Deletes a transaction body from the bucket.
      *
-     * @param pointer a pointer to the S3 object
+     * @param key the S3 object key
      */
-    public void delete(TransactionBodyPointer pointer) {
-        s3Client.deleteObject(pointer.getBucketName(), pointer.getKey());
+    public void delete(String key) {
+        s3Client.deleteObject(instanceProperties.get(DATA_BUCKET), key);
     }
 }

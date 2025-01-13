@@ -29,7 +29,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionBodyPointer;
 import sleeper.core.statestore.transactionlog.TransactionLogDeletionTracker;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
@@ -179,7 +178,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
                     long transactionNumber = getLongAttribute(item, TRANSACTION_NUMBER, 0L);
                     boolean deleteFromS3 = item.get(BODY_S3_KEY) != null;
                     if (deleteFromS3) {
-                        transactionBodyStore.delete(new TransactionBodyPointer(dataBucket, item.get(BODY_S3_KEY).getS()));
+                        transactionBodyStore.delete(item.get(BODY_S3_KEY).getS());
                         deletionTracker.deletedLargeTransactionBody(transactionNumber);
                     }
                     dynamoClient.deleteItem(logTableName, getKey(item));
@@ -196,10 +195,10 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
         if (lengthInBytes < 1024 * 350) {
             builder.string(BODY, body);
         } else {
-            TransactionBodyPointer pointer = TransactionBodyPointer.create(instanceProperties, tableProperties);
-            LOGGER.info("Found large {} transaction, saving to data bucket instead of DynamoDB at {}", transactionDescription, pointer.getKey());
-            builder.string(BODY_S3_KEY, pointer.getKey());
-            transactionBodyStore.store(pointer, body);
+            String key = S3TransactionBodyStore.createObjectKey(instanceProperties, tableProperties);
+            LOGGER.info("Found large {} transaction, saving to data bucket instead of DynamoDB at {}", transactionDescription, key);
+            builder.string(BODY_S3_KEY, key);
+            transactionBodyStore.store(key, body);
         }
     }
 
