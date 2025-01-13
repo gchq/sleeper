@@ -33,11 +33,11 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.TransactionBodyPointer;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -238,7 +237,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
         // Then
         assertThat(partitionLogStore.readTransactionsAfter(0)).isEmpty();
-        assertThat(streamFilesInDataBucket()).isEmpty();
+        assertThat(filesInDataBucket()).isEmpty();
     }
 
     @Test
@@ -262,9 +261,10 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         partitionLogStore.deleteTransactionsAtOrBefore(0);
 
         // Then
+        String file = singleFileInDataBucket();
         assertThat(partitionLogStore.readTransactionsAfter(0)).containsExactly(
-                new TransactionLogEntry(1, updateTime, new InitialisePartitionsTransaction(partitions)));
-        assertThat(streamFilesInDataBucket()).hasSize(1);
+                new TransactionLogEntry(1, updateTime, TransactionType.INITIALISE_PARTITIONS,
+                        new TransactionBodyPointer(instanceProperties.get(DATA_BUCKET), file)));
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
@@ -279,11 +279,21 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoDBClient, s3Client);
     }
 
-    private Stream<String> streamFilesInDataBucket() {
+    private String singleFileInDataBucket() {
+        List<String> files = filesInDataBucket();
+        if (files.size() != 1) {
+            throw new IllegalStateException("Expected one file in data bucket, found: " + files);
+        } else {
+            return files.get(0);
+        }
+    }
+
+    private List<String> filesInDataBucket() {
         return s3Client.listObjects(new ListObjectsRequest()
                 .withBucketName(instanceProperties.get(DATA_BUCKET))
                 .withPrefix(tableProperties.get(TableProperty.TABLE_ID)))
                 .getObjectSummaries().stream()
-                .map(S3ObjectSummary::getKey);
+                .map(S3ObjectSummary::getKey)
+                .toList();
     }
 }
