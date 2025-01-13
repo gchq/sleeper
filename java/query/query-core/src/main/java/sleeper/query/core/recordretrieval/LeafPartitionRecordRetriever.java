@@ -33,7 +33,7 @@ public interface LeafPartitionRecordRetriever {
      *                                  partition, and are in one of the specified regions. Only values specified in the
      *                                  data read schema will be returned. Other processing specified in the query will
      *                                  be applied by the caller.
-     * @throws RecordRetrievalException Thrown if the first record of any file could not be read.
+     * @throws RecordRetrievalException if the first record of any file could not be read
      */
     CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException;
 }
