@@ -134,9 +134,9 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
                             .number(TRANSACTION_NUMBER, transactionNumber)
                             .number(UPDATE_TIME, entry.getUpdateTime().toEpochMilli())
                             .string(TYPE, entry.getTransactionType().name())
-                            .apply(builder -> entry.withTransactionOrPointer(
+                            .apply(builder -> entry.withTransactionOrObjectKey(
                                     transaction -> setBodyDirectlyOrInS3IfTooBig(builder, transaction),
-                                    pointer -> builder.string(BODY_S3_KEY, pointer.getKey())))
+                                    key -> builder.string(BODY_S3_KEY, key)))
                             .build())
                     .withConditionExpression("attribute_not_exists(#Number)")
                     .withExpressionAttributeNames(Map.of("#Number", TRANSACTION_NUMBER)));

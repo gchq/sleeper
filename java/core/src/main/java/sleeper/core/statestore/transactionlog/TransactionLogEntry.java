@@ -80,16 +80,16 @@ public class TransactionLogEntry {
     }
 
     /**
-     * Applies some operation on the transaction or the pointer, whichever is held in the entry.
+     * Applies some operation on the transaction or the object key in the data bucket, whichever is held in the entry.
      *
      * @param withTransaction the operation on a transaction
-     * @param withPointer     the operation on a pointer
+     * @param withObjectKey   the operation on an object key
      */
-    public void withTransactionOrPointer(Consumer<StateStoreTransaction<?>> withTransaction, Consumer<TransactionBodyPointer> withPointer) {
+    public void withTransactionOrObjectKey(Consumer<StateStoreTransaction<?>> withTransaction, Consumer<String> withObjectKey) {
         if (transaction != null) {
             withTransaction.accept(transaction);
         } else {
-            withPointer.accept(bodyPointer);
+            withObjectKey.accept(bodyPointer.getKey());
         }
     }
 
