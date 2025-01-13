@@ -21,10 +21,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.exception.FileAlreadyExistsException;
-import sleeper.core.statestore.exception.FileNotFoundException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
-import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
@@ -66,30 +62,15 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
     public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         for (ReplaceFileReferencesRequest job : jobs) {
             try {
-                validateJob(stateStoreFiles, job);
+                job.validate(stateStoreFiles);
             } catch (StateStoreException e) {
-                LOGGER.warn("Found invalid compaction commit for job {}", job.getJobId(), e);
+                LOGGER.debug("Found invalid compaction commit for job {}", job.getJobId(), e);
                 continue;
             }
             for (String filename : job.getInputFiles()) {
                 stateStoreFiles.updateFile(filename, file -> file.removeReferenceForPartition(job.getPartitionId(), updateTime));
             }
             stateStoreFiles.add(StateStoreFile.newFile(updateTime, job.getNewReference()));
-        }
-    }
-
-    private void validateJob(StateStoreFiles stateStoreFiles, ReplaceFileReferencesRequest job) {
-        for (String filename : job.getInputFiles()) {
-            StateStoreFile file = stateStoreFiles.file(filename)
-                    .orElseThrow(() -> new FileNotFoundException(filename));
-            FileReference reference = file.getReferenceForPartitionId(job.getPartitionId())
-                    .orElseThrow(() -> new FileReferenceNotFoundException(filename, job.getPartitionId()));
-            if (!job.getJobId().equals(reference.getJobId())) {
-                throw new FileReferenceNotAssignedToJobException(reference, job.getJobId());
-            }
-        }
-        if (stateStoreFiles.file(job.getNewReference().getFilename()).isPresent()) {
-            throw new FileAlreadyExistsException(job.getNewReference().getFilename());
         }
     }
 

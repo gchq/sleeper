@@ -15,6 +15,13 @@
  */
 package sleeper.core.statestore;
 
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -69,6 +76,30 @@ public class ReplaceFileReferencesRequest {
         return builder().jobId(jobId).taskId(taskId).jobRunId(jobRunId).inputFiles(inputFiles)
                 .newReference(newReference.toBuilder().lastStateStoreUpdateTime(null).build())
                 .build();
+    }
+
+    /**
+     * Validates the request against the current state.
+     *
+     * @param  stateStoreFiles                        the state
+     * @throws FileNotFoundException                  if an input file does not exist
+     * @throws FileReferenceNotFoundException         if an input file is not referenced on the same partition
+     * @throws FileReferenceNotAssignedToJobException if an input file is not assigned to the job on this partition
+     * @throws FileAlreadyExistsException             if the new file already exists in the state store
+     */
+    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+        for (String filename : inputFiles) {
+            StateStoreFile file = stateStoreFiles.file(filename)
+                    .orElseThrow(() -> new FileNotFoundException(filename));
+            FileReference reference = file.getReferenceForPartitionId(newReference.getPartitionId())
+                    .orElseThrow(() -> new FileReferenceNotFoundException(filename, newReference.getPartitionId()));
+            if (!jobId.equals(reference.getJobId())) {
+                throw new FileReferenceNotAssignedToJobException(reference, jobId);
+            }
+        }
+        if (stateStoreFiles.file(newReference.getFilename()).isPresent()) {
+            throw new FileAlreadyExistsException(newReference.getFilename());
+        }
     }
 
     public String getJobId() {
