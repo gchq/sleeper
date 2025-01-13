@@ -33,7 +33,6 @@ import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
-import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
@@ -752,23 +751,21 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
         }
 
         @Test
-        void shouldFailToSetReadyForGCWhenAlreadyReadyForGC() {
+        void shouldIgnoreCompactionCommitWhenAlreadyCommitted() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
-
-            // When
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("oldFile"), newFile)));
 
+            // When
+            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+                    "job1", List.of("oldFile"), newFile)));
+
             // Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
-                    .isInstanceOf(ReplaceRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(newFile);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -779,35 +776,37 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
         }
 
         @Test
-        void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() {
+        void shouldIgnoreCompactionCommitWhenInputFilesAreNotAssignedToJob() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
 
-            // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
-                    .isInstanceOf(ReplaceRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
+            // When
+            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+                    "job1", List.of("oldFile"), newFile)));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(oldFile);
         }
 
         @Test
-        public void shouldFailToSetFileReadyForGCWhichDoesNotExist() {
+        public void shouldIgnoreCompactionCommitWhenInputFileIsNotInStateStore() {
             // Given
             FileReference newFile = factory.rootFile("newFile", 100L);
 
-            // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
-                    .isInstanceOf(ReplaceRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileNotFoundException.class);
+            // When we commit a compaction with an input file that is not in the state store, e.g. because the
+            // compaction has already been committed, and the file has already been garbage collected.
+            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+                    "job1", List.of("oldFile"), newFile)));
+
+            // Then
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
         @Test
-        public void shouldFailToSetFilesReadyForGCWhenOneDoesNotExist() {
+        public void shouldIgnoreCompactionCommitWhenOneInputFileIsNotInStateStore() {
             // Given
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -815,29 +814,29 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
 
-            // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", List.of("oldFile1", "oldFile2"), newFile))))
-                    .isInstanceOf(ReplaceRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileNotFoundException.class);
+            // When
+            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+                    "job1", List.of("oldFile1", "oldFile2"), newFile)));
+
+            // Then
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
         @Test
-        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() {
+        public void shouldIgnoreCompactionCommitWhenFileReferenceDoesNotExistInPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             FileReference existingReference = splitFile(file, "L");
             store.addFile(existingReference);
 
-            // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", List.of("file"), factory.rootFile("file2", 100L)))))
-                    .isInstanceOf(ReplaceRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
+            // When
+            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+                    "job1", List.of("file"), factory.rootFile("file2", 100L))));
+
+            // Then
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -861,7 +860,7 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
         }
 
         @Test
-        public void shouldFailWhenOutputFileAlreadyExists() {
+        public void shouldIgnoreCompactionCommitWhenOutputFileAlreadyExists() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("oldFile", 100L);
@@ -871,11 +870,11 @@ public class S3FileReferenceStoreIT extends S3StateStoreOneTableTestBase {
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
 
-            // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                    replaceJobFileReferences("job1", List.of("oldFile"), newReference))))
-                    .isInstanceOf(ReplaceRequestsFailedException.class)
-                    .hasCauseInstanceOf(FileAlreadyExistsException.class);
+            // When
+            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+                    "job1", List.of("oldFile"), newReference)));
+
+            // Then
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     withJobId("job1", existingReference), newReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
