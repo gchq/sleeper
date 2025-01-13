@@ -27,16 +27,6 @@ public interface TransactionBodyStore {
     /**
      * Stores a transaction at a given location.
      *
-     * @param pointer     a pointer to the location
-     * @param transaction the transaction
-     */
-    default void store(TransactionBodyPointer pointer, StateStoreTransaction<?> transaction) {
-        store(pointer.getKey(), transaction);
-    }
-
-    /**
-     * Stores a transaction at a given location.
-     *
      * @param key         the object key in the data bucket
      * @param transaction the transaction
      */
@@ -45,8 +35,8 @@ public interface TransactionBodyStore {
     /**
      * Retrives a transaction from a given location.
      *
-     * @param  pointer a pointer to the location
-     * @return         the transaction
+     * @param  key the object key in the data bucket
+     * @return     the transaction
      */
-    <T extends StateStoreTransaction<?>> T getBody(TransactionBodyPointer pointer, TransactionType transactionType);
+    <T extends StateStoreTransaction<?>> T getBody(String key, TransactionType transactionType);
 }

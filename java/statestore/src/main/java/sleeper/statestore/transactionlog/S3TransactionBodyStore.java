@@ -89,9 +89,9 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     }
 
     @Override
-    public <T extends StateStoreTransaction<?>> T getBody(TransactionBodyPointer pointer, TransactionType transactionType) {
-        LOGGER.debug("Reading large {} transaction from data bucket at {}", transactionType, pointer.getKey());
-        String body = s3Client.getObjectAsString(pointer.getBucketName(), pointer.getKey());
+    public <T extends StateStoreTransaction<?>> T getBody(String key, TransactionType transactionType) {
+        LOGGER.debug("Reading large {} transaction from data bucket at {}", transactionType, key);
+        String body = s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key);
         return (T) serDe.toTransaction(transactionType, body);
     }
 

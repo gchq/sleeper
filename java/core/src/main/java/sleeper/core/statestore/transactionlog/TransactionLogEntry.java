@@ -104,7 +104,7 @@ public class TransactionLogEntry {
         if (transaction != null) {
             return transaction;
         } else {
-            return bodyStore.getBody(bodyPointer, transactionType);
+            return bodyStore.getBody(bodyPointer.getKey(), transactionType);
         }
     }
 
