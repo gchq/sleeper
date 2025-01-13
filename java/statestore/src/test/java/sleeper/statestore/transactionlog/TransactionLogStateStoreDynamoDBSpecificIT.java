@@ -127,7 +127,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             FileReference file = fileFactory(tree).rootFile("test.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             TransactionBodyPointer pointer = TransactionBodyPointer.create(instanceProperties, tableProperties);
-            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(tableProperties, s3Client);
+            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
 
             // When
             transactionBodyStore.store(pointer, transaction);

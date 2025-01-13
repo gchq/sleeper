@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyPointer;
@@ -29,22 +30,26 @@ import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+
 /**
  * Stores the body of transactions in an S3 bucket.
  */
 public class S3TransactionBodyStore implements TransactionBodyStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(S3TransactionBodyStore.class);
+    private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
     private final TransactionSerDe serDe;
 
-    public S3TransactionBodyStore(TableProperties tableProperties, AmazonS3 s3Client) {
+    public S3TransactionBodyStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonS3 s3Client) {
+        this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
     }
 
     @Override
-    public void store(TransactionBodyPointer pointer, StateStoreTransaction<?> transaction) {
-        store(pointer, serDe.toJson(transaction));
+    public void store(String key, StateStoreTransaction<?> transaction) {
+        store(key, serDe.toJson(transaction));
     }
 
     /**
@@ -54,8 +59,18 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
      * @param body    the transaction body
      */
     public void store(TransactionBodyPointer pointer, String body) {
+        store(pointer.getKey(), body);
+    }
+
+    /**
+     * Stores a transaction body that's already been serialised as a string.
+     *
+     * @param key  the object key in the data bucket to store the file in
+     * @param body the transaction body
+     */
+    public void store(String key, String body) {
         Instant startTime = Instant.now();
-        s3Client.putObject(pointer.getBucketName(), pointer.getKey(), body);
+        s3Client.putObject(instanceProperties.get(DATA_BUCKET), key, body);
         LOGGER.info("Saved to S3 in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
     }
 

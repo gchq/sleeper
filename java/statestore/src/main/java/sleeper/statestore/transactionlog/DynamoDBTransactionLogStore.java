@@ -119,7 +119,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
         this.tableProperties = tableProperties;
         this.sleeperTable = tableProperties.getStatus();
         this.dynamoClient = dynamoClient;
-        this.transactionBodyStore = new S3TransactionBodyStore(tableProperties, s3Client);
+        this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
     }
 

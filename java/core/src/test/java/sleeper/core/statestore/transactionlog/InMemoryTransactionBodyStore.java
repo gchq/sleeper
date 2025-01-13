@@ -29,8 +29,8 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
     private final Map<String, StateStoreTransaction<?>> transactionByKey = new HashMap<>();
 
     @Override
-    public void store(TransactionBodyPointer pointer, StateStoreTransaction<?> transaction) {
-        transactionByKey.put(pointer.getKey(), transaction);
+    public void store(String key, StateStoreTransaction<?> transaction) {
+        transactionByKey.put(key, transaction);
     }
 
     @Override

@@ -65,7 +65,7 @@ public class DynamoDBTransactionLogStateStoreNoSnapshots {
                         tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0)))
                 .filesLogStore(DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoDB, s3))
                 .partitionsLogStore(DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoDB, s3))
-                .transactionBodyStore(new S3TransactionBodyStore(tableProperties, s3));
+                .transactionBodyStore(new S3TransactionBodyStore(instanceProperties, tableProperties, s3));
     }
 
 }
