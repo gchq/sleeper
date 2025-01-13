@@ -93,18 +93,6 @@ public class TransactionLogEntry {
         }
     }
 
-    public Optional<TransactionBodyPointer> getBodyPointer() {
-        return Optional.ofNullable(bodyPointer);
-    }
-
-    public Optional<StateStoreTransaction<?>> getTransaction() {
-        return Optional.ofNullable(transaction);
-    }
-
-    public boolean isPointer() {
-        return bodyPointer != null;
-    }
-
     /**
      * Returns the transaction object held in this entry. Loads it from a transaction body store if the entry is a
      * pointer.
