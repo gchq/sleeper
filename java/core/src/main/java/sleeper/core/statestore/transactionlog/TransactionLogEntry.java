@@ -20,6 +20,7 @@ import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * An entry in a state store transaction log.
@@ -33,21 +34,37 @@ public class TransactionLogEntry {
     private final StateStoreTransaction<?> transaction;
 
     public TransactionLogEntry(long transactionNumber, Instant updateTime, StateStoreTransaction<?> transaction) {
-        this(transactionNumber, updateTime, AddTransactionRequest.transaction(transaction));
+        this(transactionNumber, updateTime, TransactionType.getType(transaction), null, transaction);
     }
 
-    public TransactionLogEntry(long transactionNumber, Instant updateTime, AddTransactionRequest request) {
+    public TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, TransactionBodyPointer bodyPointer) {
+        this(transactionNumber, updateTime, transactionType, bodyPointer, null);
+    }
+
+    private TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, TransactionBodyPointer bodyPointer, StateStoreTransaction<?> transaction) {
         this.transactionNumber = transactionNumber;
         this.updateTime = updateTime;
-        this.transactionType = TransactionType.getType(request.getTransaction());
+        this.transactionType = transactionType;
+        this.bodyPointer = bodyPointer;
+        this.transaction = transaction;
+    }
+
+    /**
+     * Creates a transaction log entry from a request to add a transaction.
+     *
+     * @param  transactionNumber the transaction number
+     * @param  updateTime        the update time
+     * @param  request           the request
+     * @return                   the log entry
+     */
+    public static TransactionLogEntry fromRequest(long transactionNumber, Instant updateTime, AddTransactionRequest request) {
         Optional<TransactionBodyPointer> bodyPointer = request.getBodyPointer();
         if (bodyPointer.isPresent()) {
-            this.bodyPointer = bodyPointer.get();
-            this.transaction = null;
+            return new TransactionLogEntry(transactionNumber, updateTime, request.getTransactionType(), bodyPointer.get());
         } else {
-            this.bodyPointer = null;
-            this.transaction = request.getTransaction();
+            return new TransactionLogEntry(transactionNumber, updateTime, request.getTransaction());
         }
+
     }
 
     public long getTransactionNumber() {
@@ -62,12 +79,18 @@ public class TransactionLogEntry {
         return transactionType;
     }
 
-    public Optional<TransactionBodyPointer> getBodyPointer() {
-        return Optional.ofNullable(bodyPointer);
-    }
-
-    public Optional<StateStoreTransaction<?>> getTransaction() {
-        return Optional.ofNullable(transaction);
+    /**
+     * Applies some operation on the transaction or the pointer, whichever is held in the entry.
+     *
+     * @param withTransaction the operation on a transaction
+     * @param withPointer     the operation on a pointer
+     */
+    public void withTransactionOrPointer(Consumer<StateStoreTransaction<?>> withTransaction, Consumer<TransactionBodyPointer> withPointer) {
+        if (transaction != null) {
+            withTransaction.accept(transaction);
+        } else {
+            withPointer.accept(bodyPointer);
+        }
     }
 
     /**

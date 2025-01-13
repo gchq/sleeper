@@ -440,12 +440,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
-            String bucket = "test-data-bucket";
-            String key = "table/fileTransactions/myTransaction.json";
-            transactionBodyStore.store(new TransactionBodyPointer(bucket, key), transaction);
+            TransactionBodyPointer pointer = new TransactionBodyPointer("test-data-bucket", "table/transactions/myTransaction.json");
+            transactionBodyStore.store(pointer, transaction);
 
             // When
-            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
+            store.addTransaction(AddTransactionRequest.transactionInBucket(pointer, transaction));
 
             // Then
             assertThat(otherProcess().getFileReferences()).containsExactly(file);
@@ -456,12 +455,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             // Given
             PartitionTree tree = partitions.splitToNewChildren("root", "L", "R", "m").buildTree();
             PartitionTransaction transaction = new InitialisePartitionsTransaction(tree.getAllPartitions());
-            String bucket = "test-data-bucket";
-            String key = "table/fileTransactions/myTransaction.json";
-            transactionBodyStore.store(new TransactionBodyPointer(bucket, key), transaction);
+            TransactionBodyPointer pointer = new TransactionBodyPointer("test-data-bucket", "table/transactions/myTransaction.json");
+            transactionBodyStore.store(pointer, transaction);
 
             // When
-            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
+            store.addTransaction(AddTransactionRequest.transactionInBucket(pointer, transaction));
 
             // Then
             assertThat(otherProcess().getAllPartitions()).isEqualTo(tree.getAllPartitions());
@@ -472,9 +470,8 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
-            String bucket = "test-data-bucket";
-            String key = "table/fileTransactions/myTransaction.json";
-            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
+            TransactionBodyPointer pointer = new TransactionBodyPointer("test-data-bucket", "table/transactions/myTransaction.json");
+            store.addTransaction(AddTransactionRequest.transactionInBucket(pointer, transaction));
 
             // When / Then
             assertThatThrownBy(() -> otherProcess().getFileReferences())
@@ -488,10 +485,9 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transactionInStore = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             FileReferenceTransaction transactionInLog = new ClearFilesTransaction();
-            String bucket = "test-data-bucket";
-            String key = "table/fileTransactions/myTransaction.json";
-            transactionBodyStore.store(new TransactionBodyPointer(bucket, key), transactionInStore);
-            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transactionInLog));
+            TransactionBodyPointer pointer = new TransactionBodyPointer("test-data-bucket", "table/transactions/myTransaction.json");
+            transactionBodyStore.store(pointer, transactionInStore);
+            store.addTransaction(AddTransactionRequest.transactionInBucket(pointer, transactionInLog));
 
             // When / Then
             assertThatThrownBy(() -> otherProcess().getFileReferences())
