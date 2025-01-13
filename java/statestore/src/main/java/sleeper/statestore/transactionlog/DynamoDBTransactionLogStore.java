@@ -42,7 +42,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getInstantAttribute;
@@ -163,7 +162,6 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     public void deleteTransactionsAtOrBefore(long maxTransactionNumber) {
         LOGGER.info("Deleting {} transactions from Sleeper table {}", transactionDescription, sleeperTable);
         TransactionLogDeletionTracker deletionTracker = new TransactionLogDeletionTracker(transactionDescription);
-        String dataBucket = instanceProperties.get(DATA_BUCKET);
         streamPagedItems(dynamoClient, new QueryRequest()
                 .withTableName(logTableName)
                 .withConsistentRead(true)
