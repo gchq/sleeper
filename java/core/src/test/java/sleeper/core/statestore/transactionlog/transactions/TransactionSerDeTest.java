@@ -167,9 +167,9 @@ public class TransactionSerDeTest {
         String json = new TransactionSerDe(schema).toJson(transaction);
 
         // Then
-        assertThat(NumberFormatUtils.formatBytes(json.getBytes().length))
-                .isEqualTo("454486B (454.5KB)");
         assertThat(partitions.getAllPartitions()).hasSize(499);
+        assertThat(NumberFormatUtils.formatBytes(json.getBytes().length))
+                .isEqualTo("454439B (454.4KB)");
     }
 
     @Test
@@ -192,9 +192,9 @@ public class TransactionSerDeTest {
         String json = new TransactionSerDe(schema).toJson(transaction);
 
         // Then
-        assertThat(NumberFormatUtils.formatBytes(json.length()))
-                .isEqualTo("363136B (363.1KB)");
         assertThat(partitions.getAllPartitions()).hasSize(399);
+        assertThat(NumberFormatUtils.formatBytes(json.length()))
+                .isEqualTo("363089B (363.1KB)");
     }
 
     @Test

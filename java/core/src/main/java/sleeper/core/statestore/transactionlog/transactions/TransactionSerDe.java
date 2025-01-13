@@ -38,8 +38,7 @@ public class TransactionSerDe {
         GsonBuilder builder = GsonConfig.standardBuilder()
                 .registerTypeAdapter(Partition.class, new PartitionJsonSerDe(schema))
                 .registerTypeAdapter(AllReferencesToAFile.class, AllReferencesToAFileSerDe.noUpdateTimes())
-                .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes())
-                .serializeNulls();
+                .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes());
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
