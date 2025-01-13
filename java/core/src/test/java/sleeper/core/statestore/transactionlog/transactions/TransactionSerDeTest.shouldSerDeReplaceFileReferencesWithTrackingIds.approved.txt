@@ -1,0 +1,20 @@
+{
+  "jobs": [
+    {
+      "jobId": "job",
+      "taskId": "task",
+      "jobRunId": "run",
+      "inputFiles": [
+        "file1.parquet",
+        "file2.parquet"
+      ],
+      "newReference": {
+        "filename": "file3.parquet",
+        "partitionId": "root",
+        "numberOfRecords": 100,
+        "countApproximate": false,
+        "onlyContainsDataForThisPartition": true
+      }
+    }
+  ]
+}
