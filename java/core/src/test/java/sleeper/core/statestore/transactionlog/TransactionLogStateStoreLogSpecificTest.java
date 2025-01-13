@@ -24,6 +24,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -31,6 +32,9 @@ import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore.ThrowingRunnable;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -422,6 +426,77 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
 
             // Then
             assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
+    }
+
+    @Nested
+    @DisplayName("Store the body of a transaction separately")
+    class StoreTransactionBodySeparately {
+
+        private TransactionLogStateStore store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
+
+        @Test
+        void shouldAddFileTransactionWhoseBodyIsHeldInS3() {
+            // Given
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            String bucket = "test-data-bucket";
+            String key = "table/fileTransactions/myTransaction.json";
+            transactionBodyStore.store(new TransactionBodyPointer(bucket, key), transaction);
+
+            // When
+            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
+
+            // Then
+            assertThat(otherProcess().getFileReferences()).containsExactly(file);
+        }
+
+        @Test
+        void shouldAddPartitionTransactionWhoseBodyIsHeldInS3() {
+            // Given
+            PartitionTree tree = partitions.splitToNewChildren("root", "L", "R", "m").buildTree();
+            PartitionTransaction transaction = new InitialisePartitionsTransaction(tree.getAllPartitions());
+            String bucket = "test-data-bucket";
+            String key = "table/fileTransactions/myTransaction.json";
+            transactionBodyStore.store(new TransactionBodyPointer(bucket, key), transaction);
+
+            // When
+            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
+
+            // Then
+            assertThat(otherProcess().getAllPartitions()).isEqualTo(tree.getAllPartitions());
+        }
+
+        @Test
+        void shouldFailToLoadTransactionIfBodyIsNotInBodyStore() {
+            // Given
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            String bucket = "test-data-bucket";
+            String key = "table/fileTransactions/myTransaction.json";
+            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transaction));
+
+            // When / Then
+            assertThatThrownBy(() -> otherProcess().getFileReferences())
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Failed updating state from transactions");
+        }
+
+        @Test
+        void shouldFailToLoadTransactionIfTypeHeldInLogDoesNotMatchTypeInBodyStore() {
+            // Given
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            FileReferenceTransaction transactionInStore = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            FileReferenceTransaction transactionInLog = new ClearFilesTransaction();
+            String bucket = "test-data-bucket";
+            String key = "table/fileTransactions/myTransaction.json";
+            transactionBodyStore.store(new TransactionBodyPointer(bucket, key), transactionInStore);
+            store.addTransaction(AddTransactionRequest.transactionInBucket(bucket, key, transactionInLog));
+
+            // When / Then
+            assertThatThrownBy(() -> otherProcess().getFileReferences())
+                    .isInstanceOf(StateStoreException.class)
+                    .hasMessage("Failed updating state from transactions");
         }
     }
 

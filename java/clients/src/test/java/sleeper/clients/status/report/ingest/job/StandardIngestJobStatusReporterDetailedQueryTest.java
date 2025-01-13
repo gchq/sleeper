@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.IngestJobStatus;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -42,10 +42,10 @@ import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTe
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedStatusUpdate;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobRunOnNoTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forNoRunNoTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatusListFrom;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.jobStatusListFrom;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnNoTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forNoRunNoTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class StandardIngestJobStatusReporterDetailedQueryTest {
     @Test

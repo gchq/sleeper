@@ -17,7 +17,7 @@ on:
       - 'java/splitter/splitter-core/**'
       - 'java/ingest/ingest-runner/**'
       - 'java/common/common-job/**'
-      - 'java/ingest/ingest-status-store/**'
+      - 'java/ingest/ingest-tracker/**'
       - 'java/sketches/**'
       - 'java/statestore/**'
       - 'java/ingest/ingest-core/**'

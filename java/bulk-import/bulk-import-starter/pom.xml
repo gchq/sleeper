@@ -63,7 +63,7 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-status-store</artifactId>
+            <artifactId>ingest-tracker</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!-- Test dependencies -->

@@ -15,8 +15,11 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * An entry in a state store transaction log.
@@ -25,12 +28,26 @@ public class TransactionLogEntry {
 
     private final long transactionNumber;
     private final Instant updateTime;
+    private final TransactionType transactionType;
+    private final TransactionBodyPointer bodyPointer;
     private final StateStoreTransaction<?> transaction;
 
     public TransactionLogEntry(long transactionNumber, Instant updateTime, StateStoreTransaction<?> transaction) {
+        this(transactionNumber, updateTime, AddTransactionRequest.transaction(transaction));
+    }
+
+    public TransactionLogEntry(long transactionNumber, Instant updateTime, AddTransactionRequest request) {
         this.transactionNumber = transactionNumber;
         this.updateTime = updateTime;
-        this.transaction = transaction;
+        this.transactionType = TransactionType.getType(request.getTransaction());
+        Optional<TransactionBodyPointer> bodyPointer = request.getBodyPointer();
+        if (bodyPointer.isPresent()) {
+            this.bodyPointer = bodyPointer.get();
+            this.transaction = null;
+        } else {
+            this.bodyPointer = null;
+            this.transaction = request.getTransaction();
+        }
     }
 
     public long getTransactionNumber() {
@@ -41,8 +58,31 @@ public class TransactionLogEntry {
         return updateTime;
     }
 
-    public StateStoreTransaction<?> getTransaction() {
-        return transaction;
+    public TransactionType getTransactionType() {
+        return transactionType;
+    }
+
+    public Optional<TransactionBodyPointer> getBodyPointer() {
+        return Optional.ofNullable(bodyPointer);
+    }
+
+    public Optional<StateStoreTransaction<?>> getTransaction() {
+        return Optional.ofNullable(transaction);
+    }
+
+    /**
+     * Returns the transaction object held in this entry. Loads it from a transaction body store if the entry is a
+     * pointer.
+     *
+     * @param  bodyStore the transaction body store
+     * @return           the transaction
+     */
+    public StateStoreTransaction<?> getTransactionOrLoadFromPointer(TransactionBodyStore bodyStore) {
+        if (transaction != null) {
+            return transaction;
+        } else {
+            return bodyStore.getBody(bodyPointer, transactionType);
+        }
     }
 
     @Override

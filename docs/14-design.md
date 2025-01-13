@@ -333,13 +333,13 @@ aggregate together values for the same key (e.g. to sum counts associated with t
 function that takes as input a `CloseableIterator<Record>` and returns a `CloseableIterator<Record>`. Examples of
 iterators can be found in `sleeper.core.iterator.impl`.
 
-## Status stores
+## Job and task trackers
 
 Sleeper includes stores that track the status of jobs as they pass through the system. These status updates are stored
-separately from the state of each Sleeper table. The table state is held in the state store, whereas the status stores
+separately from the state of each Sleeper table. The table state is held in the state store, whereas the trackers
 are used for reporting.
 
-The status stores allow us to report on how a job has been run, either successfully or with failures. We also report
+The trackers allow us to report on how a job has been run, either successfully or with failures. We also report
 when a job runs on a specific task, and the status and statistics of each task.
 
 Here a task usually means an ECS task, that runs in an AWS ECS cluster. It is started by a scheduled process, it listens
@@ -354,8 +354,8 @@ running:
 4. The lambda checks the number of compaction jobs on the queue and creates tasks to run them.
 5. A compaction task starts, finds a job on the queue, and runs it. Once there are no more jobs it terminates.
 
-Updates are tracked in the status store when a compaction job is created, started in a task, finished in the task, and
-when it's committed to the Sleeper table by updating the state store.
+Updates are tracked when a compaction job is created, started in a task, finished in the task, and when it's committed
+to the Sleeper table by updating the state store.
 
 Updates are also tracked for a task when when it starts and when it terminates.
 

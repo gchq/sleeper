@@ -30,8 +30,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.ingest.runner.testutils.RecordGenerator;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
+import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
+import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;
@@ -58,8 +58,8 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
 
     @BeforeEach
     void setUp() {
-        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
-        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoDB);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoDB);
     }
 
     @Test

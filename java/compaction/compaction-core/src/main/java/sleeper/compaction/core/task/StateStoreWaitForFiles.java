@@ -21,10 +21,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.process.ProcessRunTime;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 import sleeper.core.util.LoggedDuration;
@@ -119,7 +119,7 @@ public class StateStoreWaitForFiles {
     private void reportFailure(CompactionJob job, String taskId, String jobRunId, Instant startTime, Exception e) {
         Instant finishTime = timeSupplier.get();
         jobTracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(jobRunId).build());
-        jobTracker.jobFailed(job.failedEventBuilder(new ProcessRunTime(startTime, finishTime))
+        jobTracker.jobFailed(job.failedEventBuilder(new JobRunTime(startTime, finishTime))
                 .failure(e).taskId(taskId).jobRunId(jobRunId).build());
     }
 

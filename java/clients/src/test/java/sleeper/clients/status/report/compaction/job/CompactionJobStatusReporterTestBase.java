@@ -21,10 +21,10 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.io.PrintStream;
 import java.time.Duration;
@@ -38,13 +38,13 @@ import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
 import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 
 public abstract class CompactionJobStatusReporterTestBase {
 
@@ -73,19 +73,19 @@ public abstract class CompactionJobStatusReporterTestBase {
                 dataHelper.singleFileCompaction(job(3), partition("C")),
                 Instant.parse("2022-09-19T13:33:12.001Z"),
                 failedCompactionRun(task(1),
-                        new ProcessRunTime(Instant.parse("2022-09-19T13:34:12.001Z"), Duration.ofMinutes(1)),
+                        new JobRunTime(Instant.parse("2022-09-19T13:34:12.001Z"), Duration.ofMinutes(1)),
                         List.of("Something went wrong", "More details")));
         CompactionJobStatus status4 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(4), partition("D")),
                 Instant.parse("2022-09-20T13:33:12.001Z"),
-                ProcessRun.builder().taskId(task(1))
+                JobRun.builder().taskId(task(1))
                         .startedStatus(compactionStartedStatus(Instant.parse("2022-09-20T13:34:12.001Z")))
                         .finishedStatus(compactionFinishedStatus(summary(Instant.parse("2022-09-20T13:34:12.001Z"), Duration.ofMinutes(1), 600, 300)))
                         .build());
         CompactionJobStatus status5 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(5), partition("E")),
                 Instant.parse("2022-09-21T13:33:12.001Z"),
-                ProcessRun.builder().taskId(task(1))
+                JobRun.builder().taskId(task(1))
                         .startedStatus(compactionStartedStatus(Instant.parse("2022-09-21T13:34:12.001Z")))
                         .finishedStatus(compactionFinishedStatus(summary(Instant.parse("2022-09-21T13:34:12.001Z"), Duration.ofMinutes(1), 600, 300)))
                         .statusUpdate(compactionCommittedStatus(Instant.parse("2022-09-21T13:36:12.001Z")))
@@ -93,7 +93,7 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobStatus status6 = compactionJobCreated(
                 dataHelper.singleFileCompaction(job(6), partition("F")),
                 Instant.parse("2022-09-22T13:33:12.001Z"),
-                ProcessRun.builder().taskId(task(1))
+                JobRun.builder().taskId(task(1))
                         .startedStatus(compactionStartedStatus(Instant.parse("2022-09-22T13:34:12.001Z")))
                         .statusUpdate(compactionCommittedStatus(Instant.parse("2022-09-22T13:36:12.001Z")))
                         .build());
@@ -111,7 +111,7 @@ public abstract class CompactionJobStatusReporterTestBase {
 
         CompactionJobStatus succeededThenFailed = compactionJobCreated(dataHelper.singleFileCompaction(job(1)),
                 Instant.parse("2022-10-10T10:00:00.001Z"),
-                failedCompactionRun(task(2), new ProcessRunTime(
+                failedCompactionRun(task(2), new JobRunTime(
                         Instant.parse("2022-10-10T10:01:15.001Z"), Duration.ofSeconds(30)),
                         List.of("Compaction has already been committed", "Failed database update")),
                 finishedCompactionRun(task(1), summary(
@@ -121,7 +121,7 @@ public abstract class CompactionJobStatusReporterTestBase {
         CompactionJobStatus failedThenInProgress = compactionJobCreated(dataHelper.singleFileCompaction(job(2)),
                 Instant.parse("2022-10-11T10:00:00.001Z"),
                 startedCompactionRun(task(1), Instant.parse("2022-10-11T10:02:00.001Z")),
-                failedCompactionRun(task(2), new ProcessRunTime(
+                failedCompactionRun(task(2), new JobRunTime(
                         Instant.parse("2022-10-11T10:01:00.001Z"), Duration.ofSeconds(30)),
                         List.of("Unexpected failure reading input file", "Some temporary IO problem")));
 

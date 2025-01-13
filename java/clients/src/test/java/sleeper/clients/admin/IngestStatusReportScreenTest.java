@@ -26,11 +26,10 @@ import sleeper.clients.status.report.ingest.task.IngestTaskStatusReportTestHelpe
 import sleeper.core.properties.instance.CdkDefinedInstanceProperty;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.task.common.QueueMessageCount;
 
 import java.time.Instant;
@@ -43,8 +42,8 @@ import static org.mockito.Mockito.when;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_REPORT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_TASK_STATUS_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.INGEST_TRACKER_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_RANGE_OPTION;
@@ -56,11 +55,12 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QUERY_UNFINISHED_OPTION;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.core.properties.instance.IngestProperty.INGEST_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_TRACKER_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.startedIngestJob;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
 import static sleeper.task.common.InMemoryQueueMessageCounts.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
@@ -68,7 +68,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     class IngestJobStatusReport {
         private static final String INGEST_JOB_QUEUE_URL = "test-ingest-queue";
-        private final IngestJobStatusStore ingestJobStatusStore = mock(IngestJobStatusStore.class);
+        private final IngestJobTracker tracker = mock(IngestJobTracker.class);
         private final InstanceProperties instanceProperties = createInstancePropertiesWithJobQueueUrl();
         private final TableProperties tableProperties = createValidTableProperties(instanceProperties, "test-table");
         private final QueueMessageCount.Client queueCounts = visibleMessages(INGEST_JOB_QUEUE_URL, 10);
@@ -76,7 +76,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeAll() throws Exception {
             // Given
-            when(ingestJobStatusStore.getAllJobs(tableProperties.get(TABLE_ID)))
+            when(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
                     .thenReturn(oneStartedJobStatus());
 
             // When/Then
@@ -101,7 +101,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            when(ingestJobStatusStore.getUnfinishedJobs(tableProperties.get(TABLE_ID)))
+            when(tracker.getUnfinishedJobs(tableProperties.get(TABLE_ID)))
                     .thenReturn(oneStartedJobStatus());
 
             // When/Then
@@ -126,7 +126,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeDetailed() throws Exception {
             // Given
-            when(ingestJobStatusStore.getJob("test-job"))
+            when(tracker.getJob("test-job"))
                     .thenReturn(Optional.of(startedJobStatus("test-job")));
 
             // When/Then
@@ -147,7 +147,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeRange() throws Exception {
             // Given
-            when(ingestJobStatusStore.getJobsInTimePeriod(tableProperties.get(TABLE_ID),
+            when(tracker.getJobsInTimePeriod(tableProperties.get(TABLE_ID),
                     Instant.parse("2023-03-15T14:00:00Z"), Instant.parse("2023-03-15T18:00:00Z")))
                     .thenReturn(oneStartedJobStatus());
 
@@ -172,7 +172,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunReportWithQueryTypeRejected() throws Exception {
             // Given
-            when(ingestJobStatusStore.getInvalidJobs())
+            when(tracker.getInvalidJobs())
                     .thenReturn(oneRejectedJobStatus());
 
             // When/Then
@@ -196,7 +196,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             setInstanceProperties(instanceProperties, tableProperties);
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
                     INGEST_JOB_STATUS_REPORT_OPTION, "test-table")
-                    .queueClient(queueCounts).tracker(ingestJobStatusStore);
+                    .queueClient(queueCounts).tracker(tracker);
         }
 
         private List<IngestJobStatus> oneStartedJobStatus() {
@@ -204,14 +204,14 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private List<IngestJobStatus> oneRejectedJobStatus() {
-            return List.of(jobStatus("test-job",
+            return List.of(ingestJobStatus("test-job",
                     rejectedRun("test-job", "{}", Instant.parse("2023-07-05T11:59:00Z"),
                             "Test reason")));
         }
 
         private IngestJobStatus startedJobStatus(String jobId) {
-            return startedIngestJob(IngestJob.builder().id(jobId).files(List.of("test.parquet")).build(),
-                    "test-task", Instant.parse("2023-03-15T17:52:12.001Z"));
+            return ingestJobStatus(jobId, startedRun("test-task",
+                    ingestStartedStatus(Instant.parse("2023-03-15T17:52:12.001Z"), 1)));
         }
 
         private InstanceProperties createInstancePropertiesWithJobQueueUrl() {
@@ -224,7 +224,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     @DisplayName("Ingest task status report")
     @Nested
     class IngestTaskStatusReport {
-        private final IngestTaskStatusStore ingestTaskStatusStore = mock(IngestTaskStatusStore.class);
+        private final IngestTaskTracker tracker = mock(IngestTaskTracker.class);
 
         private List<IngestTaskStatus> exampleTaskStatuses() {
             return List.of(
@@ -234,7 +234,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunIngestTaskStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            when(ingestTaskStatusStore.getAllTasks())
+            when(tracker.getAllTasks())
                     .thenReturn(exampleTaskStatuses());
 
             // When/Then
@@ -257,7 +257,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunIngestTaskStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            when(ingestTaskStatusStore.getTasksInProgress())
+            when(tracker.getTasksInProgress())
                     .thenReturn(exampleTaskStatuses());
 
             // When/Then
@@ -279,7 +279,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
             setInstanceProperties(createValidInstanceProperties());
             return runClient().enterPrompts(INGEST_STATUS_REPORT_OPTION,
                     INGEST_TASK_STATUS_REPORT_OPTION)
-                    .tracker(ingestTaskStatusStore);
+                    .tracker(tracker);
         }
     }
 
@@ -287,7 +287,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
     void shouldReturnToMainMenuIfIngestTrackerNotEnabled() throws Exception {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
-        properties.set(INGEST_STATUS_STORE_ENABLED, "false");
+        properties.set(INGEST_TRACKER_ENABLED, "false");
         setInstanceProperties(properties);
 
         // When
@@ -298,7 +298,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         // Then
         assertThat(output)
                 .isEqualTo(DISPLAY_MAIN_SCREEN +
-                        INGEST_STATUS_STORE_NOT_ENABLED_MESSAGE +
+                        INGEST_TRACKER_NOT_ENABLED_MESSAGE +
                         PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         verifyWithNumberOfPromptsBeforeExit(1);
     }

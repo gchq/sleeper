@@ -15,13 +15,13 @@
  */
 package sleeper.core.tracker.compaction.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -48,7 +48,7 @@ public class CompactionJobEventTestData {
         return CompactionJobStartedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).startTime(startTime);
     }
 
-    public static CompactionJobFinishedEvent.Builder finishedEventBuilder(CompactionJobCreatedEvent created, RecordsProcessedSummary summary) {
+    public static CompactionJobFinishedEvent.Builder finishedEventBuilder(CompactionJobCreatedEvent created, JobRunSummary summary) {
         return CompactionJobFinishedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).summary(summary);
     }
 
@@ -56,7 +56,7 @@ public class CompactionJobEventTestData {
         return CompactionJobCommittedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).commitTime(commitTime);
     }
 
-    public static CompactionJobFailedEvent.Builder failedEventBuilder(CompactionJobCreatedEvent created, ProcessRunTime runTime) {
+    public static CompactionJobFailedEvent.Builder failedEventBuilder(CompactionJobCreatedEvent created, JobRunTime runTime) {
         return CompactionJobFailedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).runTime(runTime);
     }
 

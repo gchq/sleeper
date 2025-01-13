@@ -16,10 +16,10 @@
 
 package sleeper.systemtest.dsl.reporting;
 
-import sleeper.core.record.process.AverageRecordRate;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.util.List;
 import java.util.function.Function;
@@ -87,14 +87,14 @@ public class JobsFinishedStatistics {
         private Builder() {
         }
 
-        public <T> Builder jobs(List<T> jobs, Predicate<T> isJobFinished, Function<T, List<ProcessRun>> getJobRuns) {
+        public <T> Builder jobs(List<T> jobs, Predicate<T> isJobFinished, Function<T, List<JobRun>> getJobRuns) {
             this.numJobs = jobs.size();
             this.numFinishedJobs = (int) jobs.stream().filter(isJobFinished).count();
             this.numJobRuns = jobs.stream()
                     .mapToInt(job -> getJobRuns.apply(job).size())
                     .sum();
             this.numFinishedJobRuns = jobs.stream()
-                    .mapToInt(job -> (int) getJobRuns.apply(job).stream().filter(ProcessRun::isFinished).count())
+                    .mapToInt(job -> (int) getJobRuns.apply(job).stream().filter(JobRun::isFinished).count())
                     .sum();
             this.averageRecordRate = AverageRecordRate.of(jobs.stream()
                     .filter(isJobFinished)

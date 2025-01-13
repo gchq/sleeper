@@ -41,7 +41,7 @@ chunks:
       - compaction/compaction-task-creation
       - compaction/compaction-job-creation
       - compaction/compaction-job-creation-lambda
-      - compaction/compaction-status-store
+      - compaction/compaction-tracker
       - compaction/compaction-core
       - splitter/splitter-core
       - splitter/splitter-lambda
@@ -59,7 +59,7 @@ chunks:
     workflow: chunk-ingest.yaml
     modules:
       - ingest/ingest-core
-      - ingest/ingest-status-store
+      - ingest/ingest-tracker
       - ingest/ingest-starter
       - ingest/ingest-batcher-core
       - ingest/ingest-batcher-store

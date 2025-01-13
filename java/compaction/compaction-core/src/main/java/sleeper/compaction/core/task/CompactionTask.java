@@ -27,9 +27,6 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.exception.FileNotFoundException;
@@ -41,6 +38,9 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.LoggedDuration;
 
 import java.io.IOException;
@@ -58,7 +58,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
 
 /**
- * Runs a compaction task. Executes jobs from a queue, updating the status stores with progress of the task.
+ * Runs a compaction task. Executes jobs from a queue, updating the job and task trackers with progress.
  */
 public class CompactionTask {
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTask.class);
@@ -176,7 +176,7 @@ public class CompactionTask {
             IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker) {
         Instant jobStartTime = timeSupplier.get();
         try {
-            RecordsProcessedSummary summary;
+            JobRunSummary summary;
             try {
                 summary = compact(message.getJob(), jobRunId, jobStartTime);
             } catch (TableNotFoundException e) {
@@ -193,14 +193,14 @@ public class CompactionTask {
         } catch (Exception e) {
             Instant jobFinishTime = timeSupplier.get();
             jobTracker.jobFailed(message.getJob()
-                    .failedEventBuilder(new ProcessRunTime(jobStartTime, jobFinishTime))
+                    .failedEventBuilder(new JobRunTime(jobStartTime, jobFinishTime))
                     .failure(e).taskId(taskId).jobRunId(jobRunId).build());
         }
     }
 
     private void commitCompaction(
             String jobRunId, CompactionTaskFinishedStatus.Builder builder, MessageHandle message,
-            IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker, RecordsProcessedSummary summary) throws Exception {
+            IdleTimeTracker idleTimeTracker, ConsecutiveFailuresTracker failureTracker, JobRunSummary summary) throws Exception {
         CompactionJob job = message.getJob();
         try {
             jobCommitter.commit(job, job.finishedEventBuilder(summary).taskId(taskId).jobRunId(jobRunId).build());
@@ -222,7 +222,7 @@ public class CompactionTask {
         }
     }
 
-    private RecordsProcessedSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
+    private JobRunSummary compact(CompactionJob job, String jobRunId, Instant jobStartTime) throws Exception {
         LOGGER.info("Compaction job {}: compaction called at {}", job.getId(), jobStartTime);
         jobTracker.jobStarted(job.startedEventBuilder(jobStartTime).taskId(taskId).jobRunId(jobRunId).build());
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
@@ -231,11 +231,11 @@ public class CompactionTask {
         Partition partition = stateStore.getPartition(job.getPartitionId());
         RecordsProcessed recordsProcessed = compactor.compact(job, tableProperties, partition);
         Instant jobFinishTime = timeSupplier.get();
-        RecordsProcessedSummary summary = new RecordsProcessedSummary(recordsProcessed, jobStartTime, jobFinishTime);
+        JobRunSummary summary = new JobRunSummary(recordsProcessed, jobStartTime, jobFinishTime);
         return summary;
     }
 
-    private void logMetrics(CompactionJob job, RecordsProcessedSummary summary) {
+    private void logMetrics(CompactionJob job, JobRunSummary summary) {
         LOGGER.info("Compaction job {}: finished at {}", job.getId(), summary.getFinishTime());
         METRICS_LOGGER.info("Compaction job {}: compaction run time = {}", job.getId(), summary.getDurationInSeconds());
         METRICS_LOGGER.info("Compaction job {}: compaction read {} records at {} per second", job.getId(),

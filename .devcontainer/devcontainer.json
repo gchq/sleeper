@@ -48,6 +48,7 @@
     "AWS_SECRET_ACCESS_KEY": "${localEnv:AWS_SECRET_ACCESS_KEY}",
     "AWS_SESSION_TOKEN": "${localEnv:AWS_SESSION_TOKEN}"
   },
+  "initializeCommand": "mkdir -p ${localEnv:HOME}/.aws ; mkdir -p ${localEnv:HOME}/.m2 ; mkdir -p ${localEnv:HOME}/.ssh",
   "postStartCommand": "head -1 /proc/self/cgroup | cut -d/ -f3 | echo \"HOSTNAME=$(cat -)\" >> /home/sleeper/.bashrc",
   "remoteUser": "sleeper",
   "updateRemoteUserUID": true

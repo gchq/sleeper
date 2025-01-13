@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::aws_s3::{default_s3_config, s3_config, ObjectStoreFactory};
+use crate::s3::{config_for_s3_module, default_creds_store, ObjectStoreFactory};
 use aws_config::Region;
 use aws_credential_types::Credentials;
 use color_eyre::eyre::{eyre, Result};
@@ -186,7 +186,7 @@ async fn create_object_store_factory(
 ) -> ObjectStoreFactory {
     let s3_config = match aws_config_override {
         Some(aws_config) => Some(to_s3_config(aws_config)),
-        None => default_s3_config().await.ok(),
+        None => default_creds_store().await.ok(),
     };
     ObjectStoreFactory::new(s3_config)
 }
@@ -194,7 +194,7 @@ async fn create_object_store_factory(
 fn to_s3_config(aws_config: &AwsConfig) -> AmazonS3Builder {
     let creds = Credentials::from_keys(&aws_config.access_key, &aws_config.secret_key, None);
     let region = Region::new(String::from(&aws_config.region));
-    s3_config(&creds, &region)
+    config_for_s3_module(&creds, &region)
         .with_endpoint(&aws_config.endpoint)
         .with_allow_http(aws_config.allow_http)
 }

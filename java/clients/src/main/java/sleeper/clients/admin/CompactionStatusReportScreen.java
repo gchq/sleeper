@@ -37,7 +37,7 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 
 public class CompactionStatusReportScreen {
     private final ConsoleOutput out;
@@ -62,9 +62,9 @@ public class CompactionStatusReportScreen {
         Optional<InstanceProperties> propertiesOpt = tryLoadInstanceProperties(out, in, store, instanceId);
         if (propertiesOpt.isPresent()) {
             InstanceProperties properties = propertiesOpt.get();
-            if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+            if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
                 out.println("");
-                out.println("Compaction status store not enabled. Please enable in instance properties to access this screen");
+                out.println("Compaction tracker not enabled. Please enable in instance properties to access this screen");
                 confirmReturnToMainScreen(out, in);
             } else {
                 out.clearScreen("");

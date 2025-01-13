@@ -22,9 +22,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.time.Duration;
@@ -55,8 +55,8 @@ public class WaitForJobs {
 
     public static WaitForJobs forIngest(
             SystemTestInstanceContext instance,
-            Function<InstanceProperties, IngestJobStatusStore> getJobTracker,
-            Function<InstanceProperties, IngestTaskStatusStore> getTaskTracker,
+            Function<InstanceProperties, IngestJobTracker> getJobTracker,
+            Function<InstanceProperties, IngestTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "ingest",
                 properties -> JobTracker.forIngest(getJobTracker.apply(properties)),
@@ -66,7 +66,7 @@ public class WaitForJobs {
 
     public static WaitForJobs forBulkImport(
             SystemTestInstanceContext instance,
-            Function<InstanceProperties, IngestJobStatusStore> getJobTracker,
+            Function<InstanceProperties, IngestJobTracker> getJobTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "bulk import",
                 properties -> JobTracker.forIngest(getJobTracker.apply(properties)),
@@ -139,7 +139,7 @@ public class WaitForJobs {
     private interface JobTracker {
         WaitForJobsStatus getStatus(Collection<String> jobIds);
 
-        static JobTracker forIngest(IngestJobStatusStore tracker) {
+        static JobTracker forIngest(IngestJobTracker tracker) {
             return jobId -> WaitForJobsStatus.forIngest(tracker, jobId, Instant.now());
         }
 
@@ -152,7 +152,7 @@ public class WaitForJobs {
     private interface TaskTracker {
         boolean hasRunningTasks();
 
-        static TaskTracker forIngest(IngestTaskStatusStore tracker) {
+        static TaskTracker forIngest(IngestTaskTracker tracker) {
             return () -> !tracker.getTasksInProgress().isEmpty();
         }
 

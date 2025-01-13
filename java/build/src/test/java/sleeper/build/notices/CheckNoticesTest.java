@@ -140,4 +140,14 @@ public class CheckNoticesTest {
         assertThat(CheckNotices.findProblemsInNotices(notices, versions))
                 .containsExactly("Dependency not present in pom.xml: org.codehaus.jettison:jettison:1.*");
     }
+
+    @Test
+    void shouldFindIfMajorVersionHasChanged() {
+        String notices = "Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.*)";
+        DependencyVersions versions = DependencyVersions.builder()
+                .dependency("com.nimbusds", "nimbus-jose-jwt", "10.0")
+                .build();
+        assertThat(CheckNotices.findProblemsInNotices(notices, versions))
+                .containsExactly("Dependency versions did not match: com.nimbusds:nimbus-jose-jwt:10.0");
+    }
 }
