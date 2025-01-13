@@ -69,7 +69,7 @@ public class BulkExportQuerySplitter {
      * frequently extracting all the information about the files and the partitions
      * from the state store.
      *
-     * @throws StateStoreException if the statestore can't be accessed.
+     * @throws StateStoreException if the statestore can't be accessed
      */
     public void init() throws StateStoreException {
         init(Instant.now());
@@ -78,8 +78,8 @@ public class BulkExportQuerySplitter {
     /**
      * Initialises the partitions and the mapping from partitions to active files.
      *
-     * @param partitions             to used to initialise the class
-     * @param partitionToFileMapping maps the partitions to files
+     * @param partitions             used to look up ancestor partititions
+     * @param partitionToFileMapping used to look up files in a partition
      */
     public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping) {
         init(partitions, partitionToFileMapping, Instant.now());
@@ -89,8 +89,8 @@ public class BulkExportQuerySplitter {
      * Initialises the partitions and the mapping from partitions to active files if
      * needed.
      *
-     * @param now used to determine the next initialisation.
-     * @throws StateStoreException if the statestore can't be accessed.
+     * @param  now                 used to determine the next initialisation
+     * @throws StateStoreException if the statestore can't be accessed
      */
     public void initIfNeeded(Instant now) throws StateStoreException {
         if (nextInitialiseTime.isAfter(now)) {
@@ -103,8 +103,8 @@ public class BulkExportQuerySplitter {
     /**
      * Initialises the partitions and the mapping from partitions to active files.
      *
-     * @param now used to determine the next initialisation.
-     * @throws StateStoreException if the statestore can't be accessed.
+     * @param  now                 used to determine the next initialisation
+     * @throws StateStoreException if the statestore can't be accessed
      */
     public void init(Instant now) throws StateStoreException {
         List<Partition> partitions = stateStore.getAllPartitions();
@@ -115,9 +115,9 @@ public class BulkExportQuerySplitter {
     /**
      * Initialises the partitions and the mapping from partitions to active files.
      *
-     * @param partitions             to used to initialise the class
-     * @param partitionToFileMapping maps the partitions to files
-     * @param now                    used to determine the next initialisation.
+     * @param partitions             used to look up ancestor partititions
+     * @param partitionToFileMapping used to look up files in a partition
+     * @param now                    used to determine the next initialisation time
      */
     public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping, Instant now) {
         leafPartitions = partitions.stream()
@@ -131,13 +131,12 @@ public class BulkExportQuerySplitter {
     }
 
     /**
-     * Splits up a query into a sub-query per relevant leaf partition. Uses the
-     * {@link #getRelevantLeafPartitions} method. For each leaf partition, it
+     * Splits up a query into a sub-query per relevant leaf partition. For each leaf partition, it
      * finds the parent partitions in the tree and adds any files still belonging
      * to the parent to the sub query.
      *
-     * @param bulkExportQuery the query to be split up
-     * @return A list of {@link LeafPartitionQuery}s
+     * @param  bulkExportQuery the query to be split up
+     * @return                 a list of {@link LeafPartitionQuery}s
      */
     public List<BulkExportLeafPartitionQuery> splitIntoLeafPartitionQueries(BulkExportQuery bulkExportQuery) {
         LOGGER.debug("There are {} relevant leaf partitions", leafPartitions.size());
@@ -171,10 +170,10 @@ public class BulkExportQuerySplitter {
     }
 
     /**
-     * Gets a list of files paths for a partition.
+     * Gets a list of file paths for a partition.
      *
-     * @param partition to get the files from.
-     * @return A list of files.
+     * @param  partition which partition to get the files from
+     * @return           a list of files
      */
     protected List<String> getFiles(Partition partition) {
         // Get all partitions up to the root of the tree
