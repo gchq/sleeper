@@ -15,8 +15,8 @@ The batches are held in memory one at a time when attempting to write them to th
 A record batch is created by copying from the batch buffer to the working buffer following the sort order present within
 the vector of indexes. The working buffer memory is shared between the record batch and the sort indexes.
 
-An ingest will gather files until the store is filled or until all the remaining records are in the local store.
-The size of the store is defined by the property: 'sleeper.ingest.arrow.max.local.store.bytes'.
+The size of the local file system store is defined by the property `sleeper.ingest.arrow.max.local.store.bytes`.
+An ingest will gather files until this limit is met, or until all the remaining records are in the local store.
 Once done, it will merge them all together and will pass the sorted records through to the Sleeper table. This opens all
 the files and reads one record batch for each file. Then it will hold one record batch for each file within memory at a 
 time as it scans through the data in all the files.
