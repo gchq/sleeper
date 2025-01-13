@@ -25,10 +25,10 @@ time as it scans through the data in all the files.
 
 ### One record doesn't fit into the whole batch buffer
 
-This would occur if the record itself is very large in size (batch buffer size is defined by `sleeper.ingest.arrow.batch.buffer.bytes`)
-An AssertionError is thrown during the execution of flushing the fille to local. [ArrowRecordBatch.flushToLocalArrowFileThenClear]
-Resolution for this would primarily be through expanding the buffer size if possible, alternatively adjust the input to 
-break into more manageable chunks should allow avoidance of this issue.
+This would occur if the record itself is very large. An error is thrown when flushing the file to the local file system.
+This can be resolved by expanding the buffer size if possible, set in the instance
+property `sleeper.ingest.arrow.batch.buffer.bytes`. Alternatively, it may be possible to break the records
+into more manageable chunks.
 
 ### Vector of indexes doesn't fit in the working buffer
 This is likely to occur when the records are small enough that when the batch buffer is full we would have too many integers 
