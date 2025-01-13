@@ -11,7 +11,7 @@ as such will work differently if that is used.
 
 ### Arrow implementation
 
-For further details on this see the documentation on [Arrow Implementation](19-arrow-implementation.md).
+For further details on this see the documentation on the [Arrow ingest record batch type](arrow-ingest.md).
 
 ### Array list implementation
 
