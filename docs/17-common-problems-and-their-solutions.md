@@ -6,12 +6,12 @@ These instructions will assume you start in the project root directory and Sleep
 
 ## Out of memory error from standard ingest tasks
 
-Presently the implementation is based on arrow ingest, whereas previously it was an array list based implementation and
-as such will work differently if that is used.
+Presently the implementation is based on Arrow. Previously it used an array list, and will work differently if that is
+used.
 
 ### Arrow implementation
 
-For further details on this see the documentation on the [Arrow ingest record batch type](arrow-ingest.md).
+See documentation on the [Arrow ingest record batch type](arrow-ingest.md).
 
 ### Array list implementation
 
