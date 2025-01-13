@@ -35,12 +35,12 @@ public class AddTransactionRequest {
     /**
      * Creates a request to add a transaction that's held in S3.
      *
-     * @param  pointer     the location in S3
+     * @param  bodyKey     the object key in the data bucket
      * @param  transaction the transaction object
      * @return             the request
      */
-    public static AddTransactionRequest transactionInBucket(TransactionBodyPointer pointer, StateStoreTransaction<?> transaction) {
-        return new AddTransactionRequest(pointer.getKey(), transaction);
+    public static AddTransactionRequest transactionInBucket(String bodyKey, StateStoreTransaction<?> transaction) {
+        return new AddTransactionRequest(bodyKey, transaction);
     }
 
     /**

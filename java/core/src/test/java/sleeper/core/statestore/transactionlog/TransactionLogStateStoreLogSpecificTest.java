@@ -440,11 +440,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
-            TransactionBodyPointer pointer = new TransactionBodyPointer("test-data-bucket", "table/transactions/myTransaction.json");
-            transactionBodyStore.store(pointer, transaction);
+            String key = "table/transactions/myTransaction.json";
+            transactionBodyStore.store(key, transaction);
 
             // When
-            store.addTransaction(AddTransactionRequest.transactionInBucket(pointer, transaction));
+            store.addTransaction(AddTransactionRequest.transactionInBucket(key, transaction));
 
             // Then
             assertThat(otherProcess().getFileReferences()).containsExactly(file);
@@ -455,11 +455,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             // Given
             PartitionTree tree = partitions.splitToNewChildren("root", "L", "R", "m").buildTree();
             PartitionTransaction transaction = new InitialisePartitionsTransaction(tree.getAllPartitions());
-            TransactionBodyPointer pointer = new TransactionBodyPointer("test-data-bucket", "table/transactions/myTransaction.json");
-            transactionBodyStore.store(pointer, transaction);
+            String key = "table/transactions/myTransaction.json";
+            transactionBodyStore.store(key, transaction);
 
             // When
-            store.addTransaction(AddTransactionRequest.transactionInBucket(pointer, transaction));
+            store.addTransaction(AddTransactionRequest.transactionInBucket(key, transaction));
 
             // Then
             assertThat(otherProcess().getAllPartitions()).isEqualTo(tree.getAllPartitions());
@@ -470,8 +470,8 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
-            TransactionBodyPointer pointer = new TransactionBodyPointer("test-data-bucket", "table/transactions/myTransaction.json");
-            store.addTransaction(AddTransactionRequest.transactionInBucket(pointer, transaction));
+            String key = "table/transactions/myTransaction.json";
+            store.addTransaction(AddTransactionRequest.transactionInBucket(key, transaction));
 
             // When / Then
             assertThatThrownBy(() -> otherProcess().getFileReferences())
@@ -485,9 +485,9 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transactionInStore = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             FileReferenceTransaction transactionInLog = new ClearFilesTransaction();
-            TransactionBodyPointer pointer = new TransactionBodyPointer("test-data-bucket", "table/transactions/myTransaction.json");
-            transactionBodyStore.store(pointer, transactionInStore);
-            store.addTransaction(AddTransactionRequest.transactionInBucket(pointer, transactionInLog));
+            String key = "table/transactions/myTransaction.json";
+            transactionBodyStore.store(key, transactionInStore);
+            store.addTransaction(AddTransactionRequest.transactionInBucket(key, transactionInLog));
 
             // When / Then
             assertThatThrownBy(() -> otherProcess().getFileReferences())
