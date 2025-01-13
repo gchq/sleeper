@@ -24,11 +24,11 @@ import java.util.Optional;
  */
 public class AddTransactionRequest {
 
-    private final TransactionBodyPointer bodyPointer;
+    private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
 
-    private AddTransactionRequest(TransactionBodyPointer bodyPointer, StateStoreTransaction<?> transaction) {
-        this.bodyPointer = bodyPointer;
+    private AddTransactionRequest(String bodyKey, StateStoreTransaction<?> transaction) {
+        this.bodyKey = bodyKey;
         this.transaction = transaction;
     }
 
@@ -40,7 +40,7 @@ public class AddTransactionRequest {
      * @return             the request
      */
     public static AddTransactionRequest transactionInBucket(TransactionBodyPointer pointer, StateStoreTransaction<?> transaction) {
-        return new AddTransactionRequest(pointer, transaction);
+        return new AddTransactionRequest(pointer.getKey(), transaction);
     }
 
     /**
@@ -68,7 +68,7 @@ public class AddTransactionRequest {
         return TransactionType.getType(transaction);
     }
 
-    public Optional<TransactionBodyPointer> getBodyPointer() {
-        return Optional.ofNullable(bodyPointer);
+    public Optional<String> getBodyKey() {
+        return Optional.ofNullable(bodyKey);
     }
 }

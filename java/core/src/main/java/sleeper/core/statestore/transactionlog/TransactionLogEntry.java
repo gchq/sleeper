@@ -58,9 +58,9 @@ public class TransactionLogEntry {
      * @return                   the log entry
      */
     public static TransactionLogEntry fromRequest(long transactionNumber, Instant updateTime, AddTransactionRequest request) {
-        Optional<TransactionBodyPointer> bodyPointer = request.getBodyPointer();
+        Optional<String> bodyPointer = request.getBodyKey();
         if (bodyPointer.isPresent()) {
-            return new TransactionLogEntry(transactionNumber, updateTime, request.getTransactionType(), bodyPointer.get());
+            return new TransactionLogEntry(transactionNumber, updateTime, request.getTransactionType(), new TransactionBodyPointer("bucket", bodyPointer.get()));
         } else {
             return new TransactionLogEntry(transactionNumber, updateTime, request.getTransaction());
         }
