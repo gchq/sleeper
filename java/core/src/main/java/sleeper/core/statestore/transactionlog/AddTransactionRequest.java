@@ -24,23 +24,23 @@ import java.util.Optional;
  */
 public class AddTransactionRequest {
 
-    private final TransactionBodyPointer bodyPointer;
+    private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
 
-    private AddTransactionRequest(TransactionBodyPointer bodyPointer, StateStoreTransaction<?> transaction) {
-        this.bodyPointer = bodyPointer;
+    private AddTransactionRequest(String bodyKey, StateStoreTransaction<?> transaction) {
+        this.bodyKey = bodyKey;
         this.transaction = transaction;
     }
 
     /**
      * Creates a request to add a transaction that's held in S3.
      *
-     * @param  pointer     the location in S3
+     * @param  bodyKey     the object key in the data bucket
      * @param  transaction the transaction object
      * @return             the request
      */
-    public static AddTransactionRequest transactionInBucket(TransactionBodyPointer pointer, StateStoreTransaction<?> transaction) {
-        return new AddTransactionRequest(pointer, transaction);
+    public static AddTransactionRequest transactionInBucket(String bodyKey, StateStoreTransaction<?> transaction) {
+        return new AddTransactionRequest(bodyKey, transaction);
     }
 
     /**
@@ -68,7 +68,7 @@ public class AddTransactionRequest {
         return TransactionType.getType(transaction);
     }
 
-    public Optional<TransactionBodyPointer> getBodyPointer() {
-        return Optional.ofNullable(bodyPointer);
+    public Optional<String> getBodyKey() {
+        return Optional.ofNullable(bodyKey);
     }
 }

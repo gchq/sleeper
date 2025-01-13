@@ -26,24 +26,20 @@ import java.util.Objects;
  */
 public class InMemoryTransactionBodyStore implements TransactionBodyStore {
 
-    private final Map<TransactionBodyPointer, StateStoreTransaction<?>> transactionByPointer = new HashMap<>();
+    private final Map<String, StateStoreTransaction<?>> transactionByKey = new HashMap<>();
 
     @Override
-    public void store(TransactionBodyPointer pointer, StateStoreTransaction<?> transaction) {
-        transactionByPointer.put(pointer, transaction);
+    public void store(String key, StateStoreTransaction<?> transaction) {
+        transactionByKey.put(key, transaction);
     }
 
     @Override
-    public <T extends StateStoreTransaction<?>> T getBody(TransactionBodyPointer pointer, TransactionType transactionType) {
-        T transaction = (T) Objects.requireNonNull(transactionByPointer.get(pointer));
+    public <T extends StateStoreTransaction<?>> T getBody(String key, TransactionType transactionType) {
+        T transaction = (T) Objects.requireNonNull(transactionByKey.get(key));
         Class<?> expectedClass = transactionType.getType();
         if (!expectedClass.isInstance(transaction)) {
             throw new IllegalArgumentException("Expected stored transaction to be of type " + expectedClass.getName() + ", found " + transaction.getClass().getName());
         }
         return transaction;
-    }
-
-    public Map<TransactionBodyPointer, StateStoreTransaction<?>> getTransactionByPointer() {
-        return transactionByPointer;
     }
 }

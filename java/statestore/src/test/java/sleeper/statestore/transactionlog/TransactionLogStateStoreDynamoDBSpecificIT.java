@@ -35,7 +35,6 @@ import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
-import sleeper.core.statestore.transactionlog.TransactionBodyPointer;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
@@ -126,12 +125,12 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             stateStore.initialise(tree.getAllPartitions());
             FileReference file = fileFactory(tree).rootFile("test.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
-            TransactionBodyPointer pointer = TransactionBodyPointer.create(instanceProperties, tableProperties);
-            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(tableProperties, s3Client);
+            String key = S3TransactionBodyStore.createObjectKey(instanceProperties, tableProperties);
+            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
 
             // When
-            transactionBodyStore.store(pointer, transaction);
-            stateStore.addTransaction(AddTransactionRequest.transactionInBucket(pointer, transaction));
+            transactionBodyStore.store(key, transaction);
+            stateStore.addTransaction(AddTransactionRequest.transactionInBucket(key, transaction));
 
             // Then
             assertThat(createStateStore().getFileReferences()).containsExactly(file);
