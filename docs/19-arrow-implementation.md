@@ -20,6 +20,8 @@ Each is created by copying from the batch buffer to the working buffer following
 indexes. The size of an Arrow record batch is set in the instance
 property `sleeper.ingest.arrow.max.single.write.to.file.records`.
 
+When reading a local file the working buffer is also used for some extra metadata used by Arrow.
+
 ## Possible failure states:
 
 ### One record doesn't fit into the whole batch buffer
@@ -50,8 +52,8 @@ When writing a local file, the Arrow record batch needs to fit alongside the vec
 exception can be thrown either when we allocate the record batch, or when we copy record data into the record batch. The
 exception thrown is likely to be an OutOfMemoryException.
 
-When reading a local file, Arrow requires some extra memory for the file's metadata. Any exception would come from
-Arrow. This is unlikely as a file would need to have been written first.
+When reading a local file, Arrow requires some extra memory for the file's metadata. This is also held in the working
+buffer. Any exception would come from Arrow. This is unlikely as a file would need to have been written first.
 
 This can be resolved by increasing the size of the working buffer, or reducing the number of records to write to a local
 file at once. It's also possible that this failure can be caused by a large vector of indexes, which could be resolved
