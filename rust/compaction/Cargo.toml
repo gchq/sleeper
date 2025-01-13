@@ -42,7 +42,7 @@ datafusion = { version = "44.0.0", features = ["backtrace"] }
 object_store = { version = "0.11.0", features = [
     "aws",
 ] } # Remote cloud storage access
-thiserror = { version = "2.0.10" } # Derivable error enums
+thiserror = { version = "2.0.11" } # Derivable error enums
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
 tokio = { version = "1.43.0", features = ["full"] }
 aws-config = { version = "1.5.13" } # Credential loading
