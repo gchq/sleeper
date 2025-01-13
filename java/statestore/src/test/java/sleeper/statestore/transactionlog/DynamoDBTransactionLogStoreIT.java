@@ -217,6 +217,30 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     @Test
+    void shouldStoreTransactionInS3() throws Exception {
+        // When we add a transaction too large to fit in a DynamoDB item
+        List<String> leafIds = IntStream.range(0, 1000)
+                .mapToObj(i -> "" + i)
+                .collect(Collectors.toList());
+        List<Object> splitPoints = LongStream.range(1, 1000)
+                .mapToObj(i -> "split" + i)
+                .collect(Collectors.toList());
+        List<Partition> partitions = PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema, leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves().buildList();
+        Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
+        StateStore stateStore = createStateStore(tableProperties);
+        stateStore.fixPartitionUpdateTime(updateTime);
+        stateStore.initialise(partitions);
+
+        // Then the transaction is held in S3
+        String file = singleFileInDataBucket();
+        assertThat(partitionLogStore.readTransactionsAfter(0)).containsExactly(
+                new TransactionLogEntry(1, updateTime, TransactionType.INITIALISE_PARTITIONS,
+                        new TransactionBodyPointer(instanceProperties.get(DATA_BUCKET), file)));
+    }
+
+    @Test
     void shouldDeleteTransactionStoredInS3() throws Exception {
         // Given a transaction too large to fit in a DynamoDB item
         List<String> leafIds = IntStream.range(0, 1000)
@@ -238,33 +262,6 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         // Then
         assertThat(partitionLogStore.readTransactionsAfter(0)).isEmpty();
         assertThat(filesInDataBucket()).isEmpty();
-    }
-
-    @Test
-    void shouldNotDeleteTransactionStoredInS3() throws Exception {
-        // Given a transaction too large to fit in a DynamoDB item
-        List<String> leafIds = IntStream.range(0, 1000)
-                .mapToObj(i -> "" + i)
-                .collect(Collectors.toList());
-        List<Object> splitPoints = LongStream.range(1, 1000)
-                .mapToObj(i -> "split" + i)
-                .collect(Collectors.toList());
-        List<Partition> partitions = PartitionsBuilderSplitsFirst
-                .leavesWithSplits(schema, leafIds, splitPoints)
-                .anyTreeJoiningAllLeaves().buildList();
-        Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
-        StateStore stateStore = createStateStore(tableProperties);
-        stateStore.fixPartitionUpdateTime(updateTime);
-        stateStore.initialise(partitions);
-
-        // When
-        partitionLogStore.deleteTransactionsAtOrBefore(0);
-
-        // Then
-        String file = singleFileInDataBucket();
-        assertThat(partitionLogStore.readTransactionsAfter(0)).containsExactly(
-                new TransactionLogEntry(1, updateTime, TransactionType.INITIALISE_PARTITIONS,
-                        new TransactionBodyPointer(instanceProperties.get(DATA_BUCKET), file)));
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
