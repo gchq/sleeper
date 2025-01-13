@@ -51,29 +51,39 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
 
     @Override
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
-        for (ReplaceFileReferencesRequest job : jobs) {
-            for (String filename : job.getInputFiles()) {
-                StateStoreFile file = stateStoreFiles.file(filename)
-                        .orElseThrow(() -> new FileNotFoundException(filename));
-                FileReference reference = file.getReferenceForPartitionId(job.getPartitionId())
-                        .orElseThrow(() -> new FileReferenceNotFoundException(filename, job.getPartitionId()));
-                if (!job.getJobId().equals(reference.getJobId())) {
-                    throw new FileReferenceNotAssignedToJobException(reference, job.getJobId());
-                }
-            }
-            if (stateStoreFiles.file(job.getNewReference().getFilename()).isPresent()) {
-                throw new FileAlreadyExistsException(job.getNewReference().getFilename());
-            }
-        }
+        // Compactions are committed in big batches. We ensure file references are assigned to a job before it is run,
+        // so the impact of any invalid commits should be limited.
+        // Instead of failing completely if a commit is invalid, we discard any invalid jobs at the point when we apply
+        // the transaction in the apply method.
     }
 
     @Override
     public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         for (ReplaceFileReferencesRequest job : jobs) {
+            try {
+                validateJob(stateStoreFiles, job);
+            } catch (StateStoreException e) {
+                continue;
+            }
             for (String filename : job.getInputFiles()) {
                 stateStoreFiles.updateFile(filename, file -> file.removeReferenceForPartition(job.getPartitionId(), updateTime));
             }
             stateStoreFiles.add(StateStoreFile.newFile(updateTime, job.getNewReference()));
+        }
+    }
+
+    private void validateJob(StateStoreFiles stateStoreFiles, ReplaceFileReferencesRequest job) {
+        for (String filename : job.getInputFiles()) {
+            StateStoreFile file = stateStoreFiles.file(filename)
+                    .orElseThrow(() -> new FileNotFoundException(filename));
+            FileReference reference = file.getReferenceForPartitionId(job.getPartitionId())
+                    .orElseThrow(() -> new FileReferenceNotFoundException(filename, job.getPartitionId()));
+            if (!job.getJobId().equals(reference.getJobId())) {
+                throw new FileReferenceNotAssignedToJobException(reference, job.getJobId());
+            }
+        }
+        if (stateStoreFiles.file(job.getNewReference().getFilename()).isPresent()) {
+            throw new FileAlreadyExistsException(job.getNewReference().getFilename());
         }
     }
 
