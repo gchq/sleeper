@@ -52,4 +52,25 @@ public class SupplierTestHelper {
                 .iterator()::next;
     }
 
+    /**
+     * Creates a supplier that would usually be defined as Instant::now. Will always supply the given time.
+     *
+     * @param  time the fixed time
+     * @return      the supplier
+     */
+    public static Supplier<Instant> fixTime(Instant time) {
+        return () -> time;
+    }
+
+    /**
+     * Creates a supplier that would usually be defined as Instant::now. Will supply the given times, then error if
+     * further times are requested.
+     *
+     * @param  times the times
+     * @return       the supplier
+     */
+    public static Supplier<Instant> supplyTimes(Instant... times) {
+        return List.of(times).iterator()::next;
+    }
+
 }

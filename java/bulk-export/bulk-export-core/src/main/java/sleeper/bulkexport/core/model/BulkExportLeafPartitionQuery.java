@@ -16,10 +16,14 @@
 
 package sleeper.bulkexport.core.model;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 
 import java.util.List;
 import java.util.Objects;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * An export query for a leaf partition. The query contains information about
@@ -65,12 +69,29 @@ public class BulkExportLeafPartitionQuery {
     }
 
     /**
-     * Builder class for BulkExportLeafPartitionQuery.
+     * Creates a builder for this class.
      *
-     * @return a Builder object
+     * @return the builder
      */
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates a builder for this class, pre-initialised for a given partition.
+     *
+     * @param  parentQuery     the parent query
+     * @param  tableProperties the Sleeper table properties
+     * @param  partition       the partition
+     * @return                 the builder
+     */
+    public static Builder forPartition(BulkExportQuery parentQuery, TableProperties tableProperties, Partition partition) {
+        return builder()
+                .exportId(parentQuery.getExportId())
+                .tableId(tableProperties.get(TABLE_ID))
+                .leafPartitionId(partition.getId())
+                .regions(List.of(partition.getRegion()))
+                .partitionRegion(partition.getRegion());
     }
 
     /**
@@ -180,7 +201,7 @@ public class BulkExportLeafPartitionQuery {
     }
 
     /**
-     * Builder for the BulkExportLeafPartitionQuery model.
+     * Builder for this class.
      */
     public static final class Builder {
         private String tableId;
@@ -195,11 +216,10 @@ public class BulkExportLeafPartitionQuery {
         }
 
         /**
-         * Provide the tableId.
+         * Provide the table ID.
          *
-         * @param tableId the id for the table.
-         *
-         * @return the builder object.
+         * @param  tableId the id of the Sleeper table
+         * @return         the builder
          */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
@@ -209,9 +229,8 @@ public class BulkExportLeafPartitionQuery {
         /**
          * Provide the exportId.
          *
-         * @param exportId the id for the export.
-         *
-         * @return the builder object.
+         * @param  exportId the id for the export
+         * @return          the builder
          */
         public Builder exportId(String exportId) {
             this.exportId = exportId;
@@ -221,9 +240,8 @@ public class BulkExportLeafPartitionQuery {
         /**
          * Provide the subExportId.
          *
-         * @param subExportId the id for the sub export.
-         *
-         * @return the builder object.
+         * @param  subExportId the id for the sub export
+         * @return             the builder
          */
         public Builder subExportId(String subExportId) {
             this.subExportId = subExportId;
@@ -233,9 +251,8 @@ public class BulkExportLeafPartitionQuery {
         /**
          * Provide the regions.
          *
-         * @param regions a list of regions.
-         *
-         * @return the builder object.
+         * @param  regions a list of regions
+         * @return         the builder
          */
         public Builder regions(List<Region> regions) {
             this.regions = regions;
@@ -243,11 +260,10 @@ public class BulkExportLeafPartitionQuery {
         }
 
         /**
-         * Provide the leafPartitionId.
+         * Provide the leaf partition ID.
          *
-         * @param leafPartitionId the id for the leaf partition.
-         *
-         * @return the builder object.
+         * @param  leafPartitionId the id for the leaf partition
+         * @return                 the builder
          */
         public Builder leafPartitionId(String leafPartitionId) {
             this.leafPartitionId = leafPartitionId;
@@ -255,11 +271,10 @@ public class BulkExportLeafPartitionQuery {
         }
 
         /**
-         * Provide the partition regions.
+         * Provide the partition region.
          *
-         * @param partitionRegion a partition regions.
-         *
-         * @return the builder object.
+         * @param  partitionRegion the partition region
+         * @return                 the builder
          */
         public Builder partitionRegion(Region partitionRegion) {
             this.partitionRegion = partitionRegion;
@@ -269,20 +284,14 @@ public class BulkExportLeafPartitionQuery {
         /**
          * Provide the leaf partition files.
          *
-         * @param files the files to be exported.
-         *
-         * @return the builder object.
+         * @param  files the files to be exported
+         * @return       the builder object
          */
         public Builder files(List<String> files) {
             this.files = files;
             return this;
         }
 
-        /**
-         * Builds the BulkExportLeafPartitionQuery.
-         *
-         * @return a BulkExportLeafPartitionQuery object.
-         */
         public BulkExportLeafPartitionQuery build() {
             return new BulkExportLeafPartitionQuery(this);
         }

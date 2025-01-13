@@ -23,7 +23,6 @@ import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.range.Region;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
@@ -33,10 +32,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.table.TableProperty.QUERY_PROCESSOR_CACHE_TIMEOUT;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Splits up an export query into leaf partition export queries.
@@ -46,53 +45,33 @@ public class BulkExportQuerySplitter {
 
     private final StateStore stateStore;
     private final TableProperties tableProperties;
+    private final Supplier<String> idSupplier;
+    private final Supplier<Instant> timeSupplier;
     private List<Partition> leafPartitions;
     private PartitionTree partitionTree;
     private Map<String, List<String>> partitionToFiles;
     private Instant nextInitialiseTime;
 
     public BulkExportQuerySplitter(TableProperties tableProperties, StateStore stateStore) {
-        this(stateStore, tableProperties, Instant.now());
+        this(stateStore, tableProperties, () -> UUID.randomUUID().toString(), Instant::now);
     }
 
-    public BulkExportQuerySplitter(StateStore stateStore, TableProperties tableProperties, Instant timeNow) {
+    public BulkExportQuerySplitter(StateStore stateStore, TableProperties tableProperties, Supplier<String> idSupplier, Supplier<Instant> timeSupplier) {
         this.stateStore = stateStore;
         this.tableProperties = tableProperties;
-        this.nextInitialiseTime = timeNow;
-    }
-
-    /**
-     * Initialises the partitions and the mapping from partitions to active files.
-     * This method should be called periodically so that this class is aware of
-     * new data arriving in the table. How often this method should be called is
-     * a balance between having an up-to-date view of the data and the cost of
-     * frequently extracting all the information about the files and the partitions
-     * from the state store.
-     *
-     * @throws StateStoreException if the statestore can't be accessed
-     */
-    public void init() throws StateStoreException {
-        init(Instant.now());
-    }
-
-    /**
-     * Initialises the partitions and the mapping from partitions to active files.
-     *
-     * @param partitions             used to look up ancestor partititions
-     * @param partitionToFileMapping used to look up files in a partition
-     */
-    public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping) {
-        init(partitions, partitionToFileMapping, Instant.now());
+        this.idSupplier = idSupplier;
+        this.timeSupplier = timeSupplier;
+        init(timeSupplier.get());
     }
 
     /**
      * Initialises the partitions and the mapping from partitions to active files if
      * needed.
      *
-     * @param  now                 used to determine the next initialisation
-     * @throws StateStoreException if the statestore can't be accessed
+     * @throws StateStoreException if the state store can't be accessed
      */
-    public void initIfNeeded(Instant now) throws StateStoreException {
+    public void initIfNeeded() throws StateStoreException {
+        Instant now = timeSupplier.get();
         if (nextInitialiseTime.isAfter(now)) {
             LOGGER.debug("Not refreshing state for table {}", tableProperties.getStatus());
             return;
@@ -100,26 +79,13 @@ public class BulkExportQuerySplitter {
         init(now);
     }
 
-    /**
-     * Initialises the partitions and the mapping from partitions to active files.
-     *
-     * @param  now                 used to determine the next initialisation
-     * @throws StateStoreException if the statestore can't be accessed
-     */
-    public void init(Instant now) throws StateStoreException {
+    private void init(Instant now) throws StateStoreException {
         List<Partition> partitions = stateStore.getAllPartitions();
         Map<String, List<String>> partitionToFileMapping = stateStore.getPartitionToReferencedFilesMap();
         init(partitions, partitionToFileMapping, now);
     }
 
-    /**
-     * Initialises the partitions and the mapping from partitions to active files.
-     *
-     * @param partitions             used to look up ancestor partititions
-     * @param partitionToFileMapping used to look up files in a partition
-     * @param now                    used to determine the next initialisation time
-     */
-    public void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping, Instant now) {
+    private void init(List<Partition> partitions, Map<String, List<String>> partitionToFileMapping, Instant now) {
         leafPartitions = partitions.stream()
                 .filter(Partition::isLeafPartition)
                 .collect(Collectors.toList());
@@ -143,7 +109,6 @@ public class BulkExportQuerySplitter {
 
         List<BulkExportLeafPartitionQuery> leafPartitionQueriesList = new ArrayList<>();
         for (Partition partition : leafPartitions) {
-            List<Region> regions = List.of(partition.getRegion());
             List<String> files = getFiles(partition);
 
             if (files.isEmpty()) {
@@ -153,13 +118,9 @@ public class BulkExportQuerySplitter {
 
             // For each leaf partition, create query with pre-populated list of files that
             // need to be read.
-            BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery = BulkExportLeafPartitionQuery.builder()
-                    .exportId(bulkExportQuery.getExportId())
-                    .tableId(tableProperties.get(TABLE_ID))
-                    .subExportId((UUID.randomUUID().toString()))
-                    .regions(regions)
-                    .leafPartitionId(partition.getId())
-                    .partitionRegion(partition.getRegion())
+            BulkExportLeafPartitionQuery bulkExportLeafPartitionQuery = BulkExportLeafPartitionQuery
+                    .forPartition(bulkExportQuery, tableProperties, partition)
+                    .subExportId(idSupplier.get())
                     .files(files)
                     .build();
             LOGGER.debug("Created {}", bulkExportLeafPartitionQuery);
