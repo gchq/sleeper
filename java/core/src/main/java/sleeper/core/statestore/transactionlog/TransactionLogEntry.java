@@ -20,6 +20,7 @@ import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * An entry in a state store transaction log.
@@ -78,12 +79,30 @@ public class TransactionLogEntry {
         return transactionType;
     }
 
+    /**
+     * Applies some operation on the transaction or the pointer, whichever is held in the entry.
+     *
+     * @param withTransaction the operation on a transaction
+     * @param withPointer     the operation on a pointer
+     */
+    public void withTransactionOrPointer(Consumer<StateStoreTransaction<?>> withTransaction, Consumer<TransactionBodyPointer> withPointer) {
+        if (transaction != null) {
+            withTransaction.accept(transaction);
+        } else {
+            withPointer.accept(bodyPointer);
+        }
+    }
+
     public Optional<TransactionBodyPointer> getBodyPointer() {
         return Optional.ofNullable(bodyPointer);
     }
 
     public Optional<StateStoreTransaction<?>> getTransaction() {
         return Optional.ofNullable(transaction);
+    }
+
+    public boolean isPointer() {
+        return bodyPointer != null;
     }
 
     /**

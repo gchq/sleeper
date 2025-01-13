@@ -44,19 +44,18 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
 
     @Override
     public void store(TransactionBodyPointer pointer, StateStoreTransaction<?> transaction) {
-        //TODO expand functionality here
+        store(pointer, serDe.toJson(transaction));
     }
 
     /**
      * Stores a transaction body that's already been serialised as a string.
      *
-     * @param bucketName the name of the bucket
-     * @param key        the object key
-     * @param body       the transaction body
+     * @param pointer the location to store the file
+     * @param body    the transaction body
      */
-    public void store(String bucketName, String key, String body) {
+    public void store(TransactionBodyPointer pointer, String body) {
         Instant startTime = Instant.now();
-        s3Client.putObject(bucketName, key, body);
+        s3Client.putObject(pointer.getBucketName(), pointer.getKey(), body);
         LOGGER.info("Saved to S3 in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
     }
 
