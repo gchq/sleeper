@@ -209,7 +209,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
         TransactionType type = readType(item);
         String bodyS3Key = getStringAttribute(item, BODY_S3_KEY);
         if (bodyS3Key != null) {
-            return new TransactionLogEntry(number, updateTime, type, new TransactionBodyPointer(instanceProperties.get(DATA_BUCKET), bodyS3Key));
+            return new TransactionLogEntry(number, updateTime, type, bodyS3Key);
         } else {
             String body = getStringAttribute(item, BODY);
             StateStoreTransaction<?> transaction = serDe.toTransaction(type, body);

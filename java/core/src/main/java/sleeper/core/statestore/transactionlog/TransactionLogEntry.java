@@ -30,22 +30,22 @@ public class TransactionLogEntry {
     private final long transactionNumber;
     private final Instant updateTime;
     private final TransactionType transactionType;
-    private final TransactionBodyPointer bodyPointer;
+    private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
 
     public TransactionLogEntry(long transactionNumber, Instant updateTime, StateStoreTransaction<?> transaction) {
         this(transactionNumber, updateTime, TransactionType.getType(transaction), null, transaction);
     }
 
-    public TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, TransactionBodyPointer bodyPointer) {
-        this(transactionNumber, updateTime, transactionType, bodyPointer, null);
+    public TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, String bodyKey) {
+        this(transactionNumber, updateTime, transactionType, bodyKey, null);
     }
 
-    private TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, TransactionBodyPointer bodyPointer, StateStoreTransaction<?> transaction) {
+    private TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, String bodyKey, StateStoreTransaction<?> transaction) {
         this.transactionNumber = transactionNumber;
         this.updateTime = updateTime;
         this.transactionType = transactionType;
-        this.bodyPointer = bodyPointer;
+        this.bodyKey = bodyKey;
         this.transaction = transaction;
     }
 
@@ -58,9 +58,9 @@ public class TransactionLogEntry {
      * @return                   the log entry
      */
     public static TransactionLogEntry fromRequest(long transactionNumber, Instant updateTime, AddTransactionRequest request) {
-        Optional<String> bodyPointer = request.getBodyKey();
-        if (bodyPointer.isPresent()) {
-            return new TransactionLogEntry(transactionNumber, updateTime, request.getTransactionType(), new TransactionBodyPointer("bucket", bodyPointer.get()));
+        Optional<String> bodyKey = request.getBodyKey();
+        if (bodyKey.isPresent()) {
+            return new TransactionLogEntry(transactionNumber, updateTime, request.getTransactionType(), bodyKey.get());
         } else {
             return new TransactionLogEntry(transactionNumber, updateTime, request.getTransaction());
         }
@@ -89,7 +89,7 @@ public class TransactionLogEntry {
         if (transaction != null) {
             withTransaction.accept(transaction);
         } else {
-            withObjectKey.accept(bodyPointer.getKey());
+            withObjectKey.accept(bodyKey);
         }
     }
 
@@ -104,7 +104,7 @@ public class TransactionLogEntry {
         if (transaction != null) {
             return transaction;
         } else {
-            return bodyStore.getBody(bodyPointer.getKey(), transactionType);
+            return bodyStore.getBody(bodyKey, transactionType);
         }
     }
 

@@ -33,7 +33,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionBodyPointer;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
@@ -236,8 +235,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         // Then the transaction is held in S3
         String file = singleFileInDataBucket();
         assertThat(partitionLogStore.readTransactionsAfter(0)).containsExactly(
-                new TransactionLogEntry(1, updateTime, TransactionType.INITIALISE_PARTITIONS,
-                        new TransactionBodyPointer(instanceProperties.get(DATA_BUCKET), file)));
+                new TransactionLogEntry(1, updateTime, TransactionType.INITIALISE_PARTITIONS, file));
     }
 
     @Test
