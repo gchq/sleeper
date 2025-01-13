@@ -750,7 +750,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailToSetReadyForGCWhenAlreadyReadyForGC() {
+        void shouldIgnoreCompactionCommitWhenAlreadyCommitted() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -775,7 +775,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() {
+        void shouldIgnoreCompactionCommitWhenInputFilesAreNotAssignedToJob() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -790,11 +790,12 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToSetFileReadyForGCWhichDoesNotExist() {
+        public void shouldIgnoreCompactionCommitWhenInputFileIsNotInStateStore() {
             // Given
             FileReference newFile = factory.rootFile("newFile", 100L);
 
-            // When
+            // When we commit a compaction with an input file that is not in the state store, e.g. because the
+            // compaction has already been committed, and the file has already been garbage collected.
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("oldFile"), newFile)));
 
@@ -804,7 +805,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToSetFilesReadyForGCWhenOneDoesNotExist() {
+        public void shouldIgnoreCompactionCommitWhenOneInputFileIsNotInStateStore() {
             // Given
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -823,7 +824,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() {
+        public void shouldIgnoreCompactionCommitWhenFileReferenceDoesNotExistInPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
@@ -858,7 +859,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldFailWhenOutputFileAlreadyExists() {
+        public void shouldIgnoreCompactionCommitWhenOutputFileAlreadyExists() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("oldFile", 100L);
