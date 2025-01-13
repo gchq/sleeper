@@ -182,7 +182,7 @@ public class BulkExportLeafPartitionQuery {
 
     @Override
     public String toString() {
-        return "LeafPartitionQuery{" +
+        return "BulkExportLeafPartitionQuery{" +
                 "tableId='" + tableId + '\'' +
                 ", exportId='" + exportId + '\'' +
                 ", subExportId='" + subExportId + '\'' +
