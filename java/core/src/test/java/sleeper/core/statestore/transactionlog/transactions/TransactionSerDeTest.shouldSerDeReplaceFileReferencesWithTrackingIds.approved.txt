@@ -2,6 +2,8 @@
   "jobs": [
     {
       "jobId": "job",
+      "taskId": "task",
+      "jobRunId": "run",
       "inputFiles": [
         "file1.parquet",
         "file2.parquet"

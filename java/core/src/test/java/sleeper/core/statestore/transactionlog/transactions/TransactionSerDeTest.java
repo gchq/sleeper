@@ -27,6 +27,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
@@ -167,9 +168,9 @@ public class TransactionSerDeTest {
         String json = new TransactionSerDe(schema).toJson(transaction);
 
         // Then
-        assertThat(NumberFormatUtils.formatBytes(json.getBytes().length))
-                .isEqualTo("454486B (454.5KB)");
         assertThat(partitions.getAllPartitions()).hasSize(499);
+        assertThat(NumberFormatUtils.formatBytes(json.getBytes().length))
+                .isEqualTo("454439B (454.4KB)");
     }
 
     @Test
@@ -192,9 +193,9 @@ public class TransactionSerDeTest {
         String json = new TransactionSerDe(schema).toJson(transaction);
 
         // Then
-        assertThat(NumberFormatUtils.formatBytes(json.length()))
-                .isEqualTo("363136B (363.1KB)");
         assertThat(partitions.getAllPartitions()).hasSize(399);
+        assertThat(NumberFormatUtils.formatBytes(json.length()))
+                .isEqualTo("363089B (363.1KB)");
     }
 
     @Test
@@ -207,6 +208,26 @@ public class TransactionSerDeTest {
         FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
                 replaceJobFileReferences(
                         "job", List.of("file1.parquet", "file2.parquet"), fileFactory.rootFile("file3.parquet", 100))));
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schema, transaction);
+    }
+
+    @Test
+    void shouldSerDeReplaceFileReferencesWithTrackingIds() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key");
+        PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+        Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
+        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
+        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                ReplaceFileReferencesRequest.builder()
+                        .jobId("job")
+                        .taskId("task")
+                        .jobRunId("run")
+                        .inputFiles(List.of("file1.parquet", "file2.parquet"))
+                        .newReference(fileFactory.rootFile("file3.parquet", 100))
+                        .build()));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);

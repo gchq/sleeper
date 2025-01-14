@@ -24,6 +24,8 @@ import java.util.Objects;
  */
 public class ReplaceFileReferencesRequest {
     private final String jobId;
+    private final String taskId;
+    private final String jobRunId;
     private final List<String> inputFiles;
     private final FileReference newReference;
 
@@ -47,18 +49,14 @@ public class ReplaceFileReferencesRequest {
 
     private ReplaceFileReferencesRequest(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        taskId = builder.taskId;
+        jobRunId = builder.jobRunId;
         inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
         newReference = Objects.requireNonNull(builder.newReference, "newReference must not be null");
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    private ReplaceFileReferencesRequest(String jobId, List<String> inputFiles, FileReference newReference) {
-        this.jobId = jobId;
-        this.inputFiles = inputFiles;
-        this.newReference = newReference;
     }
 
     /**
@@ -68,8 +66,9 @@ public class ReplaceFileReferencesRequest {
      * @return the copy
      */
     public ReplaceFileReferencesRequest withNoUpdateTime() {
-        return new ReplaceFileReferencesRequest(jobId, inputFiles,
-                newReference.toBuilder().lastStateStoreUpdateTime(null).build());
+        return builder().jobId(jobId).taskId(taskId).jobRunId(jobRunId).inputFiles(inputFiles)
+                .newReference(newReference.toBuilder().lastStateStoreUpdateTime(null).build())
+                .build();
     }
 
     public String getJobId() {
@@ -116,6 +115,8 @@ public class ReplaceFileReferencesRequest {
     public static final class Builder {
 
         private String jobId;
+        private String taskId;
+        private String jobRunId;
         private List<String> inputFiles;
         private FileReference newReference;
 
@@ -134,6 +135,28 @@ public class ReplaceFileReferencesRequest {
          */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
+            return this;
+        }
+
+        /**
+         * Sets the ID of the compaction task that ran the job. If set this is used by the compaction job tracker.
+         *
+         * @param  taskId the task ID
+         * @return        this builder
+         */
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
+            return this;
+        }
+
+        /**
+         * Sets the ID of the job run. If set this is used by the compaction job tracker.
+         *
+         * @param  jobRunId the job run ID
+         * @return          this builder
+         */
+        public Builder jobRunId(String jobRunId) {
+            this.jobRunId = jobRunId;
             return this;
         }
 
