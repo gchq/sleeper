@@ -19,8 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.StringType;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
@@ -59,13 +58,12 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     private static final Instant DEFAULT_FINISH_TIME = Instant.parse("2025-01-14T11:42:00Z");
     private static final Instant DEFAULT_COMMIT_TIME = Instant.parse("2025-01-14T11:42:10Z");
 
-    private final Schema schema = schemaWithKey("key", new StringType());
     private final InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
     private TransactionLogStateStore store;
 
     @BeforeEach
     void setUp() {
-        initialiseWithPartitions(new PartitionsBuilder(schema).singlePartition("root"));
+        initialiseWithPartitions(new PartitionsBuilder(schemaWithKey("key", new LongType())).singlePartition("root"));
         store = (TransactionLogStateStore) super.store;
     }
 
@@ -196,7 +194,7 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     @Test
     public void shouldIgnoreCompactionCommitWhenFileReferenceDoesNotExistInPartition() {
         // Given
-        splitPartition("root", "L", "R", "5");
+        splitPartition("root", "L", "R", 5);
         FileReference file = factory.rootFile("file", 100L);
         FileReference existingReference = splitFile(file, "L");
         store.addFile(existingReference);
@@ -233,7 +231,7 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     @Test
     public void shouldIgnoreCompactionCommitWhenOutputFileAlreadyExists() {
         // Given
-        splitPartition("root", "L", "R", "m");
+        splitPartition("root", "L", "R", 5);
         FileReference file = factory.rootFile("oldFile", 100L);
         FileReference existingReference = splitFile(file, "L");
         FileReference newReference = factory.partitionFile("L", "newFile", 100L);

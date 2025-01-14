@@ -67,7 +67,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
         return transactionLogs.stateStoreBuilder(sleeperTable, schema);
     }
 
-    protected void splitPartition(String parentId, String leftId, String rightId, Object splitPoint) {
+    protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
                 .applySplit(store, parentId);
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
