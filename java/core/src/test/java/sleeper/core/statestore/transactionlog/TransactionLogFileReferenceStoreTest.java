@@ -32,6 +32,7 @@ import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
@@ -750,21 +751,23 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldIgnoreCompactionCommitWhenAlreadyCommitted() {
+        void shouldFailToSetReadyForGCWhenAlreadyReadyForGC() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
+
+            // When
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("oldFile"), newFile)));
 
-            // When
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", List.of("oldFile"), newFile)));
-
             // Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(newFile);
             assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -775,37 +778,35 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        void shouldIgnoreCompactionCommitWhenInputFilesAreNotAssignedToJob() {
+        void shouldFailWhenFilesToMarkAsReadyForGCAreNotAssignedToJob() {
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             store.addFile(oldFile);
 
-            // When
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", List.of("oldFile"), newFile)));
-
-            // Then
-            assertThat(store.getFileReferences()).containsExactly(oldFile);
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
         }
 
         @Test
-        public void shouldIgnoreCompactionCommitWhenInputFileIsNotInStateStore() {
+        public void shouldFailToSetFileReadyForGCWhichDoesNotExist() {
             // Given
             FileReference newFile = factory.rootFile("newFile", 100L);
 
-            // When we commit a compaction with an input file that is not in the state store, e.g. because the
-            // compaction has already been committed, and the file has already been garbage collected.
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", List.of("oldFile"), newFile)));
-
-            // Then
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
         @Test
-        public void shouldIgnoreCompactionCommitWhenOneInputFileIsNotInStateStore() {
+        public void shouldFailToSetFilesReadyForGCWhenOneDoesNotExist() {
             // Given
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
@@ -813,29 +814,29 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
 
-            // When
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", List.of("oldFile1", "oldFile2"), newFile)));
-
-            // Then
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile1", "oldFile2"), newFile))))
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
             assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
 
         @Test
-        public void shouldIgnoreCompactionCommitWhenFileReferenceDoesNotExistInPartition() {
+        public void shouldFailToSetFileReadyForGCWhenReferenceDoesNotExistInPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             FileReference existingReference = splitFile(file, "L");
             store.addFile(existingReference);
 
-            // When
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", List.of("file"), factory.rootFile("file2", 100L))));
-
-            // Then
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                    replaceJobFileReferences("job1", List.of("file"), factory.rootFile("file2", 100L)))))
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
@@ -859,7 +860,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         }
 
         @Test
-        public void shouldIgnoreCompactionCommitWhenOutputFileAlreadyExists() {
+        public void shouldFailWhenOutputFileAlreadyExists() {
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("oldFile", 100L);
@@ -869,11 +870,11 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
 
-            // When
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                    "job1", List.of("oldFile"), newReference)));
-
-            // Then
+            // When / Then
+            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile"), newReference))))
+                    .isInstanceOf(ReplaceRequestsFailedException.class)
+                    .hasCauseInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
                     withJobId("job1", existingReference), newReference);
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
