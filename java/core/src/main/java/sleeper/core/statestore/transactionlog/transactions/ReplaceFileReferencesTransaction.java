@@ -23,6 +23,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.time.Instant;
 import java.util.List;
@@ -71,6 +72,17 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
             }
             stateStoreFiles.add(StateStoreFile.newFile(updateTime, job.getNewReference()));
         }
+    }
+
+    /**
+     * Reports commits and failures based on validity of each job in the state before the transaction. This should be
+     * used after the transaction is fully committed to the log.
+     *
+     * @param tracker     the job tracker
+     * @param stateBefore the state before the transaction was applied
+     */
+    public void trackJobs(CompactionJobTracker tracker, StateStoreFiles stateBefore) {
+
     }
 
     @Override

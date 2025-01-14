@@ -26,10 +26,12 @@ public class AddTransactionRequest {
 
     private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
+    private final StateListenerBeforeApply<?> beforeApplyListener;
 
-    private AddTransactionRequest(String bodyKey, StateStoreTransaction<?> transaction) {
-        this.bodyKey = bodyKey;
-        this.transaction = transaction;
+    private AddTransactionRequest(Builder<?> builder) {
+        bodyKey = builder.bodyKey;
+        transaction = builder.transaction;
+        beforeApplyListener = builder.beforeApplyListener;
     }
 
     /**
@@ -40,7 +42,7 @@ public class AddTransactionRequest {
      * @return             the request
      */
     public static AddTransactionRequest transactionInBucket(String bodyKey, StateStoreTransaction<?> transaction) {
-        return new AddTransactionRequest(bodyKey, transaction);
+        return withTransaction(transaction).bodyKey(bodyKey).build();
     }
 
     /**
@@ -50,7 +52,17 @@ public class AddTransactionRequest {
      * @return             the request
      */
     public static AddTransactionRequest transaction(StateStoreTransaction<?> transaction) {
-        return new AddTransactionRequest(null, transaction);
+        return withTransaction(transaction).build();
+    }
+
+    /**
+     * Creates a builder to add a given transaction.
+     *
+     * @param  transaction the transaction object
+     * @return             the request
+     */
+    public static <S> Builder<S> withTransaction(StateStoreTransaction<S> transaction) {
+        return new Builder<>(transaction);
     }
 
     /**
@@ -70,5 +82,60 @@ public class AddTransactionRequest {
 
     public Optional<String> getBodyKey() {
         return Optional.ofNullable(bodyKey);
+    }
+
+    /**
+     * Retrieves the listener for after the transaction is added.
+     *
+     * @param  <S> the type of the local state
+     * @param  <T> the type of the transaction being added
+     * @return     the listener
+     */
+    public <S, T extends StateStoreTransaction<S>> StateListenerBeforeApply<S> getBeforeApplyListener() {
+        return (StateListenerBeforeApply<S>) beforeApplyListener;
+    }
+
+    /**
+     * A builder for this class.
+     *
+     * @param <S> the type of state the transaction operates on
+     */
+    public static class Builder<S> {
+
+        private final StateStoreTransaction<S> transaction;
+        private String bodyKey;
+        private StateListenerBeforeApply<S> beforeApplyListener = StateListenerBeforeApply.none();
+
+        private Builder(StateStoreTransaction<S> transaction) {
+            this.transaction = transaction;
+        }
+
+        public AddTransactionRequest build() {
+            return new AddTransactionRequest(this);
+        }
+
+        /**
+         * Sets the location the transaction is held in S3. The log will point to this file instead of holding the
+         * transaction in the log.
+         *
+         * @param  bodyKey the object key in the data bucket
+         * @return         this builder
+         */
+        public Builder<S> bodyKey(String bodyKey) {
+            this.bodyKey = bodyKey;
+            return this;
+        }
+
+        /**
+         * Sets a listener to be notified after the transaction has been added to the log but before it is applied to
+         * the local state.
+         *
+         * @param  beforeApplyListener the listener
+         * @return                     this builder
+         */
+        public Builder<S> beforeApplyListener(StateListenerBeforeApply<S> beforeApplyListener) {
+            this.beforeApplyListener = beforeApplyListener;
+            return this;
+        }
     }
 }

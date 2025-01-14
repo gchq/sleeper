@@ -37,6 +37,8 @@ import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -508,11 +510,19 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     @DisplayName("Apply a batch of compaction commits, discarding but tracking failures")
     class ApplyCompactionCommitBatch {
 
+        private final CompactionJobTracker tracker = new InMemoryCompactionJobTracker();
         private TransactionLogStateStore store;
 
         @BeforeEach
         void setUp() {
             store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
+        }
+
+        private void addTransactionWithTracking(ReplaceFileReferencesTransaction transaction) {
+            store.addTransaction(AddTransactionRequest.withTransaction(transaction)
+                    .beforeApplyListener((number, state) -> {
+                        transaction.trackJobs(tracker, state);
+                    }).build());
         }
 
         @Test
@@ -527,7 +537,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     replaceJobFileReferences("job1", List.of("oldFile"), newFile)));
 
             // When
-            store.addTransaction(AddTransactionRequest.transaction(transaction));
+            addTransactionWithTracking(transaction);
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(newFile);
@@ -549,10 +559,10 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
                     replaceJobFileReferences("job1", List.of("oldFile"), newFile)));
-            store.addTransaction(AddTransactionRequest.transaction(transaction));
+            addTransactionWithTracking(transaction);
 
             // When
-            store.addTransaction(AddTransactionRequest.transaction(transaction));
+            addTransactionWithTracking(transaction);
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(newFile);
@@ -574,7 +584,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     replaceJobFileReferences("job1", List.of("oldFile"), newFile)));
 
             // When
-            store.addTransaction(AddTransactionRequest.transaction(transaction));
+            addTransactionWithTracking(transaction);
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(oldFile);
@@ -589,7 +599,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
 
             // When we commit a compaction with an input file that is not in the state store, e.g. because the
             // compaction has already been committed, and the file has already been garbage collected.
-            store.addTransaction(AddTransactionRequest.transaction(transaction));
+            addTransactionWithTracking(transaction);
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
@@ -608,7 +618,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     replaceJobFileReferences("job1", List.of("oldFile1", "oldFile2"), newFile)));
 
             // When
-            store.addTransaction(AddTransactionRequest.transaction(transaction));
+            addTransactionWithTracking(transaction);
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
@@ -627,7 +637,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     replaceJobFileReferences("job1", List.of("file"), factory.rootFile("file2", 100L))));
 
             // When
-            store.addTransaction(AddTransactionRequest.transaction(transaction));
+            addTransactionWithTracking(transaction);
 
             // Then
             assertThat(store.getFileReferences()).containsExactly(existingReference);
@@ -662,7 +672,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     replaceJobFileReferences("job1", List.of("oldFile"), newReference)));
 
             // When
-            store.addTransaction(AddTransactionRequest.transaction(transaction));
+            addTransactionWithTracking(transaction);
 
             // Then
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
