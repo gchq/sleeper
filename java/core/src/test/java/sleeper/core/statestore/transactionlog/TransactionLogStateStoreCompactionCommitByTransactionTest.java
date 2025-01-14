@@ -49,7 +49,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.fi
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRunBuilder;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 
-public class TransactionLogStateStoreCompactionBatchCommitTest extends InMemoryTransactionLogStateStoreTestBase {
+public class TransactionLogStateStoreCompactionCommitByTransactionTest extends InMemoryTransactionLogStateStoreTestBase {
 
     private static final String DEFAULT_TASK_ID = "test-task";
     private static final Instant DEFAULT_CREATE_TIME = Instant.parse("2025-01-14T11:40:00Z");
@@ -78,11 +78,10 @@ public class TransactionLogStateStoreCompactionBatchCommitTest extends InMemoryT
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         String jobRunId = "test-run";
         trackJobRun(trackedJob, jobRunId);
-        ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
-                replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId(jobRunId).build()));
 
         // When
-        addTransactionWithTracking(transaction);
+        addTransactionWithTracking(new ReplaceFileReferencesTransaction(List.of(
+                replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId(jobRunId).build())));
 
         // Then
         assertThat(store.getFileReferences()).containsExactly(newFile);
