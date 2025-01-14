@@ -88,7 +88,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
      * @param stateBefore  the state before the transaction was applied
      * @param now          the current time
      */
-    public void reportJobs(CompactionJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore, Instant now) {
+    public void reportJobCommits(CompactionJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore, Instant now) {
         for (ReplaceFileReferencesRequest job : jobs) {
             if (job.getTaskId() == null) {
                 continue;
