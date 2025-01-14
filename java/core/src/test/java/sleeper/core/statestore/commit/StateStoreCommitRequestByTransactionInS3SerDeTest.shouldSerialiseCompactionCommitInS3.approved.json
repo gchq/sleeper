@@ -1,0 +1,5 @@
+{
+  "tableId": "test-table",
+  "type": "REPLACE_FILE_REFERENCES",
+  "bodyKey": "test-table/transactions/commit-compaction-transaction.json"
+}

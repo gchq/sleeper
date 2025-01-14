@@ -1,0 +1,5 @@
+{
+  "tableId": "test-table",
+  "type": "ADD_FILES",
+  "bodyKey": "test-table/transactions/add-file-transaction.json"
+}
