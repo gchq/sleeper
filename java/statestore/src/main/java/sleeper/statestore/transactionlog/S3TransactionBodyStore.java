@@ -28,10 +28,8 @@ import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.LoggedDuration;
 
 import java.time.Instant;
-import java.util.UUID;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Stores the body of transactions in an S3 bucket.
@@ -46,18 +44,6 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
-    }
-
-    /**
-     * Creates an object key for a new transaction file with a randomly generated filename. The file will not yet exist.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  tableProperties    the Sleeper table properties
-     * @return                    the object key
-     */
-    public static String createObjectKey(InstanceProperties instanceProperties, TableProperties tableProperties) {
-        // Use a random UUID to avoid conflicting when another process is adding a transaction at the same time
-        return tableProperties.get(TABLE_ID) + "/statestore/transactions/" + Instant.now() + "-" + UUID.randomUUID().toString() + ".json";
     }
 
     @Override
