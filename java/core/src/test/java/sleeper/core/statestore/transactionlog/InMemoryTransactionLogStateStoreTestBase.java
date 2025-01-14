@@ -35,7 +35,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
     protected final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
     protected final InMemoryTransactionBodyStore transactionBodyStore = transactionLogs.getTransactionBodyStore();
     protected final List<Duration> retryWaits = transactionLogs.getRetryWaits();
-    private PartitionsBuilder partitions;
+    protected PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
     protected StateStore store;
 
@@ -66,7 +66,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
         return transactionLogs.stateStoreBuilder(sleeperTable, schema);
     }
 
-    protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
+    protected void splitPartition(String parentId, String leftId, String rightId, Object splitPoint) {
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
                 .applySplit(store, parentId);
         factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);

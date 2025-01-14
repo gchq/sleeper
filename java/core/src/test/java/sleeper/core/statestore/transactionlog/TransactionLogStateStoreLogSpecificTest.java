@@ -31,10 +31,12 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore.ThrowingRunnable;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -48,19 +50,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 
 public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransactionLogStateStoreTestBase {
 
     private final Schema schema = schemaWithKey("key", new StringType());
-    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    private StateStore store = stateStore();
 
     @BeforeEach
     void setUp() {
-        store.initialise(partitions.buildList());
+        initialiseWithPartitions(new PartitionsBuilder(schema).singlePartition("root"));
     }
 
     @Nested
@@ -430,10 +433,15 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     }
 
     @Nested
-    @DisplayName("Store the body of a transaction separately")
+    @DisplayName("Store the body of a transaction before adding to the log")
     class StoreTransactionBodySeparately {
 
-        private TransactionLogStateStore store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
+        private TransactionLogStateStore store;
+
+        @BeforeEach
+        void setUp() {
+            store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
+        }
 
         @Test
         void shouldAddFileTransactionWhoseBodyIsHeldInS3() {
@@ -493,6 +501,173 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             assertThatThrownBy(() -> otherProcess().getFileReferences())
                     .isInstanceOf(StateStoreException.class)
                     .hasMessage("Failed updating state from transactions");
+        }
+    }
+
+    @Nested
+    @DisplayName("Apply a batch of compaction commits, discarding but tracking failures")
+    class ApplyCompactionCommitBatch {
+
+        private TransactionLogStateStore store;
+
+        @BeforeEach
+        void setUp() {
+            store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
+        }
+
+        @Test
+        public void shouldCommitCompaction() {
+            // Given
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile);
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile)));
+
+            // When
+            store.addTransaction(AddTransactionRequest.transaction(transaction));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(newFile);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("oldFile");
+            assertThat(store.getPartitionToReferencedFilesMap())
+                    .containsOnlyKeys("root")
+                    .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile"));
+        }
+
+        @Test
+        void shouldIgnoreCompactionCommitWhenAlreadyCommitted() {
+            // Given
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile);
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile)));
+            store.addTransaction(AddTransactionRequest.transaction(transaction));
+
+            // When
+            store.addTransaction(AddTransactionRequest.transaction(transaction));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(newFile);
+            assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+                    .containsExactly("oldFile");
+            assertThat(store.getPartitionToReferencedFilesMap())
+                    .containsOnlyKeys("root")
+                    .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile"));
+        }
+
+        @Test
+        void shouldIgnoreCompactionCommitWhenInputFilesAreNotAssignedToJob() {
+            // Given
+            FileReference oldFile = factory.rootFile("oldFile", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile);
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile)));
+
+            // When
+            store.addTransaction(AddTransactionRequest.transaction(transaction));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(oldFile);
+        }
+
+        @Test
+        public void shouldIgnoreCompactionCommitWhenInputFileIsNotInStateStore() {
+            // Given
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile"), newFile)));
+
+            // When we commit a compaction with an input file that is not in the state store, e.g. because the
+            // compaction has already been committed, and the file has already been garbage collected.
+            store.addTransaction(AddTransactionRequest.transaction(transaction));
+
+            // Then
+            assertThat(store.getFileReferences()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldIgnoreCompactionCommitWhenOneInputFileIsNotInStateStore() {
+            // Given
+            FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
+            FileReference newFile = factory.rootFile("newFile", 100L);
+            store.addFile(oldFile1);
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile1", "oldFile2"), newFile)));
+
+            // When
+            store.addTransaction(AddTransactionRequest.transaction(transaction));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
+            assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        public void shouldIgnoreCompactionCommitWhenFileReferenceDoesNotExistInPartition() {
+            // Given
+            splitPartition("root", "L", "R", "5");
+            FileReference file = factory.rootFile("file", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            store.addFile(existingReference);
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                    replaceJobFileReferences("job1", List.of("file"), factory.rootFile("file2", 100L))));
+
+            // When
+            store.addTransaction(AddTransactionRequest.transaction(transaction));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactly(existingReference);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        }
+
+        @Test
+        void shouldFailWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() {
+            // Given
+            FileReference file = factory.rootFile("file1", 100L);
+            store.addFile(file);
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
+
+            // When / Then
+            assertThatThrownBy(() -> new ReplaceFileReferencesTransaction(List.of(
+                    replaceJobFileReferences("job1", List.of("file1"), file))))
+                    .isInstanceOf(NewReferenceSameAsOldReferenceException.class);
+        }
+
+        @Test
+        public void shouldIgnoreCompactionCommitWhenOutputFileAlreadyExists() {
+            // Given
+            splitPartition("root", "L", "R", "m");
+            FileReference file = factory.rootFile("oldFile", 100L);
+            FileReference existingReference = splitFile(file, "L");
+            FileReference newReference = factory.partitionFile("L", "newFile", 100L);
+            store.addFiles(List.of(existingReference, newReference));
+            store.assignJobIds(List.of(
+                    assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                    replaceJobFileReferences("job1", List.of("oldFile"), newReference)));
+
+            // When
+            store.addTransaction(AddTransactionRequest.transaction(transaction));
+
+            // Then
+            assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
+                    withJobId("job1", existingReference), newReference);
+            assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         }
     }
 
