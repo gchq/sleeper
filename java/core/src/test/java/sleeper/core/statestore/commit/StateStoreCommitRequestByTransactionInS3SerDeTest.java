@@ -25,13 +25,13 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
+import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 
 import java.util.List;
@@ -52,13 +52,14 @@ public class StateStoreCommitRequestByTransactionInS3SerDeTest {
     TransactionBodyStore bodyStore = new InMemoryTransactionBodyStore();
 
     @Test
-    void shouldSerialiseAddFilesCommitInS3() {
+    void shouldSerialiseCompactionCommitInS3() {
         // Given
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        FileReference file = FileReferenceFactory.from(partitions).rootFile("test.parquet", 100);
-        FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+        FileReference file = FileReferenceFactory.from(partitions).rootFile("new.parquet", 100);
+        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                replaceJobFileReferences("test-job", List.of("old.parquet"), file)));
         StateStoreCommitRequestByTransactionInS3 commitRequest = StateStoreCommitRequestByTransactionInS3.create(
-                "test-table", "test-table/transactions/add-file-transaction.json", transaction);
+                "test-table", "test-table/transactions/commit-compaction-transaction.json", transaction);
 
         // When
         String json = serDe.toJsonPrettyPrint(commitRequest);
@@ -69,14 +70,14 @@ public class StateStoreCommitRequestByTransactionInS3SerDeTest {
     }
 
     @Test
-    void shouldSerialiseCompactionCommitInS3() {
+    void shouldSerialiseInitialisePartitionsInS3() {
         // Given
-        PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        FileReference file = FileReferenceFactory.from(partitions).rootFile("new.parquet", 100);
-        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
-                replaceJobFileReferences("test-job", List.of("old.parquet"), file)));
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50L)
+                .buildList());
         StateStoreCommitRequestByTransactionInS3 commitRequest = StateStoreCommitRequestByTransactionInS3.create(
-                "test-table", "test-table/transactions/commit-compaction-transaction.json", transaction);
+                "test-table", "test-table/transactions/initialise-transaction.json", transaction);
 
         // When
         String json = serDe.toJsonPrettyPrint(commitRequest);
