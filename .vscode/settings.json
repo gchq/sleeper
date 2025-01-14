@@ -32,7 +32,9 @@
     "sleeper.configuration.properties.table.TablePropertiesTestHelper.*",
     "sleeper.core.util.ExponentialBackoffWithJitterTestHelper.*",
     "sleeper.core.testutils.SupplierTestHelper.*",
-    "sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.*"
+    "sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.*",
+    "sleeper.core.tracker.compaction.job.CompactionJobEventTestData",
+    "sleeper.core.tracker.compaction.job.CompactionJobStatusTestData"
   ],
   "comment.java.configuration.runtimes": [
     {

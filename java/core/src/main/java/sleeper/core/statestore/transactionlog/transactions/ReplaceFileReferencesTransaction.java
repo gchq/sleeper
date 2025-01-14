@@ -23,8 +23,13 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
+import sleeper.core.tracker.job.run.JobRunTime;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -78,11 +83,36 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
      * Reports commits and failures based on validity of each job in the state before the transaction. This should be
      * used after the transaction is fully committed to the log.
      *
-     * @param tracker     the job tracker
-     * @param stateBefore the state before the transaction was applied
+     * @param tracker      the job tracker
+     * @param sleeperTable the table being updated
+     * @param stateBefore  the state before the transaction was applied
+     * @param now          the current time
      */
-    public void trackJobs(CompactionJobTracker tracker, StateStoreFiles stateBefore) {
-
+    public void reportJobs(CompactionJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore, Instant now) {
+        for (ReplaceFileReferencesRequest job : jobs) {
+            if (job.getTaskId() == null) {
+                continue;
+            }
+            try {
+                job.validateStateChange(stateBefore);
+                tracker.jobCommitted(CompactionJobCommittedEvent.builder()
+                        .jobId(job.getJobId())
+                        .tableId(sleeperTable.getTableUniqueId())
+                        .taskId(job.getTaskId())
+                        .jobRunId(job.getJobRunId())
+                        .commitTime(now)
+                        .build());
+            } catch (StateStoreException e) {
+                tracker.jobFailed(CompactionJobFailedEvent.builder()
+                        .jobId(job.getJobId())
+                        .tableId(sleeperTable.getTableUniqueId())
+                        .taskId(job.getTaskId())
+                        .jobRunId(job.getJobRunId())
+                        .runTime(new JobRunTime(now, Duration.ZERO))
+                        .failure(e)
+                        .build());
+            }
+        }
     }
 
     @Override

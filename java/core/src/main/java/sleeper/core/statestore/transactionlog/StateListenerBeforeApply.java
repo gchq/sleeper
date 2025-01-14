@@ -29,7 +29,7 @@ public interface StateListenerBeforeApply<S> {
      * @param transactionNumber the transaction number
      * @param state             the state
      */
-    void beforeApply(int transactionNumber, S state);
+    void beforeApply(long transactionNumber, S state);
 
     /**
      * Creates a transaction listener that does nothing.

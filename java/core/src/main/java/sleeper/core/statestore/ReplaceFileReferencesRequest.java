@@ -120,6 +120,14 @@ public class ReplaceFileReferencesRequest {
         return jobId;
     }
 
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public String getJobRunId() {
+        return jobRunId;
+    }
+
     public String getPartitionId() {
         return newReference.getPartitionId();
     }
@@ -134,7 +142,7 @@ public class ReplaceFileReferencesRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, inputFiles, newReference);
+        return Objects.hash(jobId, taskId, jobRunId, inputFiles, newReference);
     }
 
     @Override
@@ -146,12 +154,13 @@ public class ReplaceFileReferencesRequest {
             return false;
         }
         ReplaceFileReferencesRequest other = (ReplaceFileReferencesRequest) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(inputFiles, other.inputFiles) && Objects.equals(newReference, other.newReference);
+        return Objects.equals(jobId, other.jobId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(inputFiles, other.inputFiles)
+                && Objects.equals(newReference, other.newReference);
     }
 
     @Override
     public String toString() {
-        return "ReplaceFileReferencesRequest{jobId=" + jobId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
+        return "ReplaceFileReferencesRequest{jobId=" + jobId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
     }
 
     /**

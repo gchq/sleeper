@@ -44,19 +44,19 @@ public class CompactionJobEventTestData {
                 .build();
     }
 
-    public static CompactionJobStartedEvent.Builder startedEventBuilder(CompactionJobCreatedEvent created, Instant startTime) {
+    public static CompactionJobStartedEvent.Builder compactionStartedEventBuilder(CompactionJobCreatedEvent created, Instant startTime) {
         return CompactionJobStartedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).startTime(startTime);
     }
 
-    public static CompactionJobFinishedEvent.Builder finishedEventBuilder(CompactionJobCreatedEvent created, JobRunSummary summary) {
+    public static CompactionJobFinishedEvent.Builder compactionFinishedEventBuilder(CompactionJobCreatedEvent created, JobRunSummary summary) {
         return CompactionJobFinishedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).summary(summary);
     }
 
-    public static CompactionJobCommittedEvent.Builder committedEventBuilder(CompactionJobCreatedEvent created, Instant commitTime) {
+    public static CompactionJobCommittedEvent.Builder compactionCommittedEventBuilder(CompactionJobCreatedEvent created, Instant commitTime) {
         return CompactionJobCommittedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).commitTime(commitTime);
     }
 
-    public static CompactionJobFailedEvent.Builder failedEventBuilder(CompactionJobCreatedEvent created, JobRunTime runTime) {
+    public static CompactionJobFailedEvent.Builder compactionFailedEventBuilder(CompactionJobCreatedEvent created, JobRunTime runTime) {
         return CompactionJobFailedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).runTime(runTime);
     }
 

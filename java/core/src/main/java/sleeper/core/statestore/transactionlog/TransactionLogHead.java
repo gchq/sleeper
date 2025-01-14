@@ -154,6 +154,7 @@ class TransactionLogHead<T> {
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed adding transaction", e);
         }
+        request.getBeforeApplyListener().beforeApply(transactionNumber, state);
         Instant startApplyTime = Instant.now();
         StateStoreTransaction<T> transaction = request.getTransaction();
         transaction.apply(state, updateTime);
