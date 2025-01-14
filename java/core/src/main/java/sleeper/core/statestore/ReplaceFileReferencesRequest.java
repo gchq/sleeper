@@ -19,6 +19,7 @@ import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 
@@ -87,7 +88,7 @@ public class ReplaceFileReferencesRequest {
      * @throws FileReferenceNotAssignedToJobException if an input file is not assigned to the job on this partition
      * @throws FileAlreadyExistsException             if the new file already exists in the state store
      */
-    public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+    public void validateStateChange(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (String filename : inputFiles) {
             StateStoreFile file = stateStoreFiles.file(filename)
                     .orElseThrow(() -> new FileNotFoundException(filename));
@@ -99,6 +100,19 @@ public class ReplaceFileReferencesRequest {
         }
         if (stateStoreFiles.file(newReference.getFilename()).isPresent()) {
             throw new FileAlreadyExistsException(newReference.getFilename());
+        }
+    }
+
+    /**
+     * Validates that the output file is not the same as any of the input files.
+     *
+     * @throws NewReferenceSameAsOldReferenceException thrown if any of the input files are the same as the output file
+     */
+    public void validateNewReference() throws NewReferenceSameAsOldReferenceException {
+        for (String inputFile : inputFiles) {
+            if (inputFile.equals(newReference.getFilename())) {
+                throw new NewReferenceSameAsOldReferenceException(inputFile);
+            }
         }
     }
 

@@ -18,7 +18,6 @@ package sleeper.core.statestore.transactionlog.transactions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
@@ -45,7 +44,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
                 .map(job -> job.withNoUpdateTime())
                 .collect(toUnmodifiableList());
         for (ReplaceFileReferencesRequest job : jobs) {
-            FileReference.validateNewReferenceForJobOutput(job.getInputFiles(), job.getNewReference());
+            job.validateNewReference();
         }
     }
 
@@ -62,7 +61,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
     public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         for (ReplaceFileReferencesRequest job : jobs) {
             try {
-                job.validate(stateStoreFiles);
+                job.validateStateChange(stateStoreFiles);
             } catch (StateStoreException e) {
                 LOGGER.debug("Found invalid compaction commit for job {}", job.getJobId(), e);
                 continue;
