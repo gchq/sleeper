@@ -47,7 +47,6 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -146,17 +145,51 @@ public class StateStoreCommitterTest {
         }
 
         @Test
-        void shouldApplyCompactionCommitByTransaction() throws Exception {
+        void shouldApplyCompactionCommitByTransactionInS3() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
             Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
-            JobRunSummary summary = summary(startTime, Duration.ofMinutes(2), 123, 123);
+            Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
+            JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             stateStore.addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
-            StateStoreCommitRequestByTransaction request = createAndFinishCompactionAsTransaction(job, createdTime, startTime, summary);
+            ReplaceFileReferencesTransaction transaction = createAndFinishCompactionAsTransaction(job, createdTime, startTime, summary);
+            String bodyKey = TransactionBodyStore.createObjectKey("test-table", finishTime, "test-transaction");
+            transactionLogs.getTransactionBodyStore().store(bodyKey, transaction);
+            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(job.getTableId(), bodyKey, TransactionType.REPLACE_FILE_REFERENCES);
+
+            // When
+            apply(committerWithTimes(List.of(commitTime)), StateStoreCommitRequest.forTransaction(request));
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(
+                    fileFactory.rootFile(job.getOutputFile(), 123L));
+            assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
+                    compactionJobCreated(job, createdTime,
+                            JobRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime))
+                                    .finishedStatus(compactionFinishedStatus(summary))
+                                    .statusUpdate(compactionCommittedStatus(commitTime))
+                                    .build()));
+        }
+
+        @Test
+        void shouldApplyCompactionCommitByTransactionDirectly() throws Exception {
+            // Given
+            StateStore stateStore = createTableGetStateStore("test-table");
+            Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
+            Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
+            Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
+            JobRunSummary summary = summary(startTime, finishTime, 123, 123);
+            Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            stateStore.addFile(inputFile);
+            CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
+            ReplaceFileReferencesTransaction transaction = createAndFinishCompactionAsTransaction(job, createdTime, startTime, summary);
+            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(job.getTableId(), transaction);
 
             // When
             apply(committerWithTimes(List.of(commitTime)), StateStoreCommitRequest.forTransaction(request));
@@ -716,18 +749,17 @@ public class StateStoreCommitterTest {
 
     private CompactionJobCommitRequest createAndFinishCompaction(
             CompactionJob job, Instant createTime, Instant startTime, JobRunSummary summary) throws Exception {
-        List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
-                job.getId(), job.getPartitionId(), job.getInputFiles()));
-        stateStore(job.getTableId()).assignJobIds(assignIdRequests);
-        compactionJobTracker.jobCreated(job.createCreatedEvent(), createTime);
-        compactionJobTracker.jobStarted(job.startedEventBuilder(startTime)
-                .taskId("test-task").jobRunId("test-job-run").build());
-        compactionJobTracker.jobFinished(job.finishedEventBuilder(summary)
-                .taskId("test-task").jobRunId("test-job-run").build());
-        return new CompactionJobCommitRequest(job, "test-task", "test-job-run", summary);
+        ReplaceFileReferencesRequest request = createAndFinishCompactionAsReplaceFileReferences(job, createTime, startTime, summary);
+        return new CompactionJobCommitRequest(job, request.getTaskId(), request.getJobRunId(), summary);
     }
 
-    private StateStoreCommitRequestByTransaction createAndFinishCompactionAsTransaction(
+    private ReplaceFileReferencesTransaction createAndFinishCompactionAsTransaction(
+            CompactionJob job, Instant createTime, Instant startTime, JobRunSummary summary) throws Exception {
+        return new ReplaceFileReferencesTransaction(List.of(
+                createAndFinishCompactionAsReplaceFileReferences(job, createTime, startTime, summary)));
+    }
+
+    private ReplaceFileReferencesRequest createAndFinishCompactionAsReplaceFileReferences(
             CompactionJob job, Instant createTime, Instant startTime, JobRunSummary summary) throws Exception {
         List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
                 job.getId(), job.getPartitionId(), job.getInputFiles()));
@@ -737,12 +769,8 @@ public class StateStoreCommitterTest {
                 .taskId("test-task").jobRunId("test-job-run").build());
         compactionJobTracker.jobFinished(job.finishedEventBuilder(summary)
                 .taskId("test-task").jobRunId("test-job-run").build());
-        String bodyKey = TransactionBodyStore.createObjectKey(job.getTableId(), summary.getFinishTime(), "test-transaction");
-        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
-                job.replaceFileReferencesRequestBuilder(summary.getRecordsWritten())
-                        .taskId("test-task").jobRunId("test-job-run").build()));
-        transactionLogs.getTransactionBodyStore().store(bodyKey, transaction);
-        return StateStoreCommitRequestByTransaction.create(job.getTableId(), bodyKey, TransactionType.REPLACE_FILE_REFERENCES);
+        return job.replaceFileReferencesRequestBuilder(summary.getRecordsWritten())
+                .taskId("test-task").jobRunId("test-job-run").build();
     }
 
     private CompactionJobFactory compactionFactoryForTable(String tableId) {

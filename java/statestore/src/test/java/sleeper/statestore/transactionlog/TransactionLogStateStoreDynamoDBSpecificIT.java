@@ -130,7 +130,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
 
             // When
             transactionBodyStore.store(key, transaction);
-            stateStore.addTransaction(AddTransactionRequest.transactionInBucket(key, transaction));
+            stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
 
             // Then
             assertThat(createStateStore().getFileReferences()).containsExactly(file);

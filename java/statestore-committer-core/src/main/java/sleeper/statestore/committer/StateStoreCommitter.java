@@ -201,8 +201,9 @@ public class StateStoreCommitter {
                         .build();
                 transactionStateStore.addTransaction(addTransaction);
             } else {
-                transactionStateStore.addTransaction(AddTransactionRequest.transactionInBucket(
-                        request.getBodyKey(), request.getTransaction(transactionBodyStore)));
+                transactionStateStore.addTransaction(
+                        AddTransactionRequest.withTransaction(request.getTransaction(transactionBodyStore))
+                                .bodyKey(request.getBodyKey()).build());
             }
         } else {
             throw new UnsupportedOperationException("Cannot add a transaction for a non-transaction log state store");
