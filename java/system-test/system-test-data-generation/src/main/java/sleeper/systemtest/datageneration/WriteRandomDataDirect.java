@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import static sleeper.core.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Runs a direct ingest to write random data.
@@ -79,8 +78,9 @@ public class WriteRandomDataDirect {
             AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, TableProperties tableProperties,
             StateStoreProvider stateStoreProvider) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties,
-                    requestBuilder -> requestBuilder.tableId(tableProperties.get(TABLE_ID)));
+            return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties, tableProperties,
+                    transactionBuilder -> {
+                    });
         } else {
             return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties));
         }

@@ -128,7 +128,7 @@ public class AddFilesToStateStoreIT {
     }
 
     private AddFilesToStateStore bySqs(Supplier<String> filenameSupplier) {
-        return AddFilesToStateStore.bySqsNew(sqs, instanceProperties, tableProperties,
+        return AddFilesToStateStore.bySqs(sqs, instanceProperties, tableProperties,
                 new StateStoreCommitRequestInS3Uploader(instanceProperties, s3::putObject,
                         StateStoreCommitRequestInS3Uploader.MAX_JSON_LENGTH, filenameSupplier),
                 request -> {

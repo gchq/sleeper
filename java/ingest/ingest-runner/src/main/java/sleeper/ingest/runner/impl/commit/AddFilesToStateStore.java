@@ -33,8 +33,6 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 
 import java.util.List;
 import java.util.UUID;
@@ -63,41 +61,13 @@ public interface AddFilesToStateStore {
     }
 
     static AddFilesToStateStore bySqs(
-            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties,
-            Consumer<IngestAddFilesCommitRequest.Builder> requestConfig) {
-        return bySqs(sqsClient, instanceProperties, new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject), requestConfig);
-    }
-
-    static AddFilesToStateStore bySqs(
-            AmazonSQS sqsClient, InstanceProperties instanceProperties,
-            StateStoreCommitRequestInS3Uploader s3Uploader,
-            Consumer<IngestAddFilesCommitRequest.Builder> requestConfig) {
-        IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
-        return references -> {
-            IngestAddFilesCommitRequest.Builder requestBuilder = IngestAddFilesCommitRequest.builder()
-                    .fileReferences(references);
-            requestConfig.accept(requestBuilder);
-            IngestAddFilesCommitRequest request = requestBuilder.build();
-            String json = serDe.toJson(request);
-            LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
-            json = s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), json);
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageBody(json)
-                    .withMessageGroupId(request.getTableId())
-                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
-            LOGGER.info("Submitted asynchronous request to add files via state store committer queue");
-        };
-    }
-
-    static AddFilesToStateStore bySqsNew(
             AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, TableProperties tableProperties,
             Consumer<AddFilesTransaction.Builder> transactionConfig) {
         StateStoreCommitRequestInS3Uploader s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject);
-        return bySqsNew(sqsClient, instanceProperties, tableProperties, s3Uploader, transactionConfig);
+        return bySqs(sqsClient, instanceProperties, tableProperties, s3Uploader, transactionConfig);
     }
 
-    static AddFilesToStateStore bySqsNew(
+    static AddFilesToStateStore bySqs(
             AmazonSQS sqsClient, InstanceProperties instanceProperties, TableProperties tableProperties,
             StateStoreCommitRequestInS3Uploader s3Uploader,
             Consumer<AddFilesTransaction.Builder> transactionConfig) {
