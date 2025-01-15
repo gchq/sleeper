@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
@@ -44,11 +45,11 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
-public class StateStoreCommitRequestByTransactionTest {
+public class StateStoreCommitRequestByTransactionSerDeTest {
 
     Schema schema = schemaWithKey("key", new LongType());
     TableProperties tableProperties = createTableProperties(schema);
-    StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe();
+    StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe(new FixedTablePropertiesProvider(tableProperties));
     TransactionBodyStore bodyStore = new InMemoryTransactionBodyStore();
 
     @Test
@@ -78,6 +79,23 @@ public class StateStoreCommitRequestByTransactionTest {
                 .buildList());
         StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create(
                 "test-table", "test-table/transactions/initialise-transaction.json", transaction);
+
+        // When
+        String json = serDe.toJsonPrettyPrint(commitRequest);
+
+        // Then
+        assertThat(serDe.fromJson(json)).isEqualTo(commitRequest);
+        Approvals.verify(json, new Options().forFile().withExtension(".json"));
+    }
+
+    @Test
+    void shouldSerialiseInitialisePartitionsDirectly() {
+        // Given
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50L)
+                .buildList());
+        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
 
         // When
         String json = serDe.toJsonPrettyPrint(commitRequest);

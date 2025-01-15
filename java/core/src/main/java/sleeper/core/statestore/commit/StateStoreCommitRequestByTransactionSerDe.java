@@ -17,8 +17,21 @@ package sleeper.core.statestore.commit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.GsonConfig;
+
+import java.lang.reflect.Type;
 
 /**
  * Serialises and deserialises a commit request for a transaction to be added to the state store.
@@ -27,8 +40,9 @@ public class StateStoreCommitRequestByTransactionSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public StateStoreCommitRequestByTransactionSerDe() {
-        GsonBuilder builder = GsonConfig.standardBuilder();
+    public StateStoreCommitRequestByTransactionSerDe(TablePropertiesProvider tablePropertiesProvider) {
+        GsonBuilder builder = GsonConfig.standardBuilder()
+                .registerTypeAdapter(StateStoreCommitRequestByTransaction.class, new TransactionByTypeJsonSerDe(tablePropertiesProvider));
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
@@ -61,5 +75,51 @@ public class StateStoreCommitRequestByTransactionSerDe {
      */
     public StateStoreCommitRequestByTransaction fromJson(String json) {
         return gson.fromJson(json, StateStoreCommitRequestByTransaction.class);
+    }
+
+    /**
+     * A GSON plugin to serialise/deserialise a request for a transaction, serialising a transaction by its type.
+     */
+    public static class TransactionByTypeJsonSerDe implements JsonSerializer<StateStoreCommitRequestByTransaction>, JsonDeserializer<StateStoreCommitRequestByTransaction> {
+        private final TablePropertiesProvider tablePropertiesProvider;
+
+        public TransactionByTypeJsonSerDe(TablePropertiesProvider tablePropertiesProvider) {
+            this.tablePropertiesProvider = tablePropertiesProvider;
+        }
+
+        @Override
+        public StateStoreCommitRequestByTransaction deserialize(JsonElement jsonElement, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            if (!jsonElement.isJsonObject()) {
+                throw new JsonParseException("Expected JsonObject, got " + jsonElement);
+            }
+            JsonObject json = jsonElement.getAsJsonObject();
+            String tableId = json.get("tableId").getAsString();
+            TransactionType transactionType = context.deserialize(json.get("transactionType"), TransactionType.class);
+            JsonElement bodyKeyElement = json.get("bodyKey");
+            if (bodyKeyElement != null) {
+                return StateStoreCommitRequestByTransaction.create(tableId, bodyKeyElement.getAsString(), transactionType);
+            } else {
+                return StateStoreCommitRequestByTransaction.create(tableId,
+                        transactionSerDe(tableId).toTransaction(transactionType, json.get("transaction")));
+            }
+        }
+
+        @Override
+        public JsonElement serialize(StateStoreCommitRequestByTransaction request, Type typeOfSrc, JsonSerializationContext context) {
+            JsonObject json = new JsonObject();
+            json.addProperty("tableId", request.getTableId());
+            json.add("transactionType", context.serialize(request.getTransactionType()));
+            request.getTransactionIfHeld().ifPresentOrElse(transaction -> {
+                json.add("transaction", transactionSerDe(request.getTableId()).toJsonTree(transaction));
+            }, () -> {
+                json.addProperty("bodyKey", request.getBodyKey());
+            });
+            return json;
+        }
+
+        private TransactionSerDe transactionSerDe(String tableId) {
+            TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
+            return new TransactionSerDe(tableProperties.getSchema());
+        }
     }
 }

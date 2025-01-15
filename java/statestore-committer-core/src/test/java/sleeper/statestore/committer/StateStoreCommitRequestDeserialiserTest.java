@@ -254,7 +254,7 @@ public class StateStoreCommitRequestDeserialiserTest {
                 replaceJobFileReferences("test-job", List.of("old.parquet"), file)));
         String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
         StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", key, transaction);
-        String jsonString = new StateStoreCommitRequestByTransactionSerDe().toJson(commitRequest);
+        String jsonString = requestByTransactionSerDe().toJson(commitRequest);
 
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
@@ -293,5 +293,9 @@ public class StateStoreCommitRequestDeserialiserTest {
 
     private StateStoreCommitRequestDeserialiser deserialiser() {
         return new StateStoreCommitRequestDeserialiser(new FixedTablePropertiesProvider(tables), dataBucketObjectByKey::get);
+    }
+
+    private StateStoreCommitRequestByTransactionSerDe requestByTransactionSerDe() {
+        return new StateStoreCommitRequestByTransactionSerDe(new FixedTablePropertiesProvider(tables));
     }
 }
