@@ -32,6 +32,7 @@ import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
@@ -58,7 +59,7 @@ public class StateStoreCommitter {
     private final IngestJobTracker ingestJobTracker;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final TransactionBodyStore transactionBodyStore;
+    private final TransactionBodyStoreProvider transactionBodyStoreProvider;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
@@ -66,13 +67,13 @@ public class StateStoreCommitter {
             IngestJobTracker ingestJobTracker,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            TransactionBodyStore transactionBodyStore,
+            TransactionBodyStoreProvider transactionBodyStoreProvider,
             Supplier<Instant> timeSupplier) {
         this.compactionJobTracker = compactionJobTracker;
         this.ingestJobTracker = ingestJobTracker;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.transactionBodyStore = transactionBodyStore;
+        this.transactionBodyStoreProvider = transactionBodyStoreProvider;
         this.timeSupplier = timeSupplier;
     }
 
@@ -188,6 +189,7 @@ public class StateStoreCommitter {
     void addTransaction(StateStoreCommitRequestByTransaction request) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        TransactionBodyStore transactionBodyStore = transactionBodyStoreProvider.getTransactionBodyStore(tableProperties);
         if (stateStore instanceof TransactionLogStateStore) {
             TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
             if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {

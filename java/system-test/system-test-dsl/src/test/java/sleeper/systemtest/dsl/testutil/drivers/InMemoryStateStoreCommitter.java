@@ -16,6 +16,7 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.committer.StateStoreCommitRequest;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
@@ -41,6 +42,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryStateStoreCommitter {
 
+    private final InMemoryTransactionBodyStore transactionBodyStore;
     private final InMemoryIngestByQueue ingest;
     private final InMemoryCompaction compaction;
     private final Queue<StateStoreCommitMessage> queue = new LinkedList<>();
@@ -48,7 +50,8 @@ public class InMemoryStateStoreCommitter {
     private final Map<String, Double> commitsPerSecondByTableId = new HashMap<>();
     private final Map<String, Boolean> runCommitterOnSendByTableId = new HashMap<>();
 
-    public InMemoryStateStoreCommitter(InMemoryIngestByQueue ingest, InMemoryCompaction compaction) {
+    public InMemoryStateStoreCommitter(InMemoryTransactionBodyStore transactionBodyStore, InMemoryIngestByQueue ingest, InMemoryCompaction compaction) {
+        this.transactionBodyStore = transactionBodyStore;
         this.ingest = ingest;
         this.compaction = compaction;
     }
@@ -91,7 +94,7 @@ public class InMemoryStateStoreCommitter {
             deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, InMemoryStateStoreCommitter::failToLoadS3Object);
             committer = new StateStoreCommitter(
                     compaction.jobTracker(), ingest.jobTracker(),
-                    tablePropertiesProvider, instance.getStateStoreProvider(),
+                    tablePropertiesProvider, instance.getStateStoreProvider(), transactionBodyStore,
                     Instant::now);
         }
 

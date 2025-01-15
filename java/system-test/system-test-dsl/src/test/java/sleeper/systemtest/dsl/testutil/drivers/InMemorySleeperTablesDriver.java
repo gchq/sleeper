@@ -24,6 +24,7 @@ import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.systemtest.dsl.instance.SleeperTablesDriver;
@@ -34,13 +35,17 @@ import java.util.TreeMap;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 
 public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
 
     private final Map<String, TableIndex> tableIndexByInstanceId = new TreeMap<>();
     private final Map<String, TablePropertiesStore> propertiesStoreByInstanceId = new TreeMap<>();
     private final Map<String, Map<String, StateStore>> stateStoresByInstanceId = new TreeMap<>();
+    private final InMemoryTransactionLogsPerTable transactionLogs;
+
+    public InMemorySleeperTablesDriver(InMemoryTransactionLogsPerTable transactionLogs) {
+        this.transactionLogs = transactionLogs;
+    }
 
     @Override
     public void saveTableProperties(InstanceProperties instanceProperties, TableProperties tableProperties) {
@@ -56,7 +61,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
         properties.validate();
         addInstanceIfNotPresent(instanceId);
         deployedInstancePropertiesStore(instanceId).createTable(properties);
-        StateStore stateStore = inMemoryStateStoreUninitialised(properties.getSchema());
+        StateStore stateStore = transactionLogs.stateStoreBuilder(properties).build();
         stateStore.initialise();
         stateStoresByInstanceId.get(instanceId)
                 .put(properties.get(TABLE_NAME), stateStore);

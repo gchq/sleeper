@@ -160,7 +160,7 @@ public class StateStoreCommitterThroughputIT {
                 IngestJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
                 tablePropertiesProvider(),
                 stateStoreProvider(),
-                new S3TransactionBodyStore(instanceProperties, null, s3),
+                S3TransactionBodyStore.createProvider(instanceProperties, s3),
                 Instant::now);
     }
 

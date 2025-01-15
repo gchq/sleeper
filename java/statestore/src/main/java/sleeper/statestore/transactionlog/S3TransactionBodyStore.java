@@ -23,6 +23,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.LoggedDuration;
@@ -44,6 +45,17 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
+    }
+
+    /**
+     * Creates a transaction body store provider that provides instances of this class.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  s3Client           an S3 client
+     * @return                    the provider
+     */
+    public static TransactionBodyStoreProvider createProvider(InstanceProperties instanceProperties, AmazonS3 s3Client) {
+        return tableProperties -> new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
     }
 
     @Override

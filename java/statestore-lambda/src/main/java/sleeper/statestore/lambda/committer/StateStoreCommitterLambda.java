@@ -45,6 +45,7 @@ import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 import sleeper.statestore.committer.StateStoreCommitter.RetryOnThrottling;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -84,6 +85,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
                 CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
                 IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
                 tablePropertiesProvider, stateStoreProvider,
+                S3TransactionBodyStore.createProvider(instanceProperties, s3Client),
                 Instant::now);
         throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
     }
