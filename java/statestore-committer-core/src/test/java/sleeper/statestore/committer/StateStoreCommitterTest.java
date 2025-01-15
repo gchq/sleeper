@@ -207,6 +207,39 @@ public class StateStoreCommitterTest {
         }
 
         @Test
+        void shouldFailWhenInputFileDoesNotExistByTransaction() throws Exception {
+            // Given
+            StateStore stateStore = createTableGetStateStore("test-table");
+            Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
+            Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
+            Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
+            Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
+            JobRunSummary summary = summary(startTime, finishTime, 123, 123);
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            stateStore.addFile(inputFile);
+            CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
+            ReplaceFileReferencesTransaction transaction = createAndFinishCompactionAsTransaction(job, createdTime, startTime, summary);
+            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(job.getTableId(), transaction);
+            stateStore.clearFileData();
+
+            // When
+            apply(committerWithTimes(List.of(failedTime)), StateStoreCommitRequest.forTransaction(request));
+
+            // Then
+            assertThat(failures).isEmpty();
+            assertThat(stateStore.getFileReferences()).isEmpty();
+            assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
+                    compactionJobCreated(job, createdTime,
+                            JobRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime))
+                                    .statusUpdate(compactionFinishedStatus(summary))
+                                    .finishedStatus(compactionFailedStatus(
+                                            new JobRunTime(failedTime, failedTime),
+                                            List.of("File not found: input.parquet")))
+                                    .build()));
+        }
+
+        @Test
         void shouldFailWhenInputFileDoesNotExist() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
