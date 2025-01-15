@@ -32,6 +32,7 @@ import sleeper.core.statestore.commit.CommitRequestType;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe.TransactionByTypeJsonSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.util.GsonConfig;
 import sleeper.core.util.LoggedDuration;
@@ -61,6 +62,7 @@ public class StateStoreCommitRequestDeserialiser {
         return GsonConfig.standardBuilder()
                 .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser(readFromDataBucket))
                 .registerTypeAdapter(SplitPartitionCommitRequest.class, new SplitPartitionDeserialiser(tablePropertiesProvider))
+                .registerTypeAdapter(StateStoreCommitRequestByTransaction.class, new TransactionByTypeJsonSerDe(tablePropertiesProvider))
                 .serializeNulls()
                 .create();
     }
