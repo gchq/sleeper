@@ -17,7 +17,6 @@ package sleeper.systemtest.drivers.statestore;
 
 import com.amazonaws.services.s3.AmazonS3;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequestEntry;
@@ -69,7 +68,6 @@ public class AwsStateStoreCommitterDriverIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldSendCommitToSqsQueue(SleeperSystemTest sleeper) {
         // When
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
@@ -87,7 +85,6 @@ public class AwsStateStoreCommitterDriverIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldSendMoreCommitsThanBatchSize(SleeperSystemTest sleeper) {
         // When
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
