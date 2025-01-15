@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.committer;
 
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
@@ -33,16 +32,6 @@ public class StateStoreCommitRequest {
     private final Object request;
     private final String tableId;
     private final ApplyRequest applyRequest;
-
-    /**
-     * Creates a request to commit the results of a compaction job.
-     *
-     * @param  request the compaction job commit request
-     * @return         a state store commit request
-     */
-    public static StateStoreCommitRequest forCompactionJob(CompactionJobCommitRequest request) {
-        return new StateStoreCommitRequest(request, request.getJob().getTableId(), committer -> committer.commitCompaction(request));
-    }
 
     /**
      * Creates a request to commit the assignment of job ID to files in a compaction job.

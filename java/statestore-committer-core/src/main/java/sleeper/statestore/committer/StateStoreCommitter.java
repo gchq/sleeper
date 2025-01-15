@@ -18,8 +18,6 @@ package sleeper.statestore.committer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -39,7 +37,6 @@ import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferences
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
@@ -137,26 +134,6 @@ public class StateStoreCommitter {
         request.apply(this);
         LOGGER.info("Applied request to table ID {} with type {} at time {}",
                 request.getTableId(), request.getRequest().getClass().getSimpleName(), Instant.now());
-    }
-
-    void commitCompaction(CompactionJobCommitRequest request) throws StateStoreException {
-        CompactionJob job = request.getJob();
-        StateStore stateStore = stateStore(job.getTableId());
-        try {
-            stateStore.atomicallyReplaceFileReferencesWithNewOnes(
-                    List.of(job.replaceFileReferencesRequestBuilder(request.getRecordsWritten()).build()));
-        } catch (Exception e) {
-            compactionJobTracker.jobFailed(job
-                    .failedEventBuilder(new JobRunTime(request.getFinishTime(), timeSupplier.get()))
-                    .failure(e)
-                    .taskId(request.getTaskId())
-                    .jobRunId(request.getJobRunId())
-                    .build());
-            throw e;
-        }
-        compactionJobTracker.jobCommitted(job.committedEventBuilder(timeSupplier.get())
-                .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
-        LOGGER.debug("Successfully committed compaction job {}", job.getId());
     }
 
     void addFiles(IngestAddFilesCommitRequest request) throws StateStoreException {

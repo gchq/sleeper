@@ -18,8 +18,6 @@ package sleeper.statestore.committer;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.core.partition.PartitionTree;
@@ -40,13 +38,10 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
-import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -65,29 +60,6 @@ public class StateStoreCommitRequestDeserialiserTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, String> dataBucketObjectByKey = new HashMap<>();
-
-    @Test
-    void shouldDeserialiseCompactionJobCommitRequest() {
-        // Given
-        CompactionJob job = CompactionJob.builder()
-                .tableId("test-table")
-                .jobId("test-job")
-                .inputFiles(List.of("file1.parquet", "file2.parquet"))
-                .outputFile("test-output.parquet")
-                .partitionId("test-partition-id")
-                .build();
-        CompactionJobCommitRequest compactionJobCommitRequest = new CompactionJobCommitRequest(
-                job, "test-task", "test-job-run",
-                new JobRunSummary(
-                        new RecordsProcessed(120, 100),
-                        Instant.parse("2024-05-01T10:58:00Z"), Duration.ofMinutes(1)));
-        String jsonString = new CompactionJobCommitRequestSerDe().toJson(compactionJobCommitRequest);
-
-        // When / Then
-        assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionJob(compactionJobCommitRequest))
-                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
-    }
 
     @Test
     void shouldDeserialiseCompactionJobIdAssignmentCommitRequest() {
