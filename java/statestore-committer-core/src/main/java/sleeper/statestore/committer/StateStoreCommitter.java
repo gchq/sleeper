@@ -33,6 +33,7 @@ import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -181,6 +182,19 @@ public class StateStoreCommitter {
                     transactionStateStore.addTransaction(addTransaction);
                 } catch (Exception e) {
                     transaction.reportJobsAllFailed(compactionJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
+                    throw e;
+                }
+            } else if (request.getTransactionType() == TransactionType.ADD_FILES) {
+                AddFilesTransaction transaction = getTransaction(tableProperties, request);
+                AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
+                        .bodyKey(request.getBodyKey())
+                        .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
+                                ingestJobTracker, tableProperties.getStatus()))
+                        .build();
+                try {
+                    transactionStateStore.addTransaction(addTransaction);
+                } catch (Exception e) {
+                    transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), e);
                     throw e;
                 }
             } else {

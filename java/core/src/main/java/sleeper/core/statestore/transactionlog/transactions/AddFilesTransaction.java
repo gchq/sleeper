@@ -21,6 +21,11 @@ import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;
@@ -67,6 +72,42 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         for (AllReferencesToAFile file : files) {
             stateStoreFiles.add(StateStoreFile.newFile(updateTime, file));
         }
+    }
+
+    /**
+     * Reports the files were added against the job tracker. This should be used after the transaction is fully
+     * committed to the log.
+     *
+     * @param tracker      the job tracker
+     * @param sleeperTable the table being updated
+     */
+    public void reportJobCommitted(IngestJobTracker tracker, TableStatus sleeperTable) {
+        if (jobId == null) {
+            return;
+        }
+        tracker.jobAddedFiles(IngestJobAddedFilesEvent.builder()
+                .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
+                .tableId(sleeperTable.getTableUniqueId()).writtenTime(writtenTime)
+                .files(files).build());
+    }
+
+    /**
+     * Reports failure adding files against the job tracker.
+     *
+     * @param tracker      the job tracker
+     * @param sleeperTable the table being updated
+     * @param e            the failure
+     */
+    public void reportJobFailed(IngestJobTracker tracker, TableStatus sleeperTable, Exception e) {
+        if (jobId == null) {
+            return;
+        }
+        tracker.jobFailed(IngestJobFailedEvent.builder()
+                .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
+                .tableId(sleeperTable.getTableUniqueId())
+                .runTime(new JobRunTime(writtenTime, writtenTime))
+                .failure(e)
+                .build());
     }
 
     public List<AllReferencesToAFile> getFiles() {
