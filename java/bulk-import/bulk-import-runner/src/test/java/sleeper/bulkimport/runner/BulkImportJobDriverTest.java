@@ -23,18 +23,20 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.StateStoreTestHelper;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -68,7 +70,7 @@ class BulkImportJobDriverTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
-    private final List<IngestAddFilesCommitRequest> commitRequestQueue = new ArrayList<>();
+    private final List<StateStoreCommitRequestByTransaction> commitRequestQueue = new ArrayList<>();
 
     @Test
     void shouldReportJobFinished() throws Exception {
@@ -215,12 +217,11 @@ class BulkImportJobDriverTest {
                                 summary(startTime, finishTime, 300, 300), 2))
                         .build()));
         assertThat(stateStore.getFileReferences()).isEmpty();
-        assertThat(commitRequestQueue).containsExactly(IngestAddFilesCommitRequest.builder()
-                .ingestJob(ingestJob)
-                .fileReferences(outputFiles)
-                .jobRunId("test-run").taskId("test-task")
-                .writtenTime(writtenTime)
-                .build());
+        assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID),
+                AddFilesTransaction.builder()
+                        .jobId(job.getId()).taskId("test-task").jobRunId("test-run").writtenTime(writtenTime)
+                        .files(AllReferencesToAFile.newFilesWithReferences(outputFiles))
+                        .build()));
     }
 
     private void runJob(
