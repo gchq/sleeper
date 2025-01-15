@@ -32,6 +32,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.commit.CommitRequestType;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.util.GsonConfig;
 import sleeper.core.util.LoggedDuration;
@@ -100,6 +101,10 @@ public class StateStoreCommitRequestDeserialiser {
         public StateStoreCommitRequest deserialize(JsonElement json, Type wrapperType, JsonDeserializationContext context) throws JsonParseException {
 
             JsonObject object = json.getAsJsonObject();
+            if (object.has("transactionType")) {
+                StateStoreCommitRequestByTransaction request = context.deserialize(object, StateStoreCommitRequestByTransaction.class);
+                return StateStoreCommitRequest.forTransaction(request);
+            }
             CommitRequestType type = context.deserialize(object.get("type"), CommitRequestType.class);
             JsonObject requestObj = object.getAsJsonObject("request");
             if (type == null) {

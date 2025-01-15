@@ -54,6 +54,18 @@ public interface TransactionBodyStore {
      */
     static String createObjectKey(TableProperties tableProperties) {
         // Use a random UUID to avoid conflicting when another process is adding a transaction at the same time
-        return tableProperties.get(TABLE_ID) + "/statestore/transactions/" + Instant.now() + "-" + UUID.randomUUID().toString() + ".json";
+        return createObjectKey(tableProperties.get(TABLE_ID), Instant.now(), UUID.randomUUID().toString());
+    }
+
+    /**
+     * Creates an object key for a new transaction file with a randomly generated filename. The file will not yet exist.
+     *
+     * @param  tableId the Sleeper table ID
+     * @param  now     the time now
+     * @param  uuid    a random UUID
+     * @return         the object key
+     */
+    static String createObjectKey(String tableId, Instant now, String uuid) {
+        return tableId + "/statestore/transactions/" + now + "-" + uuid + ".json";
     }
 }

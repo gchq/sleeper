@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobCommitter;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -30,7 +29,12 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRunTime;
@@ -54,6 +58,7 @@ public class StateStoreCommitter {
     private final IngestJobTracker ingestJobTracker;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final TransactionBodyStore transactionBodyStore;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
@@ -61,11 +66,13 @@ public class StateStoreCommitter {
             IngestJobTracker ingestJobTracker,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
+            TransactionBodyStore transactionBodyStore,
             Supplier<Instant> timeSupplier) {
         this.compactionJobTracker = compactionJobTracker;
         this.ingestJobTracker = ingestJobTracker;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
+        this.transactionBodyStore = transactionBodyStore;
         this.timeSupplier = timeSupplier;
     }
 
@@ -133,7 +140,8 @@ public class StateStoreCommitter {
         CompactionJob job = request.getJob();
         StateStore stateStore = stateStore(job.getTableId());
         try {
-            CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(), stateStore);
+            stateStore.atomicallyReplaceFileReferencesWithNewOnes(
+                    List.of(job.replaceFileReferencesRequestBuilder(request.getRecordsWritten()).build()));
         } catch (Exception e) {
             compactionJobTracker.jobFailed(job
                     .failedEventBuilder(new JobRunTime(request.getFinishTime(), timeSupplier.get()))
@@ -175,6 +183,28 @@ public class StateStoreCommitter {
     void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStore(request.getTableId());
         stateStore.deleteGarbageCollectedFileReferenceCounts(request.getFilenames());
+    }
+
+    void addTransaction(StateStoreCommitRequestByTransaction request) throws StateStoreException {
+        TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        if (stateStore instanceof TransactionLogStateStore) {
+            TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
+            if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {
+                ReplaceFileReferencesTransaction transaction = request.getTransaction(transactionBodyStore);
+                AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
+                        .bodyKey(request.getBodyKey())
+                        .beforeApplyListener((number, state) -> transaction.reportJobCommits(
+                                compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
+                        .build();
+                transactionStateStore.addTransaction(addTransaction);
+            } else {
+                transactionStateStore.addTransaction(AddTransactionRequest.transactionInBucket(
+                        request.getBodyKey(), request.getTransaction(transactionBodyStore)));
+            }
+        } else {
+            throw new UnsupportedOperationException("Cannot add a transaction for a non-transaction log state store");
+        }
     }
 
     private StateStore stateStore(String tableId) {

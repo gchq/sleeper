@@ -1,5 +1,5 @@
 {
   "tableId": "test-table",
-  "type": "INITIALISE_PARTITIONS",
+  "transactionType": "INITIALISE_PARTITIONS",
   "bodyKey": "test-table/transactions/initialise-transaction.json"
 }

@@ -44,11 +44,11 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
-public class StateStoreCommitRequestByTransactionInS3SerDeTest {
+public class StateStoreCommitRequestByTransactionTest {
 
     Schema schema = schemaWithKey("key", new LongType());
     TableProperties tableProperties = createTableProperties(schema);
-    StateStoreCommitRequestByTransactionInS3SerDe serDe = new StateStoreCommitRequestByTransactionInS3SerDe();
+    StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe();
     TransactionBodyStore bodyStore = new InMemoryTransactionBodyStore();
 
     @Test
@@ -58,7 +58,7 @@ public class StateStoreCommitRequestByTransactionInS3SerDeTest {
         FileReference file = FileReferenceFactory.from(partitions).rootFile("new.parquet", 100);
         FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
                 replaceJobFileReferences("test-job", List.of("old.parquet"), file)));
-        StateStoreCommitRequestByTransactionInS3 commitRequest = StateStoreCommitRequestByTransactionInS3.create(
+        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create(
                 "test-table", "test-table/transactions/commit-compaction-transaction.json", transaction);
 
         // When
@@ -76,7 +76,7 @@ public class StateStoreCommitRequestByTransactionInS3SerDeTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
-        StateStoreCommitRequestByTransactionInS3 commitRequest = StateStoreCommitRequestByTransactionInS3.create(
+        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create(
                 "test-table", "test-table/transactions/initialise-transaction.json", transaction);
 
         // When

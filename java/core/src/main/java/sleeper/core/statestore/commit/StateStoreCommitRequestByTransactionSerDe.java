@@ -21,17 +21,26 @@ import com.google.gson.GsonBuilder;
 import sleeper.core.util.GsonConfig;
 
 /**
- * Serialises and deserialises a commit request for a transaction that was uploaded to S3 before being submitted to the
- * committer.
+ * Serialises and deserialises a commit request for a transaction to be added to the state store.
  */
-public class StateStoreCommitRequestByTransactionInS3SerDe {
+public class StateStoreCommitRequestByTransactionSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public StateStoreCommitRequestByTransactionInS3SerDe() {
+    public StateStoreCommitRequestByTransactionSerDe() {
         GsonBuilder builder = GsonConfig.standardBuilder();
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
+    }
+
+    /**
+     * Serialises a commit request to a JSON string.
+     *
+     * @param  request the commit request
+     * @return         the JSON string
+     */
+    public String toJson(StateStoreCommitRequestByTransaction request) {
+        return gson.toJson(request);
     }
 
     /**
@@ -40,7 +49,7 @@ public class StateStoreCommitRequestByTransactionInS3SerDe {
      * @param  request the commit request
      * @return         the pretty-printed JSON string
      */
-    public String toJsonPrettyPrint(StateStoreCommitRequestByTransactionInS3 request) {
+    public String toJsonPrettyPrint(StateStoreCommitRequestByTransaction request) {
         return gsonPrettyPrint.toJson(request);
     }
 
@@ -50,8 +59,7 @@ public class StateStoreCommitRequestByTransactionInS3SerDe {
      * @param  json the JSON string
      * @return      the commit request
      */
-    public StateStoreCommitRequestByTransactionInS3 fromJson(String json) {
-        return gson.fromJson(json, StateStoreCommitRequestByTransactionInS3.class);
+    public StateStoreCommitRequestByTransaction fromJson(String json) {
+        return gson.fromJson(json, StateStoreCommitRequestByTransaction.class);
     }
-
 }
