@@ -22,7 +22,13 @@ import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
+import sleeper.core.tracker.job.run.JobRunTime;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -114,6 +120,42 @@ public class ReplaceFileReferencesRequest {
                 throw new NewReferenceSameAsOldReferenceException(inputFile);
             }
         }
+    }
+
+    /**
+     * Creates an event for when this request has been committed to the state store.
+     *
+     * @param  sleeperTable the table being updated
+     * @param  now          the current time
+     * @return              the event
+     */
+    public CompactionJobCommittedEvent createCommittedEvent(TableStatus sleeperTable, Instant now) {
+        return CompactionJobCommittedEvent.builder()
+                .jobId(jobId)
+                .tableId(sleeperTable.getTableUniqueId())
+                .taskId(taskId)
+                .jobRunId(jobRunId)
+                .commitTime(now)
+                .build();
+    }
+
+    /**
+     * Creates an event for when this request failed to commit to the state store.
+     *
+     * @param  sleeperTable the table being updated
+     * @param  now          the current time
+     * @param  e            the failure
+     * @return              the event
+     */
+    public CompactionJobFailedEvent createFailedEvent(TableStatus sleeperTable, Instant now, Exception e) {
+        return CompactionJobFailedEvent.builder()
+                .jobId(jobId)
+                .tableId(sleeperTable.getTableUniqueId())
+                .taskId(taskId)
+                .jobRunId(jobRunId)
+                .runTime(new JobRunTime(now, Duration.ZERO))
+                .failure(e)
+                .build();
     }
 
     public String getJobId() {

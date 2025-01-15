@@ -200,7 +200,12 @@ public class StateStoreCommitter {
                         .beforeApplyListener((number, state) -> transaction.reportJobCommits(
                                 compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
                         .build();
-                transactionStateStore.addTransaction(addTransaction);
+                try {
+                    transactionStateStore.addTransaction(addTransaction);
+                } catch (Exception e) {
+                    transaction.reportJobsAllFailed(compactionJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
+                    throw e;
+                }
             } else {
                 transactionStateStore.addTransaction(
                         AddTransactionRequest.withTransaction(getTransaction(tableProperties, request))

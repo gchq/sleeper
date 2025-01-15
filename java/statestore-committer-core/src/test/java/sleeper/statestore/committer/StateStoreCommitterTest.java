@@ -240,6 +240,44 @@ public class StateStoreCommitterTest {
         }
 
         @Test
+        void shouldFailWhenTransactionCannotBeAdded() throws Exception {
+            // Given
+            StateStore stateStore = createTableGetStateStore("test-table");
+            Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
+            Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
+            Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
+            Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
+            JobRunSummary summary = summary(startTime, finishTime, 123, 123);
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            stateStore.addFile(inputFile);
+            CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
+            ReplaceFileReferencesTransaction transaction = createAndFinishCompactionAsTransaction(job, createdTime, startTime, summary);
+            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(job.getTableId(), transaction);
+            InMemoryTransactionLogStore filesLog = transactionLogs.forTableId("test-table").getFilesLogStore();
+            filesLog.atStartOfAddTransaction(() -> {
+                throw new IllegalStateException("Something went wrong");
+            });
+
+            // When
+            apply(committerWithTimes(List.of(failedTime)), StateStoreCommitRequest.forTransaction(request));
+
+            // Then
+            assertThat(failures).singleElement().satisfies(e -> assertThat(e)
+                    .isInstanceOf(StateStoreException.class)
+                    .cause().isInstanceOf(IllegalStateException.class));
+            assertThat(stateStore.getFileReferences()).containsExactly(withJobId(job.getId(), inputFile));
+            assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
+                    compactionJobCreated(job, createdTime,
+                            JobRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime))
+                                    .statusUpdate(compactionFinishedStatus(summary))
+                                    .finishedStatus(compactionFailedStatus(
+                                            new JobRunTime(failedTime, failedTime),
+                                            List.of("Failed adding transaction", "Something went wrong")))
+                                    .build()));
+        }
+
+        @Test
         void shouldFailWhenInputFileDoesNotExist() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
