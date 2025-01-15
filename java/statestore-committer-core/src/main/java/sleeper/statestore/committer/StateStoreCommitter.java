@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
@@ -38,8 +37,6 @@ import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferences
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -135,20 +132,6 @@ public class StateStoreCommitter {
         request.apply(this);
         LOGGER.info("Applied request to table ID {} with type {} at time {}",
                 request.getTableId(), request.getRequest().getClass().getSimpleName(), Instant.now());
-    }
-
-    void addFiles(IngestAddFilesCommitRequest request) throws StateStoreException {
-        StateStore stateStore = stateStore(request.getTableId());
-        List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(request.getFileReferences());
-        stateStore.addFilesWithReferences(files);
-        IngestJob job = request.getJob();
-        if (job != null) {
-            ingestJobTracker.jobAddedFiles(job.addedFilesEventBuilder(request.getWrittenTime()).files(files)
-                    .taskId(request.getTaskId()).jobRunId(request.getJobRunId()).build());
-            LOGGER.debug("Successfully committed new files for ingest job {}", job.getId());
-        } else {
-            LOGGER.debug("Successfully committed new files for ingest with no job");
-        }
     }
 
     void splitPartition(SplitPartitionCommitRequest request) throws StateStoreException {

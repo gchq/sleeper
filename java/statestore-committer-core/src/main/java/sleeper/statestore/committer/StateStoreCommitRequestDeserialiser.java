@@ -36,7 +36,6 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe.
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.util.GsonConfig;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
 import java.lang.reflect.Type;
 import java.time.Instant;
@@ -116,9 +115,6 @@ public class StateStoreCommitRequestDeserialiser {
                 case STORED_IN_S3:
                     return fromDataBucket.read(
                             context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
-                case INGEST_ADD_FILES:
-                    return StateStoreCommitRequest.forIngestAddFiles(
-                            context.deserialize(requestObj, IngestAddFilesCommitRequest.class));
                 case COMPACTION_JOB_ID_ASSIGNMENT:
                     return StateStoreCommitRequest.forCompactionJobIdAssignment(
                             context.deserialize(requestObj, CompactionJobIdAssignmentCommitRequest.class));
