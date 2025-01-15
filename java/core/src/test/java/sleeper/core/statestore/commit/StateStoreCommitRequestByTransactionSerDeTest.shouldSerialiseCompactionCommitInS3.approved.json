@@ -1,5 +1,5 @@
 {
   "tableId": "test-table",
   "transactionType": "REPLACE_FILE_REFERENCES",
-  "bodyKey": "test-table/transactions/commit-compaction-transaction.json"
+  "bodyKey": "test-table/statestore/transactions/2025-01-14T15:30:00Z-test-transaction.json"
 }

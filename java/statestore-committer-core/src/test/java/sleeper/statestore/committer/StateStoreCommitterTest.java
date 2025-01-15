@@ -52,6 +52,7 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
@@ -741,7 +742,7 @@ public class StateStoreCommitterTest {
                 job.replaceFileReferencesRequestBuilder(summary.getRecordsWritten())
                         .taskId("test-task").jobRunId("test-job-run").build()));
         transactionLogs.getTransactionBodyStore().store(bodyKey, transaction);
-        return StateStoreCommitRequestByTransaction.create(job.getTableId(), bodyKey, transaction);
+        return StateStoreCommitRequestByTransaction.create(job.getTableId(), bodyKey, TransactionType.REPLACE_FILE_REFERENCES);
     }
 
     private CompactionJobFactory compactionFactoryForTable(String tableId) {

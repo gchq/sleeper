@@ -46,6 +46,7 @@ import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.time.Duration;
@@ -159,6 +160,7 @@ public class StateStoreCommitterThroughputIT {
                 IngestJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
                 tablePropertiesProvider(),
                 stateStoreProvider(),
+                new S3TransactionBodyStore(instanceProperties, null, s3),
                 Instant::now);
     }
 

@@ -43,18 +43,6 @@ public class StateStoreCommitRequestByTransaction {
     /**
      * Creates a commit request for a transaction in S3.
      *
-     * @param  tableId     the Sleeper table ID
-     * @param  bodyKey     the object key in the data bucket where the transaction body is stored
-     * @param  transaction the transaction
-     * @return             the commit request
-     */
-    public static StateStoreCommitRequestByTransaction create(String tableId, String bodyKey, StateStoreTransaction<?> transaction) {
-        return create(tableId, bodyKey, TransactionType.getType(transaction));
-    }
-
-    /**
-     * Creates a commit request for a transaction in S3.
-     *
      * @param  tableId         the Sleeper table ID
      * @param  bodyKey         the object key in the data bucket where the transaction body is stored
      * @param  transactionType the transaction type

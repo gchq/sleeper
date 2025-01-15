@@ -19,23 +19,19 @@ import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 
-import java.util.List;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -43,7 +39,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
 public class StateStoreCommitRequestByTransactionSerDeTest {
 
@@ -55,12 +50,9 @@ public class StateStoreCommitRequestByTransactionSerDeTest {
     @Test
     void shouldSerialiseCompactionCommitInS3() {
         // Given
-        PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        FileReference file = FileReferenceFactory.from(partitions).rootFile("new.parquet", 100);
-        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
-                replaceJobFileReferences("test-job", List.of("old.parquet"), file)));
+        String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
         StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create(
-                "test-table", "test-table/transactions/commit-compaction-transaction.json", transaction);
+                "test-table", key, TransactionType.REPLACE_FILE_REFERENCES);
 
         // When
         String json = serDe.toJsonPrettyPrint(commitRequest);
@@ -73,12 +65,9 @@ public class StateStoreCommitRequestByTransactionSerDeTest {
     @Test
     void shouldSerialiseInitialisePartitionsInS3() {
         // Given
-        PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 50L)
-                .buildList());
+        String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
         StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create(
-                "test-table", "test-table/transactions/initialise-transaction.json", transaction);
+                "test-table", key, TransactionType.INITIALISE_PARTITIONS);
 
         // When
         String json = serDe.toJsonPrettyPrint(commitRequest);

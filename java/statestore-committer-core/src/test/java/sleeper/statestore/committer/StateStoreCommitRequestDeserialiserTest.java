@@ -38,9 +38,8 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.ingest.core.job.IngestJob;
@@ -61,7 +60,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
 public class StateStoreCommitRequestDeserialiserTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -244,16 +242,8 @@ public class StateStoreCommitRequestDeserialiserTest {
     @Test
     void shouldDeserialiseCompactionCommitTransactionInS3() {
         // Given
-        FileReference file = FileReference.builder()
-                .filename("file.parquet")
-                .partitionId("root")
-                .numberOfRecords(100L)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
-                replaceJobFileReferences("test-job", List.of("old.parquet"), file)));
         String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
-        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", key, transaction);
+        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", key, TransactionType.REPLACE_FILE_REFERENCES);
         String jsonString = requestByTransactionSerDe().toJson(commitRequest);
 
         // When / Then
