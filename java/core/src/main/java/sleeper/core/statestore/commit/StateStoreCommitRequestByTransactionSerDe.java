@@ -32,6 +32,9 @@ import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.GsonConfig;
 
 import java.lang.reflect.Type;
+import java.util.Objects;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Serialises and deserialises a commit request for a transaction to be added to the state store.
@@ -41,6 +44,20 @@ public class StateStoreCommitRequestByTransactionSerDe {
     private final Gson gsonPrettyPrint;
 
     public StateStoreCommitRequestByTransactionSerDe(TablePropertiesProvider tablePropertiesProvider) {
+        this(tablePropertiesProvider::getById);
+    }
+
+    public StateStoreCommitRequestByTransactionSerDe(TableProperties tableProperties) {
+        this(tableId -> {
+            if (Objects.equals(tableId, tableProperties.get(TABLE_ID))) {
+                return tableProperties;
+            } else {
+                throw new IllegalArgumentException("Expected table ID " + tableProperties.get(TABLE_ID) + ", found " + tableId);
+            }
+        });
+    }
+
+    private StateStoreCommitRequestByTransactionSerDe(TablePropertiesSource tablePropertiesProvider) {
         GsonBuilder builder = GsonConfig.standardBuilder()
                 .registerTypeAdapter(StateStoreCommitRequestByTransaction.class, new TransactionByTypeJsonSerDe(tablePropertiesProvider));
         gson = builder.create();
@@ -81,9 +98,9 @@ public class StateStoreCommitRequestByTransactionSerDe {
      * A GSON plugin to serialise/deserialise a request for a transaction, serialising a transaction by its type.
      */
     public static class TransactionByTypeJsonSerDe implements JsonSerializer<StateStoreCommitRequestByTransaction>, JsonDeserializer<StateStoreCommitRequestByTransaction> {
-        private final TablePropertiesProvider tablePropertiesProvider;
+        private final TablePropertiesSource tablePropertiesProvider;
 
-        public TransactionByTypeJsonSerDe(TablePropertiesProvider tablePropertiesProvider) {
+        public TransactionByTypeJsonSerDe(TablePropertiesSource tablePropertiesProvider) {
             this.tablePropertiesProvider = tablePropertiesProvider;
         }
 
@@ -121,5 +138,18 @@ public class StateStoreCommitRequestByTransactionSerDe {
             TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
             return new TransactionSerDe(tableProperties.getSchema());
         }
+    }
+
+    /**
+     * A way to retrieve table properties by the table ID.
+     */
+    public interface TablePropertiesSource {
+        /**
+         * Gets the properties of a Sleeper table.
+         *
+         * @param  tableId the table ID
+         * @return         the properties
+         */
+        TableProperties getById(String tableId);
     }
 }

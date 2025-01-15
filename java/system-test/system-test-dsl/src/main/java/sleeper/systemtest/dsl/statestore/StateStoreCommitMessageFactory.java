@@ -17,8 +17,6 @@ package sleeper.systemtest.dsl.statestore;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -27,6 +25,9 @@ import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
@@ -83,9 +84,11 @@ public class StateStoreCommitMessageFactory {
             String jobId, String partitionId, List<String> filenames, String taskId, String jobRunId, JobRunSummary recordsProcessed) {
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job = factory.createCompactionJobWithFilenames(jobId, filenames, partitionId);
-        CompactionJobCommitRequest request = new CompactionJobCommitRequest(job, taskId, jobRunId, recordsProcessed);
+        ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                job.createReplaceFileReferencesRequest(taskId, jobRunId, recordsProcessed.getRecordsProcessed())));
+        StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), transaction);
         return StateStoreCommitMessage.tableIdAndBody(tableId(),
-                new CompactionJobCommitRequestSerDe().toJson(request));
+                new StateStoreCommitRequestByTransactionSerDe(tableProperties).toJson(request));
     }
 
     public StateStoreCommitMessage filesDeleted(List<String> filenames) {
