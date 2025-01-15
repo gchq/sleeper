@@ -51,7 +51,8 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         taskId = builder.taskId;
         jobRunId = builder.jobRunId;
         writtenTime = builder.writtenTime;
-        files = builder.files.stream().map(file -> file.withCreatedUpdateTime(null)).toList();
+        files = Objects.requireNonNull(builder.files, "files must not be null")
+                .stream().map(file -> file.withCreatedUpdateTime(null)).toList();
     }
 
     public static Builder builder() {
