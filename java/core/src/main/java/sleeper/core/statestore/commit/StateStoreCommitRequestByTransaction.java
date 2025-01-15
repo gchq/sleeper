@@ -16,7 +16,6 @@
 package sleeper.core.statestore.commit;
 
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 
 import java.util.Objects;
@@ -72,20 +71,6 @@ public class StateStoreCommitRequestByTransaction {
 
     public String getBodyKey() {
         return bodyKey;
-    }
-
-    /**
-     * Reads the transaction from S3.
-     *
-     * @param  transactionBodyStore the transaction body store
-     * @return                      the transaction
-     */
-    public <T extends StateStoreTransaction<?>> T getTransaction(TransactionBodyStore transactionBodyStore) {
-        if (transaction != null) {
-            return (T) transaction;
-        } else {
-            return transactionBodyStore.getBody(bodyKey, transactionType);
-        }
     }
 
     /**

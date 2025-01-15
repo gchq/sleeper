@@ -31,6 +31,7 @@ import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -44,6 +45,7 @@ import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -189,11 +191,10 @@ public class StateStoreCommitter {
     void addTransaction(StateStoreCommitRequestByTransaction request) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        TransactionBodyStore transactionBodyStore = transactionBodyStoreProvider.getTransactionBodyStore(tableProperties);
         if (stateStore instanceof TransactionLogStateStore) {
             TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
             if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {
-                ReplaceFileReferencesTransaction transaction = request.getTransaction(transactionBodyStore);
+                ReplaceFileReferencesTransaction transaction = getTransaction(tableProperties, request);
                 AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                         .bodyKey(request.getBodyKey())
                         .beforeApplyListener((number, state) -> transaction.reportJobCommits(
@@ -202,11 +203,23 @@ public class StateStoreCommitter {
                 transactionStateStore.addTransaction(addTransaction);
             } else {
                 transactionStateStore.addTransaction(
-                        AddTransactionRequest.withTransaction(request.getTransaction(transactionBodyStore))
-                                .bodyKey(request.getBodyKey()).build());
+                        AddTransactionRequest.withTransaction(getTransaction(tableProperties, request))
+                                .bodyKey(request.getBodyKey())
+                                .build());
             }
         } else {
             throw new UnsupportedOperationException("Cannot add a transaction for a non-transaction log state store");
+        }
+    }
+
+    private <T extends StateStoreTransaction<?>> T getTransaction(
+            TableProperties tableProperties, StateStoreCommitRequestByTransaction request) {
+        Optional<T> transaction = request.getTransactionIfHeld();
+        if (transaction.isPresent()) {
+            return transaction.get();
+        } else {
+            TransactionBodyStore store = transactionBodyStoreProvider.getTransactionBodyStore(tableProperties);
+            return store.getBody(request.getBodyKey(), request.getTransactionType());
         }
     }
 
