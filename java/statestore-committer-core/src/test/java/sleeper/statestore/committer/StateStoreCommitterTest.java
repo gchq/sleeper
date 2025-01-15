@@ -58,7 +58,6 @@ import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 
@@ -817,10 +816,7 @@ public class StateStoreCommitterTest {
     }
 
     private StateStoreCommitRequest addFilesRequest(String tableId, FileReference... files) {
-        IngestAddFilesCommitRequest request = IngestAddFilesCommitRequest.builder()
-                .tableId(tableId)
-                .fileReferences(List.of(files))
-                .build();
-        return StateStoreCommitRequest.forIngestAddFiles(request);
+        return StateStoreCommitRequest.forTransaction(StateStoreCommitRequestByTransaction.create(tableId,
+                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(files)))));
     }
 }
