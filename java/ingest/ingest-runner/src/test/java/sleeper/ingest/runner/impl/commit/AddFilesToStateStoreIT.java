@@ -36,13 +36,15 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 
 import java.util.List;
 import java.util.Map;
@@ -89,11 +91,8 @@ public class AddFilesToStateStoreIT {
 
         // Then
         assertThat(receiveAddFilesCommitMessages())
-                .containsExactly(
-                        IngestAddFilesCommitRequest.builder()
-                                .fileReferences(List.of(file1))
-                                .tableId(tableProperties.get(TABLE_ID))
-                                .build());
+                .containsExactly(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID),
+                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))));
     }
 
     @Test
@@ -113,10 +112,8 @@ public class AddFilesToStateStoreIT {
         assertThat(receiveCommitRequestStoredInS3Messages())
                 .containsExactly(new StateStoreCommitRequestInS3(expectedS3Key));
         assertThat(readAddFilesCommitRequestFromDataBucket(expectedS3Key))
-                .isEqualTo(IngestAddFilesCommitRequest.builder()
-                        .fileReferences(fileReferences)
-                        .tableId(tableProperties.get(TABLE_ID))
-                        .build());
+                .isEqualTo(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID),
+                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(fileReferences))));
     }
 
     private String createFifoQueueGetUrl() {
@@ -131,10 +128,11 @@ public class AddFilesToStateStoreIT {
     }
 
     private AddFilesToStateStore bySqs(Supplier<String> filenameSupplier) {
-        return AddFilesToStateStore.bySqs(sqs, instanceProperties,
+        return AddFilesToStateStore.bySqsNew(sqs, instanceProperties, tableProperties,
                 new StateStoreCommitRequestInS3Uploader(instanceProperties, s3::putObject,
                         StateStoreCommitRequestInS3Uploader.MAX_JSON_LENGTH, filenameSupplier),
-                request -> request.tableId(tableProperties.get(TABLE_ID)));
+                request -> {
+                });
     }
 
     private List<StateStoreCommitRequestInS3> receiveCommitRequestStoredInS3Messages() {
@@ -143,9 +141,9 @@ public class AddFilesToStateStoreIT {
                 .collect(Collectors.toList());
     }
 
-    private List<IngestAddFilesCommitRequest> receiveAddFilesCommitMessages() {
+    private List<StateStoreCommitRequestByTransaction> receiveAddFilesCommitMessages() {
         return receiveCommitMessages().stream()
-                .map(message -> new IngestAddFilesCommitRequestSerDe().fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 
@@ -156,8 +154,8 @@ public class AddFilesToStateStoreIT {
         return sqs.receiveMessage(receiveMessageRequest).getMessages();
     }
 
-    private IngestAddFilesCommitRequest readAddFilesCommitRequestFromDataBucket(String s3Key) {
+    private StateStoreCommitRequestByTransaction readAddFilesCommitRequestFromDataBucket(String s3Key) {
         String requestJson = s3.getObjectAsString(instanceProperties.get(DATA_BUCKET), s3Key);
-        return new IngestAddFilesCommitRequestSerDe().fromJson(requestJson);
+        return new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(requestJson);
     }
 }
