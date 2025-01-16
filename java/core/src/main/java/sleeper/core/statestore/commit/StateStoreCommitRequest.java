@@ -101,7 +101,7 @@ public class StateStoreCommitRequest {
 
     @Override
     public String toString() {
-        return "StateStoreCommitRequestByTransaction{tableId=" + tableId + ", transactionType=" + transactionType + ", bodyKey=" + bodyKey + ", transaction=" + transaction + "}";
+        return "StateStoreCommitRequest{tableId=" + tableId + ", transactionType=" + transactionType + ", bodyKey=" + bodyKey + ", transaction=" + transaction + "}";
     }
 
 }
