@@ -24,7 +24,6 @@ import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -115,9 +114,6 @@ public class StateStoreCommitRequestDeserialiser {
                 case STORED_IN_S3:
                     return fromDataBucket.read(
                             context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
-                case COMPACTION_JOB_ID_ASSIGNMENT:
-                    return StateStoreCommitRequest.forCompactionJobIdAssignment(
-                            context.deserialize(requestObj, CompactionJobIdAssignmentCommitRequest.class));
                 case SPLIT_PARTITION:
                     return StateStoreCommitRequest.forSplitPartition(
                             context.deserialize(requestObj, SplitPartitionCommitRequest.class));

@@ -21,7 +21,6 @@ package sleeper.core.statestore.commit;
 public enum CommitRequestType {
     STORED_IN_S3,
     INGEST_ADD_FILES,
-    COMPACTION_JOB_ID_ASSIGNMENT,
     SPLIT_PARTITION,
     GARBAGE_COLLECTED_FILES
 }

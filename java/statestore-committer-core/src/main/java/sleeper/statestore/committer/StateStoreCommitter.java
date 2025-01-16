@@ -18,7 +18,6 @@ package sleeper.statestore.committer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
@@ -137,11 +136,6 @@ public class StateStoreCommitter {
     void splitPartition(SplitPartitionCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStore(request.getTableId());
         stateStore.atomicallyUpdatePartitionAndCreateNewOnes(request.getParentPartition(), request.getLeftChild(), request.getRightChild());
-    }
-
-    void assignCompactionInputFiles(CompactionJobIdAssignmentCommitRequest request) throws StateStoreException {
-        StateStore stateStore = stateStore(request.getTableId());
-        stateStore.assignJobIds(request.getAssignJobIdRequests());
     }
 
     void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
