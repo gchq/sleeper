@@ -184,11 +184,6 @@ public class StateStoreCommitter {
         }
     }
 
-    private StateStore stateStore(String tableId) {
-        TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
-        return stateStoreProvider.getStateStore(tableProperties);
-    }
-
     /**
      * Wraps a commit request to track callbacks as a request handle.
      */

@@ -92,8 +92,4 @@ public class StateStoreCommitMessageFactory {
         return StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), transaction);
     }
 
-    private String tableId() {
-        return tableProperties.get(TABLE_ID);
-    }
-
 }
