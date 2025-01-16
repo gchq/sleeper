@@ -20,6 +20,7 @@ import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
 import java.util.Objects;
@@ -81,6 +82,16 @@ public class StateStoreCommitRequest {
      */
     public static StateStoreCommitRequest forGarbageCollection(GarbageCollectionCommitRequest request) {
         return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.filesDeleted(request));
+    }
+
+    /**
+     * Creates a request to commit a transaction.
+     *
+     * @param  request the request
+     * @return         a state store commit request
+     */
+    public static StateStoreCommitRequest forTransaction(StateStoreCommitRequestByTransaction request) {
+        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.addTransaction(request));
     }
 
     private StateStoreCommitRequest(Object request, String tableId, ApplyRequest applyRequest) {

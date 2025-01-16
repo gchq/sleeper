@@ -25,11 +25,7 @@ import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
-import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
-import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
-import sleeper.core.tracker.job.run.JobRunTime;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -95,23 +91,26 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
             }
             try {
                 job.validateStateChange(stateBefore);
-                tracker.jobCommitted(CompactionJobCommittedEvent.builder()
-                        .jobId(job.getJobId())
-                        .tableId(sleeperTable.getTableUniqueId())
-                        .taskId(job.getTaskId())
-                        .jobRunId(job.getJobRunId())
-                        .commitTime(now)
-                        .build());
+                tracker.jobCommitted(job.createCommittedEvent(sleeperTable, now));
             } catch (StateStoreException e) {
-                tracker.jobFailed(CompactionJobFailedEvent.builder()
-                        .jobId(job.getJobId())
-                        .tableId(sleeperTable.getTableUniqueId())
-                        .taskId(job.getTaskId())
-                        .jobRunId(job.getJobRunId())
-                        .runTime(new JobRunTime(now, Duration.ZERO))
-                        .failure(e)
-                        .build());
+                tracker.jobFailed(job.createFailedEvent(sleeperTable, now, e));
             }
+        }
+    }
+
+    /**
+     * Reports that the whole transaction failed to commit.
+     *
+     * @param tracker      the job tracker
+     * @param sleeperTable the table being updated
+     * @param now          the current time
+     */
+    public void reportJobsAllFailed(CompactionJobTracker tracker, TableStatus sleeperTable, Instant now, Exception e) {
+        for (ReplaceFileReferencesRequest job : jobs) {
+            if (job.getTaskId() == null) {
+                continue;
+            }
+            tracker.jobFailed(job.createFailedEvent(sleeperTable, now, e));
         }
     }
 

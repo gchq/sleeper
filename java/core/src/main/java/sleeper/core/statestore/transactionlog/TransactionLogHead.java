@@ -79,7 +79,7 @@ class TransactionLogHead<T> {
     }
 
     void addTransaction(Instant updateTime, StateStoreTransaction<T> transaction) throws StateStoreException {
-        addTransaction(updateTime, AddTransactionRequest.transaction(transaction));
+        addTransaction(updateTime, AddTransactionRequest.withTransaction(transaction).build());
     }
 
     /**

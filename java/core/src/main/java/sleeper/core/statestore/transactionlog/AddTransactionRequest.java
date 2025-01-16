@@ -35,27 +35,6 @@ public class AddTransactionRequest {
     }
 
     /**
-     * Creates a request to add a transaction that's held in S3.
-     *
-     * @param  bodyKey     the object key in the data bucket
-     * @param  transaction the transaction object
-     * @return             the request
-     */
-    public static AddTransactionRequest transactionInBucket(String bodyKey, StateStoreTransaction<?> transaction) {
-        return withTransaction(transaction).bodyKey(bodyKey).build();
-    }
-
-    /**
-     * Creates a request to add a transaction that's not held in S3.
-     *
-     * @param  transaction the transaction object
-     * @return             the request
-     */
-    public static AddTransactionRequest transaction(StateStoreTransaction<?> transaction) {
-        return withTransaction(transaction).build();
-    }
-
-    /**
      * Creates a builder to add a given transaction.
      *
      * @param  transaction the transaction object

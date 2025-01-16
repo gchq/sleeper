@@ -28,14 +28,21 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
+import sleeper.core.statestore.transactionlog.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.ingest.core.job.IngestJob;
@@ -259,6 +266,35 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .isInstanceOf(CommitRequestValidationException.class);
     }
 
+    @Test
+    void shouldDeserialiseInitialisePartitionsTransactionInS3() {
+        // Given
+        String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
+        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", key, TransactionType.INITIALISE_PARTITIONS);
+        String jsonString = requestByTransactionSerDe().toJson(commitRequest);
+
+        // When / Then
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forTransaction(commitRequest));
+    }
+
+    @Test
+    void shouldDeserialiseInitialisePartitionsTransactionInRequest() {
+        // Given
+        Schema schema = schemaWithKey("key", new LongType());
+        createTable("test-table", schema);
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 5L)
+                .buildList());
+        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
+        String jsonString = requestByTransactionSerDe().toJson(commitRequest);
+
+        // When / Then
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forTransaction(commitRequest));
+    }
+
     private void createTable(String tableId, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_ID, tableId);
@@ -267,5 +303,9 @@ public class StateStoreCommitRequestDeserialiserTest {
 
     private StateStoreCommitRequestDeserialiser deserialiser() {
         return new StateStoreCommitRequestDeserialiser(new FixedTablePropertiesProvider(tables), dataBucketObjectByKey::get);
+    }
+
+    private StateStoreCommitRequestByTransactionSerDe requestByTransactionSerDe() {
+        return new StateStoreCommitRequestByTransactionSerDe(new FixedTablePropertiesProvider(tables));
     }
 }

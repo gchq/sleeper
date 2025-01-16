@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobCommitter;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
@@ -30,7 +29,14 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRunTime;
@@ -39,6 +45,7 @@ import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -54,6 +61,7 @@ public class StateStoreCommitter {
     private final IngestJobTracker ingestJobTracker;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final TransactionBodyStoreProvider transactionBodyStoreProvider;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
@@ -61,11 +69,13 @@ public class StateStoreCommitter {
             IngestJobTracker ingestJobTracker,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
+            TransactionBodyStoreProvider transactionBodyStoreProvider,
             Supplier<Instant> timeSupplier) {
         this.compactionJobTracker = compactionJobTracker;
         this.ingestJobTracker = ingestJobTracker;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
+        this.transactionBodyStoreProvider = transactionBodyStoreProvider;
         this.timeSupplier = timeSupplier;
     }
 
@@ -133,7 +143,8 @@ public class StateStoreCommitter {
         CompactionJob job = request.getJob();
         StateStore stateStore = stateStore(job.getTableId());
         try {
-            CompactionJobCommitter.updateStateStoreSuccess(job, request.getRecordsWritten(), stateStore);
+            stateStore.atomicallyReplaceFileReferencesWithNewOnes(
+                    List.of(job.replaceFileReferencesRequestBuilder(request.getRecordsWritten()).build()));
         } catch (Exception e) {
             compactionJobTracker.jobFailed(job
                     .failedEventBuilder(new JobRunTime(request.getFinishTime(), timeSupplier.get()))
@@ -175,6 +186,46 @@ public class StateStoreCommitter {
     void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
         StateStore stateStore = stateStore(request.getTableId());
         stateStore.deleteGarbageCollectedFileReferenceCounts(request.getFilenames());
+    }
+
+    void addTransaction(StateStoreCommitRequestByTransaction request) throws StateStoreException {
+        TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        if (stateStore instanceof TransactionLogStateStore) {
+            TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
+            if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {
+                ReplaceFileReferencesTransaction transaction = getTransaction(tableProperties, request);
+                AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
+                        .bodyKey(request.getBodyKey())
+                        .beforeApplyListener((number, state) -> transaction.reportJobCommits(
+                                compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
+                        .build();
+                try {
+                    transactionStateStore.addTransaction(addTransaction);
+                } catch (Exception e) {
+                    transaction.reportJobsAllFailed(compactionJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
+                    throw e;
+                }
+            } else {
+                transactionStateStore.addTransaction(
+                        AddTransactionRequest.withTransaction(getTransaction(tableProperties, request))
+                                .bodyKey(request.getBodyKey())
+                                .build());
+            }
+        } else {
+            throw new UnsupportedOperationException("Cannot add a transaction for a non-transaction log state store");
+        }
+    }
+
+    private <T extends StateStoreTransaction<?>> T getTransaction(
+            TableProperties tableProperties, StateStoreCommitRequestByTransaction request) {
+        Optional<T> transaction = request.getTransactionIfHeld();
+        if (transaction.isPresent()) {
+            return transaction.get();
+        } else {
+            TransactionBodyStore store = transactionBodyStoreProvider.getTransactionBodyStore(tableProperties);
+            return store.getBody(request.getBodyKey(), request.getTransactionType());
+        }
     }
 
     private StateStore stateStore(String tableId) {

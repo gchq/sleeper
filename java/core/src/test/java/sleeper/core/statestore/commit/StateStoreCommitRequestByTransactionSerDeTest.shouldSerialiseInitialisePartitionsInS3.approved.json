@@ -1,0 +1,5 @@
+{
+  "tableId": "test-table",
+  "transactionType": "INITIALISE_PARTITIONS",
+  "bodyKey": "test-table/statestore/transactions/2025-01-14T15:30:00Z-test-transaction.json"
+}

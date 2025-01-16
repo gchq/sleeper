@@ -125,12 +125,12 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             stateStore.initialise(tree.getAllPartitions());
             FileReference file = fileFactory(tree).rootFile("test.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
-            String key = S3TransactionBodyStore.createObjectKey(instanceProperties, tableProperties);
+            String key = TransactionBodyStore.createObjectKey(tableProperties);
             TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
 
             // When
             transactionBodyStore.store(key, transaction);
-            stateStore.addTransaction(AddTransactionRequest.transactionInBucket(key, transaction));
+            stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
 
             // Then
             assertThat(createStateStore().getFileReferences()).containsExactly(file);

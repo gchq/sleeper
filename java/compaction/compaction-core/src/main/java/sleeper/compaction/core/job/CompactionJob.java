@@ -17,6 +17,8 @@ package sleeper.compaction.core.job;
 
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.CheckFileAssignmentsRequest;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
@@ -102,6 +104,21 @@ public class CompactionJob {
 
     public CompactionJobFailedEvent.Builder failedEventBuilder(JobRunTime runTime) {
         return CompactionJobFailedEvent.builder().jobId(jobId).tableId(tableId).runTime(runTime);
+    }
+
+    public FileReference createOutputFileReference(long recordsWritten) {
+        return FileReference.builder()
+                .filename(outputFile)
+                .partitionId(partitionId)
+                .numberOfRecords(recordsWritten)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+    }
+
+    public ReplaceFileReferencesRequest.Builder replaceFileReferencesRequestBuilder(long recordsWritten) {
+        return ReplaceFileReferencesRequest.builder().jobId(jobId).inputFiles(inputFiles)
+                .newReference(createOutputFileReference(recordsWritten));
     }
 
     /**

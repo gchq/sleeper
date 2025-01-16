@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
@@ -64,6 +65,16 @@ public class TransactionSerDe {
     }
 
     /**
+     * Serialises a transaction to JSON.
+     *
+     * @param  transaction the transaction
+     * @return             the JSON
+     */
+    public JsonElement toJsonTree(StateStoreTransaction<?> transaction) {
+        return gson.toJsonTree(transaction);
+    }
+
+    /**
      * Deserialises a transaction from JSON.
      *
      * @param  type the type of transaction (expected to be held in the log entry)
@@ -71,6 +82,17 @@ public class TransactionSerDe {
      * @return      the transaction
      */
     public StateStoreTransaction<?> toTransaction(TransactionType type, String json) {
+        return gson.fromJson(json, type.getType());
+    }
+
+    /**
+     * Deserialises a transaction from JSON.
+     *
+     * @param  type the type of transaction (expected to be held in the log entry)
+     * @param  json the JSON
+     * @return      the transaction
+     */
+    public StateStoreTransaction<?> toTransaction(TransactionType type, JsonElement json) {
         return gson.fromJson(json, type.getType());
     }
 }

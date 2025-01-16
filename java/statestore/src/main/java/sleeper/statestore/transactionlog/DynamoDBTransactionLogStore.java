@@ -29,6 +29,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogDeletionTracker;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
@@ -193,7 +194,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
         if (lengthInBytes < 1024 * 350) {
             builder.string(BODY, body);
         } else {
-            String key = S3TransactionBodyStore.createObjectKey(instanceProperties, tableProperties);
+            String key = TransactionBodyStore.createObjectKey(tableProperties);
             LOGGER.info("Found large {} transaction, saving to data bucket instead of DynamoDB at {}", transactionDescription, key);
             builder.string(BODY_S3_KEY, key);
             transactionBodyStore.store(key, body);

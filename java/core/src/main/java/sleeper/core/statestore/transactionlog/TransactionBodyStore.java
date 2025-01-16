@@ -15,7 +15,13 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+
+import java.time.Instant;
+import java.util.UUID;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * A store of the bodies of transactions that will be referenced in a transaction log. Used by
@@ -39,4 +45,27 @@ public interface TransactionBodyStore {
      * @return     the transaction
      */
     <T extends StateStoreTransaction<?>> T getBody(String key, TransactionType transactionType);
+
+    /**
+     * Creates an object key for a new transaction file with a randomly generated filename. The file will not yet exist.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @return                 the object key
+     */
+    static String createObjectKey(TableProperties tableProperties) {
+        // Use a random UUID to avoid conflicting when another process is adding a transaction at the same time
+        return createObjectKey(tableProperties.get(TABLE_ID), Instant.now(), UUID.randomUUID().toString());
+    }
+
+    /**
+     * Creates an object key for a new transaction file with a randomly generated filename. The file will not yet exist.
+     *
+     * @param  tableId the Sleeper table ID
+     * @param  now     the time now
+     * @param  uuid    a random UUID
+     * @return         the object key
+     */
+    static String createObjectKey(String tableId, Instant now, String uuid) {
+        return tableId + "/statestore/transactions/" + now + "-" + uuid + ".json";
+    }
 }

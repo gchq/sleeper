@@ -447,7 +447,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             transactionBodyStore.store(key, transaction);
 
             // When
-            store.addTransaction(AddTransactionRequest.transactionInBucket(key, transaction));
+            store.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
 
             // Then
             assertThat(otherProcess().getFileReferences()).containsExactly(file);
@@ -462,7 +462,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             transactionBodyStore.store(key, transaction);
 
             // When
-            store.addTransaction(AddTransactionRequest.transactionInBucket(key, transaction));
+            store.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
 
             // Then
             assertThat(otherProcess().getAllPartitions()).isEqualTo(tree.getAllPartitions());
@@ -474,7 +474,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             String key = "table/transactions/myTransaction.json";
-            store.addTransaction(AddTransactionRequest.transactionInBucket(key, transaction));
+            store.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
 
             // When / Then
             assertThatThrownBy(() -> otherProcess().getFileReferences())
@@ -490,7 +490,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReferenceTransaction transactionInLog = new ClearFilesTransaction();
             String key = "table/transactions/myTransaction.json";
             transactionBodyStore.store(key, transactionInStore);
-            store.addTransaction(AddTransactionRequest.transactionInBucket(key, transactionInLog));
+            store.addTransaction(AddTransactionRequest.withTransaction(transactionInLog).bodyKey(key).build());
 
             // When / Then
             assertThatThrownBy(() -> otherProcess().getFileReferences())

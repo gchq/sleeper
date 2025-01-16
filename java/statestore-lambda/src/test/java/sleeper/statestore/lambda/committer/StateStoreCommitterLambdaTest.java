@@ -139,7 +139,7 @@ public class StateStoreCommitterLambdaTest {
 
     private StateStoreCommitter committer(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
         return new StateStoreCommitter(CompactionJobTracker.NONE, IngestJobTracker.NONE,
-                tablePropertiesProvider, stateStoreProvider,
+                tablePropertiesProvider, stateStoreProvider, transactionLogs.getTransactionBodyStore(),
                 Instant::now);
     }
 

@@ -16,6 +16,7 @@
 package sleeper.core.statestore.testutils;
 
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
@@ -34,6 +35,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class InMemoryTransactionLogsPerTable {
 
     private final Map<String, InMemoryTransactionLogs> transactionLogsByTableId = new LinkedHashMap<>();
+    private final InMemoryTransactionBodyStore transactionBodyStore = new InMemoryTransactionBodyStore();
     private final List<Duration> retryWaits = new ArrayList<>();
 
     /**
@@ -64,7 +66,11 @@ public class InMemoryTransactionLogsPerTable {
      * @return         the helper
      */
     public InMemoryTransactionLogs forTableId(String tableId) {
-        return transactionLogsByTableId.computeIfAbsent(tableId, id -> InMemoryTransactionLogs.recordRetryWaits(retryWaits));
+        return transactionLogsByTableId.computeIfAbsent(tableId, id -> InMemoryTransactionLogs.recordRetryWaits(transactionBodyStore, retryWaits));
+    }
+
+    public InMemoryTransactionBodyStore getTransactionBodyStore() {
+        return transactionBodyStore;
     }
 
     public List<Duration> getRetryWaits() {

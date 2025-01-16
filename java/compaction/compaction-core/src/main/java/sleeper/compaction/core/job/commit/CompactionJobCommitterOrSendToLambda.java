@@ -27,6 +27,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
@@ -69,9 +70,8 @@ public class CompactionJobCommitterOrSendToLambda {
             LOGGER.info("Sent compaction job {} to queue to be committed asynchronously to table {}", job.getId(), table);
         } else {
             LOGGER.debug("Committing compaction job {} inside compaction task", job.getId());
-            CompactionJobCommitter.updateStateStoreSuccess(job,
-                    finishedEvent.getSummary().getRecordsWritten(),
-                    stateStoreProvider.getStateStore(tableProperties));
+            stateStoreProvider.getStateStore(tableProperties).atomicallyReplaceFileReferencesWithNewOnes(
+                    List.of(job.replaceFileReferencesRequestBuilder(finishedEvent.getSummary().getRecordsWritten()).build()));
             tracker.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())
