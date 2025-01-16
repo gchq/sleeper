@@ -72,10 +72,11 @@ public class StateStoreCommitRequestInS3SerDe {
      * deserialise the correct commit request.
      */
     private static class WrappedCommitRequest {
-        private final String type = "STORED_IN_S3";
+        private final String type;
         private final StateStoreCommitRequestInS3 request;
 
         WrappedCommitRequest(StateStoreCommitRequestInS3 request) {
+            this.type = "STORED_IN_S3";
             this.request = request;
         }
     }
