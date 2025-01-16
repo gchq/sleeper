@@ -23,7 +23,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
@@ -130,11 +129,6 @@ public class StateStoreCommitter {
         request.apply(this);
         LOGGER.info("Applied request to table ID {} with type {} at time {}",
                 request.getTableId(), request.getRequest().getClass().getSimpleName(), Instant.now());
-    }
-
-    void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
-        StateStore stateStore = stateStore(request.getTableId());
-        stateStore.deleteGarbageCollectedFileReferenceCounts(request.getFilenames());
     }
 
     void addTransaction(StateStoreCommitRequestByTransaction request) throws StateStoreException {
