@@ -15,6 +15,7 @@
  */
 package sleeper.garbagecollector;
 
+import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
@@ -29,12 +30,12 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
+import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -198,11 +199,12 @@ public class GarbageCollector {
 
     public static SendAsyncCommit sendAsyncCommit(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            AmazonSQS sqs, StateStoreCommitRequestInS3Uploader s3Uploader) {
-        StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider);
+            AmazonSQS sqs, AmazonS3 s3, int maxCommitLength) {
+        StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(tablePropertiesProvider,
+                S3TransactionBodyStore.createProvider(instanceProperties, s3), maxCommitLength);
         return request -> sqs.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMessageBody(s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request)))
+                .withMessageBody(uploader.serialiseAndUploadIfTooBig(request))
                 .withMessageGroupId(request.getTableId())
                 .withMessageDeduplicationId(UUID.randomUUID().toString()));
     }
