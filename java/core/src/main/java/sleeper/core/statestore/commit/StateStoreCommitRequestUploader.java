@@ -24,16 +24,18 @@ import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
  * Handles uploading transactions to S3 if a commit request is too big to fit in an SQS message.
  */
 public class StateStoreCommitRequestUploader {
+    public static final int MAX_SQS_LENGTH = 262144;
+
     private final TablePropertiesProvider tablePropertiesProvider;
     private final TransactionBodyStoreProvider transactionBodyStore;
     private final StateStoreCommitRequestByTransactionSerDe serDe;
-    private final int maxBodyLength;
+    private final int maxLength;
 
     public StateStoreCommitRequestUploader(
-            TablePropertiesProvider tablePropertiesProvider, TransactionBodyStoreProvider transactionBodyStore, int maxBodyLength) {
+            TablePropertiesProvider tablePropertiesProvider, TransactionBodyStoreProvider transactionBodyStore, int maxLength) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.transactionBodyStore = transactionBodyStore;
-        this.maxBodyLength = maxBodyLength;
+        this.maxLength = maxLength;
         this.serDe = new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider);
     }
 
@@ -45,7 +47,7 @@ public class StateStoreCommitRequestUploader {
      */
     public String serialiseAndUploadIfTooBig(StateStoreCommitRequestByTransaction request) {
         String json = serDe.toJson(request);
-        if (json.length() < maxBodyLength) {
+        if (json.length() < maxLength) {
             return json;
         } else {
             TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
