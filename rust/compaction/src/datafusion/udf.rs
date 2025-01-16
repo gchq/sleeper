@@ -34,7 +34,7 @@ use arrow::{
 };
 use datafusion::{
     common::{internal_err, DFSchema, Result},
-    logical_expr::{ColumnarValue, ScalarUDFImpl, Signature, Volatility},
+    logical_expr::{ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility},
     scalar::ScalarValue,
 };
 
@@ -134,12 +134,12 @@ impl ScalarUDFImpl for SketchUDF {
         Ok(args[0].clone())
     }
 
-    fn invoke(&self, columns: &[ColumnarValue]) -> Result<ColumnarValue> {
+    fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
         *self.invoke_count.lock().unwrap() += 1;
 
         let mut sk_lock = self.sketch.lock().unwrap();
 
-        for (sketch, col) in zip(sk_lock.iter_mut(), columns) {
+        for (sketch, col) in zip(sk_lock.iter_mut(), &args.args) {
             match col {
                 ColumnarValue::Array(array) => {
                     // dynamic dispatch. Match the datatype to the type of sketch to update.
@@ -203,6 +203,6 @@ impl ScalarUDFImpl for SketchUDF {
             }
         }
 
-        Ok(columns[0].clone())
+        Ok(args.args[0].clone())
     }
 }
