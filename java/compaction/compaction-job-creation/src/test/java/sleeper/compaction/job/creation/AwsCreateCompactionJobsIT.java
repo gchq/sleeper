@@ -52,6 +52,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
@@ -65,7 +66,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobsNew;
 import static sleeper.compaction.core.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
 import static sleeper.compaction.core.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.core.job.creation.CreateJobsTestUtils.createTableProperties;
@@ -154,7 +154,8 @@ public class AwsCreateCompactionJobsIT {
                 assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
                 assertThat(job.getPartitionId()).isEqualTo("root");
                 assertThat(jobIdAssignmentRequests).containsExactly(
-                        requestToAssignFilesToJobsNew(List.of(job), tableProperties.get(TABLE_ID)));
+                        StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
+                                List.of(job.createAssignJobIdRequest()))));
             });
         });
     }

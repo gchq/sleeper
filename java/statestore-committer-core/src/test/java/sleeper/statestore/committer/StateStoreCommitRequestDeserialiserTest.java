@@ -17,9 +17,6 @@ package sleeper.statestore.committer;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -52,7 +49,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -62,33 +58,6 @@ public class StateStoreCommitRequestDeserialiserTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, String> dataBucketObjectByKey = new HashMap<>();
-
-    @Test
-    void shouldDeserialiseCompactionJobIdAssignmentCommitRequest() {
-        // Given
-        CompactionJob job1 = CompactionJob.builder()
-                .tableId("test-table")
-                .jobId("test-job-1")
-                .inputFiles(List.of("file1.parquet", "file2.parquet"))
-                .outputFile("test-output-1.parquet")
-                .partitionId("test-partition-id")
-                .build();
-        CompactionJob job2 = CompactionJob.builder()
-                .tableId("test-table")
-                .jobId("test-job-2")
-                .inputFiles(List.of("file3.parquet", "file4.parquet"))
-                .outputFile("test-output-2.parquet")
-                .partitionId("test-partition-id")
-                .build();
-        CompactionJobIdAssignmentCommitRequest jobIdAssignmentRequest = requestToAssignFilesToJobs(
-                List.of(job1, job2), "test-table");
-        String jsonString = new CompactionJobIdAssignmentCommitRequestSerDe().toJson(jobIdAssignmentRequest);
-
-        // When / Then
-        assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forCompactionJobIdAssignment(jobIdAssignmentRequest))
-                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
-    }
 
     @Test
     void shouldDeserialiseIngestJobCommitRequest() {
