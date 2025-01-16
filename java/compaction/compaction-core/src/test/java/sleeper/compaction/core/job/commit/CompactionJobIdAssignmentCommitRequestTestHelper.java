@@ -16,6 +16,8 @@
 package sleeper.compaction.core.job.commit;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,5 +30,10 @@ public class CompactionJobIdAssignmentCommitRequestTestHelper {
         return CompactionJobIdAssignmentCommitRequest.tableRequests(tableId, jobs.stream()
                 .map(job -> job.createAssignJobIdRequest())
                 .collect(Collectors.toList()));
+    }
+
+    public static StateStoreCommitRequestByTransaction requestToAssignFilesToJobsNew(List<CompactionJob> jobs, String tableId) {
+        return StateStoreCommitRequestByTransaction.create(tableId, new AssignJobIdsTransaction(
+                jobs.stream().map(CompactionJob::createAssignJobIdRequest).toList()));
     }
 }
