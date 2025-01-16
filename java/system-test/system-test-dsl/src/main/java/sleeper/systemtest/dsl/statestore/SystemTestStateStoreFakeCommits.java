@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.util.LoggedDuration;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -98,27 +99,27 @@ public class SystemTestStateStoreFakeCommits {
         return this;
     }
 
-    private void sendParallelBatches(Stream<StateStoreCommitMessage> messages) {
+    private void sendParallelBatches(Stream<StateStoreCommitRequestByTransaction> messages) {
         Instant startTime = Instant.now();
         driver.sendCommitMessagesInParallelBatches(countCommits(messages));
         LOGGER.info("Sent commit messages in parallel batches in {}, total commits by table ID: {}",
                 LoggedDuration.withShortOutput(startTime, Instant.now()), waitForNumCommitsByTableId);
     }
 
-    private void sendSequentialBatches(Stream<StateStoreCommitMessage> messages) {
+    private void sendSequentialBatches(Stream<StateStoreCommitRequestByTransaction> messages) {
         Instant startTime = Instant.now();
         driver.sendCommitMessagesInSequentialBatches(countCommits(messages));
         LOGGER.info("Sent commit messages in sequential batches in {}, total commits by table ID: {}",
                 LoggedDuration.withShortOutput(startTime, Instant.now()), waitForNumCommitsByTableId);
     }
 
-    private Stream<StateStoreCommitMessage> forCurrentTable(Stream<StateStoreCommitMessage.Commit> commits) {
+    private Stream<StateStoreCommitRequestByTransaction> forCurrentTable(Stream<StateStoreCommitMessage.Commit> commits) {
         StateStoreCommitMessageFactory factory = new StateStoreCommitMessageFactory(
                 instance.getInstanceProperties(), instance.getTableProperties());
         return commits.map(commit -> commit.createMessage(factory));
     }
 
-    private Stream<StateStoreCommitMessage> forEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
+    private Stream<StateStoreCommitRequestByTransaction> forEachTable(Stream<StateStoreCommitMessage.Commit> commits) {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         List<StateStoreCommitMessageFactory> factories = instance.streamTableProperties()
                 .map(tableProperties -> new StateStoreCommitMessageFactory(instanceProperties, tableProperties))
@@ -126,7 +127,7 @@ public class SystemTestStateStoreFakeCommits {
         return commits.flatMap(commit -> factories.stream().map(factory -> commit.createMessage(factory)));
     }
 
-    private Stream<StateStoreCommitMessage> countCommits(Stream<StateStoreCommitMessage> messages) {
+    private Stream<StateStoreCommitRequestByTransaction> countCommits(Stream<StateStoreCommitRequestByTransaction> messages) {
         return messages
                 .peek(message -> waitForNumCommitsByTableId.compute(
                         message.getTableId(),
