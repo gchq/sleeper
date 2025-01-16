@@ -27,8 +27,6 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
@@ -42,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -112,56 +109,7 @@ public class StateStoreCommitRequestDeserialiserTest {
     }
 
     @Test
-    void shouldDeserialiseCommitRequestInS3() {
-        // Given
-        createTable("test-table", schemaWithKey("key"));
-        FileReference file = FileReference.builder()
-                .filename("file.parquet")
-                .partitionId("root")
-                .numberOfRecords(100L)
-                .onlyContainsDataForThisPartition(true)
-                .build();
-        AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
-        StateStoreCommitRequestByTransaction requestInBucket = StateStoreCommitRequestByTransaction.create("test-table", transaction);
-        String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
-        dataBucketObjectByKey.put(s3Key, requestByTransactionSerDe().toJson(requestInBucket));
-        StateStoreCommitRequestInS3 commitRequest = new StateStoreCommitRequestInS3(s3Key);
-        String jsonString = new StateStoreCommitRequestInS3SerDe().toJson(commitRequest);
-
-        // When / Then
-        assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forTransaction(requestInBucket))
-                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
-    }
-
-    @Test
-    void shouldRefuseReferenceToS3HeldInS3() throws Exception {
-        // Given we have a request pointing to itself
-        String s3Key = StateStoreCommitRequestInS3.createFileS3Key("test-table", "test-file");
-        StateStoreCommitRequestInS3 commitRequest = new StateStoreCommitRequestInS3(s3Key);
-        dataBucketObjectByKey.put(s3Key, new StateStoreCommitRequestInS3SerDe().toJson(commitRequest));
-        String jsonString = new StateStoreCommitRequestInS3SerDe().toJson(commitRequest);
-
-        // When / Then
-        StateStoreCommitRequestDeserialiser deserialiser = deserialiser();
-        assertThatThrownBy(() -> deserialiser.fromJson(jsonString))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void shouldDeserialiseTransactionInS3() {
-        // Given
-        String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
-        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", key, TransactionType.INITIALISE_PARTITIONS);
-        String jsonString = requestByTransactionSerDe().toJson(commitRequest);
-
-        // When / Then
-        assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forTransaction(commitRequest));
-    }
-
-    @Test
-    void shouldDeserialiseInitialisePartitionsTransactionInRequest() {
+    void shouldDeserialiseInitialisePartitionsTransaction() {
         // Given
         Schema schema = schemaWithKey("key", new LongType());
         createTable("test-table", schema);
@@ -170,6 +118,18 @@ public class StateStoreCommitRequestDeserialiserTest {
                 .splitToNewChildren("root", "L", "R", 5L)
                 .buildList());
         StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
+        String jsonString = requestByTransactionSerDe().toJson(commitRequest);
+
+        // When / Then
+        assertThat(deserialiser().fromJson(jsonString))
+                .isEqualTo(StateStoreCommitRequest.forTransaction(commitRequest));
+    }
+
+    @Test
+    void shouldDeserialiseTransactionInS3() {
+        // Given
+        String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
+        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", key, TransactionType.INITIALISE_PARTITIONS);
         String jsonString = requestByTransactionSerDe().toJson(commitRequest);
 
         // When / Then
