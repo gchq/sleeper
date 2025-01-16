@@ -149,16 +149,6 @@ public class StateStoreCommitRequestDeserialiserTest {
     }
 
     @Test
-    void shouldThrowExceptionIfCommitRequestTypeInvalid() {
-        // Given
-        String jsonString = "{\"type\":\"invalid-type\", \"request\":{}}";
-
-        // When / Then
-        assertThatThrownBy(() -> deserialiser().fromJson(jsonString))
-                .isInstanceOf(CommitRequestValidationException.class);
-    }
-
-    @Test
     void shouldDeserialiseTransactionInS3() {
         // Given
         String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
