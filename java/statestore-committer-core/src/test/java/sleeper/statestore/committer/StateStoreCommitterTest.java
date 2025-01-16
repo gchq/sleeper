@@ -43,7 +43,9 @@ import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
+import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
@@ -106,7 +108,7 @@ public class StateStoreCommitterTest {
     private final Map<String, TableProperties> propertiesByTableId = new LinkedHashMap<>();
     private final Map<String, StateStore> stateStoreByTableId = new LinkedHashMap<>();
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
-    private final List<StateStoreCommitRequest> failedRequests = new ArrayList<>();
+    private final List<StateStoreCommitRequestByTransaction> failedRequests = new ArrayList<>();
     private final List<Exception> failures = new ArrayList<>();
 
     @Nested
@@ -128,7 +130,7 @@ public class StateStoreCommitterTest {
             StateStoreCommitRequestByTransaction request = createAndFinishCompaction(job, createdTime, startTime, summary);
 
             // When
-            apply(committerWithTimes(List.of(commitTime)), StateStoreCommitRequest.forTransaction(request));
+            apply(committerWithTimes(List.of(commitTime)), request);
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
@@ -158,7 +160,7 @@ public class StateStoreCommitterTest {
             stateStore.clearFileData();
 
             // When
-            apply(committerWithTimes(List.of(failedTime)), StateStoreCommitRequest.forTransaction(request));
+            apply(committerWithTimes(List.of(failedTime)), request);
 
             // Then
             assertThat(failures).isEmpty();
@@ -194,8 +196,7 @@ public class StateStoreCommitterTest {
             });
 
             // When
-            apply(committerWithTimes(List.of(failedTime)),
-                    StateStoreCommitRequest.forTransaction(request));
+            apply(committerWithTimes(List.of(failedTime)), request);
 
             // Then
             assertThat(failures).singleElement()
@@ -226,9 +227,8 @@ public class StateStoreCommitterTest {
             compactionJobTracker.fixUpdateTime(filesAssignedTime);
 
             // When
-            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create("test-table", new AssignJobIdsTransaction(
-                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet")))));
-            apply(StateStoreCommitRequest.forTransaction(request));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", new AssignJobIdsTransaction(
+                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))))));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
@@ -244,9 +244,8 @@ public class StateStoreCommitterTest {
             stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
 
             // When
-            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create("test-table", new AssignJobIdsTransaction(
-                    List.of(assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet")))));
-            apply(StateStoreCommitRequest.forTransaction(request));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", new AssignJobIdsTransaction(
+                    List.of(assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))))));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
@@ -262,9 +261,8 @@ public class StateStoreCommitterTest {
             StateStore stateStore = createTableGetStateStore("test-table");
 
             // When
-            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create("test-table", new AssignJobIdsTransaction(
-                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet")))));
-            apply(StateStoreCommitRequest.forTransaction(request));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", new AssignJobIdsTransaction(
+                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))))));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
@@ -297,13 +295,12 @@ public class StateStoreCommitterTest {
                     .writtenTime(writtenTime)
                     .files(AllReferencesToAFile.newFilesWithReferences(List.of(outputFile)))
                     .build();
-            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
 
             ingestJobTracker.jobStarted(ingestJob.startedEventBuilder(startTime)
                     .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
             // When
-            apply(StateStoreCommitRequest.forTransaction(commitRequest));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", transaction));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
@@ -321,10 +318,9 @@ public class StateStoreCommitterTest {
             StateStore stateStore = createTableGetStateStore("test-table");
             FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
             AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(outputFile)));
-            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
 
             // When
-            apply(StateStoreCommitRequest.forTransaction(commitRequest));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", transaction));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
@@ -351,13 +347,12 @@ public class StateStoreCommitterTest {
                     .writtenTime(writtenTime)
                     .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
                     .build();
-            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
 
             ingestJobTracker.jobStarted(ingestJob.startedEventBuilder(startTime)
                     .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
             // When
-            apply(StateStoreCommitRequest.forTransaction(commitRequest));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", transaction));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
@@ -392,7 +387,6 @@ public class StateStoreCommitterTest {
                     .writtenTime(writtenTime)
                     .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
                     .build();
-            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
             RuntimeException failure = new RuntimeException("Unexpected failure");
             InMemoryTransactionLogStore filesLog = transactionLogs.forTableId("test-table").getFilesLogStore();
             filesLog.atStartOfAddTransaction(() -> {
@@ -403,7 +397,7 @@ public class StateStoreCommitterTest {
                     .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
             // When
-            apply(StateStoreCommitRequest.forTransaction(commitRequest));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", transaction));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
@@ -433,12 +427,11 @@ public class StateStoreCommitterTest {
                     .splitToNewChildren("root", "left", "right", "aaa")
                     .buildTree();
             StateStore stateStore = createTableGetStateStore("test-table");
-            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table",
-                    new SplitPartitionTransaction(afterTree.getPartition("root"),
-                            List.of(afterTree.getPartition("left"), afterTree.getPartition("right"))));
+            PartitionTransaction transaction = new SplitPartitionTransaction(afterTree.getPartition("root"),
+                    List.of(afterTree.getPartition("left"), afterTree.getPartition("right")));
 
             // When
-            apply(StateStoreCommitRequest.forTransaction(commitRequest));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", transaction));
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -457,12 +450,11 @@ public class StateStoreCommitterTest {
                     afterTree.getPartition("root"),
                     afterTree.getPartition("left"),
                     afterTree.getPartition("right"));
-            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table",
-                    new SplitPartitionTransaction(afterTree.getPartition("root"),
-                            List.of(afterTree.getPartition("left"), afterTree.getPartition("right"))));
+            PartitionTransaction transaction = new SplitPartitionTransaction(afterTree.getPartition("root"),
+                    List.of(afterTree.getPartition("left"), afterTree.getPartition("right")));
 
             // When
-            apply(StateStoreCommitRequest.forTransaction(commitRequest));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", transaction));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
@@ -488,11 +480,10 @@ public class StateStoreCommitterTest {
             stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("test-job", filenames, fileAfterCompaction)));
             // And we have a request to commit that they have been deleted
-            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(
-                    "test-table", new DeleteFilesTransaction(filenames));
+            FileReferenceTransaction transaction = new DeleteFilesTransaction(filenames);
 
             // When
-            apply(StateStoreCommitRequest.forTransaction(request));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", transaction));
 
             // Then
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(3))
@@ -504,11 +495,10 @@ public class StateStoreCommitterTest {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
             stateStore.addFiles(List.of(fileFactory.rootFile("file.parquet", 100)));
-            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(
-                    "test-table", new DeleteFilesTransaction(List.of("file.parquet")));
+            FileReferenceTransaction transaction = new DeleteFilesTransaction(List.of("file.parquet"));
 
             // When
-            apply(StateStoreCommitRequest.forTransaction(request));
+            apply(StateStoreCommitRequestByTransaction.create("test-table", transaction));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
@@ -527,7 +517,7 @@ public class StateStoreCommitterTest {
             FileReference file = fileFactory.rootFile("test.parquet", 123L);
             stateStore.addFile(file);
             FileReference duplicate = fileFactory.rootFile("test.parquet", 123L);
-            StateStoreCommitRequest commitRequest = addFilesRequest("test-table", duplicate);
+            StateStoreCommitRequestByTransaction commitRequest = addFilesRequest("test-table", duplicate);
 
             // When
             apply(commitRequest);
@@ -545,10 +535,10 @@ public class StateStoreCommitterTest {
             FileReference duplicate1 = fileFactory.rootFile("file-1.parquet", 200);
             FileReference file2 = fileFactory.rootFile("file-2.parquet", 300);
             FileReference duplicate2 = fileFactory.rootFile("file-2.parquet", 400);
-            StateStoreCommitRequest commitRequest1 = addFilesRequest("test-table", file1);
-            StateStoreCommitRequest commitRequest2 = addFilesRequest("test-table", duplicate1);
-            StateStoreCommitRequest commitRequest3 = addFilesRequest("test-table", file2);
-            StateStoreCommitRequest commitRequest4 = addFilesRequest("test-table", duplicate2);
+            StateStoreCommitRequestByTransaction commitRequest1 = addFilesRequest("test-table", file1);
+            StateStoreCommitRequestByTransaction commitRequest2 = addFilesRequest("test-table", duplicate1);
+            StateStoreCommitRequestByTransaction commitRequest3 = addFilesRequest("test-table", file2);
+            StateStoreCommitRequestByTransaction commitRequest4 = addFilesRequest("test-table", duplicate2);
 
             // When
             apply(commitRequest1, commitRequest2, commitRequest3, commitRequest4);
@@ -573,8 +563,8 @@ public class StateStoreCommitterTest {
             FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
             FileReference file3 = fileFactory.rootFile("file-3.parquet", 300);
             stateStore(tableProperties).addFile(file1);
-            StateStoreCommitRequest commitRequest1 = addFilesRequest(tableProperties, file2);
-            StateStoreCommitRequest commitRequest2 = addFilesRequest(tableProperties, file3);
+            StateStoreCommitRequestByTransaction commitRequest1 = addFilesRequest(tableProperties, file2);
+            StateStoreCommitRequestByTransaction commitRequest2 = addFilesRequest(tableProperties, file3);
             AtomicInteger addTransactionCalls = new AtomicInteger();
             AtomicInteger readTransactionCalls = new AtomicInteger();
             filesLog(tableProperties).atStartOfAddTransaction(() -> addTransactionCalls.incrementAndGet());
@@ -606,8 +596,8 @@ public class StateStoreCommitterTest {
             AtomicInteger readTransactionCalls = new AtomicInteger();
             filesLog(tableProperties).atStartOfAddTransaction(() -> addTransactionCalls.incrementAndGet());
             filesLog(tableProperties).atStartOfReadTransactions(() -> readTransactionCalls.incrementAndGet());
-            StateStoreCommitRequest commitRequest1 = addFilesRequest(tableProperties, file2);
-            StateStoreCommitRequest commitRequest2 = addFilesRequest(tableProperties, file3);
+            StateStoreCommitRequestByTransaction commitRequest1 = addFilesRequest(tableProperties, file2);
+            StateStoreCommitRequestByTransaction commitRequest2 = addFilesRequest(tableProperties, file3);
 
             // When
             apply(commitRequest1, commitRequest2);
@@ -635,8 +625,8 @@ public class StateStoreCommitterTest {
             AtomicInteger readTransactionCalls = new AtomicInteger();
             filesLog(tableProperties).atStartOfAddTransaction(() -> addTransactionCalls.incrementAndGet());
             filesLog(tableProperties).atStartOfReadTransactions(() -> readTransactionCalls.incrementAndGet());
-            StateStoreCommitRequest commitRequest1 = addFilesRequest(tableProperties, file2);
-            StateStoreCommitRequest commitRequest2 = addFilesRequest(tableProperties, file3);
+            StateStoreCommitRequestByTransaction commitRequest1 = addFilesRequest(tableProperties, file2);
+            StateStoreCommitRequestByTransaction commitRequest2 = addFilesRequest(tableProperties, file3);
 
             // When
             apply(commitRequest1, commitRequest2);
@@ -673,7 +663,7 @@ public class StateStoreCommitterTest {
             StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(job.getTableId(), bodyKey, TransactionType.REPLACE_FILE_REFERENCES);
 
             // When
-            apply(committerWithTimes(List.of(commitTime)), StateStoreCommitRequest.forTransaction(request));
+            apply(committerWithTimes(List.of(commitTime)), request);
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
@@ -688,11 +678,11 @@ public class StateStoreCommitterTest {
         }
     }
 
-    private void apply(StateStoreCommitRequest... requests) {
+    private void apply(StateStoreCommitRequestByTransaction... requests) {
         apply(committer(), requests);
     }
 
-    private void apply(StateStoreCommitter committer, StateStoreCommitRequest... requests) {
+    private void apply(StateStoreCommitter committer, StateStoreCommitRequestByTransaction... requests) {
         committer.applyBatch(operation -> operation.run(),
                 Stream.of(requests)
                         .map(this::message)
@@ -717,11 +707,6 @@ public class StateStoreCommitterTest {
 
     private StateStore createTableGetStateStore(String tableId) {
         return stateStore(createTable(tableId));
-    }
-
-    private void createTable(String tableId, StateStore stateStore) {
-        createTable(tableId);
-        stateStoreByTableId.put(tableId, stateStore);
     }
 
     private TableProperties createTable(String tableId) {
@@ -803,19 +788,19 @@ public class StateStoreCommitterTest {
         return new CompactionJobFactory(instanceProperties, propertiesByTableId.get(tableId));
     }
 
-    private RequestHandle message(StateStoreCommitRequest request) {
+    private RequestHandle message(StateStoreCommitRequestByTransaction request) {
         return RequestHandle.withCallbackOnFail(request, exception -> {
             failedRequests.add(request);
             failures.add(exception);
         });
     }
 
-    private StateStoreCommitRequest addFilesRequest(TableProperties tableProperties, FileReference... files) {
+    private StateStoreCommitRequestByTransaction addFilesRequest(TableProperties tableProperties, FileReference... files) {
         return addFilesRequest(tableProperties.get(TABLE_ID), files);
     }
 
-    private StateStoreCommitRequest addFilesRequest(String tableId, FileReference... files) {
-        return StateStoreCommitRequest.forTransaction(StateStoreCommitRequestByTransaction.create(tableId,
-                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(files)))));
+    private StateStoreCommitRequestByTransaction addFilesRequest(String tableId, FileReference... files) {
+        return StateStoreCommitRequestByTransaction.create(tableId,
+                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(files))));
     }
 }

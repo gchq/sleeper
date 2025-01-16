@@ -35,13 +35,13 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 import sleeper.statestore.committer.StateStoreCommitter.RetryOnThrottling;
@@ -55,7 +55,6 @@ import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 
 /**
  * A lambda that allows for asynchronous commits to a state store.
@@ -65,7 +64,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final StateStoreCommitRequestDeserialiser deserialiser;
+    private final StateStoreCommitRequestByTransactionSerDe serDe;
     private final StateStoreCommitter committer;
     private final PollWithRetries throttlingRetriesConfig;
 
@@ -80,7 +79,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
-        deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, key -> s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key));
+        serDe = new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider);
         committer = new StateStoreCommitter(
                 CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
                 IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
@@ -93,12 +92,12 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     public StateStoreCommitterLambda(
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            StateStoreCommitRequestDeserialiser deserialiser,
+            StateStoreCommitRequestByTransactionSerDe serDe,
             StateStoreCommitter committer,
             PollWithRetries throttlingRetriesConfig) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.deserialiser = deserialiser;
+        this.serDe = serDe;
         this.committer = committer;
         this.throttlingRetriesConfig = throttlingRetriesConfig;
     }
@@ -126,7 +125,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     private RequestHandle readRequest(SQSMessage message, Consumer<SQSMessage> onFail) {
         LOGGER.debug("Found message: {}", message.getBody());
         return RequestHandle.withCallbackOnFail(
-                deserialiser.fromJson(message.getBody()),
+                serDe.fromJson(message.getBody()),
                 () -> onFail.accept(message));
     }
 

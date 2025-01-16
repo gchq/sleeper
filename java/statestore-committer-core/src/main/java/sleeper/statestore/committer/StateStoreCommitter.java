@@ -125,52 +125,47 @@ public class StateStoreCommitter {
      *
      * @param request the commit request
      */
-    public void apply(StateStoreCommitRequest request) throws StateStoreException {
-        request.apply(this);
-        LOGGER.info("Applied request to table ID {} with type {} at time {}",
-                request.getTableId(), request.getRequest().getClass().getSimpleName(), Instant.now());
-    }
-
-    void addTransaction(StateStoreCommitRequestByTransaction request) throws StateStoreException {
+    public void apply(StateStoreCommitRequestByTransaction request) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        if (stateStore instanceof TransactionLogStateStore) {
-            TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
-            if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {
-                ReplaceFileReferencesTransaction transaction = getTransaction(tableProperties, request);
-                AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
-                        .bodyKey(request.getBodyKey())
-                        .beforeApplyListener((number, state) -> transaction.reportJobCommits(
-                                compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
-                        .build();
-                try {
-                    transactionStateStore.addTransaction(addTransaction);
-                } catch (Exception e) {
-                    transaction.reportJobsAllFailed(compactionJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
-                    throw e;
-                }
-            } else if (request.getTransactionType() == TransactionType.ADD_FILES) {
-                AddFilesTransaction transaction = getTransaction(tableProperties, request);
-                AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
-                        .bodyKey(request.getBodyKey())
-                        .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
-                                ingestJobTracker, tableProperties.getStatus()))
-                        .build();
-                try {
-                    transactionStateStore.addTransaction(addTransaction);
-                } catch (Exception e) {
-                    transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), e);
-                    throw e;
-                }
-            } else {
-                transactionStateStore.addTransaction(
-                        AddTransactionRequest.withTransaction(getTransaction(tableProperties, request))
-                                .bodyKey(request.getBodyKey())
-                                .build());
-            }
-        } else {
+        if (!(stateStore instanceof TransactionLogStateStore)) {
             throw new UnsupportedOperationException("Cannot add a transaction for a non-transaction log state store");
         }
+        TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
+        if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {
+            ReplaceFileReferencesTransaction transaction = getTransaction(tableProperties, request);
+            AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
+                    .bodyKey(request.getBodyKey())
+                    .beforeApplyListener((number, state) -> transaction.reportJobCommits(
+                            compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
+                    .build();
+            try {
+                transactionStateStore.addTransaction(addTransaction);
+            } catch (Exception e) {
+                transaction.reportJobsAllFailed(compactionJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
+                throw e;
+            }
+        } else if (request.getTransactionType() == TransactionType.ADD_FILES) {
+            AddFilesTransaction transaction = getTransaction(tableProperties, request);
+            AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
+                    .bodyKey(request.getBodyKey())
+                    .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
+                            ingestJobTracker, tableProperties.getStatus()))
+                    .build();
+            try {
+                transactionStateStore.addTransaction(addTransaction);
+            } catch (Exception e) {
+                transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), e);
+                throw e;
+            }
+        } else {
+            transactionStateStore.addTransaction(
+                    AddTransactionRequest.withTransaction(getTransaction(tableProperties, request))
+                            .bodyKey(request.getBodyKey())
+                            .build());
+        }
+        LOGGER.info("Applied request to table ID {} with type {} at time {}",
+                request.getTableId(), request.getTransactionType(), Instant.now());
     }
 
     private <T extends StateStoreTransaction<?>> T getTransaction(
@@ -188,10 +183,10 @@ public class StateStoreCommitter {
      * Wraps a commit request to track callbacks as a request handle.
      */
     public static class RequestHandle {
-        private StateStoreCommitRequest request;
+        private StateStoreCommitRequestByTransaction request;
         private Consumer<Exception> onFail;
 
-        private RequestHandle(StateStoreCommitRequest request, Consumer<Exception> onFail) {
+        private RequestHandle(StateStoreCommitRequestByTransaction request, Consumer<Exception> onFail) {
             this.request = request;
             this.onFail = onFail;
         }
@@ -203,7 +198,7 @@ public class StateStoreCommitter {
          * @param  onFail  the callback to run if the request failed
          * @return         the handle
          */
-        public static RequestHandle withCallbackOnFail(StateStoreCommitRequest request, Runnable onFail) {
+        public static RequestHandle withCallbackOnFail(StateStoreCommitRequestByTransaction request, Runnable onFail) {
             return new RequestHandle(request, e -> onFail.run());
         }
 
@@ -214,11 +209,11 @@ public class StateStoreCommitter {
          * @param  onFail  the callback to run if the request failed
          * @return         the handle
          */
-        public static RequestHandle withCallbackOnFail(StateStoreCommitRequest request, Consumer<Exception> onFail) {
+        public static RequestHandle withCallbackOnFail(StateStoreCommitRequestByTransaction request, Consumer<Exception> onFail) {
             return new RequestHandle(request, onFail);
         }
 
-        private StateStoreCommitRequest request() {
+        private StateStoreCommitRequestByTransaction request() {
             return request;
         }
 

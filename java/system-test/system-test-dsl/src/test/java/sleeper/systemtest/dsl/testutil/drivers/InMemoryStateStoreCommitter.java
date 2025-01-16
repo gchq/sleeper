@@ -19,7 +19,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.statestore.committer.StateStoreCommitRequest;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -111,10 +110,9 @@ public class InMemoryStateStoreCommitter {
         private void runCommitter() {
             for (StateStoreCommitRequestByTransaction message = queue.poll(); message != null; message = queue.poll()) {
                 try {
-                    StateStoreCommitRequest request = StateStoreCommitRequest.forTransaction(message);
-                    committer.apply(request);
+                    committer.apply(message);
                     numCommitsByTableId.compute(
-                            request.getTableId(),
+                            message.getTableId(),
                             (id, count) -> count == null ? 1 : count + 1);
                 } catch (TableNotFoundException e) {
                     // Discard messages from other tests
@@ -167,10 +165,6 @@ public class InMemoryStateStoreCommitter {
             return tableIds.stream()
                     .collect(toMap(id -> id, id -> commitsPerSecondByTableId.getOrDefault(id, 1.0)));
         }
-    }
-
-    private static String failToLoadS3Object(String key) {
-        throw new UnsupportedOperationException();
     }
 
 }

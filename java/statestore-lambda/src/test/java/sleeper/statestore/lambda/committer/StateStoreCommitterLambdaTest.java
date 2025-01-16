@@ -45,7 +45,6 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
 
 import java.time.Duration;
@@ -128,15 +127,11 @@ public class StateStoreCommitterLambdaTest {
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore());
         return new StateStoreCommitterLambda(
                 tablePropertiesProvider, stateStoreProvider,
-                deserialiser(), committer(tablePropertiesProvider, stateStoreProvider), PollWithRetries.noRetries());
+                serDe(), committer(tablePropertiesProvider, stateStoreProvider), PollWithRetries.noRetries());
     }
 
-    private StateStoreCommitRequestDeserialiser deserialiser() {
-        return new StateStoreCommitRequestDeserialiser(
-                new FixedTablePropertiesProvider(tableProperties),
-                s3Key -> {
-                    throw new IllegalArgumentException("Unexpected request to load from data bucket key " + s3Key);
-                });
+    private StateStoreCommitRequestByTransactionSerDe serDe() {
+        return new StateStoreCommitRequestByTransactionSerDe(new FixedTablePropertiesProvider(tableProperties));
     }
 
     private StateStoreCommitter committer(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {

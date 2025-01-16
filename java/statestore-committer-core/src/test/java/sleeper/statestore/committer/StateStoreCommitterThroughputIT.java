@@ -94,17 +94,17 @@ public class StateStoreCommitterThroughputIT {
         String tableId = createTable(schema).get(TABLE_ID);
         StateStoreCommitter committer = committer();
         FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
-        committer.apply(StateStoreCommitRequest.forTransaction(StateStoreCommitRequestByTransaction.create(tableId,
+        committer.apply(StateStoreCommitRequestByTransaction.create(tableId,
                 new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(
-                        List.of(fileFactory.rootFile("prewarm-file.parquet", 123)))))));
+                        List.of(fileFactory.rootFile("prewarm-file.parquet", 123))))));
 
         return runRequestsGetStats(committer, IntStream.rangeClosed(1, numberOfRequests)
-                .mapToObj(i -> StateStoreCommitRequest.forTransaction(StateStoreCommitRequestByTransaction.create(tableId,
+                .mapToObj(i -> StateStoreCommitRequestByTransaction.create(tableId,
                         new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(
-                                List.of(fileFactory.rootFile("file-" + i + ".parquet", i))))))));
+                                List.of(fileFactory.rootFile("file-" + i + ".parquet", i)))))));
     }
 
-    private Stats runRequestsGetStats(StateStoreCommitter committer, Stream<StateStoreCommitRequest> requests) throws Exception {
+    private Stats runRequestsGetStats(StateStoreCommitter committer, Stream<StateStoreCommitRequestByTransaction> requests) throws Exception {
         Instant startTime = Instant.now();
         AtomicInteger numRequestsTracker = new AtomicInteger();
         requests.forEach(request -> {
