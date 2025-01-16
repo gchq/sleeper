@@ -206,7 +206,7 @@ impl ScalarUDFImpl for SketchUDF {
         Ok(columns[0].clone())
     }
 
-    /// Sleeper tables cannot contains nullable columns
+    /// Sleeper tables cannot contains nullable columns.
     fn is_nullable(
         &self,
         _args: &[datafusion::prelude::Expr],
