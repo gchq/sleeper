@@ -15,15 +15,15 @@
  */
 package sleeper.systemtest.dsl.statestore;
 
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 
 import java.util.stream.Stream;
 
 public interface StateStoreCommitterDriver {
 
-    void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitRequestByTransaction> messages);
+    void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitRequest> messages);
 
-    void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitRequestByTransaction> messages);
+    void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitRequest> messages);
 
     void pauseReceivingMessages();
 

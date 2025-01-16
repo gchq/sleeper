@@ -36,7 +36,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.util.ObjectFactory;
@@ -78,7 +78,7 @@ public class CreateCompactionJobsTest {
     List<CompactionJob> jobs = new ArrayList<>();
     Queue<CompactionJobDispatchRequest> pendingQueue = new LinkedList<>();
     Map<String, List<CompactionJob>> bucketAndKeyToJobs = new HashMap<>();
-    List<StateStoreCommitRequestByTransaction> jobIdAssignmentCommitRequests = new ArrayList<>();
+    List<StateStoreCommitRequest> jobIdAssignmentCommitRequests = new ArrayList<>();
 
     @Nested
     @DisplayName("Compact files using strategy")
@@ -406,7 +406,7 @@ public class CreateCompactionJobsTest {
             CompactionJob job = compactionFactory().createCompactionJob("test-job", List.of(file), "root");
             assertThat(jobs).containsExactly(job);
             assertThat(jobIdAssignmentCommitRequests).containsExactly(
-                    StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
+                    StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
                             List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("test.parquet"))))));
         }
 
@@ -434,9 +434,9 @@ public class CreateCompactionJobsTest {
             CompactionJob job3 = compactionFactory().createCompactionJob("job-3", List.of(rrFile), "RR");
             assertThat(jobs).containsExactly(job1, job2, job3);
             assertThat(jobIdAssignmentCommitRequests).containsExactly(
-                    StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
+                    StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
                             List.of(job1.createAssignJobIdRequest(), job2.createAssignJobIdRequest()))),
-                    StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
+                    StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
                             List.of(job3.createAssignJobIdRequest()))));
         }
     }

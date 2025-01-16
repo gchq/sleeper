@@ -71,8 +71,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
@@ -504,7 +504,7 @@ class BulkImportJobDriverIT {
         sortRecords(expectedRecords);
         assertThat(receiveCommitMessages()).singleElement().satisfies(commit -> {
             AddFilesTransaction transaction = commit.<AddFilesTransaction>getTransactionIfHeld().orElseThrow();
-            assertThat(commit).isEqualTo(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID),
+            assertThat(commit).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                     AddFilesTransaction.builder()
                             .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(writtenTime)
                             .files(transaction.getFiles())
@@ -541,7 +541,7 @@ class BulkImportJobDriverIT {
                 .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(writtenTime)
                 .files(AllReferencesToAFile.newFilesWithReferences(fileReferences))
                 .build();
-        StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), transaction);
+        StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
 
         // When
         BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, tablePropertiesProvider, s3FileNameSupplier)
@@ -549,7 +549,7 @@ class BulkImportJobDriverIT {
 
         // Then
         assertThat(receiveCommitMessages()).singleElement().satisfies(found -> {
-            assertThat(found).isEqualTo(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.ADD_FILES));
+            assertThat(found).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.ADD_FILES));
             assertThat(readTransactionFromDataBucket(found))
                     .isEqualTo(transaction);
         });
@@ -724,16 +724,16 @@ class BulkImportJobDriverIT {
                 .tableName(tableProperties.get(TABLE_NAME));
     }
 
-    private List<StateStoreCommitRequestByTransaction> receiveCommitMessages() {
+    private List<StateStoreCommitRequest> receiveCommitMessages() {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMaxNumberOfMessages(10);
         return sqsClient.receiveMessage(receiveMessageRequest).getMessages().stream()
-                .map(message -> new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 
-    private StateStoreTransaction<?> readTransactionFromDataBucket(StateStoreCommitRequestByTransaction request) {
+    private StateStoreTransaction<?> readTransactionFromDataBucket(StateStoreCommitRequest request) {
         return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
                 .getBody(request.getBodyKey(), request.getTransactionType());
     }

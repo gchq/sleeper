@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.lambda.model.GetEventSourceMappingRespons
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.SplitIntoBatches;
@@ -57,16 +57,16 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     }
 
     @Override
-    public void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitRequestByTransaction> messages) {
+    public void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitRequest> messages) {
         SplitIntoBatches.streamBatchesOf(10, messages).parallel().forEach(this::sendMessageBatch);
     }
 
     @Override
-    public void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitRequestByTransaction> messages) {
+    public void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitRequest> messages) {
         SplitIntoBatches.streamBatchesOf(10, messages).sequential().forEach(this::sendMessageBatch);
     }
 
-    private void sendMessageBatch(List<StateStoreCommitRequestByTransaction> batch) {
+    private void sendMessageBatch(List<StateStoreCommitRequest> batch) {
         StateStoreCommitRequestUploader uploader = uploader();
         sqs.sendMessageBatch(request -> request
                 .queueUrl(instance.getInstanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL))

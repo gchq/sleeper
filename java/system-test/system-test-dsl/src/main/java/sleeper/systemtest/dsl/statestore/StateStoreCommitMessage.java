@@ -16,7 +16,7 @@
 package sleeper.systemtest.dsl.statestore;
 
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 
 import java.util.List;
 
@@ -49,7 +49,7 @@ public class StateStoreCommitMessage {
     }
 
     public interface Commit {
-        StateStoreCommitRequestByTransaction createMessage(StateStoreCommitMessageFactory factory);
+        StateStoreCommitRequest createMessage(StateStoreCommitMessageFactory factory);
     }
 
 }

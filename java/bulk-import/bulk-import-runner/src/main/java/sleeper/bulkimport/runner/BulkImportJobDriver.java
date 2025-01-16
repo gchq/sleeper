@@ -41,7 +41,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.table.TableStatus;
@@ -123,7 +123,7 @@ public class BulkImportJobDriver {
                         .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(getTime.get())
                         .files(AllReferencesToAFile.newFilesWithReferences(output.fileReferences()))
                         .build();
-                StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(table.getTableUniqueId(), transaction);
+                StateStoreCommitRequest request = StateStoreCommitRequest.create(table.getTableUniqueId(), transaction);
                 LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
                 addFilesAsync.submit(request);
                 LOGGER.info("Submitted {} files to statestore committer for job {} in table {}", output.numFiles(), job.getId(), table);
@@ -253,7 +253,7 @@ public class BulkImportJobDriver {
     }
 
     public interface AddFilesAsynchronously {
-        void submit(StateStoreCommitRequestByTransaction request);
+        void submit(StateStoreCommitRequest request);
     }
 
     public static AddFilesAsynchronously submitFilesToCommitQueue(

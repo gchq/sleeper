@@ -51,8 +51,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
@@ -291,7 +291,7 @@ class IngestJobRunnerIT {
         runIngestJob(tableProperties, stateStore, job);
 
         // Then
-        List<StateStoreCommitRequestByTransaction> commitRequests = getCommitRequestsFromQueue(tableProperties);
+        List<StateStoreCommitRequest> commitRequests = getCommitRequestsFromQueue(tableProperties);
         List<FileReference> actualFiles = getFilesAdded(commitRequests);
         List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(stateStore);
@@ -302,7 +302,7 @@ class IngestJobRunnerIT {
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
         assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
-        assertThat(commitRequests).containsExactly(StateStoreCommitRequestByTransaction.create(tableId,
+        assertThat(commitRequests).containsExactly(StateStoreCommitRequest.create(tableId,
                 AddFilesTransaction.builder()
                         .jobId(job.getId()).taskId("test-task").jobRunId("test-job-run")
                         .writtenTime(Instant.parse("2024-06-20T15:10:01Z"))
@@ -310,21 +310,21 @@ class IngestJobRunnerIT {
                         .build()));
     }
 
-    private List<StateStoreCommitRequestByTransaction> getCommitRequestsFromQueue(TableProperties tableProperties) {
+    private List<StateStoreCommitRequest> getCommitRequestsFromQueue(TableProperties tableProperties) {
         String commitQueueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
         ReceiveMessageResult result = sqs.receiveMessage(commitQueueUrl);
-        StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe(tableProperties);
+        StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);
         return result.getMessages().stream()
                 .map(Message::getBody)
                 .map(serDe::fromJson)
                 .collect(Collectors.toList());
     }
 
-    private List<FileReference> getFilesAdded(List<StateStoreCommitRequestByTransaction> commitRequests) {
+    private List<FileReference> getFilesAdded(List<StateStoreCommitRequest> commitRequests) {
         return commitRequests.stream().flatMap(this::streamFilesAdded).toList();
     }
 
-    private Stream<FileReference> streamFilesAdded(StateStoreCommitRequestByTransaction commitRequest) {
+    private Stream<FileReference> streamFilesAdded(StateStoreCommitRequest commitRequest) {
         AddFilesTransaction transaction = commitRequest.<AddFilesTransaction>getTransactionIfHeld().orElseThrow();
         return transaction.getFiles().stream().flatMap(file -> file.getReferences().stream());
     }

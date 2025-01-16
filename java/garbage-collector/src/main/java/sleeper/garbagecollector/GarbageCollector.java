@@ -29,7 +29,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.core.table.TableStatus;
@@ -135,7 +135,7 @@ public class GarbageCollector {
         try {
             boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
             if (asyncCommit) {
-                sendAsyncCommit.sendCommit(StateStoreCommitRequestByTransaction.create(
+                sendAsyncCommit.sendCommit(StateStoreCommitRequest.create(
                         tableProperties.get(TABLE_ID), new DeleteFilesTransaction(deletedFilenames)));
             } else {
                 stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
@@ -194,7 +194,7 @@ public class GarbageCollector {
      */
     @FunctionalInterface
     public interface SendAsyncCommit {
-        void sendCommit(StateStoreCommitRequestByTransaction commitRequest);
+        void sendCommit(StateStoreCommitRequest commitRequest);
     }
 
     public static SendAsyncCommit sendAsyncCommit(

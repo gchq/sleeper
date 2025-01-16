@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -66,7 +66,7 @@ public class CompactionJobCommitterOrSendToLambda {
         if (commitAsync) {
             ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
                     job.createReplaceFileReferencesRequest(finishedEvent)));
-            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(table.getTableUniqueId(), transaction);
+            StateStoreCommitRequest request = StateStoreCommitRequest.create(table.getTableUniqueId(), transaction);
             LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
             jobCommitQueueSender.send(request);
             LOGGER.info("Sent compaction job {} to queue to be committed asynchronously to table {}", job.getId(), table);
@@ -83,6 +83,6 @@ public class CompactionJobCommitterOrSendToLambda {
     }
 
     public interface CommitQueueSender {
-        void send(StateStoreCommitRequestByTransaction commitRequest);
+        void send(StateStoreCommitRequest commitRequest);
     }
 }

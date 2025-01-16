@@ -35,7 +35,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
@@ -64,7 +64,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final StateStoreCommitRequestByTransactionSerDe serDe;
+    private final StateStoreCommitRequestSerDe serDe;
     private final StateStoreCommitter committer;
     private final PollWithRetries throttlingRetriesConfig;
 
@@ -79,7 +79,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreFactory stateStoreFactory = StateStoreFactory.forCommitterProcess(instanceProperties, s3Client, dynamoDBClient, hadoopConf);
         stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
-        serDe = new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider);
+        serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
         committer = new StateStoreCommitter(
                 CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
                 IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
@@ -92,7 +92,7 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
     public StateStoreCommitterLambda(
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            StateStoreCommitRequestByTransactionSerDe serDe,
+            StateStoreCommitRequestSerDe serDe,
             StateStoreCommitter committer,
             PollWithRetries throttlingRetriesConfig) {
         this.tablePropertiesProvider = tablePropertiesProvider;

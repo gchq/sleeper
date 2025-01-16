@@ -16,7 +16,7 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.committer.StateStoreCommitter;
@@ -43,7 +43,7 @@ public class InMemoryStateStoreCommitter {
     private final InMemoryTransactionBodyStore transactionBodyStore;
     private final InMemoryIngestByQueue ingest;
     private final InMemoryCompaction compaction;
-    private final Queue<StateStoreCommitRequestByTransaction> queue = new LinkedList<>();
+    private final Queue<StateStoreCommitRequest> queue = new LinkedList<>();
     private final Map<String, Integer> numCommitsByTableId = new HashMap<>();
     private final Map<String, Double> commitsPerSecondByTableId = new HashMap<>();
     private final Map<String, Boolean> runCommitterOnSendByTableId = new HashMap<>();
@@ -95,12 +95,12 @@ public class InMemoryStateStoreCommitter {
         }
 
         @Override
-        public void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitRequestByTransaction> messages) {
+        public void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitRequest> messages) {
             sendCommitMessagesInSequentialBatches(messages);
         }
 
         @Override
-        public void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitRequestByTransaction> messages) {
+        public void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitRequest> messages) {
             messages.forEach(queue::add);
             if (!committerPaused && isRunCommitterOnSend()) {
                 runCommitter();
@@ -108,7 +108,7 @@ public class InMemoryStateStoreCommitter {
         }
 
         private void runCommitter() {
-            for (StateStoreCommitRequestByTransaction message = queue.poll(); message != null; message = queue.poll()) {
+            for (StateStoreCommitRequest message = queue.poll(); message != null; message = queue.poll()) {
                 try {
                     committer.apply(message);
                     numCommitsByTableId.compute(

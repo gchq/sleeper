@@ -23,7 +23,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
@@ -125,7 +125,7 @@ public class StateStoreCommitter {
      *
      * @param request the commit request
      */
-    public void apply(StateStoreCommitRequestByTransaction request) throws StateStoreException {
+    public void apply(StateStoreCommitRequest request) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
         if (!(stateStore instanceof TransactionLogStateStore)) {
@@ -169,7 +169,7 @@ public class StateStoreCommitter {
     }
 
     private <T extends StateStoreTransaction<?>> T getTransaction(
-            TableProperties tableProperties, StateStoreCommitRequestByTransaction request) {
+            TableProperties tableProperties, StateStoreCommitRequest request) {
         Optional<T> transaction = request.getTransactionIfHeld();
         if (transaction.isPresent()) {
             return transaction.get();
@@ -183,10 +183,10 @@ public class StateStoreCommitter {
      * Wraps a commit request to track callbacks as a request handle.
      */
     public static class RequestHandle {
-        private StateStoreCommitRequestByTransaction request;
+        private StateStoreCommitRequest request;
         private Consumer<Exception> onFail;
 
-        private RequestHandle(StateStoreCommitRequestByTransaction request, Consumer<Exception> onFail) {
+        private RequestHandle(StateStoreCommitRequest request, Consumer<Exception> onFail) {
             this.request = request;
             this.onFail = onFail;
         }
@@ -198,7 +198,7 @@ public class StateStoreCommitter {
          * @param  onFail  the callback to run if the request failed
          * @return         the handle
          */
-        public static RequestHandle withCallbackOnFail(StateStoreCommitRequestByTransaction request, Runnable onFail) {
+        public static RequestHandle withCallbackOnFail(StateStoreCommitRequest request, Runnable onFail) {
             return new RequestHandle(request, e -> onFail.run());
         }
 
@@ -209,11 +209,11 @@ public class StateStoreCommitter {
          * @param  onFail  the callback to run if the request failed
          * @return         the handle
          */
-        public static RequestHandle withCallbackOnFail(StateStoreCommitRequestByTransaction request, Consumer<Exception> onFail) {
+        public static RequestHandle withCallbackOnFail(StateStoreCommitRequest request, Consumer<Exception> onFail) {
             return new RequestHandle(request, onFail);
         }
 
-        private StateStoreCommitRequestByTransaction request() {
+        private StateStoreCommitRequest request() {
             return request;
         }
 

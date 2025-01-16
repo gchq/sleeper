@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.compaction.core.job.creation.AssignJobIdQueueSender;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
@@ -48,7 +48,7 @@ public class SendAssignJobIdToSqs implements AssignJobIdQueueSender {
     }
 
     @Override
-    public void send(StateStoreCommitRequestByTransaction request) {
+    public void send(StateStoreCommitRequest request) {
         LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
         sqsClient.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))

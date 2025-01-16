@@ -45,8 +45,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
@@ -171,7 +171,7 @@ public class GarbageCollectorS3IT {
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(newFile), List.of(oldFile.getFilename())));
         assertThat(receiveCommitRequests(tableProperties))
-                .containsExactly(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID),
+                .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                         new DeleteFilesTransaction(List.of(oldFile.getFilename()))));
     }
 
@@ -204,7 +204,7 @@ public class GarbageCollectorS3IT {
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(newFile), List.of(oldFile.getFilename())));
         assertThat(receiveCommitRequests(tableProperties)).singleElement().satisfies(found -> {
-            assertThat(found).isEqualTo(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.DELETE_FILES));
+            assertThat(found).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.DELETE_FILES));
             assertThat(readTransactionFromDataBucket(tableProperties, found))
                     .isEqualTo(new DeleteFilesTransaction(List.of(oldFile.getFilename())));
         });
@@ -249,13 +249,13 @@ public class GarbageCollectorS3IT {
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
     }
 
-    private List<StateStoreCommitRequestByTransaction> receiveCommitRequests(TableProperties tableProperties) {
+    private List<StateStoreCommitRequest> receiveCommitRequests(TableProperties tableProperties) {
         return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 
-    private StateStoreTransaction<?> readTransactionFromDataBucket(TableProperties tableProperties, StateStoreCommitRequestByTransaction request) {
+    private StateStoreTransaction<?> readTransactionFromDataBucket(TableProperties tableProperties, StateStoreCommitRequest request) {
         return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
                 .getBody(request.getBodyKey(), request.getTransactionType());
     }

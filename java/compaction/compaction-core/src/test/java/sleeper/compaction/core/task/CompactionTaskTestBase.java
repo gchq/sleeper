@@ -33,7 +33,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
@@ -88,7 +88,7 @@ public class CompactionTaskTestBase {
     protected final InMemoryCompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     protected final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
     protected final List<Duration> sleeps = new ArrayList<>();
-    protected final List<StateStoreCommitRequestByTransaction> commitRequestsOnQueue = new ArrayList<>();
+    protected final List<StateStoreCommitRequest> commitRequestsOnQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
 
@@ -327,12 +327,12 @@ public class CompactionTaskTestBase {
         };
     }
 
-    protected StateStoreCommitRequestByTransaction commitRequestFor(CompactionJob job, JobRunSummary summary) {
+    protected StateStoreCommitRequest commitRequestFor(CompactionJob job, JobRunSummary summary) {
         return commitRequestFor(job, "test-job-run-1", summary);
     }
 
-    protected StateStoreCommitRequestByTransaction commitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
-        return StateStoreCommitRequestByTransaction.create(job.getTableId(),
+    protected StateStoreCommitRequest commitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
+        return StateStoreCommitRequest.create(job.getTableId(),
                 new ReplaceFileReferencesTransaction(List.of(
                         ReplaceFileReferencesRequest.builder()
                                 .jobId(job.getId())

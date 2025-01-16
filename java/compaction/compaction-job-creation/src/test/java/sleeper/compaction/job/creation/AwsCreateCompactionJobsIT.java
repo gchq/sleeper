@@ -50,8 +50,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
@@ -148,13 +148,13 @@ public class AwsCreateCompactionJobsIT {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files);
         List<CompactionJobDispatchRequest> batches = receivePendingBatches();
-        List<StateStoreCommitRequestByTransaction> jobIdAssignmentRequests = receiveJobIdAssignmentRequests();
+        List<StateStoreCommitRequest> jobIdAssignmentRequests = receiveJobIdAssignmentRequests();
         assertThat(batches).singleElement().satisfies(batch -> {
             assertThat(loadBatchJobs(batch)).singleElement().satisfies(job -> {
                 assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
                 assertThat(job.getPartitionId()).isEqualTo("root");
                 assertThat(jobIdAssignmentRequests).containsExactly(
-                        StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
+                        StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
                                 List.of(job.createAssignJobIdRequest()))));
             });
         });
@@ -175,7 +175,7 @@ public class AwsCreateCompactionJobsIT {
         return new CompactionJobSerDe().batchFromJson(json);
     }
 
-    private List<StateStoreCommitRequestByTransaction> receiveJobIdAssignmentRequests() {
+    private List<StateStoreCommitRequest> receiveJobIdAssignmentRequests() {
         return receiveAssignJobIdQueueMessage().getMessages().stream()
                 .map(this::readAssignJobIdRequest)
                 .collect(Collectors.toList());
@@ -188,8 +188,8 @@ public class AwsCreateCompactionJobsIT {
         return sqs.receiveMessage(receiveMessageRequest);
     }
 
-    private StateStoreCommitRequestByTransaction readAssignJobIdRequest(Message message) {
-        return new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(message.getBody());
+    private StateStoreCommitRequest readAssignJobIdRequest(Message message) {
+        return new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody());
     }
 
     private InstanceProperties createInstance() {

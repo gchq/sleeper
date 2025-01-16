@@ -40,8 +40,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
@@ -93,7 +93,7 @@ public class AddFilesToStateStoreIT {
 
         // Then
         assertThat(receiveAddFilesCommitMessages())
-                .containsExactly(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID),
+                .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                         new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))));
     }
 
@@ -110,7 +110,7 @@ public class AddFilesToStateStoreIT {
 
         // Then
         assertThat(receiveCommitRequestStoredInS3Messages()).singleElement().satisfies(found -> {
-            assertThat(found).isEqualTo(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.ADD_FILES));
+            assertThat(found).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.ADD_FILES));
             assertThat(readTransactionFromDataBucket(found)).isEqualTo(
                     new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(fileReferences)));
         });
@@ -136,15 +136,15 @@ public class AddFilesToStateStoreIT {
                 });
     }
 
-    private List<StateStoreCommitRequestByTransaction> receiveCommitRequestStoredInS3Messages() {
+    private List<StateStoreCommitRequest> receiveCommitRequestStoredInS3Messages() {
         return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 
-    private List<StateStoreCommitRequestByTransaction> receiveAddFilesCommitMessages() {
+    private List<StateStoreCommitRequest> receiveAddFilesCommitMessages() {
         return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 
@@ -155,7 +155,7 @@ public class AddFilesToStateStoreIT {
         return sqs.receiveMessage(receiveMessageRequest).getMessages();
     }
 
-    private StateStoreTransaction<?> readTransactionFromDataBucket(StateStoreCommitRequestByTransaction request) {
+    private StateStoreTransaction<?> readTransactionFromDataBucket(StateStoreCommitRequest request) {
         return new S3TransactionBodyStore(instanceProperties, tableProperties, s3)
                 .getBody(request.getBodyKey(), request.getTransactionType());
     }

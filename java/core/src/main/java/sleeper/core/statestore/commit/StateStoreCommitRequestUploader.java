@@ -28,7 +28,7 @@ public class StateStoreCommitRequestUploader {
 
     private final TablePropertiesProvider tablePropertiesProvider;
     private final TransactionBodyStoreProvider transactionBodyStore;
-    private final StateStoreCommitRequestByTransactionSerDe serDe;
+    private final StateStoreCommitRequestSerDe serDe;
     private final int maxLength;
 
     public StateStoreCommitRequestUploader(
@@ -36,7 +36,7 @@ public class StateStoreCommitRequestUploader {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.transactionBodyStore = transactionBodyStore;
         this.maxLength = maxLength;
-        this.serDe = new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider);
+        this.serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
     }
 
     /**
@@ -45,7 +45,7 @@ public class StateStoreCommitRequestUploader {
      * @param  request the request
      * @return         the string
      */
-    public String serialiseAndUploadIfTooBig(StateStoreCommitRequestByTransaction request) {
+    public String serialiseAndUploadIfTooBig(StateStoreCommitRequest request) {
         String json = serDe.toJson(request);
         if (json.length() < maxLength) {
             return json;
@@ -53,7 +53,7 @@ public class StateStoreCommitRequestUploader {
             TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
             String key = TransactionBodyStore.createObjectKey(tableProperties);
             transactionBodyStore.getTransactionBodyStore(tableProperties).store(key, request.getTransactionIfHeld().orElseThrow());
-            return serDe.toJson(StateStoreCommitRequestByTransaction.create(request.getTableId(), key, request.getTransactionType()));
+            return serDe.toJson(StateStoreCommitRequest.create(request.getTableId(), key, request.getTransactionType()));
         }
     }
 }

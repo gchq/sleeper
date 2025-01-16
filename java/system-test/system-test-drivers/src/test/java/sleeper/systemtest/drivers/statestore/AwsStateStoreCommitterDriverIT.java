@@ -27,8 +27,8 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
@@ -75,7 +75,7 @@ public class AwsStateStoreCommitterDriverIT {
         assertThat(receiveCommitRequests(sleeper))
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactly(tuple(tableId,
-                        StateStoreCommitRequestByTransaction.create(tableId,
+                        StateStoreCommitRequest.create(tableId,
                                 new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))))));
     }
 
@@ -95,7 +95,7 @@ public class AwsStateStoreCommitterDriverIT {
         assertThat(receiveCommitRequestsForBatches(sleeper, 2))
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactlyInAnyOrderElementsOf(files.stream().map(file -> tuple(tableId,
-                        StateStoreCommitRequestByTransaction.create(tableId,
+                        StateStoreCommitRequest.create(tableId,
                                 new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))))))
                         .collect(toUnmodifiableList()));
     }
@@ -137,8 +137,8 @@ public class AwsStateStoreCommitterDriverIT {
         return message.attributes().get(MessageSystemAttributeName.MESSAGE_GROUP_ID);
     }
 
-    private StateStoreCommitRequestByTransaction readCommitRequest(Message message) {
-        return new StateStoreCommitRequestByTransactionSerDe(instance.getTablePropertiesProvider())
+    private StateStoreCommitRequest readCommitRequest(Message message) {
+        return new StateStoreCommitRequestSerDe(instance.getTablePropertiesProvider())
                 .fromJson(message.body());
     }
 

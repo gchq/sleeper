@@ -24,14 +24,14 @@ import java.util.Optional;
 /**
  * A commit request for a transaction to be added to the state store.
  */
-public class StateStoreCommitRequestByTransaction {
+public class StateStoreCommitRequest {
 
     private final String tableId;
     private final TransactionType transactionType;
     private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
 
-    private StateStoreCommitRequestByTransaction(String tableId, TransactionType transactionType, String bodyKey, StateStoreTransaction<?> transaction) {
+    private StateStoreCommitRequest(String tableId, TransactionType transactionType, String bodyKey, StateStoreTransaction<?> transaction) {
         this.tableId = tableId;
         this.transactionType = transactionType;
         this.bodyKey = bodyKey;
@@ -46,8 +46,8 @@ public class StateStoreCommitRequestByTransaction {
      * @param  transactionType the transaction type
      * @return                 the commit request
      */
-    public static StateStoreCommitRequestByTransaction create(String tableId, String bodyKey, TransactionType transactionType) {
-        return new StateStoreCommitRequestByTransaction(tableId, transactionType, bodyKey, null);
+    public static StateStoreCommitRequest create(String tableId, String bodyKey, TransactionType transactionType) {
+        return new StateStoreCommitRequest(tableId, transactionType, bodyKey, null);
     }
 
     /**
@@ -57,8 +57,8 @@ public class StateStoreCommitRequestByTransaction {
      * @param  transaction the transaction
      * @return             the commit request
      */
-    public static StateStoreCommitRequestByTransaction create(String tableId, StateStoreTransaction<?> transaction) {
-        return new StateStoreCommitRequestByTransaction(tableId, TransactionType.getType(transaction), null, transaction);
+    public static StateStoreCommitRequest create(String tableId, StateStoreTransaction<?> transaction) {
+        return new StateStoreCommitRequest(tableId, TransactionType.getType(transaction), null, transaction);
     }
 
     public String getTableId() {
@@ -92,10 +92,10 @@ public class StateStoreCommitRequestByTransaction {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof StateStoreCommitRequestByTransaction)) {
+        if (!(obj instanceof StateStoreCommitRequest)) {
             return false;
         }
-        StateStoreCommitRequestByTransaction other = (StateStoreCommitRequestByTransaction) obj;
+        StateStoreCommitRequest other = (StateStoreCommitRequest) obj;
         return Objects.equals(tableId, other.tableId) && transactionType == other.transactionType && Objects.equals(bodyKey, other.bodyKey) && Objects.equals(transaction, other.transaction);
     }
 

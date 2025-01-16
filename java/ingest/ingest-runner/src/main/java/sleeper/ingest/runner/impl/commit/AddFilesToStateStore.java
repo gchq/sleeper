@@ -26,7 +26,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -67,7 +67,7 @@ public interface AddFilesToStateStore {
                     .files(AllReferencesToAFile.newFilesWithReferences(references));
             transactionConfig.accept(requestBuilder);
             AddFilesTransaction transaction = requestBuilder.build();
-            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), transaction);
+            StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
             LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
             sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))

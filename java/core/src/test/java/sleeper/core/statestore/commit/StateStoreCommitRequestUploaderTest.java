@@ -40,16 +40,16 @@ public class StateStoreCommitRequestUploaderTest {
     @Test
     void shouldUploadTransactionWhenTooBig() {
         // Given
-        StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(tableId, new ClearFilesTransaction());
+        StateStoreCommitRequest request = StateStoreCommitRequest.create(tableId, new ClearFilesTransaction());
         StateStoreCommitRequestUploader uploader = uploaderWithMaxLength(10);
 
         // When
         String resultJson = uploader.serialiseAndUploadIfTooBig(request);
 
         // Then
-        StateStoreCommitRequestByTransaction found = new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(resultJson);
+        StateStoreCommitRequest found = new StateStoreCommitRequestSerDe(tableProperties).fromJson(resultJson);
         assertThat(found)
-                .isEqualTo(StateStoreCommitRequestByTransaction.create(tableId, found.getBodyKey(), TransactionType.CLEAR_FILES));
+                .isEqualTo(StateStoreCommitRequest.create(tableId, found.getBodyKey(), TransactionType.CLEAR_FILES));
         assertThat(transactionBodyStore.<ClearFilesTransaction>getBody(found.getBodyKey(), TransactionType.CLEAR_FILES))
                 .isEqualTo(new ClearFilesTransaction());
     }
@@ -57,14 +57,14 @@ public class StateStoreCommitRequestUploaderTest {
     @Test
     void shouldNotUploadTransactionWhenNotTooBig() {
         // Given
-        StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(tableId, new ClearFilesTransaction());
+        StateStoreCommitRequest request = StateStoreCommitRequest.create(tableId, new ClearFilesTransaction());
         StateStoreCommitRequestUploader uploader = uploaderWithMaxLength(100);
 
         // When
         String resultJson = uploader.serialiseAndUploadIfTooBig(request);
 
         // Then
-        assertThat(new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(resultJson))
+        assertThat(new StateStoreCommitRequestSerDe(tableProperties).fromJson(resultJson))
                 .isEqualTo(request);
         assertThat(transactionBodyStore.getTransactionByKey()).isEmpty();
     }
