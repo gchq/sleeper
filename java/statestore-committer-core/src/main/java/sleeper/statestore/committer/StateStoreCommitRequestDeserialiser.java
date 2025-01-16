@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.commit.CommitRequestType;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe.TransactionByTypeJsonSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
@@ -110,9 +109,6 @@ public class StateStoreCommitRequestDeserialiser {
                 case STORED_IN_S3:
                     return fromDataBucket.read(
                             context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
-                case GARBAGE_COLLECTED_FILES:
-                    return StateStoreCommitRequest.forGarbageCollection(
-                            context.deserialize(requestObj, GarbageCollectionCommitRequest.class));
                 default:
                     throw new CommitRequestValidationException("Unrecognised request type");
             }
