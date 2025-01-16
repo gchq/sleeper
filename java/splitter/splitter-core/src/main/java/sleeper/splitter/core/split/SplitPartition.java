@@ -23,7 +23,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 import sleeper.splitter.core.split.FindPartitionSplitPoint.SketchesLoader;
 
 import java.util.List;
@@ -103,7 +104,8 @@ public class SplitPartition {
         if (!tableProperties.getBoolean(PARTITION_SPLIT_ASYNC_COMMIT)) {
             stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
         } else {
-            sendAsyncCommit.sendCommit(new SplitPartitionCommitRequest(tableProperties.get(TABLE_ID), parentPartition, leftChild, rightChild));
+            sendAsyncCommit.sendCommit(StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID),
+                    new SplitPartitionTransaction(parentPartition, List.of(leftChild, rightChild))));
         }
     }
 
@@ -112,6 +114,6 @@ public class SplitPartition {
      */
     @FunctionalInterface
     public interface SendAsyncCommit {
-        void sendCommit(SplitPartitionCommitRequest splitPartitionCommitRequest);
+        void sendCommit(StateStoreCommitRequestByTransaction splitPartitionCommitRequest);
     }
 }
