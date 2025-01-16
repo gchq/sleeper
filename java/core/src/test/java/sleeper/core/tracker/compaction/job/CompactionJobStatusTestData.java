@@ -72,6 +72,12 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
+    public static JobRun.Builder finishedCompactionRunBuilder(String taskId, JobRunSummary summary) {
+        return JobRun.builder().taskId(taskId)
+                .startedStatus(compactionStartedStatus(summary.getStartTime()))
+                .finishedStatus(compactionFinishedStatus(summary));
+    }
+
     public static JobRun failedCompactionRun(String taskId, JobRunTime runTime, List<String> failureReasons) {
         return JobRun.finished(taskId,
                 compactionStartedStatus(runTime.getStartTime()),

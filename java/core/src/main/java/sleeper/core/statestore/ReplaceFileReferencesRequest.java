@@ -15,6 +15,14 @@
  */
 package sleeper.core.statestore;
 
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -71,8 +79,53 @@ public class ReplaceFileReferencesRequest {
                 .build();
     }
 
+    /**
+     * Validates the request against the current state.
+     *
+     * @param  stateStoreFiles                        the state
+     * @throws FileNotFoundException                  if an input file does not exist
+     * @throws FileReferenceNotFoundException         if an input file is not referenced on the same partition
+     * @throws FileReferenceNotAssignedToJobException if an input file is not assigned to the job on this partition
+     * @throws FileAlreadyExistsException             if the new file already exists in the state store
+     */
+    public void validateStateChange(StateStoreFiles stateStoreFiles) throws StateStoreException {
+        for (String filename : inputFiles) {
+            StateStoreFile file = stateStoreFiles.file(filename)
+                    .orElseThrow(() -> new FileNotFoundException(filename));
+            FileReference reference = file.getReferenceForPartitionId(newReference.getPartitionId())
+                    .orElseThrow(() -> new FileReferenceNotFoundException(filename, newReference.getPartitionId()));
+            if (!jobId.equals(reference.getJobId())) {
+                throw new FileReferenceNotAssignedToJobException(reference, jobId);
+            }
+        }
+        if (stateStoreFiles.file(newReference.getFilename()).isPresent()) {
+            throw new FileAlreadyExistsException(newReference.getFilename());
+        }
+    }
+
+    /**
+     * Validates that the output file is not the same as any of the input files.
+     *
+     * @throws NewReferenceSameAsOldReferenceException thrown if any of the input files are the same as the output file
+     */
+    public void validateNewReference() throws NewReferenceSameAsOldReferenceException {
+        for (String inputFile : inputFiles) {
+            if (inputFile.equals(newReference.getFilename())) {
+                throw new NewReferenceSameAsOldReferenceException(inputFile);
+            }
+        }
+    }
+
     public String getJobId() {
         return jobId;
+    }
+
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public String getJobRunId() {
+        return jobRunId;
     }
 
     public String getPartitionId() {
@@ -89,7 +142,7 @@ public class ReplaceFileReferencesRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, inputFiles, newReference);
+        return Objects.hash(jobId, taskId, jobRunId, inputFiles, newReference);
     }
 
     @Override
@@ -101,12 +154,13 @@ public class ReplaceFileReferencesRequest {
             return false;
         }
         ReplaceFileReferencesRequest other = (ReplaceFileReferencesRequest) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(inputFiles, other.inputFiles) && Objects.equals(newReference, other.newReference);
+        return Objects.equals(jobId, other.jobId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(inputFiles, other.inputFiles)
+                && Objects.equals(newReference, other.newReference);
     }
 
     @Override
     public String toString() {
-        return "ReplaceFileReferencesRequest{jobId=" + jobId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
+        return "ReplaceFileReferencesRequest{jobId=" + jobId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
     }
 
     /**

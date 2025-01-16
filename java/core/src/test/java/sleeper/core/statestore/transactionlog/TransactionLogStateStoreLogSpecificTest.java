@@ -55,12 +55,10 @@ import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJ
 public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransactionLogStateStoreTestBase {
 
     private final Schema schema = schemaWithKey("key", new StringType());
-    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
-    private StateStore store = stateStore();
 
     @BeforeEach
     void setUp() {
-        store.initialise(partitions.buildList());
+        initialiseWithPartitions(new PartitionsBuilder(schema).singlePartition("root"));
     }
 
     @Nested
@@ -430,10 +428,15 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     }
 
     @Nested
-    @DisplayName("Store the body of a transaction separately")
+    @DisplayName("Store the body of a transaction before adding to the log")
     class StoreTransactionBodySeparately {
 
-        private TransactionLogStateStore store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
+        private TransactionLogStateStore store;
+
+        @BeforeEach
+        void setUp() {
+            store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
+        }
 
         @Test
         void shouldAddFileTransactionWhoseBodyIsHeldInS3() {
