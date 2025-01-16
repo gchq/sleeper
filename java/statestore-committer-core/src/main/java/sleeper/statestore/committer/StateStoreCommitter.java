@@ -133,31 +133,9 @@ public class StateStoreCommitter {
         }
         TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
         if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {
-            ReplaceFileReferencesTransaction transaction = getTransaction(tableProperties, request);
-            AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
-                    .bodyKey(request.getBodyKey())
-                    .beforeApplyListener((number, state) -> transaction.reportJobCommits(
-                            compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
-                    .build();
-            try {
-                transactionStateStore.addTransaction(addTransaction);
-            } catch (Exception e) {
-                transaction.reportJobsAllFailed(compactionJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
-                throw e;
-            }
+            commitCompaction(request, tableProperties, transactionStateStore);
         } else if (request.getTransactionType() == TransactionType.ADD_FILES) {
-            AddFilesTransaction transaction = getTransaction(tableProperties, request);
-            AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
-                    .bodyKey(request.getBodyKey())
-                    .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
-                            ingestJobTracker, tableProperties.getStatus()))
-                    .build();
-            try {
-                transactionStateStore.addTransaction(addTransaction);
-            } catch (Exception e) {
-                transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), e);
-                throw e;
-            }
+            commitIngest(request, tableProperties, transactionStateStore);
         } else {
             transactionStateStore.addTransaction(
                     AddTransactionRequest.withTransaction(getTransaction(tableProperties, request))
@@ -166,6 +144,36 @@ public class StateStoreCommitter {
         }
         LOGGER.info("Applied request to table ID {} with type {} at time {}",
                 request.getTableId(), request.getTransactionType(), Instant.now());
+    }
+
+    private void commitCompaction(StateStoreCommitRequest request, TableProperties tableProperties, TransactionLogStateStore stateStore) {
+        ReplaceFileReferencesTransaction transaction = getTransaction(tableProperties, request);
+        AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
+                .bodyKey(request.getBodyKey())
+                .beforeApplyListener((number, state) -> transaction.reportJobCommits(
+                        compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
+                .build();
+        try {
+            stateStore.addTransaction(addTransaction);
+        } catch (Exception e) {
+            transaction.reportJobsAllFailed(compactionJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
+            throw e;
+        }
+    }
+
+    private void commitIngest(StateStoreCommitRequest request, TableProperties tableProperties, TransactionLogStateStore stateStore) {
+        AddFilesTransaction transaction = getTransaction(tableProperties, request);
+        AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
+                .bodyKey(request.getBodyKey())
+                .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
+                        ingestJobTracker, tableProperties.getStatus()))
+                .build();
+        try {
+            stateStore.addTransaction(addTransaction);
+        } catch (Exception e) {
+            transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), e);
+            throw e;
+        }
     }
 
     private <T extends StateStoreTransaction<?>> T getTransaction(
