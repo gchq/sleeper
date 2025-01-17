@@ -27,8 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
-import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
-import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;

@@ -21,10 +21,11 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.core.job.creation.AssignJobIdQueueSender;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
 
 import java.util.UUID;
@@ -37,16 +38,17 @@ public class SendAssignJobIdToSqs implements AssignJobIdQueueSender {
     private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
     private final StateStoreCommitRequestInS3Uploader s3Uploader;
-    private final CompactionJobIdAssignmentCommitRequestSerDe serDe = new CompactionJobIdAssignmentCommitRequestSerDe();
+    private final StateStoreCommitRequestByTransactionSerDe serDe;
 
-    public SendAssignJobIdToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client) {
+    public SendAssignJobIdToSqs(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonSQS sqsClient, AmazonS3 s3Client) {
         this.instanceProperties = instanceProperties;
         this.sqsClient = sqsClient;
         this.s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject);
+        this.serDe = new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider);
     }
 
     @Override
-    public void send(CompactionJobIdAssignmentCommitRequest request) {
+    public void send(StateStoreCommitRequestByTransaction request) {
         LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
         String json = s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request));
         sqsClient.sendMessage(new SendMessageRequest()

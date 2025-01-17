@@ -15,7 +15,6 @@
  */
 package sleeper.statestore.committer;
 
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
@@ -31,16 +30,6 @@ public class StateStoreCommitRequest {
     private final Object request;
     private final String tableId;
     private final ApplyRequest applyRequest;
-
-    /**
-     * Creates a request to commit the assignment of job ID to files in a compaction job.
-     *
-     * @param  request the compaction job ID assignment commit request
-     * @return         a state store commit request
-     */
-    public static StateStoreCommitRequest forCompactionJobIdAssignment(CompactionJobIdAssignmentCommitRequest request) {
-        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.assignCompactionInputFiles(request));
-    }
 
     /**
      * Creates a request to commit a partition split to add new child partitions.

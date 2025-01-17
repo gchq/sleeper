@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -50,6 +49,7 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
@@ -226,9 +226,9 @@ public class StateStoreCommitterTest {
             compactionJobTracker.fixUpdateTime(filesAssignedTime);
 
             // When
-            CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests("test-table",
-                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))));
-            apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
+            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create("test-table", new AssignJobIdsTransaction(
+                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet")))));
+            apply(StateStoreCommitRequest.forTransaction(request));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
@@ -244,9 +244,9 @@ public class StateStoreCommitterTest {
             stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
 
             // When
-            CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests("test-table",
-                    List.of(assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet"))));
-            apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
+            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create("test-table", new AssignJobIdsTransaction(
+                    List.of(assignJobOnPartitionToFiles("job2", "root", List.of("input.parquet")))));
+            apply(StateStoreCommitRequest.forTransaction(request));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
@@ -262,9 +262,9 @@ public class StateStoreCommitterTest {
             StateStore stateStore = createTableGetStateStore("test-table");
 
             // When
-            CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests("test-table",
-                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet"))));
-            apply(StateStoreCommitRequest.forCompactionJobIdAssignment(request));
+            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create("test-table", new AssignJobIdsTransaction(
+                    List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("input.parquet")))));
+            apply(StateStoreCommitRequest.forTransaction(request));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)

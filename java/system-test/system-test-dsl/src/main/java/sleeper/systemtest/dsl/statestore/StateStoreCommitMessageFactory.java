@@ -17,8 +17,6 @@ package sleeper.systemtest.dsl.statestore;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAFile;
@@ -30,6 +28,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.job.run.JobRunSummary;
 
@@ -69,10 +68,8 @@ public class StateStoreCommitMessageFactory {
     }
 
     public StateStoreCommitMessage assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
-        CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests(tableId(),
-                List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
-        return StateStoreCommitMessage.tableIdAndBody(tableId(),
-                new CompactionJobIdAssignmentCommitRequestSerDe().toJson(request));
+        return message(new AssignJobIdsTransaction(
+                List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames))));
     }
 
     public StateStoreCommitMessage commitCompactionForPartitionOnTaskInRun(

@@ -15,9 +15,9 @@
  */
 package sleeper.compaction.core.job.creation;
 
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 
 @FunctionalInterface
 public interface AssignJobIdQueueSender {
-    void send(CompactionJobIdAssignmentCommitRequest commitRequest);
+    void send(StateStoreCommitRequestByTransaction commitRequest);
 }

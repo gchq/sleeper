@@ -89,6 +89,7 @@ public class AwsCompactionDriver implements CompactionDriver {
             try {
                 CreateCompactionJobs createJobs = AwsCreateCompactionJobs.from(
                         ObjectFactory.noUserJars(), instance.getInstanceProperties(),
+                        instance.getTablePropertiesProvider(),
                         new StateStoreProvider(instance.getInstanceProperties(), instance::getStateStore),
                         s3Client, sqsClient);
                 createJobs.createJobWithForceAllFiles(table);
