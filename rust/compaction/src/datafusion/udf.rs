@@ -207,7 +207,7 @@ impl ScalarUDFImpl for SketchUDF {
         Ok(args.args[0].clone())
     }
 
-    /// Sleeper tables cannot contains nullable columns.
+    /// Sleeper tables cannot contains nullable row key columns.
     fn is_nullable(&self, _args: &[Expr], _schema: &dyn ExprSchema) -> bool {
         false
     }
