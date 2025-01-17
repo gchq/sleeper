@@ -33,8 +33,9 @@ use arrow::{
     },
 };
 use datafusion::{
-    common::{internal_err, DFSchema, Result},
+    common::{internal_err, DFSchema, ExprSchema, Result},
     logical_expr::{ColumnarValue, ScalarUDFImpl, Signature, Volatility},
+    prelude::Expr,
     scalar::ScalarValue,
 };
 
@@ -207,11 +208,7 @@ impl ScalarUDFImpl for SketchUDF {
     }
 
     /// Sleeper tables cannot contains nullable columns.
-    fn is_nullable(
-        &self,
-        _args: &[datafusion::prelude::Expr],
-        _schema: &dyn datafusion::common::ExprSchema,
-    ) -> bool {
+    fn is_nullable(&self, _args: &[Expr], _schema: &dyn ExprSchema) -> bool {
         false
     }
 }
