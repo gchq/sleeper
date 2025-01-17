@@ -60,11 +60,6 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public JobRunSummary getSummary() {
-        return summary;
-    }
-
-    @Override
     public Instant getFinishTime() {
         return summary.getFinishTime();
     }

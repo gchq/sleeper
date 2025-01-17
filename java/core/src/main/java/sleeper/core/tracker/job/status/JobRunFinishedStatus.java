@@ -45,12 +45,9 @@ public class JobRunFinishedStatus implements JobRunEndUpdate {
         return new JobRunFinishedStatus(updateTime, summary);
     }
 
+    @Override
     public Instant getUpdateTime() {
         return updateTime;
-    }
-
-    public JobRunSummary getSummary() {
-        return summary;
     }
 
     @Override

@@ -56,11 +56,6 @@ public class TestJobStartedAndFinishedStatus implements JobRunStartedUpdate, Job
     }
 
     @Override
-    public JobRunSummary getSummary() {
-        return summary;
-    }
-
-    @Override
     public Instant getFinishTime() {
         return summary.getFinishTime();
     }

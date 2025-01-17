@@ -16,7 +16,6 @@
 
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
@@ -26,13 +25,6 @@ import java.util.List;
  * Interface for a status update that marks the end of a process run.
  */
 public interface JobRunEndUpdate extends JobStatusUpdate {
-
-    /**
-     * Gets a summary of records processed by this run.
-     *
-     * @return the summary
-     */
-    JobRunSummary getSummary();
 
     /**
      * Gets the time the job finished in the task.

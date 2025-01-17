@@ -16,7 +16,6 @@
 
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
@@ -68,11 +67,6 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, JobRun
     @Override
     public boolean isValid() {
         return false;
-    }
-
-    @Override
-    public JobRunSummary getSummary() {
-        return JobRunSummary.noProcessingDoneAtTime(validationTime);
     }
 
     @Override
