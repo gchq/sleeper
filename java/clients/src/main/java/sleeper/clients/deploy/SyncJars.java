@@ -152,6 +152,7 @@ public class SyncJars {
     }
 
     private BucketLocationConstraint bucketLocationConstraint() {
+        // The us-east-1 region is returned as UNKNOWN_TO_SDK_VERSION, which incorrectly serialises as a string "null".
         BucketLocationConstraint constraint = BucketLocationConstraint.fromValue(region);
         if (constraint == BucketLocationConstraint.UNKNOWN_TO_SDK_VERSION) {
             return null;
