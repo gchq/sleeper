@@ -16,7 +16,6 @@
 package sleeper.statestore.committer;
 
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 
 import java.util.Objects;
@@ -29,16 +28,6 @@ public class StateStoreCommitRequest {
     private final Object request;
     private final String tableId;
     private final ApplyRequest applyRequest;
-
-    /**
-     * Creates a request to commit when files have been deleted by the garbage collector.
-     *
-     * @param  request the commit request
-     * @return         a state store commit request
-     */
-    public static StateStoreCommitRequest forGarbageCollection(GarbageCollectionCommitRequest request) {
-        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.filesDeleted(request));
-    }
 
     /**
      * Creates a request to commit a transaction.

@@ -25,8 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.commit.CommitRequestType;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe.TransactionByTypeJsonSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
@@ -99,22 +97,10 @@ public class StateStoreCommitRequestDeserialiser {
             if (object.has("transactionType")) {
                 StateStoreCommitRequestByTransaction request = context.deserialize(object, StateStoreCommitRequestByTransaction.class);
                 return StateStoreCommitRequest.forTransaction(request);
-            }
-            CommitRequestType type = context.deserialize(object.get("type"), CommitRequestType.class);
-            JsonObject requestObj = object.getAsJsonObject("request");
-            if (type == null) {
-                LOGGER.warn("Attempted to read an unrecognised type, JSON: {}", json);
-                throw new CommitRequestValidationException("Unrecognised request type");
-            }
-            switch (type) {
-                case STORED_IN_S3:
-                    return fromDataBucket.read(
-                            context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
-                case GARBAGE_COLLECTED_FILES:
-                    return StateStoreCommitRequest.forGarbageCollection(
-                            context.deserialize(requestObj, GarbageCollectionCommitRequest.class));
-                default:
-                    throw new CommitRequestValidationException("Unrecognised request type");
+            } else {
+                JsonObject requestObj = object.getAsJsonObject("request");
+                return fromDataBucket.read(
+                        context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
             }
         }
     }

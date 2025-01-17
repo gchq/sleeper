@@ -61,7 +61,7 @@ public class StateStoreCommitRequestInS3SerDe {
      */
     public StateStoreCommitRequestInS3 fromJson(String json) {
         WrappedCommitRequest wrappedRequest = gson.fromJson(json, WrappedCommitRequest.class);
-        if (CommitRequestType.STORED_IN_S3 == wrappedRequest.type) {
+        if ("STORED_IN_S3".equals(wrappedRequest.type)) {
             return wrappedRequest.request;
         }
         throw new IllegalArgumentException("Unexpected request type");
@@ -72,11 +72,11 @@ public class StateStoreCommitRequestInS3SerDe {
      * deserialise the correct commit request.
      */
     private static class WrappedCommitRequest {
-        private final CommitRequestType type;
+        private final String type;
         private final StateStoreCommitRequestInS3 request;
 
         WrappedCommitRequest(StateStoreCommitRequestInS3 request) {
-            this.type = CommitRequestType.STORED_IN_S3;
+            this.type = "STORED_IN_S3";
             this.request = request;
         }
     }

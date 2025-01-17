@@ -37,7 +37,6 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -49,6 +48,7 @@ import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
@@ -488,10 +488,11 @@ public class StateStoreCommitterTest {
             stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("test-job", filenames, fileAfterCompaction)));
             // And we have a request to commit that they have been deleted
-            GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest("test-table", filenames);
+            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(
+                    "test-table", new DeleteFilesTransaction(filenames));
 
             // When
-            apply(StateStoreCommitRequest.forGarbageCollection(request));
+            apply(StateStoreCommitRequest.forTransaction(request));
 
             // Then
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(3))
@@ -503,11 +504,11 @@ public class StateStoreCommitterTest {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
             stateStore.addFiles(List.of(fileFactory.rootFile("file.parquet", 100)));
-            GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest(
-                    "test-table", List.of("file.parquet"));
+            StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(
+                    "test-table", new DeleteFilesTransaction(List.of("file.parquet")));
 
             // When
-            apply(StateStoreCommitRequest.forGarbageCollection(request));
+            apply(StateStoreCommitRequest.forTransaction(request));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)

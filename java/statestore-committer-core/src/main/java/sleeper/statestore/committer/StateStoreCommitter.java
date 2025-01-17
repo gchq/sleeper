@@ -23,7 +23,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
@@ -132,11 +131,6 @@ public class StateStoreCommitter {
                 request.getTableId(), request.getRequest().getClass().getSimpleName(), Instant.now());
     }
 
-    void filesDeleted(GarbageCollectionCommitRequest request) throws StateStoreException {
-        StateStore stateStore = stateStore(request.getTableId());
-        stateStore.deleteGarbageCollectedFileReferenceCounts(request.getFilenames());
-    }
-
     void addTransaction(StateStoreCommitRequestByTransaction request) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
@@ -188,11 +182,6 @@ public class StateStoreCommitter {
             TransactionBodyStore store = transactionBodyStoreProvider.getTransactionBodyStore(tableProperties);
             return store.getBody(request.getBodyKey(), request.getTransactionType());
         }
-    }
-
-    private StateStore stateStore(String tableId) {
-        TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
-        return stateStoreProvider.getStateStore(tableProperties);
     }
 
     /**

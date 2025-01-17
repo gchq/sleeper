@@ -22,13 +22,12 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.job.run.JobRunSummary;
 
@@ -81,9 +80,7 @@ public class StateStoreCommitMessageFactory {
     }
 
     public StateStoreCommitMessage filesDeleted(List<String> filenames) {
-        GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest(tableId(), filenames);
-        return StateStoreCommitMessage.tableIdAndBody(tableId(),
-                new GarbageCollectionCommitRequestSerDe().toJson(request));
+        return message(new DeleteFilesTransaction(filenames));
     }
 
     private StateStoreCommitMessage ingest(Consumer<AddFilesTransaction.Builder> config) {

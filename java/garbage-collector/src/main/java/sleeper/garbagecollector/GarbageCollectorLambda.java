@@ -85,7 +85,8 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         garbageCollector = new GarbageCollector(deleteFileAndSketches(conf),
                 instanceProperties, stateStoreProvider,
-                sendAsyncCommit(instanceProperties, sqsClient, new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject)));
+                sendAsyncCommit(instanceProperties, tablePropertiesProvider, sqsClient,
+                        new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject)));
     }
 
     @Override

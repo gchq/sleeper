@@ -35,8 +35,9 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFile;
@@ -82,7 +83,7 @@ public class GarbageCollectorIT {
     private final List<TableProperties> tables = new ArrayList<>();
     private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final List<GarbageCollectionCommitRequest> sentCommits = new ArrayList<>();
+    private final List<StateStoreCommitRequestByTransaction> sentCommits = new ArrayList<>();
 
     @BeforeEach
     void setUp() throws Exception {
@@ -343,7 +344,8 @@ public class GarbageCollectorIT {
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference(newFile)), List.of(oldFile.toString())));
             assertThat(sentCommits).containsExactly(
-                    new GarbageCollectionCommitRequest(table.get(TABLE_ID), List.of(oldFile.toString())));
+                    StateStoreCommitRequestByTransaction.create(table.get(TABLE_ID),
+                            new DeleteFilesTransaction(List.of(oldFile.toString()))));
         }
 
         @Test
@@ -374,8 +376,10 @@ public class GarbageCollectorIT {
                             List.of(activeReference(newFile1), activeReference(newFile2), activeReference(newFile3)),
                             List.of(oldFile1.toString(), oldFile2.toString(), oldFile3.toString())));
             assertThat(sentCommits).containsExactly(
-                    new GarbageCollectionCommitRequest(table.get(TABLE_ID), List.of(oldFile1.toString(), oldFile2.toString())),
-                    new GarbageCollectionCommitRequest(table.get(TABLE_ID), List.of(oldFile3.toString())));
+                    StateStoreCommitRequestByTransaction.create(table.get(TABLE_ID),
+                            new DeleteFilesTransaction(List.of(oldFile1.toString(), oldFile2.toString()))),
+                    StateStoreCommitRequestByTransaction.create(table.get(TABLE_ID),
+                            new DeleteFilesTransaction(List.of(oldFile3.toString()))));
         }
 
         @Test

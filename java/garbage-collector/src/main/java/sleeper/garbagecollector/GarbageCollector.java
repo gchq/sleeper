@@ -25,11 +25,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
+import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -132,7 +134,8 @@ public class GarbageCollector {
         try {
             boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
             if (asyncCommit) {
-                sendAsyncCommit.sendCommit(new GarbageCollectionCommitRequest(tableProperties.get(TABLE_ID), deletedFilenames));
+                sendAsyncCommit.sendCommit(StateStoreCommitRequestByTransaction.create(
+                        tableProperties.get(TABLE_ID), new DeleteFilesTransaction(deletedFilenames)));
             } else {
                 stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
                 LOGGER.info("Applied deletion to state store");
@@ -190,11 +193,13 @@ public class GarbageCollector {
      */
     @FunctionalInterface
     public interface SendAsyncCommit {
-        void sendCommit(GarbageCollectionCommitRequest commitRequest);
+        void sendCommit(StateStoreCommitRequestByTransaction commitRequest);
     }
 
-    public static SendAsyncCommit sendAsyncCommit(InstanceProperties instanceProperties, AmazonSQS sqs, StateStoreCommitRequestInS3Uploader s3Uploader) {
-        GarbageCollectionCommitRequestSerDe serDe = new GarbageCollectionCommitRequestSerDe();
+    public static SendAsyncCommit sendAsyncCommit(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            AmazonSQS sqs, StateStoreCommitRequestInS3Uploader s3Uploader) {
+        StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider);
         return request -> sqs.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMessageBody(s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request)))

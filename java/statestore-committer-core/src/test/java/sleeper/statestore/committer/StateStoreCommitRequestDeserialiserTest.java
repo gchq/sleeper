@@ -25,8 +25,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
@@ -114,21 +112,6 @@ public class StateStoreCommitRequestDeserialiserTest {
     }
 
     @Test
-    void shouldDeserialiseGarbageCollectionCommitRequest() {
-        // Given
-        createTable("test-table", schemaWithKey("key"));
-        GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest(
-                "test-table", List.of("file1.parquet", "file2.parquet"));
-
-        String jsonString = new GarbageCollectionCommitRequestSerDe().toJson(request);
-
-        // When / Then
-        assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forGarbageCollection(request))
-                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
-    }
-
-    @Test
     void shouldDeserialiseCommitRequestInS3() {
         // Given
         createTable("test-table", schemaWithKey("key"));
@@ -163,16 +146,6 @@ public class StateStoreCommitRequestDeserialiserTest {
         StateStoreCommitRequestDeserialiser deserialiser = deserialiser();
         assertThatThrownBy(() -> deserialiser.fromJson(jsonString))
                 .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
-    void shouldThrowExceptionIfCommitRequestTypeInvalid() {
-        // Given
-        String jsonString = "{\"type\":\"invalid-type\", \"request\":{}}";
-
-        // When / Then
-        assertThatThrownBy(() -> deserialiser().fromJson(jsonString))
-                .isInstanceOf(CommitRequestValidationException.class);
     }
 
     @Test
