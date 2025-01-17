@@ -33,13 +33,20 @@ use arrow::{
     },
 };
 use datafusion::{
-    common::{internal_err, DFSchema, Result},
+    common::{internal_err, DFSchema, ExprSchema, Result},
     logical_expr::{ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility},
+    prelude::Expr,
     scalar::ScalarValue,
 };
 
 use super::sketch::{update_sketch, DataSketchVariant, K};
 
+/// A UDF for producing quantile sketches of Sleeper tables. It operates on row key columns.
+/// This function works by taking each row key column as an argument. It returns a clone of the 0'th column.
+/// The column values aren't transformed at all. We just use the UDF as a way to get to see the column values
+/// so we can inject them into a sketch for later retrieval. The query should look something like:
+/// `SELECT sketch(row_key_col1, row_key_col2, ...), row_key_col2, value_col1, value_col2, ... FROM blah...`
+/// so the sketch function can see each row key column, but only returns the first.
 pub(crate) struct SketchUDF {
     signature: Signature,
     invoke_count: Mutex<usize>,
@@ -204,5 +211,10 @@ impl ScalarUDFImpl for SketchUDF {
         }
 
         Ok(args.args[0].clone())
+    }
+
+    /// Sleeper tables cannot contains nullable row key columns.
+    fn is_nullable(&self, _args: &[Expr], _schema: &dyn ExprSchema) -> bool {
+        false
     }
 }

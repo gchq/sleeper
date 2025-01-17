@@ -26,23 +26,18 @@ use crate::{
 };
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
-    common::{
-        tree_node::{Transformed, TreeNode},
-        DFSchema, DFSchemaRef,
-    },
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
         config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
         FunctionRegistry,
     },
-    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF, SortExpr},
+    logical_expr::{LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_plan::{
         accept, collect, filter::FilterExec, projection::ProjectionExec, ExecutionPlan,
         ExecutionPlanVisitor,
     },
-    physical_planner::{DefaultPhysicalPlanner, PhysicalPlanner},
     prelude::*,
 };
 use log::{error, info, warn};
@@ -137,9 +132,6 @@ pub async fn compact(
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
 
-    // Store schema before applying the sketch function so we can reapply it later
-    let input_schema = frame.schema().clone();
-
     // Build compaction query
     frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
@@ -163,7 +155,7 @@ pub async fn compact(
     }
 
     // Write the frame out and collect stats
-    let stats = collect_stats(frame.clone(), output_path, pqo, input_schema).await?;
+    let stats = collect_stats(frame.clone(), output_path, pqo).await?;
 
     // Write sketches out to file in Sleeper compatible way
     let binding = sketch_func.inner();
@@ -219,12 +211,11 @@ async fn collect_stats(
     frame: DataFrame,
     output_path: &Url,
     pqo: datafusion::config::TableParquetOptions,
-    schema: DFSchema,
 ) -> Result<RowCounts, DataFusionError> {
     // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
     let task_ctx = frame.task_ctx();
     let (session_state, logical_plan) = frame.into_parts();
-    let mut logical_plan = LogicalPlanBuilder::copy_to(
+    let logical_plan = LogicalPlanBuilder::copy_to(
         logical_plan,
         output_path.as_str().into(),
         format_as_file_type(Arc::new(ParquetFormatFactory::new_with_options(pqo))),
@@ -233,27 +224,8 @@ async fn collect_stats(
     )?
     .build()?;
 
-    // Use a tree-node walker to change the schema in the projection node
-    // to eliminate nullable columns
-    logical_plan = session_state
-        // Run the query optimizer
-        .optimize(&logical_plan)?
-        // Fix schema to remove nullable columns
-        .transform(|node| {
-            if let LogicalPlan::Projection(mut projection) = node {
-                projection.schema = DFSchemaRef::new(schema.clone());
-                return Ok(Transformed::yes(LogicalPlan::Projection(projection)));
-            }
-            Ok(Transformed::no(node))
-        })?
-        .data;
-
-    // Convert optimised plan to physical plan
-    let query_planner = DefaultPhysicalPlanner::default();
-    let physical_plan = query_planner
-        .create_physical_plan(&logical_plan, &session_state)
-        .await?;
-
+    // Optimise plan and generate physical plan
+    let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
     let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
     let mut stats = RowCounts::default();
     accept(physical_plan.as_ref(), &mut stats)?;
