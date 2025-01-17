@@ -20,7 +20,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 
 import java.util.Objects;
 
@@ -41,16 +40,6 @@ public class StateStoreCommitRequest {
      */
     public static StateStoreCommitRequest forCompactionJobIdAssignment(CompactionJobIdAssignmentCommitRequest request) {
         return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.assignCompactionInputFiles(request));
-    }
-
-    /**
-     * Creates a request to commit files written during ingest or bulk import.
-     *
-     * @param  request the commit request
-     * @return         a state store commit request
-     */
-    public static StateStoreCommitRequest forIngestAddFiles(IngestAddFilesCommitRequest request) {
-        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.addFiles(request));
     }
 
     /**

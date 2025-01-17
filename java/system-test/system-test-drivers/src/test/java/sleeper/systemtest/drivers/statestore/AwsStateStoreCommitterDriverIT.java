@@ -25,9 +25,11 @@ import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.statestore.committer.StateStoreCommitRequest;
 import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
@@ -78,10 +80,8 @@ public class AwsStateStoreCommitterDriverIT {
         assertThat(receiveCommitRequests(sleeper))
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactly(tuple(tableId,
-                        StateStoreCommitRequest.forIngestAddFiles(IngestAddFilesCommitRequest.builder()
-                                .tableId(tableId)
-                                .fileReferences(List.of(file))
-                                .build())));
+                        StateStoreCommitRequest.forTransaction(StateStoreCommitRequestByTransaction.create(tableId,
+                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)))))));
     }
 
     @Test
@@ -100,10 +100,8 @@ public class AwsStateStoreCommitterDriverIT {
         assertThat(receiveCommitRequestsForBatches(sleeper, 2))
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactlyInAnyOrderElementsOf(files.stream().map(file -> tuple(tableId,
-                        StateStoreCommitRequest.forIngestAddFiles(IngestAddFilesCommitRequest.builder()
-                                .tableId(tableId)
-                                .fileReferences(List.of(file))
-                                .build())))
+                        StateStoreCommitRequest.forTransaction(StateStoreCommitRequestByTransaction.create(tableId,
+                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)))))))
                         .collect(toUnmodifiableList()));
     }
 

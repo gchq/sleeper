@@ -29,6 +29,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
@@ -40,6 +41,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
@@ -47,6 +49,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
@@ -55,7 +58,6 @@ import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 
@@ -89,6 +91,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
 
@@ -287,19 +290,20 @@ public class StateStoreCommitterTest {
                     .build();
             Instant startTime = Instant.parse("2024-06-20T14:50:00Z");
             Instant writtenTime = Instant.parse("2024-06-20T14:55:01Z");
-            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
-                    .ingestJob(ingestJob)
+            AddFilesTransaction transaction = AddFilesTransaction.builder()
+                    .jobId("test-job")
                     .taskId("test-task-id")
                     .jobRunId("test-job-run-id")
-                    .fileReferences(List.of(outputFile))
                     .writtenTime(writtenTime)
+                    .files(AllReferencesToAFile.newFilesWithReferences(List.of(outputFile)))
                     .build();
+            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
 
             ingestJobTracker.jobStarted(ingestJob.startedEventBuilder(startTime)
                     .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
             // When
-            apply(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+            apply(StateStoreCommitRequest.forTransaction(commitRequest));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
@@ -316,17 +320,104 @@ public class StateStoreCommitterTest {
             // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
             StateStore stateStore = createTableGetStateStore("test-table");
             FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
-            IngestAddFilesCommitRequest commitRequest = IngestAddFilesCommitRequest.builder()
-                    .tableId("test-table")
-                    .fileReferences(List.of(outputFile))
-                    .build();
+            AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(outputFile)));
+            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
 
             // When
-            apply(StateStoreCommitRequest.forIngestAddFiles(commitRequest));
+            apply(StateStoreCommitRequest.forTransaction(commitRequest));
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
             assertThat(ingestJobTracker.getAllJobs("test-table")).isEmpty();
+        }
+
+        @Test
+        void shouldFailToApplyAddFilesWhenFileAlreadyExists() throws Exception {
+            // Given we have a commit request during an ingest job, which may still be in progress
+            StateStore stateStore = createTableGetStateStore("test-table");
+            FileReference file = fileFactory.rootFile("output.parquet", 123L);
+            stateStore.addFile(file);
+            IngestJob ingestJob = IngestJob.builder()
+                    .id("test-job")
+                    .tableId("test-table")
+                    .files(List.of("input.parquet"))
+                    .build();
+            Instant startTime = Instant.parse("2024-06-20T14:50:00Z");
+            Instant writtenTime = Instant.parse("2024-06-20T14:55:01Z");
+            AddFilesTransaction transaction = AddFilesTransaction.builder()
+                    .jobId("test-job")
+                    .taskId("test-task-id")
+                    .jobRunId("test-job-run-id")
+                    .writtenTime(writtenTime)
+                    .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
+                    .build();
+            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
+
+            ingestJobTracker.jobStarted(ingestJob.startedEventBuilder(startTime)
+                    .taskId("test-task-id").jobRunId("test-job-run-id").build());
+
+            // When
+            apply(StateStoreCommitRequest.forTransaction(commitRequest));
+
+            // Then
+            assertThat(failures).singleElement().satisfies(e -> assertThat(e)
+                    .isInstanceOf(FileAlreadyExistsException.class));
+            assertThat(stateStore.getFileReferences()).containsExactly(file);
+            assertThat(ingestJobTracker.getAllJobs("test-table"))
+                    .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
+                            .taskId("test-task-id")
+                            .startedStatus(ingestStartedStatus(ingestJob, startTime))
+                            .finishedStatus(failedStatus(
+                                    new JobRunTime(writtenTime, writtenTime),
+                                    List.of("File already exists: output.parquet")))
+                            .build()));
+        }
+
+        @Test
+        void shouldFailToApplyAddFilesWhenStateStoreThrowsUnexpectedException() throws Exception {
+            // Given we have a commit request during an ingest job, which may still be in progress
+            StateStore stateStore = createTableGetStateStore("test-table");
+            FileReference file = fileFactory.rootFile("output.parquet", 123L);
+            IngestJob ingestJob = IngestJob.builder()
+                    .id("test-job")
+                    .tableId("test-table")
+                    .files(List.of("input.parquet"))
+                    .build();
+            Instant startTime = Instant.parse("2024-06-20T14:50:00Z");
+            Instant writtenTime = Instant.parse("2024-06-20T14:55:01Z");
+            AddFilesTransaction transaction = AddFilesTransaction.builder()
+                    .jobId("test-job")
+                    .taskId("test-task-id")
+                    .jobRunId("test-job-run-id")
+                    .writtenTime(writtenTime)
+                    .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
+                    .build();
+            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
+            RuntimeException failure = new RuntimeException("Unexpected failure");
+            InMemoryTransactionLogStore filesLog = transactionLogs.forTableId("test-table").getFilesLogStore();
+            filesLog.atStartOfAddTransaction(() -> {
+                throw failure;
+            });
+
+            ingestJobTracker.jobStarted(ingestJob.startedEventBuilder(startTime)
+                    .taskId("test-task-id").jobRunId("test-job-run-id").build());
+
+            // When
+            apply(StateStoreCommitRequest.forTransaction(commitRequest));
+
+            // Then
+            assertThat(failures).singleElement().satisfies(e -> assertThat(e)
+                    .isInstanceOf(StateStoreException.class)
+                    .hasCause(failure));
+            assertThat(stateStore.getFileReferences()).isEmpty();
+            assertThat(ingestJobTracker.getAllJobs("test-table"))
+                    .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
+                            .taskId("test-task-id")
+                            .startedStatus(ingestStartedStatus(ingestJob, startTime))
+                            .finishedStatus(failedStatus(
+                                    new JobRunTime(writtenTime, writtenTime),
+                                    List.of("Failed adding transaction", "Unexpected failure")))
+                            .build()));
         }
     }
 
@@ -725,10 +816,7 @@ public class StateStoreCommitterTest {
     }
 
     private StateStoreCommitRequest addFilesRequest(String tableId, FileReference... files) {
-        IngestAddFilesCommitRequest request = IngestAddFilesCommitRequest.builder()
-                .tableId(tableId)
-                .fileReferences(List.of(files))
-                .build();
-        return StateStoreCommitRequest.forIngestAddFiles(request);
+        return StateStoreCommitRequest.forTransaction(StateStoreCommitRequestByTransaction.create(tableId,
+                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(files)))));
     }
 }

@@ -157,8 +157,8 @@ public class IngestJobRunner implements IngestJobHandler {
 
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties,
-                    requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
+            return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties, tableProperties,
+                    transactionBuilder -> transactionBuilder.jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         } else {
             return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), tracker,
                     job.addedFilesEventBuilder(timeSupplier.get()).taskId(taskId).jobRunId(jobRunId));
