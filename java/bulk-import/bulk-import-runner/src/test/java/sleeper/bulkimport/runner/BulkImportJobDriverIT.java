@@ -23,7 +23,6 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
-import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
@@ -67,24 +66,27 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
@@ -500,14 +502,15 @@ class BulkImportJobDriverIT {
         assertThat(stateStore.getFileReferences()).isEmpty();
         List<Record> expectedRecords = new ArrayList<>(records);
         sortRecords(expectedRecords);
-        assertThat(receiveAddFilesCommitMessages()).singleElement().satisfies(commit -> {
-            assertThat(commit).isEqualTo(IngestAddFilesCommitRequest.builder()
-                    .ingestJob(ingestJob)
-                    .fileReferences(commit.getFileReferences())
-                    .taskId(taskId).jobRunId(jobRunId)
-                    .writtenTime(writtenTime)
-                    .build());
-            assertThat(commit.getFileReferences())
+        assertThat(receiveCommitMessages()).singleElement().satisfies(commit -> {
+            AddFilesTransaction transaction = commit.<AddFilesTransaction>getTransactionIfHeld().orElseThrow();
+            assertThat(commit).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
+                    AddFilesTransaction.builder()
+                            .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(writtenTime)
+                            .files(transaction.getFiles())
+                            .build()));
+            assertThat(transaction.getFiles())
+                    .flatExtracting(AllReferencesToAFile::getReferences)
                     .extracting(FileReference::getNumberOfRecords, FileReference::getPartitionId,
                             file -> readRecords(file.getFilename(), schema))
                     .containsExactly(tuple(200L, "root", expectedRecords));
@@ -533,29 +536,23 @@ class BulkImportJobDriverIT {
                 .mapToObj(i -> factory.rootFile("s3a://test-data-bucket/test-table/data/partition_root/test-file" + i + ".parquet", 100L))
                 .collect(Collectors.toList());
         Supplier<String> s3FileNameSupplier = () -> "test-add-files-commit";
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+        AddFilesTransaction transaction = AddFilesTransaction.builder()
+                .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(writtenTime)
+                .files(AllReferencesToAFile.newFilesWithReferences(fileReferences))
+                .build();
+        StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
 
         // When
-        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(List.of("test-input-file.parquet")).build();
-        BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, s3FileNameSupplier).submit(
-                IngestAddFilesCommitRequest.builder()
-                        .ingestJob(job.toIngestJob())
-                        .fileReferences(fileReferences)
-                        .taskId(taskId).jobRunId(jobRunId)
-                        .writtenTime(writtenTime)
-                        .build());
+        BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, tablePropertiesProvider, s3FileNameSupplier)
+                .submit(request);
 
         // Then
-        String expectedS3Key = StateStoreCommitRequestInS3.createFileS3Key(
-                tableProperties.get(TABLE_ID), "test-add-files-commit");
-        assertThat(receiveCommitRequestStoredInS3Messages())
-                .containsExactly(new StateStoreCommitRequestInS3(expectedS3Key));
-        assertThat(readAddFilesCommitRequestFromDataBucket(expectedS3Key))
-                .isEqualTo(IngestAddFilesCommitRequest.builder()
-                        .ingestJob(job.toIngestJob())
-                        .fileReferences(fileReferences)
-                        .taskId(taskId).jobRunId(jobRunId)
-                        .writtenTime(writtenTime)
-                        .build());
+        assertThat(receiveCommitMessages()).singleElement().satisfies(found -> {
+            assertThat(found).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.ADD_FILES));
+            assertThat(readTransactionFromDataBucket(found))
+                    .isEqualTo(transaction);
+        });
     }
 
     private static List<Record> readRecords(String filename, Schema schema) {
@@ -706,7 +703,7 @@ class BulkImportJobDriverIT {
         tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-        AddFilesAsynchronously addFilesAsync = BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties);
+        AddFilesAsynchronously addFilesAsync = BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, tablePropertiesProvider);
         BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
                 tablePropertiesProvider, stateStoreProvider, tracker, addFilesAsync, timeSupplier);
@@ -727,28 +724,18 @@ class BulkImportJobDriverIT {
                 .tableName(tableProperties.get(TABLE_NAME));
     }
 
-    private List<StateStoreCommitRequestInS3> receiveCommitRequestStoredInS3Messages() {
-        return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestInS3SerDe().fromJson(message.getBody()))
-                .collect(Collectors.toList());
-    }
-
-    private List<IngestAddFilesCommitRequest> receiveAddFilesCommitMessages() {
-        return receiveCommitMessages().stream()
-                .map(message -> new IngestAddFilesCommitRequestSerDe().fromJson(message.getBody()))
-                .collect(Collectors.toList());
-    }
-
-    private List<Message> receiveCommitMessages() {
+    private List<StateStoreCommitRequest> receiveCommitMessages() {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMaxNumberOfMessages(10);
-        return sqsClient.receiveMessage(receiveMessageRequest).getMessages();
+        return sqsClient.receiveMessage(receiveMessageRequest).getMessages().stream()
+                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
+                .collect(Collectors.toList());
     }
 
-    private IngestAddFilesCommitRequest readAddFilesCommitRequestFromDataBucket(String s3Key) {
-        String requestJson = s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), s3Key);
-        return new IngestAddFilesCommitRequestSerDe().fromJson(requestJson);
+    private StateStoreTransaction<?> readTransactionFromDataBucket(StateStoreCommitRequest request) {
+        return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
+                .getBody(request.getBodyKey(), request.getTransactionType());
     }
 
     private String createFifoQueueGetUrl() {

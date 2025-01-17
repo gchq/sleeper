@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -242,14 +241,6 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                             new JobRunSummary(recordsProcessed, startTime1, finishTime1)))
                                     .statusUpdate(compactionCommittedStatus(commitTime))
                                     .build()));
-        }
-
-        private CompactionJobCommitRequest commitRequestFor(CompactionJob job, JobRunSummary summary) {
-            return commitRequestFor(job, "test-job-run-1", summary);
-        }
-
-        private CompactionJobCommitRequest commitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
-            return new CompactionJobCommitRequest(job, DEFAULT_TASK_ID, runId, summary);
         }
     }
 

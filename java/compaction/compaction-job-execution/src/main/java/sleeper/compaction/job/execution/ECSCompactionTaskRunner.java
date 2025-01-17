@@ -27,9 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
-import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
@@ -42,6 +41,7 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
@@ -144,18 +144,19 @@ public class ECSCompactionTaskRunner {
             CompactionJobTracker jobTracker, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
-                sendToSqs(instanceProperties, sqsClient));
+                sendToSqs(instanceProperties, tablePropertiesProvider, sqsClient));
     }
 
-    private static CommitQueueSender sendToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+    private static CommitQueueSender sendToSqs(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonSQS sqsClient) {
         return request -> {
             String queueUrl = instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL);
-            String tableId = request.getJob().getTableId();
+            String tableId = request.getTableId();
             sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(queueUrl)
                     .withMessageDeduplicationId(UUID.randomUUID().toString())
                     .withMessageGroupId(tableId)
-                    .withMessageBody(new CompactionJobCommitRequestSerDe().toJson(request)));
+                    .withMessageBody(new StateStoreCommitRequestSerDe(tablePropertiesProvider).toJson(request)));
         };
     }
 }

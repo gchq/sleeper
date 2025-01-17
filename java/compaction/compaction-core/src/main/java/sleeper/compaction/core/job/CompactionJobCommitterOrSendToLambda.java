@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.job.commit;
+package sleeper.compaction.core.job;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
@@ -63,15 +64,16 @@ public class CompactionJobCommitterOrSendToLambda {
         boolean commitAsync = tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
         tracker.jobFinished(finishedEvent);
         if (commitAsync) {
-            CompactionJobCommitRequest request = new CompactionJobCommitRequest(job,
-                    finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getSummary());
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                    job.createReplaceFileReferencesRequest(finishedEvent)));
+            StateStoreCommitRequest request = StateStoreCommitRequest.create(table.getTableUniqueId(), transaction);
             LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
             jobCommitQueueSender.send(request);
             LOGGER.info("Sent compaction job {} to queue to be committed asynchronously to table {}", job.getId(), table);
         } else {
             LOGGER.debug("Committing compaction job {} inside compaction task", job.getId());
             stateStoreProvider.getStateStore(tableProperties).atomicallyReplaceFileReferencesWithNewOnes(
-                    List.of(job.replaceFileReferencesRequestBuilder(finishedEvent.getSummary().getRecordsWritten()).build()));
+                    List.of(job.createReplaceFileReferencesRequest(finishedEvent)));
             tracker.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())
@@ -81,6 +83,6 @@ public class CompactionJobCommitterOrSendToLambda {
     }
 
     public interface CommitQueueSender {
-        void send(CompactionJobCommitRequest commitRequest);
+        void send(StateStoreCommitRequest commitRequest);
     }
 }

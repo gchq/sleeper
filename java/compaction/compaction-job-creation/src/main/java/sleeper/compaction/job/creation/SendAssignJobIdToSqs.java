@@ -21,11 +21,12 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.core.job.creation.AssignJobIdQueueSender;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.util.UUID;
 
@@ -36,22 +37,22 @@ public class SendAssignJobIdToSqs implements AssignJobIdQueueSender {
 
     private final InstanceProperties instanceProperties;
     private final AmazonSQS sqsClient;
-    private final StateStoreCommitRequestInS3Uploader s3Uploader;
-    private final CompactionJobIdAssignmentCommitRequestSerDe serDe = new CompactionJobIdAssignmentCommitRequestSerDe();
+    private final StateStoreCommitRequestUploader uploader;
 
-    public SendAssignJobIdToSqs(InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client) {
+    public SendAssignJobIdToSqs(InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonSQS sqsClient, AmazonS3 s3Client) {
         this.instanceProperties = instanceProperties;
         this.sqsClient = sqsClient;
-        this.s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject);
+        this.uploader = new StateStoreCommitRequestUploader(tablePropertiesProvider,
+                S3TransactionBodyStore.createProvider(instanceProperties, s3Client),
+                StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
     }
 
     @Override
-    public void send(CompactionJobIdAssignmentCommitRequest request) {
+    public void send(StateStoreCommitRequest request) {
         LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
-        String json = s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request));
         sqsClient.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMessageBody(json)
+                .withMessageBody(uploader.serialiseAndUploadIfTooBig(request))
                 .withMessageGroupId(request.getTableId())
                 .withMessageDeduplicationId(UUID.randomUUID().toString()));
         LOGGER.debug("Submitted asynchronous request to assign compaction input files via state store committer queue");

@@ -15,26 +15,22 @@
  */
 package sleeper.systemtest.datageneration;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
-
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
 import java.util.Iterator;
 
 import static sleeper.core.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Runs a direct ingest to write random data.
@@ -46,18 +42,16 @@ public class WriteRandomDataDirect {
 
     public static void writeWithIngestFactory(
             SystemTestPropertyValues systemTestProperties, InstanceIngestSession session) throws IOException {
-        StateStoreProvider stateStoreProvider = session.createStateStoreProvider();
         writeWithIngestFactory(
                 IngestFactory.builder()
                         .objectFactory(ObjectFactory.noUserJars())
                         .localDir("/mnt/scratch")
-                        .stateStoreProvider(stateStoreProvider)
+                        .stateStoreProvider(session.stateStoreProvider())
                         .instanceProperties(session.instanceProperties())
                         .hadoopConfiguration(session.hadoopConfiguration())
                         .s3AsyncClient(session.s3Async())
                         .build(),
-                addFilesToStateStore(session.sqs(), session.s3(),
-                        session.instanceProperties(), session.tableProperties(), stateStoreProvider),
+                addFilesToStateStore(session),
                 systemTestProperties, session.tableProperties());
     }
 
@@ -75,14 +69,16 @@ public class WriteRandomDataDirect {
         }
     }
 
-    private static AddFilesToStateStore addFilesToStateStore(
-            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, TableProperties tableProperties,
-            StateStoreProvider stateStoreProvider) {
-        if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties,
-                    requestBuilder -> requestBuilder.tableId(tableProperties.get(TABLE_ID)));
+    private static AddFilesToStateStore addFilesToStateStore(InstanceIngestSession session) {
+        if (session.tableProperties().getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
+            return AddFilesToStateStore.bySqs(session.sqs(), session.instanceProperties(), session.tableProperties(),
+                    new StateStoreCommitRequestUploader(session.tablePropertiesProvider(),
+                            S3TransactionBodyStore.createProvider(session.instanceProperties(), session.s3()),
+                            StateStoreCommitRequestUploader.MAX_SQS_LENGTH),
+                    transactionBuilder -> {
+                    });
         } else {
-            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties));
+            return AddFilesToStateStore.synchronous(session.stateStoreProvider().getStateStore(session.tableProperties()));
         }
     }
 }

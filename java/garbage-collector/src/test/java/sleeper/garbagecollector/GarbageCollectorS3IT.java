@@ -37,6 +37,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -44,13 +45,15 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3SerDe;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -167,8 +170,9 @@ public class GarbageCollectorS3IT {
         assertThat(s3Client.doesObjectExist(testBucket, "new-file.parquet")).isTrue();
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(newFile), List.of(oldFile.getFilename())));
-        assertThat(receiveGarbageCollectionCommitRequests())
-                .containsExactly(new GarbageCollectionCommitRequest(tableProperties.get(TABLE_ID), List.of(oldFile.getFilename())));
+        assertThat(receiveCommitRequests(tableProperties))
+                .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
+                        new DeleteFilesTransaction(List.of(oldFile.getFilename()))));
     }
 
     @Test
@@ -199,10 +203,11 @@ public class GarbageCollectorS3IT {
         assertThat(s3Client.doesObjectExist(testBucket, "new-file.parquet")).isTrue();
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(newFile), List.of(oldFile.getFilename())));
-        assertThat(receiveS3CommitRequests())
-                .map(request -> s3Client.getObjectAsString(testBucket, request.getKeyInS3()))
-                .map(new GarbageCollectionCommitRequestSerDe()::fromJson)
-                .containsExactly(new GarbageCollectionCommitRequest(tableProperties.get(TABLE_ID), List.of(oldFile.getFilename())));
+        assertThat(receiveCommitRequests(tableProperties)).singleElement().satisfies(found -> {
+            assertThat(found).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.DELETE_FILES));
+            assertThat(readTransactionFromDataBucket(tableProperties, found))
+                    .isEqualTo(new DeleteFilesTransaction(List.of(oldFile.getFilename())));
+        });
     }
 
     private InstanceProperties createInstanceProperties() {
@@ -221,15 +226,14 @@ public class GarbageCollectorS3IT {
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
         return createGarbageCollectorWithMaxCommitLength(
-                StateStoreCommitRequestInS3Uploader.MAX_JSON_LENGTH,
+                StateStoreCommitRequestUploader.MAX_SQS_LENGTH,
                 instanceProperties, tableProperties, stateStore);
     }
 
     private GarbageCollector createGarbageCollectorWithMaxCommitLength(int maxLength, InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
         return new GarbageCollector(deleteFileAndSketches(configuration), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                sendAsyncCommit(instanceProperties, sqsClient,
-                        new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject, maxLength, () -> UUID.randomUUID().toString())));
+                sendAsyncCommit(instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client, maxLength));
     }
 
     private static Schema getSchema() {
@@ -245,16 +249,15 @@ public class GarbageCollectorS3IT {
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
     }
 
-    private List<GarbageCollectionCommitRequest> receiveGarbageCollectionCommitRequests() {
+    private List<StateStoreCommitRequest> receiveCommitRequests(TableProperties tableProperties) {
         return receiveCommitMessages().stream()
-                .map(message -> new GarbageCollectionCommitRequestSerDe().fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 
-    private List<StateStoreCommitRequestInS3> receiveS3CommitRequests() {
-        return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestInS3SerDe().fromJson(message.getBody()))
-                .collect(Collectors.toList());
+    private StateStoreTransaction<?> readTransactionFromDataBucket(TableProperties tableProperties, StateStoreCommitRequest request) {
+        return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
+                .getBody(request.getBodyKey(), request.getTransactionType());
     }
 
     private List<Message> receiveCommitMessages() {

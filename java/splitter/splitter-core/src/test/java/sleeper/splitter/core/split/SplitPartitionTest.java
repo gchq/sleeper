@@ -34,7 +34,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 import sleeper.sketches.Sketches;
 import sleeper.splitter.core.split.FindPartitionSplitPoint.SketchesLoader;
 
@@ -64,7 +65,7 @@ public class SplitPartitionTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     private final Map<String, Sketches> fileToSketchMap = new HashMap<>();
-    private final List<SplitPartitionCommitRequest> sentAsyncCommits = new ArrayList<>();
+    private final List<StateStoreCommitRequest> sentAsyncCommits = new ArrayList<>();
 
     @Nested
     @DisplayName("Skip split")
@@ -537,11 +538,9 @@ public class SplitPartitionTest {
                     .splitToNewChildren("A", "B", "C", 51)
                     .buildTree();
 
-            assertThat(sentAsyncCommits).containsExactly(new SplitPartitionCommitRequest(
-                    "tableId",
-                    resultant.getPartition("A"),
-                    resultant.getPartition("B"),
-                    resultant.getPartition("C")));
+            assertThat(sentAsyncCommits).containsExactly(StateStoreCommitRequest.create("tableId",
+                    new SplitPartitionTransaction(resultant.getPartition("A"),
+                            List.of(resultant.getPartition("B"), resultant.getPartition("C")))));
         }
     }
 

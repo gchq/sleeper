@@ -48,4 +48,8 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore, Trans
     public TransactionBodyStore getTransactionBodyStore(TableProperties tableProperties) {
         return this;
     }
+
+    public Map<String, StateStoreTransaction<?>> getTransactionByKey() {
+        return transactionByKey;
+    }
 }

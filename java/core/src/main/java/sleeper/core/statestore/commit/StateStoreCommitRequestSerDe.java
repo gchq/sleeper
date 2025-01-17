@@ -32,17 +32,34 @@ import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.GsonConfig;
 
 import java.lang.reflect.Type;
+import java.util.Objects;
+
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Serialises and deserialises a commit request for a transaction to be added to the state store.
  */
-public class StateStoreCommitRequestByTransactionSerDe {
+public class StateStoreCommitRequestSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public StateStoreCommitRequestByTransactionSerDe(TablePropertiesProvider tablePropertiesProvider) {
+    public StateStoreCommitRequestSerDe(TablePropertiesProvider tablePropertiesProvider) {
+        this(tablePropertiesProvider::getById);
+    }
+
+    public StateStoreCommitRequestSerDe(TableProperties tableProperties) {
+        this(tableId -> {
+            if (Objects.equals(tableId, tableProperties.get(TABLE_ID))) {
+                return tableProperties;
+            } else {
+                throw new IllegalArgumentException("Expected table ID " + tableProperties.get(TABLE_ID) + ", found " + tableId);
+            }
+        });
+    }
+
+    private StateStoreCommitRequestSerDe(TablePropertiesSource tablePropertiesProvider) {
         GsonBuilder builder = GsonConfig.standardBuilder()
-                .registerTypeAdapter(StateStoreCommitRequestByTransaction.class, new TransactionByTypeJsonSerDe(tablePropertiesProvider));
+                .registerTypeAdapter(StateStoreCommitRequest.class, new TransactionByTypeJsonSerDe(tablePropertiesProvider));
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
@@ -53,7 +70,7 @@ public class StateStoreCommitRequestByTransactionSerDe {
      * @param  request the commit request
      * @return         the JSON string
      */
-    public String toJson(StateStoreCommitRequestByTransaction request) {
+    public String toJson(StateStoreCommitRequest request) {
         return gson.toJson(request);
     }
 
@@ -63,7 +80,7 @@ public class StateStoreCommitRequestByTransactionSerDe {
      * @param  request the commit request
      * @return         the pretty-printed JSON string
      */
-    public String toJsonPrettyPrint(StateStoreCommitRequestByTransaction request) {
+    public String toJsonPrettyPrint(StateStoreCommitRequest request) {
         return gsonPrettyPrint.toJson(request);
     }
 
@@ -73,22 +90,22 @@ public class StateStoreCommitRequestByTransactionSerDe {
      * @param  json the JSON string
      * @return      the commit request
      */
-    public StateStoreCommitRequestByTransaction fromJson(String json) {
-        return gson.fromJson(json, StateStoreCommitRequestByTransaction.class);
+    public StateStoreCommitRequest fromJson(String json) {
+        return gson.fromJson(json, StateStoreCommitRequest.class);
     }
 
     /**
      * A GSON plugin to serialise/deserialise a request for a transaction, serialising a transaction by its type.
      */
-    public static class TransactionByTypeJsonSerDe implements JsonSerializer<StateStoreCommitRequestByTransaction>, JsonDeserializer<StateStoreCommitRequestByTransaction> {
-        private final TablePropertiesProvider tablePropertiesProvider;
+    private static class TransactionByTypeJsonSerDe implements JsonSerializer<StateStoreCommitRequest>, JsonDeserializer<StateStoreCommitRequest> {
+        private final TablePropertiesSource tablePropertiesProvider;
 
-        public TransactionByTypeJsonSerDe(TablePropertiesProvider tablePropertiesProvider) {
+        private TransactionByTypeJsonSerDe(TablePropertiesSource tablePropertiesProvider) {
             this.tablePropertiesProvider = tablePropertiesProvider;
         }
 
         @Override
-        public StateStoreCommitRequestByTransaction deserialize(JsonElement jsonElement, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+        public StateStoreCommitRequest deserialize(JsonElement jsonElement, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             if (!jsonElement.isJsonObject()) {
                 throw new JsonParseException("Expected JsonObject, got " + jsonElement);
             }
@@ -97,15 +114,15 @@ public class StateStoreCommitRequestByTransactionSerDe {
             TransactionType transactionType = context.deserialize(json.get("transactionType"), TransactionType.class);
             JsonElement bodyKeyElement = json.get("bodyKey");
             if (bodyKeyElement != null) {
-                return StateStoreCommitRequestByTransaction.create(tableId, bodyKeyElement.getAsString(), transactionType);
+                return StateStoreCommitRequest.create(tableId, bodyKeyElement.getAsString(), transactionType);
             } else {
-                return StateStoreCommitRequestByTransaction.create(tableId,
+                return StateStoreCommitRequest.create(tableId,
                         transactionSerDe(tableId).toTransaction(transactionType, json.get("transaction")));
             }
         }
 
         @Override
-        public JsonElement serialize(StateStoreCommitRequestByTransaction request, Type typeOfSrc, JsonSerializationContext context) {
+        public JsonElement serialize(StateStoreCommitRequest request, Type typeOfSrc, JsonSerializationContext context) {
             JsonObject json = new JsonObject();
             json.addProperty("tableId", request.getTableId());
             json.add("transactionType", context.serialize(request.getTransactionType()));
@@ -121,5 +138,18 @@ public class StateStoreCommitRequestByTransactionSerDe {
             TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
             return new TransactionSerDe(tableProperties.getSchema());
         }
+    }
+
+    /**
+     * A way to retrieve table properties by the table ID.
+     */
+    public interface TablePropertiesSource {
+        /**
+         * Gets the properties of a Sleeper table.
+         *
+         * @param  tableId the table ID
+         * @return         the properties
+         */
+        TableProperties getById(String tableId);
     }
 }

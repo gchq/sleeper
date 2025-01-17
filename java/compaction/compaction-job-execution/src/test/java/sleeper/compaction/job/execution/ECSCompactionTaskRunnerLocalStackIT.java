@@ -42,10 +42,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
@@ -71,8 +69,11 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
@@ -525,7 +526,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, JobRunSummary summary) {
-        return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, jobRunId, summary));
+        return new StateStoreCommitRequestSerDe(tablePropertiesProvider)
+                .toJson(StateStoreCommitRequest.create(tableId,
+                        new ReplaceFileReferencesTransaction(List.of(
+                                job.createReplaceFileReferencesRequest(taskId, jobRunId, summary.getRecordsProcessed())))));
     }
 
     private FileReference onJob(CompactionJob job, FileReference reference) {

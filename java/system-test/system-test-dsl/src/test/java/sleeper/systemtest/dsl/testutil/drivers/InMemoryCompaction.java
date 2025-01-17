@@ -17,7 +17,6 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
@@ -64,7 +63,6 @@ import java.util.UUID;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class InMemoryCompaction {
-    private final List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = new ArrayList<>();
     private final List<CompactionJob> queuedJobs = new ArrayList<>();
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
@@ -148,8 +146,9 @@ public class InMemoryCompaction {
         private CreateCompactionJobs jobCreator() {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                     instance.getStateStoreProvider(), batchJobsWriter(),
-                    message -> {
-                    }, jobIdAssignmentRequests::add,
+                    compactionJobMessage -> {
+                    }, idAssignmentCommit -> {
+                    },
                     GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
         }
     }
@@ -184,7 +183,7 @@ public class InMemoryCompaction {
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         stateStore.atomicallyReplaceFileReferencesWithNewOnes(
-                List.of(job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten()).build()));
+                List.of(job.createReplaceFileReferencesRequest(run.getTaskId(), null, recordsProcessed)));
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new JobRunSummary(recordsProcessed, startTime, finishTime);
     }

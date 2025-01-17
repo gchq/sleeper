@@ -44,14 +44,14 @@ public class StateStoreCommitRequestByTransactionSerDeTest {
 
     Schema schema = schemaWithKey("key", new LongType());
     TableProperties tableProperties = createTableProperties(schema);
-    StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe(new FixedTablePropertiesProvider(tableProperties));
+    StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(new FixedTablePropertiesProvider(tableProperties));
     TransactionBodyStore bodyStore = new InMemoryTransactionBodyStore();
 
     @Test
     void shouldSerialiseCompactionCommitInS3() {
         // Given
         String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
-        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create(
+        StateStoreCommitRequest commitRequest = StateStoreCommitRequest.create(
                 "test-table", key, TransactionType.REPLACE_FILE_REFERENCES);
 
         // When
@@ -66,7 +66,7 @@ public class StateStoreCommitRequestByTransactionSerDeTest {
     void shouldSerialiseInitialisePartitionsInS3() {
         // Given
         String key = TransactionBodyStore.createObjectKey("test-table", Instant.parse("2025-01-14T15:30:00Z"), "test-transaction");
-        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create(
+        StateStoreCommitRequest commitRequest = StateStoreCommitRequest.create(
                 "test-table", key, TransactionType.INITIALISE_PARTITIONS);
 
         // When
@@ -84,7 +84,7 @@ public class StateStoreCommitRequestByTransactionSerDeTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
-        StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table", transaction);
+        StateStoreCommitRequest commitRequest = StateStoreCommitRequest.create("test-table", transaction);
 
         // When
         String json = serDe.toJsonPrettyPrint(commitRequest);

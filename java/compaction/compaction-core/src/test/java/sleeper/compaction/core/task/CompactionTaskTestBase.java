@@ -18,9 +18,8 @@ package sleeper.compaction.core.task;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
 import sleeper.core.properties.PropertiesReloader;
@@ -29,13 +28,18 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
@@ -84,7 +88,7 @@ public class CompactionTaskTestBase {
     protected final InMemoryCompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     protected final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
     protected final List<Duration> sleeps = new ArrayList<>();
-    protected final List<CompactionJobCommitRequest> commitRequestsOnQueue = new ArrayList<>();
+    protected final List<StateStoreCommitRequest> commitRequestsOnQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
 
@@ -321,6 +325,28 @@ public class CompactionTaskTestBase {
                 throw new IllegalStateException("Unexpected job: " + job);
             }
         };
+    }
+
+    protected StateStoreCommitRequest commitRequestFor(CompactionJob job, JobRunSummary summary) {
+        return commitRequestFor(job, "test-job-run-1", summary);
+    }
+
+    protected StateStoreCommitRequest commitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
+        return StateStoreCommitRequest.create(job.getTableId(),
+                new ReplaceFileReferencesTransaction(List.of(
+                        ReplaceFileReferencesRequest.builder()
+                                .jobId(job.getId())
+                                .taskId(DEFAULT_TASK_ID)
+                                .jobRunId(runId)
+                                .inputFiles(job.getInputFiles())
+                                .newReference(FileReference.builder()
+                                        .filename(job.getOutputFile())
+                                        .partitionId(job.getPartitionId())
+                                        .numberOfRecords(summary.getRecordsWritten())
+                                        .countApproximate(false)
+                                        .onlyContainsDataForThisPartition(true)
+                                        .build())
+                                .build())));
     }
 
     protected void setAsyncCommit(boolean enabled, TableProperties... tableProperties) {
