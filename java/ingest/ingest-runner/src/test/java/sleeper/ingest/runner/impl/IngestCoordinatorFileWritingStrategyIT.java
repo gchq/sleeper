@@ -30,9 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -48,6 +46,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.runner.testutils.TestIngestType;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -86,8 +85,7 @@ import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoop
 @Testcontainers
 public class IngestCoordinatorFileWritingStrategyIT {
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
     @TempDir
     public Path temporaryFolder;
     private final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);

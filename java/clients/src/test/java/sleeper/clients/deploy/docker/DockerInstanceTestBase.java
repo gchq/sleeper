@@ -24,7 +24,6 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
@@ -33,7 +32,6 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.clients.docker.DeployDockerInstance;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -43,6 +41,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.recordretrieval.QueryExecutor;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
@@ -57,8 +56,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class DockerInstanceTestBase {
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE_V2))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
     protected final AmazonS3 s3Client = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     protected final AmazonDynamoDB dynamoDB = buildAwsV1Client(

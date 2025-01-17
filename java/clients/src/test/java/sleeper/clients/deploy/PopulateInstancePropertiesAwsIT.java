@@ -25,12 +25,11 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.regions.Region;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 
 import java.util.Map;
 
@@ -50,8 +49,7 @@ import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 public class PopulateInstancePropertiesAwsIT {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.STS);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.STS);
     private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
             .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
                     localStackContainer.getEndpointOverride(LocalStackContainer.Service.STS).toString(),

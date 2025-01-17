@@ -31,13 +31,11 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -55,6 +53,7 @@ import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransac
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.splitter.core.find.SplitPartitionJobDefinition;
 import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
 import sleeper.statestore.StateStoreFactory;
@@ -86,8 +85,7 @@ import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoop
 public class SplitPartitionLambdaIT {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(Service.S3, Service.DYNAMODB, Service.SQS);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(Service.S3, Service.DYNAMODB, Service.SQS);
 
     private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());

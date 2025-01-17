@@ -41,7 +41,6 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.bulkimport.runner.BulkImportJobDriver.AddFilesAsynchronously;
@@ -50,7 +49,6 @@ import sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSort
 import sleeper.bulkimport.runner.rdd.BulkImportJobRDDDriver;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -80,6 +78,7 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.ingest.core.job.IngestJob;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
@@ -141,8 +140,7 @@ class BulkImportJobDriverIT {
     }
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            Service.DYNAMODB, Service.S3, Service.SQS);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(Service.DYNAMODB, Service.S3, Service.SQS);
 
     @TempDir
     public java.nio.file.Path folder;

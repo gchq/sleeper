@@ -21,14 +21,13 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -40,8 +39,7 @@ import java.util.stream.Stream;
 @Testcontainers
 public abstract class JarsBucketITBase {
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3);
 
     protected final S3Client s3 = S3Client.builder()
             .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3))

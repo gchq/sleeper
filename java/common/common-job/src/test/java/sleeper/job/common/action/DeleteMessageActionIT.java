@@ -25,9 +25,8 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,8 +39,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 public class DeleteMessageActionIT {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.SQS);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.SQS);
 
     private AmazonSQS createSQSClient() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
