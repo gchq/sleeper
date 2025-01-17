@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.BucketCannedACL;
+import software.amazon.awssdk.services.s3.model.BucketLocationConstraint;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
@@ -89,7 +90,7 @@ public class SyncJars {
                     .bucket(bucketName)
                     .acl(BucketCannedACL.PRIVATE)
                     .createBucketConfiguration(configBuilder -> configBuilder
-                            .locationConstraint(region)));
+                            .locationConstraint(bucketLocationConstraint())));
             s3.putPublicAccessBlock(builder -> builder
                     .bucket(bucketName)
                     .publicAccessBlockConfiguration(configBuilder -> configBuilder
@@ -147,6 +148,16 @@ public class SyncJars {
     private static List<Path> listJarsInDirectory(Path directory) throws IOException {
         try (Stream<Path> jars = Files.list(directory)) {
             return jars.filter(path -> path.toFile().getName().endsWith(".jar")).collect(Collectors.toList());
+        }
+    }
+
+    private BucketLocationConstraint bucketLocationConstraint() {
+        // The us-east-1 region is returned as UNKNOWN_TO_SDK_VERSION, which incorrectly serialises as a string "null".
+        BucketLocationConstraint constraint = BucketLocationConstraint.fromValue(region);
+        if (constraint == BucketLocationConstraint.UNKNOWN_TO_SDK_VERSION) {
+            return null;
+        } else {
+            return constraint;
         }
     }
 

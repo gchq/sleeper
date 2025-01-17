@@ -26,12 +26,11 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 
 import java.util.List;
 import java.util.Map;
@@ -42,15 +41,14 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class InvokeForTablesIT {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.SQS);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.SQS);
 
     private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
 

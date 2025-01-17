@@ -23,13 +23,12 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -57,8 +56,7 @@ import static sleeper.build.uptime.lambda.WiremockTestHelper.wiremockClient;
 public class BuildUptimeLambdaIT {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3);
 
     private final BuildUptimeEventSerDe serDe = new BuildUptimeEventSerDe();
     private BuildUptimeLambda lambda;

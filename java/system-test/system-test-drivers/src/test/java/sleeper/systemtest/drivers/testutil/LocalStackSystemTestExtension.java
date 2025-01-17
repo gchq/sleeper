@@ -17,9 +17,8 @@ package sleeper.systemtest.drivers.testutil;
 
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentContext;
 import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
@@ -40,8 +39,7 @@ public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
     @SuppressWarnings("resource") // Will be cleaned up by Ryuk
     private static LocalStackContainer startContainer() {
-        LocalStackContainer container = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE_V2))
-                .withServices(Service.S3, Service.DYNAMODB, Service.SQS);
+        LocalStackContainer container = SleeperLocalStackContainer.create(Service.S3, Service.DYNAMODB, Service.SQS);
         container.start();
         return container;
     }

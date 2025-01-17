@@ -26,9 +26,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -44,6 +42,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
 import sleeper.ingest.runner.testutils.RecordGenerator;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -60,7 +59,6 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -70,14 +68,14 @@ import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.parque
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.standardIngestCoordinatorBuilder;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class IngestCoordinatorUsingDirectWriteBackedByArrayListIT {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
     @TempDir
     public Path temporaryFolder;
     private final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);

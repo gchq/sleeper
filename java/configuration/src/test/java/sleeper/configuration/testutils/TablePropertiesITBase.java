@@ -23,24 +23,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A base class for tests storing table properties in S3 with a DynamoDB table index, in LocalStack.
@@ -49,8 +48,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 public abstract class TablePropertiesITBase {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))

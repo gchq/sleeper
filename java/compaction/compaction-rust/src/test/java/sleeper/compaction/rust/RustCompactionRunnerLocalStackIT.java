@@ -24,14 +24,12 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.rust.RustCompactionRunner.AwsConfig;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -41,6 +39,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.record.RecordReadSupport;
@@ -69,8 +68,7 @@ import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoop
 public class RustCompactionRunnerLocalStackIT {
 
     @Container
-    private static final LocalStackContainer CONTAINER = new LocalStackContainer(
-            DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(S3);
+    private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.create(S3);
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);

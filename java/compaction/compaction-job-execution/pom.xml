@@ -88,13 +88,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>configuration</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>parquet</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
@@ -121,18 +114,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>localstack</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
+            <groupId>sleeper</groupId>
+            <artifactId>localstack-test</artifactId>
+            <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

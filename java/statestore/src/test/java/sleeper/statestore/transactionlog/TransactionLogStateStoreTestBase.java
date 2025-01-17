@@ -26,26 +26,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class TransactionLogStateStoreTestBase {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
     protected static AmazonDynamoDB dynamoDBClient;
     protected static AmazonS3 s3Client;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();

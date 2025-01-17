@@ -30,9 +30,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -52,6 +50,7 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
@@ -64,7 +63,6 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -79,12 +77,12 @@ import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFil
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
 import static sleeper.garbagecollector.GarbageCollector.sendAsyncCommit;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class GarbageCollectorS3IT {
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(Service.S3, Service.SQS);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(Service.S3, Service.SQS);
     private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
 

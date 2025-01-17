@@ -28,6 +28,7 @@ chunks:
       - build
       - common/dynamodb-tools
       - common/dynamodb-test
+      - common/localstack-test
       - statestore
       - statestore-committer-core
       - statestore-lambda

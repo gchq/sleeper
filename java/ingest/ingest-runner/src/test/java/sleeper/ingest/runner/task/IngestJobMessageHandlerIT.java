@@ -27,9 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
@@ -38,15 +36,16 @@ import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class IngestJobMessageHandlerIT {
@@ -54,8 +53,7 @@ public class IngestJobMessageHandlerIT {
     private static final String TEST_TABLE_ID = "test-table-id";
     private static final String TEST_BUCKET = "test-bucket";
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3);
     private final AmazonS3 s3Client = createS3Client();
     private final InstanceProperties properties = new InstanceProperties();
     private final Instant validationTime = Instant.parse("2023-10-17T14:15:00Z");
