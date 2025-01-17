@@ -18,8 +18,10 @@ package sleeper.core.tracker.job.status;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents a job finishing, and stores the records processed summary.
@@ -58,6 +60,11 @@ public class JobRunFinishedStatus implements JobRunEndUpdate {
     @Override
     public RecordsProcessed getRecordsProcessed() {
         return summary.getRecordsProcessed();
+    }
+
+    @Override
+    public Optional<Duration> getTimeInProcess() {
+        return Optional.of(summary.getTimeInProcess());
     }
 
     @Override

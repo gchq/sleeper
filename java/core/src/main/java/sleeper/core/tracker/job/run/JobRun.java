@@ -152,8 +152,11 @@ public class JobRun {
             Instant startTime = Optional.ofNullable(startedStatus)
                     .map(JobRunStartedUpdate::getStartTime)
                     .orElseGet(finishedStatus::getFinishTime);
-            return new JobRunSummary(finishedStatus.getRecordsProcessed(),
-                    new JobRunTime(startTime, finishedStatus.getFinishTime()));
+            Instant finishTime = finishedStatus.getFinishTime();
+            JobRunTime runTime = finishedStatus.getTimeInProcess()
+                    .map(timeInProcess -> new JobRunTime(startTime, finishTime, timeInProcess))
+                    .orElseGet(() -> new JobRunTime(startTime, finishTime));
+            return new JobRunSummary(finishedStatus.getRecordsProcessed(), runTime);
         } else {
             return null;
         }
