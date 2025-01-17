@@ -43,9 +43,9 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public abstract class AdminClientITBase extends AdminClientTestBase {

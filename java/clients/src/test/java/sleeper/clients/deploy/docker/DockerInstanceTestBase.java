@@ -52,8 +52,8 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 public class DockerInstanceTestBase {
     public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);

@@ -34,7 +34,7 @@ import sleeper.localstack.test.SleeperLocalStackContainer;
 import java.util.List;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public abstract class LocalStackTestBase {

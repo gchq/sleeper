@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.configuration.testutils;
+package sleeper.localstack.test;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
