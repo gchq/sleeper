@@ -16,6 +16,7 @@
 package sleeper.core.tracker.job.status;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -57,6 +58,16 @@ public class TestJobStartedAndFinishedStatus implements JobRunStartedUpdate, Job
     @Override
     public JobRunSummary getSummary() {
         return summary;
+    }
+
+    @Override
+    public Instant getFinishTime() {
+        return summary.getFinishTime();
+    }
+
+    @Override
+    public RecordsProcessed getRecordsProcessed() {
+        return summary.getRecordsProcessed();
     }
 
     @Override

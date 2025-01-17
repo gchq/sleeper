@@ -16,6 +16,7 @@
 package sleeper.core.tracker.ingest.job.query;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;
@@ -61,6 +62,16 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
     @Override
     public JobRunSummary getSummary() {
         return summary;
+    }
+
+    @Override
+    public Instant getFinishTime() {
+        return summary.getFinishTime();
+    }
+
+    @Override
+    public RecordsProcessed getRecordsProcessed() {
+        return summary.getRecordsProcessed();
     }
 
     public int getNumFilesWrittenByJob() {

@@ -21,6 +21,9 @@ import java.util.Objects;
  * A data structure for storing the number of records read and written.
  */
 public class RecordsProcessed {
+
+    public static final RecordsProcessed NONE = new RecordsProcessed(0, 0);
+
     private final long recordsRead;
     private final long recordsWritten;
 
