@@ -195,12 +195,12 @@ class DynamoDBCompactionJobStatusFormat {
                         getInstantAttribute(item, START_TIME),
                         getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_FINISHED:
-                return CompactionJobFinishedStatus.updateTimeAndSummary(
-                        getInstantAttribute(item, UPDATE_TIME),
-                        new JobRunSummary(new RecordsProcessed(
+                return CompactionJobFinishedStatus.builder()
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .recordsProcessed(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
-                                getLongAttribute(item, RECORDS_WRITTEN, 0)),
-                                getRunTime(item)))
+                                getLongAttribute(item, RECORDS_WRITTEN, 0)))
                         .build();
             case UPDATE_TYPE_COMMITTED:
                 return CompactionJobCommittedStatus.commitAndUpdateTime(

@@ -15,7 +15,6 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
@@ -35,19 +34,6 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
         recordsProcessed = Objects.requireNonNull(builder.recordsProcessed, "recordsProcessed must not be null");
-    }
-
-    /**
-     * Creates a builder for a finished status update.
-     *
-     * @param  updateTime the update time to set
-     * @param  summary    the records processed summary to set
-     * @return            a builder
-     */
-    public static Builder updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return builder().updateTime(updateTime)
-                .finishTime(summary.getFinishTime())
-                .recordsProcessed(summary.getRecordsProcessed());
     }
 
     public static Builder builder() {

@@ -97,7 +97,11 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobFinishedStatus compactionFinishedStatus(JobRunSummary summary) {
-        return CompactionJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary).build();
+        return CompactionJobFinishedStatus.builder()
+                .updateTime(defaultUpdateTime(summary.getFinishTime()))
+                .finishTime(summary.getFinishTime())
+                .recordsProcessed(summary.getRecordsProcessed())
+                .build();
     }
 
     public static CompactionJobCommittedStatus compactionCommittedStatus(Instant committedTime) {
