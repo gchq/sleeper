@@ -31,7 +31,6 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
-import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
@@ -113,16 +112,14 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
             CompactionJobFinishedEvent event, DynamoDBRecordBuilder builder) {
-        JobRunSummary summary = event.getSummary();
+        RecordsProcessed recordsProcessed = event.getRecordsProcessed();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
-                .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(TASK_ID, event.getTaskId())
                 .string(JOB_RUN_ID, event.getJobRunId())
-                .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
-                .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
-                .number(RECORDS_READ, summary.getRecordsRead())
-                .number(RECORDS_WRITTEN, summary.getRecordsWritten())
+                .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
+                .number(RECORDS_READ, recordsProcessed.getRecordsRead())
+                .number(RECORDS_WRITTEN, recordsProcessed.getRecordsWritten())
                 .build();
     }
 
