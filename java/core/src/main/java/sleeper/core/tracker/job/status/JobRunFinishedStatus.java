@@ -29,11 +29,15 @@ import java.util.Optional;
 public class JobRunFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
-    private final JobRunSummary summary;
+    private final Instant finishTime;
+    private final RecordsProcessed recordsProcessed;
+    private final Duration timeInProcess;
 
-    private JobRunFinishedStatus(Instant updateTime, JobRunSummary summary) {
+    private JobRunFinishedStatus(Instant updateTime, Instant finishTime, RecordsProcessed recordsProcessed, Duration timeInProcess) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
-        this.summary = Objects.requireNonNull(summary, "summary must not be null");
+        this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
+        this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
+        this.timeInProcess = timeInProcess;
     }
 
     /**
@@ -44,7 +48,7 @@ public class JobRunFinishedStatus implements JobRunEndUpdate {
      * @return            an instance of this class
      */
     public static JobRunFinishedStatus updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return new JobRunFinishedStatus(updateTime, summary);
+        return new JobRunFinishedStatus(updateTime, summary.getFinishTime(), summary.getRecordsProcessed(), summary.getTimeInProcess());
     }
 
     @Override
@@ -54,41 +58,39 @@ public class JobRunFinishedStatus implements JobRunEndUpdate {
 
     @Override
     public Instant getFinishTime() {
-        return summary.getFinishTime();
+        return finishTime;
     }
 
     @Override
     public RecordsProcessed getRecordsProcessed() {
-        return summary.getRecordsProcessed();
+        return recordsProcessed;
     }
 
     @Override
     public Optional<Duration> getTimeInProcess() {
-        return Optional.of(summary.getTimeInProcess());
+        return Optional.of(timeInProcess);
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof JobRunFinishedStatus)) {
             return false;
         }
-        JobRunFinishedStatus that = (JobRunFinishedStatus) o;
-        return updateTime.equals(that.updateTime) && summary.equals(that.summary);
+        JobRunFinishedStatus other = (JobRunFinishedStatus) obj;
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(recordsProcessed, other.recordsProcessed)
+                && Objects.equals(timeInProcess, other.timeInProcess);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary);
+        return Objects.hash(updateTime, finishTime, recordsProcessed, timeInProcess);
     }
 
     @Override
     public String toString() {
-        return "ProcessFinishedStatus{" +
-                "updateTime=" + updateTime +
-                ", summary=" + summary +
-                '}';
+        return "JobRunFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", recordsProcessed=" + recordsProcessed + ", timeInProcess=" + timeInProcess + "}";
     }
 }
