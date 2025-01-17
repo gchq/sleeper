@@ -24,12 +24,9 @@ import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.commit.CommitRequestType;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe.TransactionByTypeJsonSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
@@ -59,7 +56,6 @@ public class StateStoreCommitRequestDeserialiser {
     private static Gson gson(TablePropertiesProvider tablePropertiesProvider, DeserialiseFromDataBucket readFromDataBucket) {
         return GsonConfig.standardBuilder()
                 .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser(readFromDataBucket))
-                .registerTypeAdapter(SplitPartitionCommitRequest.class, new SplitPartitionDeserialiser(tablePropertiesProvider))
                 .registerTypeAdapter(StateStoreCommitRequestByTransaction.class, new TransactionByTypeJsonSerDe(tablePropertiesProvider::getById))
                 .serializeNulls()
                 .create();
@@ -114,51 +110,12 @@ public class StateStoreCommitRequestDeserialiser {
                 case STORED_IN_S3:
                     return fromDataBucket.read(
                             context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
-                case SPLIT_PARTITION:
-                    return StateStoreCommitRequest.forSplitPartition(
-                            context.deserialize(requestObj, SplitPartitionCommitRequest.class));
                 case GARBAGE_COLLECTED_FILES:
                     return StateStoreCommitRequest.forGarbageCollection(
                             context.deserialize(requestObj, GarbageCollectionCommitRequest.class));
                 default:
                     throw new CommitRequestValidationException("Unrecognised request type");
             }
-        }
-    }
-
-    /**
-     * Deserialise the split partition request.
-     */
-    private static class SplitPartitionDeserialiser implements JsonDeserializer<SplitPartitionCommitRequest> {
-
-        public static final String TABLE_ID = "tableId";
-        public static final String PARENT_PARTITION = "parentPartition";
-        public static final String LEFT_PARTITION = "leftChild";
-        public static final String RIGHT_PARTITION = "rightChild";
-
-        private TablePropertiesProvider tablePropertiesProvider;
-
-        private SplitPartitionDeserialiser(TablePropertiesProvider tablePropertiesProvider) {
-            this.tablePropertiesProvider = tablePropertiesProvider;
-        }
-
-        @Override
-        public SplitPartitionCommitRequest deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext context) throws JsonParseException {
-            JsonObject json = jsonElement.getAsJsonObject();
-            String tableId = json.get(TABLE_ID).getAsString();
-
-            PartitionJsonSerDe partitionJsonSerDe = new PartitionJsonSerDe(tablePropertiesProvider.getById(tableId).getSchema());
-
-            JsonElement jsonParentPartition = json.get(PARENT_PARTITION);
-            Partition parentPartition = partitionJsonSerDe.deserialize(jsonParentPartition, type, context);
-
-            JsonElement jsonLeftPartition = json.get(LEFT_PARTITION);
-            Partition leftChildPartition = partitionJsonSerDe.deserialize(jsonLeftPartition, type, context);
-
-            JsonElement jsonRightPartition = json.get(RIGHT_PARTITION);
-            Partition rightChildPartition = partitionJsonSerDe.deserialize(jsonRightPartition, type, context);
-
-            return new SplitPartitionCommitRequest(tableId, parentPartition, leftChildPartition, rightChildPartition);
         }
     }
 

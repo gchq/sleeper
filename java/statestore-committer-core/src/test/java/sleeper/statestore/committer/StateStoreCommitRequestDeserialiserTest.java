@@ -17,20 +17,16 @@ package sleeper.statestore.committer;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestInS3;
@@ -114,27 +110,6 @@ public class StateStoreCommitRequestDeserialiserTest {
         // When / Then
         assertThat(deserialiser().fromJson(jsonString))
                 .isEqualTo(StateStoreCommitRequest.forTransaction(request))
-                .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
-    }
-
-    @Test
-    void shouldDeserialiseSplitPartitionCommitRequest() {
-        // Given
-        Schema schema = schemaWithKey("key", new StringType());
-        PartitionTree partitionTree = new PartitionsBuilder(schema)
-                .rootFirst("root")
-                .splitToNewChildren("root", "left", "right", "aaa")
-                .buildTree();
-        SplitPartitionCommitRequest splitPartitionCommitRequest = new SplitPartitionCommitRequest(
-                "test-table", partitionTree.getRootPartition(),
-                partitionTree.getPartition("left"), partitionTree.getPartition("right"));
-        createTable("test-table", schema);
-
-        String jsonString = new SplitPartitionCommitRequestSerDe(schema).toJson(splitPartitionCommitRequest);
-
-        // When / Then
-        assertThat(deserialiser().fromJson(jsonString))
-                .isEqualTo(StateStoreCommitRequest.forSplitPartition(splitPartitionCommitRequest))
                 .extracting(StateStoreCommitRequest::getTableId).isEqualTo("test-table");
     }
 

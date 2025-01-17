@@ -49,8 +49,9 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
@@ -142,11 +143,9 @@ public class SplitPartitionLambdaIT {
                 .buildTree();
         assertThat(stateStore().getAllPartitions()).containsExactlyElementsOf(partitionTree.getAllPartitions());
         assertThat(receiveSplitPartitionCommitMessages()).containsExactly(
-                new SplitPartitionCommitRequest(
-                        tableProperties.get(TABLE_ID),
-                        expectedTree.getRootPartition(),
-                        expectedTree.getPartition("L"),
-                        expectedTree.getPartition("R")));
+                StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID),
+                        new SplitPartitionTransaction(expectedTree.getRootPartition(),
+                                List.of(expectedTree.getPartition("L"), expectedTree.getPartition("R")))));
     }
 
     private InstanceProperties createInstance() {
@@ -166,9 +165,9 @@ public class SplitPartitionLambdaIT {
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
     }
 
-    private List<SplitPartitionCommitRequest> receiveSplitPartitionCommitMessages() {
+    private List<StateStoreCommitRequestByTransaction> receiveSplitPartitionCommitMessages() {
         return receiveCommitMessages().stream()
-                .map(message -> new SplitPartitionCommitRequestSerDe(schema).fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 

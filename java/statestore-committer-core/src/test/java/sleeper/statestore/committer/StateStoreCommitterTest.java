@@ -38,7 +38,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
@@ -51,6 +50,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
@@ -433,13 +433,12 @@ public class StateStoreCommitterTest {
                     .splitToNewChildren("root", "left", "right", "aaa")
                     .buildTree();
             StateStore stateStore = createTableGetStateStore("test-table");
-            SplitPartitionCommitRequest commitRequest = new SplitPartitionCommitRequest("test-table",
-                    afterTree.getPartition("root"),
-                    afterTree.getPartition("left"),
-                    afterTree.getPartition("right"));
+            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table",
+                    new SplitPartitionTransaction(afterTree.getPartition("root"),
+                            List.of(afterTree.getPartition("left"), afterTree.getPartition("right"))));
 
             // When
-            apply(StateStoreCommitRequest.forSplitPartition(commitRequest));
+            apply(StateStoreCommitRequest.forTransaction(commitRequest));
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -458,13 +457,12 @@ public class StateStoreCommitterTest {
                     afterTree.getPartition("root"),
                     afterTree.getPartition("left"),
                     afterTree.getPartition("right"));
-            SplitPartitionCommitRequest commitRequest = new SplitPartitionCommitRequest("test-table",
-                    afterTree.getPartition("root"),
-                    afterTree.getPartition("left"),
-                    afterTree.getPartition("right"));
+            StateStoreCommitRequestByTransaction commitRequest = StateStoreCommitRequestByTransaction.create("test-table",
+                    new SplitPartitionTransaction(afterTree.getPartition("root"),
+                            List.of(afterTree.getPartition("left"), afterTree.getPartition("right"))));
 
             // When
-            apply(StateStoreCommitRequest.forSplitPartition(commitRequest));
+            apply(StateStoreCommitRequest.forTransaction(commitRequest));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)

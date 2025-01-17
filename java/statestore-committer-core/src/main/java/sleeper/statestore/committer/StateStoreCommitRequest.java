@@ -17,7 +17,6 @@ package sleeper.statestore.committer;
 
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
 
 import java.util.Objects;
@@ -30,16 +29,6 @@ public class StateStoreCommitRequest {
     private final Object request;
     private final String tableId;
     private final ApplyRequest applyRequest;
-
-    /**
-     * Creates a request to commit a partition split to add new child partitions.
-     *
-     * @param  request the commit request
-     * @return         a state store commit request
-     */
-    public static StateStoreCommitRequest forSplitPartition(SplitPartitionCommitRequest request) {
-        return new StateStoreCommitRequest(request, request.getTableId(), committer -> committer.splitPartition(request));
-    }
 
     /**
      * Creates a request to commit when files have been deleted by the garbage collector.

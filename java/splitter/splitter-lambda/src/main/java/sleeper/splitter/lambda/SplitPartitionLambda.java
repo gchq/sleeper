@@ -40,7 +40,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.SplitPartitionCommitRequestSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.splitter.core.find.SplitPartitionJobDefinition;
 import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
@@ -128,7 +128,7 @@ public class SplitPartitionLambda implements RequestHandler<SQSEvent, SQSBatchRe
     }
 
     private static SendAsyncCommit sendAsyncCommit(AmazonSQS sqs, InstanceProperties instanceProperties, TableProperties tableProperties) {
-        SplitPartitionCommitRequestSerDe serDe = new SplitPartitionCommitRequestSerDe(tableProperties.getSchema());
+        StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe(tableProperties);
         return request -> sqs.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMessageBody(serDe.toJson(request))
