@@ -24,7 +24,6 @@ import com.google.gson.JsonParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe.PartitionJsonSerDe;
@@ -63,7 +62,7 @@ public class StateStoreCommitRequestDeserialiser {
         return GsonConfig.standardBuilder()
                 .registerTypeAdapter(StateStoreCommitRequest.class, new WrapperDeserialiser(readFromDataBucket))
                 .registerTypeAdapter(SplitPartitionCommitRequest.class, new SplitPartitionDeserialiser(tablePropertiesProvider))
-                .registerTypeAdapter(StateStoreCommitRequestByTransaction.class, new TransactionByTypeJsonSerDe(tablePropertiesProvider))
+                .registerTypeAdapter(StateStoreCommitRequestByTransaction.class, new TransactionByTypeJsonSerDe(tablePropertiesProvider::getById))
                 .serializeNulls()
                 .create();
     }
@@ -117,9 +116,6 @@ public class StateStoreCommitRequestDeserialiser {
                 case STORED_IN_S3:
                     return fromDataBucket.read(
                             context.deserialize(requestObj, StateStoreCommitRequestInS3.class));
-                case COMPACTION_FINISHED:
-                    return StateStoreCommitRequest.forCompactionJob(
-                            context.deserialize(requestObj, CompactionJobCommitRequest.class));
                 case INGEST_ADD_FILES:
                     return StateStoreCommitRequest.forIngestAddFiles(
                             context.deserialize(requestObj, IngestAddFilesCommitRequest.class));

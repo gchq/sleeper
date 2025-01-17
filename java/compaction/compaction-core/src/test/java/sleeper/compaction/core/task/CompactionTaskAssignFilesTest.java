@@ -19,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
@@ -206,7 +205,6 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         uncommittedCompactionRun(DEFAULT_TASK_ID, expectedSummary)));
-        assertThat(commitRequestsOnQueue).containsExactly(
-                new CompactionJobCommitRequest(job, DEFAULT_TASK_ID, "test-job-run-1", expectedSummary));
+        assertThat(commitRequestsOnQueue).containsExactly(commitRequestFor(job, expectedSummary));
     }
 }
