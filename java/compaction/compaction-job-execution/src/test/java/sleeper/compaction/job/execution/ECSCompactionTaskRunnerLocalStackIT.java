@@ -69,8 +69,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
@@ -526,8 +526,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, JobRunSummary summary) {
-        return new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider)
-                .toJson(StateStoreCommitRequestByTransaction.create(tableId,
+        return new StateStoreCommitRequestSerDe(tablePropertiesProvider)
+                .toJson(StateStoreCommitRequest.create(tableId,
                         new ReplaceFileReferencesTransaction(List.of(
                                 job.createReplaceFileReferencesRequest(taskId, jobRunId, summary.getRecordsProcessed())))));
     }

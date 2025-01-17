@@ -23,7 +23,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
@@ -126,55 +126,58 @@ public class StateStoreCommitter {
      * @param request the commit request
      */
     public void apply(StateStoreCommitRequest request) throws StateStoreException {
-        request.apply(this);
-        LOGGER.info("Applied request to table ID {} with type {} at time {}",
-                request.getTableId(), request.getRequest().getClass().getSimpleName(), Instant.now());
-    }
-
-    void addTransaction(StateStoreCommitRequestByTransaction request) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        if (stateStore instanceof TransactionLogStateStore) {
-            TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
-            if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {
-                ReplaceFileReferencesTransaction transaction = getTransaction(tableProperties, request);
-                AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
-                        .bodyKey(request.getBodyKey())
-                        .beforeApplyListener((number, state) -> transaction.reportJobCommits(
-                                compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
-                        .build();
-                try {
-                    transactionStateStore.addTransaction(addTransaction);
-                } catch (Exception e) {
-                    transaction.reportJobsAllFailed(compactionJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
-                    throw e;
-                }
-            } else if (request.getTransactionType() == TransactionType.ADD_FILES) {
-                AddFilesTransaction transaction = getTransaction(tableProperties, request);
-                AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
-                        .bodyKey(request.getBodyKey())
-                        .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
-                                ingestJobTracker, tableProperties.getStatus()))
-                        .build();
-                try {
-                    transactionStateStore.addTransaction(addTransaction);
-                } catch (Exception e) {
-                    transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), e);
-                    throw e;
-                }
-            } else {
-                transactionStateStore.addTransaction(
-                        AddTransactionRequest.withTransaction(getTransaction(tableProperties, request))
-                                .bodyKey(request.getBodyKey())
-                                .build());
-            }
-        } else {
+        if (!(stateStore instanceof TransactionLogStateStore)) {
             throw new UnsupportedOperationException("Cannot add a transaction for a non-transaction log state store");
+        }
+        TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
+        if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {
+            commitCompaction(request, tableProperties, transactionStateStore);
+        } else if (request.getTransactionType() == TransactionType.ADD_FILES) {
+            commitIngest(request, tableProperties, transactionStateStore);
+        } else {
+            transactionStateStore.addTransaction(
+                    AddTransactionRequest.withTransaction(getTransaction(tableProperties, request))
+                            .bodyKey(request.getBodyKey())
+                            .build());
+        }
+        LOGGER.info("Applied request to table ID {} with type {} at time {}",
+                request.getTableId(), request.getTransactionType(), Instant.now());
+    }
+
+    private void commitCompaction(StateStoreCommitRequest request, TableProperties tableProperties, TransactionLogStateStore stateStore) {
+        ReplaceFileReferencesTransaction transaction = getTransaction(tableProperties, request);
+        AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
+                .bodyKey(request.getBodyKey())
+                .beforeApplyListener((number, state) -> transaction.reportJobCommits(
+                        compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
+                .build();
+        try {
+            stateStore.addTransaction(addTransaction);
+        } catch (Exception e) {
+            transaction.reportJobsAllFailed(compactionJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
+            throw e;
+        }
+    }
+
+    private void commitIngest(StateStoreCommitRequest request, TableProperties tableProperties, TransactionLogStateStore stateStore) {
+        AddFilesTransaction transaction = getTransaction(tableProperties, request);
+        AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
+                .bodyKey(request.getBodyKey())
+                .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
+                        ingestJobTracker, tableProperties.getStatus()))
+                .build();
+        try {
+            stateStore.addTransaction(addTransaction);
+        } catch (Exception e) {
+            transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), e);
+            throw e;
         }
     }
 
     private <T extends StateStoreTransaction<?>> T getTransaction(
-            TableProperties tableProperties, StateStoreCommitRequestByTransaction request) {
+            TableProperties tableProperties, StateStoreCommitRequest request) {
         Optional<T> transaction = request.getTransactionIfHeld();
         if (transaction.isPresent()) {
             return transaction.get();

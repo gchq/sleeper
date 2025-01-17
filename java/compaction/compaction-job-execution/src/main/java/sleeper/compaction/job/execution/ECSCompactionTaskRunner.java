@@ -41,7 +41,7 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.util.LoggedDuration;
@@ -156,7 +156,7 @@ public class ECSCompactionTaskRunner {
                     .withQueueUrl(queueUrl)
                     .withMessageDeduplicationId(UUID.randomUUID().toString())
                     .withMessageGroupId(tableId)
-                    .withMessageBody(new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider).toJson(request)));
+                    .withMessageBody(new StateStoreCommitRequestSerDe(tablePropertiesProvider).toJson(request)));
         };
     }
 }

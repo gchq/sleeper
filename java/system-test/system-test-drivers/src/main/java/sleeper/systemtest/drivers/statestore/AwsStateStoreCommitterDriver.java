@@ -23,11 +23,12 @@ import software.amazon.awssdk.services.lambda.model.GetEventSourceMappingRespons
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.SplitIntoBatches;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 
 import java.time.Duration;
@@ -56,17 +57,17 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     }
 
     @Override
-    public void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitMessage> messages) {
+    public void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitRequest> messages) {
         SplitIntoBatches.streamBatchesOf(10, messages).parallel().forEach(this::sendMessageBatch);
     }
 
     @Override
-    public void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitMessage> messages) {
+    public void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitRequest> messages) {
         SplitIntoBatches.streamBatchesOf(10, messages).sequential().forEach(this::sendMessageBatch);
     }
 
-    private void sendMessageBatch(List<StateStoreCommitMessage> batch) {
-        StateStoreCommitRequestInS3Uploader s3Uploader = s3Uploader();
+    private void sendMessageBatch(List<StateStoreCommitRequest> batch) {
+        StateStoreCommitRequestUploader uploader = uploader();
         sqs.sendMessageBatch(request -> request
                 .queueUrl(instance.getInstanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL))
                 .entries(batch.stream()
@@ -74,13 +75,15 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
                                 .messageDeduplicationId(UUID.randomUUID().toString())
                                 .id(UUID.randomUUID().toString())
                                 .messageGroupId(message.getTableId())
-                                .messageBody(s3Uploader.uploadAndWrapIfTooBig(message.getTableId(), message.getBody()))
+                                .messageBody(uploader.serialiseAndUploadIfTooBig(message))
                                 .build())
                         .collect(toUnmodifiableList())));
     }
 
-    private StateStoreCommitRequestInS3Uploader s3Uploader() {
-        return new StateStoreCommitRequestInS3Uploader(instance.getInstanceProperties(), s3::putObject);
+    private StateStoreCommitRequestUploader uploader() {
+        return new StateStoreCommitRequestUploader(instance.getTablePropertiesProvider(),
+                S3TransactionBodyStore.createProvider(instance.getInstanceProperties(), s3),
+                StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
     }
 
     @Override

@@ -22,8 +22,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
@@ -48,15 +47,15 @@ public class StateStoreCommitMessageFactory {
         this.tableProperties = tableProperties;
     }
 
-    public StateStoreCommitMessage addFiles(List<FileReference> files) {
+    public StateStoreCommitRequest addFiles(List<FileReference> files) {
         return ingest(builder -> builder.files(AllReferencesToAFile.newFilesWithReferences(files)));
     }
 
-    public StateStoreCommitMessage addFileWithJob(FileReference file) {
+    public StateStoreCommitRequest addFileWithJob(FileReference file) {
         return addFilesWithJob(List.of(file));
     }
 
-    public StateStoreCommitMessage addFilesWithJob(List<FileReference> files) {
+    public StateStoreCommitRequest addFilesWithJob(List<FileReference> files) {
         String jobId = UUID.randomUUID().toString();
         return ingest(builder -> builder
                 .files(AllReferencesToAFile.newFilesWithReferences(files))
@@ -66,12 +65,12 @@ public class StateStoreCommitMessageFactory {
                 .writtenTime(Instant.now()));
     }
 
-    public StateStoreCommitMessage assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
+    public StateStoreCommitRequest assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
         return message(new AssignJobIdsTransaction(
                 List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames))));
     }
 
-    public StateStoreCommitMessage commitCompactionForPartitionOnTaskInRun(
+    public StateStoreCommitRequest commitCompactionForPartitionOnTaskInRun(
             String jobId, String partitionId, List<String> filenames, String taskId, String jobRunId, JobRunSummary recordsProcessed) {
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job = factory.createCompactionJobWithFilenames(jobId, filenames, partitionId);
@@ -79,24 +78,18 @@ public class StateStoreCommitMessageFactory {
                 job.createReplaceFileReferencesRequest(taskId, jobRunId, recordsProcessed.getRecordsProcessed()))));
     }
 
-    public StateStoreCommitMessage filesDeleted(List<String> filenames) {
+    public StateStoreCommitRequest filesDeleted(List<String> filenames) {
         return message(new DeleteFilesTransaction(filenames));
     }
 
-    private StateStoreCommitMessage ingest(Consumer<AddFilesTransaction.Builder> config) {
+    private StateStoreCommitRequest ingest(Consumer<AddFilesTransaction.Builder> config) {
         AddFilesTransaction.Builder builder = AddFilesTransaction.builder();
         config.accept(builder);
         return message(builder.build());
     }
 
-    private StateStoreCommitMessage message(StateStoreTransaction<?> transaction) {
-        StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID), transaction);
-        StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe(tableProperties);
-        return StateStoreCommitMessage.tableIdAndBody(tableId(), serDe.toJson(request));
-    }
-
-    private String tableId() {
-        return tableProperties.get(TABLE_ID);
+    private StateStoreCommitRequest message(StateStoreTransaction<?> transaction) {
+        return StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
     }
 
 }

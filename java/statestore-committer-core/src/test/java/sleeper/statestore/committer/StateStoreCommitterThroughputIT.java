@@ -42,7 +42,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
@@ -94,14 +94,14 @@ public class StateStoreCommitterThroughputIT {
         String tableId = createTable(schema).get(TABLE_ID);
         StateStoreCommitter committer = committer();
         FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
-        committer.apply(StateStoreCommitRequest.forTransaction(StateStoreCommitRequestByTransaction.create(tableId,
+        committer.apply(StateStoreCommitRequest.create(tableId,
                 new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(
-                        List.of(fileFactory.rootFile("prewarm-file.parquet", 123)))))));
+                        List.of(fileFactory.rootFile("prewarm-file.parquet", 123))))));
 
         return runRequestsGetStats(committer, IntStream.rangeClosed(1, numberOfRequests)
-                .mapToObj(i -> StateStoreCommitRequest.forTransaction(StateStoreCommitRequestByTransaction.create(tableId,
+                .mapToObj(i -> StateStoreCommitRequest.create(tableId,
                         new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(
-                                List.of(fileFactory.rootFile("file-" + i + ".parquet", i))))))));
+                                List.of(fileFactory.rootFile("file-" + i + ".parquet", i)))))));
     }
 
     private Stats runRequestsGetStats(StateStoreCommitter committer, Stream<StateStoreCommitRequest> requests) throws Exception {

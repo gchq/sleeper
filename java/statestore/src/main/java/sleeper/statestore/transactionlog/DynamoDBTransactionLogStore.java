@@ -67,7 +67,6 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
 
     private final String transactionDescription;
     private final String logTableName;
-    private final InstanceProperties instanceProperties;
     private final TableProperties tableProperties;
     private final TableStatus sleeperTable;
     private final AmazonDynamoDB dynamoClient;
@@ -114,7 +113,6 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
             AmazonDynamoDB dynamoClient, AmazonS3 s3Client) {
         this.transactionDescription = transactionDescription;
         this.logTableName = logTableName;
-        this.instanceProperties = instanceProperties;
         this.tableProperties = tableProperties;
         this.sleeperTable = tableProperties.getStatus();
         this.dynamoClient = dynamoClient;

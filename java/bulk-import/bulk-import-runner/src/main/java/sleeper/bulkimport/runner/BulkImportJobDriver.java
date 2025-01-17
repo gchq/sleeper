@@ -41,9 +41,8 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -54,6 +53,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -123,7 +123,7 @@ public class BulkImportJobDriver {
                         .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(getTime.get())
                         .files(AllReferencesToAFile.newFilesWithReferences(output.fileReferences()))
                         .build();
-                StateStoreCommitRequestByTransaction request = StateStoreCommitRequestByTransaction.create(table.getTableUniqueId(), transaction);
+                StateStoreCommitRequest request = StateStoreCommitRequest.create(table.getTableUniqueId(), transaction);
                 LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
                 addFilesAsync.submit(request);
                 LOGGER.info("Submitted {} files to statestore committer for job {} in table {}", output.numFiles(), job.getId(), table);
@@ -253,7 +253,7 @@ public class BulkImportJobDriver {
     }
 
     public interface AddFilesAsynchronously {
-        void submit(StateStoreCommitRequestByTransaction request);
+        void submit(StateStoreCommitRequest request);
     }
 
     public static AddFilesAsynchronously submitFilesToCommitQueue(
@@ -263,14 +263,12 @@ public class BulkImportJobDriver {
 
     public static AddFilesAsynchronously submitFilesToCommitQueue(
             AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, Supplier<String> s3FilenameSupplier) {
-        StateStoreCommitRequestByTransactionSerDe serDe = new StateStoreCommitRequestByTransactionSerDe(tablePropertiesProvider);
-        StateStoreCommitRequestInS3Uploader s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject,
-                StateStoreCommitRequestInS3Uploader.MAX_JSON_LENGTH, s3FilenameSupplier);
+        StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(tablePropertiesProvider,
+                S3TransactionBodyStore.createProvider(instanceProperties, s3Client), StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
         return request -> {
-            String json = s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request));
             sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageBody(json)
+                    .withMessageBody(uploader.serialiseAndUploadIfTooBig(request))
                     .withMessageGroupId(request.getTableId())
                     .withMessageDeduplicationId(UUID.randomUUID().toString()));
         };

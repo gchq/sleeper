@@ -49,8 +49,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransaction;
-import sleeper.core.statestore.commit.StateStoreCommitRequestByTransactionSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
@@ -143,7 +143,7 @@ public class SplitPartitionLambdaIT {
                 .buildTree();
         assertThat(stateStore().getAllPartitions()).containsExactlyElementsOf(partitionTree.getAllPartitions());
         assertThat(receiveSplitPartitionCommitMessages()).containsExactly(
-                StateStoreCommitRequestByTransaction.create(tableProperties.get(TABLE_ID),
+                StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                         new SplitPartitionTransaction(expectedTree.getRootPartition(),
                                 List.of(expectedTree.getPartition("L"), expectedTree.getPartition("R")))));
     }
@@ -165,9 +165,9 @@ public class SplitPartitionLambdaIT {
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
     }
 
-    private List<StateStoreCommitRequestByTransaction> receiveSplitPartitionCommitMessages() {
+    private List<StateStoreCommitRequest> receiveSplitPartitionCommitMessages() {
         return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestByTransactionSerDe(tableProperties).fromJson(message.getBody()))
+                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
                 .collect(Collectors.toList());
     }
 
