@@ -20,12 +20,17 @@ import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import sleeper.core.CommonTestConstants;
+
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -36,8 +41,9 @@ class QueueMessageCountIT {
     private static final String TEST_QUEUE_NAME = "test-queue-url";
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.SQS);
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+            .withServices(LocalStackContainer.Service.SQS)
+            .withEnv("LOCALSTACK_HOST", getHostAddress());
 
     private AmazonSQS createSQSClient() {
         return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
@@ -45,6 +51,15 @@ class QueueMessageCountIT {
 
     private String createQueue(AmazonSQS sqs) {
         return sqs.createQueue(TEST_QUEUE_NAME).getQueueUrl();
+    }
+
+    private static String getHostAddress() {
+        String dockerHost = DockerClientFactory.instance().dockerHostIpAddress();
+        try {
+            return InetAddress.getByName(dockerHost).getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Test
