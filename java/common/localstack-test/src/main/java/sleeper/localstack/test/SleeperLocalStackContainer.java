@@ -15,6 +15,7 @@
  */
 package sleeper.localstack.test;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -32,6 +33,7 @@ public class SleeperLocalStackContainer {
     private SleeperLocalStackContainer() {
     }
 
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     public static LocalStackContainer create(LocalStackContainer.Service... services) {
         return new LocalStackContainer(DockerImageName.parse(LOCALSTACK_DOCKER_IMAGE))
                 .withServices(services)
