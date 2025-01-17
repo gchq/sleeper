@@ -110,7 +110,7 @@ public class JobRun {
      */
     public Instant getFinishTime() {
         if (isFinished()) {
-            return getFinishedStatus().getSummary().getFinishTime();
+            return getFinishedStatus().getFinishTime();
         } else {
             return null;
         }
@@ -149,7 +149,11 @@ public class JobRun {
      */
     public JobRunSummary getFinishedSummary() {
         if (isFinished()) {
-            return getFinishedStatus().getSummary();
+            Instant startTime = Optional.ofNullable(startedStatus)
+                    .map(JobRunStartedUpdate::getStartTime)
+                    .orElseGet(finishedStatus::getFinishTime);
+            return new JobRunSummary(finishedStatus.getRecordsProcessed(),
+                    new JobRunTime(startTime, finishedStatus.getFinishTime()));
         } else {
             return null;
         }
