@@ -57,7 +57,7 @@ import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildA
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 public class DockerInstanceTestBase {
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE_V2))
             .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
     protected final AmazonS3 s3Client = buildAwsV1Client(
             localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());

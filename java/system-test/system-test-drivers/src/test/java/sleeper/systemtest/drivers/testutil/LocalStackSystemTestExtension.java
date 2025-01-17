@@ -40,7 +40,7 @@ public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
     @SuppressWarnings("resource") // Will be cleaned up by Ryuk
     private static LocalStackContainer startContainer() {
-        LocalStackContainer container = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
+        LocalStackContainer container = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE_V2))
                 .withServices(Service.S3, Service.DYNAMODB, Service.SQS);
         container.start();
         return container;
