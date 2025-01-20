@@ -20,6 +20,7 @@
               "recordsRead": 1000600,
               "recordsWritten": 500300
             },
+            "timeInProcess": 7200.0,
             "type": "FINISHED_WHEN_COMMITTED"
           },
           {
@@ -52,6 +53,7 @@
               "recordsRead": 600,
               "recordsWritten": 300
             },
+            "timeInProcess": 0.123,
             "type": "FINISHED_WHEN_COMMITTED"
           },
           {

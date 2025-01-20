@@ -53,7 +53,7 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
      * @return            a builder
      */
     public static Builder updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return builder().updateTime(updateTime).finishTime(summary.getFinishTime()).recordsProcessed(summary.getRecordsProcessed());
+        return builder().updateTime(updateTime).finishTime(summary.getFinishTime()).recordsProcessed(summary.getRecordsProcessed()).timeInProcess(summary.getTimeInProcess());
     }
 
     public static Builder builder() {
