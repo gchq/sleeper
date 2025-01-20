@@ -144,7 +144,6 @@ class DynamoDBIngestJobStatusFormat {
         JobRunSummary summary = event.getSummary();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
-                .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
