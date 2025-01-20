@@ -15,6 +15,7 @@
  */
 package sleeper.core.tracker.job.status;
 
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 
@@ -24,7 +25,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Represents a job finishing, and stores the records processed summary.
+ * Represents a job finishing, and stores the records processed summary. In practice this is used when converting a
+ * task to appear as a {@link JobRun}, including the amount of time spent on jobs in the task.
  */
 public class JobRunFinishedStatus implements JobRunEndUpdate {
 
