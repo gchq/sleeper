@@ -83,12 +83,11 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
 
     @Override
     public void jobFinished(CompactionJobFinishedEvent event) {
-        Instant eventTime = event.getFinishTime();
         add(event.getTableId(), JobStatusUpdateRecord.builder()
                 .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(CompactionJobFinishedStatus.builder()
-                        .updateTime(getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)))
-                        .finishTime(eventTime)
+                        .updateTime(getUpdateTimeOrDefault(() -> defaultUpdateTime(event.getFinishTime())))
+                        .finishTime(event.getFinishTime())
                         .recordsProcessed(event.getRecordsProcessed())
                         .build())
                 .build());
