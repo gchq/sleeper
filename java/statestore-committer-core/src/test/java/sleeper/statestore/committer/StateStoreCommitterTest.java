@@ -337,6 +337,7 @@ public class StateStoreCommitterTest {
                     .build();
             Instant startTime = Instant.parse("2024-06-20T14:50:00Z");
             Instant writtenTime = Instant.parse("2024-06-20T14:55:01Z");
+            Instant failedTime = Instant.parse("2024-06-20T14:55:02Z");
             AddFilesTransaction transaction = AddFilesTransaction.builder()
                     .jobId("test-job")
                     .taskId("test-task-id")
@@ -349,7 +350,7 @@ public class StateStoreCommitterTest {
                     .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
             // When
-            apply(StateStoreCommitRequest.create("test-table", transaction));
+            apply(committerWithTimes(List.of(failedTime)), StateStoreCommitRequest.create("test-table", transaction));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
@@ -359,7 +360,7 @@ public class StateStoreCommitterTest {
                     .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                             .taskId("test-task-id")
                             .startedStatus(ingestStartedStatus(ingestJob, startTime))
-                            .finishedStatus(failedStatus(writtenTime,
+                            .finishedStatus(failedStatus(failedTime,
                                     List.of("File already exists: output.parquet")))
                             .build()));
         }
@@ -376,6 +377,7 @@ public class StateStoreCommitterTest {
                     .build();
             Instant startTime = Instant.parse("2024-06-20T14:50:00Z");
             Instant writtenTime = Instant.parse("2024-06-20T14:55:01Z");
+            Instant failedTime = Instant.parse("2024-06-20T14:55:02Z");
             AddFilesTransaction transaction = AddFilesTransaction.builder()
                     .jobId("test-job")
                     .taskId("test-task-id")
@@ -393,7 +395,7 @@ public class StateStoreCommitterTest {
                     .taskId("test-task-id").jobRunId("test-job-run-id").build());
 
             // When
-            apply(StateStoreCommitRequest.create("test-table", transaction));
+            apply(committerWithTimes(List.of(failedTime)), StateStoreCommitRequest.create("test-table", transaction));
 
             // Then
             assertThat(failures).singleElement().satisfies(e -> assertThat(e)
@@ -404,7 +406,7 @@ public class StateStoreCommitterTest {
                     .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                             .taskId("test-task-id")
                             .startedStatus(ingestStartedStatus(ingestJob, startTime))
-                            .finishedStatus(failedStatus(writtenTime,
+                            .finishedStatus(failedStatus(failedTime,
                                     List.of("Failed adding transaction", "Unexpected failure")))
                             .build()));
         }
