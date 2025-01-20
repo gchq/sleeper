@@ -15,6 +15,13 @@
  */
 package sleeper.compaction.core.job.commit;
 
+import java.util.List;
+
 public class CompactionCommitBatcher {
+
+    public void sendBatch(List<CompactionCommitRequest> requests) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'sendBatch'");
+    }
 
 }

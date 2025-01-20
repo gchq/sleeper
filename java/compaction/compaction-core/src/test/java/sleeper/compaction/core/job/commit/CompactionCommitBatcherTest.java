@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.core.job.commit;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -23,9 +24,13 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -34,14 +39,22 @@ public class CompactionCommitBatcherTest {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore tables = InMemoryTableProperties.getStore();
+    private final Queue<StateStoreCommitRequest> queue = new LinkedList<>();
 
     @Test
+    @Disabled
     void shouldSendOneCompactionCommit() {
         // Given
         TableProperties table = createTable();
         CompactionJob job = jobFactory(table).createCompactionJobWithFilenames(
                 "test-job", List.of("test.parquet"), "root");
         List<CompactionCommitRequest> requests = List.of(commitRequest(job));
+
+        // When
+        batcher().sendBatch(requests);
+
+        // Then
+        assertThat(queue).containsExactly();//(List.of(StateStoreCommitRequest));
     }
 
     private TableProperties createTable() {
