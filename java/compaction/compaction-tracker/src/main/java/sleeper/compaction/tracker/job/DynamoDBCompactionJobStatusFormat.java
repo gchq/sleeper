@@ -39,7 +39,6 @@ import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.security.SecureRandom;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Random;
@@ -67,7 +66,6 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String START_TIME = "StartTime";
     private static final String FINISH_TIME = "FinishTime";
     private static final String COMMIT_TIME = "CommitTime";
-    private static final String MILLIS_IN_PROCESS = "MillisInProcess";
     private static final String RECORDS_READ = "RecordsRead";
     private static final String RECORDS_WRITTEN = "RecordsWritten";
     private static final String FAILURE_REASONS = "FailureReasons";
@@ -117,7 +115,6 @@ class DynamoDBCompactionJobStatusFormat {
                 .string(TASK_ID, event.getTaskId())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
-                .number(MILLIS_IN_PROCESS, event.getTimeInProcess().toMillis())
                 .number(RECORDS_READ, recordsProcessed.getRecordsRead())
                 .number(RECORDS_WRITTEN, recordsProcessed.getRecordsWritten())
                 .build();
@@ -192,7 +189,6 @@ class DynamoDBCompactionJobStatusFormat {
                 return CompactionJobFinishedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
-                        .timeInProcess(getTimeInProcess(item))
                         .recordsProcessed(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)))
@@ -211,12 +207,5 @@ class DynamoDBCompactionJobStatusFormat {
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
                 throw new IllegalArgumentException("Found record with unrecognised update type");
         }
-    }
-
-    private static Duration getTimeInProcess(Map<String, AttributeValue> item) {
-        long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
-        return millisInProcess > -1
-                ? Duration.ofMillis(millisInProcess)
-                : null;
     }
 }

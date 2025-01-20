@@ -25,7 +25,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -150,32 +149,5 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
                                 commitTime2),
                         finishedCompactionRun(DEFAULT_TASK_ID, new JobRunSummary(processed, startTime1, finishTime1),
                                 commitTime1)));
-    }
-
-    @Test
-    public void shouldStoreTimeInProcessWhenFinished() {
-        // Given
-        Partition partition = singlePartition();
-        FileReferenceFactory fileFactory = fileFactory(partition);
-        CompactionJob job = jobFactory.createCompactionJob(
-                List.of(fileFactory.rootFile(100L)),
-                partition.getId());
-        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
-        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
-        Duration timeInProcess = Duration.ofSeconds(20);
-        JobRunSummary summary = new JobRunSummary(
-                new RecordsProcessed(123L, 45L),
-                startedTime, finishedTime, timeInProcess);
-
-        // When
-        storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobFinished(job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
-
-        // Then
-        assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(finishedThenCommittedStatusWithDefaults(job, summary));
     }
 }
