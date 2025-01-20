@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
@@ -157,7 +158,7 @@ public class IngestJobStatusInPeriodTest {
             // When / Then
             assertThat(statusFromUpdates(
                     startedRun(run1StartTime),
-                    finishedRun(run1StartTime, run1FinishTime),
+                    finishedRun(run1FinishTime),
                     startedRun(run2StartTime))
                     .isInPeriod(windowStartTime, windowEndTime))
                     .isTrue();
@@ -176,9 +177,9 @@ public class IngestJobStatusInPeriodTest {
             // When / Then
             assertThat(statusFromUpdates(
                     startedRun(run1StartTime),
-                    finishedRun(run1StartTime, run1FinishTime),
+                    finishedRun(run1FinishTime),
                     startedRun(run2StartTime),
-                    finishedRun(run2StartTime, run2FinishTime))
+                    finishedRun(run2FinishTime))
                     .isInPeriod(windowStartTime, windowEndTime))
                     .isFalse();
         }
@@ -196,9 +197,9 @@ public class IngestJobStatusInPeriodTest {
             // When / Then
             assertThat(statusFromUpdates(
                     startedRun(run1StartTime),
-                    finishedRun(run1StartTime, run1FinishTime),
+                    finishedRun(run1FinishTime),
                     startedRun(run2StartTime),
-                    finishedRun(run2StartTime, run2FinishTime))
+                    finishedRun(run2FinishTime))
                     .isInPeriod(windowStartTime, windowEndTime))
                     .isTrue();
         }
@@ -228,9 +229,12 @@ public class IngestJobStatusInPeriodTest {
         return IngestJobStatusTestData.ingestStartedStatus(startedTime, defaultUpdateTime(startedTime));
     }
 
-    private JobStatusUpdate finishedRun(Instant startedTime, Instant finishedTime) {
-        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime),
-                summary(startedTime, finishedTime, 100, 100))
-                .numFilesWrittenByJob(2).build();
+    private JobStatusUpdate finishedRun(Instant finishedTime) {
+        return IngestJobFinishedStatus.builder()
+                .updateTime(defaultUpdateTime(finishedTime))
+                .finishTime(finishedTime)
+                .recordsProcessed(new RecordsProcessed(100, 100))
+                .numFilesWrittenByJob(2)
+                .build();
     }
 }

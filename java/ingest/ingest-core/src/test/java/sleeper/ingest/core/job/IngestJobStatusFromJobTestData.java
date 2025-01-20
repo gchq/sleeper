@@ -159,8 +159,10 @@ public class IngestJobStatusFromJobTestData {
                                 .inputFileCount(job.getFileCount())
                                 .startTime(summary.getStartTime())
                                 .updateTime(defaultUpdateTime(summary.getStartTime())).build())
-                .finishedStatus(IngestJobFinishedStatus
-                        .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                .finishedStatus(IngestJobFinishedStatus.builder()
+                        .updateTime(defaultUpdateTime(summary.getFinishTime()))
+                        .finishTime(summary.getFinishTime())
+                        .recordsProcessed(summary.getRecordsProcessed())
                         .numFilesWrittenByJob(numFilesWrittenByJob).build())
                 .build();
     }
@@ -306,8 +308,12 @@ public class IngestJobStatusFromJobTestData {
             IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
         return finishedRun(taskId,
                 ingestStartedStatus(job, summary.getStartTime()),
-                IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                        .numFilesWrittenByJob(numFilesWrittenByJob).build());
+                IngestJobFinishedStatus.builder()
+                        .updateTime(defaultUpdateTime(summary.getFinishTime()))
+                        .finishTime(summary.getFinishTime())
+                        .recordsProcessed(summary.getRecordsProcessed())
+                        .numFilesWrittenByJob(numFilesWrittenByJob)
+                        .build());
     }
 
     /**

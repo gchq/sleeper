@@ -15,7 +15,6 @@
  */
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
@@ -39,17 +38,6 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
         recordsProcessed = Objects.requireNonNull(builder.recordsProcessed, "recordsProcessed must not be null");
         numFilesWrittenByJob = builder.numFilesWrittenByJob;
         committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
-    }
-
-    /**
-     * Creates a status update for when an ingest job has finished.
-     *
-     * @param  updateTime the update time to set
-     * @param  summary    the records processed summary to set
-     * @return            a builder
-     */
-    public static Builder updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return builder().updateTime(updateTime).finishTime(summary.getFinishTime()).recordsProcessed(summary.getRecordsProcessed());
     }
 
     public static Builder builder() {

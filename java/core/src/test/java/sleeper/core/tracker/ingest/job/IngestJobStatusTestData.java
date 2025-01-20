@@ -350,9 +350,12 @@ public class IngestJobStatusTestData {
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatus(JobRunSummary summary, int numFilesWrittenByJob) {
-        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                .committedBySeparateFileUpdates(false)
+        return IngestJobFinishedStatus.builder()
+                .updateTime(defaultUpdateTime(summary.getFinishTime()))
+                .finishTime(summary.getFinishTime())
+                .recordsProcessed(summary.getRecordsProcessed())
                 .numFilesWrittenByJob(numFilesWrittenByJob)
+                .committedBySeparateFileUpdates(false)
                 .build();
     }
 
@@ -374,9 +377,12 @@ public class IngestJobStatusTestData {
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(JobRunSummary summary, int numFilesWrittenByJob) {
-        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                .committedBySeparateFileUpdates(true)
+        return IngestJobFinishedStatus.builder()
+                .updateTime(defaultUpdateTime(summary.getFinishTime()))
+                .finishTime(summary.getFinishTime())
+                .recordsProcessed(summary.getRecordsProcessed())
                 .numFilesWrittenByJob(numFilesWrittenByJob)
+                .committedBySeparateFileUpdates(true)
                 .build();
     }
 
