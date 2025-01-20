@@ -15,12 +15,10 @@
  */
 package sleeper.core.tracker.ingest.job.update;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * An event for when an ingest job failed. Used in the ingest job tracker.
@@ -31,7 +29,6 @@ public class IngestJobFailedEvent implements IngestJobEvent {
     private final String jobRunId;
     private final String taskId;
     private final Instant failureTime;
-    private final Duration timeInProcess;
     private final List<String> failureReasons;
 
     private IngestJobFailedEvent(Builder builder) {
@@ -40,7 +37,6 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         this.jobRunId = builder.jobRunId;
         this.taskId = builder.taskId;
         this.failureTime = builder.failureTime;
-        this.timeInProcess = builder.timeInProcess;
         this.failureReasons = builder.failureReasons;
     }
 
@@ -68,17 +64,13 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         return failureTime;
     }
 
-    public Optional<Duration> getTimeInProcess() {
-        return Optional.ofNullable(timeInProcess);
-    }
-
     public List<String> getFailureReasons() {
         return failureReasons;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, jobRunId, taskId, failureTime, timeInProcess, failureReasons);
+        return Objects.hash(jobId, tableId, jobRunId, taskId, failureTime, failureReasons);
     }
 
     @Override
@@ -91,13 +83,13 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         }
         IngestJobFailedEvent other = (IngestJobFailedEvent) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(taskId, other.taskId)
-                && Objects.equals(failureTime, other.failureTime) && Objects.equals(timeInProcess, other.timeInProcess) && Objects.equals(failureReasons, other.failureReasons);
+                && Objects.equals(failureTime, other.failureTime) && Objects.equals(failureReasons, other.failureReasons);
     }
 
     @Override
     public String toString() {
-        return "IngestJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", jobRunId=" + jobRunId + ", taskId=" + taskId + ", failureTime=" + failureTime + ", timeInProcess=" + timeInProcess
-                + ", failureReasons=" + failureReasons + "}";
+        return "IngestJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", jobRunId=" + jobRunId + ", taskId=" + taskId + ", failureTime=" + failureTime + ", failureReasons=" + failureReasons
+                + "}";
     }
 
     /**
@@ -109,7 +101,6 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         private String jobRunId;
         private String taskId;
         private Instant failureTime;
-        private Duration timeInProcess;
         private List<String> failureReasons;
 
         /**
@@ -164,17 +155,6 @@ public class IngestJobFailedEvent implements IngestJobEvent {
          */
         public Builder failureTime(Instant failureTime) {
             this.failureTime = failureTime;
-            return this;
-        }
-
-        /**
-         * Sets the time spent in the process that failed.
-         *
-         * @param  timeInProcess the time spent
-         * @return               the builder
-         */
-        public Builder timeInProcess(Duration timeInProcess) {
-            this.timeInProcess = timeInProcess;
             return this;
         }
 

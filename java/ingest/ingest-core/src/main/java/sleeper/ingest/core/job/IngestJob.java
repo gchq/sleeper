@@ -21,7 +21,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;
@@ -128,17 +127,6 @@ public class IngestJob {
      */
     public IngestJobFinishedEvent.Builder finishedEventBuilder(JobRunSummary summary) {
         return IngestJobFinishedEvent.builder().jobId(id).tableId(tableId).summary(summary);
-    }
-
-    /**
-     * Creates a builder for an event when the ingest job failed. Used with the ingest job tracker.
-     *
-     * @param  runTime the time spent on the failed operation
-     * @return         the builder
-     */
-    public IngestJobFailedEvent.Builder failedEventBuilder(JobRunTime runTime) {
-        return IngestJobFailedEvent.builder().jobId(id).tableId(tableId)
-                .failureTime(runTime.getFinishTime()).timeInProcess(runTime.getTimeInProcess());
     }
 
     /**

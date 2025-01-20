@@ -165,7 +165,6 @@ class DynamoDBIngestJobStatusFormat {
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, event.getFailureTime().toEpochMilli())
-                .number(MILLIS_IN_PROCESS, event.getTimeInProcess().map(Duration::toMillis).orElse(null))
                 .list(FAILURE_REASONS, event.getFailureReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
@@ -249,7 +248,6 @@ class DynamoDBIngestJobStatusFormat {
                 return JobRunFailedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .failureTime(getInstantAttribute(item, FINISH_TIME))
-                        .timeInProcess(getTimeInProcess(item))
                         .failureReasons(getStringListAttribute(item, FAILURE_REASONS))
                         .build();
             default:

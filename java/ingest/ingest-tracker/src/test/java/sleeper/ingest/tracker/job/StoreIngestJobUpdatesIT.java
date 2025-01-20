@@ -21,7 +21,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
@@ -59,17 +58,17 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobTrackerTestBase {
         // Given
         IngestJob job = jobWithFiles("file");
         Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
-        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
+        Instant failureTime = Instant.parse("2022-12-14T13:51:42.001Z");
         List<String> failureReasons = List.of("Something went wrong");
 
         // When
         tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
-        tracker.jobFailed(defaultJobFailedEvent(job, startedTime, finishedTime, failureReasons));
+        tracker.jobFailed(defaultJobFailedEvent(job, failureTime, failureReasons));
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(defaultJobFailedStatus(job, startedTime, finishedTime, failureReasons));
+                .containsExactly(defaultJobFailedStatus(job, startedTime, failureTime, failureReasons));
     }
 
     @Test
@@ -116,27 +115,6 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobTrackerTestBase {
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(defaultJobFinishedStatus(job, summary));
-    }
-
-    @Test
-    public void shouldStoreTimeInProcessWhenFailed() {
-        // Given
-        IngestJob job = jobWithFiles("file");
-        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
-        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
-        Duration timeInProcess = Duration.ofSeconds(20);
-        JobRunTime runTime = new JobRunTime(
-                startedTime, finishedTime, timeInProcess);
-        List<String> failureReasons = List.of("Some reason");
-
-        // When
-        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
-        tracker.jobFailed(defaultJobFailedEvent(job, runTime, failureReasons));
-
-        // Then
-        assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(defaultJobFailedStatus(job, runTime, failureReasons));
     }
 
     @Test

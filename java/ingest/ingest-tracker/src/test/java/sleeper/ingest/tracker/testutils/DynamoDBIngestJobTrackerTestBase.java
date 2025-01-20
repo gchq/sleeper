@@ -142,13 +142,8 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
-            IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {
-        return defaultJobFailedEvent(job, new JobRunTime(startedTime, finishedTime), failureReasons);
-    }
-
-    protected static IngestJobFailedEvent defaultJobFailedEvent(
-            IngestJob job, JobRunTime runTime, List<String> failureReasons) {
-        return job.failedEventBuilder(runTime)
+            IngestJob job, Instant failureTime, List<String> failureReasons) {
+        return job.failedEventBuilder(failureTime)
                 .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build();
     }
 

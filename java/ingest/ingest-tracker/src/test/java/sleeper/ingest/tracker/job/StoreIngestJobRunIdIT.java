@@ -141,18 +141,18 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobTrackerTestBase {
         IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-        JobRunTime runTime = new JobRunTime(startTime, Duration.ofMinutes(10));
+        Instant finishTime = Instant.parse("2022-09-22T12:00:25.000Z");
         List<String> failureReasons = List.of("Something failed");
 
         // When
         tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         tracker.jobStarted(job.startedAfterValidationEventBuilder(startTime).jobRunId(jobRunId).taskId(taskId).build());
-        tracker.jobFailed(job.failedEventBuilder(runTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
+        tracker.jobFailed(job.failedEventBuilder(finishTime).jobRunId(jobRunId).taskId(taskId).failureReasons(failureReasons).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(ingestJobStatus(job, acceptedRunWhichFailed(job, taskId,
-                        validationTime, runTime, failureReasons)));
+                        validationTime, new JobRunTime(startTime, finishTime), failureReasons)));
     }
 }

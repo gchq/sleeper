@@ -22,7 +22,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;
@@ -135,17 +134,16 @@ public class IngestJobEventTestData {
     /**
      * Creates a builder for an ingest job failed event.
      *
-     * @param  job     a previous event for the same job
-     * @param  runTime the runtime information
-     * @return         the builder
+     * @param  job         a previous event for the same job
+     * @param  failureTime the time of the faiure
+     * @return             the builder
      */
-    public static IngestJobFailedEvent.Builder ingestJobFailedEventBuilder(IngestJobEvent job, JobRunTime runTime, List<String> reasons) {
+    public static IngestJobFailedEvent.Builder ingestJobFailedEventBuilder(IngestJobEvent job, Instant failureTime, List<String> reasons) {
         return IngestJobFailedEvent.builder()
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
-                .failureTime(runTime.getFinishTime())
-                .timeInProcess(runTime.getTimeInProcess())
+                .failureTime(failureTime)
                 .failureReasons(reasons);
     }
 
