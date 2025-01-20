@@ -26,7 +26,6 @@ import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -187,8 +186,12 @@ public class IngestJobStatusFromJobTestData {
                                 .inputFileCount(job.getFileCount())
                                 .startTime(runTime.getStartTime())
                                 .updateTime(defaultUpdateTime(runTime.getStartTime())).build())
-                .finishedStatus(JobRunFailedStatus
-                        .timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons))
+                .finishedStatus(JobRunFailedStatus.builder()
+                        .updateTime(defaultUpdateTime(runTime.getFinishTime()))
+                        .finishTime(runTime.getFinishTime())
+                        .timeInProcess(runTime.getTimeInProcess())
+                        .failureReasons(failureReasons)
+                        .build())
                 .build();
     }
 
@@ -337,7 +340,12 @@ public class IngestJobStatusFromJobTestData {
             IngestJob job, String taskId, JobRunTime runTime, List<String> failureReasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(job, runTime.getStartTime()),
-                JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
+                JobRunFailedStatus.builder()
+                        .updateTime(defaultUpdateTime(runTime.getFinishTime()))
+                        .finishTime(runTime.getFinishTime())
+                        .timeInProcess(runTime.getTimeInProcess())
+                        .failureReasons(failureReasons)
+                        .build());
     }
 
     /**
@@ -354,8 +362,11 @@ public class IngestJobStatusFromJobTestData {
         return JobRun.builder()
                 .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)))
-                .finishedStatus(JobRunFailedStatus.timeAndReasons(
-                        defaultUpdateTime(failureTime), new JobRunTime(failureTime, Duration.ZERO), failureReasons))
+                .finishedStatus(JobRunFailedStatus.builder()
+                        .updateTime(defaultUpdateTime(failureTime))
+                        .finishTime(failureTime)
+                        .failureReasons(failureReasons)
+                        .build())
                 .build();
     }
 

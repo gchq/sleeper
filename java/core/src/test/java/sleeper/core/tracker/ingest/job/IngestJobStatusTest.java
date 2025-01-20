@@ -472,9 +472,12 @@ public class IngestJobStatusTest {
     }
 
     private JobRunFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
-        return JobRunFailedStatus.timeAndReasons(
-                defaultUpdateTime(finishTime), new JobRunTime(startTime, finishTime),
-                List.of("Something went wrong"));
+        return JobRunFailedStatus.builder()
+                .updateTime(defaultUpdateTime(finishTime))
+                .finishTime(finishTime)
+                .failureReasons(List.of("Something went wrong"))
+                .timeInProcess(Duration.between(startTime, finishTime))
+                .build();
     }
 
     private JobRunSummary summary(Instant startTime, Instant finishTime) {

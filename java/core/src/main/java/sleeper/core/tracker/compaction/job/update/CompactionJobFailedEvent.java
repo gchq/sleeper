@@ -17,6 +17,8 @@ package sleeper.core.tracker.compaction.job.update;
 
 import sleeper.core.tracker.job.run.JobRunTime;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -59,6 +61,14 @@ public class CompactionJobFailedEvent {
 
     public String getJobRunId() {
         return jobRunId;
+    }
+
+    public Instant getFinishTime() {
+        return runTime.getFinishTime();
+    }
+
+    public Duration getTimeInProcess() {
+        return runTime.getTimeInProcess();
     }
 
     public JobRunTime getRunTime() {

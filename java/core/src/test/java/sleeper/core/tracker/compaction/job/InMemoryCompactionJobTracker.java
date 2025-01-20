@@ -25,7 +25,6 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
@@ -107,12 +106,14 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
 
     @Override
     public void jobFailed(CompactionJobFailedEvent event) {
-        JobRunTime runTime = event.getRunTime();
-        Instant eventTime = runTime.getFinishTime();
         add(event.getTableId(), JobStatusUpdateRecord.builder()
                 .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
-                .statusUpdate(JobRunFailedStatus.timeAndReasons(
-                        getUpdateTimeOrDefault(() -> defaultUpdateTime(eventTime)), runTime, event.getFailureReasons()))
+                .statusUpdate(JobRunFailedStatus.builder()
+                        .updateTime(getUpdateTimeOrDefault(() -> defaultUpdateTime(event.getFinishTime())))
+                        .finishTime(event.getFinishTime())
+                        .failureReasons(event.getFailureReasons())
+                        .timeInProcess(event.getTimeInProcess())
+                        .build())
                 .build());
     }
 

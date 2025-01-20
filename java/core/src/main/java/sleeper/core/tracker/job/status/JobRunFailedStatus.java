@@ -15,7 +15,6 @@
  */
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Duration;
@@ -34,23 +33,15 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
     private final List<String> failureReasons;
     private final Duration timeInProcess;
 
-    private JobRunFailedStatus(Instant updateTime, Instant finishTime, List<String> failureReasons, Duration timeInProcess) {
-        this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
-        this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
-        this.failureReasons = Objects.requireNonNull(failureReasons, "failureReasons must not be null");
-        this.timeInProcess = timeInProcess;
+    private JobRunFailedStatus(Builder builder) {
+        updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
+        finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
+        failureReasons = Objects.requireNonNull(builder.failureReasons, "failureReasons must not be null");
+        timeInProcess = builder.timeInProcess;
     }
 
-    /**
-     * Creates an instance of this class.
-     *
-     * @param  updateTime     the update time to set
-     * @param  runTime        the time spent on the process
-     * @param  failureReasons reasons the process failed
-     * @return                the status update
-     */
-    public static JobRunFailedStatus timeAndReasons(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
-        return new JobRunFailedStatus(updateTime, runTime.getFinishTime(), failureReasons, runTime.getTimeInProcess());
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -104,5 +95,66 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
     @Override
     public String toString() {
         return "JobRunFailedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", failureReasons=" + failureReasons + ", timeInProcess=" + timeInProcess + "}";
+    }
+
+    /**
+     * A builder for this class.
+     */
+    public static class Builder {
+        private Instant updateTime;
+        private Instant finishTime;
+        private List<String> failureReasons;
+        private Duration timeInProcess;
+
+        private Builder() {
+        }
+
+        /**
+         * Sets the update time.
+         *
+         * @param  updateTime the time
+         * @return            the builder for chaining
+         */
+        public Builder updateTime(Instant updateTime) {
+            this.updateTime = updateTime;
+            return this;
+        }
+
+        /**
+         * Sets the finish time.
+         *
+         * @param  finishTime the finish time
+         * @return            the builder for chaining
+         */
+        public Builder finishTime(Instant finishTime) {
+            this.finishTime = finishTime;
+            return this;
+        }
+
+        /**
+         * Sets the reasons the job failed.
+         *
+         * @param  failureReasons the reasons
+         * @return                the builder for chaining
+         */
+        public Builder failureReasons(List<String> failureReasons) {
+            this.failureReasons = failureReasons;
+            return this;
+        }
+
+        /**
+         * Sets the records processed.
+         *
+         * @param  timeInProcess the records processed
+         * @return               the builder for chaining
+         */
+        public Builder timeInProcess(Duration timeInProcess) {
+            this.timeInProcess = timeInProcess;
+            return this;
+        }
+
+        public JobRunFailedStatus build() {
+            return new JobRunFailedStatus(this);
+        }
     }
 }

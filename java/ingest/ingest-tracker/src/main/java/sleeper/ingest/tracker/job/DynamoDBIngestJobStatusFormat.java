@@ -33,7 +33,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
@@ -161,14 +160,12 @@ class DynamoDBIngestJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFailedUpdate(
             IngestJobFailedEvent event, DynamoDBRecordBuilder builder) {
-        JobRunTime runTime = event.getRunTime();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
-                .number(START_TIME, runTime.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
-                .number(FINISH_TIME, runTime.getFinishTime().toEpochMilli())
-                .number(MILLIS_IN_PROCESS, runTime.getTimeInProcess().toMillis())
+                .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
+                .number(MILLIS_IN_PROCESS, event.getTimeInProcess().toMillis())
                 .list(FAILURE_REASONS, event.getFailureReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
@@ -249,24 +246,16 @@ class DynamoDBIngestJobStatusFormat {
                         .numFilesWrittenByJob(getNullableIntAttribute(item, FILES_WRITTEN_COUNT))
                         .build();
             case UPDATE_TYPE_FAILED:
-                return JobRunFailedStatus.timeAndReasons(
-                        getInstantAttribute(item, UPDATE_TIME),
-                        getRunTime(item),
-                        getStringListAttribute(item, FAILURE_REASONS));
+                return JobRunFailedStatus.builder()
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .timeInProcess(getTimeInProcess(item))
+                        .failureReasons(getStringListAttribute(item, FAILURE_REASONS))
+                        .build();
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
                 throw new IllegalArgumentException("Found record with unrecognised update type");
         }
-    }
-
-    private static JobRunTime getRunTime(Map<String, AttributeValue> item) {
-        Instant startTime = getInstantAttribute(item, START_TIME);
-        Instant finishTime = getInstantAttribute(item, FINISH_TIME);
-        long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
-        Duration timeInProcess = millisInProcess > -1
-                ? Duration.ofMillis(millisInProcess)
-                : Duration.between(startTime, finishTime);
-        return new JobRunTime(startTime, finishTime, timeInProcess);
     }
 
     private static Duration getTimeInProcess(Map<String, AttributeValue> item) {

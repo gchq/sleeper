@@ -110,7 +110,12 @@ public class CompactionJobStatusTestData {
     }
 
     public static JobRunFailedStatus compactionFailedStatus(JobRunTime runTime, List<String> failureReasons) {
-        return JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
+        return JobRunFailedStatus.builder()
+                .updateTime(defaultUpdateTime(runTime.getFinishTime()))
+                .finishTime(runTime.getFinishTime())
+                .failureReasons(failureReasons)
+                .timeInProcess(runTime.getTimeInProcess())
+                .build();
     }
 
     public static CompactionJobStatus jobStatusFromUpdates(JobStatusUpdate... updates) {
