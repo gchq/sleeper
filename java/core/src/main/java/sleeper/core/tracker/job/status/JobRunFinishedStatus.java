@@ -37,7 +37,7 @@ public class JobRunFinishedStatus implements JobRunEndUpdate {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
         this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
         this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
-        this.timeInProcess = timeInProcess;
+        this.timeInProcess = Objects.requireNonNull(timeInProcess, "timeInProcess must not be null");
     }
 
     /**
