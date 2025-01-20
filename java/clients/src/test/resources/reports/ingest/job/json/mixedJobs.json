@@ -178,8 +178,7 @@
               "failureReasons": [
                 "Something went wrong",
                 "More details"
-              ],
-              "timeInProcess": 60.0
+              ]
             }
           ]
         }

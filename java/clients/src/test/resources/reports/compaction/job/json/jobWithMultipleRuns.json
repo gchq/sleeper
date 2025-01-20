@@ -98,7 +98,6 @@
               "Unexpected failure reading input file",
               "Some temporary IO problem"
             ],
-            "timeInProcess": 30.0,
             "type": "FAILED"
           }
         ]
@@ -126,7 +125,6 @@
               "Compaction has already been committed",
               "Failed database update"
             ],
-            "timeInProcess": 30.0,
             "type": "FAILED"
           }
         ]
