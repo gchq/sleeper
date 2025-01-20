@@ -18,22 +18,13 @@
             {
               "type": "FINISHED",
               "updateTime": "2022-10-13T14:04:13.123Z",
+              "finishTime": "2022-10-13T14:04:13.456Z",
+              "recordsProcessed": {
+                "recordsRead": 1234000,
+                "recordsWritten": 1234000
+              },
               "committedBySeparateFileUpdates": false,
-              "numFilesWrittenByJob": 4,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 1234000,
-                  "recordsWritten": 1234000
-                },
-                "runTime": {
-                  "startTime": "2022-10-13T14:02:10Z",
-                  "finishTime": "2022-10-13T14:04:13.456Z",
-                  "durationInSeconds": 123.456,
-                  "timeInProcessInSeconds": 123.456
-                },
-                "recordsReadPerSecond": 9995.463970969415,
-                "recordsWrittenPerSecond": 9995.463970969415
-              }
+              "numFilesWrittenByJob": 4
             }
           ]
         }
@@ -54,22 +45,13 @@
             {
               "type": "FINISHED",
               "updateTime": "2022-10-13T14:02:10.123Z",
+              "finishTime": "2022-10-13T14:02:10Z",
+              "recordsProcessed": {
+                "recordsRead": 1000600,
+                "recordsWritten": 500300
+              },
               "committedBySeparateFileUpdates": false,
-              "numFilesWrittenByJob": 3,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 1000600,
-                  "recordsWritten": 500300
-                },
-                "runTime": {
-                  "startTime": "2022-10-13T14:01:10Z",
-                  "finishTime": "2022-10-13T14:02:10Z",
-                  "durationInSeconds": 60.0,
-                  "timeInProcessInSeconds": 60.0
-                },
-                "recordsReadPerSecond": 16676.666666666668,
-                "recordsWrittenPerSecond": 8338.333333333334
-              }
+              "numFilesWrittenByJob": 3
             }
           ]
         }
@@ -90,22 +72,13 @@
             {
               "type": "FINISHED",
               "updateTime": "2022-10-13T14:01:10.123Z",
+              "finishTime": "2022-10-13T14:01:10Z",
+              "recordsProcessed": {
+                "recordsRead": 1000600,
+                "recordsWritten": 500300
+              },
               "committedBySeparateFileUpdates": false,
-              "numFilesWrittenByJob": 2,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 1000600,
-                  "recordsWritten": 500300
-                },
-                "runTime": {
-                  "startTime": "2022-10-13T12:01:10Z",
-                  "finishTime": "2022-10-13T14:01:10Z",
-                  "durationInSeconds": 7200.0,
-                  "timeInProcessInSeconds": 7200.0
-                },
-                "recordsReadPerSecond": 138.97222222222223,
-                "recordsWrittenPerSecond": 69.48611111111111
-              }
+              "numFilesWrittenByJob": 2
             }
           ]
         }
@@ -126,22 +99,13 @@
             {
               "type": "FINISHED",
               "updateTime": "2022-10-13T10:02:13.123Z",
+              "finishTime": "2022-10-13T10:02:13.123Z",
+              "recordsProcessed": {
+                "recordsRead": 600000,
+                "recordsWritten": 300000
+              },
               "committedBySeparateFileUpdates": false,
-              "numFilesWrittenByJob": 1,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 600000,
-                  "recordsWritten": 300000
-                },
-                "runTime": {
-                  "startTime": "2022-10-13T10:00:10Z",
-                  "finishTime": "2022-10-13T10:02:13.123Z",
-                  "durationInSeconds": 123.123,
-                  "timeInProcessInSeconds": 123.123
-                },
-                "recordsReadPerSecond": 4873.175604882922,
-                "recordsWrittenPerSecond": 2436.587802441461
-              }
+              "numFilesWrittenByJob": 1
             }
           ]
         }

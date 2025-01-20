@@ -28,13 +28,16 @@ import java.util.Objects;
 public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
-    private final JobRunSummary summary;
+    private final Instant finishTime;
+    private final RecordsProcessed recordsProcessed;
     private final int numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
 
     private IngestJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
-        summary = Objects.requireNonNull(builder.summary, "summary must not be null");
+        JobRunSummary summary = Objects.requireNonNull(builder.summary, "summary must not be null");
+        finishTime = summary.getFinishTime();
+        recordsProcessed = summary.getRecordsProcessed();
         numFilesWrittenByJob = builder.numFilesWrittenByJob;
         committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
     }
@@ -61,12 +64,12 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     @Override
     public Instant getFinishTime() {
-        return summary.getFinishTime();
+        return finishTime;
     }
 
     @Override
     public RecordsProcessed getRecordsProcessed() {
-        return summary.getRecordsProcessed();
+        return recordsProcessed;
     }
 
     public int getNumFilesWrittenByJob() {
@@ -79,7 +82,7 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary, numFilesWrittenByJob, committedBySeparateFileUpdates);
+        return Objects.hash(updateTime, finishTime, recordsProcessed, numFilesWrittenByJob, committedBySeparateFileUpdates);
     }
 
     @Override
@@ -91,15 +94,14 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
             return false;
         }
         IngestJobFinishedStatus other = (IngestJobFinishedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary) && Objects.equals(numFilesWrittenByJob, other.numFilesWrittenByJob)
-                && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates;
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(recordsProcessed, other.recordsProcessed)
+                && numFilesWrittenByJob == other.numFilesWrittenByJob && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates;
     }
 
     @Override
     public String toString() {
-        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + ", numFilesWrittenByJob=" + numFilesWrittenByJob + ", committedBySeparateFileUpdates="
-                + committedBySeparateFileUpdates
-                + "}";
+        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", recordsProcessed=" + recordsProcessed + ", numFilesWrittenByJob=" + numFilesWrittenByJob
+                + ", committedBySeparateFileUpdates=" + committedBySeparateFileUpdates + "}";
     }
 
     /**
