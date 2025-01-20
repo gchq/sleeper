@@ -41,7 +41,6 @@ import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.security.SecureRandom;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
@@ -77,7 +76,6 @@ class DynamoDBIngestJobStatusFormat {
     static final String FILES_WRITTEN_COUNT = "FilesWrittenCount";
     static final String FINISH_TIME = "FinishTime";
     static final String JOB_COMMITTED_WHEN_FILES_ADDED = "JobCommittedWhenFilesAdded";
-    static final String MILLIS_IN_PROCESS = "MillisInProcess";
     static final String RECORDS_READ = "RecordsRead";
     static final String RECORDS_WRITTEN = "RecordsWritten";
     static final String FAILURE_REASONS = "FailureReasons";
@@ -150,7 +148,6 @@ class DynamoDBIngestJobStatusFormat {
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
-                .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
                 .number(RECORDS_READ, summary.getRecordsRead())
                 .number(RECORDS_WRITTEN, summary.getRecordsWritten())
                 .bool(JOB_COMMITTED_WHEN_FILES_ADDED, event.isCommittedBySeparateFileUpdates())
@@ -237,7 +234,6 @@ class DynamoDBIngestJobStatusFormat {
                 return IngestJobFinishedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
-                        .timeInProcess(getTimeInProcess(item))
                         .recordsProcessed(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)))
@@ -254,12 +250,5 @@ class DynamoDBIngestJobStatusFormat {
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
                 throw new IllegalArgumentException("Found record with unrecognised update type");
         }
-    }
-
-    private static Duration getTimeInProcess(Map<String, AttributeValue> item) {
-        long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
-        return millisInProcess > -1
-                ? Duration.ofMillis(millisInProcess)
-                : null;
     }
 }

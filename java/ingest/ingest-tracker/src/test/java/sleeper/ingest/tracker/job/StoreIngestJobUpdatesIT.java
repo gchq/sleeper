@@ -20,12 +20,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.tracker.testutils.DynamoDBIngestJobTrackerTestBase;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -94,27 +91,6 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobTrackerTestBase {
                 .containsExactly(ingestJobStatus(job,
                         finishedIngestRun(job, taskId2, defaultSummary(startTime2, finishTime2), 2),
                         finishedIngestRun(job, taskId1, defaultSummary(startTime1, finishTime1), 1)));
-    }
-
-    @Test
-    public void shouldStoreTimeInProcessWhenFinished() {
-        // Given
-        IngestJob job = jobWithFiles("file");
-        Instant startedTime = Instant.parse("2022-12-14T13:51:12.001Z");
-        Instant finishedTime = Instant.parse("2022-12-14T13:51:42.001Z");
-        Duration timeInProcess = Duration.ofSeconds(20);
-        JobRunSummary summary = new JobRunSummary(
-                new RecordsProcessed(123L, 45L),
-                startedTime, finishedTime, timeInProcess);
-
-        // When
-        tracker.jobStarted(defaultJobStartedEvent(job, startedTime));
-        tracker.jobFinished(defaultJobFinishedEvent(job, summary));
-
-        // Then
-        assertThat(getAllJobStatuses())
-                .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(defaultJobFinishedStatus(job, summary));
     }
 
     @Test
