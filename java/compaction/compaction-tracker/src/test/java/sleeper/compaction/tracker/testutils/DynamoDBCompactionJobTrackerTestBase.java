@@ -164,7 +164,11 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
 
     protected static JobRunTime defaultRunTime() {
         return new JobRunTime(
-                defaultStartTime(), Instant.parse("2022-09-23T10:52:00.001Z"));
+                defaultStartTime(), defaultFinishTime());
+    }
+
+    protected static Instant defaultFinishTime() {
+        return Instant.parse("2022-09-23T10:52:00.001Z");
     }
 
     protected static CompactionJobStatus startedStatusWithDefaults(CompactionJob job) {

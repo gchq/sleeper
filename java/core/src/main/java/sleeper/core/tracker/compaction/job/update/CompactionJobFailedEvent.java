@@ -15,14 +15,10 @@
  */
 package sleeper.core.tracker.compaction.job.update;
 
-import sleeper.core.tracker.job.run.JobRunTime;
-
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * An event for when a compaction job failed. Used in the compaction job tracker.
@@ -33,7 +29,6 @@ public class CompactionJobFailedEvent {
     private final String taskId;
     private final String jobRunId;
     private final Instant failureTime;
-    private final Duration timeInProcess;
     private final List<String> failureReasons;
 
     private CompactionJobFailedEvent(Builder builder) {
@@ -42,7 +37,6 @@ public class CompactionJobFailedEvent {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         jobRunId = builder.jobRunId;
         failureTime = Objects.requireNonNull(builder.failureTime, "failureTime must not be null");
-        timeInProcess = builder.timeInProcess;
         failureReasons = Objects.requireNonNull(builder.failureReasons, "failureReasons must not be null");
     }
 
@@ -70,17 +64,13 @@ public class CompactionJobFailedEvent {
         return failureTime;
     }
 
-    public Optional<Duration> getTimeInProcess() {
-        return Optional.ofNullable(timeInProcess);
-    }
-
     public List<String> getFailureReasons() {
         return failureReasons;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, taskId, jobRunId, failureTime, timeInProcess, failureReasons);
+        return Objects.hash(jobId, tableId, taskId, jobRunId, failureTime, failureReasons);
     }
 
     @Override
@@ -93,13 +83,13 @@ public class CompactionJobFailedEvent {
         }
         CompactionJobFailedEvent other = (CompactionJobFailedEvent) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId)
-                && Objects.equals(failureTime, other.failureTime) && Objects.equals(timeInProcess, other.timeInProcess) && Objects.equals(failureReasons, other.failureReasons);
+                && Objects.equals(failureTime, other.failureTime) && Objects.equals(failureReasons, other.failureReasons);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", failureTime=" + failureTime + ", timeInProcess="
-                + timeInProcess + ", failureReasons=" + failureReasons + "}";
+        return "CompactionJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", failureTime=" + failureTime + ", failureReasons="
+                + failureReasons + "}";
     }
 
     /**
@@ -111,7 +101,6 @@ public class CompactionJobFailedEvent {
         private String jobRunId;
         private String taskId;
         private Instant failureTime;
-        private Duration timeInProcess;
         private List<String> failureReasons;
 
         /**
@@ -159,16 +148,6 @@ public class CompactionJobFailedEvent {
         }
 
         /**
-         * Sets the run time.
-         *
-         * @param  runTime the run time
-         * @return         the builder
-         */
-        public Builder runTime(JobRunTime runTime) {
-            return failureTime(runTime.getFinishTime()).timeInProcess(runTime.getTimeInProcess());
-        }
-
-        /**
          * Sets the time of the failure.
          *
          * @param  failureTime the failure time
@@ -176,17 +155,6 @@ public class CompactionJobFailedEvent {
          */
         public Builder failureTime(Instant failureTime) {
             this.failureTime = failureTime;
-            return this;
-        }
-
-        /**
-         * Sets the time spent on the failed process.
-         *
-         * @param  timeInProcess the time spent
-         * @return               the builder
-         */
-        public Builder timeInProcess(Duration timeInProcess) {
-            this.timeInProcess = timeInProcess;
             return this;
         }
 

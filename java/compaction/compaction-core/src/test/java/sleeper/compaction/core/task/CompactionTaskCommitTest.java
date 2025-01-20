@@ -220,7 +220,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             // And the commits are saved to the job tracker
             jobTracker.jobCommitted(job.committedEventBuilder(commitTime)
                     .taskId("test-task").jobRunId("test-job-run-1").build());
-            jobTracker.jobFailed(job.failedEventBuilder(new JobRunTime(startTime2, commitFailTime))
+            jobTracker.jobFailed(job.failedEventBuilder(commitFailTime)
                     .failureReasons(List.of("Could not commit same job twice"))
                     .taskId("test-task").jobRunId("test-job-run-2").build());
 
@@ -231,8 +231,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     .startedStatus(compactionStartedStatus(startTime2))
                                     .statusUpdate(compactionFinishedStatus(
                                             new JobRunSummary(recordsProcessed, startTime2, finishTime2)))
-                                    .finishedStatus(compactionFailedStatus(
-                                            new JobRunTime(startTime2, commitFailTime),
+                                    .finishedStatus(compactionFailedStatus(commitFailTime,
                                             List.of("Could not commit same job twice")))
                                     .build(),
                             JobRun.builder().taskId("test-task")

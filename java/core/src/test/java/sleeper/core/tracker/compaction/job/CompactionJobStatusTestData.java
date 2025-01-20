@@ -81,14 +81,14 @@ public class CompactionJobStatusTestData {
     public static JobRun failedCompactionRun(String taskId, JobRunTime runTime, List<String> failureReasons) {
         return JobRun.finished(taskId,
                 compactionStartedStatus(runTime.getStartTime()),
-                compactionFailedStatus(runTime, failureReasons));
+                compactionFailedStatus(runTime.getFinishTime(), failureReasons));
     }
 
     public static JobRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
         return JobRun.builder().taskId(taskId)
                 .startedStatus(compactionStartedStatus(startTime))
                 .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)))
-                .statusUpdate(compactionFailedStatus(new JobRunTime(startTime, failureTime), failureReasons))
+                .statusUpdate(compactionFailedStatus(failureTime, failureReasons))
                 .build();
     }
 
@@ -107,15 +107,6 @@ public class CompactionJobStatusTestData {
 
     public static CompactionJobCommittedStatus compactionCommittedStatus(Instant committedTime) {
         return CompactionJobCommittedStatus.commitAndUpdateTime(committedTime, defaultUpdateTime(committedTime));
-    }
-
-    public static JobRunFailedStatus compactionFailedStatus(JobRunTime runTime, List<String> failureReasons) {
-        return JobRunFailedStatus.builder()
-                .updateTime(defaultUpdateTime(runTime.getFinishTime()))
-                .failureTime(runTime.getFinishTime())
-                .failureReasons(failureReasons)
-                .timeInProcess(runTime.getTimeInProcess())
-                .build();
     }
 
     public static JobRunFailedStatus compactionFailedStatus(Instant failureTime, List<String> failureReasons) {
