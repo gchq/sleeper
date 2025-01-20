@@ -34,7 +34,6 @@
                 "recordsRead": 300,
                 "recordsWritten": 200
               },
-              "timeInProcess": 30.0,
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 2
             }
@@ -57,7 +56,6 @@
                 "recordsRead": 300,
                 "recordsWritten": 200
               },
-              "timeInProcess": 20.0,
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 1
             }
