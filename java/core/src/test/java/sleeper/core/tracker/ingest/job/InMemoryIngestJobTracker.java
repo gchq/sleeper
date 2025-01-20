@@ -26,7 +26,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
-import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
@@ -92,14 +91,15 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
 
     @Override
     public void jobFinished(IngestJobFinishedEvent event) {
-        JobRunSummary summary = event.getSummary();
         existingJobRecords(event.getTableId(), event.getJobId())
                 .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(IngestJobFinishedStatus.updateTimeAndSummary(
-                                defaultUpdateTime(summary.getFinishTime()), summary)
-                                .committedBySeparateFileUpdates(event.isCommittedBySeparateFileUpdates())
+                        .statusUpdate(IngestJobFinishedStatus.builder()
+                                .updateTime(defaultUpdateTime(event.getFinishTime()))
+                                .finishTime(event.getFinishTime())
+                                .recordsProcessed(event.getRecordsProcessed())
                                 .numFilesWrittenByJob(event.getNumFilesWrittenByJob())
+                                .committedBySeparateFileUpdates(event.isCommittedBySeparateFileUpdates())
                                 .build())
                         .jobRunId(event.getJobRunId())
                         .taskId(event.getTaskId())

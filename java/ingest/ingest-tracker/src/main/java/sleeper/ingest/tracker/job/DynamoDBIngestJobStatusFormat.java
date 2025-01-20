@@ -32,7 +32,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
-import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
@@ -141,14 +140,14 @@ class DynamoDBIngestJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
             IngestJobFinishedEvent event, DynamoDBRecordBuilder builder) {
-        JobRunSummary summary = event.getSummary();
+        RecordsProcessed recordsProcessed = event.getRecordsProcessed();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
-                .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
-                .number(RECORDS_READ, summary.getRecordsRead())
-                .number(RECORDS_WRITTEN, summary.getRecordsWritten())
+                .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
+                .number(RECORDS_READ, recordsProcessed.getRecordsRead())
+                .number(RECORDS_WRITTEN, recordsProcessed.getRecordsWritten())
                 .bool(JOB_COMMITTED_WHEN_FILES_ADDED, event.isCommittedBySeparateFileUpdates())
                 .number(FILES_WRITTEN_COUNT, event.getNumFilesWrittenByJob())
                 .build();
