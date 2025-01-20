@@ -18,9 +18,11 @@ package sleeper.core.tracker.job.status;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents a job failing.
@@ -28,13 +30,15 @@ import java.util.Objects;
 public class JobRunFailedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
-    private final JobRunTime runTime;
+    private final Instant finishTime;
     private final List<String> failureReasons;
+    private final Duration timeInProcess;
 
-    private JobRunFailedStatus(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
+    private JobRunFailedStatus(Instant updateTime, Instant finishTime, List<String> failureReasons, Duration timeInProcess) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
-        this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
+        this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
         this.failureReasons = Objects.requireNonNull(failureReasons, "failureReasons must not be null");
+        this.timeInProcess = timeInProcess;
     }
 
     /**
@@ -46,7 +50,7 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
      * @return                the status update
      */
     public static JobRunFailedStatus timeAndReasons(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
-        return new JobRunFailedStatus(updateTime, runTime, failureReasons);
+        return new JobRunFailedStatus(updateTime, runTime.getFinishTime(), failureReasons, runTime.getTimeInProcess());
     }
 
     @Override
@@ -56,7 +60,12 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
 
     @Override
     public Instant getFinishTime() {
-        return runTime.getFinishTime();
+        return finishTime;
+    }
+
+    @Override
+    public Optional<Duration> getTimeInProcess() {
+        return Optional.ofNullable(timeInProcess);
     }
 
     @Override
@@ -76,7 +85,7 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, runTime, failureReasons);
+        return Objects.hash(updateTime, finishTime, failureReasons, timeInProcess);
     }
 
     @Override
@@ -88,11 +97,12 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
             return false;
         }
         JobRunFailedStatus other = (JobRunFailedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(runTime, other.runTime) && Objects.equals(failureReasons, other.failureReasons);
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(failureReasons, other.failureReasons)
+                && Objects.equals(timeInProcess, other.timeInProcess);
     }
 
     @Override
     public String toString() {
-        return "ProcessFailedStatus{updateTime=" + updateTime + ", runTime=" + runTime + ", failureReasons=" + failureReasons + "}";
+        return "JobRunFailedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", failureReasons=" + failureReasons + ", timeInProcess=" + timeInProcess + "}";
     }
 }
