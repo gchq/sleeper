@@ -31,7 +31,8 @@ public class CompactionJobFailedEvent {
     private final String tableId;
     private final String taskId;
     private final String jobRunId;
-    private final JobRunTime runTime;
+    private final Instant failureTime;
+    private final Duration timeInProcess;
     private final List<String> failureReasons;
 
     private CompactionJobFailedEvent(Builder builder) {
@@ -39,7 +40,9 @@ public class CompactionJobFailedEvent {
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         jobRunId = builder.jobRunId;
-        runTime = Objects.requireNonNull(builder.runTime, "runTime must not be null");
+        JobRunTime runTime = Objects.requireNonNull(builder.runTime, "runTime must not be null");
+        failureTime = runTime.getFinishTime();
+        timeInProcess = runTime.getTimeInProcess();
         failureReasons = Objects.requireNonNull(builder.failureReasons, "failureReasons must not be null");
     }
 
@@ -64,15 +67,11 @@ public class CompactionJobFailedEvent {
     }
 
     public Instant getFailureTime() {
-        return runTime.getFinishTime();
+        return failureTime;
     }
 
     public Duration getTimeInProcess() {
-        return runTime.getTimeInProcess();
-    }
-
-    public JobRunTime getRunTime() {
-        return runTime;
+        return timeInProcess;
     }
 
     public List<String> getFailureReasons() {
@@ -81,7 +80,7 @@ public class CompactionJobFailedEvent {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, taskId, jobRunId, runTime, failureReasons);
+        return Objects.hash(jobId, tableId, taskId, jobRunId, failureTime, timeInProcess, failureReasons);
     }
 
     @Override
@@ -94,13 +93,13 @@ public class CompactionJobFailedEvent {
         }
         CompactionJobFailedEvent other = (CompactionJobFailedEvent) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId)
-                && Objects.equals(runTime, other.runTime) && Objects.equals(failureReasons, other.failureReasons);
+                && Objects.equals(failureTime, other.failureTime) && Objects.equals(timeInProcess, other.timeInProcess) && Objects.equals(failureReasons, other.failureReasons);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", runTime=" + runTime + ", failureReasons=" + failureReasons
-                + "}";
+        return "CompactionJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", failureTime=" + failureTime + ", timeInProcess="
+                + timeInProcess + ", failureReasons=" + failureReasons + "}";
     }
 
     /**
