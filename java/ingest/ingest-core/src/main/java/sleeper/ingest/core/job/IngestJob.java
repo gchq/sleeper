@@ -137,7 +137,18 @@ public class IngestJob {
      * @return         the builder
      */
     public IngestJobFailedEvent.Builder failedEventBuilder(JobRunTime runTime) {
-        return IngestJobFailedEvent.builder().jobId(id).tableId(tableId).runTime(runTime);
+        return IngestJobFailedEvent.builder().jobId(id).tableId(tableId)
+                .failureTime(runTime.getFinishTime()).timeInProcess(runTime.getTimeInProcess());
+    }
+
+    /**
+     * Creates a builder for an event when the ingest job failed. Used with the ingest job tracker.
+     *
+     * @param  failureTime the time of the failure
+     * @return             the builder
+     */
+    public IngestJobFailedEvent.Builder failedEventBuilder(Instant failureTime) {
+        return IngestJobFailedEvent.builder().jobId(id).tableId(tableId).failureTime(failureTime);
     }
 
     public String getId() {

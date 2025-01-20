@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * An event for when an ingest job failed. Used in the ingest job tracker.
@@ -31,7 +32,8 @@ public class IngestJobFailedEvent implements IngestJobEvent {
     private final String tableId;
     private final String jobRunId;
     private final String taskId;
-    private final JobRunTime runTime;
+    private final Instant failureTime;
+    private final Duration timeInProcess;
     private final List<String> failureReasons;
 
     private IngestJobFailedEvent(Builder builder) {
@@ -39,7 +41,8 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         this.tableId = builder.tableId;
         this.jobRunId = builder.jobRunId;
         this.taskId = builder.taskId;
-        this.runTime = builder.runTime;
+        this.failureTime = builder.failureTime;
+        this.timeInProcess = builder.timeInProcess;
         this.failureReasons = builder.failureReasons;
     }
 
@@ -64,15 +67,11 @@ public class IngestJobFailedEvent implements IngestJobEvent {
     }
 
     public Instant getFailureTime() {
-        return runTime.getFinishTime();
+        return failureTime;
     }
 
-    public Duration getTimeInProcess() {
-        return runTime.getTimeInProcess();
-    }
-
-    public JobRunTime getRunTime() {
-        return runTime;
+    public Optional<Duration> getTimeInProcess() {
+        return Optional.ofNullable(timeInProcess);
     }
 
     public List<String> getFailureReasons() {
@@ -81,7 +80,7 @@ public class IngestJobFailedEvent implements IngestJobEvent {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, jobRunId, taskId, runTime);
+        return Objects.hash(jobId, tableId, jobRunId, taskId, failureTime, timeInProcess, failureReasons);
     }
 
     @Override
@@ -94,12 +93,13 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         }
         IngestJobFailedEvent other = (IngestJobFailedEvent) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(taskId, other.taskId)
-                && Objects.equals(runTime, other.runTime);
+                && Objects.equals(failureTime, other.failureTime) && Objects.equals(timeInProcess, other.timeInProcess) && Objects.equals(failureReasons, other.failureReasons);
     }
 
     @Override
     public String toString() {
-        return "IngestJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", jobRunId=" + jobRunId + ", taskId=" + taskId + ", runTime=" + runTime + "}";
+        return "IngestJobFailedEvent{jobId=" + jobId + ", tableId=" + tableId + ", jobRunId=" + jobRunId + ", taskId=" + taskId + ", failureTime=" + failureTime + ", timeInProcess=" + timeInProcess
+                + ", failureReasons=" + failureReasons + "}";
     }
 
     /**
@@ -110,7 +110,8 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         private String tableId;
         private String jobRunId;
         private String taskId;
-        private JobRunTime runTime;
+        private Instant failureTime;
+        private Duration timeInProcess;
         private List<String> failureReasons;
 
         /**
@@ -164,7 +165,28 @@ public class IngestJobFailedEvent implements IngestJobEvent {
          * @return         the builder
          */
         public Builder runTime(JobRunTime runTime) {
-            this.runTime = runTime;
+            return failureTime(runTime.getFinishTime());
+        }
+
+        /**
+         * Sets the time of the failure.
+         *
+         * @param  failureTime the failure time
+         * @return             the builder
+         */
+        public Builder failureTime(Instant failureTime) {
+            this.failureTime = failureTime;
+            return this;
+        }
+
+        /**
+         * Sets the time spent in the process that failed.
+         *
+         * @param  timeInProcess the time spent
+         * @return               the builder
+         */
+        public Builder timeInProcess(Duration timeInProcess) {
+            this.timeInProcess = timeInProcess;
             return this;
         }
 
