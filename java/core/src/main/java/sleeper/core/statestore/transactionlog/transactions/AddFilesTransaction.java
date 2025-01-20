@@ -98,14 +98,14 @@ public class AddFilesTransaction implements FileReferenceTransaction {
      * @param sleeperTable the table being updated
      * @param e            the failure
      */
-    public void reportJobFailed(IngestJobTracker tracker, TableStatus sleeperTable, Instant now, Exception e) {
+    public void reportJobFailed(IngestJobTracker tracker, TableStatus sleeperTable, Exception e) {
         if (jobId == null) {
             return;
         }
         tracker.jobFailed(IngestJobFailedEvent.builder()
                 .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
                 .tableId(sleeperTable.getTableUniqueId())
-                .failureTime(now)
+                .failureTime(writtenTime)
                 .failure(e)
                 .build());
     }

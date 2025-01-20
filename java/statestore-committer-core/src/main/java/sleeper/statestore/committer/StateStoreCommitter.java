@@ -171,7 +171,7 @@ public class StateStoreCommitter {
         try {
             stateStore.addTransaction(addTransaction);
         } catch (Exception e) {
-            transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), timeSupplier.get(), e);
+            transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), e);
             throw e;
         }
     }
