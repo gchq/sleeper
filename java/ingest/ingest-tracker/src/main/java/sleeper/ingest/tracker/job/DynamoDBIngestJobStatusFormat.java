@@ -238,12 +238,13 @@ class DynamoDBIngestJobStatusFormat {
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .build();
             case UPDATE_TYPE_FINISHED:
-                return IngestJobFinishedStatus.updateTimeAndSummary(
-                        getInstantAttribute(item, UPDATE_TIME),
-                        new JobRunSummary(new RecordsProcessed(
+                return IngestJobFinishedStatus.builder()
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .timeInProcess(getTimeInProcess(item))
+                        .recordsProcessed(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
-                                getLongAttribute(item, RECORDS_WRITTEN, 0)),
-                                getRunTime(item)))
+                                getLongAttribute(item, RECORDS_WRITTEN, 0)))
                         .committedBySeparateFileUpdates(getBooleanAttribute(item, JOB_COMMITTED_WHEN_FILES_ADDED))
                         .numFilesWrittenByJob(getNullableIntAttribute(item, FILES_WRITTEN_COUNT))
                         .build();
@@ -266,5 +267,12 @@ class DynamoDBIngestJobStatusFormat {
                 ? Duration.ofMillis(millisInProcess)
                 : Duration.between(startTime, finishTime);
         return new JobRunTime(startTime, finishTime, timeInProcess);
+    }
+
+    private static Duration getTimeInProcess(Map<String, AttributeValue> item) {
+        long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
+        return millisInProcess > -1
+                ? Duration.ofMillis(millisInProcess)
+                : null;
     }
 }

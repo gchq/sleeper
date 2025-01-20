@@ -101,6 +101,7 @@ public class CompactionJobStatusTestData {
                 .updateTime(defaultUpdateTime(summary.getFinishTime()))
                 .finishTime(summary.getFinishTime())
                 .recordsProcessed(summary.getRecordsProcessed())
+                .timeInProcess(summary.getTimeInProcess())
                 .build();
     }
 

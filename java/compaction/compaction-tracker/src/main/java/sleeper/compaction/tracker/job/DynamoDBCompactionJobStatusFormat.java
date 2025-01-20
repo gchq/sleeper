@@ -118,6 +118,7 @@ class DynamoDBCompactionJobStatusFormat {
                 .string(TASK_ID, event.getTaskId())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
+                .number(MILLIS_IN_PROCESS, event.getTimeInProcess().toMillis())
                 .number(RECORDS_READ, recordsProcessed.getRecordsRead())
                 .number(RECORDS_WRITTEN, recordsProcessed.getRecordsWritten())
                 .build();
@@ -195,6 +196,7 @@ class DynamoDBCompactionJobStatusFormat {
                 return CompactionJobFinishedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .timeInProcess(getTimeInProcess(item))
                         .recordsProcessed(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
                                 getLongAttribute(item, RECORDS_WRITTEN, 0)))
@@ -222,5 +224,12 @@ class DynamoDBCompactionJobStatusFormat {
                 ? Duration.ofMillis(millisInProcess)
                 : Duration.between(startTime, finishTime);
         return new JobRunTime(startTime, finishTime, timeInProcess);
+    }
+
+    private static Duration getTimeInProcess(Map<String, AttributeValue> item) {
+        long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
+        return millisInProcess > -1
+                ? Duration.ofMillis(millisInProcess)
+                : null;
     }
 }
