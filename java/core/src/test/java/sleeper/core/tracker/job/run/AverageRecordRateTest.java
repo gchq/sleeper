@@ -187,7 +187,6 @@ public class AverageRecordRateTest {
                         JobRunFailedStatus.builder()
                                 .updateTime(defaultUpdateTime(finishTime))
                                 .failureTime(finishTime)
-                                .timeInProcess(Duration.between(startTime, finishTime))
                                 .failureReasons(List.of("Unexpected failure", "Some IO problem"))
                                 .build()))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")

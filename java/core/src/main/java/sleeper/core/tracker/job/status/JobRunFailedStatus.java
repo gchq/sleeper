@@ -17,11 +17,9 @@ package sleeper.core.tracker.job.status;
 
 import sleeper.core.tracker.job.run.RecordsProcessed;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Represents a job failing.
@@ -31,13 +29,11 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
     private final Instant updateTime;
     private final Instant failureTime;
     private final List<String> failureReasons;
-    private final Duration timeInProcess;
 
     private JobRunFailedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
         failureTime = Objects.requireNonNull(builder.failureTime, "failureTime must not be null");
         failureReasons = Objects.requireNonNull(builder.failureReasons, "failureReasons must not be null");
-        timeInProcess = builder.timeInProcess;
     }
 
     public static Builder builder() {
@@ -52,11 +48,6 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
     @Override
     public Instant getFinishTime() {
         return failureTime;
-    }
-
-    @Override
-    public Optional<Duration> getTimeInProcess() {
-        return Optional.ofNullable(timeInProcess);
     }
 
     @Override
@@ -76,7 +67,7 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, failureTime, failureReasons, timeInProcess);
+        return Objects.hash(updateTime, failureTime, failureReasons);
     }
 
     @Override
@@ -88,13 +79,12 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
             return false;
         }
         JobRunFailedStatus other = (JobRunFailedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(failureTime, other.failureTime) && Objects.equals(failureReasons, other.failureReasons)
-                && Objects.equals(timeInProcess, other.timeInProcess);
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(failureTime, other.failureTime) && Objects.equals(failureReasons, other.failureReasons);
     }
 
     @Override
     public String toString() {
-        return "JobRunFailedStatus{updateTime=" + updateTime + ", failureTime=" + failureTime + ", failureReasons=" + failureReasons + ", timeInProcess=" + timeInProcess + "}";
+        return "JobRunFailedStatus{updateTime=" + updateTime + ", failureTime=" + failureTime + ", failureReasons=" + failureReasons + "}";
     }
 
     /**
@@ -104,7 +94,6 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
         private Instant updateTime;
         private Instant failureTime;
         private List<String> failureReasons;
-        private Duration timeInProcess;
 
         private Builder() {
         }
@@ -139,17 +128,6 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
          */
         public Builder failureReasons(List<String> failureReasons) {
             this.failureReasons = failureReasons;
-            return this;
-        }
-
-        /**
-         * Sets the records processed.
-         *
-         * @param  timeInProcess the records processed
-         * @return               the builder for chaining
-         */
-        public Builder timeInProcess(Duration timeInProcess) {
-            this.timeInProcess = timeInProcess;
             return this;
         }
 
