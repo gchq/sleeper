@@ -26,7 +26,6 @@ import sleeper.core.properties.testutils.InMemoryTableProperties;
 
 import java.util.List;
 
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -42,20 +41,26 @@ public class CompactionCommitBatcherTest {
         TableProperties table = createTable();
         CompactionJob job = jobFactory(table).createCompactionJobWithFilenames(
                 "test-job", List.of("test.parquet"), "root");
-        List<CompactionCommitRequest> requests = List.of(commitRequest(table, job));
+        List<CompactionCommitRequest> requests = List.of(commitRequest(job));
     }
 
     private TableProperties createTable() {
-        return createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+        tables.createTable(tableProperties);
+        return tableProperties;
     }
 
     private CompactionJobFactory jobFactory(TableProperties tableProperties) {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    private CompactionCommitRequest commitRequest(TableProperties tableProperties, CompactionJob job) {
-        return new CompactionCommitRequest(tableProperties.get(TABLE_ID),
+    private CompactionCommitRequest commitRequest(CompactionJob job) {
+        return new CompactionCommitRequest(job.getTableId(),
                 job.replaceFileReferencesRequestBuilder(100).build());
+    }
+
+    private CompactionCommitBatcher batcher() {
+        return new CompactionCommitBatcher();
     }
 
 }
