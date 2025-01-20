@@ -25,7 +25,6 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
-import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;
@@ -106,7 +105,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         tracker.jobFailed(IngestJobFailedEvent.builder()
                 .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
                 .tableId(sleeperTable.getTableUniqueId())
-                .runTime(new JobRunTime(writtenTime, writtenTime))
+                .failureTime(writtenTime)
                 .failure(e)
                 .build());
     }

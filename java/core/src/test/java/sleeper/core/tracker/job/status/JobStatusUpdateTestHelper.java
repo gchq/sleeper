@@ -123,6 +123,22 @@ public class JobStatusUpdateTestHelper {
     }
 
     /**
+     * Creates a job failed status.
+     *
+     * @param  failureTime    the time of the failure
+     * @param  failureReasons the reasons for the failure
+     * @return                a {@link JobRunFailedStatus}
+     */
+    public static JobRunFailedStatus failedStatus(
+            Instant failureTime, List<String> failureReasons) {
+        return JobRunFailedStatus.builder()
+                .updateTime(defaultUpdateTime(failureTime))
+                .failureTime(failureTime)
+                .failureReasons(failureReasons)
+                .build();
+    }
+
+    /**
      * Creates a default update time based on a given time.
      *
      * @param  time the provided time

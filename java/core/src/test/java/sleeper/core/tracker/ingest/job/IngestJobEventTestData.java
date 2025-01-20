@@ -144,7 +144,8 @@ public class IngestJobEventTestData {
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
-                .runTime(runTime)
+                .failureTime(runTime.getFinishTime())
+                .timeInProcess(runTime.getTimeInProcess())
                 .failureReasons(reasons);
     }
 

@@ -362,8 +362,7 @@ public class StateStoreCommitterTest {
                     .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                             .taskId("test-task-id")
                             .startedStatus(ingestStartedStatus(ingestJob, startTime))
-                            .finishedStatus(failedStatus(
-                                    new JobRunTime(writtenTime, writtenTime),
+                            .finishedStatus(failedStatus(writtenTime,
                                     List.of("File already exists: output.parquet")))
                             .build()));
         }
@@ -408,8 +407,7 @@ public class StateStoreCommitterTest {
                     .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
                             .taskId("test-task-id")
                             .startedStatus(ingestStartedStatus(ingestJob, startTime))
-                            .finishedStatus(failedStatus(
-                                    new JobRunTime(writtenTime, writtenTime),
+                            .finishedStatus(failedStatus(writtenTime,
                                     List.of("Failed adding transaction", "Unexpected failure")))
                             .build()));
         }

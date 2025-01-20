@@ -15,8 +15,6 @@
  */
 package sleeper.core.tracker.ingest.job.update;
 
-import sleeper.core.tracker.job.run.JobRunTime;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -156,16 +154,6 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         public Builder taskId(String taskId) {
             this.taskId = taskId;
             return this;
-        }
-
-        /**
-         * Sets the run time.
-         *
-         * @param  runTime the run time
-         * @return         the builder
-         */
-        public Builder runTime(JobRunTime runTime) {
-            return failureTime(runTime.getFinishTime());
         }
 
         /**
