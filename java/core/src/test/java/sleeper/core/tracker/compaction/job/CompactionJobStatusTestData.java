@@ -118,6 +118,14 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
+    public static JobRunFailedStatus compactionFailedStatus(Instant failureTime, List<String> failureReasons) {
+        return JobRunFailedStatus.builder()
+                .updateTime(defaultUpdateTime(failureTime))
+                .failureTime(failureTime)
+                .failureReasons(failureReasons)
+                .build();
+    }
+
     public static CompactionJobStatus jobStatusFromUpdates(JobStatusUpdate... updates) {
         return jobStatusFrom(records().fromUpdates(updates));
     }

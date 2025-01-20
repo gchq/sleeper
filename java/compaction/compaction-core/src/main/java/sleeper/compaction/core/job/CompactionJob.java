@@ -104,7 +104,8 @@ public class CompactionJob {
     }
 
     public CompactionJobFailedEvent.Builder failedEventBuilder(JobRunTime runTime) {
-        return CompactionJobFailedEvent.builder().jobId(jobId).tableId(tableId).runTime(runTime);
+        return CompactionJobFailedEvent.builder().jobId(jobId).tableId(tableId)
+                .failureTime(runTime.getFinishTime()).timeInProcess(runTime.getTimeInProcess());
     }
 
     public FileReference createOutputFileReference(long recordsWritten) {

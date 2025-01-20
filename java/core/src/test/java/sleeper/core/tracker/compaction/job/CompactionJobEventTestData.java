@@ -57,7 +57,7 @@ public class CompactionJobEventTestData {
     }
 
     public static CompactionJobFailedEvent.Builder compactionFailedEventBuilder(CompactionJobCreatedEvent created, JobRunTime runTime) {
-        return CompactionJobFailedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).runTime(runTime);
+        return CompactionJobFailedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).failureTime(runTime.getFinishTime()).timeInProcess(runTime.getTimeInProcess());
     }
 
 }

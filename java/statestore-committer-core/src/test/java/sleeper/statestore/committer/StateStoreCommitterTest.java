@@ -58,7 +58,6 @@ import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
@@ -170,8 +169,7 @@ public class StateStoreCommitterTest {
                             JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
-                                    .finishedStatus(compactionFailedStatus(
-                                            new JobRunTime(failedTime, failedTime),
+                                    .finishedStatus(compactionFailedStatus(failedTime,
                                             List.of("File not found: input.parquet")))
                                     .build()));
         }
@@ -208,8 +206,7 @@ public class StateStoreCommitterTest {
                             JobRun.builder().taskId("test-task")
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .statusUpdate(compactionFinishedStatus(summary))
-                                    .finishedStatus(compactionFailedStatus(
-                                            new JobRunTime(failedTime, failedTime),
+                                    .finishedStatus(compactionFailedStatus(failedTime,
                                             List.of("Failed adding transaction", "Unexpected failure")))
                                     .build()));
         }

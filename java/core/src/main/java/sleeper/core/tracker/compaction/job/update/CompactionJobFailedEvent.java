@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * An event for when a compaction job failed. Used in the compaction job tracker.
@@ -40,9 +41,8 @@ public class CompactionJobFailedEvent {
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         jobRunId = builder.jobRunId;
-        JobRunTime runTime = Objects.requireNonNull(builder.runTime, "runTime must not be null");
-        failureTime = runTime.getFinishTime();
-        timeInProcess = runTime.getTimeInProcess();
+        failureTime = Objects.requireNonNull(builder.failureTime, "failureTime must not be null");
+        timeInProcess = builder.timeInProcess;
         failureReasons = Objects.requireNonNull(builder.failureReasons, "failureReasons must not be null");
     }
 
@@ -70,8 +70,8 @@ public class CompactionJobFailedEvent {
         return failureTime;
     }
 
-    public Duration getTimeInProcess() {
-        return timeInProcess;
+    public Optional<Duration> getTimeInProcess() {
+        return Optional.ofNullable(timeInProcess);
     }
 
     public List<String> getFailureReasons() {
@@ -110,7 +110,8 @@ public class CompactionJobFailedEvent {
         private String tableId;
         private String jobRunId;
         private String taskId;
-        private JobRunTime runTime;
+        private Instant failureTime;
+        private Duration timeInProcess;
         private List<String> failureReasons;
 
         /**
@@ -164,7 +165,28 @@ public class CompactionJobFailedEvent {
          * @return         the builder
          */
         public Builder runTime(JobRunTime runTime) {
-            this.runTime = runTime;
+            return failureTime(runTime.getFinishTime()).timeInProcess(runTime.getTimeInProcess());
+        }
+
+        /**
+         * Sets the time of the failure.
+         *
+         * @param  failureTime the failure time
+         * @return             the builder
+         */
+        public Builder failureTime(Instant failureTime) {
+            this.failureTime = failureTime;
+            return this;
+        }
+
+        /**
+         * Sets the time spent on the failed process.
+         *
+         * @param  timeInProcess the time spent
+         * @return               the builder
+         */
+        public Builder timeInProcess(Duration timeInProcess) {
+            this.timeInProcess = timeInProcess;
             return this;
         }
 
