@@ -139,7 +139,7 @@ class DynamoDBCompactionJobStatusFormat {
                 .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
                 .string(TASK_ID, event.getTaskId())
                 .string(JOB_RUN_ID, event.getJobRunId())
-                .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
+                .number(FINISH_TIME, event.getFailureTime().toEpochMilli())
                 .number(MILLIS_IN_PROCESS, event.getTimeInProcess().toMillis())
                 .list(FAILURE_REASONS, event.getFailureReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)

@@ -164,7 +164,7 @@ class DynamoDBIngestJobStatusFormat {
                 .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
-                .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
+                .number(FINISH_TIME, event.getFailureTime().toEpochMilli())
                 .number(MILLIS_IN_PROCESS, event.getTimeInProcess().toMillis())
                 .list(FAILURE_REASONS, event.getFailureReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)

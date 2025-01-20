@@ -63,7 +63,7 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         return taskId;
     }
 
-    public Instant getFinishTime() {
+    public Instant getFailureTime() {
         return runTime.getFinishTime();
     }
 

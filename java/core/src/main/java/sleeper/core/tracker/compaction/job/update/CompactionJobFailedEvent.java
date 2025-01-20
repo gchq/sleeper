@@ -63,7 +63,7 @@ public class CompactionJobFailedEvent {
         return jobRunId;
     }
 
-    public Instant getFinishTime() {
+    public Instant getFailureTime() {
         return runTime.getFinishTime();
     }
 
