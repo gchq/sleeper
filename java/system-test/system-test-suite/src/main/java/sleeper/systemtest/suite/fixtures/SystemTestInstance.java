@@ -38,7 +38,6 @@ import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterPro
 import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_PART_SIZE_BYTES;
 import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterProperty.ASYNC_INGEST_CRT_TARGET_THROUGHPUT_GBPS;
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
-import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
@@ -146,7 +145,6 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.IngestStack);
         properties.set(MAXIMUM_CONCURRENT_INGEST_TASKS, "11");
-        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         properties.set(DEFAULT_INGEST_RECORD_BATCH_TYPE, "arrow");
         properties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "async");
         properties.set(ARROW_INGEST_WORKING_BUFFER_BYTES, "268435456"); // 256MB
@@ -167,7 +165,6 @@ public class SystemTestInstance {
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
         properties.set(COMPACTION_TASK_X86_CPU, "1024");
         properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
-        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
         properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
         setSystemTestTags(properties, "compactionPerformance", "Sleeper Maven system test compaction performance");
@@ -181,7 +178,6 @@ public class SystemTestInstance {
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
         properties.set(COMPACTION_TASK_X86_CPU, "1024");
         properties.set(COMPACTION_TASK_X86_MEMORY, "4096");
-        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         properties.set(MAXIMUM_CONCURRENT_COMPACTION_TASKS, "10");
         properties.set(DEFAULT_COMPACTION_FILES_BATCH_SIZE, "11");
         setSystemTestTags(properties, "compactionOnDataFusion", "Sleeper Maven system test compaction performance on DataFusion");
@@ -199,7 +195,6 @@ public class SystemTestInstance {
         InstanceProperties properties = createInstanceProperties();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.EmrBulkImportStack);
         properties.set(DEFAULT_BULK_IMPORT_EMR_MAX_EXECUTOR_CAPACITY, "5");
-        properties.set(MAXIMUM_CONNECTIONS_TO_S3, "25");
         setSystemTestTags(properties, "bulkImportPerformance", "Sleeper Maven system test bulk import performance");
         return createInstanceConfiguration(properties);
     }
