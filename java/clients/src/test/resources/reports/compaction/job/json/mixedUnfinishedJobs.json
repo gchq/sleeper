@@ -15,19 +15,10 @@
           },
           {
             "updateTime": "2022-09-20T13:35:12.123Z",
-            "summary": {
-              "recordsProcessed": {
-                "recordsRead": 600,
-                "recordsWritten": 300
-              },
-              "runTime": {
-                "startTime": "2022-09-20T13:34:12.001Z",
-                "finishTime": "2022-09-20T13:35:12.001Z",
-                "durationInSeconds": 60.0,
-                "timeInProcessInSeconds": 60.0
-              },
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0
+            "finishTime": "2022-09-20T13:35:12.001Z",
+            "recordsProcessed": {
+              "recordsRead": 600,
+              "recordsWritten": 300
             },
             "type": "FINISHED_WHEN_COMMITTED"
           }
