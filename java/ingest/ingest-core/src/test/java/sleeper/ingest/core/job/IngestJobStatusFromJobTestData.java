@@ -188,7 +188,7 @@ public class IngestJobStatusFromJobTestData {
                                 .updateTime(defaultUpdateTime(runTime.getStartTime())).build())
                 .finishedStatus(JobRunFailedStatus.builder()
                         .updateTime(defaultUpdateTime(runTime.getFinishTime()))
-                        .finishTime(runTime.getFinishTime())
+                        .failureTime(runTime.getFinishTime())
                         .timeInProcess(runTime.getTimeInProcess())
                         .failureReasons(failureReasons)
                         .build())
@@ -342,7 +342,7 @@ public class IngestJobStatusFromJobTestData {
                 ingestStartedStatus(job, runTime.getStartTime()),
                 JobRunFailedStatus.builder()
                         .updateTime(defaultUpdateTime(runTime.getFinishTime()))
-                        .finishTime(runTime.getFinishTime())
+                        .failureTime(runTime.getFinishTime())
                         .timeInProcess(runTime.getTimeInProcess())
                         .failureReasons(failureReasons)
                         .build());
@@ -364,7 +364,7 @@ public class IngestJobStatusFromJobTestData {
                         validationTime, defaultUpdateTime(validationTime)))
                 .finishedStatus(JobRunFailedStatus.builder()
                         .updateTime(defaultUpdateTime(failureTime))
-                        .finishTime(failureTime)
+                        .failureTime(failureTime)
                         .failureReasons(failureReasons)
                         .build())
                 .build();

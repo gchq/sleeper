@@ -474,7 +474,7 @@ public class IngestJobStatusTest {
     private JobRunFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
         return JobRunFailedStatus.builder()
                 .updateTime(defaultUpdateTime(finishTime))
-                .finishTime(finishTime)
+                .failureTime(finishTime)
                 .failureReasons(List.of("Something went wrong"))
                 .timeInProcess(Duration.between(startTime, finishTime))
                 .build();

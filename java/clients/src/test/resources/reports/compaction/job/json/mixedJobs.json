@@ -99,16 +99,12 @@
           },
           {
             "updateTime": "2022-09-19T13:35:12.123Z",
-            "runTime": {
-              "startTime": "2022-09-19T13:34:12.001Z",
-              "finishTime": "2022-09-19T13:35:12.001Z",
-              "durationInSeconds": 60.0,
-              "timeInProcessInSeconds": 60.0
-            },
+            "failureTime": "2022-09-19T13:35:12.001Z",
             "failureReasons": [
               "Something went wrong",
               "More details"
             ],
+            "timeInProcess": 60.0,
             "type": "FAILED"
           }
         ]

@@ -110,7 +110,7 @@ public class InMemoryCompactionJobTracker implements CompactionJobTracker {
                 .jobId(event.getJobId()).taskId(event.getTaskId()).jobRunId(event.getJobRunId())
                 .statusUpdate(JobRunFailedStatus.builder()
                         .updateTime(getUpdateTimeOrDefault(() -> defaultUpdateTime(event.getFinishTime())))
-                        .finishTime(event.getFinishTime())
+                        .failureTime(event.getFinishTime())
                         .failureReasons(event.getFailureReasons())
                         .timeInProcess(event.getTimeInProcess())
                         .build())

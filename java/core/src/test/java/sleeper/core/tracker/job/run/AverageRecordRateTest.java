@@ -186,7 +186,7 @@ public class AverageRecordRateTest {
                         JobStatusUpdateTestHelper.startedStatus(startTime),
                         JobRunFailedStatus.builder()
                                 .updateTime(defaultUpdateTime(finishTime))
-                                .finishTime(finishTime)
+                                .failureTime(finishTime)
                                 .timeInProcess(Duration.between(startTime, finishTime))
                                 .failureReasons(List.of("Unexpected failure", "Some IO problem"))
                                 .build()))))

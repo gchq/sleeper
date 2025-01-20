@@ -93,16 +93,12 @@
           },
           {
             "updateTime": "2022-10-11T10:01:30.123Z",
-            "runTime": {
-              "startTime": "2022-10-11T10:01:00.001Z",
-              "finishTime": "2022-10-11T10:01:30.001Z",
-              "durationInSeconds": 30.0,
-              "timeInProcessInSeconds": 30.0
-            },
+            "failureTime": "2022-10-11T10:01:30.001Z",
             "failureReasons": [
               "Unexpected failure reading input file",
               "Some temporary IO problem"
             ],
+            "timeInProcess": 30.0,
             "type": "FAILED"
           }
         ]
@@ -125,16 +121,12 @@
           },
           {
             "updateTime": "2022-10-10T10:01:45.123Z",
-            "runTime": {
-              "startTime": "2022-10-10T10:01:15.001Z",
-              "finishTime": "2022-10-10T10:01:45.001Z",
-              "durationInSeconds": 30.0,
-              "timeInProcessInSeconds": 30.0
-            },
+            "failureTime": "2022-10-10T10:01:45.001Z",
             "failureReasons": [
               "Compaction has already been committed",
               "Failed database update"
             ],
+            "timeInProcess": 30.0,
             "type": "FAILED"
           }
         ]

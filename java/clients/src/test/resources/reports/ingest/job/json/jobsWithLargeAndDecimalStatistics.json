@@ -23,6 +23,7 @@
                 "recordsRead": 1234000,
                 "recordsWritten": 1234000
               },
+              "timeInProcess": 123.456,
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 4
             }
@@ -50,6 +51,7 @@
                 "recordsRead": 1000600,
                 "recordsWritten": 500300
               },
+              "timeInProcess": 60.0,
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 3
             }
@@ -77,6 +79,7 @@
                 "recordsRead": 1000600,
                 "recordsWritten": 500300
               },
+              "timeInProcess": 7200.0,
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 2
             }
@@ -104,6 +107,7 @@
                 "recordsRead": 600000,
                 "recordsWritten": 300000
               },
+              "timeInProcess": 123.123,
               "committedBySeparateFileUpdates": false,
               "numFilesWrittenByJob": 1
             }

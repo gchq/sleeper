@@ -248,7 +248,7 @@ class DynamoDBIngestJobStatusFormat {
             case UPDATE_TYPE_FAILED:
                 return JobRunFailedStatus.builder()
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
-                        .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .failureTime(getInstantAttribute(item, FINISH_TIME))
                         .timeInProcess(getTimeInProcess(item))
                         .failureReasons(getStringListAttribute(item, FAILURE_REASONS))
                         .build();

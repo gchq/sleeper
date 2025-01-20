@@ -99,7 +99,7 @@ public class JobStatusUpdateTestHelper {
         Instant finishTime = startTime.plus(runDuration);
         return JobRunFailedStatus.builder()
                 .updateTime(defaultUpdateTime(finishTime))
-                .finishTime(finishTime)
+                .failureTime(finishTime)
                 .timeInProcess(runDuration)
                 .failureReasons(failureReasons)
                 .build();
@@ -116,7 +116,7 @@ public class JobStatusUpdateTestHelper {
             JobRunTime runTime, List<String> failureReasons) {
         return JobRunFailedStatus.builder()
                 .updateTime(defaultUpdateTime(runTime.getFinishTime()))
-                .finishTime(runTime.getFinishTime())
+                .failureTime(runTime.getFinishTime())
                 .timeInProcess(runTime.getTimeInProcess())
                 .failureReasons(failureReasons)
                 .build();

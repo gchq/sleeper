@@ -113,7 +113,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
                         .jobId(event.getJobId())
                         .statusUpdate(JobRunFailedStatus.builder()
                                 .updateTime(defaultUpdateTime(event.getFinishTime()))
-                                .finishTime(event.getFinishTime())
+                                .failureTime(event.getFinishTime())
                                 .failureReasons(event.getFailureReasons())
                                 .timeInProcess(event.getTimeInProcess())
                                 .build())
