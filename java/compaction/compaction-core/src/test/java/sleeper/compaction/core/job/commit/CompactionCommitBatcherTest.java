@@ -137,6 +137,29 @@ public class CompactionCommitBatcherTest {
         assertThat(failures).containsExactly("first");
     }
 
+    @Test
+    void shouldReportFailureSendingMultipleCompactionsForOneTable() {
+        // Given
+        TableProperties table = createTable("some-table");
+        CompactionJob job1 = jobFactory(table).createCompactionJobWithFilenames(
+                "job1", List.of("test.parquet"), "root");
+        CompactionJob job2 = jobFactory(table).createCompactionJobWithFilenames(
+                "job1", List.of("test.parquet"), "root");
+        ReplaceFileReferencesRequest request1 = defaultReplaceFileReferencesRequest(job1);
+        ReplaceFileReferencesRequest request2 = defaultReplaceFileReferencesRequest(job2);
+        SendStateStoreCommit sendCommits = SendStateStoreCommitDummy.sendToQueueExceptForTable(queue, "some-table");
+        List<String> failures = new ArrayList<>();
+
+        // When
+        new CompactionCommitBatcher(sendCommits).sendBatch(List.of(
+                new CompactionCommitRequest("some-table", request1, () -> failures.add("first")),
+                new CompactionCommitRequest("some-table", request2, () -> failures.add("second"))));
+
+        // Then
+        assertThat(queue).isEmpty();
+        assertThat(failures).containsExactlyInAnyOrder("first", "second");
+    }
+
     private CompactionCommitRequest commitRequest(String tableId, ReplaceFileReferencesRequest request) {
         return new CompactionCommitRequest(tableId, request, () -> {
         });
