@@ -38,7 +38,7 @@ public interface NonPersistentEMRProperty {
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +
                     "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue("x86_64")
+            .defaultValue("arm64")
             .validationPredicate(EmrInstanceArchitecture::isValid)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.x86.instance.types")
@@ -59,14 +59,14 @@ public interface NonPersistentEMRProperty {
             .description("(Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used " +
                     "for the master node of the EMR cluster.\n" +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue("m6g.xlarge")
+            .defaultValue("m7g.xlarge")
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.arm.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used " +
                     "for the executor nodes of the EMR cluster.\n" +
                     "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
-            .defaultValue("m6g.4xlarge")
+            .defaultValue("m7g.4xlarge")
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.market.type")
