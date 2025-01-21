@@ -291,7 +291,8 @@ This is used during the release process to update the version number across the 
 
 ## Standalone deployment
 
-See the [deployment guide](deployment-guide.md) for notes on how to deploy Sleeper.
+See the [deployment guide](deployment-guide.md) for notes on how to deploy Sleeper, and
+the [system test guide](development/system-tests.md) to deploy instances specifically set up for development.
 
 ## Release Process
 
