@@ -365,7 +365,7 @@ To include a table in your instance, your `table.properties` file must be next t
 You can add more than one by creating a `tables` directory, with a subfolder for each table.
 
 Each table will also need a `schema.json` file next to the `table.properties` file.
-See [create a schema](03-schema.md) for how to create a schema.
+See [create a schema](tables/schema.md) for how to create a schema.
 
 You can optionally create a `tags.properties` file next to your `instance.properties`, to apply tags to AWS resources
 deployed by Sleeper. An example tags.properties file can be found [here](../example/full/tags.properties).
@@ -460,7 +460,7 @@ Note that the system test stacks do not need to be specified. They will be inclu
 There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to work with an
 existing instance.
 
-Also see the [tables documentation](04-tables.md#addedit-a-table) for scripts to add/edit Sleeper tables.
+Also see the [tables documentation](tables/tables.md#addedit-a-table) for scripts to add/edit Sleeper tables.
 
 ### Update Existing Instance
 
