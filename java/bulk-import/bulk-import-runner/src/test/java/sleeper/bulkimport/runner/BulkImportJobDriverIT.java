@@ -153,7 +153,6 @@ class BulkImportJobDriverIT {
     private final String jobRunId = "test-run";
     private final Instant validationTime = Instant.parse("2023-04-05T16:00:01Z");
     private final Instant startTime = Instant.parse("2023-04-05T16:01:01Z");
-    private final Instant writtenTime = Instant.parse("2023-04-05T16:01:10Z");
     private final Instant endTime = Instant.parse("2023-04-05T16:01:11Z");
     private final Configuration conf = getHadoopConfiguration(localStackContainer);
     private InstanceProperties instanceProperties;
@@ -493,7 +492,7 @@ class BulkImportJobDriverIT {
 
         // When
         BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
-        runJob(BulkImportJobDataframeDriver::createFileReferences, instanceProperties, job, startWrittenAndEndTime());
+        runJob(BulkImportJobDataframeDriver::createFileReferences, instanceProperties, job, startAndEndTime());
 
         // Then
         IngestJob ingestJob = job.toIngestJob();
@@ -504,7 +503,7 @@ class BulkImportJobDriverIT {
             AddFilesTransaction transaction = commit.<AddFilesTransaction>getTransactionIfHeld().orElseThrow();
             assertThat(commit).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                     AddFilesTransaction.builder()
-                            .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(writtenTime)
+                            .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(endTime)
                             .files(transaction.getFiles())
                             .build()));
             assertThat(transaction.getFiles())
@@ -536,7 +535,7 @@ class BulkImportJobDriverIT {
         Supplier<String> s3FileNameSupplier = () -> "test-add-files-commit";
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         AddFilesTransaction transaction = AddFilesTransaction.builder()
-                .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(writtenTime)
+                .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(endTime)
                 .files(AllReferencesToAFile.newFilesWithReferences(fileReferences))
                 .build();
         StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
@@ -710,10 +709,6 @@ class BulkImportJobDriverIT {
 
     private Supplier<Instant> startAndEndTime() {
         return List.of(startTime, endTime).iterator()::next;
-    }
-
-    private Supplier<Instant> startWrittenAndEndTime() {
-        return List.of(startTime, writtenTime, endTime).iterator()::next;
     }
 
     private BulkImportJob.Builder jobForTable(TableProperties tableProperties) {

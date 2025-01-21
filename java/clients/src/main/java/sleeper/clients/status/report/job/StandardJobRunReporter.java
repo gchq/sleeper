@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -85,7 +86,7 @@ public class StandardJobRunReporter {
     private UpdatePrinter defaultUpdatePrinter() {
         return updatePrinters(
                 printUpdateType(JobRunStartedUpdate.class, this::printProcessStarted),
-                printUpdateType(JobRunEndUpdate.class, this::printProcessFinished));
+                printUpdateTypeInRun(JobRunEndUpdate.class, this::printProcessFinished));
     }
 
     private void printProcessJobRun(JobRun run, UpdatePrinter updatePrinter) {
@@ -94,16 +95,16 @@ public class StandardJobRunReporter {
             out.printf("Run on task %s%n", run.getTaskId());
         }
         for (JobStatusUpdate update : run.getStatusUpdates()) {
-            if (!updatePrinter.print(update)) {
+            if (!updatePrinter.print(run, update)) {
                 out.printf("Unknown update type: %s%n", update.getClass().getSimpleName());
             }
         }
     }
 
-    public static <T extends JobStatusUpdate> UpdatePrinter printUpdateType(Class<T> type, Consumer<T> printer) {
-        return update -> {
+    public static <T extends JobStatusUpdate> UpdatePrinter printUpdateTypeInRun(Class<T> type, BiConsumer<JobRun, T> printer) {
+        return (run, update) -> {
             if (type.isInstance(update)) {
-                printer.accept(type.cast(update));
+                printer.accept(run, type.cast(update));
                 return true;
             } else {
                 return false;
@@ -111,10 +112,14 @@ public class StandardJobRunReporter {
         };
     }
 
+    public static <T extends JobStatusUpdate> UpdatePrinter printUpdateType(Class<T> type, Consumer<T> printer) {
+        return printUpdateTypeInRun(type, (run, update) -> printer.accept(update));
+    }
+
     public static UpdatePrinter updatePrinters(UpdatePrinter... printers) {
-        return update -> {
+        return (run, update) -> {
             for (UpdatePrinter printer : printers) {
-                if (printer.print(update)) {
+                if (printer.print(run, update)) {
                     return true;
                 }
             }
@@ -123,7 +128,7 @@ public class StandardJobRunReporter {
     }
 
     public interface UpdatePrinter {
-        boolean print(JobStatusUpdate update);
+        boolean print(JobRun run, JobStatusUpdate update);
     }
 
     public void printProcessStarted(JobRunStartedUpdate update) {
@@ -131,8 +136,8 @@ public class StandardJobRunReporter {
         out.printf("Start update time: %s%n", update.getUpdateTime());
     }
 
-    public void printProcessFinished(JobRunEndUpdate update) {
-        JobRunSummary summary = update.getSummary();
+    public void printProcessFinished(JobRun run, JobRunEndUpdate update) {
+        JobRunSummary summary = run.getFinishedSummary();
         out.printf("Finish time: %s%n", summary.getFinishTime());
         out.printf("Finish update time: %s%n", update.getUpdateTime());
         out.printf("Duration: %s%n", getDurationString(summary)); // Duration from job started in driver or job accepted in executor?

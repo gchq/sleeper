@@ -31,8 +31,6 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
-import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
@@ -41,7 +39,6 @@ import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.security.SecureRandom;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Random;
@@ -69,7 +66,6 @@ class DynamoDBCompactionJobStatusFormat {
     private static final String START_TIME = "StartTime";
     private static final String FINISH_TIME = "FinishTime";
     private static final String COMMIT_TIME = "CommitTime";
-    private static final String MILLIS_IN_PROCESS = "MillisInProcess";
     private static final String RECORDS_READ = "RecordsRead";
     private static final String RECORDS_WRITTEN = "RecordsWritten";
     private static final String FAILURE_REASONS = "FailureReasons";
@@ -113,16 +109,14 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
             CompactionJobFinishedEvent event, DynamoDBRecordBuilder builder) {
-        JobRunSummary summary = event.getSummary();
+        RecordsProcessed recordsProcessed = event.getRecordsProcessed();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
-                .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(TASK_ID, event.getTaskId())
                 .string(JOB_RUN_ID, event.getJobRunId())
-                .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
-                .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
-                .number(RECORDS_READ, summary.getRecordsRead())
-                .number(RECORDS_WRITTEN, summary.getRecordsWritten())
+                .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
+                .number(RECORDS_READ, recordsProcessed.getRecordsRead())
+                .number(RECORDS_WRITTEN, recordsProcessed.getRecordsWritten())
                 .build();
     }
 
@@ -138,14 +132,11 @@ class DynamoDBCompactionJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFailedUpdate(
             CompactionJobFailedEvent event, DynamoDBRecordBuilder builder) {
-        JobRunTime runTime = event.getRunTime();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
-                .number(START_TIME, runTime.getStartTime().toEpochMilli())
                 .string(TASK_ID, event.getTaskId())
                 .string(JOB_RUN_ID, event.getJobRunId())
-                .number(FINISH_TIME, runTime.getFinishTime().toEpochMilli())
-                .number(MILLIS_IN_PROCESS, runTime.getTimeInProcess().toMillis())
+                .number(FINISH_TIME, event.getFailureTime().toEpochMilli())
                 .list(FAILURE_REASONS, event.getFailureReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(toUnmodifiableList()))
@@ -195,35 +186,26 @@ class DynamoDBCompactionJobStatusFormat {
                         getInstantAttribute(item, START_TIME),
                         getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_FINISHED:
-                return CompactionJobFinishedStatus.updateTimeAndSummary(
-                        getInstantAttribute(item, UPDATE_TIME),
-                        new JobRunSummary(new RecordsProcessed(
+                return CompactionJobFinishedStatus.builder()
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .recordsProcessed(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
-                                getLongAttribute(item, RECORDS_WRITTEN, 0)),
-                                getRunTime(item)))
+                                getLongAttribute(item, RECORDS_WRITTEN, 0)))
                         .build();
             case UPDATE_TYPE_COMMITTED:
                 return CompactionJobCommittedStatus.commitAndUpdateTime(
                         getInstantAttribute(item, COMMIT_TIME),
                         getInstantAttribute(item, UPDATE_TIME));
             case UPDATE_TYPE_FAILED:
-                return JobRunFailedStatus.timeAndReasons(
-                        getInstantAttribute(item, UPDATE_TIME),
-                        getRunTime(item),
-                        getStringListAttribute(item, FAILURE_REASONS));
+                return JobRunFailedStatus.builder()
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .failureTime(getInstantAttribute(item, FINISH_TIME))
+                        .failureReasons(getStringListAttribute(item, FAILURE_REASONS))
+                        .build();
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
                 throw new IllegalArgumentException("Found record with unrecognised update type");
         }
-    }
-
-    private static JobRunTime getRunTime(Map<String, AttributeValue> item) {
-        Instant startTime = getInstantAttribute(item, START_TIME);
-        Instant finishTime = getInstantAttribute(item, FINISH_TIME);
-        long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
-        Duration timeInProcess = millisInProcess > -1
-                ? Duration.ofMillis(millisInProcess)
-                : Duration.between(startTime, finishTime);
-        return new JobRunTime(startTime, finishTime, timeInProcess);
     }
 }

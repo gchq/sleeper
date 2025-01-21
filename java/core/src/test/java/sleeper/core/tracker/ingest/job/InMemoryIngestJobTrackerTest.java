@@ -29,7 +29,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
@@ -468,7 +467,7 @@ public class InMemoryIngestJobTrackerTest {
             String taskId = "test-task";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            JobRunTime runTime = new JobRunTime(startTime, Duration.ofMinutes(10));
+            Instant failureTime = Instant.parse("2022-09-22T12:00:25.000Z");
             List<String> failureReasons = List.of("Something went wrong");
             IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1)
                     .jobId("test-job-1").jobRunId(jobRunId).build();
@@ -476,14 +475,14 @@ public class InMemoryIngestJobTrackerTest {
             // When
             tracker.jobValidated(job);
             tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).jobRunId(jobRunId).taskId(taskId).build());
-            tracker.jobFailed(ingestJobFailedEventBuilder(job, runTime, failureReasons).jobRunId(jobRunId).taskId(taskId).build());
+            tracker.jobFailed(ingestJobFailedEventBuilder(job, failureTime, failureReasons).jobRunId(jobRunId).taskId(taskId).build());
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, validatedFinishedRun(taskId,
                             ingestAcceptedStatus(validationTime, 1),
                             validatedIngestStartedStatus(1, startTime),
-                            failedStatus(runTime, failureReasons))));
+                            failedStatus(failureTime, failureReasons))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId, jobRunId);

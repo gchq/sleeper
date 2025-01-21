@@ -32,8 +32,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobValidatedEvent;
-import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
@@ -42,7 +40,6 @@ import sleeper.dynamodb.tools.DynamoDBAttributes;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.security.SecureRandom;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
@@ -78,7 +75,6 @@ class DynamoDBIngestJobStatusFormat {
     static final String FILES_WRITTEN_COUNT = "FilesWrittenCount";
     static final String FINISH_TIME = "FinishTime";
     static final String JOB_COMMITTED_WHEN_FILES_ADDED = "JobCommittedWhenFilesAdded";
-    static final String MILLIS_IN_PROCESS = "MillisInProcess";
     static final String RECORDS_READ = "RecordsRead";
     static final String RECORDS_WRITTEN = "RecordsWritten";
     static final String FAILURE_REASONS = "FailureReasons";
@@ -144,16 +140,14 @@ class DynamoDBIngestJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFinishedUpdate(
             IngestJobFinishedEvent event, DynamoDBRecordBuilder builder) {
-        JobRunSummary summary = event.getSummary();
+        RecordsProcessed recordsProcessed = event.getRecordsProcessed();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FINISHED)
-                .number(START_TIME, summary.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
-                .number(FINISH_TIME, summary.getFinishTime().toEpochMilli())
-                .number(MILLIS_IN_PROCESS, summary.getTimeInProcess().toMillis())
-                .number(RECORDS_READ, summary.getRecordsRead())
-                .number(RECORDS_WRITTEN, summary.getRecordsWritten())
+                .number(FINISH_TIME, event.getFinishTime().toEpochMilli())
+                .number(RECORDS_READ, recordsProcessed.getRecordsRead())
+                .number(RECORDS_WRITTEN, recordsProcessed.getRecordsWritten())
                 .bool(JOB_COMMITTED_WHEN_FILES_ADDED, event.isCommittedBySeparateFileUpdates())
                 .number(FILES_WRITTEN_COUNT, event.getNumFilesWrittenByJob())
                 .build();
@@ -161,14 +155,11 @@ class DynamoDBIngestJobStatusFormat {
 
     public static Map<String, AttributeValue> createJobFailedUpdate(
             IngestJobFailedEvent event, DynamoDBRecordBuilder builder) {
-        JobRunTime runTime = event.getRunTime();
         return builder
                 .string(UPDATE_TYPE, UPDATE_TYPE_FAILED)
-                .number(START_TIME, runTime.getStartTime().toEpochMilli())
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
-                .number(FINISH_TIME, runTime.getFinishTime().toEpochMilli())
-                .number(MILLIS_IN_PROCESS, runTime.getTimeInProcess().toMillis())
+                .number(FINISH_TIME, event.getFailureTime().toEpochMilli())
                 .list(FAILURE_REASONS, event.getFailureReasons().stream()
                         .map(DynamoDBAttributes::createStringAttribute)
                         .collect(Collectors.toList()))
@@ -238,33 +229,24 @@ class DynamoDBIngestJobStatusFormat {
                         .updateTime(getInstantAttribute(item, UPDATE_TIME))
                         .build();
             case UPDATE_TYPE_FINISHED:
-                return IngestJobFinishedStatus.updateTimeAndSummary(
-                        getInstantAttribute(item, UPDATE_TIME),
-                        new JobRunSummary(new RecordsProcessed(
+                return IngestJobFinishedStatus.builder()
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .finishTime(getInstantAttribute(item, FINISH_TIME))
+                        .recordsProcessed(new RecordsProcessed(
                                 getLongAttribute(item, RECORDS_READ, 0),
-                                getLongAttribute(item, RECORDS_WRITTEN, 0)),
-                                getRunTime(item)))
+                                getLongAttribute(item, RECORDS_WRITTEN, 0)))
                         .committedBySeparateFileUpdates(getBooleanAttribute(item, JOB_COMMITTED_WHEN_FILES_ADDED))
                         .numFilesWrittenByJob(getNullableIntAttribute(item, FILES_WRITTEN_COUNT))
                         .build();
             case UPDATE_TYPE_FAILED:
-                return JobRunFailedStatus.timeAndReasons(
-                        getInstantAttribute(item, UPDATE_TIME),
-                        getRunTime(item),
-                        getStringListAttribute(item, FAILURE_REASONS));
+                return JobRunFailedStatus.builder()
+                        .updateTime(getInstantAttribute(item, UPDATE_TIME))
+                        .failureTime(getInstantAttribute(item, FINISH_TIME))
+                        .failureReasons(getStringListAttribute(item, FAILURE_REASONS))
+                        .build();
             default:
                 LOGGER.warn("Found record with unrecognised update type: {}", item);
                 throw new IllegalArgumentException("Found record with unrecognised update type");
         }
-    }
-
-    private static JobRunTime getRunTime(Map<String, AttributeValue> item) {
-        Instant startTime = getInstantAttribute(item, START_TIME);
-        Instant finishTime = getInstantAttribute(item, FINISH_TIME);
-        long millisInProcess = getLongAttribute(item, MILLIS_IN_PROCESS, -1);
-        Duration timeInProcess = millisInProcess > -1
-                ? Duration.ofMillis(millisInProcess)
-                : Duration.between(startTime, finishTime);
-        return new JobRunTime(startTime, finishTime, timeInProcess);
     }
 }

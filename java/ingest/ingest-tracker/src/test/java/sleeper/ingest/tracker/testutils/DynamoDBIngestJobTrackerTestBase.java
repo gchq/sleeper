@@ -108,8 +108,12 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
 
     protected static JobRunSummary defaultSummary(Instant startTime, Instant finishTime) {
         return new JobRunSummary(
-                new RecordsProcessed(200L, 100L),
+                defaultRecordsProcessed(),
                 startTime, finishTime);
+    }
+
+    protected static RecordsProcessed defaultRecordsProcessed() {
+        return new RecordsProcessed(200, 200);
     }
 
     protected static IngestJobStartedEvent defaultJobStartedEvent(IngestJob job, Instant startedTime) {
@@ -142,13 +146,8 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
-            IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {
-        return defaultJobFailedEvent(job, new JobRunTime(startedTime, finishedTime), failureReasons);
-    }
-
-    protected static IngestJobFailedEvent defaultJobFailedEvent(
-            IngestJob job, JobRunTime runTime, List<String> failureReasons) {
-        return job.failedEventBuilder(runTime)
+            IngestJob job, Instant failureTime, List<String> failureReasons) {
+        return job.failedEventBuilder(failureTime)
                 .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build();
     }
 
@@ -180,7 +179,10 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
         return ingestJobStatus(job, JobRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
-                .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
+                .finishedStatus(IngestJobFinishedStatus.builder()
+                        .updateTime(defaultUpdateTime(finishedTime))
+                        .finishTime(finishedTime)
+                        .recordsProcessed(defaultRecordsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
                         .build())
@@ -191,7 +193,10 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
         return ingestJobStatus(job, JobRun.builder()
                 .taskId(DEFAULT_TASK_ID)
                 .startedStatus(ingestStartedStatus(job, startedTime))
-                .finishedStatus(IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishedTime), defaultSummary(startedTime, finishedTime))
+                .finishedStatus(IngestJobFinishedStatus.builder()
+                        .updateTime(defaultUpdateTime(finishedTime))
+                        .finishTime(finishedTime)
+                        .recordsProcessed(defaultRecordsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
                         .build())

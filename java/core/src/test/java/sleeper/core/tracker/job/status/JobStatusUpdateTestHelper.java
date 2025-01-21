@@ -16,7 +16,6 @@
 package sleeper.core.tracker.job.status;
 
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Duration;
@@ -83,33 +82,24 @@ public class JobStatusUpdateTestHelper {
      */
     public static JobRunFailedStatus failedStatus(
             JobRunStartedUpdate startedStatus, Duration runDuration, List<String> failureReasons) {
-        return failedStatus(startedStatus.getStartTime(), runDuration, failureReasons);
+        Instant failureTime = startedStatus.getStartTime().plus(runDuration);
+        return failedStatus(failureTime, failureReasons);
     }
 
     /**
      * Creates a job failed status.
      *
-     * @param  startTime      the start time
-     * @param  runDuration    the duration
+     * @param  failureTime    the time of the failure
      * @param  failureReasons the reasons for the failure
      * @return                a {@link JobRunFailedStatus}
      */
     public static JobRunFailedStatus failedStatus(
-            Instant startTime, Duration runDuration, List<String> failureReasons) {
-        JobRunTime runTime = new JobRunTime(startTime, runDuration);
-        return JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
-    }
-
-    /**
-     * Creates a job failed status.
-     *
-     * @param  runTime        the runtime information
-     * @param  failureReasons the reasons for the failure
-     * @return                a {@link JobRunFailedStatus}
-     */
-    public static JobRunFailedStatus failedStatus(
-            JobRunTime runTime, List<String> failureReasons) {
-        return JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons);
+            Instant failureTime, List<String> failureReasons) {
+        return JobRunFailedStatus.builder()
+                .updateTime(defaultUpdateTime(failureTime))
+                .failureTime(failureTime)
+                .failureReasons(failureReasons)
+                .build();
     }
 
     /**

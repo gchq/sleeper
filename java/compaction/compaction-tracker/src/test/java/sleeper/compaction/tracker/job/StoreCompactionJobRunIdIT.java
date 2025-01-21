@@ -112,7 +112,7 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestB
         storeJobCreated(job);
         tracker.jobStarted(job.startedEventBuilder(defaultStartTime())
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
-        tracker.jobFailed(job.failedEventBuilder(defaultRunTime()).failure(new RuntimeException("Failed"))
+        tracker.jobFailed(job.failedEventBuilder(defaultFinishTime()).failure(new RuntimeException("Failed"))
                 .taskId(DEFAULT_TASK_ID).jobRunId("test-job-run").build());
 
         // Then

@@ -15,22 +15,31 @@
  */
 package sleeper.core.tracker.job.status;
 
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
- * Represents a job finishing, and stores the records processed summary.
+ * Represents a job finishing, and stores the records processed summary. In practice this is used when converting a
+ * task to appear as a {@link JobRun}, including the amount of time spent on jobs in the task.
  */
 public class JobRunFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
-    private final JobRunSummary summary;
+    private final Instant finishTime;
+    private final RecordsProcessed recordsProcessed;
+    private final Duration timeInProcess;
 
-    private JobRunFinishedStatus(Instant updateTime, JobRunSummary summary) {
+    private JobRunFinishedStatus(Instant updateTime, Instant finishTime, RecordsProcessed recordsProcessed, Duration timeInProcess) {
         this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
-        this.summary = Objects.requireNonNull(summary, "summary must not be null");
+        this.finishTime = Objects.requireNonNull(finishTime, "finishTime must not be null");
+        this.recordsProcessed = Objects.requireNonNull(recordsProcessed, "recordsProcessed must not be null");
+        this.timeInProcess = Objects.requireNonNull(timeInProcess, "timeInProcess must not be null");
     }
 
     /**
@@ -41,39 +50,49 @@ public class JobRunFinishedStatus implements JobRunEndUpdate {
      * @return            an instance of this class
      */
     public static JobRunFinishedStatus updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return new JobRunFinishedStatus(updateTime, summary);
+        return new JobRunFinishedStatus(updateTime, summary.getFinishTime(), summary.getRecordsProcessed(), summary.getTimeInProcess());
     }
 
+    @Override
     public Instant getUpdateTime() {
         return updateTime;
     }
 
-    public JobRunSummary getSummary() {
-        return summary;
+    @Override
+    public Instant getFinishTime() {
+        return finishTime;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public RecordsProcessed getRecordsProcessed() {
+        return recordsProcessed;
+    }
+
+    @Override
+    public Optional<Duration> getTimeInProcess() {
+        return Optional.of(timeInProcess);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(obj instanceof JobRunFinishedStatus)) {
             return false;
         }
-        JobRunFinishedStatus that = (JobRunFinishedStatus) o;
-        return updateTime.equals(that.updateTime) && summary.equals(that.summary);
+        JobRunFinishedStatus other = (JobRunFinishedStatus) obj;
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(recordsProcessed, other.recordsProcessed)
+                && Objects.equals(timeInProcess, other.timeInProcess);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary);
+        return Objects.hash(updateTime, finishTime, recordsProcessed, timeInProcess);
     }
 
     @Override
     public String toString() {
-        return "ProcessFinishedStatus{" +
-                "updateTime=" + updateTime +
-                ", summary=" + summary +
-                '}';
+        return "JobRunFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", recordsProcessed=" + recordsProcessed + ", timeInProcess=" + timeInProcess + "}";
     }
 }

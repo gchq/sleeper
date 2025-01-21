@@ -29,7 +29,6 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 
 import java.time.Instant;
 import java.util.List;
@@ -304,7 +303,7 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
 
     private JobRun defaultFailedCommitRun(int numberOfRecords, List<String> reasons) {
         return finishedCompactionRunBuilder(DEFAULT_TASK_ID, defaultSummary(numberOfRecords))
-                .statusUpdate(compactionFailedStatus(new JobRunTime(DEFAULT_COMMIT_TIME, DEFAULT_COMMIT_TIME), reasons))
+                .statusUpdate(compactionFailedStatus(DEFAULT_COMMIT_TIME, reasons))
                 .build();
     }
 }

@@ -289,7 +289,7 @@ public class IngestJobStatusTest {
                     forRunOnNoTask("run-1", acceptedStatusUpdate(validationTime1)),
                     forRunOnTask("run-1", "task",
                             startedStatusUpdateAfterValidation(startTime),
-                            failedStatusUpdate(startTime, finishTime))));
+                            failedStatusUpdate(finishTime))));
 
             // Then
             assertThat(status)
@@ -314,7 +314,7 @@ public class IngestJobStatusTest {
                     forRunOnNoTask("run-2", acceptedStatusUpdate(validationTime2)),
                     forRunOnTask("run-2", "task",
                             startedStatusUpdateAfterValidation(startTime2),
-                            failedStatusUpdate(startTime2, finishTime2))));
+                            failedStatusUpdate(finishTime2))));
 
             // Then
             assertThat(status)
@@ -334,7 +334,7 @@ public class IngestJobStatusTest {
                     forRunOnNoTask("run-1", acceptedStatusUpdate(validationTime1)),
                     forRunOnTask("run-1", "task",
                             startedStatusUpdateAfterValidation(startTime1),
-                            failedStatusUpdate(startTime1, finishTime1)),
+                            failedStatusUpdate(finishTime1)),
                     forRunOnNoTask("run-2", acceptedStatusUpdate(validationTime2)),
                     forRunOnTask("run-2", "task",
                             startedStatusUpdateAfterValidation(startTime2))));
@@ -471,10 +471,12 @@ public class IngestJobStatusTest {
         return IngestJobStatusTestData.ingestFinishedStatusUncommitted(summary(startTime, finishTime), numFilesAddedByJob);
     }
 
-    private JobRunFailedStatus failedStatusUpdate(Instant startTime, Instant finishTime) {
-        return JobRunFailedStatus.timeAndReasons(
-                defaultUpdateTime(finishTime), new JobRunTime(startTime, finishTime),
-                List.of("Something went wrong"));
+    private JobRunFailedStatus failedStatusUpdate(Instant finishTime) {
+        return JobRunFailedStatus.builder()
+                .updateTime(defaultUpdateTime(finishTime))
+                .failureTime(finishTime)
+                .failureReasons(List.of("Something went wrong"))
+                .build();
     }
 
     private JobRunSummary summary(Instant startTime, Instant finishTime) {

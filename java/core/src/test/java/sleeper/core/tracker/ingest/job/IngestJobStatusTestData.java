@@ -24,7 +24,6 @@ import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.JobRuns;
 import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
 
@@ -156,7 +155,7 @@ public class IngestJobStatusTestData {
     public static JobRun failedIngestRun(String taskId, Instant startTime, Instant failTime, List<String> reasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(startTime),
-                failedStatus(new JobRunTime(startTime, failTime), reasons));
+                failedStatus(failTime, reasons));
     }
 
     /**
@@ -171,7 +170,7 @@ public class IngestJobStatusTestData {
     public static JobRun failedIngestRun(String taskId, Instant startTime, Duration duration, List<String> reasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(startTime),
-                failedStatus(new JobRunTime(startTime, duration), reasons));
+                failedStatus(startTime.plus(duration), reasons));
     }
 
     /**
@@ -351,9 +350,12 @@ public class IngestJobStatusTestData {
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatus(JobRunSummary summary, int numFilesWrittenByJob) {
-        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                .committedBySeparateFileUpdates(false)
+        return IngestJobFinishedStatus.builder()
+                .updateTime(defaultUpdateTime(summary.getFinishTime()))
+                .finishTime(summary.getFinishTime())
+                .recordsProcessed(summary.getRecordsProcessed())
                 .numFilesWrittenByJob(numFilesWrittenByJob)
+                .committedBySeparateFileUpdates(false)
                 .build();
     }
 
@@ -375,9 +377,12 @@ public class IngestJobStatusTestData {
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatusUncommitted(JobRunSummary summary, int numFilesWrittenByJob) {
-        return IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                .committedBySeparateFileUpdates(true)
+        return IngestJobFinishedStatus.builder()
+                .updateTime(defaultUpdateTime(summary.getFinishTime()))
+                .finishTime(summary.getFinishTime())
+                .recordsProcessed(summary.getRecordsProcessed())
                 .numFilesWrittenByJob(numFilesWrittenByJob)
+                .committedBySeparateFileUpdates(true)
                 .build();
     }
 

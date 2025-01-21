@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;
@@ -27,22 +27,13 @@ import java.util.Objects;
 public class CompactionJobFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
-    private final JobRunSummary summary;
+    private final Instant finishTime;
+    private final RecordsProcessed recordsProcessed;
 
     private CompactionJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
-        summary = Objects.requireNonNull(builder.summary, "summary must not be null");
-    }
-
-    /**
-     * Creates a builder for a finished status update.
-     *
-     * @param  updateTime the update time to set
-     * @param  summary    the records processed summary to set
-     * @return            a builder
-     */
-    public static Builder updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return builder().updateTime(updateTime).summary(summary);
+        finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
+        recordsProcessed = Objects.requireNonNull(builder.recordsProcessed, "recordsProcessed must not be null");
     }
 
     public static Builder builder() {
@@ -55,13 +46,18 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public JobRunSummary getSummary() {
-        return summary;
+    public Instant getFinishTime() {
+        return finishTime;
+    }
+
+    @Override
+    public RecordsProcessed getRecordsProcessed() {
+        return recordsProcessed;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary);
+        return Objects.hash(updateTime, finishTime, recordsProcessed);
     }
 
     @Override
@@ -73,17 +69,18 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
             return false;
         }
         CompactionJobFinishedStatus other = (CompactionJobFinishedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary);
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(recordsProcessed, other.recordsProcessed);
     }
 
     @Override
     public String toString() {
-        return "CompactionJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + "}";
+        return "CompactionJobFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", recordsProcessed=" + recordsProcessed + "}";
     }
 
     public static class Builder {
         private Instant updateTime;
-        private JobRunSummary summary;
+        private Instant finishTime;
+        private RecordsProcessed recordsProcessed;
 
         private Builder() {
         }
@@ -93,8 +90,13 @@ public class CompactionJobFinishedStatus implements JobRunEndUpdate {
             return this;
         }
 
-        public Builder summary(JobRunSummary summary) {
-            this.summary = summary;
+        public Builder finishTime(Instant finishTime) {
+            this.finishTime = finishTime;
+            return this;
+        }
+
+        public Builder recordsProcessed(RecordsProcessed recordsProcessed) {
+            this.recordsProcessed = recordsProcessed;
             return this;
         }
 

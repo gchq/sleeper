@@ -184,9 +184,11 @@ public class AverageRecordRateTest {
         assertThat(AverageRecordRate.of(Stream.of(
                 JobRun.finished(DEFAULT_TASK_ID,
                         JobStatusUpdateTestHelper.startedStatus(startTime),
-                        JobRunFailedStatus.timeAndReasons(defaultUpdateTime(finishTime),
-                                new JobRunTime(startTime, finishTime),
-                                List.of("Unexpected failure", "Some IO problem"))))))
+                        JobRunFailedStatus.builder()
+                                .updateTime(defaultUpdateTime(finishTime))
+                                .failureTime(finishTime)
+                                .failureReasons(List.of("Unexpected failure", "Some IO problem"))
+                                .build()))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
                 .containsExactly(0, 0L, 0L, Duration.ofSeconds(0));
     }

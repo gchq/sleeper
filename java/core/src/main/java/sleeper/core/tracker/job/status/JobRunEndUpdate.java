@@ -16,9 +16,12 @@
 
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Interface for a status update that marks the end of a process run.
@@ -26,11 +29,22 @@ import java.util.List;
 public interface JobRunEndUpdate extends JobStatusUpdate {
 
     /**
+     * Gets the time the job finished in the task.
+     *
+     * @return the time
+     */
+    Instant getFinishTime();
+
+    /**
      * Gets a summary of records processed by this run.
      *
      * @return the summary
      */
-    JobRunSummary getSummary();
+    RecordsProcessed getRecordsProcessed();
+
+    default Optional<Duration> getTimeInProcess() {
+        return Optional.empty();
+    }
 
     default boolean isSuccessful() {
         return true;

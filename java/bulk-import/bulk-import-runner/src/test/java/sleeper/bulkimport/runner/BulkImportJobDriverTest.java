@@ -146,7 +146,7 @@ class BulkImportJobDriverTest {
         BulkImportJobDriver driver = driver(
                 successfulWithOutput(outputFiles), stateStore, startAndFinishTime(startTime, finishTime));
         assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
-                .isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
+                .isInstanceOf(RuntimeException.class).cause().isSameAs(jobFailure);
 
         // Then
         assertThat(allJobsReported())
@@ -176,7 +176,7 @@ class BulkImportJobDriverTest {
         BulkImportJobDriver driver = driver(
                 successfulWithOutput(outputFiles), stateStore, startAndFinishTime(startTime, finishTime));
         assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
-                .isInstanceOf(RuntimeException.class).hasCauseReference(jobFailure);
+                .isInstanceOf(RuntimeException.class).cause().isSameAs(jobFailure);
 
         // Then
         assertThat(allJobsReported())
@@ -196,7 +196,6 @@ class BulkImportJobDriverTest {
         BulkImportJob job = singleFileImportJob();
         Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-        Instant writtenTime = Instant.parse("2023-04-06T12:41:00Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
         List<FileReference> outputFiles = List.of(
                 defaultFileOnRootPartitionWithRecords("file1.parquet", 100),
@@ -204,7 +203,7 @@ class BulkImportJobDriverTest {
 
         // When
         runJob(job, "test-run", "test-task", validationTime, driver(
-                successfulWithOutput(outputFiles), startWrittenAndFinishTime(startTime, writtenTime, finishTime)));
+                successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
 
         // Then
         IngestJob ingestJob = job.toIngestJob();
@@ -219,7 +218,7 @@ class BulkImportJobDriverTest {
         assertThat(stateStore.getFileReferences()).isEmpty();
         assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                 AddFilesTransaction.builder()
-                        .jobId(job.getId()).taskId("test-task").jobRunId("test-run").writtenTime(writtenTime)
+                        .jobId(job.getId()).taskId("test-task").jobRunId("test-run").writtenTime(finishTime)
                         .files(AllReferencesToAFile.newFilesWithReferences(outputFiles))
                         .build()));
     }
@@ -258,10 +257,6 @@ class BulkImportJobDriverTest {
 
     private Supplier<Instant> startAndFinishTime(Instant startTime, Instant finishTime) {
         return List.of(startTime, finishTime).iterator()::next;
-    }
-
-    private Supplier<Instant> startWrittenAndFinishTime(Instant startTime, Instant writtenTime, Instant finishTime) {
-        return List.of(startTime, writtenTime, finishTime).iterator()::next;
     }
 
     private BulkImportJob singleFileImportJob() {

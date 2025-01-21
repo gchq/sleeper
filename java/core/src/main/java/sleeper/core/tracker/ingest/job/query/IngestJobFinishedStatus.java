@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 
 import java.time.Instant;
@@ -27,26 +27,17 @@ import java.util.Objects;
 public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
-    private final JobRunSummary summary;
+    private final Instant finishTime;
+    private final RecordsProcessed recordsProcessed;
     private final int numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
 
     private IngestJobFinishedStatus(Builder builder) {
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
-        summary = Objects.requireNonNull(builder.summary, "summary must not be null");
+        finishTime = Objects.requireNonNull(builder.finishTime, "finishTime must not be null");
+        recordsProcessed = Objects.requireNonNull(builder.recordsProcessed, "recordsProcessed must not be null");
         numFilesWrittenByJob = builder.numFilesWrittenByJob;
         committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
-    }
-
-    /**
-     * Creates a status update for when an ingest job has finished.
-     *
-     * @param  updateTime the update time to set
-     * @param  summary    the records processed summary to set
-     * @return            a builder
-     */
-    public static Builder updateTimeAndSummary(Instant updateTime, JobRunSummary summary) {
-        return builder().updateTime(updateTime).summary(summary);
     }
 
     public static Builder builder() {
@@ -59,8 +50,13 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public JobRunSummary getSummary() {
-        return summary;
+    public Instant getFinishTime() {
+        return finishTime;
+    }
+
+    @Override
+    public RecordsProcessed getRecordsProcessed() {
+        return recordsProcessed;
     }
 
     public int getNumFilesWrittenByJob() {
@@ -73,7 +69,7 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, summary, numFilesWrittenByJob, committedBySeparateFileUpdates);
+        return Objects.hash(updateTime, finishTime, recordsProcessed, numFilesWrittenByJob, committedBySeparateFileUpdates);
     }
 
     @Override
@@ -85,15 +81,14 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
             return false;
         }
         IngestJobFinishedStatus other = (IngestJobFinishedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(summary, other.summary) && Objects.equals(numFilesWrittenByJob, other.numFilesWrittenByJob)
-                && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates;
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(finishTime, other.finishTime) && Objects.equals(recordsProcessed, other.recordsProcessed)
+                && numFilesWrittenByJob == other.numFilesWrittenByJob && committedBySeparateFileUpdates == other.committedBySeparateFileUpdates;
     }
 
     @Override
     public String toString() {
-        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", summary=" + summary + ", numFilesWrittenByJob=" + numFilesWrittenByJob + ", committedBySeparateFileUpdates="
-                + committedBySeparateFileUpdates
-                + "}";
+        return "IngestJobFinishedStatus{updateTime=" + updateTime + ", finishTime=" + finishTime + ", recordsProcessed=" + recordsProcessed + ", numFilesWrittenByJob=" + numFilesWrittenByJob
+                + ", committedBySeparateFileUpdates=" + committedBySeparateFileUpdates + "}";
     }
 
     /**
@@ -101,7 +96,8 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
      */
     public static class Builder {
         private Instant updateTime;
-        private JobRunSummary summary;
+        private Instant finishTime;
+        private RecordsProcessed recordsProcessed;
         private int numFilesWrittenByJob;
         private boolean committedBySeparateFileUpdates;
 
@@ -120,13 +116,24 @@ public class IngestJobFinishedStatus implements JobRunEndUpdate {
         }
 
         /**
-         * Sets the summary.
+         * Sets the finish time.
          *
-         * @param  summary the summary
-         * @return         the builder for chaining
+         * @param  finishTime the finish time
+         * @return            the builder for chaining
          */
-        public Builder summary(JobRunSummary summary) {
-            this.summary = summary;
+        public Builder finishTime(Instant finishTime) {
+            this.finishTime = finishTime;
+            return this;
+        }
+
+        /**
+         * Sets the records processed.
+         *
+         * @param  recordsProcessed the records processed
+         * @return                  the builder for chaining
+         */
+        public Builder recordsProcessed(RecordsProcessed recordsProcessed) {
+            this.recordsProcessed = recordsProcessed;
             return this;
         }
 
