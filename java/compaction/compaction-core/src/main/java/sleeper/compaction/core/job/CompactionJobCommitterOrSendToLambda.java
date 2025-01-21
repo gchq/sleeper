@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
@@ -63,17 +64,19 @@ public class CompactionJobCommitterOrSendToLambda {
         TableStatus table = tableProperties.getStatus();
         boolean commitAsync = tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
         tracker.jobFinished(finishedEvent);
+        List<ReplaceFileReferencesRequest> requestsList = List.of(job.replaceFileReferencesRequestBuilder(finishedEvent.getRecordsProcessed().getRecordsWritten())
+                .taskId(finishedEvent.getTaskId())
+                .jobRunId(finishedEvent.getJobRunId())
+                .build());
         if (commitAsync) {
-            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
-                    job.createReplaceFileReferencesRequest(finishedEvent)));
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(requestsList);
             StateStoreCommitRequest request = StateStoreCommitRequest.create(table.getTableUniqueId(), transaction);
             LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
             jobCommitQueueSender.send(request);
             LOGGER.info("Sent compaction job {} to queue to be committed asynchronously to table {}", job.getId(), table);
         } else {
             LOGGER.debug("Committing compaction job {} inside compaction task", job.getId());
-            stateStoreProvider.getStateStore(tableProperties).atomicallyReplaceFileReferencesWithNewOnes(
-                    List.of(job.createReplaceFileReferencesRequest(finishedEvent)));
+            stateStoreProvider.getStateStore(tableProperties).atomicallyReplaceFileReferencesWithNewOnes(requestsList);
             tracker.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())

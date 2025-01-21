@@ -117,10 +117,6 @@ public class CompactionJob {
                 .build();
     }
 
-    public ReplaceFileReferencesRequest createReplaceFileReferencesRequest(CompactionJobFinishedEvent finishedEvent) {
-        return createReplaceFileReferencesRequest(finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getRecordsProcessed());
-    }
-
     public ReplaceFileReferencesRequest createReplaceFileReferencesRequest(String taskId, String jobRunId, RecordsProcessed recordsProcessed) {
         return replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
                 .taskId(taskId)
