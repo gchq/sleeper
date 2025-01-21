@@ -98,7 +98,7 @@ See the documentation contained in the docs folder:
 2. [Deployment guide](docs/deployment-guide.md)
 3. [Creating a schema](docs/usage/schema.md)
 4. [Tables](docs/usage/tables.md)
-5. [Ingesting data](docs/ingest/ingest.md)
+5. [Ingesting data](docs/usage/ingest.md)
 6. [Checking the status of the system](docs/usage/status.md)
 7. [Retrieving data](docs/usage/data-retrieval.md)
 8. [Python API](docs/usage/python-api.md)
