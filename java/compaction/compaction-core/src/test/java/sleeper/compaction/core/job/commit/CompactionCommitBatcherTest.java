@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
+import sleeper.compaction.core.job.commit.CompactionCommitBatcher.SendStateStoreCommit;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
@@ -120,9 +121,10 @@ public class CompactionCommitBatcherTest {
                 "job1", List.of("test.parquet"), "root");
         ReplaceFileReferencesRequest request1 = defaultReplaceFileReferencesRequest(job1);
         ReplaceFileReferencesRequest request2 = defaultReplaceFileReferencesRequest(job2);
+        SendStateStoreCommit sendCommits = SendStateStoreCommitDummy.sendToQueueExceptForTable(queue, "table1");
 
         // When
-        new CompactionCommitBatcher(new SendStateStoreCommitDummy(queue)).sendBatch(List.of(
+        new CompactionCommitBatcher(sendCommits).sendBatch(List.of(
                 new CompactionCommitRequest("table1", request1),
                 new CompactionCommitRequest("table2", request2)));
 

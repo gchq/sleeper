@@ -23,16 +23,22 @@ import java.util.Queue;
 public class SendStateStoreCommitDummy implements SendStateStoreCommit {
 
     private final Queue<StateStoreCommitRequest> queue;
-    private final String failureValue = "table1";
+    private final String failForTableId;
 
-    public SendStateStoreCommitDummy(Queue<StateStoreCommitRequest> queue) {
+    private SendStateStoreCommitDummy(Queue<StateStoreCommitRequest> queue, String failForTableId) {
         this.queue = queue;
+        this.failForTableId = failForTableId;
+    }
+
+    public static SendStateStoreCommit sendToQueueExceptForTable(
+            Queue<StateStoreCommitRequest> queue, String failForTableId) {
+        return new SendStateStoreCommitDummy(queue, failForTableId);
     }
 
     @Override
     public void send(StateStoreCommitRequest request) {
-        if (request.getTableId().equals(failureValue)) {
-            throw new RuntimeException("Failure due to table issue");
+        if (request.getTableId().equals(failForTableId)) {
+            throw new RuntimeException("Dummy failure");
         } else {
             queue.add(request);
         }
