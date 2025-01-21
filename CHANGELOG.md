@@ -591,7 +591,7 @@ This contains the following improvements:
 
 Ingest batcher:
 
-- Added a new system for batching files into ingest jobs. See [docs/05-ingest.md](./docs/05-ingest.md)
+- Added a new system for batching files into ingest jobs. See [docs/ingest/ingest.md](./docs/ingest/ingest.md)
   and [docs/10-design.md](./docs/12-design.md) for more information.
 
 Bulk Import:
