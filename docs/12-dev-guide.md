@@ -295,4 +295,4 @@ See the [deployment guide](02-deployment-guide.md) for notes on how to deploy Sl
 
 ## Release Process
 
-See the [release process guide](16-release-process.md) for instructions on how to publish a release of Sleeper.
+See the [release process guide](development/release-process.md) for instructions on how to publish a release of Sleeper.

@@ -108,6 +108,6 @@ See the documentation contained in the docs folder:
 12. [Dependency conflicts](docs/development/dependency-conflicts.md)
 13. [Design](docs/13-design.md)
 14. [System tests](docs/development/system-tests.md)
-15. [Release process](docs/15-release-process.md)
+15. [Release process](docs/development/release-process.md)
 16. [Common problems and their solutions](docs/16-common-problems-and-their-solutions.md)
-17. [Roadmap](docs/17-roadmap.md)
+17. [Roadmap](docs/development/roadmap.md)
