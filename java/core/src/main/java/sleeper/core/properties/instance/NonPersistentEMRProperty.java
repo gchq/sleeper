@@ -37,35 +37,35 @@ public interface NonPersistentEMRProperty {
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE = Index.propertyBuilder("sleeper.default.bulk.import.emr.instance.architecture")
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +
                     "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/components/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/design/ingest.md")
             .defaultValue("x86_64")
             .validationPredicate(EmrInstanceArchitecture::isValid)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.x86.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 x86_64 instance types and weights to be " +
                     "used for the master node of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/components/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/design/ingest.md")
             .defaultValue("m7i.xlarge")
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.x86.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 x86_64 instance types and weights to be " +
                     "used for the executor nodes of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/components/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/design/ingest.md")
             .defaultValue("m7i.4xlarge")
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.master.arm.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used " +
                     "for the master node of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/components/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/design/ingest.md")
             .defaultValue("m6g.xlarge")
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
     UserDefinedInstanceProperty DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.default.bulk.import.emr.executor.arm.instance.types")
             .description("(Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used " +
                     "for the executor nodes of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/components/ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/design/ingest.md")
             .defaultValue("m6g.4xlarge")
             .validationPredicate(EmrInstanceTypeConfig::isValidInstanceTypes)
             .propertyGroup(InstancePropertyGroup.BULK_IMPORT).build();
