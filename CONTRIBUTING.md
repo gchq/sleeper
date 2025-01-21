@@ -40,7 +40,7 @@ Actions > General > Workflow permissions > Select "Read and write permissions".
 
 ### Getting help
 
-Read our [common problems and their solutions](docs/15-common-problems-and-their-solutions.md) to see if your problem
+Read our [common problems and their solutions](docs/common-problems-and-their-solutions.md) to see if your problem
 is covered there.
 
 For help with an issue you can post in the issue's comments.
