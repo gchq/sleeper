@@ -103,7 +103,6 @@ See the documentation contained in the docs folder:
 9. [Trino](docs/usage/trino.md)
 10. [Deploying to LocalStack](docs/development/deploy-to-localstack.md)
 11. [Developer guide](docs/developer-guide.md)
-12. [Dependency conflicts](docs/development/dependency-conflicts.md)
 13. [Design](docs/design.md)
 14. [System tests](docs/development/system-tests.md)
 15. [Release process](docs/development/release-process.md)
