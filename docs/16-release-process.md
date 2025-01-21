@@ -23,9 +23,9 @@ VERSION=0.12.0
 7. Get the performance figures from the nightly system tests.
 
 There should be a cron job configured to run these nightly. Running it manually and retrieving the results is documented
-in the [system tests guide](15-system-tests.md#nightly-test-scripts).
+in the [system tests guide](development/system-tests.md#nightly-test-scripts).
 
-Update the performance figures in the [system tests guide](15-system-tests.md#performance-benchmarks).
+Update the performance figures in the [system tests guide](development/system-tests.md#performance-benchmarks).
 
 8. Run a deployment of the deployAll system test to test the functionality of the system. Note that it is best to
    provide a fresh instance ID that has not been used before:

@@ -2,7 +2,7 @@ Releases
 =========
 
 This page documents the releases of Sleeper. Performance figures for each release
-are available [here](docs/13-system-tests.md#performance-benchmarks)
+are available [here](docs/development/system-tests.md#performance-benchmarks)
 
 ## Version 0.27.0
 

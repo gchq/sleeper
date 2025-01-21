@@ -45,7 +45,7 @@ There's an [example crontab](crontab.example) you can edit and use to regularly 
 
 You'll need to choose a test type to run. This can be either "performance" or "functional". This will use the
 acceptance tests as described in the
-[system tests documentation](../../../docs/13-system-tests.md#acceptance-tests). The test type will decide which test
+[system tests documentation](../../../docs/development/system-tests.md#acceptance-tests). The test type will decide which test
 suites to run. Please see that document for details of the test suites.
 
 The functional test type will run the nightly functional test suite. The performance test type will run the nightly
@@ -96,4 +96,4 @@ The performance reports can be found here:
 ```
 
 You can use these results to update the performance table
-in [the documentation](../../../docs/13-system-tests.md#performance-benchmarks)
+in [the documentation](../../../docs/development/system-tests.md#performance-benchmarks)

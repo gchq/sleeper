@@ -9,7 +9,7 @@ allow you to deploy an instance, ingest some files, and run reports and scripts 
 
 The quickest way to get an instance of Sleeper is to deploy to LocalStack in Docker on your local machine. Note that the
 LocalStack version has very limited functionality in comparison to the AWS version, and can only handle small volumes of
-data. See the documentation on [deploying to localstack](11-deploy-to-localstack.md) for more information.
+data. See the documentation on [deploying to localstack](development/deploy-to-localstack.md) for more information.
 
 ## Deploy to AWS
 
