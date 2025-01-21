@@ -155,7 +155,7 @@ mvn clean install -Pquick -DskipRust=true
 
 ## Using the codebase
 
-The codebase is structured around the components explained in the [design document](14-design.md). The elements of the
+The codebase is structured around the components explained in the [design document](design.md). The elements of the
 design largely correspond to Maven modules. Core or common modules contain shared model code. Other modules contain
 integrations with libraries which are not needed by all components of the system, eg. AWS API clients.
 

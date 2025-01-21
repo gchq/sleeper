@@ -313,7 +313,7 @@ Tables:
 - Added ability to take a table offline and put a table online using the scripts `scripts/utility/takeTableOffline.sh`
 and `scripts/utility/putTableOnline.sh` respectively. Partition splitting and compactions will not be performed on
 offline tables, but you will still be able to perform ingests and queries against them.
-See the documentation [here](docs/12-design.md#tables) for more information.
+See the documentation [here](docs/design.md#tables) for more information.
 
 Compaction:
 
@@ -344,7 +344,7 @@ This contains the following improvements:
 Compactions:
 
 - The concept of splitting compactions has been removed. More information about how splits are now done can be
-  found [here](docs/12-design.md#compactions).
+  found [here](docs/design.md#compactions).
 - Compactions now use references and the partitions they exist in to only read and compact data within that partition.
 - File splitting now happens in the compaction job creation lambda, before compaction jobs are created.
 - Updated javadoc for `CompactionStrategy` and `LeafStrategy` classes.
@@ -353,7 +353,7 @@ Compactions:
 State store:
 
 - Files are now split by storing references to them in the state store. More information about how file references are
-  stored can be found [here](docs/12-design.md#state-store).
+  stored can be found [here](docs/design.md#state-store).
 - `FileInfo` has been renamed to `FileReference`.
 - Renamed several state store methods to reflect new file reference changes.
 - Improved logging in the `S3StateStore` update process.
@@ -592,7 +592,7 @@ This contains the following improvements:
 Ingest batcher:
 
 - Added a new system for batching files into ingest jobs. See [docs/ingest/ingest.md](./docs/ingest/ingest.md)
-  and [docs/10-design.md](./docs/12-design.md) for more information.
+  and [docs/design.md](./docs/design.md) for more information.
 
 Bulk Import:
 

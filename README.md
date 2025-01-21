@@ -106,7 +106,7 @@ See the documentation contained in the docs folder:
 10. [Deploying to LocalStack](docs/development/deploy-to-localstack.md)
 11. [Developer guide](docs/11-dev-guide.md)
 12. [Dependency conflicts](docs/development/dependency-conflicts.md)
-13. [Design](docs/13-design.md)
+13. [Design](docs/design.md)
 14. [System tests](docs/development/system-tests.md)
 15. [Release process](docs/development/release-process.md)
 16. [Common problems and their solutions](docs/common-problems-and-their-solutions.md)
