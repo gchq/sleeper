@@ -21,8 +21,6 @@ import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
@@ -46,7 +44,6 @@ public class CompactionCommitBatcherTest {
     // - One table failed to send to queue, other table sent successfully (retry just the failed table, callback to lambda/SQS code)
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TablePropertiesStore tables = InMemoryTableProperties.getStore();
     private final Queue<StateStoreCommitRequest> queue = new LinkedList<>();
 
     @Test
@@ -115,7 +112,6 @@ public class CompactionCommitBatcherTest {
     private TableProperties createTable(String tableId) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         tableProperties.set(TABLE_ID, tableId);
-        tables.createTable(tableProperties);
         return tableProperties;
     }
 
