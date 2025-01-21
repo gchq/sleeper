@@ -360,7 +360,7 @@ to the Sleeper table by updating the state store.
 Updates are also tracked for a task when when it starts and when it terminates.
 
 Similar tracking is in place for ingest and bulk import. The available reports are documented
-under [checking the status of the system](clients/status.md).
+under [checking the status of the system](usage/status.md).
 
 ## Scheduled rules scaling across tables
 

@@ -483,7 +483,7 @@ We have provided a command line client that will enable you to:
 2) List Sleeper table names
 3) List Sleeper table properties
 4) Change an instance/table property
-5) Get status reports (also see [checking the status of the system](clients/status.md))
+5) Get status reports (also see [checking the status of the system](usage/status.md))
 
 This client will prompt you for things like your instance ID as mentioned above and/or the name of the table you want to
 look at. To adjust property values it will open a text editor for a temporary file.

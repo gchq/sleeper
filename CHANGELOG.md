@@ -629,7 +629,7 @@ This contains the following improvements:
 
 Trino:
 
-- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/clients/trino.md). This is an
+- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/usage/trino.md). This is an
   experimental feature.
 
 Bulk Import:
