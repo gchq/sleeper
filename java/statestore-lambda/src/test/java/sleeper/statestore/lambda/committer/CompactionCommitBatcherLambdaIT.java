@@ -17,6 +17,7 @@ package sleeper.statestore.lambda.committer;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
@@ -93,12 +94,13 @@ public class CompactionCommitBatcherLambdaIT {
         ReplaceFileReferencesRequest filesRequest = createFilesRequest();
 
         // When
-        lambda().handleRequest(createEvent(tableProperties.get(TABLE_ID), filesRequest), null);
+        SQSBatchResponse response = lambda().handleRequest(createEvent(tableProperties.get(TABLE_ID), filesRequest), null);
 
         // Then
         assertThat(consumeQueueMessages()).containsExactly(
                 StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                         new ReplaceFileReferencesTransaction(List.of(filesRequest))));
+        assertThat(response.getBatchItemFailures()).isEmpty();
     }
 
     private ReplaceFileReferencesRequest createFilesRequest() {
@@ -118,8 +120,12 @@ public class CompactionCommitBatcherLambdaIT {
     }
 
     private SQSEvent createEvent(String tableId, ReplaceFileReferencesRequest request) {
+        return createEvent(createMessage(tableId, request));
+    }
+
+    private SQSEvent createEvent(SQSMessage... messages) {
         SQSEvent event = new SQSEvent();
-        event.setRecords(List.of(createMessage(tableId, request)));
+        event.setRecords(List.of(messages));
         return event;
     }
 
