@@ -15,10 +15,16 @@
  */
 package sleeper.statestore.lambda.committer;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
+import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -26,15 +32,30 @@ import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -44,22 +65,51 @@ import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Clie
 public class CompactionCommitBatcherLambdaIT {
 
     @Container
-    private static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(Service.S3, Service.SQS);
+    private static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(Service.S3, Service.SQS, Service.DYNAMODB);
     private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
+    private final AmazonDynamoDB dynamoClient = buildAwsV1Client(localStackContainer, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final CompactionCommitRequestSerDe serDe = new CompactionCommitRequestSerDe();
+    private final StateStoreCommitRequestSerDe commitSerDe = new StateStoreCommitRequestSerDe(tableProperties);
 
     @BeforeEach
     void setUp() {
+        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(new CreateQueueRequest()
+                .withQueueName(UUID.randomUUID().toString() + ".fifo")
+                .withAttributes(Map.of("FifoQueue", "true")))
+                .getQueueUrl());
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
     }
 
     @Test
-    void shouldSendBatch() {
+    void shouldSendOneCommit() {
+        // Given
+        ReplaceFileReferencesRequest filesRequest = createFilesRequest();
 
+        // When
+        lambda().handleRequest(createEvent(tableProperties.get(TABLE_ID), filesRequest), null);
+
+        // Then
+        assertThat(consumeQueueMessages()).containsExactly(
+                StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
+                        new ReplaceFileReferencesTransaction(List.of(filesRequest))));
+    }
+
+    private ReplaceFileReferencesRequest createFilesRequest() {
+        PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
+        return ReplaceFileReferencesRequest.builder()
+                .jobId("test-job")
+                .taskId("test-task")
+                .jobRunId("test-run")
+                .inputFiles(List.of("test.parquet"))
+                .newReference(FileReferenceFactory.from(partitions).rootFile("output.parquet", 200))
+                .build();
     }
 
     private CompactionCommitBatcherLambda lambda() {
@@ -67,4 +117,26 @@ public class CompactionCommitBatcherLambdaIT {
                 instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client));
     }
 
+    private SQSEvent createEvent(String tableId, ReplaceFileReferencesRequest request) {
+        SQSEvent event = new SQSEvent();
+        event.setRecords(List.of(createMessage(tableId, request)));
+        return event;
+    }
+
+    private SQSMessage createMessage(String tableId, ReplaceFileReferencesRequest request) {
+        SQSMessage message = new SQSMessage();
+        message.setMessageId(UUID.randomUUID().toString());
+        message.setBody(serDe.toJson(tableId, request));
+        return message;
+    }
+
+    private List<StateStoreCommitRequest> consumeQueueMessages() {
+        return sqsClient.receiveMessage(new ReceiveMessageRequest()
+                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                .withWaitTimeSeconds(1)
+                .withMaxNumberOfMessages(10))
+                .getMessages().stream()
+                .map(message -> commitSerDe.fromJson(message.getBody()))
+                .toList();
+    }
 }
