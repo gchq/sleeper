@@ -28,7 +28,7 @@ these are optional, but in practice the compaction, garbage collection and parti
 
 The following diagram shows the architecture of Sleeper.
 
-![High level design diagram](designs/high-level-design.png)
+![High level design diagram](design/high-level-design.png)
 
 ## Records
 
@@ -175,8 +175,8 @@ consistency layer.
 
 We are considering alternative designs for the state store:
 
-- [A transaction log stored in DynamoDB, with snapshots in S3](designs/transaction-log-state-store.md)
-- [A PostgreSQL database](designs/postgresql-state-store.md)
+- [A transaction log stored in DynamoDB, with snapshots in S3](design/transaction-log-state-store.md)
+- [A PostgreSQL database](design/postgresql-state-store.md)
 
 ## Ingest of data
 
@@ -242,7 +242,7 @@ The files need to be accessible to the relevant ingest system, but are not read 
 
 An outline of the design of this system is shown below:
 
-![Ingest Batcher design diagram](designs/ingest-batcher.png)
+![Ingest Batcher design diagram](design/ingest-batcher.png)
 
 ## Compactions
 
