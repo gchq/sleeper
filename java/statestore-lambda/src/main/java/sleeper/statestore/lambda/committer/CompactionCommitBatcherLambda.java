@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.commit.CompactionCommitBatcher;
-import sleeper.compaction.core.job.commit.CompactionCommitBatcher.SendStateStoreCommit;
 import sleeper.compaction.core.job.commit.CompactionCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
@@ -65,7 +64,11 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
         String bucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        this.batcher = new CompactionCommitBatcher(sendStateStoreCommit(instanceProperties, tablePropertiesProvider, sqsClient, s3Client));
+        this.batcher = createBatcher(instanceProperties, tablePropertiesProvider, sqsClient, s3Client);
+    }
+
+    public CompactionCommitBatcherLambda(CompactionCommitBatcher batcher) {
+        this.batcher = batcher;
     }
 
     @Override
@@ -83,12 +86,21 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
                 () -> failures.add(new BatchItemFailure(message.getMessageId())));
     }
 
-    private static SendStateStoreCommit sendStateStoreCommit(
+    /**
+     * Creates the batcher used to send requests to the state store committer queue via SQS.
+     *
+     * @param  instanceProperties      the instance properties
+     * @param  tablePropertiesProvider the table properties provider
+     * @param  sqsClient               the SQS client
+     * @param  s3Client                the S3 client
+     * @return                         the batcher
+     */
+    public static CompactionCommitBatcher createBatcher(
             InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonSQS sqsClient, AmazonS3 s3Client) {
         StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(tablePropertiesProvider,
                 S3TransactionBodyStore.createProvider(instanceProperties, s3Client),
                 StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
-        return request -> {
+        return new CompactionCommitBatcher(request -> {
             LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
             sqsClient.sendMessage(new SendMessageRequest()
                     .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
@@ -96,7 +108,7 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
                     .withMessageGroupId(request.getTableId())
                     .withMessageDeduplicationId(UUID.randomUUID().toString()));
             LOGGER.debug("Submitted asynchronous request to assign compaction input files via state store committer queue");
-        };
+        });
     }
 
 }
