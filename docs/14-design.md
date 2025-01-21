@@ -28,7 +28,7 @@ these are optional, but in practice the compaction, garbage collection and parti
 
 The following diagram shows the architecture of Sleeper.
 
-![High level design diagram](diagrams/high-level-design.png)
+![High level design diagram](designs/high-level-design.png)
 
 ## Records
 
@@ -242,7 +242,7 @@ The files need to be accessible to the relevant ingest system, but are not read 
 
 An outline of the design of this system is shown below:
 
-![Ingest Batcher design diagram](diagrams/ingest-batcher.png)
+![Ingest Batcher design diagram](designs/ingest-batcher.png)
 
 ## Compactions
 
