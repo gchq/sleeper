@@ -137,7 +137,7 @@ of `sleeper.ingest.max.local.records`). Using the bulk import method, there will
 the 1000 files are all imported in the same bulk import job).
 
 Note that it is vital that a table is pre-split before data is bulk
-imported ([see here](../tables/tables.md#reinitialise-a-table)).
+imported ([see here](../usage/tables.md#reinitialise-a-table)).
 
 There are several stacks that allow data to be imported using the bulk import process:
 

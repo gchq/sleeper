@@ -96,8 +96,8 @@ See the documentation contained in the docs folder:
 
 1. [Getting started](docs/getting-started.md)
 2. [Deployment guide](docs/deployment-guide.md)
-3. [Creating a schema](docs/tables/schema.md)
-4. [Tables](docs/tables/tables.md)
+3. [Creating a schema](docs/usage/schema.md)
+4. [Tables](docs/usage/tables.md)
 5. [Ingesting data](docs/ingest/ingest.md)
 6. [Checking the status of the system](docs/usage/status.md)
 7. [Retrieving data](docs/usage/data-retrieval.md)
