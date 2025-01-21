@@ -18,6 +18,7 @@ package sleeper.statestore.lambda.committer;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import com.amazonaws.services.s3.AmazonS3;
@@ -101,6 +102,40 @@ public class CompactionCommitBatcherLambdaIT {
                 StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                         new ReplaceFileReferencesTransaction(List.of(filesRequest))));
         assertThat(response.getBatchItemFailures()).isEmpty();
+    }
+
+    @Test
+    void shouldFailOnIncorrectTableId() {
+        // Given
+        ReplaceFileReferencesRequest filesRequest = createFilesRequest();
+        SQSMessage sqsMessage = createMessage("IncorrectId", filesRequest);
+
+        // When
+        SQSBatchResponse response = lambda().handleRequest(createEvent(sqsMessage), null);
+
+        // Then
+        assertThat(consumeQueueMessages()).isEmpty();
+        assertThat(response.getBatchItemFailures())
+                .extracting(BatchItemFailure::getItemIdentifier)
+                .containsExactly(sqsMessage.getMessageId());
+    }
+
+    @Test
+    void shouldFailWhenUnableToGetToTheSQSQueue() {
+        // Given
+        ReplaceFileReferencesRequest filesRequest = createFilesRequest();
+        SQSMessage sqsMessage = createMessage(tableProperties.get(TABLE_ID), filesRequest);
+
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, "BROKEN-URL");
+
+        // When
+        SQSBatchResponse response = lambda().handleRequest(createEvent(sqsMessage), null);
+
+        // Then
+        assertThat(response.getBatchItemFailures())
+                .extracting(BatchItemFailure::getItemIdentifier)
+                .containsExactly(sqsMessage.getMessageId());
+
     }
 
     private ReplaceFileReferencesRequest createFilesRequest() {
