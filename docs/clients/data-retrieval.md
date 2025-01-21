@@ -11,7 +11,7 @@ The methods below describe how queries can be executed using scripts. See the do
 for details of how to execute them from Python.
 
 These instructions will assume you start in the project root directory and Sleeper has been built
-(see [the developer guide](../12-dev-guide.md) for how to set that up).
+(see [the developer guide](../developer-guide.md) for how to set that up).
 
 ## Running queries directly using the Java client
 

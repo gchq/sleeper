@@ -104,7 +104,7 @@ See the documentation contained in the docs folder:
 8. [Python API](docs/clients/python-api.md)
 9. [Trino](docs/clients/trino.md)
 10. [Deploying to LocalStack](docs/development/deploy-to-localstack.md)
-11. [Developer guide](docs/11-dev-guide.md)
+11. [Developer guide](docs/developer-guide.md)
 12. [Dependency conflicts](docs/development/dependency-conflicts.md)
 13. [Design](docs/design.md)
 14. [System tests](docs/development/system-tests.md)

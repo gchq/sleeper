@@ -72,7 +72,7 @@ Next, you'll need a VPC that is suitable for deploying Sleeper. You'll also want
 avoid lengthy uploads of large jar files and Docker images. You can use the Sleeper CLI to create both of these.
 
 If you prefer to use your own EC2, you'll need to build Sleeper there as described in
-the [developer guide](12-dev-guide.md). The EC2 should run on an x86_64 architecture. If you prefer to use your own VPC,
+the [developer guide](developer-guide.md). The EC2 should run on an x86_64 architecture. If you prefer to use your own VPC,
 you'll need to ensure it meets Sleeper's requirements. Deployment of an EC2 to an existing VPC is documented in
 the [deployment guide](deployment-guide.md#managing-environments).
 
