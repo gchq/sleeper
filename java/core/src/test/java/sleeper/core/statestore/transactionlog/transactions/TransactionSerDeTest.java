@@ -17,6 +17,9 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import org.apache.commons.lang.StringUtils;
 import org.approvaltests.Approvals;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -270,5 +273,16 @@ public class TransactionSerDeTest {
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
+    }
+
+    @Nested
+    @DisplayName("Serialisation without schema")
+    class NoSchema {
+
+        @Test
+        @Disabled
+        void shouldSerialiseFileTransactionWithoutSchema() {
+            TransactionSerDe serDe = TransactionSerDe.forFileTransactions();
+        }
     }
 }

@@ -45,6 +45,15 @@ public class TransactionSerDe {
     }
 
     /**
+     * Creates an instance of the SerDe that only supports file transactions. The schema is not required.
+     *
+     * @return the SerDe
+     */
+    public static TransactionSerDe forFileTransactions() {
+        return null;
+    }
+
+    /**
      * Serialises a transaction to JSON.
      *
      * @param  transaction the transaction
