@@ -25,7 +25,6 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
 import java.util.List;
@@ -114,13 +113,6 @@ public class CompactionJob {
                 .numberOfRecords(recordsWritten)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
-                .build();
-    }
-
-    public ReplaceFileReferencesRequest createReplaceFileReferencesRequest(String taskId, String jobRunId, RecordsProcessed recordsProcessed) {
-        return replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
-                .taskId(taskId)
-                .jobRunId(jobRunId)
                 .build();
     }
 
