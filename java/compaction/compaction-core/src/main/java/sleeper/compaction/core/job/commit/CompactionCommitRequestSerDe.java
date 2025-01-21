@@ -17,8 +17,10 @@ package sleeper.compaction.core.job.commit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 
 import sleeper.core.statestore.FileReferenceSerDe;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.util.GsonConfig;
 
 public class CompactionCommitRequestSerDe {
@@ -32,14 +34,16 @@ public class CompactionCommitRequestSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(CompactionCommitRequest request) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'toJson'");
+    public String toJson(String tableId, ReplaceFileReferencesRequest request) {
+        JsonObject json = new JsonObject();
+        json.addProperty("tableId", tableId);
+        json.add("request", gson.toJsonTree(request));
+        return gsonPrettyPrint.toJson(json);
     }
 
     public CompactionCommitRequest fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'fromJsonWithCallbackOnFail'");
+        CompactionCommitRequest jsonRequest = gson.fromJson(json, CompactionCommitRequest.class);
+        return new CompactionCommitRequest(jsonRequest.tableId(), jsonRequest.request(), callbackOnFail);
     }
 
 }

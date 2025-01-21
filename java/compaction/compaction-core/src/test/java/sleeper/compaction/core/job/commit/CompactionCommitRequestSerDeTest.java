@@ -17,7 +17,6 @@ package sleeper.compaction.core.job.commit;
 
 import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -35,7 +34,6 @@ public class CompactionCommitRequestSerDeTest {
     CompactionCommitRequestSerDe serDe = new CompactionCommitRequestSerDe();
 
     @Test
-    @Disabled
     void shouldSerialiseCompactionCommitRequest() {
         // Given
         PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
@@ -48,14 +46,13 @@ public class CompactionCommitRequestSerDeTest {
                 .build();
         Runnable callbackOnFail = () -> {
         };
-        CompactionCommitRequest request = new CompactionCommitRequest("test-table", filesRequest, callbackOnFail);
 
         // When
-        String json = serDe.toJson(request);
+        String json = serDe.toJson("test-table", filesRequest);
         CompactionCommitRequest found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
 
         // Then
-        assertThat(found).isEqualTo(request);
+        assertThat(found).isEqualTo(new CompactionCommitRequest("test-table", filesRequest, callbackOnFail));
         Approvals.verify(json, new Options().forFile().withExtension(".json"));
     }
 
