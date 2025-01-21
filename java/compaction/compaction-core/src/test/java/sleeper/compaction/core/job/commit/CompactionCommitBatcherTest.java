@@ -26,6 +26,7 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -56,7 +57,7 @@ public class CompactionCommitBatcherTest {
         ReplaceFileReferencesRequest request = defaultReplaceFileReferencesRequest(job);
 
         // When
-        batcher().sendBatch(List.of(new CompactionCommitRequest("test-table", request)));
+        batcher().sendBatch(List.of(commitRequest("test-table", request)));
 
         // Then
         assertThat(queue).containsExactly(StateStoreCommitRequest.create(
@@ -77,8 +78,8 @@ public class CompactionCommitBatcherTest {
 
         // When
         batcher().sendBatch(List.of(
-                new CompactionCommitRequest("table1", request1),
-                new CompactionCommitRequest("table2", request2)));
+                commitRequest("table1", request1),
+                commitRequest("table2", request2)));
 
         // Then
         assertThat(queue).containsExactlyInAnyOrder(
@@ -101,8 +102,8 @@ public class CompactionCommitBatcherTest {
 
         // When
         batcher().sendBatch(List.of(
-                new CompactionCommitRequest("test-table", request1),
-                new CompactionCommitRequest("test-table", request2)));
+                commitRequest("test-table", request1),
+                commitRequest("test-table", request2)));
 
         // Then
         assertThat(queue).containsExactly(
@@ -122,16 +123,23 @@ public class CompactionCommitBatcherTest {
         ReplaceFileReferencesRequest request1 = defaultReplaceFileReferencesRequest(job1);
         ReplaceFileReferencesRequest request2 = defaultReplaceFileReferencesRequest(job2);
         SendStateStoreCommit sendCommits = SendStateStoreCommitDummy.sendToQueueExceptForTable(queue, "table1");
+        List<String> failures = new ArrayList<>();
 
         // When
         new CompactionCommitBatcher(sendCommits).sendBatch(List.of(
-                new CompactionCommitRequest("table1", request1),
-                new CompactionCommitRequest("table2", request2)));
+                new CompactionCommitRequest("table1", request1, () -> failures.add("first")),
+                new CompactionCommitRequest("table2", request2, () -> failures.add("second"))));
 
         // Then
         assertThat(queue).containsExactly(
                 StateStoreCommitRequest.create("table2",
                         new ReplaceFileReferencesTransaction(List.of(request2))));
+        assertThat(failures).containsExactly("first");
+    }
+
+    private CompactionCommitRequest commitRequest(String tableId, ReplaceFileReferencesRequest request) {
+        return new CompactionCommitRequest(tableId, request, () -> {
+        });
     }
 
     private TableProperties createTable(String tableId) {
