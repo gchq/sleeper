@@ -54,6 +54,8 @@ The `addTable.sh` script will create a new table with properties defined in `tem
 schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
 client. We will add support for declarative deployment in the future.
 
+See [creating a schema](schema.md) for how to set up a schema for your table.
+
 ```bash
 cd scripts
 editor templates/tableproperties.template

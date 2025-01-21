@@ -364,6 +364,8 @@ to the ECR repository name, eg. `my-instance-id/ingest`.
 To include a table in your instance, your `table.properties` file must be next to your `instance.properties` file.
 You can add more than one by creating a `tables` directory, with a subfolder for each table.
 
+See [tables](usage/tables.md) for more information on creating and working with Sleeper tables.
+
 Each table will also need a `schema.json` file next to the `table.properties` file.
 See [create a schema](usage/schema.md) for how to create a schema.
 
