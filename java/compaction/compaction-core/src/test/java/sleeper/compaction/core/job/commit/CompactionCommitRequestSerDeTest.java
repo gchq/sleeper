@@ -49,11 +49,12 @@ public class CompactionCommitRequestSerDeTest {
 
         // When
         String json = serDe.toJson("test-table", filesRequest);
+        String jsonPretty = serDe.toJsonPrettyPrint("test-table", filesRequest);
         CompactionCommitRequest found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
 
         // Then
         assertThat(found).isEqualTo(new CompactionCommitRequest("test-table", filesRequest, callbackOnFail));
-        Approvals.verify(json, new Options().forFile().withExtension(".json"));
+        Approvals.verify(jsonPretty, new Options().forFile().withExtension(".json"));
     }
 
 }

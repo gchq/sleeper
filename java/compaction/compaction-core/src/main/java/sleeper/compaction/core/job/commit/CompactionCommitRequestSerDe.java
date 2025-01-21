@@ -35,10 +35,18 @@ public class CompactionCommitRequestSerDe {
     }
 
     public String toJson(String tableId, ReplaceFileReferencesRequest request) {
+        return gson.toJson(toJsonObject(tableId, request));
+    }
+
+    public String toJsonPrettyPrint(String tableId, ReplaceFileReferencesRequest request) {
+        return gsonPrettyPrint.toJson(toJsonObject(tableId, request));
+    }
+
+    private JsonObject toJsonObject(String tableId, ReplaceFileReferencesRequest request) {
         JsonObject json = new JsonObject();
         json.addProperty("tableId", tableId);
         json.add("request", gson.toJsonTree(request));
-        return gsonPrettyPrint.toJson(json);
+        return json;
     }
 
     public CompactionCommitRequest fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {
