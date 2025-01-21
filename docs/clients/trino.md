@@ -62,12 +62,12 @@ here: https://trino.io/docs/current/installation/deployment.html
 Trino requires some configuration. The standard Trino instructions provide a great deal of detail about how to do this,
 and the instructions below should be sufficient to get you started.
 
-Scripts are available under [scripts/trino/](../scripts/cli/trino) to build the plugin and run Trino in Docker.
+Scripts are available under [scripts/trino/](../../scripts/cli/trino) to build the plugin and run Trino in Docker.
 These use the Trino Docker image as documented here: https://trino.io/docs/current/installation/containers.html
 
 Follow the steps below to run the Trino server.
 
-1. In a Sleeper build/development environment, open a terminal in the [scripts/trino/](../scripts/cli/trino) directory.
+1. In a Sleeper build/development environment, open a terminal in the [scripts/trino/](../../scripts/cli/trino) directory.
 2. Ensure that AWS credentials are available and valid to work with Sleeper.
 3. Run `./buildMaven.sh`. This will build the plugin and copy an example Trino configuration into the current directory.
 4. Edit `./etc/catalog/sleeper.properties` to set the config bucket to point to your Sleeper instance.
