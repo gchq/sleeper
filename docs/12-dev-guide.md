@@ -62,7 +62,7 @@ git checkout --track origin/main
 
 #### Sleeper CLI builder image
 
-If you installed the Sleeper CLI from GitHub as described in the [getting started guide](01-getting-started.md), you can
+If you installed the Sleeper CLI from GitHub as described in the [getting started guide](getting-started.md), you can
 use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed. This is the same
 container image that's used for the Dev Containers setup above. It may be useful if you want to work inside Docker
 without using Dev Containers.

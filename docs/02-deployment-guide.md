@@ -6,7 +6,7 @@ This contains instructions on how to deploy Sleeper.
 ## Get your environment set up
 
 You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
-interact with it. See [getting started](01-getting-started.md) for how to install the Sleeper CLI. The information below
+interact with it. See [getting started](getting-started.md) for how to install the Sleeper CLI. The information below
 provides more detail on how to create an environment to deploy Sleeper into, and how to get set up to deploy into AWS.
 
 Currently it's necessary to build Sleeper before any deployment. With the `sleeper environment` setup described in the
@@ -67,7 +67,7 @@ Sleeper itself. See
 [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
 on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
 not be run from inside the sleeper directory. You can run `cdk bootstrap` in a Sleeper CLI
-Docker container, as described in [getting started](01-getting-started.md#deployment-environment).
+Docker container, as described in [getting started](getting-started.md#deployment-environment).
 
 ### Lambda Reserved Concurrency
 
@@ -87,8 +87,8 @@ You're now ready to build and deploy Sleeper.
 
 ### Deployment environment
 
-Please follow the [getting started guide](01-getting-started.md#deployment-environment) to set up a VPC and EC2 instance
-to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](01-getting-started.md#install-sleeper-cli).
+Please follow the [getting started guide](getting-started.md#deployment-environment) to set up a VPC and EC2 instance
+to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](getting-started.md#install-sleeper-cli).
 This section adds more detail for the tools to set up this environment.
 
 If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
