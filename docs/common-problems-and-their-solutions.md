@@ -11,7 +11,7 @@ used.
 
 ### Arrow implementation
 
-See documentation on the [Arrow ingest record batch type](design/arrow-ingest.md).
+See documentation on the [Arrow ingest record batch type](components/arrow-ingest.md).
 
 ### Array list implementation
 
