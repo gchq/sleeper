@@ -26,7 +26,7 @@ used and the fewer records will fit into memory / on disk.
 
 If you see an out of memory error, then try reducing `sleeper.ingest.memory.max.batch.size`. When reducing this
 parameter it is a good idea to also reduce `sleeper.ingest.max.local.records`. To change these parameters, use the
-administration client described in the [system status documentation](06-status.md).
+administration client described in the [deployment guide](02-deployment-guide.md#sleeper-administration-client).
 
 
 ## I created an instance, destroyed it and then recreating it failed

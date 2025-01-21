@@ -109,7 +109,7 @@ aim for at least 10s of millions of records per job.
 The id field will be used in logging so that users can see the progress of particular ingest jobs by viewing the
 logs. The URL of the SQS queue that the message should be sent to can be found from the `sleeper.ingest.job.queue.url`
 property. This will be populated in the config object in the `sleeper-<instance-id>-config` S3 bucket. It can also
-be found using the [admininstration client](../06-status.md#sleeper-administration-client).
+be found using the [admininstration client](../02-deployment-guide.md#sleeper-administration-client).
 
 You will need to ensure that the role with the ARN given by the `IngestContainerRoleARN` property has read access
 to the files you wish to ingest. This ARN is exported as a named export from CloudFormation with name
@@ -137,7 +137,7 @@ of `sleeper.ingest.max.local.records`). Using the bulk import method, there will
 the 1000 files are all imported in the same bulk import job).
 
 Note that it is vital that a table is pre-split before data is bulk
-imported ([see here](../06-status.md#reinitialise-a-table)).
+imported ([see here](../tables/tables.md#reinitialise-a-table)).
 
 There are several stacks that allow data to be imported using the bulk import process:
 

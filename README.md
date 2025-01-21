@@ -99,7 +99,7 @@ See the documentation contained in the docs folder:
 3. [Creating a schema](docs/tables/schema.md)
 4. [Tables](docs/tables/tables.md)
 5. [Ingesting data](docs/ingest/ingest.md)
-6. [Checking the status of the system](docs/06-status.md)
+6. [Checking the status of the system](docs/clients/status.md)
 7. [Retrieving data](docs/07-data-retrieval.md)
 8. [Python API](docs/08-python-api.md)
 9. [Trino](docs/09-trino.md)

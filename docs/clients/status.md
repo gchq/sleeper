@@ -5,7 +5,7 @@ There are two main ways to check the status of the system: use the metrics in th
 or use the provided scripts to get a textual summary of various aspects of the system.
 
 These instructions will assume you start in the project root directory and Sleeper has been built
-(see [the developer guide](11-dev-guide.md) for how to set that up).
+(see [the developer guide](../11-dev-guide.md) for how to set that up).
 
 ## CloudWatch metrics
 
@@ -39,7 +39,7 @@ in the INSTANCE_ID environment variable:
 export INSTANCE_ID=mySleeper
 ```
 
-All status reports can be run using the scripts in the `utility` directory, [here](../scripts/utility). They require
+All status reports can be run using the scripts in the `utility` directory, [here](../../scripts/utility). They require
 your Sleeper instance id. Some of the reports also require a table name. Some offer a standard option and a verbose
 option.
 
