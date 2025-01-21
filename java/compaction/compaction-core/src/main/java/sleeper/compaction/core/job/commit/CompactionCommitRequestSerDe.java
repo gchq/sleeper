@@ -15,7 +15,22 @@
  */
 package sleeper.compaction.core.job.commit;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import sleeper.core.statestore.FileReferenceSerDe;
+import sleeper.core.util.GsonConfig;
+
 public class CompactionCommitRequestSerDe {
+    private final Gson gson;
+    private final Gson gsonPrettyPrint;
+
+    public CompactionCommitRequestSerDe() {
+        GsonBuilder builder = GsonConfig.standardBuilder()
+                .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes());
+        gson = builder.create();
+        gsonPrettyPrint = builder.setPrettyPrinting().create();
+    }
 
     public String toJson(CompactionCommitRequest request) {
         // TODO Auto-generated method stub
