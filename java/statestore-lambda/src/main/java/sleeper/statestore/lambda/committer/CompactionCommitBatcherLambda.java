@@ -15,30 +15,88 @@
  */
 package sleeper.statestore.lambda.committer;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
+import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import com.amazonaws.services.sqs.model.SendMessageRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.core.job.commit.CompactionCommitBatcher;
+import sleeper.compaction.core.job.commit.CompactionCommitBatcher.SendStateStoreCommit;
 import sleeper.compaction.core.job.commit.CompactionCommitRequest;
+import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
+import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
 /**
  * A lambda that combines multiple compaction commits into a single transaction per Sleeper table.
  */
 public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
 
-    @Override
-    public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
-        List<CompactionCommitRequest> requests = event.getRecords().stream().map(this::readMessage).toList();
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleRequest'");
+    public static final Logger LOGGER = LoggerFactory.getLogger(CompactionCommitBatcherLambda.class);
+    private final CompactionCommitRequestSerDe serDe = new CompactionCommitRequestSerDe();
+    private final CompactionCommitBatcher batcher;
+
+    public CompactionCommitBatcherLambda() {
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+        String bucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        this.batcher = new CompactionCommitBatcher(sendStateStoreCommit(instanceProperties, tablePropertiesProvider, sqsClient, s3Client));
     }
 
-    private CompactionCommitRequest readMessage(SQSMessage message) {
-        return new CompactionCommitRequest(null, null, null);
+    @Override
+    public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
+        List<BatchItemFailure> failures = new ArrayList<>();
+        List<CompactionCommitRequest> requests = event.getRecords().stream()
+                .map(message -> readMessage(message, failures))
+                .toList();
+        batcher.sendBatch(requests);
+        return new SQSBatchResponse(failures);
+    }
+
+    private CompactionCommitRequest readMessage(SQSMessage message, List<BatchItemFailure> failures) {
+        return serDe.fromJsonWithCallbackOnFail(message.getBody(),
+                () -> failures.add(new BatchItemFailure(message.getMessageId())));
+    }
+
+    private static SendStateStoreCommit sendStateStoreCommit(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonSQS sqsClient, AmazonS3 s3Client) {
+        StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(tablePropertiesProvider,
+                S3TransactionBodyStore.createProvider(instanceProperties, s3Client),
+                StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
+        return request -> {
+            LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
+            sqsClient.sendMessage(new SendMessageRequest()
+                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                    .withMessageBody(uploader.serialiseAndUploadIfTooBig(request))
+                    .withMessageGroupId(request.getTableId())
+                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
+            LOGGER.debug("Submitted asynchronous request to assign compaction input files via state store committer queue");
+        };
     }
 
 }
