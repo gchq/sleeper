@@ -109,6 +109,29 @@ public class CompactionCommitBatcherTest {
                         new ReplaceFileReferencesTransaction(List.of(request1, request2))));
     }
 
+    @Test
+    void shouldReportFailureOfOneRequestAlongsideSuccessfulRequest() {
+        // Given
+        TableProperties table1 = createTable("table1");
+        TableProperties table2 = createTable("table2");
+        CompactionJob job1 = jobFactory(table1).createCompactionJobWithFilenames(
+                "job1", List.of("test.parquet"), "root");
+        CompactionJob job2 = jobFactory(table2).createCompactionJobWithFilenames(
+                "job1", List.of("test.parquet"), "root");
+        ReplaceFileReferencesRequest request1 = defaultReplaceFileReferencesRequest(job1);
+        ReplaceFileReferencesRequest request2 = defaultReplaceFileReferencesRequest(job2);
+
+        // When
+        new CompactionCommitBatcher(new SendStateStoreCommitDummy(queue)).sendBatch(List.of(
+                new CompactionCommitRequest("table1", request1),
+                new CompactionCommitRequest("table2", request2)));
+
+        // Then
+        assertThat(queue).containsExactly(
+                StateStoreCommitRequest.create("table2",
+                        new ReplaceFileReferencesTransaction(List.of(request2))));
+    }
+
     private TableProperties createTable(String tableId) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
         tableProperties.set(TABLE_ID, tableId);

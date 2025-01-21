@@ -38,9 +38,13 @@ public class CompactionCommitBatcher {
     }
 
     private void sendTransaction(String tableId, List<CompactionCommitRequest> requests) {
-        ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(
-                requests.stream().map(CompactionCommitRequest::request).toList());
-        sendStateStoreCommit.send(StateStoreCommitRequest.create(tableId, transaction));
+        try {
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(
+                    requests.stream().map(CompactionCommitRequest::request).toList());
+            sendStateStoreCommit.send(StateStoreCommitRequest.create(tableId, transaction));
+        } catch (Exception ex) {
+
+        }
     }
 
     public interface SendStateStoreCommit {
