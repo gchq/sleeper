@@ -282,7 +282,30 @@ public class TransactionSerDeTest {
         @Test
         @Disabled
         void shouldSerialiseFileTransactionWithoutSchema() {
+            PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
+            Instant updateTime = Instant.parse("2024-03-26T09:43:01Z");
+            FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
+            FileReferenceTransaction transaction = new AddFilesTransaction(
+                    AllReferencesToAFile.newFilesWithReferences(Stream.of(
+                            fileFactory.rootFile("file1.parquet", 100),
+                            fileFactory.rootFile("file2.parquet", 200)))
+                            .map(file -> file.withCreatedUpdateTime(updateTime))
+                            .collect(toUnmodifiableList()));
+
+            // When / Then
+            whenSerDeThenMatchAndVerify(transaction);
+        }
+
+        private static void whenSerDeThenMatchAndVerify(StateStoreTransaction<?> transaction) {
+            // When
             TransactionSerDe serDe = TransactionSerDe.forFileTransactions();
+            TransactionType type = TransactionType.getType(transaction);
+            String json = serDe.toJsonPrettyPrint(transaction);
+
+            // Then
+            assertThat(serDe.toTransaction(type, json))
+                    .isEqualTo(transaction);
+            Approvals.verify(json);
         }
     }
 }

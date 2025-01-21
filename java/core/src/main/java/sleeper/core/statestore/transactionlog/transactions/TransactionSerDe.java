@@ -50,7 +50,7 @@ public class TransactionSerDe {
      * @return the SerDe
      */
     public static TransactionSerDe forFileTransactions() {
-        return null;
+        return new TransactionSerDe(null);
     }
 
     /**
