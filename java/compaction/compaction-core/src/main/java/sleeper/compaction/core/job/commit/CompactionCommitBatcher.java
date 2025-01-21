@@ -15,6 +15,9 @@
  */
 package sleeper.compaction.core.job.commit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 
@@ -24,6 +27,8 @@ import java.util.Map;
 import static java.util.stream.Collectors.groupingBy;
 
 public class CompactionCommitBatcher {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionCommitBatcher.class);
 
     private final SendStateStoreCommit sendStateStoreCommit;
 
@@ -43,7 +48,8 @@ public class CompactionCommitBatcher {
                     requests.stream().map(CompactionCommitRequest::request).toList());
             sendStateStoreCommit.send(StateStoreCommitRequest.create(tableId, transaction));
         } catch (Exception ex) {
-
+            //TODO improve this logging
+            LOGGER.warn("Failure detection in transaction {}", tableId, ex);
         }
     }
 
