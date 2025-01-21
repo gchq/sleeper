@@ -24,6 +24,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -45,25 +47,18 @@ public class CompactionCommitBatcherTest {
     @Test
     @Disabled
     void shouldSendOneCompactionCommit() {
-
-        long recordswritten = 100L;
-
         // Given
         TableProperties table = createTable();
         CompactionJob job = jobFactory(table).createCompactionJobWithFilenames(
                 "test-job", List.of("test.parquet"), "root");
-        List<CompactionCommitRequest> requests = List.of(commitRequest(job));
-
-        ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
-                job.replaceFileReferencesRequestBuilder(recordswritten).build()));
+        ReplaceFileReferencesRequest request = defaultReplaceFileReferencesRequest(job);
 
         // When
-        batcher().sendBatch(requests);
+        batcher().sendBatch(List.of(new CompactionCommitRequest(table.get(TABLE_ID), request)));
 
         // Then
-        //ReplaceFileReferencesTransaction = CompactionCommitRequest
-        //queue contains StateStoreCommitRequest
-        assertThat(queue).containsExactly();
+        assertThat(queue).containsExactly(StateStoreCommitRequest.create(
+                table.get(TABLE_ID), new ReplaceFileReferencesTransaction(List.of(request))));
     }
 
     private TableProperties createTable() {
@@ -76,9 +71,11 @@ public class CompactionCommitBatcherTest {
         return new CompactionJobFactory(instanceProperties, tableProperties);
     }
 
-    private CompactionCommitRequest commitRequest(CompactionJob job) {
-        return new CompactionCommitRequest(job.getTableId(),
-                job.replaceFileReferencesRequestBuilder(100).build());
+    private ReplaceFileReferencesRequest defaultReplaceFileReferencesRequest(CompactionJob job) {
+        return job.replaceFileReferencesRequestBuilder(100)
+                .taskId("test-task")
+                .jobRunId("test-run")
+                .build();
     }
 
     private CompactionCommitBatcher batcher() {
