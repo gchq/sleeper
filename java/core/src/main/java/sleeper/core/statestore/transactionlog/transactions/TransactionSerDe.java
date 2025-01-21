@@ -27,6 +27,7 @@ import sleeper.core.statestore.AllReferencesToAFileSerDe;
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.util.GsonConfig;
+import sleeper.core.util.RefuseTypeJsonSerDe;
 
 /**
  * Serialises and deserialises transactions to and from JSON. This can be used to store the transactions in a log.
@@ -36,8 +37,12 @@ public class TransactionSerDe {
     private final Gson gsonPrettyPrint;
 
     public TransactionSerDe(Schema schema) {
+        this(new PartitionJsonSerDe(schema));
+    }
+
+    private TransactionSerDe(Object partitionTypeAdapter) {
         GsonBuilder builder = GsonConfig.standardBuilder()
-                .registerTypeAdapter(Partition.class, new PartitionJsonSerDe(schema))
+                .registerTypeAdapter(Partition.class, partitionTypeAdapter)
                 .registerTypeAdapter(AllReferencesToAFile.class, AllReferencesToAFileSerDe.noUpdateTimes())
                 .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes());
         gson = builder.create();
@@ -50,7 +55,7 @@ public class TransactionSerDe {
      * @return the SerDe
      */
     public static TransactionSerDe forFileTransactions() {
-        return new TransactionSerDe(null);
+        return new TransactionSerDe(new RefuseTypeJsonSerDe<Partition>());
     }
 
     /**
