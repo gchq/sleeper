@@ -3,6 +3,10 @@ Building and deploying Sleeper
 
 This contains instructions on how to deploy Sleeper.
 
+If you just want a local instance for testing, see the documentation
+on [deploying to localstack](development/deploy-to-localstack.md). This has very limited functionality compared to a
+deployed instance.
+
 ## Get your environment set up
 
 You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
