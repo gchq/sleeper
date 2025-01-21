@@ -44,24 +44,27 @@ public class StateStoreCommitRequestSerDe {
     private final Gson gsonPrettyPrint;
 
     public StateStoreCommitRequestSerDe(TablePropertiesProvider tablePropertiesProvider) {
-        this(tablePropertiesProvider::getById);
+        this(TransactionSerDeProvider.forTableProvider(tablePropertiesProvider));
     }
 
     public StateStoreCommitRequestSerDe(TableProperties tableProperties) {
-        this(tableId -> {
-            if (Objects.equals(tableId, tableProperties.get(TABLE_ID))) {
-                return tableProperties;
-            } else {
-                throw new IllegalArgumentException("Expected table ID " + tableProperties.get(TABLE_ID) + ", found " + tableId);
-            }
-        });
+        this(TransactionSerDeProvider.forTable(tableProperties));
     }
 
-    private StateStoreCommitRequestSerDe(TablePropertiesSource tablePropertiesProvider) {
+    private StateStoreCommitRequestSerDe(TransactionSerDeProvider transactionSerDeProvider) {
         GsonBuilder builder = GsonConfig.standardBuilder()
-                .registerTypeAdapter(StateStoreCommitRequest.class, new TransactionByTypeJsonSerDe(tablePropertiesProvider));
+                .registerTypeAdapter(StateStoreCommitRequest.class, new TransactionByTypeJsonSerDe(transactionSerDeProvider));
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
+    }
+
+    /**
+     * Creates an instance of this class that only supports file transactions. The table properties are not required.
+     *
+     * @return the serialiser
+     */
+    public static StateStoreCommitRequestSerDe forFileTransactions() {
+        return new StateStoreCommitRequestSerDe(TransactionSerDeProvider.forFileTransactions());
     }
 
     /**
@@ -98,10 +101,10 @@ public class StateStoreCommitRequestSerDe {
      * A GSON plugin to serialise/deserialise a request for a transaction, serialising a transaction by its type.
      */
     private static class TransactionByTypeJsonSerDe implements JsonSerializer<StateStoreCommitRequest>, JsonDeserializer<StateStoreCommitRequest> {
-        private final TablePropertiesSource tablePropertiesProvider;
+        private final TransactionSerDeProvider transactionSerDeProvider;
 
-        private TransactionByTypeJsonSerDe(TablePropertiesSource tablePropertiesProvider) {
-            this.tablePropertiesProvider = tablePropertiesProvider;
+        private TransactionByTypeJsonSerDe(TransactionSerDeProvider transactionSerDeProvider) {
+            this.transactionSerDeProvider = transactionSerDeProvider;
         }
 
         @Override
@@ -117,7 +120,8 @@ public class StateStoreCommitRequestSerDe {
                 return StateStoreCommitRequest.create(tableId, bodyKeyElement.getAsString(), transactionType);
             } else {
                 return StateStoreCommitRequest.create(tableId,
-                        transactionSerDe(tableId).toTransaction(transactionType, json.get("transaction")));
+                        transactionSerDeProvider.getByTableId(tableId)
+                                .toTransaction(transactionType, json.get("transaction")));
             }
         }
 
@@ -127,29 +131,62 @@ public class StateStoreCommitRequestSerDe {
             json.addProperty("tableId", request.getTableId());
             json.add("transactionType", context.serialize(request.getTransactionType()));
             request.getTransactionIfHeld().ifPresentOrElse(transaction -> {
-                json.add("transaction", transactionSerDe(request.getTableId()).toJsonTree(transaction));
+                json.add("transaction",
+                        transactionSerDeProvider.getByTableId(request.getTableId())
+                                .toJsonTree(transaction));
             }, () -> {
                 json.addProperty("bodyKey", request.getBodyKey());
             });
             return json;
         }
-
-        private TransactionSerDe transactionSerDe(String tableId) {
-            TableProperties tableProperties = tablePropertiesProvider.getById(tableId);
-            return new TransactionSerDe(tableProperties.getSchema());
-        }
     }
 
     /**
-     * A way to retrieve table properties by the table ID.
+     * A way to retrieve a transaction serialiser by the table ID.
      */
-    public interface TablePropertiesSource {
+    private interface TransactionSerDeProvider {
         /**
          * Gets the properties of a Sleeper table.
          *
          * @param  tableId the table ID
          * @return         the properties
          */
-        TableProperties getById(String tableId);
+        TransactionSerDe getByTableId(String tableId);
+
+        /**
+         * Provides a transaction serialiser that supports a single table.
+         *
+         * @param  tableProperties the table properties
+         * @return                 the provider
+         */
+        static TransactionSerDeProvider forTable(TableProperties tableProperties) {
+            TransactionSerDe serDe = new TransactionSerDe(tableProperties.getSchema());
+            return tableId -> {
+                if (Objects.equals(tableId, tableProperties.get(TABLE_ID))) {
+                    return serDe;
+                } else {
+                    throw new IllegalArgumentException("Expected table ID " + tableProperties.get(TABLE_ID) + ", found " + tableId);
+                }
+            };
+        }
+
+        /**
+         * Provides a transaction serialiser that supports any table.
+         *
+         * @param  tablePropertiesProvider the table properties provider
+         * @return                         the provider
+         */
+        static TransactionSerDeProvider forTableProvider(TablePropertiesProvider tablePropertiesProvider) {
+            return tableId -> new TransactionSerDe(tablePropertiesProvider.getById(tableId).getSchema());
+        }
+
+        /**
+         * Provides a transaction serialiser that only supports file transactions.
+         *
+         * @return the provider
+         */
+        static TransactionSerDeProvider forFileTransactions() {
+            return tableId -> TransactionSerDe.forFileTransactions();
+        }
     }
 }
