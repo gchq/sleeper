@@ -38,6 +38,12 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class CompactionCommitBatcherTest {
+    // Tests
+    // - Commit one compaction
+    // - Compactions for multiple tables
+    // - Multiple compactions for one table
+    // - What happens when one table does not exist?
+    // - One table failed to send to queue, other table sent successfully (retry just the failed table, callback to lambda/SQS code)
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TablePropertiesStore tables = InMemoryTableProperties.getStore();
