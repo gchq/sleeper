@@ -19,6 +19,9 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 
 import java.util.List;
+import java.util.Map;
+
+import static java.util.stream.Collectors.groupingBy;
 
 public class CompactionCommitBatcher {
 
@@ -29,10 +32,15 @@ public class CompactionCommitBatcher {
     }
 
     public void sendBatch(List<CompactionCommitRequest> requests) {
-        for (CompactionCommitRequest request : requests) {
-            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(request.request()));
-            sendStateStoreCommit.send(StateStoreCommitRequest.create(request.tableId(), transaction));
-        }
+        Map<String, List<CompactionCommitRequest>> requestsByTableId = requests.stream()
+                .collect(groupingBy(CompactionCommitRequest::tableId));
+        requestsByTableId.forEach(this::sendTransaction);
+    }
+
+    private void sendTransaction(String tableId, List<CompactionCommitRequest> requests) {
+        ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(
+                requests.stream().map(CompactionCommitRequest::request).toList());
+        sendStateStoreCommit.send(StateStoreCommitRequest.create(tableId, transaction));
     }
 
     public interface SendStateStoreCommit {

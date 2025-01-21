@@ -83,11 +83,33 @@ public class CompactionCommitBatcherTest {
                 new CompactionCommitRequest(table2.get(TABLE_ID), request2)));
 
         // Then
-        assertThat(queue).containsExactly(
+        assertThat(queue).containsExactlyInAnyOrder(
                 StateStoreCommitRequest.create(table1.get(TABLE_ID),
                         new ReplaceFileReferencesTransaction(List.of(request1))),
                 StateStoreCommitRequest.create(table2.get(TABLE_ID),
                         new ReplaceFileReferencesTransaction(List.of(request2))));
+    }
+
+    @Test
+    void shouldSendMultipleCompactionCommitsForSameTableAsOneTransaction() {
+        // Given
+        TableProperties table = createTable();
+        CompactionJob job1 = jobFactory(table).createCompactionJobWithFilenames(
+                "job1", List.of("test.parquet"), "root");
+        CompactionJob job2 = jobFactory(table).createCompactionJobWithFilenames(
+                "job1", List.of("test.parquet"), "root");
+        ReplaceFileReferencesRequest request1 = defaultReplaceFileReferencesRequest(job1);
+        ReplaceFileReferencesRequest request2 = defaultReplaceFileReferencesRequest(job2);
+
+        // When
+        batcher().sendBatch(List.of(
+                new CompactionCommitRequest(table.get(TABLE_ID), request1),
+                new CompactionCommitRequest(table.get(TABLE_ID), request2)));
+
+        // Then
+        assertThat(queue).containsExactly(
+                StateStoreCommitRequest.create(table.get(TABLE_ID),
+                        new ReplaceFileReferencesTransaction(List.of(request1, request2))));
     }
 
     private TableProperties createTable() {
