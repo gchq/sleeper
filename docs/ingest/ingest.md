@@ -109,7 +109,7 @@ aim for at least 10s of millions of records per job.
 The id field will be used in logging so that users can see the progress of particular ingest jobs by viewing the
 logs. The URL of the SQS queue that the message should be sent to can be found from the `sleeper.ingest.job.queue.url`
 property. This will be populated in the config object in the `sleeper-<instance-id>-config` S3 bucket. It can also
-be found using the [admininstration client](../02-deployment-guide.md#sleeper-administration-client).
+be found using the [admininstration client](../deployment-guide.md#sleeper-administration-client).
 
 You will need to ensure that the role with the ARN given by the `IngestContainerRoleARN` property has read access
 to the files you wish to ingest. This ARN is exported as a named export from CloudFormation with name
@@ -581,7 +581,7 @@ The instance property `sleeper.bulk.import.class.name` can be used to set the de
 #### Bulk import on EKS
 
 The `EksBulkImportStack` option requires the bulk import Docker image to be pushed to ECR - see the instructions in the
-[deployment guide](../02-deployment-guide.md).
+[deployment guide](../deployment-guide.md).
 
 It's also important to configure a role to be mapped into EKS to administer the cluster. This will allow you to connect
 with `kubectl` and access Kubernetes resources in the AWS console. Look in AWS IAM, and choose a role that gets assigned

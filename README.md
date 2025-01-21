@@ -95,7 +95,7 @@ Sleeper is licensed under the [Apache 2](http://www.apache.org/licenses/LICENSE-
 See the documentation contained in the docs folder:
 
 1. [Getting started](docs/getting-started.md)
-2. [Deployment guide](docs/02-deployment-guide.md)
+2. [Deployment guide](docs/deployment-guide.md)
 3. [Creating a schema](docs/tables/schema.md)
 4. [Tables](docs/tables/tables.md)
 5. [Ingesting data](docs/ingest/ingest.md)

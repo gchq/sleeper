@@ -74,7 +74,7 @@ avoid lengthy uploads of large jar files and Docker images. You can use the Slee
 If you prefer to use your own EC2, you'll need to build Sleeper there as described in
 the [developer guide](12-dev-guide.md). The EC2 should run on an x86_64 architecture. If you prefer to use your own VPC,
 you'll need to ensure it meets Sleeper's requirements. Deployment of an EC2 to an existing VPC is documented in
-the [deployment guide](02-deployment-guide.md#managing-environments).
+the [deployment guide](deployment-guide.md#managing-environments).
 
 #### Sleeper CLI environment
 
@@ -224,4 +224,4 @@ editor system-test-instance.properties
 ./buildDeployTest.sh  ${ID} ${VPC} ${SUBNETS}
 ```
 
-To deploy your own instance of Sleeper with a particular schema, follow the [deployment guide](02-deployment-guide.md).
+To deploy your own instance of Sleeper with a particular schema, follow the [deployment guide](deployment-guide.md).
