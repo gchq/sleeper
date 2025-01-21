@@ -25,6 +25,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -44,17 +45,25 @@ public class CompactionCommitBatcherTest {
     @Test
     @Disabled
     void shouldSendOneCompactionCommit() {
+
+        long recordswritten = 100L;
+
         // Given
         TableProperties table = createTable();
         CompactionJob job = jobFactory(table).createCompactionJobWithFilenames(
                 "test-job", List.of("test.parquet"), "root");
         List<CompactionCommitRequest> requests = List.of(commitRequest(job));
 
+        ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                job.replaceFileReferencesRequestBuilder(recordswritten).build()));
+
         // When
         batcher().sendBatch(requests);
 
         // Then
-        assertThat(queue).containsExactly();//(List.of(StateStoreCommitRequest));
+        //ReplaceFileReferencesTransaction = CompactionCommitRequest
+        //queue contains StateStoreCommitRequest
+        assertThat(queue).containsExactly();
     }
 
     private TableProperties createTable() {
