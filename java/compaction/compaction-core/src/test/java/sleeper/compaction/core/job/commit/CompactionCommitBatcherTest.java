@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.commit;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -45,7 +44,6 @@ public class CompactionCommitBatcherTest {
     private final Queue<StateStoreCommitRequest> queue = new LinkedList<>();
 
     @Test
-    @Disabled
     void shouldSendOneCompactionCommit() {
         // Given
         TableProperties table = createTable();
@@ -79,7 +77,7 @@ public class CompactionCommitBatcherTest {
     }
 
     private CompactionCommitBatcher batcher() {
-        return new CompactionCommitBatcher();
+        return new CompactionCommitBatcher(queue::add);
     }
 
 }

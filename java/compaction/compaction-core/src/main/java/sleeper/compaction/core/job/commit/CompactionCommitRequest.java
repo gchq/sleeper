@@ -17,14 +17,5 @@ package sleeper.compaction.core.job.commit;
 
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 
-public class CompactionCommitRequest {
-
-    private final String tableId;
-    private final ReplaceFileReferencesRequest request;
-
-    public CompactionCommitRequest(String tableId, ReplaceFileReferencesRequest request) {
-        this.tableId = tableId;
-        this.request = request;
-    }
-
+public record CompactionCommitRequest(String tableId, ReplaceFileReferencesRequest request) {
 }

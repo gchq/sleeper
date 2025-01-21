@@ -15,13 +15,28 @@
  */
 package sleeper.compaction.core.job.commit;
 
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+
 import java.util.List;
 
 public class CompactionCommitBatcher {
 
+    private final SendStateStoreCommit sendStateStoreCommit;
+
+    public CompactionCommitBatcher(SendStateStoreCommit sendStateStoreCommit) {
+        this.sendStateStoreCommit = sendStateStoreCommit;
+    }
+
     public void sendBatch(List<CompactionCommitRequest> requests) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'sendBatch'");
+        for (CompactionCommitRequest request : requests) {
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(request.request()));
+            sendStateStoreCommit.send(StateStoreCommitRequest.create(request.tableId(), transaction));
+        }
+    }
+
+    public interface SendStateStoreCommit {
+        void send(StateStoreCommitRequest request);
     }
 
 }
