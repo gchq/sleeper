@@ -70,13 +70,13 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         List<BatchItemFailure> failures = new ArrayList<>();
         List<CompactionCommitRequest> requests = event.getRecords().stream()
-                .map(message -> readMessage(message, failures))
+                .map(message -> readMessageTrackingFailure(message, failures))
                 .toList();
         batcher.sendBatch(requests);
         return new SQSBatchResponse(failures);
     }
 
-    private CompactionCommitRequest readMessage(SQSMessage message, List<BatchItemFailure> failures) {
+    private CompactionCommitRequest readMessageTrackingFailure(SQSMessage message, List<BatchItemFailure> failures) {
         return serDe.fromJsonWithCallbackOnFail(message.getBody(),
                 () -> failures.add(new BatchItemFailure(message.getMessageId())));
     }
