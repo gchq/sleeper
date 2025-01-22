@@ -26,7 +26,10 @@ use crate::{
 };
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
-    datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
+    datasource::{
+        file_format::{format_as_file_type, parquet::ParquetFormatFactory},
+        physical_plan::ParquetExec,
+    },
     error::DataFusionError,
     execution::{
         config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
@@ -35,18 +38,35 @@ use datafusion::{
     logical_expr::{LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
     physical_plan::{
-        accept, collect, filter::FilterExec, projection::ProjectionExec, ExecutionPlan,
-        ExecutionPlanVisitor,
+        accept, collect,
+        filter::FilterExec,
+        metrics::{MetricValue, MetricsSet},
+        projection::ProjectionExec,
+        ExecutionPlan, ExecutionPlanVisitor,
     },
     prelude::*,
 };
 use log::{error, info, warn};
 use num_format::{Locale, ToFormattedString};
-use std::{collections::HashMap, iter::once, sync::Arc};
+use std::{collections::HashMap, io::Write, iter::once, sync::Arc};
 use url::Url;
 
 pub mod sketch;
 mod udf;
+
+/// Per file metrics to collect from the Parquet reader after compaction
+pub const FILE_METRICS: [&'static str; 10] = [
+    "metadata_load_time",
+    "statistics_eval_time",
+    "page_index_eval_time",
+    "bytes_scanned",
+    "row_groups_pruned_statistics",
+    "row_groups_matched_statistics",
+    "row_groups_pruned_bloom_filter",
+    "row_groups_matched_bloom_filter",
+    "page_index_rows_pruned",
+    "page_index_rows_matched",
+];
 
 /// Starts a Sleeper compaction.
 ///
@@ -155,7 +175,7 @@ pub async fn compact(
     }
 
     // Write the frame out and collect stats
-    let stats = collect_stats(frame.clone(), output_path, pqo).await?;
+    let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
 
     // Write sketches out to file in Sleeper compatible way
     let binding = sketch_func.inner();
@@ -209,6 +229,7 @@ async fn calculate_input_size(
 /// from the number of rows coalsced before being written.
 async fn collect_stats(
     frame: DataFrame,
+    input_paths: &[Url],
     output_path: &Url,
     pqo: datafusion::config::TableParquetOptions,
 ) -> Result<RowCounts, DataFusionError> {
@@ -227,16 +248,45 @@ async fn collect_stats(
     // Optimise plan and generate physical plan
     let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
     let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
-    let mut stats = RowCounts::default();
+    let mut stats = RowCounts::new(input_paths);
     accept(physical_plan.as_ref(), &mut stats)?;
+    log_metrics(&stats.file_metrics);
     Ok(stats)
 }
 
+/// Log some collected per file metrics
+fn log_metrics(metric_map: &HashMap<Url, Vec<MetricValue>>) {
+    for (file, metrics) in metric_map {
+        let mut formatted_metrics = Vec::new();
+        for m in metrics {
+            write!(&mut formatted_metrics, "{} = {}, ", m.name(), m)
+                .expect("Write metrics to string failed: This is a bug");
+        }
+        info!(
+            "File {} {{ {} }}",
+            file.as_str(),
+            String::from_utf8(formatted_metrics).expect("Error in UTF-8 parsing! This is a bug")
+        );
+    }
+}
+
 /// Simple struct used for storing the collected statistics from an execution plan.
-#[derive(Default)]
 struct RowCounts {
-    rows_read: usize,
-    rows_written: usize,
+    pub rows_read: usize,
+    pub rows_written: usize,
+    pub file_metrics: HashMap<Url, Vec<MetricValue>>,
+}
+
+impl RowCounts {
+    /// Pre-populates the map of file metrics from the given list of files
+    pub fn new(inputs: &[Url]) -> Self {
+        Self {
+            rows_read: 0,
+            rows_written: 0,
+            // Populate map with names
+            file_metrics: HashMap::from_iter(inputs.iter().map(|n| (n.to_owned(), vec![]))),
+        }
+    }
 }
 
 impl From<&RowCounts> for CompactionResult {
@@ -252,24 +302,50 @@ impl ExecutionPlanVisitor for RowCounts {
     type Error = DataFusionError;
 
     fn pre_visit(&mut self, plan: &dyn ExecutionPlan) -> Result<bool, Self::Error> {
-        // read output records from here
-        let maybe_coalesce = plan
+        // read output records from final projection stage
+        let maybe_projection = plan
             .as_any()
             .downcast_ref::<ProjectionExec>()
             .and_then(ExecutionPlan::metrics);
-        // read input records from here
+        // read input records from filter stage, not parquet read stage, since parquet
+        // read stage may not filter precisely to range needed and therefore over-reports
+        // number of rows read
         let maybe_parq_read = plan
             .as_any()
             .downcast_ref::<FilterExec>()
             .and_then(ExecutionPlan::metrics);
-        if let Some(m) = maybe_coalesce {
+        if let Some(m) = maybe_projection {
             self.rows_written = m.output_rows().unwrap_or_default();
         }
         if let Some(m) = maybe_parq_read {
             self.rows_read = m.output_rows().unwrap_or_default();
         }
+        // Read other metrics on a per file basis
+        if let Some(m) = plan
+            .as_any()
+            .downcast_ref::<ParquetExec>()
+            .and_then(ExecutionPlan::metrics)
+        {
+            for (file, file_metrics) in self.file_metrics.iter_mut() {
+                for metric_name in FILE_METRICS {
+                    if let Some(val) = metric_sum_by_filename(&m, metric_name, file.as_str()) {
+                        file_metrics.push(val);
+                    }
+                }
+            }
+        }
         Ok(true)
     }
+}
+
+/// Sum all metrics of a given name for a given filename.
+fn metric_sum_by_filename(metrics: &MetricsSet, name: &str, filename: &str) -> Option<MetricValue> {
+    metrics.sum(|m| {
+        m.value().name() == name
+            && m.labels()
+                .iter()
+                .any(|label| label.name() == "filename" && filename.ends_with(label.value()))
+    })
 }
 
 /// Create the `DataFusion` filtering expression from a Sleeper region.
