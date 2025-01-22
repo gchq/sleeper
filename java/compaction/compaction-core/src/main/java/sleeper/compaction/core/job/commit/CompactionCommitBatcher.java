@@ -26,6 +26,9 @@ import java.util.Map;
 
 import static java.util.stream.Collectors.groupingBy;
 
+/**
+ * Combines multiple compaction commits into a single transaction per Sleeper table.
+ */
 public class CompactionCommitBatcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionCommitBatcher.class);
@@ -53,6 +56,9 @@ public class CompactionCommitBatcher {
         }
     }
 
+    /**
+     * Sends a state store commit to the commit queue.
+     */
     public interface SendStateStoreCommit {
         void send(StateStoreCommitRequest request);
     }
