@@ -124,7 +124,7 @@ images. In the future we may add support for prebuilt artifacts, in which case t
 Sleeper.
 
 The EC2 is deployed with admin access to your AWS account. A production instance of Sleeper is likely to need some extra
-security setup, and an EC2 with admin access may not be desirable.
+security setup, and you may wish to avoid deploying an EC2 with admin access to a production AWS account.
 
 For general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2.
 
