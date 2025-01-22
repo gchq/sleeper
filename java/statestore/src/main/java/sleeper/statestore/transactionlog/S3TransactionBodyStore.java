@@ -55,7 +55,7 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
      * @return                    the provider
      */
     public static TransactionBodyStoreProvider createProvider(InstanceProperties instanceProperties, AmazonS3 s3Client) {
-        return tableProperties -> new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
+        return new S3TransactionBodyStoreProvider(instanceProperties, s3Client);
     }
 
     @Override
@@ -89,5 +89,30 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
      */
     public void delete(String key) {
         s3Client.deleteObject(instanceProperties.get(DATA_BUCKET), key);
+    }
+
+    /**
+     * Provides stores for a given table.
+     */
+    private static class S3TransactionBodyStoreProvider implements TransactionBodyStoreProvider {
+        private final InstanceProperties instanceProperties;
+        private final AmazonS3 s3Client;
+
+        private S3TransactionBodyStoreProvider(InstanceProperties instanceProperties, AmazonS3 s3Client) {
+            this.instanceProperties = instanceProperties;
+            this.s3Client = s3Client;
+        }
+
+        @Override
+        public TransactionBodyStore getTransactionBodyStore(TableProperties tableProperties) {
+            return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
+        }
+
+        @Override
+        public TransactionBodyStore getTransactionBodyStore(String tableId) {
+            // TODO Auto-generated method stub
+            throw new UnsupportedOperationException("Unimplemented method 'getTransactionBodyStore'");
+        }
+
     }
 }

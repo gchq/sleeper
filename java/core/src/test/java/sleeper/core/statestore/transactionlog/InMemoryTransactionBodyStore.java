@@ -49,6 +49,11 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore, Trans
         return this;
     }
 
+    @Override
+    public TransactionBodyStore getTransactionBodyStore(String tableId) {
+        return this;
+    }
+
     public Map<String, StateStoreTransaction<?>> getTransactionByKey() {
         return transactionByKey;
     }

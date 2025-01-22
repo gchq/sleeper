@@ -30,4 +30,11 @@ public interface TransactionBodyStoreProvider {
      */
     TransactionBodyStore getTransactionBodyStore(TableProperties tableProperties);
 
+    /**
+     * Retrieves a transaction body store for the given table.
+     *
+     * @param  tableId the Sleeper table ID
+     * @return         the store
+     */
+    TransactionBodyStore getTransactionBodyStore(String tableId);
 }

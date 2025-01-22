@@ -51,7 +51,7 @@ public class StateStoreCommitRequestUploader {
             return json;
         } else {
             TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
-            String key = TransactionBodyStore.createObjectKey(tableProperties);
+            String key = TransactionBodyStore.createObjectKey(request.getTableId());
             transactionBodyStore.getTransactionBodyStore(tableProperties).store(key, request.getTransactionIfHeld().orElseThrow());
             return serDe.toJson(StateStoreCommitRequest.create(request.getTableId(), key, request.getTransactionType()));
         }

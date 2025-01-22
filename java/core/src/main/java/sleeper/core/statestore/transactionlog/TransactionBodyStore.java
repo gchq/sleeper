@@ -61,6 +61,17 @@ public interface TransactionBodyStore {
      * Creates an object key for a new transaction file with a randomly generated filename. The file will not yet exist.
      *
      * @param  tableId the Sleeper table ID
+     * @return         the object key
+     */
+    static String createObjectKey(String tableId) {
+        // Use a random UUID to avoid conflicting when another process is adding a transaction at the same time
+        return createObjectKey(tableId, Instant.now(), UUID.randomUUID().toString());
+    }
+
+    /**
+     * Creates an object key for a new transaction file with a randomly generated filename. The file will not yet exist.
+     *
+     * @param  tableId the Sleeper table ID
      * @param  now     the time now
      * @param  uuid    a random UUID
      * @return         the object key
