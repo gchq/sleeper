@@ -41,7 +41,6 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -75,7 +74,7 @@ public class CompactionCommitBatcherLambdaIT {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final CompactionCommitRequestSerDe serDe = new CompactionCommitRequestSerDe();
-    private final StateStoreCommitRequestSerDe commitSerDe = new StateStoreCommitRequestSerDe(tableProperties);
+    private final StateStoreCommitRequestSerDe commitSerDe = StateStoreCommitRequestSerDe.forFileTransactions();
 
     @BeforeEach
     void setUp() {
@@ -105,7 +104,7 @@ public class CompactionCommitBatcherLambdaIT {
     }
 
     @Test
-    void shouldFailOnIncorrectTableId() {
+    void shouldPassThroughIncorrectTableId() {
         // Given
         ReplaceFileReferencesRequest filesRequest = createFilesRequest();
         SQSMessage sqsMessage = createMessage("IncorrectId", filesRequest);
@@ -114,10 +113,10 @@ public class CompactionCommitBatcherLambdaIT {
         SQSBatchResponse response = lambda().handleRequest(createEvent(sqsMessage), null);
 
         // Then
-        assertThat(consumeQueueMessages()).isEmpty();
-        assertThat(response.getBatchItemFailures())
-                .extracting(BatchItemFailure::getItemIdentifier)
-                .containsExactly(sqsMessage.getMessageId());
+        assertThat(consumeQueueMessages()).containsExactly(
+                StateStoreCommitRequest.create("IncorrectId",
+                        new ReplaceFileReferencesTransaction(List.of(filesRequest))));
+        assertThat(response.getBatchItemFailures()).isEmpty();
     }
 
     @Test
@@ -150,8 +149,8 @@ public class CompactionCommitBatcherLambdaIT {
     }
 
     private CompactionCommitBatcherLambda lambda() {
-        return new CompactionCommitBatcherLambda(CompactionCommitBatcherLambda.createBatcher(
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client));
+        return new CompactionCommitBatcherLambda(
+                CompactionCommitBatcherLambda.createBatcher(instanceProperties, sqsClient, s3Client));
     }
 
     private SQSEvent createEvent(String tableId, ReplaceFileReferencesRequest request) {

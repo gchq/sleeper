@@ -15,8 +15,6 @@
  */
 package sleeper.statestore.lambda.committer;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
@@ -35,9 +33,8 @@ import sleeper.compaction.core.job.commit.CompactionCommitBatcher;
 import sleeper.compaction.core.job.commit.CompactionCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
-import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
@@ -60,11 +57,9 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
     public CompactionCommitBatcherLambda() {
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
         String bucketName = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        this.batcher = createBatcher(instanceProperties, tablePropertiesProvider, sqsClient, s3Client);
+        this.batcher = createBatcher(instanceProperties, sqsClient, s3Client);
     }
 
     public CompactionCommitBatcherLambda(CompactionCommitBatcher batcher) {
@@ -89,16 +84,16 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
     /**
      * Creates the batcher used to send requests to the state store committer queue via SQS.
      *
-     * @param  instanceProperties      the instance properties
-     * @param  tablePropertiesProvider the table properties provider
-     * @param  sqsClient               the SQS client
-     * @param  s3Client                the S3 client
-     * @return                         the batcher
+     * @param  instanceProperties the instance properties
+     * @param  sqsClient          the SQS client
+     * @param  s3Client           the S3 client
+     * @return                    the batcher
      */
     public static CompactionCommitBatcher createBatcher(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonSQS sqsClient, AmazonS3 s3Client) {
-        StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(tablePropertiesProvider,
-                S3TransactionBodyStore.createProvider(instanceProperties, s3Client),
+            InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client) {
+        StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(
+                S3TransactionBodyStore.createProviderByIdForFileTransactions(instanceProperties, s3Client),
+                StateStoreCommitRequestSerDe.forFileTransactions(),
                 StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
         return new CompactionCommitBatcher(request -> {
             LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
