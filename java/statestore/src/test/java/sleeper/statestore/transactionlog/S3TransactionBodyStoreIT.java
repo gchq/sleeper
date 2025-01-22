@@ -16,23 +16,30 @@
 package sleeper.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.statestore.testutil.LocalStackTestBase;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -54,15 +61,14 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
     @DisplayName("Support all transactions")
     class SupportAllTransactions {
 
-        private final TransactionBodyStoreProvider provider = S3TransactionBodyStore.createProvider(instanceProperties, s3Client);
-        private final PartitionTransaction transaction = new InitialisePartitionsTransaction(
-                new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
-
         @Test
         void shouldSaveAndLoadPartitionTransactionByTableProperties() {
             // Given
-            TransactionBodyStore store = provider.getTransactionBodyStore(tableProperties);
+            TransactionBodyStore store = S3TransactionBodyStore.createProvider(instanceProperties, s3Client)
+                    .getTransactionBodyStore(tableProperties);
             String key = TransactionBodyStore.createObjectKey(tableProperties);
+            PartitionTransaction transaction = new InitialisePartitionsTransaction(
+                    new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
 
             // When
             store.store(key, transaction);
@@ -73,11 +79,14 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         }
 
         @Test
-        @Disabled
         void shouldSaveAndLoadPartitionTransactionByTableId() {
             // Given
-            TransactionBodyStore store = provider.getTransactionBodyStore(tableId);
+            TransactionBodyStore store = S3TransactionBodyStore.createProviderById(
+                    instanceProperties, new FixedTablePropertiesProvider(tableProperties), s3Client)
+                    .getTransactionBodyStore(tableId);
             String key = TransactionBodyStore.createObjectKey(tableId);
+            PartitionTransaction transaction = new InitialisePartitionsTransaction(
+                    new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
 
             // When
             store.store(key, transaction);
@@ -92,6 +101,39 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
     @DisplayName("Support only file transactions")
     class SupportOnlyFileTransactions {
 
+        TransactionBodyStore store = S3TransactionBodyStore.createProviderByIdForFileTransactions(instanceProperties, s3Client).getTransactionBodyStore(tableId);
+
+        @Test
+        void shouldStoreFileTransaction() {
+            // Given
+            String key = TransactionBodyStore.createObjectKey(tableId);
+            PartitionTree partitions = new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildTree();
+            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(
+                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100))));
+
+            // When
+            store.store(key, transaction);
+            StateStoreTransaction<?> found = store.getBody(key, TransactionType.ADD_FILES);
+
+            // Then
+            assertThat(found).isEqualTo(transaction);
+        }
+
+        @Test
+        void shouldFailPartitionTransaction() {
+            // Given
+            String key = TransactionBodyStore.createObjectKey(tableId);
+            PartitionTransaction transaction = new InitialisePartitionsTransaction(
+                    new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
+
+            // When / Then
+            assertThatThrownBy(() -> store.store(key, transaction))
+                    .isInstanceOf(UnsupportedOperationException.class);
+            new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
+                    .store(key, transaction);
+            assertThatThrownBy(() -> store.getBody(key, TransactionType.INITIALISE_PARTITIONS))
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
     }
 
 }

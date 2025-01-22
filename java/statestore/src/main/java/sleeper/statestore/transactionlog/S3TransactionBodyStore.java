@@ -21,9 +21,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
+import sleeper.core.statestore.transactionlog.TransactionBodyStoreProviderByTableId;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.LoggedDuration;
@@ -59,7 +61,46 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
      * @return                    the provider
      */
     public static TransactionBodyStoreProvider createProvider(InstanceProperties instanceProperties, AmazonS3 s3Client) {
-        return new S3TransactionBodyStoreProvider(instanceProperties, s3Client);
+        return tableProperties -> new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
+    }
+
+    /**
+     * Creates a transaction body store provider that provides instances of this class.
+     *
+     * @param  instanceProperties      the instance properties
+     * @param  tablePropertiesProvider the table properties provider
+     * @param  s3Client                an S3 client
+     * @return                         the provider
+     */
+    public static TransactionBodyStoreProviderByTableId createProviderById(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonS3 s3Client) {
+        return tableId -> new S3TransactionBodyStore(instanceProperties, s3Client,
+                new TransactionSerDe(tablePropertiesProvider.getById(tableId).getSchema()));
+    }
+
+    /**
+     * Creates a transaction body store provider that provides instances of this class that only support file
+     * transactions.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  s3Client           an S3 client
+     * @return                    the provider
+     */
+    public static TransactionBodyStoreProviderByTableId createProviderByIdForFileTransactions(
+            InstanceProperties instanceProperties, AmazonS3 s3Client) {
+        TransactionBodyStore store = forFileTransactions(instanceProperties, s3Client);
+        return tableId -> store;
+    }
+
+    /**
+     * Creates an instance of this class that only supports file transactions.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  s3Client           an S3 client
+     * @return                    the store
+     */
+    public static TransactionBodyStore forFileTransactions(InstanceProperties instanceProperties, AmazonS3 s3Client) {
+        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDe.forFileTransactions());
     }
 
     @Override
@@ -93,30 +134,5 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
      */
     public void delete(String key) {
         s3Client.deleteObject(instanceProperties.get(DATA_BUCKET), key);
-    }
-
-    /**
-     * Provides stores for a given table.
-     */
-    private static class S3TransactionBodyStoreProvider implements TransactionBodyStoreProvider {
-        private final InstanceProperties instanceProperties;
-        private final AmazonS3 s3Client;
-
-        private S3TransactionBodyStoreProvider(InstanceProperties instanceProperties, AmazonS3 s3Client) {
-            this.instanceProperties = instanceProperties;
-            this.s3Client = s3Client;
-        }
-
-        @Override
-        public TransactionBodyStore getTransactionBodyStore(TableProperties tableProperties) {
-            return new S3TransactionBodyStore(instanceProperties, s3Client, new TransactionSerDe(tableProperties.getSchema()));
-        }
-
-        @Override
-        public TransactionBodyStore getTransactionBodyStore(String tableId) {
-            // TODO Auto-generated method stub
-            throw new UnsupportedOperationException("Unimplemented method 'getTransactionBodyStore'");
-        }
-
     }
 }

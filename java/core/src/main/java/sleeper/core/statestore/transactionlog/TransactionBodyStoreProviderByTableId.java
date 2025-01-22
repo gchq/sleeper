@@ -15,18 +15,17 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.properties.table.TableProperties;
-
 /**
- * Creates transaction body stores per Sleeper table.
+ * Creates transaction body stores per Sleeper table by ID.
  */
-public interface TransactionBodyStoreProvider {
+public interface TransactionBodyStoreProviderByTableId {
 
     /**
      * Retrieves a transaction body store for the given table.
      *
-     * @param  tableProperties the table properties
-     * @return                 the store
+     * @param  tableId the Sleeper table ID
+     * @return         the store
      */
-    TransactionBodyStore getTransactionBodyStore(TableProperties tableProperties);
+    TransactionBodyStore getTransactionBodyStore(String tableId);
+
 }
