@@ -81,8 +81,28 @@ the [deployment guide](deployment-guide.md#managing-environments).
 The Sleeper CLI can create an EC2 instance in a VPC that is suitable for deploying Sleeper. This will automatically
 configure authentication such that once you're in the EC2 instance you'll have administrator access to your AWS account.
 
+This environment is provided to allow easy deployment, especially for development. By building Sleeper within AWS we
+can avoid lengthy uploads of built artifacts into AWS. A production instance of Sleeper is likely to also need some
+extra security setup, and the environment EC2 may not be useful for this. Note that for general administration of an
+existing Sleeper instance it is not necessary to connect this way.
+
+You can deploy a fresh environment like this:
+
 ```bash
-sleeper environment deploy TestEnvironment
+# Replace <environment-id> with your own unique environment ID.
+sleeper environment deploy <environment-id>
+```
+
+If someone else has already created an environment that you want to share, you can add it as long as you have access
+and the EC2 is currently running. You can create your own user on the EC2, but there's no authorisation that links your
+identity to a particular user. Anyone can access any user on the EC2. They will have separate instances of the Sleeper
+repository checked out with Git.
+
+```bash
+sleeper environment add <environment-id>
+# Make sure your username is different from other users.
+# If you already have a user on the EC2, you can use setuser instead of adduser.
+sleeper environment adduser <username>
 ```
 
 The `sleeper environment deploy` command will wait for the EC2 instance to be deployed.
@@ -105,9 +125,11 @@ You can check the output like this (add `-f` if you'd like to follow the progres
 tail /var/log/cloud-init-output.log
 ```
 
-Once it has finished the EC2 will restart. Once it's restarted you can use the Sleeper CLI. The Sleeper Git repository
-will also be cloned. Run `sleeper builder` in the EC2 to start a builder Docker container with the Git repository
-mounted into it:
+This process will install the Sleeper CLI and clone the Sleeper Git repository. Once it has finished the EC2 will
+restart. If you added an existing environment, adding a user will clone your own copy of the repository, but cloud-init
+will already have been done, and the EC2 will not restart.
+
+Run `sleeper builder` in the EC2 to start a builder Docker container with the Git repository mounted into it:
 
 ```bash
 sleeper environment connect # Get a shell in the EC2 you deployed
@@ -122,12 +144,6 @@ executions of `sleeper builder`, and re-mounted to a fresh container each time y
 If you run `sleeper builder` outside of the EC2, you'll get the same thing but in your local Docker host. Please ensure
 you connect to the EC2 first via `sleeper environment connect`, to avoid the deployment being slow uploading jars and
 Docker images.
-
-If you want someone else to be able to access the same environment EC2, they can run `sleeper environment add <id>`
-with the same environment ID. To begin with you'll both log on as the same user and share a single `screen` session. You
-can set up separate users with `sleeper environment adduser <username>`, and switch users with
-`sleeper environment setuser <username>`. If you call `sleeper environment setuser` with no arguments, you'll switch
-back to the original default user for the EC2.
 
 ### System test
 
