@@ -75,7 +75,10 @@ public class StateStoreCommitMessageFactory {
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job = factory.createCompactionJobWithFilenames(jobId, filenames, partitionId);
         return message(new ReplaceFileReferencesTransaction(List.of(
-                job.createReplaceFileReferencesRequest(taskId, jobRunId, recordsProcessed.getRecordsProcessed()))));
+                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsProcessed().getRecordsWritten())
+                        .taskId(taskId)
+                        .jobRunId(jobRunId)
+                        .build())));
     }
 
     public StateStoreCommitRequest filesDeleted(List<String> filenames) {

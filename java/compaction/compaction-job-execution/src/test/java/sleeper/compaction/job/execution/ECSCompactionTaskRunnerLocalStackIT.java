@@ -528,7 +528,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         return new StateStoreCommitRequestSerDe(tablePropertiesProvider)
                 .toJson(StateStoreCommitRequest.create(tableId,
                         new ReplaceFileReferencesTransaction(List.of(
-                                job.createReplaceFileReferencesRequest(taskId, jobRunId, summary.getRecordsProcessed())))));
+                                job.replaceFileReferencesRequestBuilder(summary.getRecordsProcessed().getRecordsWritten())
+                                        .taskId(taskId)
+                                        .jobRunId(jobRunId)
+                                        .build()))));
     }
 
     private FileReference onJob(CompactionJob job, FileReference reference) {
