@@ -26,8 +26,9 @@ cd sleeper                  # Change directory to the root of the Git repository
 
 If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
 
-To build Sleeper locally to interact with an instance from elsewhere, you can follow the instructions in
-the [developer guide](developer-guide.md#install-prerequisite-software).
+If you want to interact with a pre-existing instance, you can skip the `sleeper environment connect` and run in your
+local machine, as described in the [developer guide](developer-guide.md#sleeper-cli-builder-image). You will need to
+check out the Git repository yourself in the builder container.
 
 ### Configure AWS
 
@@ -91,15 +92,17 @@ You're now ready to build and deploy Sleeper.
 
 ### Deployment environment
 
-Please follow the [getting started guide](getting-started.md#deployment-environment) to set up a VPC and EC2 instance
+Please follow the [getting started guide](getting-started.md#deployment-environment) to set up an environment suitable
 to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](getting-started.md#install-sleeper-cli).
 This section adds more detail for the tools to set up this environment.
 
-The environment described in the getting started guide is provided to allow easy deployment, especially for development.
-By building Sleeper within AWS we can avoid lengthy uploads of built artifacts into AWS. A production instance of
-Sleeper is likely to also need some extra security setup, and this environment may not be useful for this. Note that for
-general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2. In the
-future we may add support for prebuilt artifacts, in which case the EC2 will also not be needed to deploy Sleeper.
+The environment EC2 described here is provided to allow easy deployment, especially for development. By building Sleeper
+within AWS we can avoid lengthy uploads of built artifacts into AWS, particularly jars and Docker images. In the future
+we may add support for prebuilt artifacts, in which case the EC2 will not be needed to deploy Sleeper. A production
+instance of Sleeper is likely to also need some extra security setup, and this environment may not be useful for this.
+
+Note that for general administration of an existing Sleeper instance it is not necessary to connect to an environment
+EC2.
 
 If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
 Sleeper `environment` commands directly, without prefixing with `sleeper`.
@@ -108,7 +111,9 @@ You can use `aws` commands there to set the AWS account, region and authenticati
 variables or configuration on the host machine, which will be propagated to the Docker container when you use
 `sleeper` commands.
 
-The Sleeper CLI also lets you manage multiple environments.
+Note that `sleeper environment` commands are not intended to be run from inside an environment EC2. When you connect to
+an EC2, this will be in a fresh context that is not aware of environments you have deployed or added. You can still use
+it to run `aws` and `cdk` commands, although it may be more convenient to use `sleeper builder` for this.
 
 #### Managing environments
 
@@ -136,12 +141,28 @@ You can add an environment that was previously deployed like this:
 sleeper environment add <environment-id>
 ```
 
+Whether you deployed or added an environment, you can connect to the deployed EC2 like this when it is running:
+
+```bash
+sleeper environment connect
+```
+
+This will SSH into the machine with EC2 Instance Connect and SSM Session Manager, and create a Linux `screen` session.
+If you do not explicitly exit this session, you will reconnect to the same `screen` session next time you connect to the
+EC2. If multiple connections are made to the EC2 as the same user, this will take over the `screen` session and
+disconnect the previous connection.
+
+You can replace the `screen` command by adding your own parameters to pass to ssh, like this:
+
+```bash
+sleeper environment connect bash
+```
+
 You can switch environments like this:
 
 ```bash
 sleeper environment list
 sleeper environment set <environment-id>
-sleeper environment connect
 ```
 
 You can tear down the deployed environment like this:
