@@ -15,10 +15,10 @@
  */
 package sleeper.core.statestore.commit;
 
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
+import sleeper.core.statestore.transactionlog.TransactionBodyStoreProviderByTableId;
 
 /**
  * Handles uploading transactions to S3 if a commit request is too big to fit in an SQS message.
@@ -26,17 +26,20 @@ import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
 public class StateStoreCommitRequestUploader {
     public static final int MAX_SQS_LENGTH = 262144;
 
-    private final TablePropertiesProvider tablePropertiesProvider;
-    private final TransactionBodyStoreProvider transactionBodyStore;
+    private final TransactionBodyStoreProviderByTableId transactionBodyStore;
     private final StateStoreCommitRequestSerDe serDe;
     private final int maxLength;
 
     public StateStoreCommitRequestUploader(
             TablePropertiesProvider tablePropertiesProvider, TransactionBodyStoreProvider transactionBodyStore, int maxLength) {
-        this.tablePropertiesProvider = tablePropertiesProvider;
+        this(transactionBodyStore.byTableId(tablePropertiesProvider), new StateStoreCommitRequestSerDe(tablePropertiesProvider), maxLength);
+    }
+
+    public StateStoreCommitRequestUploader(
+            TransactionBodyStoreProviderByTableId transactionBodyStore, StateStoreCommitRequestSerDe serDe, int maxLength) {
         this.transactionBodyStore = transactionBodyStore;
+        this.serDe = serDe;
         this.maxLength = maxLength;
-        this.serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
     }
 
     /**
@@ -50,9 +53,8 @@ public class StateStoreCommitRequestUploader {
         if (json.length() < maxLength) {
             return json;
         } else {
-            TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
             String key = TransactionBodyStore.createObjectKey(request.getTableId());
-            transactionBodyStore.getTransactionBodyStore(tableProperties).store(key, request.getTransactionIfHeld().orElseThrow());
+            transactionBodyStore.getTransactionBodyStore(request.getTableId()).store(key, request.getTransactionIfHeld().orElseThrow());
             return serDe.toJson(StateStoreCommitRequest.create(request.getTableId(), key, request.getTransactionType()));
         }
     }
