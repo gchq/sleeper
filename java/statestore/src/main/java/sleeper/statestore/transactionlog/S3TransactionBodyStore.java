@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
@@ -65,20 +64,6 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     }
 
     /**
-     * Creates a transaction body store provider that provides instances of this class.
-     *
-     * @param  instanceProperties      the instance properties
-     * @param  tablePropertiesProvider the table properties provider
-     * @param  s3Client                an S3 client
-     * @return                         the provider
-     */
-    public static TransactionBodyStoreProviderByTableId createProviderById(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, AmazonS3 s3Client) {
-        return tableId -> new S3TransactionBodyStore(instanceProperties, s3Client,
-                new TransactionSerDe(tablePropertiesProvider.getById(tableId).getSchema()));
-    }
-
-    /**
      * Creates a transaction body store provider that provides instances of this class that only support file
      * transactions.
      *
@@ -86,7 +71,7 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
      * @param  s3Client           an S3 client
      * @return                    the provider
      */
-    public static TransactionBodyStoreProviderByTableId createProviderByIdForFileTransactions(
+    public static TransactionBodyStoreProviderByTableId createProviderForFileTransactions(
             InstanceProperties instanceProperties, AmazonS3 s3Client) {
         TransactionBodyStore store = forFileTransactions(instanceProperties, s3Client);
         return tableId -> store;

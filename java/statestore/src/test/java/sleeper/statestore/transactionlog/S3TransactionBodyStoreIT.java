@@ -81,8 +81,8 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         @Test
         void shouldSaveAndLoadPartitionTransactionByTableId() {
             // Given
-            TransactionBodyStore store = S3TransactionBodyStore.createProviderById(
-                    instanceProperties, new FixedTablePropertiesProvider(tableProperties), s3Client)
+            TransactionBodyStore store = S3TransactionBodyStore.createProvider(instanceProperties, s3Client)
+                    .byTableId(new FixedTablePropertiesProvider(tableProperties))
                     .getTransactionBodyStore(tableId);
             String key = TransactionBodyStore.createObjectKey(tableId);
             PartitionTransaction transaction = new InitialisePartitionsTransaction(
@@ -101,7 +101,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
     @DisplayName("Support only file transactions")
     class SupportOnlyFileTransactions {
 
-        TransactionBodyStore store = S3TransactionBodyStore.createProviderByIdForFileTransactions(instanceProperties, s3Client).getTransactionBodyStore(tableId);
+        TransactionBodyStore store = S3TransactionBodyStore.createProviderForFileTransactions(instanceProperties, s3Client).getTransactionBodyStore(tableId);
 
         @Test
         void shouldStoreFileTransaction() {

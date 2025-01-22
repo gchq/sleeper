@@ -92,7 +92,7 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
     public static CompactionCommitBatcher createBatcher(
             InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client) {
         StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(
-                S3TransactionBodyStore.createProviderByIdForFileTransactions(instanceProperties, s3Client),
+                S3TransactionBodyStore.createProviderForFileTransactions(instanceProperties, s3Client),
                 StateStoreCommitRequestSerDe.forFileTransactions(),
                 StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
         return new CompactionCommitBatcher(request -> {
