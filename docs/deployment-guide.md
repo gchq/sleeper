@@ -101,8 +101,7 @@ within AWS we can avoid lengthy uploads of built artifacts into AWS, particularl
 we may add support for prebuilt artifacts, in which case the EC2 will not be needed to deploy Sleeper. A production
 instance of Sleeper is likely to also need some extra security setup, and this environment may not be useful for this.
 
-Note that for general administration of an existing Sleeper instance it is not necessary to connect to an environment
-EC2.
+For general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2.
 
 If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
 Sleeper `environment` commands directly, without prefixing with `sleeper`.
