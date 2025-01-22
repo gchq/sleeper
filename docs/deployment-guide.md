@@ -95,6 +95,12 @@ Please follow the [getting started guide](getting-started.md#deployment-environm
 to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](getting-started.md#install-sleeper-cli).
 This section adds more detail for the tools to set up this environment.
 
+The environment described in the getting started guide is provided to allow easy deployment, especially for development.
+By building Sleeper within AWS we can avoid lengthy uploads of built artifacts into AWS. A production instance of
+Sleeper is likely to also need some extra security setup, and this environment may not be useful for this. Note that for
+general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2. In the
+future we may add support for prebuilt artifacts, in which case the EC2 will also not be needed to deploy Sleeper.
+
 If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
 Sleeper `environment` commands directly, without prefixing with `sleeper`.
 
@@ -124,6 +130,12 @@ sleeper environment deploy <environment-id> -c vpcId=[vpc-id]
 sleeper environment deploy <environment-id> -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
 ```
 
+You can add an environment that was previously deployed like this:
+
+```bash
+sleeper environment add <environment-id>
+```
+
 You can switch environments like this:
 
 ```bash
@@ -145,6 +157,28 @@ sleeper environment destroy <environment-id> "*-BuildEC2"
 ```
 
 Parameters after the environment ID will be passed to a `cdk destroy` command.
+
+#### Managing users
+
+When you deploy or add an environment, you will connect to the EC2 as the default user for the machine. This may not be
+desirable if you want to share the EC2, or if you want to automate system tests to run as that user.
+
+You can manage operating system users on the EC2 like this:
+
+```bash
+sleeper environment adduser <username>
+sleeper environment setuser <username>
+sleeper environment deluser <username>
+```
+
+When you add a new user or set your user, further invocations of `sleeper environment connect` will connect as that
+user.
+
+When you add a new user a fresh instance of the Sleeper Git repository will be checked out for that user, accessible
+through `sleeper builder` as that user.
+
+There's no authorisation that links your identity to a particular user. Anyone with access to the EC2 can connect as any
+user.
 
 ## Deployment
 

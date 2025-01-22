@@ -80,12 +80,8 @@ the [deployment guide](deployment-guide.md#managing-environments).
 
 The Sleeper CLI can create an EC2 instance in a VPC that is suitable for deploying Sleeper. This will automatically
 configure authentication such that once you're in the EC2 instance you'll have administrator access to your AWS account.
-
-This environment is provided to allow easy deployment, especially for development. By building Sleeper within AWS we
-can avoid lengthy uploads of built artifacts into AWS. A production instance of Sleeper is likely to also need some
-extra security setup, and the environment EC2 may not be useful for this. Note that for general administration of an
-existing Sleeper instance it is not necessary to connect this way. In the future we may add support for prebuilt
-artifacts, in which case this will also not be needed to deploy Sleeper.
+This is suitable for non-production use, see the [deployment guide](deployment-guide.md#deployment-environment) for
+further details.
 
 You can deploy a fresh environment like this:
 
@@ -96,8 +92,8 @@ sleeper environment deploy <environment-id>
 
 If someone else has already created an environment that you want to share, you can add it as long as you have access
 and the EC2 is currently running. You can create your own user on the EC2, but there's no authorisation that links your
-identity to a particular user. Anyone can access any user on the EC2. They will have separate instances of the Sleeper
-repository checked out with Git.
+identity to a particular user. Anyone with access to the EC2 can connect as any user. Users will have separate instances
+of the Sleeper repository checked out with Git.
 
 ```bash
 sleeper environment add <environment-id>
@@ -133,9 +129,10 @@ will already have been done, and the EC2 will not restart.
 Run `sleeper builder` in the EC2 to start a builder Docker container with the Git repository mounted into it:
 
 ```bash
-sleeper environment connect # Get a shell in the EC2 you deployed
-sleeper builder             # Get a shell in a builder Docker container (hosted in the EC2)
-cd sleeper                  # Change directory to the root of the Git repository
+sleeper environment connect      # Get a shell in the EC2 you deployed
+sleeper builder                  # Get a shell in a builder Docker container (hosted in the EC2)
+cd sleeper                       # Change directory to the root of the Git repository
+git checkout --track origin/main # Check out the latest release version
 ```
 
 This Docker container includes the dependencies for building Sleeper. The rest of the guide assumes you're in the root
