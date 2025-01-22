@@ -25,9 +25,7 @@ import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
-import sleeper.core.tracker.job.run.JobRunTime;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
@@ -153,7 +151,7 @@ public class ReplaceFileReferencesRequest {
                 .tableId(sleeperTable.getTableUniqueId())
                 .taskId(taskId)
                 .jobRunId(jobRunId)
-                .runTime(new JobRunTime(now, Duration.ZERO))
+                .failureTime(now)
                 .failure(e)
                 .build();
     }

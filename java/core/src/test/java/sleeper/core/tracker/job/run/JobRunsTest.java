@@ -109,7 +109,7 @@ class JobRunsTest {
         @Test
         void shouldReportRunFailedBeforeStart() {
             // Given
-            JobRunFailedStatus failed = failedStatus(Instant.parse("2022-09-24T09:23:30.001Z"), Duration.ofSeconds(30), List.of("Job could not be started"));
+            JobRunFailedStatus failed = failedStatus(Instant.parse("2022-09-24T09:24:00.001Z"), List.of("Job could not be started"));
 
             // When
             JobRuns runs = runsFromUpdates(forJobRunOnTask("some-job", "some-run", "some-task", failed));

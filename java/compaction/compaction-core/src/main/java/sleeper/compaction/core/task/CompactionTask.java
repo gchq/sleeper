@@ -39,7 +39,6 @@ import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.LoggedDuration;
 
@@ -191,9 +190,8 @@ public class CompactionTask {
             }
             commitCompaction(jobRunId, builder, message, idleTimeTracker, failureTracker, summary);
         } catch (Exception e) {
-            Instant jobFinishTime = timeSupplier.get();
             jobTracker.jobFailed(message.getJob()
-                    .failedEventBuilder(new JobRunTime(jobStartTime, jobFinishTime))
+                    .failedEventBuilder(timeSupplier.get())
                     .failure(e).taskId(taskId).jobRunId(jobRunId).build());
         }
     }

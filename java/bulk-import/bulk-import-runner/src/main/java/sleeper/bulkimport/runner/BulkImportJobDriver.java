@@ -47,7 +47,6 @@ import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
@@ -111,16 +110,17 @@ public class BulkImportJobDriver {
             output = sessionRunner.run(job);
         } catch (RuntimeException e) {
             tracker.jobFailed(job.toIngestJob()
-                    .failedEventBuilder(new JobRunTime(startTime, getTime.get()))
+                    .failedEventBuilder(getTime.get())
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw e;
         }
 
+        Instant finishTime = getTime.get();
         boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
         try {
             if (asyncCommit) {
                 AddFilesTransaction transaction = AddFilesTransaction.builder()
-                        .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(getTime.get())
+                        .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
                         .files(AllReferencesToAFile.newFilesWithReferences(output.fileReferences()))
                         .build();
                 StateStoreCommitRequest request = StateStoreCommitRequest.create(table.getTableUniqueId(), transaction);
@@ -134,13 +134,12 @@ public class BulkImportJobDriver {
             }
         } catch (RuntimeException e) {
             tracker.jobFailed(job.toIngestJob()
-                    .failedEventBuilder(new JobRunTime(startTime, getTime.get()))
+                    .failedEventBuilder(finishTime)
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
         }
 
-        Instant finishTime = getTime.get();
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
         LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
         long numRecords = output.numRecords();

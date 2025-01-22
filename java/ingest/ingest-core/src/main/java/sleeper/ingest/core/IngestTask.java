@@ -23,7 +23,6 @@ import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
@@ -112,8 +111,8 @@ public class IngestTask {
                 jobTracker.jobStarted(job.startedEventBuilder(jobStartTime)
                         .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
                 IngestResult result = ingester.ingest(job, jobRunId);
-                LOGGER.info("{} records were written", result.getRecordsWritten());
                 Instant jobFinishTime = timeSupplier.get();
+                LOGGER.info("{} records were written", result.getRecordsWritten());
                 JobRunSummary summary = new JobRunSummary(result.asRecordsProcessed(), jobStartTime, jobFinishTime);
                 jobTracker.jobFinished(job.finishedEventBuilder(summary)
                         .taskId(taskId).jobRunId(jobRunId)
@@ -126,9 +125,8 @@ public class IngestTask {
                 return true;
             } catch (Exception e) {
                 LOGGER.error("Failed processing ingest job, terminating task", e);
-                Instant jobFinishTime = timeSupplier.get();
                 jobTracker.jobFailed(job
-                        .failedEventBuilder(new JobRunTime(jobStartTime, jobFinishTime))
+                        .failedEventBuilder(timeSupplier.get())
                         .taskId(taskId).jobRunId(jobRunId).failure(e)
                         .build());
                 message.failed();

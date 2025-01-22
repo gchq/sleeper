@@ -25,7 +25,6 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
@@ -103,8 +102,9 @@ public class CompactionJob {
         return CompactionJobCommittedEvent.builder().jobId(jobId).tableId(tableId).commitTime(commitTime);
     }
 
-    public CompactionJobFailedEvent.Builder failedEventBuilder(JobRunTime runTime) {
-        return CompactionJobFailedEvent.builder().jobId(jobId).tableId(tableId).runTime(runTime);
+    public CompactionJobFailedEvent.Builder failedEventBuilder(Instant failureTime) {
+        return CompactionJobFailedEvent.builder().jobId(jobId).tableId(tableId)
+                .failureTime(failureTime);
     }
 
     public FileReference createOutputFileReference(long recordsWritten) {
@@ -118,7 +118,7 @@ public class CompactionJob {
     }
 
     public ReplaceFileReferencesRequest createReplaceFileReferencesRequest(CompactionJobFinishedEvent finishedEvent) {
-        return createReplaceFileReferencesRequest(finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getSummary().getRecordsProcessed());
+        return createReplaceFileReferencesRequest(finishedEvent.getTaskId(), finishedEvent.getJobRunId(), finishedEvent.getRecordsProcessed());
     }
 
     public ReplaceFileReferencesRequest createReplaceFileReferencesRequest(String taskId, String jobRunId, RecordsProcessed recordsProcessed) {

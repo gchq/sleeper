@@ -26,7 +26,6 @@ import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -160,8 +159,10 @@ public class IngestJobStatusFromJobTestData {
                                 .inputFileCount(job.getFileCount())
                                 .startTime(summary.getStartTime())
                                 .updateTime(defaultUpdateTime(summary.getStartTime())).build())
-                .finishedStatus(IngestJobFinishedStatus
-                        .updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
+                .finishedStatus(IngestJobFinishedStatus.builder()
+                        .updateTime(defaultUpdateTime(summary.getFinishTime()))
+                        .finishTime(summary.getFinishTime())
+                        .recordsProcessed(summary.getRecordsProcessed())
                         .numFilesWrittenByJob(numFilesWrittenByJob).build())
                 .build();
     }
@@ -187,8 +188,11 @@ public class IngestJobStatusFromJobTestData {
                                 .inputFileCount(job.getFileCount())
                                 .startTime(runTime.getStartTime())
                                 .updateTime(defaultUpdateTime(runTime.getStartTime())).build())
-                .finishedStatus(JobRunFailedStatus
-                        .timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons))
+                .finishedStatus(JobRunFailedStatus.builder()
+                        .updateTime(defaultUpdateTime(runTime.getFinishTime()))
+                        .failureTime(runTime.getFinishTime())
+                        .failureReasons(failureReasons)
+                        .build())
                 .build();
     }
 
@@ -304,8 +308,12 @@ public class IngestJobStatusFromJobTestData {
             IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
         return finishedRun(taskId,
                 ingestStartedStatus(job, summary.getStartTime()),
-                IngestJobFinishedStatus.updateTimeAndSummary(defaultUpdateTime(summary.getFinishTime()), summary)
-                        .numFilesWrittenByJob(numFilesWrittenByJob).build());
+                IngestJobFinishedStatus.builder()
+                        .updateTime(defaultUpdateTime(summary.getFinishTime()))
+                        .finishTime(summary.getFinishTime())
+                        .recordsProcessed(summary.getRecordsProcessed())
+                        .numFilesWrittenByJob(numFilesWrittenByJob)
+                        .build());
     }
 
     /**
@@ -337,7 +345,11 @@ public class IngestJobStatusFromJobTestData {
             IngestJob job, String taskId, JobRunTime runTime, List<String> failureReasons) {
         return finishedRun(taskId,
                 ingestStartedStatus(job, runTime.getStartTime()),
-                JobRunFailedStatus.timeAndReasons(defaultUpdateTime(runTime.getFinishTime()), runTime, failureReasons));
+                JobRunFailedStatus.builder()
+                        .updateTime(defaultUpdateTime(runTime.getFinishTime()))
+                        .failureTime(runTime.getFinishTime())
+                        .failureReasons(failureReasons)
+                        .build());
     }
 
     /**
@@ -354,8 +366,11 @@ public class IngestJobStatusFromJobTestData {
         return JobRun.builder()
                 .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)))
-                .finishedStatus(JobRunFailedStatus.timeAndReasons(
-                        defaultUpdateTime(failureTime), new JobRunTime(failureTime, Duration.ZERO), failureReasons))
+                .finishedStatus(JobRunFailedStatus.builder()
+                        .updateTime(defaultUpdateTime(failureTime))
+                        .failureTime(failureTime)
+                        .failureReasons(failureReasons)
+                        .build())
                 .build();
     }
 

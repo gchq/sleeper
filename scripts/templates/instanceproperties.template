@@ -737,7 +737,7 @@ sleeper.default.bulk.import.emr.release.label=emr-7.2.0
 # (Non-persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR
 # cluster. Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk
 # import using EMR - Instance types section in docs/usage/ingest.md
-sleeper.default.bulk.import.emr.instance.architecture=x86_64
+sleeper.default.bulk.import.emr.instance.architecture=arm64
 
 # (Non-persistent EMR mode only) The default EC2 x86_64 instance types and weights to be used for the
 # master node of the EMR cluster.
@@ -752,12 +752,12 @@ sleeper.default.bulk.import.emr.executor.x86.instance.types=m7i.4xlarge
 # (Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used for the
 # master node of the EMR cluster.
 # For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
-sleeper.default.bulk.import.emr.master.arm.instance.types=m6g.xlarge
+sleeper.default.bulk.import.emr.master.arm.instance.types=m7g.xlarge
 
 # (Non-persistent EMR mode only) The default EC2 ARM64 instance types and weights to be used for the
 # executor nodes of the EMR cluster.
 # For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
-sleeper.default.bulk.import.emr.executor.arm.instance.types=m6g.4xlarge
+sleeper.default.bulk.import.emr.executor.arm.instance.types=m7g.4xlarge
 
 # (Non-persistent EMR mode only) The default purchasing option to be used for the executor nodes of
 # the EMR cluster.
@@ -790,7 +790,7 @@ sleeper.bulk.import.persistent.emr.release.label=emr-7.2.0
 # (Persistent EMR mode only) Which architecture to be used for EC2 instance types in the EMR cluster.
 # Must be either "x86_64" "arm64" or "x86_64,arm64". For more information, see the Bulk import using
 # EMR - Instance types section in docs/usage/ingest.md
-sleeper.bulk.import.persistent.emr.instance.architecture=x86_64
+sleeper.bulk.import.persistent.emr.instance.architecture=arm64
 
 # (Persistent EMR mode only) The EC2 x86_64 instance types and weights used for the master node of the
 # persistent EMR cluster.
@@ -805,12 +805,12 @@ sleeper.bulk.import.persistent.emr.executor.x86.instance.types=m7i.4xlarge
 # (Persistent EMR mode only) The EC2 ARM64 instance types and weights used for the master node of the
 # persistent EMR cluster.
 # For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
-sleeper.bulk.import.persistent.emr.master.arm.instance.types=m6g.xlarge
+sleeper.bulk.import.persistent.emr.master.arm.instance.types=m7g.xlarge
 
 # (Persistent EMR mode only) The EC2 ARM64 instance types and weights used for the executor nodes of
 # the persistent EMR cluster.
 # For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md
-sleeper.bulk.import.persistent.emr.executor.arm.instance.types=m6g.4xlarge
+sleeper.bulk.import.persistent.emr.executor.arm.instance.types=m7g.4xlarge
 
 # (Persistent EMR mode only) Whether the persistent EMR cluster should use managed scaling or not.
 sleeper.bulk.import.persistent.emr.use.managed.scaling=true

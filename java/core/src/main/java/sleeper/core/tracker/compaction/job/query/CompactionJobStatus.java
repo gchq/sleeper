@@ -157,7 +157,7 @@ public class CompactionJobStatus {
         return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
                 .flatMap(committedStatus -> run.getLastStatusOfType(CompactionJobFinishedStatus.class)
                         .map(finishedStatus -> Duration.between(
-                                finishedStatus.getSummary().getFinishTime(),
+                                finishedStatus.getFinishTime(),
                                 committedStatus.getCommitTime())));
     }
 

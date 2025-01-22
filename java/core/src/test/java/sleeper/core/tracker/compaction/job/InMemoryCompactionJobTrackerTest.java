@@ -127,11 +127,11 @@ class InMemoryCompactionJobTrackerTest {
             // Given
             Instant createdTime = Instant.parse("2023-03-29T12:27:42Z");
             Instant startedTime = Instant.parse("2023-03-29T12:27:43Z");
-            Instant finishedTime = Instant.parse("2023-03-29T12:27:44Z");
+            Instant failureTime = Instant.parse("2023-03-29T12:27:44Z");
             String taskId = "test-task";
             List<String> failureReasons = List.of("Something went wrong");
             CompactionJobCreatedEvent job = addFailedJob(createdTime,
-                    new JobRunTime(startedTime, finishedTime), taskId, failureReasons);
+                    new JobRunTime(startedTime, failureTime), taskId, failureReasons);
 
             // When / Then
             assertThat(tracker.streamAllJobs(tableId))
@@ -139,7 +139,7 @@ class InMemoryCompactionJobTrackerTest {
                             forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
                             forJobOnTask(job.getJobId(), taskId,
                                     compactionStartedStatus(startedTime),
-                                    compactionFailedStatus(new JobRunTime(startedTime, finishedTime), failureReasons)))));
+                                    compactionFailedStatus(failureTime, failureReasons)))));
         }
 
         @Test
@@ -468,7 +468,7 @@ class InMemoryCompactionJobTrackerTest {
             tracker.jobFinished(compactionFinishedEventBuilder(job, summary1).taskId(taskId).jobRunId(runId1).build());
             tracker.jobCommitted(compactionCommittedEventBuilder(job, committedTime1).taskId(taskId).jobRunId(runId1).build());
             tracker.jobStarted(compactionStartedEventBuilder(job, startedTime2).taskId(taskId).jobRunId(runId2).build());
-            tracker.jobFailed(compactionFailedEventBuilder(job, summary2.getRunTime()).taskId(taskId).jobRunId(runId2)
+            tracker.jobFailed(compactionFailedEventBuilder(job, summary2.getFinishTime()).taskId(taskId).jobRunId(runId2)
                     .failure(new RuntimeException("Could not commit same compaction twice")).build());
 
             // Then
@@ -476,7 +476,7 @@ class InMemoryCompactionJobTrackerTest {
                     .containsExactly(compactionJobCreated(job, createdTime,
                             JobRun.builder().taskId(taskId)
                                     .startedStatus(compactionStartedStatus(startedTime2))
-                                    .finishedStatus(compactionFailedStatus(summary2.getRunTime(), List.of("Could not commit same compaction twice")))
+                                    .finishedStatus(compactionFailedStatus(summary2.getFinishTime(), List.of("Could not commit same compaction twice")))
                                     .build(),
                             JobRun.builder().taskId(taskId)
                                     .startedStatus(compactionStartedStatus(startedTime1))
@@ -521,7 +521,7 @@ class InMemoryCompactionJobTrackerTest {
     private CompactionJobCreatedEvent addFailedJob(Instant createdTime, JobRunTime runTime, String taskId, List<String> failureReasons) {
         CompactionJobCreatedEvent job = addStartedJob(createdTime, runTime.getStartTime(), taskId);
         tracker.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
-        tracker.jobFailed(compactionFailedEventBuilder(job, runTime).failureReasons(failureReasons).taskId(taskId).build());
+        tracker.jobFailed(compactionFailedEventBuilder(job, runTime.getFinishTime()).failureReasons(failureReasons).taskId(taskId).build());
         return job;
     }
 }

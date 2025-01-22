@@ -15,8 +15,7 @@
  */
 package sleeper.core.tracker.job.status;
 
-import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,25 +27,17 @@ import java.util.Objects;
 public class JobRunFailedStatus implements JobRunEndUpdate {
 
     private final Instant updateTime;
-    private final JobRunTime runTime;
+    private final Instant failureTime;
     private final List<String> failureReasons;
 
-    private JobRunFailedStatus(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
-        this.updateTime = Objects.requireNonNull(updateTime, "updateTime must not be null");
-        this.runTime = Objects.requireNonNull(runTime, "runTime must not be null");
-        this.failureReasons = Objects.requireNonNull(failureReasons, "failureReasons must not be null");
+    private JobRunFailedStatus(Builder builder) {
+        updateTime = Objects.requireNonNull(builder.updateTime, "updateTime must not be null");
+        failureTime = Objects.requireNonNull(builder.failureTime, "failureTime must not be null");
+        failureReasons = Objects.requireNonNull(builder.failureReasons, "failureReasons must not be null");
     }
 
-    /**
-     * Creates an instance of this class.
-     *
-     * @param  updateTime     the update time to set
-     * @param  runTime        the time spent on the process
-     * @param  failureReasons reasons the process failed
-     * @return                the status update
-     */
-    public static JobRunFailedStatus timeAndReasons(Instant updateTime, JobRunTime runTime, List<String> failureReasons) {
-        return new JobRunFailedStatus(updateTime, runTime, failureReasons);
+    public static Builder builder() {
+        return new Builder();
     }
 
     @Override
@@ -55,8 +46,13 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
     }
 
     @Override
-    public JobRunSummary getSummary() {
-        return JobRunSummary.noRecordsProcessed(runTime);
+    public Instant getFinishTime() {
+        return failureTime;
+    }
+
+    @Override
+    public RecordsProcessed getRecordsProcessed() {
+        return RecordsProcessed.NONE;
     }
 
     @Override
@@ -71,7 +67,7 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
 
     @Override
     public int hashCode() {
-        return Objects.hash(updateTime, runTime, failureReasons);
+        return Objects.hash(updateTime, failureTime, failureReasons);
     }
 
     @Override
@@ -83,11 +79,60 @@ public class JobRunFailedStatus implements JobRunEndUpdate {
             return false;
         }
         JobRunFailedStatus other = (JobRunFailedStatus) obj;
-        return Objects.equals(updateTime, other.updateTime) && Objects.equals(runTime, other.runTime) && Objects.equals(failureReasons, other.failureReasons);
+        return Objects.equals(updateTime, other.updateTime) && Objects.equals(failureTime, other.failureTime) && Objects.equals(failureReasons, other.failureReasons);
     }
 
     @Override
     public String toString() {
-        return "ProcessFailedStatus{updateTime=" + updateTime + ", runTime=" + runTime + ", failureReasons=" + failureReasons + "}";
+        return "JobRunFailedStatus{updateTime=" + updateTime + ", failureTime=" + failureTime + ", failureReasons=" + failureReasons + "}";
+    }
+
+    /**
+     * A builder for this class.
+     */
+    public static class Builder {
+        private Instant updateTime;
+        private Instant failureTime;
+        private List<String> failureReasons;
+
+        private Builder() {
+        }
+
+        /**
+         * Sets the update time.
+         *
+         * @param  updateTime the time
+         * @return            the builder for chaining
+         */
+        public Builder updateTime(Instant updateTime) {
+            this.updateTime = updateTime;
+            return this;
+        }
+
+        /**
+         * Sets the time of the failure.
+         *
+         * @param  failureTime the failure time
+         * @return             the builder for chaining
+         */
+        public Builder failureTime(Instant failureTime) {
+            this.failureTime = failureTime;
+            return this;
+        }
+
+        /**
+         * Sets the reasons the job failed.
+         *
+         * @param  failureReasons the reasons
+         * @return                the builder for chaining
+         */
+        public Builder failureReasons(List<String> failureReasons) {
+            this.failureReasons = failureReasons;
+            return this;
+        }
+
+        public JobRunFailedStatus build() {
+            return new JobRunFailedStatus(this);
+        }
     }
 }
