@@ -60,7 +60,8 @@ rather than based on the number of records.
 ## Array list implementation
 
 The array list record batch implementation holds records in a Java ArrayList, until it fills up and they are sorted and
-written to a local Parquet file. The size of the array and the local store are both configured in terms of the number of
+written to a local Parquet file. The Parquet library is responsible for holding intermediate data when writing to and
+reading from local files. The size of the array and the local store are both configured in terms of the number of
 records. The amount of space this takes up will vary depending on the size of the records.
 
 The maximum number of records to hold in the ArrayList at once is set in the instance
