@@ -1,23 +1,54 @@
-## Arrow ingest record batch type
+Ingest record batch types
+=========================
 
-The Arrow ingest design uses a batch buffer to hold Sleeper records as they come in. If this buffer fills up, when the
-next record is added the whole batch is sorted and written to a local file. When this local store fills up, or when the
-ingest finishes, the local files are merged together as a minor compaction and written to the Sleeper table.
+Standard ingest involves caching records in a record batch as they come in. The record batch is responsible for holding
+records, sorting them, and then returning them back in order to be written to the Sleeper table. In practice a record
+batch holds some records in memory, then when the memory fills up it sorts the records and writes them to the local
+disk. When the store on the local disk fills up it reports that it's full.
 
-The size of the batch buffer is set in the instance property `sleeper.ingest.arrow.batch.buffer.bytes`. The size of the
-local store is set in the instance property `sleeper.ingest.arrow.max.local.store.bytes`.
+When the record batch is full or the ingest finishes, the records are written to the Sleeper table as a minor compaction
+where all the files in the local disk are merged together in sort order.
 
-A working buffer is also needed when sorting and writing to a local file, and when reading the local files into the
-Sleeper table. The working buffer size is set in the instance property `sleeper.ingest.arrow.working.buffer.bytes`.
+We have multiple implementations of a record batch. Currently the default implementation uses Arrow, and we also have a
+version backed by a Java ArrayList. Both are described below.
 
-### Working buffer
+Also see information on possible out of memory errors
+in [common problems and their solutions](../common-problems-and-their-solutions.md#out-of-memory-error-from-standard-ingest-tasks).
 
-The working buffer holds a vector of indexes to establish a sort order of the records. One integer is held for each
-record. This is updated during sorting, so that the record data remains unchanged.
+## Arrow implementation
 
-The working buffer holds one Arrow record batch at a time when writing a local file. These are like pages of the file.
-Each is created by copying from the batch buffer to the working buffer following the sort order in the vector of
-indexes. The size of an Arrow record batch is set in the instance
-property `sleeper.ingest.arrow.max.single.write.to.file.records`.
+The Arrow record batch implementation uses two Arrow buffers, called the batch buffer and the working buffer.
 
-When reading a local file the working buffer is also used for some extra metadata used by Arrow.
+The batch buffer holds Sleeper records as they come in, until it fills up and they are written to a local file. The
+working buffer holds the sort order when sorting the records, and a page of records at a time when writing to and
+reading from local files.
+
+The sort order is a vector of indexes that each point to a record at that position in the order. This is updated
+during sorting so that the record data is unchanged.
+
+When reading from or writing to a local file, one Arrow record batch is held at a time, containing a page of records.
+Each record batch is created just before it's written to a local file by copying from the batch buffer to the working
+buffer following the sort order in the vector of indexes.
+
+When reading a local file the working buffer is also used for some extra metadata used by Arrow. This can usually be
+ignored as the sort order is not held in memory at this point.
+
+### Size requirements and configuration
+
+The working buffer needs to be big enough to hold the sort order and one record batch at the same time. The sort order
+vector will hold one integer for every record in the batch buffer. The size of the batch buffer and the working buffer
+are configurable. The number of records in a record batch is also configurable, which will take up some amount of space
+in the working buffer.
+
+Note that the amount of space needed for a record is not constant, as nested data may be held that can vary per record.
+
+The relationship between the size of a record and the size it requires in the sort order vector will vary. If a record is
+large the batch buffer can be much larger than the working buffer. If a record is very small the working buffer will
+need to be closer in size to the batch buffer, and the sort order will take up proportionally more of the space in the
+working buffer.
+
+The maximum number of records to hold in the batch buffer at once is set in the instance
+property `sleeper.ingest.arrow.max.single.write.to.file.records`. The size of the batch buffer is set in the instance
+property `sleeper.ingest.arrow.batch.buffer.bytes`. The size of the local store is set in the instance
+property `sleeper.ingest.arrow.max.local.store.bytes`. The working buffer size is set in the instance
+property `sleeper.ingest.arrow.working.buffer.bytes`.
