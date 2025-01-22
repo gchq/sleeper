@@ -118,10 +118,13 @@ Please follow the [getting started guide](getting-started.md#deployment-environm
 to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](getting-started.md#install-sleeper-cli).
 This section adds more detail for the tools to set up this environment.
 
-The environment EC2 described here is provided to allow easy deployment, especially for development. By building Sleeper
-within AWS we can avoid lengthy uploads of built artifacts into AWS, particularly jars and Docker images. In the future
-we may add support for prebuilt artifacts, in which case the EC2 will not be needed to deploy Sleeper. A production
-instance of Sleeper is likely to also need some extra security setup, and this environment may not be useful for this.
+The environment EC2 described here is provided to allow easy deployment, especially for development. It's a machine that
+can build Sleeper within AWS, and it avoids lengthy uploads of built artifacts into AWS, particularly jars and Docker
+images. In the future we may add support for prebuilt artifacts, in which case the EC2 will not be needed to deploy
+Sleeper.
+
+The EC2 is deployed with admin access to your AWS account. A production instance of Sleeper is likely to need some extra
+security setup, and an EC2 with admin access may not be desirable.
 
 For general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2.
 
