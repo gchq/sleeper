@@ -3,10 +3,14 @@ Building and deploying Sleeper
 
 This contains instructions on how to deploy Sleeper.
 
+If you just want a local instance for testing, see the documentation
+on [deploying to localstack](usage/deploy-to-localstack.md). This has very limited functionality compared to a
+deployed instance.
+
 ## Get your environment set up
 
 You will need to get your environment set up correctly so that you can deploy a Sleeper instance to AWS and then
-interact with it. See [getting started](01-getting-started.md) for how to install the Sleeper CLI. The information below
+interact with it. See [getting started](getting-started.md) for how to install the Sleeper CLI. The information below
 provides more detail on how to create an environment to deploy Sleeper into, and how to get set up to deploy into AWS.
 
 Currently it's necessary to build Sleeper before any deployment. With the `sleeper environment` setup described in the
@@ -23,7 +27,7 @@ cd sleeper                  # Change directory to the root of the Git repository
 If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
 
 To build Sleeper locally to interact with an instance from elsewhere, you can follow the instructions in
-the [developer guide](12-dev-guide.md#install-prerequisite-software).
+the [developer guide](developer-guide.md#install-prerequisite-software).
 
 ### Configure AWS
 
@@ -67,7 +71,7 @@ Sleeper itself. See
 [this link](https://docs.aws.amazon.com/cdk/latest/guide/bootstrapping.html) for guidance
 on how to bootstrap CDK in your account. Note that the `cdk bootstrap` command should
 not be run from inside the sleeper directory. You can run `cdk bootstrap` in a Sleeper CLI
-Docker container, as described in [getting started](01-getting-started.md#deployment-environment).
+Docker container, as described in [getting started](getting-started.md#deployment-environment).
 
 ### Lambda Reserved Concurrency
 
@@ -87,8 +91,8 @@ You're now ready to build and deploy Sleeper.
 
 ### Deployment environment
 
-Please follow the [getting started guide](01-getting-started.md#deployment-environment) to set up a VPC and EC2 instance
-to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](01-getting-started.md#install-sleeper-cli).
+Please follow the [getting started guide](getting-started.md#deployment-environment) to set up a VPC and EC2 instance
+to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](getting-started.md#install-sleeper-cli).
 This section adds more detail for the tools to set up this environment.
 
 If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
@@ -364,8 +368,10 @@ to the ECR repository name, eg. `my-instance-id/ingest`.
 To include a table in your instance, your `table.properties` file must be next to your `instance.properties` file.
 You can add more than one by creating a `tables` directory, with a subfolder for each table.
 
+See [tables](usage/tables.md) for more information on creating and working with Sleeper tables.
+
 Each table will also need a `schema.json` file next to the `table.properties` file.
-See [create a schema](03-schema.md) for how to create a schema.
+See [create a schema](usage/schema.md) for how to create a schema.
 
 You can optionally create a `tags.properties` file next to your `instance.properties`, to apply tags to AWS resources
 deployed by Sleeper. An example tags.properties file can be found [here](../example/full/tags.properties).
@@ -460,7 +466,7 @@ Note that the system test stacks do not need to be specified. They will be inclu
 There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to work with an
 existing instance.
 
-Also see the [tables documentation](04-tables.md#addedit-a-table) for scripts to add/edit Sleeper tables.
+Also see the [tables documentation](usage/tables.md#addedit-a-table) for scripts to add/edit Sleeper tables.
 
 ### Update Existing Instance
 
@@ -483,7 +489,7 @@ We have provided a command line client that will enable you to:
 2) List Sleeper table names
 3) List Sleeper table properties
 4) Change an instance/table property
-5) Get status reports (also see [checking the status of the system](06-status.md))
+5) Get status reports (also see [checking the status of the system](usage/status.md))
 
 This client will prompt you for things like your instance ID as mentioned above and/or the name of the table you want to
 look at. To adjust property values it will open a text editor for a temporary file.

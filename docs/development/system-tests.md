@@ -187,7 +187,7 @@ less -R test.log # The -R option presents colours correctly. When it opens, use 
 ### Nightly test scripts
 
 We run the acceptance test suite nightly. The scripts and crontab we use for this are available
-in `scripts/test/nightly`. See the documentation for this [here](../scripts/test/nightly/README.md).
+in `scripts/test/nightly`. See the documentation for this [here](../../scripts/test/nightly/README.md).
 
 This uploads the output to an S3 bucket, including an HTML site with Maven Failsafe reports
 on which tests were run, including information about failures. This will deploy fresh instances, and tear them down

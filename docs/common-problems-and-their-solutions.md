@@ -2,7 +2,7 @@ Common problems and their solutions
 ===================================
 
 These instructions will assume you start in the project root directory and Sleeper has been built
-(see [the developer guide](12-dev-guide.md) for how to set that up).
+(see [the developer guide](developer-guide.md) for how to set that up).
 
 ## Out of memory error from standard ingest tasks
 
@@ -11,7 +11,7 @@ used.
 
 ### Arrow implementation
 
-See documentation on the [Arrow ingest record batch type](arrow-ingest.md).
+See documentation on the [Arrow ingest record batch type](design/arrow-ingest.md).
 
 ### Array list implementation
 
@@ -26,7 +26,7 @@ used and the fewer records will fit into memory / on disk.
 
 If you see an out of memory error, then try reducing `sleeper.ingest.memory.max.batch.size`. When reducing this
 parameter it is a good idea to also reduce `sleeper.ingest.max.local.records`. To change these parameters, use the
-administration client described in the [system status documentation](06-status.md).
+administration client described in the [deployment guide](deployment-guide.md#sleeper-administration-client).
 
 
 ## I created an instance, destroyed it and then recreating it failed

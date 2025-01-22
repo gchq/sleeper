@@ -4,7 +4,7 @@ Tables
 A Sleeper instance contains one or more tables. Each table has four important
 properties: a name, a schema for storing data for that table, a state store for 
 storing metadata about the table, and a flag to denote whether the table is 
-online or not (see [here](14-design.md#Tables) for more information about 
+online or not (see [here](../design.md#Tables) for more information about 
 online tables). All resources for the instance, such as the S3 bucket used for 
 storing data in a table, ECS clusters and lambda functions are shared across 
 all the tables.
@@ -53,6 +53,8 @@ Scripts can be used to add, rename and delete tables in a Sleeper instance.
 The `addTable.sh` script will create a new table with properties defined in `templates/tableproperties.template`, and a
 schema defined in `templates/schema.template`. Currently any changes must be done in those templates or in the admin
 client. We will add support for declarative deployment in the future.
+
+See [creating a schema](schema.md) for how to set up a schema for your table.
 
 ```bash
 cd scripts

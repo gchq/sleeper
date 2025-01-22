@@ -6,7 +6,7 @@ This is a brief guide to developing Sleeper.
 ## Get your environment setup
 
 Before you do any dev work on Sleeper it is worth reading the "Get your environment setup" section in
-the [deployment guide](02-deployment-guide.md). Once you've built the system, exactly the same will apply here with a
+the [deployment guide](deployment-guide.md). Once you've built the system, exactly the same will apply here with a
 copy that you built yourself.
 
 ### Install Prerequisite Software
@@ -62,7 +62,7 @@ git checkout --track origin/main
 
 #### Sleeper CLI builder image
 
-If you installed the Sleeper CLI from GitHub as described in the [getting started guide](01-getting-started.md), you can
+If you installed the Sleeper CLI from GitHub as described in the [getting started guide](getting-started.md), you can
 use `sleeper builder` to get a shell inside a Docker container with the dependencies pre-installed. This is the same
 container image that's used for the Dev Containers setup above. It may be useful if you want to work inside Docker
 without using Dev Containers.
@@ -155,12 +155,13 @@ mvn clean install -Pquick -DskipRust=true
 
 ## Using the codebase
 
-The codebase is structured around the components explained in the [design document](14-design.md). The elements of the
+The codebase is structured around the components explained in the [design document](design.md). The elements of the
 design largely correspond to Maven modules. Core or common modules contain shared model code. Other modules contain
 integrations with libraries which are not needed by all components of the system, eg. AWS API clients.
 
 If you'd like to look at how the modules relate to one another in terms of their dependencies, there is a script in
-the [development scripts section](#development-scripts) that can display the dependency structure as a graph.
+the [development scripts section](#development-scripts) that can display the dependency structure as a graph. There's
+also a document with information on past and current [dependency conflicts](development/dependency-conflicts.md).
 
 If you'd like to raise or pick up an open issue, see the [contributing guide](/CONTRIBUTING.md) for more information.
 
@@ -230,7 +231,7 @@ public void process(String foo, String bar) {
 
 The Maven project includes unit tests, integration tests and system tests. We use JUnit 5, with AssertJ for assertions.
 We also have a setup for manual testing against a deployed instance of Sleeper, documented in
-the [system tests guide](15-system-tests.md#manual-testing).
+the [system tests guide](development/system-tests.md#manual-testing).
 
 A unit test is any test that runs entirely in-memory without any I/O operations (eg. file system or network calls).
 If you configure your IDE to run all unit tests at once, they should finish in less than a minute. The unit of a test
@@ -239,7 +240,7 @@ should be a particular behaviour or scenario, rather than eg. a specific method.
 A system test is a test that works with a deployed instance of Sleeper. These can be found in the
 module `system-test/system-test-suite`. They use the class `SleeperSystemTest` as the entry point to work with an
 instance of Sleeper. This is the acceptance test suite we use to define releasability of the system. This is documented
-in the [system tests guide](15-system-tests.md#acceptance-tests). If you add a new feature, please add one or two simple
+in the [system tests guide](development/system-tests.md#acceptance-tests). If you add a new feature, please add one or two simple
 cases to this test suite, as a complement to more detailed unit testing.
 
 An integration test is any test which does not meet the definition of a unit test or a system test. Usually it uses
@@ -249,7 +250,7 @@ Unit tests should be in a class ending with Test, like MyFeatureTest. Integratio
 IT, like MyFeatureIT. Classes named this way will be picked up by Maven's Surefire plugin for unit tests, and Failsafe
 for integration tests. System tests should be in a class ending with ST, like CompactionPerformanceST, and must be
 tagged with the annotation `SystemTest`. This means they will only be run as part of a system test suite, or directly.
-See the [system tests guide](15-system-tests.md#acceptance-tests).
+See the [system tests guide](development/system-tests.md#acceptance-tests).
 
 We avoid mocking wherever possible, and prefer to use test fakes, eg. implement an interface to a database with a
 wrapper around a HashMap. Use test helper methods to make tests as readable as possible, and as close as possible to a
@@ -291,8 +292,9 @@ This is used during the release process to update the version number across the 
 
 ## Standalone deployment
 
-See the [deployment guide](02-deployment-guide.md) for notes on how to deploy Sleeper.
+See the [deployment guide](deployment-guide.md) for notes on how to deploy Sleeper, and
+the [system test guide](development/system-tests.md) to deploy instances specifically set up for development.
 
 ## Release Process
 
-See the [release process guide](16-release-process.md) for instructions on how to publish a release of Sleeper.
+See the [release process guide](development/release-process.md) for instructions on how to publish a release of Sleeper.

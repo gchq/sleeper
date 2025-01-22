@@ -5,7 +5,7 @@ A schema describes the data in a table. A schema consists of several fields. A f
 name and a type, e.g. a field with name 'id' and type 'string'. A schema has three types of field:
 row keys, sort keys and values. 
 
-See [a full example](../example/full/schema.json) for an example of a schema. 
+See [a full example](../../example/full/schema.json) for an example of a schema. 
 
 For example, a simple key-value schema with a string key and a string value would allow records to be
 retrieved by querying for a key. The schema for this would be:

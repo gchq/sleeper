@@ -83,7 +83,7 @@ with columns matching the fields in your schema (note that the fields in the sch
 all need to be non-optional).
 
 Note that the descriptions below describe how data in Parquet files can be ingested by sending ingest job
-definitions in JSON form to SQS queues. In practice it may be easier to use the [Python API](09-python-api.md).
+definitions in JSON form to SQS queues. In practice it may be easier to use the [Python API](../usage/python-api.md).
 
 When you have the data you want to ingest stored in Parquet files, a message should be sent
 to Sleeper's ingest queue telling it that the data should be ingested. This message should have the following form:
@@ -109,7 +109,7 @@ aim for at least 10s of millions of records per job.
 The id field will be used in logging so that users can see the progress of particular ingest jobs by viewing the
 logs. The URL of the SQS queue that the message should be sent to can be found from the `sleeper.ingest.job.queue.url`
 property. This will be populated in the config object in the `sleeper-<instance-id>-config` S3 bucket. It can also
-be found using the [admininstration client](06-status.md#sleeper-administration-client).
+be found using the [admininstration client](../deployment-guide.md#sleeper-administration-client).
 
 You will need to ensure that the role with the ARN given by the `IngestContainerRoleARN` property has read access
 to the files you wish to ingest. This ARN is exported as a named export from CloudFormation with name
@@ -137,7 +137,7 @@ of `sleeper.ingest.max.local.records`). Using the bulk import method, there will
 the 1000 files are all imported in the same bulk import job).
 
 Note that it is vital that a table is pre-split before data is bulk
-imported ([see here](06-status.md#reinitialise-a-table)).
+imported ([see here](../usage/tables.md#reinitialise-a-table)).
 
 There are several stacks that allow data to be imported using the bulk import process:
 
@@ -581,7 +581,7 @@ The instance property `sleeper.bulk.import.class.name` can be used to set the de
 #### Bulk import on EKS
 
 The `EksBulkImportStack` option requires the bulk import Docker image to be pushed to ECR - see the instructions in the
-[deployment guide](02-deployment-guide.md).
+[deployment guide](../deployment-guide.md).
 
 It's also important to configure a role to be mapped into EKS to administer the cluster. This will allow you to connect
 with `kubectl` and access Kubernetes resources in the AWS console. Look in AWS IAM, and choose a role that gets assigned
@@ -708,8 +708,8 @@ for that file, unless it has already been added to a job. When a file has been a
 file at that path will be treated as a new file.
 
 For details of the batcher configuration, see the property descriptions in the example
-[table.properties](../example/full/table.properties) and
-[instance.properties](../example/full/instance.properties) files. The relevant table properties are under
+[table.properties](../../example/full/table.properties) and
+[instance.properties](../../example/full/instance.properties) files. The relevant table properties are under
 `sleeper.table.ingest.batcher`. The relevant instance properties are under `sleeper.ingest.batcher` and
 `sleeper.default.ingest.batcher`.
 
