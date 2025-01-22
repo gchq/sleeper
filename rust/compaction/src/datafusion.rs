@@ -34,17 +34,16 @@ use datafusion::{
     },
     logical_expr::{LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
-    physical_plan::{
-        accept, collect, filter::FilterExec, projection::ProjectionExec, ExecutionPlan,
-        ExecutionPlanVisitor,
-    },
+    physical_plan::{accept, collect},
     prelude::*,
 };
 use log::{error, info, warn};
+use metrics::{log_metrics, RowCounts};
 use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, iter::once, sync::Arc};
 use url::Url;
 
+mod metrics;
 pub mod sketch;
 mod udf;
 
@@ -155,7 +154,7 @@ pub async fn compact(
     }
 
     // Write the frame out and collect stats
-    let stats = collect_stats(frame.clone(), output_path, pqo).await?;
+    let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
 
     // Write sketches out to file in Sleeper compatible way
     let binding = sketch_func.inner();
@@ -209,6 +208,7 @@ async fn calculate_input_size(
 /// from the number of rows coalsced before being written.
 async fn collect_stats(
     frame: DataFrame,
+    input_paths: &[Url],
     output_path: &Url,
     pqo: datafusion::config::TableParquetOptions,
 ) -> Result<RowCounts, DataFusionError> {
@@ -227,49 +227,10 @@ async fn collect_stats(
     // Optimise plan and generate physical plan
     let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
     let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
-    let mut stats = RowCounts::default();
+    let mut stats = RowCounts::new(input_paths);
     accept(physical_plan.as_ref(), &mut stats)?;
+    log_metrics(&stats.file_metrics);
     Ok(stats)
-}
-
-/// Simple struct used for storing the collected statistics from an execution plan.
-#[derive(Default)]
-struct RowCounts {
-    rows_read: usize,
-    rows_written: usize,
-}
-
-impl From<&RowCounts> for CompactionResult {
-    fn from(value: &RowCounts) -> Self {
-        Self {
-            rows_read: value.rows_read,
-            rows_written: value.rows_written,
-        }
-    }
-}
-
-impl ExecutionPlanVisitor for RowCounts {
-    type Error = DataFusionError;
-
-    fn pre_visit(&mut self, plan: &dyn ExecutionPlan) -> Result<bool, Self::Error> {
-        // read output records from here
-        let maybe_coalesce = plan
-            .as_any()
-            .downcast_ref::<ProjectionExec>()
-            .and_then(ExecutionPlan::metrics);
-        // read input records from here
-        let maybe_parq_read = plan
-            .as_any()
-            .downcast_ref::<FilterExec>()
-            .and_then(ExecutionPlan::metrics);
-        if let Some(m) = maybe_coalesce {
-            self.rows_written = m.output_rows().unwrap_or_default();
-        }
-        if let Some(m) = maybe_parq_read {
-            self.rows_read = m.output_rows().unwrap_or_default();
-        }
-        Ok(true)
-    }
 }
 
 /// Create the `DataFusion` filtering expression from a Sleeper region.
