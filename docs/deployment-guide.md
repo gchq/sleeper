@@ -26,14 +26,10 @@ cd sleeper                  # Change directory to the root of the Git repository
 
 If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
 
-If you want to interact with a pre-existing instance, you can skip the `sleeper environment connect` and run in your
-local machine, as described in the [developer guide](developer-guide.md#sleeper-cli-builder-image). You will need to
-check out the Git repository yourself in the builder container.
-
 ### Sleeper CLI Docker environment
 
 The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
-dependencies or build Sleeper yourself.
+dependencies.
 
 The `sleeper builder` command gets you a shell inside a Docker container. This container will have all the dependencies
 required to build and deploy an instance of Sleeper. Note that when you run this inside an environment EC2, the Sleeper
