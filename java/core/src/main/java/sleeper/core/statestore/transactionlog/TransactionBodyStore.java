@@ -53,8 +53,7 @@ public interface TransactionBodyStore {
      * @return                 the object key
      */
     static String createObjectKey(TableProperties tableProperties) {
-        // Use a random UUID to avoid conflicting when another process is adding a transaction at the same time
-        return createObjectKey(tableProperties.get(TABLE_ID), Instant.now(), UUID.randomUUID().toString());
+        return createObjectKey(tableProperties.get(TABLE_ID));
     }
 
     /**
