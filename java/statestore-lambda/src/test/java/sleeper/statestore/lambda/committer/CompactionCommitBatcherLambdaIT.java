@@ -15,8 +15,6 @@
  */
 package sleeper.statestore.lambda.committer;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse;
 import com.amazonaws.services.lambda.runtime.events.SQSBatchResponse.BatchItemFailure;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -35,12 +33,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
-import sleeper.configuration.properties.S3TableProperties;
-import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -53,12 +48,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
@@ -69,23 +61,18 @@ public class CompactionCommitBatcherLambdaIT {
     private static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(Service.S3, Service.SQS, Service.DYNAMODB);
     private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
     private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
-    private final AmazonDynamoDB dynamoClient = buildAwsV1Client(localStackContainer, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final CompactionCommitRequestSerDe serDe = new CompactionCommitRequestSerDe();
-    private final StateStoreCommitRequestSerDe commitSerDe = StateStoreCommitRequestSerDe.forFileTransactions();
+    private final CompactionCommitRequestSerDe compactionSerDe = new CompactionCommitRequestSerDe();
+    private final StateStoreCommitRequestSerDe stateStoreSerDe = StateStoreCommitRequestSerDe.forFileTransactions();
 
     @BeforeEach
     void setUp() {
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
                 .withAttributes(Map.of("FifoQueue", "true")))
                 .getQueueUrl());
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
     }
 
     @Test
@@ -94,27 +81,11 @@ public class CompactionCommitBatcherLambdaIT {
         ReplaceFileReferencesRequest filesRequest = createFilesRequest();
 
         // When
-        SQSBatchResponse response = lambda().handleRequest(createEvent(tableProperties.get(TABLE_ID), filesRequest), null);
+        SQSBatchResponse response = lambda().handleRequest(createEvent("test-table", filesRequest), null);
 
         // Then
         assertThat(consumeQueueMessages()).containsExactly(
-                StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
-                        new ReplaceFileReferencesTransaction(List.of(filesRequest))));
-        assertThat(response.getBatchItemFailures()).isEmpty();
-    }
-
-    @Test
-    void shouldPassThroughIncorrectTableId() {
-        // Given
-        ReplaceFileReferencesRequest filesRequest = createFilesRequest();
-        SQSMessage sqsMessage = createMessage("IncorrectId", filesRequest);
-
-        // When
-        SQSBatchResponse response = lambda().handleRequest(createEvent(sqsMessage), null);
-
-        // Then
-        assertThat(consumeQueueMessages()).containsExactly(
-                StateStoreCommitRequest.create("IncorrectId",
+                StateStoreCommitRequest.create("test-table",
                         new ReplaceFileReferencesTransaction(List.of(filesRequest))));
         assertThat(response.getBatchItemFailures()).isEmpty();
     }
@@ -123,7 +94,7 @@ public class CompactionCommitBatcherLambdaIT {
     void shouldFailWhenUnableToGetToTheSQSQueue() {
         // Given
         ReplaceFileReferencesRequest filesRequest = createFilesRequest();
-        SQSMessage sqsMessage = createMessage(tableProperties.get(TABLE_ID), filesRequest);
+        SQSMessage sqsMessage = createMessage("test-table", filesRequest);
 
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, "BROKEN-URL");
 
@@ -166,7 +137,7 @@ public class CompactionCommitBatcherLambdaIT {
     private SQSMessage createMessage(String tableId, ReplaceFileReferencesRequest request) {
         SQSMessage message = new SQSMessage();
         message.setMessageId(UUID.randomUUID().toString());
-        message.setBody(serDe.toJson(tableId, request));
+        message.setBody(compactionSerDe.toJson(tableId, request));
         return message;
     }
 
@@ -176,7 +147,7 @@ public class CompactionCommitBatcherLambdaIT {
                 .withWaitTimeSeconds(1)
                 .withMaxNumberOfMessages(10))
                 .getMessages().stream()
-                .map(message -> commitSerDe.fromJson(message.getBody()))
+                .map(message -> stateStoreSerDe.fromJson(message.getBody()))
                 .toList();
     }
 }
