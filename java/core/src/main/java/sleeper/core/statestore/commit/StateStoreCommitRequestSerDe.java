@@ -44,11 +44,21 @@ public class StateStoreCommitRequestSerDe {
     private final Gson gsonPrettyPrint;
 
     public StateStoreCommitRequestSerDe(TablePropertiesProvider tablePropertiesProvider) {
-        this(TransactionSerDeProvider.forTableProvider(tablePropertiesProvider));
+        this(tableId -> new TransactionSerDe(tablePropertiesProvider.getById(tableId).getSchema()));
     }
 
     public StateStoreCommitRequestSerDe(TableProperties tableProperties) {
-        this(TransactionSerDeProvider.forTable(tableProperties));
+        this(tableProperties.get(TABLE_ID), new TransactionSerDe(tableProperties.getSchema()));
+    }
+
+    private StateStoreCommitRequestSerDe(String expectedTableId, TransactionSerDe serDe) {
+        this(tableId -> {
+            if (Objects.equals(tableId, expectedTableId)) {
+                return serDe;
+            } else {
+                throw new IllegalArgumentException("Expected table ID " + expectedTableId + ", found " + tableId);
+            }
+        });
     }
 
     private StateStoreCommitRequestSerDe(TransactionSerDeProvider transactionSerDeProvider) {
@@ -64,7 +74,8 @@ public class StateStoreCommitRequestSerDe {
      * @return the serialiser
      */
     public static StateStoreCommitRequestSerDe forFileTransactions() {
-        return new StateStoreCommitRequestSerDe(TransactionSerDeProvider.forFileTransactions());
+        TransactionSerDe serDe = TransactionSerDe.forFileTransactions();
+        return new StateStoreCommitRequestSerDe(tableId -> serDe);
     }
 
     /**
@@ -152,42 +163,5 @@ public class StateStoreCommitRequestSerDe {
          * @return         the properties
          */
         TransactionSerDe getByTableId(String tableId);
-
-        /**
-         * Provides a transaction serialiser that supports a single table.
-         *
-         * @param  tableProperties the table properties
-         * @return                 the provider
-         */
-        static TransactionSerDeProvider forTable(TableProperties tableProperties) {
-            TransactionSerDe serDe = new TransactionSerDe(tableProperties.getSchema());
-            return tableId -> {
-                if (Objects.equals(tableId, tableProperties.get(TABLE_ID))) {
-                    return serDe;
-                } else {
-                    throw new IllegalArgumentException("Expected table ID " + tableProperties.get(TABLE_ID) + ", found " + tableId);
-                }
-            };
-        }
-
-        /**
-         * Provides a transaction serialiser that supports any table.
-         *
-         * @param  tablePropertiesProvider the table properties provider
-         * @return                         the provider
-         */
-        static TransactionSerDeProvider forTableProvider(TablePropertiesProvider tablePropertiesProvider) {
-            return tableId -> new TransactionSerDe(tablePropertiesProvider.getById(tableId).getSchema());
-        }
-
-        /**
-         * Provides a transaction serialiser that only supports file transactions.
-         *
-         * @return the provider
-         */
-        static TransactionSerDeProvider forFileTransactions() {
-            TransactionSerDe serDe = TransactionSerDe.forFileTransactions();
-            return tableId -> serDe;
-        }
     }
 }
