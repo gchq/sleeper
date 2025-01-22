@@ -186,7 +186,8 @@ public class StateStoreCommitRequestSerDe {
          * @return the provider
          */
         static TransactionSerDeProvider forFileTransactions() {
-            return tableId -> TransactionSerDe.forFileTransactions();
+            TransactionSerDe serDe = TransactionSerDe.forFileTransactions();
+            return tableId -> serDe;
         }
     }
 }
