@@ -74,8 +74,8 @@ public class StateStoreCommitRequestSerDe {
      * @return the serialiser
      */
     public static StateStoreCommitRequestSerDe forFileTransactions() {
-        TransactionSerDe serDe = TransactionSerDe.forFileTransactions();
-        return new StateStoreCommitRequestSerDe(tableId -> serDe);
+        TransactionSerDe transactionSerDe = TransactionSerDe.forFileTransactions();
+        return new StateStoreCommitRequestSerDe(tableId -> transactionSerDe);
     }
 
     /**
