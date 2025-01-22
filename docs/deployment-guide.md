@@ -107,41 +107,41 @@ The Sleeper CLI also lets you manage multiple environments.
 #### Managing environments
 
 You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
-You must specify an environment ID when deploying an environment. Parameters after the environment ID will be passed to
-a `cdk deploy --all` command.
+You must specify a unique environment ID when deploying an environment. Parameters after the environment ID will be
+passed to a `cdk deploy --all` command.
 
 ```bash
 # Deploy EC2 in a new VPC
-sleeper environment deploy MyEnvironment
+sleeper environment deploy <environment-id>
 
 # Only deploy VPC
-sleeper environment deploy VPCEnvironment -c deployEc2=false
+sleeper environment deploy <environment-id> -c deployEc2=false
 
 # Deploy EC2 in an existing VPC
-sleeper environment deploy EC2Environment -c vpcId=[vpc-id]
+sleeper environment deploy <environment-id> -c vpcId=[vpc-id]
 
 # Deploy with nightly system test automation (set nightlyTestDeployId to your own 2-character value)
-sleeper environment deploy NightlyTestEnvironment -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
+sleeper environment deploy <environment-id> -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
 ```
 
 You can switch environments like this:
 
 ```bash
 sleeper environment list
-sleeper environment set OtherEnvironment
+sleeper environment set <environment-id>
 sleeper environment connect
 ```
 
 You can tear down the deployed environment like this:
 
 ```bash
-sleeper environment destroy MyEnvironment
+sleeper environment destroy <environment-id>
 ```
 
 You can also tear down individual parts of the environment like this:
 
 ```bash
-sleeper environment destroy MyEnvironment "*-BuildEC2"
+sleeper environment destroy <environment-id> "*-BuildEC2"
 ```
 
 Parameters after the environment ID will be passed to a `cdk destroy` command.
