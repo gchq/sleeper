@@ -28,13 +28,14 @@ If you used the system test deployment described in the getting started guide, y
 
 ### Sleeper CLI Docker environment
 
-The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
-dependencies.
+The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install anything other than
+Docker on your machine.
 
-The `sleeper builder` command gets you a shell inside a Docker container. This container will have all the dependencies
-required to build and deploy an instance of Sleeper. Note that when you run this inside an environment EC2, the Sleeper
-Git repository will have been cloned into the working directory of the container. If you are not using an environment
-EC2, you will need to manually clone the repository.
+The `sleeper builder` command gets you a shell inside a container with all the dependencies required to build and deploy
+an instance of Sleeper. Note that when you run this inside an environment EC2, the Sleeper Git repository will have been
+cloned into the working directory of the container. If you are not using an environment EC2, you will need to manually
+clone the repository. If you deploy from outside of AWS this will involve lengthy uploads of build artifacts, which you
+can avoid with the environment EC2.
 
 If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
 the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
