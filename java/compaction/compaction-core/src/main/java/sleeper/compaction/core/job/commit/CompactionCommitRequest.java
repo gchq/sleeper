@@ -16,13 +16,10 @@
 package sleeper.compaction.core.job.commit;
 
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
-import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 
 /**
- * A request to include a single compaction job commit in a batch update. Used in the compaction commit batcher, and
- * combined into a single {@link StateStoreCommitRequest} per Sleeper table, in a
- * {@link ReplaceFileReferencesTransaction}.
+ * A request to include a single compaction job commit in a batch update. Combined into a single transaction per Sleeper
+ * table by {@link CompactionCommitBatcher}.
  *
  * @param tableId        the Sleeper table ID
  * @param request        details of the compaction commit, to be included in a transaction
