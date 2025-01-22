@@ -84,7 +84,8 @@ configure authentication such that once you're in the EC2 instance you'll have a
 This environment is provided to allow easy deployment, especially for development. By building Sleeper within AWS we
 can avoid lengthy uploads of built artifacts into AWS. A production instance of Sleeper is likely to also need some
 extra security setup, and the environment EC2 may not be useful for this. Note that for general administration of an
-existing Sleeper instance it is not necessary to connect this way.
+existing Sleeper instance it is not necessary to connect this way. In the future we may add support for prebuilt
+artifacts, in which case this will also not be needed to deploy Sleeper.
 
 You can deploy a fresh environment like this:
 
