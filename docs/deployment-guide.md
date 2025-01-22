@@ -120,7 +120,7 @@ passed to a `cdk deploy --all` command.
 # Deploy EC2 in a new VPC
 sleeper environment deploy <environment-id>
 
-# Only deploy VPC
+# Only deploy VPC (running this with an existing environment will remove the EC2)
 sleeper environment deploy <environment-id> -c deployEc2=false
 
 # Deploy EC2 in an existing VPC
@@ -148,12 +148,6 @@ You can tear down the deployed environment like this:
 
 ```bash
 sleeper environment destroy <environment-id>
-```
-
-You can also tear down individual parts of the environment like this:
-
-```bash
-sleeper environment destroy <environment-id> "*-BuildEC2"
 ```
 
 Parameters after the environment ID will be passed to a `cdk destroy` command.
