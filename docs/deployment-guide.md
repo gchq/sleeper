@@ -177,7 +177,7 @@ Parameters after the environment ID will be passed to a `cdk destroy` command.
 When you deploy or add an environment, you will connect to the EC2 as the default user for the machine. This may not be
 desirable if you want to share the EC2, or if you want to automate system tests to run as that user.
 
-You can manage operating system users on the EC2 like this:
+From outside the EC2, you can manage operating system users on the EC2 like this:
 
 ```bash
 sleeper environment adduser <username>
