@@ -30,6 +30,31 @@ If you want to interact with a pre-existing instance, you can skip the `sleeper 
 local machine, as described in the [developer guide](developer-guide.md#sleeper-cli-builder-image). You will need to
 check out the Git repository yourself in the builder container.
 
+### Sleeper CLI Docker environment
+
+The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
+dependencies or build Sleeper yourself.
+
+The `sleeper builder` command gets you a shell inside a Docker container. This container will have all the dependencies
+required to build and deploy an instance of Sleeper. Note that when you run this inside an environment EC2, the Sleeper
+Git repository will have been cloned into the working directory of the container. If you are not using an environment
+EC2, you will need to manually clone the repository.
+
+If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
+the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
+to the container as well.
+
+The host Docker environment will be propagated to the container via the Docker socket.
+
+The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
+if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
+
+If you add a command on the end, you can run a specific script like this:
+
+```shell
+sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
+```
+
 ### Configure AWS
 
 When you configure AWS on your machine or in the environment EC2, if you do it outside the Sleeper CLI, the
@@ -207,7 +232,8 @@ The automated deployment creates an instance of Sleeper either from your own con
 This also pre-populates certain properties for you, e.g. from your AWS configuration, and handles uploading the
 necessary deployment artifacts to AWS.
 
-Please ensure Sleeper has been built successfully before using this.
+Please ensure Sleeper has been built successfully before using this. This guide assumes you are in a `sleeper builder`
+container in an EC2 deployed with `sleeper environment`.
 
 Properties that are set to "changeme" in the templates will be overwritten and should not be set manually during
 automated deployment.
@@ -247,31 +273,6 @@ ECR.
 
 The deployment scripts will create all of the required configuration files in a folder called `generated` in the scripts
 directory.
-
-#### Sleeper CLI Docker environment
-
-The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
-dependencies or build Sleeper yourself.
-
-The `sleeper builder` command gets you a shell inside a Docker container. This docker container will have all the
-dependencies required to build and deploy an instance of Sleeper. Note that when you run this inside an environment EC2,
-the Sleeper Git repository will be cloned into the working directory of the container. If you are not using an
-environment EC2, you will need to manually clone the repository.
-
-If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
-the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
-to the container as well.
-
-The host Docker environment will be propagated to the container via the Docker socket.
-
-The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
-if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
-
-If you add a command on the end, you can run a specific script like this:
-
-```shell
-sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
-```
 
 ### Manual Deployment
 
