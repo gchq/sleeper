@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.statestore.testutil.LocalStackTestBase;
 
 import java.nio.file.Path;
 
@@ -29,7 +29,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTIONS_TO_S3;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public abstract class S3StateStoreTestBase extends DynamoDBTestBase {
+public abstract class S3StateStoreTestBase extends LocalStackTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
 
     @TempDir

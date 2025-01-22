@@ -42,9 +42,13 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     private final TransactionSerDe serDe;
 
     public S3TransactionBodyStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonS3 s3Client) {
+        this(instanceProperties, s3Client, new TransactionSerDe(tableProperties.getSchema()));
+    }
+
+    private S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDe serDe) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
-        this.serDe = new TransactionSerDe(tableProperties.getSchema());
+        this.serDe = serDe;
     }
 
     /**
@@ -105,7 +109,7 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
 
         @Override
         public TransactionBodyStore getTransactionBodyStore(TableProperties tableProperties) {
-            return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
+            return new S3TransactionBodyStore(instanceProperties, s3Client, new TransactionSerDe(tableProperties.getSchema()));
         }
 
         @Override
