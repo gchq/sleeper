@@ -63,7 +63,7 @@ public class StateStoreCommitRequestSerDe {
 
     private StateStoreCommitRequestSerDe(TransactionSerDeProvider transactionSerDeProvider) {
         GsonBuilder builder = GsonConfig.standardBuilder()
-                .registerTypeAdapter(StateStoreCommitRequest.class, new TransactionByTypeJsonSerDe(transactionSerDeProvider));
+                .registerTypeAdapter(StateStoreCommitRequest.class, new RequestJsonSerDe(transactionSerDeProvider));
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
@@ -109,12 +109,12 @@ public class StateStoreCommitRequestSerDe {
     }
 
     /**
-     * A GSON plugin to serialise/deserialise a request for a transaction, serialising a transaction by its type.
+     * A GSON plugin to serialise/deserialise a request, handling transactions by the type and the table ID.
      */
-    private static class TransactionByTypeJsonSerDe implements JsonSerializer<StateStoreCommitRequest>, JsonDeserializer<StateStoreCommitRequest> {
+    private static class RequestJsonSerDe implements JsonSerializer<StateStoreCommitRequest>, JsonDeserializer<StateStoreCommitRequest> {
         private final TransactionSerDeProvider transactionSerDeProvider;
 
-        private TransactionByTypeJsonSerDe(TransactionSerDeProvider transactionSerDeProvider) {
+        private RequestJsonSerDe(TransactionSerDeProvider transactionSerDeProvider) {
             this.transactionSerDeProvider = transactionSerDeProvider;
         }
 
