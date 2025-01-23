@@ -86,7 +86,7 @@ public class DockerInstanceTestBase {
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
-                new LeafPartitionRecordRetrieverImpl(Executors.newSingleThreadExecutor(), getHadoopConfiguration()));
+                new LeafPartitionRecordRetrieverImpl(Executors.newSingleThreadExecutor(), getHadoopConfiguration(), tableProperties));
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }

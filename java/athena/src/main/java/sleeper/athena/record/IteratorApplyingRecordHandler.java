@@ -193,7 +193,7 @@ public class IteratorApplyingRecordHandler extends SleeperRecordHandler {
         FilterPredicate filterPredicate = FilterTranslator.and(filterTranslator.toPredicate(valueSets), createFilter(schema, minRowKeys, maxRowKeys));
         Configuration conf = getConfigurationForTable(tableProperties);
 
-        LeafPartitionRecordRetrieverImpl recordRetriever = new LeafPartitionRecordRetrieverImpl(executorService, conf);
+        LeafPartitionRecordRetrieverImpl recordRetriever = new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties);
 
         CloseableIterator<Record> iterator = recordRetriever.getRecords(new ArrayList<>(relevantFiles), schema, filterPredicate);
 

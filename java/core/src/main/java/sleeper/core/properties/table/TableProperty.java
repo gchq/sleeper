@@ -201,6 +201,11 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "Can be either v1 or v2. The v2 pages store levels uncompressed while v1 pages compress levels with the data.")
             .defaultProperty(DEFAULT_PARQUET_WRITER_VERSION)
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
+    TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.parquet.query.column.index.enabled")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .description("Used to determine if during parquet queries, whether the column indexes are used.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
             .description("The S3 readahead range - defaults to the value in the instance properties.")

@@ -280,7 +280,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 tableProperties,
                 null,
                 new LeafPartitionRecordRetrieverImpl(executorService,
-                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)));
+                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
+                        tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(),
                 sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.splitIntoLeafPartitionQueries(query);
@@ -308,7 +309,8 @@ public class SleeperRawAwsConnection implements AutoCloseable {
                 tableProperties,
                 stateStore,
                 new LeafPartitionRecordRetrieverImpl(executorService,
-                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties)));
+                        hadoopConfigurationProvider.getHadoopConfiguration(this.instanceProperties),
+                        tableProperties));
         queryExecutor.init(sleeperTablePartitionStructure.getAllPartitions(), sleeperTablePartitionStructure.getPartitionToFileMapping());
         return queryExecutor.execute(query);
     }

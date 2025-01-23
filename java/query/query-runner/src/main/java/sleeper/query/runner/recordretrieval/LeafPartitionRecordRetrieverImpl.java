@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.MergingIterator;
 import sleeper.core.iterator.WrappedIterator;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.RecordComparator;
 import sleeper.core.schema.Schema;
@@ -47,6 +48,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import static sleeper.core.properties.table.TableProperty.PARQUET_QUERY_COLUMN_INDEX_ENABLED;
+
 /**
  * Pulls back records for a single leaf partition according to a provided predicate.
  */
@@ -55,10 +58,12 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
 
     private final Configuration filesConfig;
     private final ExecutorService executorService;
+    private final TableProperties tableProperties;
 
-    public LeafPartitionRecordRetrieverImpl(ExecutorService executorService, Configuration conf) {
+    public LeafPartitionRecordRetrieverImpl(ExecutorService executorService, Configuration conf, TableProperties tableProperties) {
         this.executorService = executorService;
         this.filesConfig = conf;
+        this.tableProperties = tableProperties;
     }
 
     public CloseableIterator<Record> getRecords(List<String> files, Schema dataReadSchema, FilterPredicate filterPredicate) throws RecordRetrievalException {
@@ -137,6 +142,7 @@ public class LeafPartitionRecordRetrieverImpl implements LeafPartitionRecordRetr
         return new ParquetRecordReader.Builder(new Path(fileName), readSchema)
                 .withConf(filesConfig)
                 .withFilter(FilterCompat.get(filterPredicate))
+                .useColumnIndexFilter(tableProperties.getBoolean(PARQUET_QUERY_COLUMN_INDEX_ENABLED))
                 .build();
     }
 }

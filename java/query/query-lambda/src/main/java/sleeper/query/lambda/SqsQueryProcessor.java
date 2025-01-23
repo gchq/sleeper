@@ -107,7 +107,7 @@ public class SqsQueryProcessor {
             StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
             Configuration conf = getConfiguration(tableProperties);
             return new QueryExecutor(objectFactory, tableProperties, stateStore,
-                    new LeafPartitionRecordRetrieverImpl(executorService, conf));
+                    new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties));
         });
 
         queryExecutor.initIfNeeded(Instant.now());
