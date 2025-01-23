@@ -15,10 +15,11 @@
  */
 package sleeper.statestore.commit;
 
+import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
@@ -34,6 +35,8 @@ import sleeper.statestore.testutil.LocalStackTestBase;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,8 +53,15 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     private final String tableId = tableProperties.get(TABLE_ID);
     private final StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);
 
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(new CreateQueueRequest()
+                .withQueueName(UUID.randomUUID().toString() + ".fifo")
+                .withAttributes(Map.of("FifoQueue", "true")))
+                .getQueueUrl());
+    }
+
     @Test
-    @Disabled
     void shouldSendStateStoreCommitToSQS() {
         // Given
         PartitionTransaction transaction = new InitialisePartitionsTransaction(
