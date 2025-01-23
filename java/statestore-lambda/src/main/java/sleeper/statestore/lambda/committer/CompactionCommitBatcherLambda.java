@@ -25,7 +25,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,16 +33,13 @@ import sleeper.compaction.core.job.commit.CompactionCommitRequest;
 import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
-import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
 /**
  * A lambda that combines multiple compaction commits into a single transaction per Sleeper table.
@@ -91,19 +87,8 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
      */
     public static CompactionCommitBatcher createBatcher(
             InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client) {
-        StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(
-                S3TransactionBodyStore.createProviderForFileTransactions(instanceProperties, s3Client),
-                StateStoreCommitRequestSerDe.forFileTransactions(),
-                StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
-        return new CompactionCommitBatcher(request -> {
-            LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageBody(uploader.serialiseAndUploadIfTooBig(request))
-                    .withMessageGroupId(request.getTableId())
-                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
-            LOGGER.debug("Submitted asynchronous request to assign compaction input files via state store committer queue");
-        });
+        return new CompactionCommitBatcher(new SqsFifoStateStoreCommitRequestSender(
+                instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.forFileTransactions()));
     }
 
 }

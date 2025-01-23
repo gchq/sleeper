@@ -56,6 +56,13 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
 
     public SqsFifoStateStoreCommitRequestSender(
             InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client,
+            TransactionSerDeProvider transactionSerDeProvider) {
+        this(instanceProperties, sqsClient, s3Client, transactionSerDeProvider,
+                DEFAULT_MAX_TRANSACTION_BYTES, Instant::now, () -> UUID.randomUUID().toString());
+    }
+
+    public SqsFifoStateStoreCommitRequestSender(
+            InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client,
             TransactionSerDeProvider transactionSerDeProvider,
             int maxTransactionBytes, Supplier<Instant> timeSupplier, Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;

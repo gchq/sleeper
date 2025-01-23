@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 
 import java.util.List;
@@ -33,9 +34,9 @@ public class CompactionCommitBatcher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompactionCommitBatcher.class);
 
-    private final SendStateStoreCommit sendStateStoreCommit;
+    private final StateStoreCommitRequestSender sendStateStoreCommit;
 
-    public CompactionCommitBatcher(SendStateStoreCommit sendStateStoreCommit) {
+    public CompactionCommitBatcher(StateStoreCommitRequestSender sendStateStoreCommit) {
         this.sendStateStoreCommit = sendStateStoreCommit;
     }
 
@@ -54,13 +55,6 @@ public class CompactionCommitBatcher {
             LOGGER.error("Failed to send message to state store commit queue with {} compactions for table ID {}", requests.size(), tableId, ex);
             requests.forEach(request -> request.callbackOnFail().run());
         }
-    }
-
-    /**
-     * Sends a state store commit to the commit queue.
-     */
-    public interface SendStateStoreCommit {
-        void send(StateStoreCommitRequest request);
     }
 
 }
