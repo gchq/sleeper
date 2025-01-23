@@ -49,9 +49,11 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Duration;
@@ -76,7 +78,6 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCF
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
-import static sleeper.garbagecollector.GarbageCollector.sendAsyncCommit;
 import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -231,7 +232,7 @@ public class GarbageCollectorS3IT {
     private GarbageCollector createGarbageCollectorWithMaxCommitLength(int maxLength, InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
         return new GarbageCollector(deleteFileAndSketches(configuration), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                sendAsyncCommit(instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client, maxLength));
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }
 
     private static Schema getSchema() {
