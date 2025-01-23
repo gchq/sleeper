@@ -19,11 +19,11 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.commit.CompactionCommitBatcher.SendStateStoreCommit;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 
 import java.util.ArrayList;
@@ -116,7 +116,7 @@ public class CompactionCommitBatcherTest {
                 "job1", List.of("test.parquet"), "root");
         ReplaceFileReferencesRequest request1 = defaultReplaceFileReferencesRequest(job1);
         ReplaceFileReferencesRequest request2 = defaultReplaceFileReferencesRequest(job2);
-        SendStateStoreCommit sendCommits = SendStateStoreCommitDummy.sendToQueueExceptForTable(queue, "table1");
+        StateStoreCommitRequestSender sendCommits = SendStateStoreCommitDummy.sendToQueueExceptForTable(queue, "table1");
         List<String> failures = new ArrayList<>();
 
         // When
@@ -141,7 +141,7 @@ public class CompactionCommitBatcherTest {
                 "job1", List.of("test.parquet"), "root");
         ReplaceFileReferencesRequest request1 = defaultReplaceFileReferencesRequest(job1);
         ReplaceFileReferencesRequest request2 = defaultReplaceFileReferencesRequest(job2);
-        SendStateStoreCommit sendCommits = SendStateStoreCommitDummy.sendToQueueExceptForTable(queue, "some-table");
+        StateStoreCommitRequestSender sendCommits = SendStateStoreCommitDummy.sendToQueueExceptForTable(queue, "some-table");
         List<String> failures = new ArrayList<>();
 
         // When

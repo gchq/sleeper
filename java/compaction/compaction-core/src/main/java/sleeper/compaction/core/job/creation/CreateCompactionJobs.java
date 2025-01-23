@@ -31,6 +31,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
@@ -72,7 +73,7 @@ public class CreateCompactionJobs {
     private final BatchJobsWriter batchJobsWriter;
     private final BatchMessageSender batchMessageSender;
     private final StateStoreProvider stateStoreProvider;
-    private final AssignJobIdQueueSender assignJobIdQueueSender;
+    private final StateStoreCommitRequestSender stateStoreCommitSender;
     private final GenerateJobId generateJobId;
     private final GenerateBatchId generateBatchId;
     private final Random random;
@@ -83,7 +84,7 @@ public class CreateCompactionJobs {
             StateStoreProvider stateStoreProvider,
             BatchJobsWriter batchJobsWriter,
             BatchMessageSender batchMessageSender,
-            AssignJobIdQueueSender assignJobIdQueueSender,
+            StateStoreCommitRequestSender stateStoreCommitSender,
             GenerateJobId generateJobId,
             GenerateBatchId generateBatchId,
             Random random,
@@ -93,7 +94,7 @@ public class CreateCompactionJobs {
         this.batchJobsWriter = batchJobsWriter;
         this.batchMessageSender = batchMessageSender;
         this.stateStoreProvider = stateStoreProvider;
-        this.assignJobIdQueueSender = assignJobIdQueueSender;
+        this.stateStoreCommitSender = stateStoreCommitSender;
         this.generateJobId = generateJobId;
         this.generateBatchId = generateBatchId;
         this.random = random;
@@ -162,7 +163,7 @@ public class CreateCompactionJobs {
         Instant sendJobsStartTime = Instant.now();
         AssignJobIdToFiles assignJobIdsToFiles;
         if (tableProperties.getBoolean(COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC)) {
-            assignJobIdsToFiles = AssignJobIdToFiles.byQueue(assignJobIdQueueSender);
+            assignJobIdsToFiles = AssignJobIdToFiles.byQueue(stateStoreCommitSender);
         } else {
             assignJobIdsToFiles = AssignJobIdToFiles.synchronous(stateStore);
         }
