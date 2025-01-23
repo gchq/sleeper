@@ -46,7 +46,7 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
         this(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
     }
 
-    private S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDeProvider serDeProvider) {
+    public S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDeProvider serDeProvider) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.serDeProvider = serDeProvider;

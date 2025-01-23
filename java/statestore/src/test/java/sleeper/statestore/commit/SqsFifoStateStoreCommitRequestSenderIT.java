@@ -113,11 +113,10 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     }
 
     private StateStoreCommitRequestSender senderWithMaxTransactionBytes(int maxBytes) {
+        TransactionSerDeProvider serDeProvider = TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties));
         return new SqsFifoStateStoreCommitRequestSender(instanceProperties,
-                S3TransactionBodyStore.createProvider(instanceProperties, s3Client)
-                        .byTableId(new FixedTablePropertiesProvider(tableProperties)),
-                TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties)),
-                sqsClient, maxBytes, timeSupplier, idSupplier);
+                new S3TransactionBodyStore(instanceProperties, s3Client, serDeProvider),
+                serDeProvider, sqsClient, maxBytes, timeSupplier, idSupplier);
     }
 
     private List<StateStoreCommitRequest> receiveCommitRequests() {

@@ -26,7 +26,6 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.TransactionBodyStoreProviderByTableId;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
@@ -46,7 +45,7 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
     public static final int DEFAULT_MAX_TRANSACTION_BYTES = 262144;
 
     private final InstanceProperties instanceProperties;
-    private final TransactionBodyStoreProviderByTableId transactionBodyStore;
+    private final TransactionBodyStore transactionBodyStore;
     private final TransactionSerDeProvider transactionSerDeProvider;
     private final StateStoreCommitRequestSerDe requestSerDe;
     private final AmazonSQS sqsClient;
@@ -55,7 +54,7 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
     private final Supplier<String> idSupplier;
 
     public SqsFifoStateStoreCommitRequestSender(
-            InstanceProperties instanceProperties, TransactionBodyStoreProviderByTableId transactionBodyStore,
+            InstanceProperties instanceProperties, TransactionBodyStore transactionBodyStore,
             TransactionSerDeProvider transactionSerDeProvider, AmazonSQS sqsClient,
             int maxTransactionBytes, Supplier<Instant> timeSupplier, Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;
@@ -92,7 +91,7 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
             return Optional.empty();
         } else {
             String key = TransactionBodyStore.createObjectKey(request.getTableId(), timeSupplier.get(), idSupplier.get());
-            S3TransactionBodyStore bodyStore = (S3TransactionBodyStore) transactionBodyStore.getTransactionBodyStore(request.getTableId());
+            S3TransactionBodyStore bodyStore = (S3TransactionBodyStore) transactionBodyStore;
             bodyStore.store(key, json);
             return Optional.of(StateStoreCommitRequest.create(request.getTableId(), key, request.getTransactionType()));
         }

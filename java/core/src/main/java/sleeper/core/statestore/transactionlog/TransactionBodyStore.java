@@ -43,9 +43,10 @@ public interface TransactionBodyStore {
     /**
      * Retrives a transaction from a given location.
      *
-     * @param  key     the object key in the data bucket
-     * @param  tableId the ID of the Sleeper table the transaction is for
-     * @return         the transaction
+     * @param  key             the object key in the data bucket
+     * @param  tableId         the ID of the Sleeper table the transaction is for
+     * @param  transactionType the type of the transaction
+     * @return                 the transaction
      */
     <T extends StateStoreTransaction<?>> T getBody(String key, String tableId, TransactionType transactionType);
 
