@@ -30,31 +30,45 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.statestore.testutil.LocalStackTestBase;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.testutils.SupplierTestHelper.fixIds;
+import static sleeper.core.testutils.SupplierTestHelper.fixTime;
 
 public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
+
+    private static final Instant DEFAULT_TRANSACTION_TIME = Instant.parse("2025-01-23T11:36:00Z");
+    private static final String DEFAULT_TRANSACTION_ID = "test-transaction";
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final String tableId = tableProperties.get(TABLE_ID);
     private final StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);
+    private final Supplier<Instant> timeSupplier = fixTime(DEFAULT_TRANSACTION_TIME);
+    private final Supplier<String> idSupplier = fixIds(DEFAULT_TRANSACTION_ID);
 
     @BeforeEach
     void setUp() {
+        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
                 .withAttributes(Map.of("FifoQueue", "true")))
@@ -75,12 +89,34 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
                 .containsExactly(StateStoreCommitRequest.create(tableId, transaction));
     }
 
+    @Test
+    void shouldStoreTransactionInS3WhenTooBigForSqsMessage() {
+        // Given
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(
+                new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
+
+        // When
+        senderWithMaxTransactionBytes(10)
+                .send(StateStoreCommitRequest.create(tableId, transaction));
+
+        // Then
+        String expectedKey = TransactionBodyStore.createObjectKey(tableId, DEFAULT_TRANSACTION_TIME, DEFAULT_TRANSACTION_ID);
+        assertThat(receiveCommitRequests())
+                .containsExactly(StateStoreCommitRequest.create(tableId, expectedKey, TransactionType.INITIALISE_PARTITIONS));
+        assertThat(readTransaction(expectedKey, TransactionType.INITIALISE_PARTITIONS))
+                .isEqualTo(transaction);
+    }
+
     private StateStoreCommitRequestSender sender() {
+        return senderWithMaxTransactionBytes(SqsFifoStateStoreCommitRequestSender.DEFAULT_MAX_TRANSACTION_BYTES);
+    }
+
+    private StateStoreCommitRequestSender senderWithMaxTransactionBytes(int maxBytes) {
         return new SqsFifoStateStoreCommitRequestSender(instanceProperties,
                 S3TransactionBodyStore.createProvider(instanceProperties, s3Client)
                         .byTableId(new FixedTablePropertiesProvider(tableProperties)),
                 new StateStoreCommitRequestSerDe(tableProperties), sqsClient,
-                SqsFifoStateStoreCommitRequestSender.DEFAULT_MAX_LENGTH);
+                maxBytes, timeSupplier, idSupplier);
     }
 
     private List<StateStoreCommitRequest> receiveCommitRequests() {
@@ -98,6 +134,11 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     private StateStoreCommitRequest readCommitRequest(Message message) {
         return serDe.fromJson(message.getBody());
+    }
+
+    private StateStoreTransaction<?> readTransaction(String key, TransactionType transactionType) {
+        return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
+                .getBody(key, transactionType);
     }
 
 }

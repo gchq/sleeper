@@ -27,7 +27,9 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStoreProviderByTableId;
 
+import java.time.Instant;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
@@ -36,22 +38,27 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
  */
 public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitRequestSender {
     public static final Logger LOGGER = LoggerFactory.getLogger(SqsFifoStateStoreCommitRequestSender.class);
-    public static final int DEFAULT_MAX_LENGTH = 262144;
+    public static final int DEFAULT_MAX_TRANSACTION_BYTES = 262144;
 
     private final InstanceProperties instanceProperties;
     private final TransactionBodyStoreProviderByTableId transactionBodyStore;
     private final StateStoreCommitRequestSerDe serDe;
     private final AmazonSQS sqsClient;
-    private final int maxLength;
+    private final int maxTransactionBytes;
+    private final Supplier<Instant> timeSupplier;
+    private final Supplier<String> idSupplier;
 
     public SqsFifoStateStoreCommitRequestSender(
             InstanceProperties instanceProperties, TransactionBodyStoreProviderByTableId transactionBodyStore,
-            StateStoreCommitRequestSerDe serDe, AmazonSQS sqsClient, int maxLength) {
+            StateStoreCommitRequestSerDe serDe, AmazonSQS sqsClient,
+            int maxTransactionBytes, Supplier<Instant> timeSupplier, Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;
         this.transactionBodyStore = transactionBodyStore;
         this.serDe = serDe;
         this.sqsClient = sqsClient;
-        this.maxLength = maxLength;
+        this.maxTransactionBytes = maxTransactionBytes;
+        this.timeSupplier = timeSupplier;
+        this.idSupplier = idSupplier;
     }
 
     @Override
@@ -67,10 +74,10 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
 
     private String serialiseAndUploadIfTooBig(StateStoreCommitRequest request) {
         String json = serDe.toJson(request);
-        if (json.length() < maxLength) {
+        if (json.length() < maxTransactionBytes) {
             return json;
         } else {
-            String key = TransactionBodyStore.createObjectKey(request.getTableId());
+            String key = TransactionBodyStore.createObjectKey(request.getTableId(), timeSupplier.get(), idSupplier.get());
             transactionBodyStore.getTransactionBodyStore(request.getTableId()).store(key, request.getTransactionIfHeld().orElseThrow());
             return serDe.toJson(StateStoreCommitRequest.create(request.getTableId(), key, request.getTransactionType()));
         }
