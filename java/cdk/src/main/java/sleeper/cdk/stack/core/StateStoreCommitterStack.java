@@ -43,7 +43,6 @@ import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
-import java.util.Map;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_ARN;
@@ -128,7 +127,6 @@ public class StateStoreCommitterStack extends NestedStack {
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
             CompactionTrackerResources compactionTracker,
             IngestTrackerResources ingestTracker) {
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "statestore-committer");
@@ -140,7 +138,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(environmentVariables)
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getIntOrNull(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(logGroup));
 
