@@ -28,6 +28,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 
@@ -40,7 +41,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class StateStoreCommitRequestByTransactionSerDeTest {
+public class StateStoreCommitRequestSerDeTest {
 
     Schema schema = schemaWithKey("key", new LongType());
     TableProperties tableProperties = createTableProperties(schema);
@@ -92,6 +93,19 @@ public class StateStoreCommitRequestByTransactionSerDeTest {
         // Then
         assertThat(serDe.fromJson(json)).isEqualTo(commitRequest);
         Approvals.verify(json, new Options().forFile().withExtension(".json"));
+    }
+
+    @Test
+    void shouldSeraliseFileTransactionWithoutTableProperties() {
+        // Given
+        StateStoreCommitRequestSerDe serDe = StateStoreCommitRequestSerDe.forFileTransactions();
+        StateStoreCommitRequest commitRequest = StateStoreCommitRequest.create("test-table", new ClearFilesTransaction());
+
+        // When
+        String json = serDe.toJson(commitRequest);
+
+        // Then
+        assertThat(serDe.fromJson(json)).isEqualTo(commitRequest);
     }
 
     private TableProperties createTableProperties(Schema schema) {

@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.core.statestore.transactionlog;
 
-package sleeper.statestore.dynamodb;
+/**
+ * Creates transaction body stores per Sleeper table by ID.
+ */
+public interface TransactionBodyStoreProviderByTableId {
 
-import org.junit.jupiter.api.BeforeEach;
+    /**
+     * Retrieves a transaction body store for the given table.
+     *
+     * @param  tableId the Sleeper table ID
+     * @return         the store
+     */
+    TransactionBodyStore getTransactionBodyStore(String tableId);
 
-import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestore.testutil.LocalStackTestBase;
-
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-
-public class DynamoDBStateStoreTestBase extends LocalStackTestBase {
-
-    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-
-    @BeforeEach
-    void setUpBase() {
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
-    }
 }

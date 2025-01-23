@@ -1,0 +1,18 @@
+{
+  "tableId": "test-table",
+  "request": {
+    "jobId": "test-job",
+    "taskId": "test-task",
+    "jobRunId": "test-run",
+    "inputFiles": [
+      "test.parquet"
+    ],
+    "newReference": {
+      "filename": "output.parquet",
+      "partitionId": "root",
+      "numberOfRecords": 200,
+      "countApproximate": false,
+      "onlyContainsDataForThisPartition": true
+    }
+  }
+}

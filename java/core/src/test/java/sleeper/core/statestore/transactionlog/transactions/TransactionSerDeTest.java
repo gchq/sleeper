@@ -17,6 +17,8 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import org.apache.commons.lang.StringUtils;
 import org.approvaltests.Approvals;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -41,6 +43,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
@@ -270,5 +273,44 @@ public class TransactionSerDeTest {
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
+    }
+
+    @Nested
+    @DisplayName("Serialisation without schema")
+    class NoSchema {
+
+        TransactionSerDe serDe = TransactionSerDe.forFileTransactions();
+
+        @Test
+        void shouldSerialiseFileTransactionWithoutSchema() {
+            // Given
+            PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
+            FileReferenceTransaction transaction = new AddFilesTransaction(
+                    AllReferencesToAFile.newFilesWithReferences(List.of(
+                            FileReferenceFactory.from(partitions).rootFile("file.parquet", 100))));
+
+            // When
+            String json = serDe.toJson(transaction);
+
+            // Then
+            assertThat(serDe.toTransaction(TransactionType.ADD_FILES, json)).isEqualTo(transaction);
+        }
+
+        @Test
+        void shouldRefusePartitionTransactionWithoutSchema() {
+            // Given
+            Schema schema = schemaWithKey("key");
+            PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+            PartitionTransaction transaction = new InitialisePartitionsTransaction(partitions.getAllPartitions());
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.toJson(transaction))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessage("Attempted serialisation of unsupported class sleeper.core.partition.Partition");
+            String json = new TransactionSerDe(schema).toJson(transaction);
+            assertThatThrownBy(() -> serDe.toTransaction(TransactionType.INITIALISE_PARTITIONS, json))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessage("Attempted deserialisation of unsupported class sleeper.core.partition.Partition");
+        }
     }
 }

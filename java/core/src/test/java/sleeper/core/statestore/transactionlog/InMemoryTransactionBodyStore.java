@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * An in memory store of the bodies of transactions that are not held directly in the log.
  */
-public class InMemoryTransactionBodyStore implements TransactionBodyStore, TransactionBodyStoreProvider {
+public class InMemoryTransactionBodyStore implements TransactionBodyStore, TransactionBodyStoreProvider, TransactionBodyStoreProviderByTableId {
 
     private final Map<String, StateStoreTransaction<?>> transactionByKey = new HashMap<>();
 
@@ -46,6 +46,11 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore, Trans
 
     @Override
     public TransactionBodyStore getTransactionBodyStore(TableProperties tableProperties) {
+        return this;
+    }
+
+    @Override
+    public TransactionBodyStore getTransactionBodyStore(String tableId) {
         return this;
     }
 
