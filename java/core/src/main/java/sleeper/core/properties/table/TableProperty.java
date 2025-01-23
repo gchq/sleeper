@@ -80,7 +80,6 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ROW_GROUP_SIZE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
@@ -207,7 +206,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Used to determine if during parquet queries, whether the column indexes are used.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
-            .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
+            .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
             .description("The S3 readahead range - defaults to the value in the instance properties.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
