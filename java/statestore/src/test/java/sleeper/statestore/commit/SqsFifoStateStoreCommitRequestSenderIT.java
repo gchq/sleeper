@@ -26,12 +26,16 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
+import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
@@ -44,6 +48,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -77,7 +82,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldSendStateStoreCommitToSQS() {
+    void shouldSendCommitToSqs() {
         // Given
         PartitionTransaction transaction = new InitialisePartitionsTransaction(
                 new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
@@ -105,6 +110,32 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
         assertThat(receiveCommitRequests())
                 .containsExactly(StateStoreCommitRequest.create(tableId, expectedKey, TransactionType.INITIALISE_PARTITIONS));
         assertThat(readTransaction(expectedKey, TransactionType.INITIALISE_PARTITIONS))
+                .isEqualTo(transaction);
+    }
+
+    @Test
+    void shouldSendCommitWithTooManyFilesForSqs() throws Exception {
+        // Given
+        instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + UUID.randomUUID().toString());
+        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        FileReferenceFactory factory = FileReferenceFactory.forSinglePartition("root", tableProperties);
+        List<FileReference> fileReferences = IntStream.range(0, 1350)
+                .mapToObj(i -> factory.rootFile("s3a://test-data-bucket/test-table/data/partition_root/test-file" + i + ".parquet", 100L))
+                .collect(Collectors.toList());
+        AddFilesTransaction transaction = AddFilesTransaction.builder()
+                .jobId("test-job").taskId("test-task").jobRunId("test-run").writtenTime(Instant.parse("2025-01-23T15:20:00Z"))
+                .files(AllReferencesToAFile.newFilesWithReferences(fileReferences))
+                .build();
+        StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
+
+        // When
+        sender().send(request);
+
+        // Then
+        String expectedKey = TransactionBodyStore.createObjectKey(tableId, DEFAULT_TRANSACTION_TIME, DEFAULT_TRANSACTION_ID);
+        assertThat(receiveCommitRequests())
+                .containsExactly(StateStoreCommitRequest.create(tableId, expectedKey, TransactionType.ADD_FILES));
+        assertThat(readTransaction(expectedKey, TransactionType.ADD_FILES))
                 .isEqualTo(transaction);
     }
 

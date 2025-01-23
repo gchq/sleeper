@@ -17,6 +17,7 @@ package sleeper.core.statestore;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableFilePaths;
@@ -82,6 +83,17 @@ public class FileReferenceFactory {
      */
     public static FileReferenceFactory from(StateStore stateStore) {
         return from(stateStore.getAllPartitions());
+    }
+
+    /**
+     * Creates a factory to create files for a partition tree with a single partition.
+     *
+     * @param  partitionId     the root partition ID
+     * @param  tableProperties the table properties
+     * @return                 the factory
+     */
+    public static FileReferenceFactory forSinglePartition(String partitionId, TableProperties tableProperties) {
+        return from(new PartitionsBuilder(tableProperties.getSchema()).singlePartition(partitionId).buildTree());
     }
 
     /**

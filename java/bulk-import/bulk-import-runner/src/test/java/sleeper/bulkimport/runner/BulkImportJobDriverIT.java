@@ -43,7 +43,6 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
-import sleeper.bulkimport.runner.BulkImportJobDriver.AddFilesAsynchronously;
 import sleeper.bulkimport.runner.dataframe.BulkImportJobDataframeDriver;
 import sleeper.bulkimport.runner.dataframelocalsort.BulkImportDataframeLocalSortDriver;
 import sleeper.bulkimport.runner.rdd.BulkImportJobRDDDriver;
@@ -66,14 +65,14 @@ import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
@@ -82,6 +81,7 @@ import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
@@ -102,7 +102,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -522,36 +521,6 @@ class BulkImportJobDriverIT {
                         .build()));
     }
 
-    @Test
-    void shouldSendAsynchronousCommitWithTooManyFilesForSqs() throws Exception {
-        // Given
-        instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + UUID.randomUUID().toString());
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        StateStore stateStore = createTable(instanceProperties, tableProperties);
-        FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
-        List<FileReference> fileReferences = IntStream.range(0, 1350)
-                .mapToObj(i -> factory.rootFile("s3a://test-data-bucket/test-table/data/partition_root/test-file" + i + ".parquet", 100L))
-                .collect(Collectors.toList());
-        Supplier<String> s3FileNameSupplier = () -> "test-add-files-commit";
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
-        AddFilesTransaction transaction = AddFilesTransaction.builder()
-                .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(endTime)
-                .files(AllReferencesToAFile.newFilesWithReferences(fileReferences))
-                .build();
-        StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
-
-        // When
-        BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, tablePropertiesProvider, s3FileNameSupplier)
-                .submit(request);
-
-        // Then
-        assertThat(receiveCommitMessages()).singleElement().satisfies(found -> {
-            assertThat(found).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.ADD_FILES));
-            assertThat(readTransactionFromDataBucket(found))
-                    .isEqualTo(transaction);
-        });
-    }
-
     private static List<Record> readRecords(String filename, Schema schema) {
         try (ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema)) {
             List<Record> readRecords = new ArrayList<>();
@@ -700,10 +669,11 @@ class BulkImportJobDriverIT {
         tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-        AddFilesAsynchronously addFilesAsync = BulkImportJobDriver.submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, tablePropertiesProvider);
+        StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
+                properties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
         BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
-                tablePropertiesProvider, stateStoreProvider, tracker, addFilesAsync, timeSupplier);
+                tablePropertiesProvider, stateStoreProvider, tracker, commitSender, timeSupplier);
         driver.run(job, jobRunId, taskId);
     }
 

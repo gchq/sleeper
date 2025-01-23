@@ -25,7 +25,6 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.gson.JsonSyntaxException;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -42,8 +41,9 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
@@ -52,18 +52,16 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 
 /**
@@ -78,20 +76,20 @@ public class BulkImportJobDriver {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final IngestJobTracker tracker;
-    private final AddFilesAsynchronously addFilesAsync;
+    private final StateStoreCommitRequestSender asyncSender;
     private final Supplier<Instant> getTime;
 
     public BulkImportJobDriver(SessionRunner sessionRunner,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             IngestJobTracker tracker,
-            AddFilesAsynchronously addFilesAsync,
+            StateStoreCommitRequestSender asyncSender,
             Supplier<Instant> getTime) {
         this.sessionRunner = sessionRunner;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.tracker = tracker;
-        this.addFilesAsync = addFilesAsync;
+        this.asyncSender = asyncSender;
         this.getTime = getTime;
     }
 
@@ -123,9 +121,7 @@ public class BulkImportJobDriver {
                         .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
                         .files(AllReferencesToAFile.newFilesWithReferences(output.fileReferences()))
                         .build();
-                StateStoreCommitRequest request = StateStoreCommitRequest.create(table.getTableUniqueId(), transaction);
-                LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
-                addFilesAsync.submit(request);
+                asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(), transaction));
                 LOGGER.info("Submitted {} files to statestore committer for job {} in table {}", output.numFiles(), job.getId(), table);
             } else {
                 stateStoreProvider.getStateStore(tableProperties)
@@ -201,10 +197,11 @@ public class BulkImportJobDriver {
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, configuration);
             IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
-            AddFilesAsynchronously addFilesAsync = submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, tablePropertiesProvider);
+            StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
+                    instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
             BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                     runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
-                    tablePropertiesProvider, stateStoreProvider, tracker, addFilesAsync, Instant::now);
+                    tablePropertiesProvider, stateStoreProvider, tracker, commitSender, Instant::now);
             driver.run(bulkImportJob, jobRunId, taskId);
         } finally {
             s3Client.shutdown();
@@ -249,27 +246,5 @@ public class BulkImportJobDriver {
         } finally {
             sts.shutdown();
         }
-    }
-
-    public interface AddFilesAsynchronously {
-        void submit(StateStoreCommitRequest request);
-    }
-
-    public static AddFilesAsynchronously submitFilesToCommitQueue(
-            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider) {
-        return submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, tablePropertiesProvider, () -> UUID.randomUUID().toString());
-    }
-
-    public static AddFilesAsynchronously submitFilesToCommitQueue(
-            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider, Supplier<String> s3FilenameSupplier) {
-        StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(tablePropertiesProvider,
-                S3TransactionBodyStore.createProvider(instanceProperties, s3Client), StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
-        return request -> {
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageBody(uploader.serialiseAndUploadIfTooBig(request))
-                    .withMessageGroupId(request.getTableId())
-                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
-        };
     }
 }
