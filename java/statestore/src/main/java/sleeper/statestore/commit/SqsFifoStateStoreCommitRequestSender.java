@@ -29,6 +29,7 @@ import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStoreProviderByTableId;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -80,18 +81,19 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
 
     private String serialiseAndUploadIfTooBig(StateStoreCommitRequest request) {
         return requestSerDe.toJson(request.getTransactionIfHeld()
-                .flatMap(transaction -> uploadIfTooBig(request, transaction))
+                .flatMap(transaction -> uploadTransactionIfTooBig(request, transaction))
                 .orElse(request));
     }
 
-    private Optional<StateStoreCommitRequest> uploadIfTooBig(StateStoreCommitRequest request, StateStoreTransaction<?> transaction) {
+    private Optional<StateStoreCommitRequest> uploadTransactionIfTooBig(StateStoreCommitRequest request, StateStoreTransaction<?> transaction) {
         TransactionSerDe transactionSerDe = transactionSerDeProvider.getByTableId(request.getTableId());
         String json = transactionSerDe.toJson(transaction);
         if (json.length() < maxTransactionBytes) {
             return Optional.empty();
         } else {
             String key = TransactionBodyStore.createObjectKey(request.getTableId(), timeSupplier.get(), idSupplier.get());
-            transactionBodyStore.getTransactionBodyStore(request.getTableId()).store(key, transaction);
+            S3TransactionBodyStore bodyStore = (S3TransactionBodyStore) transactionBodyStore.getTransactionBodyStore(request.getTableId());
+            bodyStore.store(key, json);
             return Optional.of(StateStoreCommitRequest.create(request.getTableId(), key, request.getTransactionType()));
         }
     }
