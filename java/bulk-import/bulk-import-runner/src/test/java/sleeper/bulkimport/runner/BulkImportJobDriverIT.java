@@ -21,9 +21,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -32,7 +29,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Named;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -63,15 +59,10 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -85,7 +76,6 @@ import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
@@ -99,7 +89,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -108,16 +97,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestAcceptedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
@@ -476,51 +462,6 @@ class BulkImportJobDriverIT {
                         .build()));
     }
 
-    @Test
-    void shouldImportDataWithAsynchronousCommitOfNewFiles() throws Exception {
-        // Given
-        // - Set async commit
-        tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "true");
-        // - Write some data to be imported
-        List<Record> records = getRecords();
-        writeRecordsToFile(records, dataDir + "/import/a.parquet");
-        List<String> inputFiles = new ArrayList<>();
-        inputFiles.add(dataDir + "/import/a.parquet");
-        // - State store
-        StateStore stateStore = createTable(instanceProperties, tableProperties);
-
-        // When
-        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
-        runJob(BulkImportJobDataframeDriver::createFileReferences, instanceProperties, job, startAndEndTime());
-
-        // Then
-        IngestJob ingestJob = job.toIngestJob();
-        assertThat(stateStore.getFileReferences()).isEmpty();
-        List<Record> expectedRecords = new ArrayList<>(records);
-        sortRecords(expectedRecords);
-        assertThat(receiveCommitMessages()).singleElement().satisfies(commit -> {
-            AddFilesTransaction transaction = commit.<AddFilesTransaction>getTransactionIfHeld().orElseThrow();
-            assertThat(commit).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
-                    AddFilesTransaction.builder()
-                            .jobId("my-job").taskId(taskId).jobRunId(jobRunId).writtenTime(endTime)
-                            .files(transaction.getFiles())
-                            .build()));
-            assertThat(transaction.getFiles())
-                    .flatExtracting(AllReferencesToAFile::getReferences)
-                    .extracting(FileReference::getNumberOfRecords, FileReference::getPartitionId,
-                            file -> readRecords(file.getFilename(), schema))
-                    .containsExactly(tuple(200L, "root", expectedRecords));
-        });
-        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
-                        .taskId(taskId)
-                        .startedStatus(ingestAcceptedStatus(ingestJob, validationTime))
-                        .statusUpdate(validatedIngestStartedStatus(ingestJob, startTime))
-                        .finishedStatus(ingestFinishedStatusUncommitted(
-                                summary(startTime, endTime, 200, 200), 1))
-                        .build()));
-    }
-
     private static List<Record> readRecords(String filename, Schema schema) {
         try (ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema)) {
             List<Record> readRecords = new ArrayList<>();
@@ -550,7 +491,6 @@ class BulkImportJobDriverIT {
         new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
         return instanceProperties;
     }
 
@@ -685,26 +625,5 @@ class BulkImportJobDriverIT {
         return BulkImportJob.builder()
                 .tableId(tableProperties.get(TABLE_ID))
                 .tableName(tableProperties.get(TABLE_NAME));
-    }
-
-    private List<StateStoreCommitRequest> receiveCommitMessages() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        return sqsClient.receiveMessage(receiveMessageRequest).getMessages().stream()
-                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
-                .collect(Collectors.toList());
-    }
-
-    private StateStoreTransaction<?> readTransactionFromDataBucket(StateStoreCommitRequest request) {
-        return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
-                .getTransaction(request);
-    }
-
-    private String createFifoQueueGetUrl() {
-        CreateQueueResult result = sqsClient.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true")));
-        return result.getQueueUrl();
     }
 }
