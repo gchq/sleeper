@@ -325,6 +325,7 @@ public class CompactionJobResources {
                 .batchSize(1)
                 .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
+        coreStacks.grantSendStateStoreCommits(function);
     }
 
     private Queue sqsQueueForCompactionBatcher(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
