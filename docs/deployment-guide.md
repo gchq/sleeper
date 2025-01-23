@@ -26,8 +26,31 @@ cd sleeper                  # Change directory to the root of the Git repository
 
 If you used the system test deployment described in the getting started guide, you will have already built Sleeper.
 
-To build Sleeper locally to interact with an instance from elsewhere, you can follow the instructions in
-the [developer guide](developer-guide.md#install-prerequisite-software).
+### Sleeper CLI Docker environment
+
+The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install anything other than
+Docker on your machine.
+
+The `sleeper builder` command gets you a shell inside a container with all the dependencies required to build and deploy
+an instance of Sleeper. Note that when you run this inside an environment EC2, the Sleeper Git repository will have been
+cloned into the working directory of the container. If you are not using an environment EC2, you will need to manually
+clone the repository. If you deploy from outside of AWS this will involve lengthy uploads of build artifacts, which you
+can avoid with the environment EC2.
+
+If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
+the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
+to the container as well.
+
+The host Docker environment will be propagated to the container via the Docker socket.
+
+The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
+if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
+
+If you add a command on the end, you can run a specific script like this:
+
+```shell
+sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
+```
 
 ### Configure AWS
 
@@ -91,9 +114,19 @@ You're now ready to build and deploy Sleeper.
 
 ### Deployment environment
 
-Please follow the [getting started guide](getting-started.md#deployment-environment) to set up a VPC and EC2 instance
+Please follow the [getting started guide](getting-started.md#deployment-environment) to set up an environment suitable
 to deploy Sleeper. This also assumes you have [installed the Sleeper CLI](getting-started.md#install-sleeper-cli).
 This section adds more detail for the tools to set up this environment.
+
+The environment EC2 described here is provided to allow easy deployment, especially for development. It's a machine that
+can build Sleeper within AWS, and it avoids lengthy uploads of built artifacts into AWS, particularly jars and Docker
+images. In the future we may add support for prebuilt artifacts, in which case the EC2 will not be needed to deploy
+Sleeper.
+
+The EC2 is deployed with admin access to your AWS account. A production instance of Sleeper is likely to need some extra
+security setup, and you may wish to avoid deploying an EC2 with admin access to a production AWS account.
+
+For general administration of an existing Sleeper instance it is not necessary to connect to an environment EC2.
 
 If you run `sleeper environment`, you'll get a shell inside a Docker container where you can run `aws`, `cdk` and
 Sleeper `environment` commands directly, without prefixing with `sleeper`.
@@ -102,49 +135,89 @@ You can use `aws` commands there to set the AWS account, region and authenticati
 variables or configuration on the host machine, which will be propagated to the Docker container when you use
 `sleeper` commands.
 
-The Sleeper CLI also lets you manage multiple environments.
+Note that `sleeper environment` commands are not intended to be run from inside an environment EC2. When you connect to
+an EC2, this will be in a fresh context that is not aware of environments you have deployed or added. You can still use
+it to run `aws` and `cdk` commands, although it may be more convenient to use `sleeper builder` for this.
 
 #### Managing environments
 
 You can deploy either the VPC or the EC2 independently, or specify an existing VPC to deploy the EC2 to.
-You must specify an environment ID when deploying an environment. Parameters after the environment ID will be passed to
-a `cdk deploy --all` command.
+You must specify a unique environment ID when deploying an environment. Parameters after the environment ID will be
+passed to a `cdk deploy --all` command.
 
 ```bash
 # Deploy EC2 in a new VPC
-sleeper environment deploy MyEnvironment
+sleeper environment deploy <environment-id>
 
-# Only deploy VPC
-sleeper environment deploy VPCEnvironment -c deployEc2=false
+# Only deploy VPC (running this with an existing environment will remove the EC2)
+sleeper environment deploy <environment-id> -c deployEc2=false
 
 # Deploy EC2 in an existing VPC
-sleeper environment deploy EC2Environment -c vpcId=[vpc-id]
+sleeper environment deploy <environment-id> -c vpcId=[vpc-id]
 
 # Deploy with nightly system test automation (set nightlyTestDeployId to your own 2-character value)
-sleeper environment deploy NightlyTestEnvironment -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
+sleeper environment deploy <environment-id> -c nightlyTestsEnabled=true -c nightlyTestDeployId=my
+```
+
+You can add an environment that was previously deployed like this:
+
+```bash
+sleeper environment add <environment-id>
+```
+
+Whether you deployed or added an environment, you can connect to the deployed EC2 like this when it is running:
+
+```bash
+sleeper environment connect
+```
+
+This will SSH into the machine with EC2 Instance Connect and SSM Session Manager, and create a Linux `screen` session.
+If you do not explicitly exit this session, you will reconnect to the same `screen` session next time you connect to the
+EC2. If multiple connections are made to the EC2 as the same user, this will take over the `screen` session and
+disconnect the previous connection.
+
+You can replace the `screen` command by adding your own parameters to pass to ssh, like this:
+
+```bash
+sleeper environment connect bash
 ```
 
 You can switch environments like this:
 
 ```bash
 sleeper environment list
-sleeper environment set OtherEnvironment
-sleeper environment connect
+sleeper environment set <environment-id>
 ```
 
 You can tear down the deployed environment like this:
 
 ```bash
-sleeper environment destroy MyEnvironment
-```
-
-You can also tear down individual parts of the environment like this:
-
-```bash
-sleeper environment destroy MyEnvironment "*-BuildEC2"
+sleeper environment destroy <environment-id>
 ```
 
 Parameters after the environment ID will be passed to a `cdk destroy` command.
+
+#### Managing users
+
+When you deploy or add an environment, you will connect to the EC2 as the default user for the machine. This may not be
+desirable if you want to share the EC2, or if you want to automate system tests to run as that user.
+
+From outside the EC2, you can manage operating system users on the EC2 like this:
+
+```bash
+sleeper environment adduser <username>
+sleeper environment setuser <username>
+sleeper environment deluser <username>
+```
+
+When you add a new user or set your user, further invocations of `sleeper environment connect` will connect as that
+user.
+
+When you add a new user a fresh instance of the Sleeper Git repository will be checked out for that user, accessible
+through `sleeper builder` as that user.
+
+There's no authorisation that links your identity to a particular user. Anyone with access to the EC2 can connect as any
+user.
 
 ## Deployment
 
@@ -159,7 +232,8 @@ The automated deployment creates an instance of Sleeper either from your own con
 This also pre-populates certain properties for you, e.g. from your AWS configuration, and handles uploading the
 necessary deployment artifacts to AWS.
 
-Please ensure Sleeper has been built successfully before using this.
+Please ensure Sleeper has been built successfully before using this. This guide assumes you are in a `sleeper builder`
+container in an EC2 deployed with `sleeper environment`.
 
 Properties that are set to "changeme" in the templates will be overwritten and should not be set manually during
 automated deployment.
@@ -199,31 +273,6 @@ ECR.
 
 The deployment scripts will create all of the required configuration files in a folder called `generated` in the scripts
 directory.
-
-#### Sleeper CLI Docker environment
-
-The Sleeper CLI runs commands inside a Docker container. This way you can avoid needing to install any of the
-dependencies or build Sleeper yourself.
-
-The `sleeper builder` command gets you a shell inside a Docker container. This docker container will have all the
-dependencies required to build and deploy an instance of Sleeper. Note that when you run this inside an environment EC2,
-the Sleeper Git repository will be cloned into the working directory of the container. If you are not using an
-environment EC2, you will need to manually clone the repository.
-
-If you have AWS CLI installed, it will use your configuration from the host. Otherwise, any configuration you set in
-the container will be persisted in the host home directory. AWS authentication environment variables will be propagated
-to the container as well.
-
-The host Docker environment will be propagated to the container via the Docker socket.
-
-The files generated for the Sleeper instance will be persisted in the host home directory under `~/.sleeper`, so that
-if you run the Docker container multiple times you will still have details of the last Sleeper instance you worked with.
-
-If you add a command on the end, you can run a specific script like this:
-
-```shell
-sleeper builder sleeper/scripts/test/deployAll/deployTest.sh myinstanceid myvpc mysubnet
-```
 
 ### Manual Deployment
 
