@@ -207,7 +207,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
-            .description("The S3 readahead range - defaults to the value in the instance properties.")
+            .description("The S3 readahead range - defaults to the row group size.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPRESSION_CODEC = Index.propertyBuilder("sleeper.table.compression.codec")
