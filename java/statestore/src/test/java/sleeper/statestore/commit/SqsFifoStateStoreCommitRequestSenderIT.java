@@ -33,6 +33,7 @@ import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.statestore.testutil.LocalStackTestBase;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
@@ -63,8 +64,8 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final String tableId = tableProperties.get(TABLE_ID);
     private final StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);
-    private final Supplier<Instant> timeSupplier = fixTime(DEFAULT_TRANSACTION_TIME);
-    private final Supplier<String> idSupplier = fixIds(DEFAULT_TRANSACTION_ID);
+    private Supplier<Instant> timeSupplier = fixTime(DEFAULT_TRANSACTION_TIME);
+    private Supplier<String> idSupplier = fixIds(DEFAULT_TRANSACTION_ID);
 
     @BeforeEach
     void setUp() {
@@ -115,8 +116,8 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
         return new SqsFifoStateStoreCommitRequestSender(instanceProperties,
                 S3TransactionBodyStore.createProvider(instanceProperties, s3Client)
                         .byTableId(new FixedTablePropertiesProvider(tableProperties)),
-                new StateStoreCommitRequestSerDe(tableProperties), sqsClient,
-                maxBytes, timeSupplier, idSupplier);
+                TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties)),
+                sqsClient, maxBytes, timeSupplier, idSupplier);
     }
 
     private List<StateStoreCommitRequest> receiveCommitRequests() {
