@@ -17,7 +17,6 @@ package sleeper.compaction.core.job.commit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
 
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
@@ -35,18 +34,11 @@ public class CompactionCommitRequestSerDe {
     }
 
     public String toJson(String tableId, ReplaceFileReferencesRequest request) {
-        return gson.toJson(toJsonObject(tableId, request));
+        return gson.toJson(new CompactionCommitMessage(tableId, request));
     }
 
     public String toJsonPrettyPrint(String tableId, ReplaceFileReferencesRequest request) {
-        return gsonPrettyPrint.toJson(toJsonObject(tableId, request));
-    }
-
-    private JsonObject toJsonObject(String tableId, ReplaceFileReferencesRequest request) {
-        JsonObject json = new JsonObject();
-        json.addProperty("tableId", tableId);
-        json.add("request", gson.toJsonTree(request));
-        return json;
+        return gsonPrettyPrint.toJson(new CompactionCommitMessage(tableId, request));
     }
 
     public CompactionCommitRequest fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {

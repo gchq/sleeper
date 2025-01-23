@@ -294,6 +294,12 @@ public interface TableDefaultProperty {
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_ASYNC_BATCHING = Index.propertyBuilder("sleeper.default.compaction.job.async.commit.batching")
+            .description("This is the default for whether the asynchronous compaction commits will be sent " +
+                    "to the batcher if enabled.")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_INGEST_FILES_COMMIT_ASYNC = Index.propertyBuilder("sleeper.default.ingest.job.files.commit.async")
             .description("This is the default for whether ingest tasks will add files asynchronously via the state " +
                     "store committer, if asynchronous commit is enabled. Otherwise, ingest tasks will add files " +

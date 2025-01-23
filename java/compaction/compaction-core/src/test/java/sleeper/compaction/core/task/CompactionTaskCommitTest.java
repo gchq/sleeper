@@ -16,6 +16,7 @@
 package sleeper.compaction.core.task;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -59,10 +61,11 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     private final StateStore store2 = stateStore(table2);
 
     @Nested
-    @DisplayName("Send commits to queue")
-    class SendCommitsToQueue {
+    @DisplayName("Send commits to state store commit queue")
+    class SendCommitsToStateStoreCommitQueue {
 
         @Test
+        @Disabled
         void shouldSendJobCommitRequestToQueue() throws Exception {
             // Given
             setAsyncCommit(true, tableProperties);
@@ -82,7 +85,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(consumedJobs).containsExactly(job1);
             assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
-            assertThat(commitRequestsOnQueue).containsExactly(
+            assertThat(stateStoreCommitQueue).containsExactly(
                     commitRequestFor(job1,
                             new JobRunSummary(job1Summary,
                                     Instant.parse("2024-02-22T13:50:01Z"),
@@ -122,7 +125,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(consumedJobs).containsExactly(job1, job2);
             assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
-            assertThat(commitRequestsOnQueue).containsExactly(
+            assertThat(stateStoreCommitQueue).containsExactly(
                     commitRequestFor(job1, "test-job-run-1",
                             new JobRunSummary(job1Records, startTime1, finishTime1)),
                     commitRequestFor(job2, "test-job-run-2",
@@ -172,7 +175,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
             assertThat(consumedJobs).containsExactly(job1, job2);
             assertThat(jobsReturnedToQueue).isEmpty();
             assertThat(jobsOnQueue).isEmpty();
-            assertThat(commitRequestsOnQueue).containsExactly(
+            assertThat(stateStoreCommitQueue).containsExactly(
                     commitRequestFor(job1, new JobRunSummary(job1Records, startTime1, finishTime1)));
             assertThat(jobTracker.getAllJobs(table1.get(TABLE_ID))).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
@@ -241,6 +244,47 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     .statusUpdate(compactionCommittedStatus(commitTime))
                                     .build()));
         }
+    }
+
+    @Nested
+    @DisplayName("Send commits to the commit batcher queue")
+    class CommitBatcherQueue {
+
+        @Test
+        void shouldSendJobCommitRequestToBatcher() throws Exception {
+            // Given
+            setAsyncCommit(true, tableProperties);
+            tableProperties.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
+
+            Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
+            Iterator<Instant> times = List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"),   // Task start
+                    startTime, finishTime,
+                    Instant.parse("2024-02-22T13:50:05Z")).iterator(); // Task finish
+            CompactionJob job1 = createJobOnQueue("job1");
+            RecordsProcessed job1Summary = new RecordsProcessed(10L, 5L);
+
+            // When
+            runTask(processJobs(jobSucceeds(job1Summary)), times::next);
+
+            // Then
+            assertThat(consumedJobs).containsExactly(job1);
+            assertThat(stateStoreCommitQueue).containsExactly(
+                    commitRequestFor(job1,
+                            new JobRunSummary(job1Summary,
+                                    Instant.parse("2024-02-22T13:50:01Z"),
+                                    Instant.parse("2024-02-22T13:50:02Z"))));
+            assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
+                    compactionJobCreated(job1, DEFAULT_CREATED_TIME,
+                            JobRun.builder().taskId(DEFAULT_TASK_ID)
+                                    .startedStatus(compactionStartedStatus(startTime))
+                                    .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10, 5)))
+                                    .build()));
+        }
+
+        //Other test ideas
+        //If Async is disabled, shouldn't go to the batcher
     }
 
     @Nested

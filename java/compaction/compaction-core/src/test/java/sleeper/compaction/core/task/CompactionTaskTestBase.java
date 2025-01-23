@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.core.job.commit.CompactionCommitRequest;
 import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
 import sleeper.core.properties.PropertiesReloader;
@@ -88,7 +89,8 @@ public class CompactionTaskTestBase {
     protected final InMemoryCompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     protected final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
     protected final List<Duration> sleeps = new ArrayList<>();
-    protected final List<StateStoreCommitRequest> commitRequestsOnQueue = new ArrayList<>();
+    protected final List<StateStoreCommitRequest> stateStoreCommitQueue = new ArrayList<>();
+    protected final List<CompactionCommitRequest> batcherCommitQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
 
@@ -150,7 +152,7 @@ public class CompactionTaskTestBase {
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider(), stateStoreProvider(),
-                jobTracker, commitRequestsOnQueue::add, timeSupplier);
+                jobTracker, stateStoreCommitQueue::add, timeSupplier);
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,

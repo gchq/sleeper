@@ -1486,6 +1486,10 @@ sleeper.default.compaction.job.id.assignment.commit.async=true
 # finished jobs directly to the state store.
 sleeper.default.compaction.job.commit.async=true
 
+# This is the default for whether the asynchronous compaction commits will be sent to the batcher if
+# enabled.
+sleeper.default.compaction.job.async.commit.batching=true
+
 # This is the default for whether ingest tasks will add files asynchronously via the state store
 # committer, if asynchronous commit is enabled. Otherwise, ingest tasks will add files directly to the
 # state store.

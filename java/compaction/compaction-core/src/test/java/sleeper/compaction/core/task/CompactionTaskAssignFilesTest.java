@@ -205,6 +205,6 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         uncommittedCompactionRun(DEFAULT_TASK_ID, expectedSummary)));
-        assertThat(commitRequestsOnQueue).containsExactly(commitRequestFor(job, expectedSummary));
+        assertThat(stateStoreCommitQueue).containsExactly(commitRequestFor(job, expectedSummary));
     }
 }
