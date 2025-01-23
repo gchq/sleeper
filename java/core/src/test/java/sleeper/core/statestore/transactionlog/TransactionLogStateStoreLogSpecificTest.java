@@ -444,7 +444,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             String key = "table/transactions/myTransaction.json";
-            transactionBodyStore.store(key, transaction);
+            transactionBodyStore.store(key, tableId, transaction);
 
             // When
             store.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
@@ -459,7 +459,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             PartitionTree tree = partitions.splitToNewChildren("root", "L", "R", "m").buildTree();
             PartitionTransaction transaction = new InitialisePartitionsTransaction(tree.getAllPartitions());
             String key = "table/transactions/myTransaction.json";
-            transactionBodyStore.store(key, transaction);
+            transactionBodyStore.store(key, tableId, transaction);
 
             // When
             store.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
@@ -489,7 +489,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReferenceTransaction transactionInStore = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             FileReferenceTransaction transactionInLog = new ClearFilesTransaction();
             String key = "table/transactions/myTransaction.json";
-            transactionBodyStore.store(key, transactionInStore);
+            transactionBodyStore.store(key, tableId, transactionInStore);
             store.addTransaction(AddTransactionRequest.withTransaction(transactionInLog).bodyKey(key).build());
 
             // When / Then

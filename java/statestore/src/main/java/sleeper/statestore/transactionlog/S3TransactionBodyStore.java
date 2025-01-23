@@ -25,7 +25,7 @@ import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionBodyStoreProviderByTableId;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.LoggedDuration;
 
@@ -40,16 +40,16 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(S3TransactionBodyStore.class);
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
-    private final TransactionSerDe serDe;
+    private final TransactionSerDeProvider serDeProvider;
 
     public S3TransactionBodyStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonS3 s3Client) {
-        this(instanceProperties, s3Client, new TransactionSerDe(tableProperties.getSchema()));
+        this(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
     }
 
-    private S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDe serDe) {
+    private S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDeProvider serDeProvider) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
-        this.serDe = serDe;
+        this.serDeProvider = serDeProvider;
     }
 
     /**
@@ -85,12 +85,12 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
      * @return                    the store
      */
     public static TransactionBodyStore forFileTransactions(InstanceProperties instanceProperties, AmazonS3 s3Client) {
-        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDe.forFileTransactions());
+        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forFileTransactions());
     }
 
     @Override
-    public void store(String key, StateStoreTransaction<?> transaction) {
-        store(key, serDe.toJson(transaction));
+    public void store(String key, String tableId, StateStoreTransaction<?> transaction) {
+        store(key, serDeProvider.getByTableId(tableId).toJson(transaction));
     }
 
     /**
@@ -106,10 +106,10 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     }
 
     @Override
-    public <T extends StateStoreTransaction<?>> T getBody(String key, TransactionType transactionType) {
+    public <T extends StateStoreTransaction<?>> T getBody(String key, String tableId, TransactionType transactionType) {
         LOGGER.debug("Reading large {} transaction from data bucket at {}", transactionType, key);
         String body = s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), key);
-        return (T) serDe.toTransaction(transactionType, body);
+        return (T) serDeProvider.getByTableId(tableId).toTransaction(transactionType, body);
     }
 
     /**

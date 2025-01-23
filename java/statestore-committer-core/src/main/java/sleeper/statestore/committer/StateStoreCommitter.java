@@ -183,7 +183,7 @@ public class StateStoreCommitter {
             return transaction.get();
         } else {
             TransactionBodyStore store = transactionBodyStoreProvider.getTransactionBodyStore(tableProperties);
-            return store.getBody(request.getBodyKey(), request.getTransactionType());
+            return store.getTransaction(request);
         }
     }
 

@@ -100,11 +100,11 @@ public class TransactionLogEntry {
      * @param  bodyStore the transaction body store
      * @return           the transaction
      */
-    public StateStoreTransaction<?> getTransactionOrLoadFromPointer(TransactionBodyStore bodyStore) {
+    public StateStoreTransaction<?> getTransactionOrLoadFromPointer(String tableId, TransactionBodyStore bodyStore) {
         if (transaction != null) {
             return transaction;
         } else {
-            return bodyStore.getBody(bodyKey, transactionType);
+            return bodyStore.getBody(bodyKey, tableId, transactionType);
         }
     }
 

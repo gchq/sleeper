@@ -728,7 +728,7 @@ class BulkImportJobDriverIT {
 
     private StateStoreTransaction<?> readTransactionFromDataBucket(StateStoreCommitRequest request) {
         return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
-                .getBody(request.getBodyKey(), request.getTransactionType());
+                .getTransaction(request);
     }
 
     private String createFifoQueueGetUrl() {

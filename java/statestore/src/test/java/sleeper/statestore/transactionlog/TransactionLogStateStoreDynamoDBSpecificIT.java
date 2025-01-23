@@ -51,6 +51,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.ADD_TRANSACTION_MAX_ATTEMPTS;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -129,7 +130,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
 
             // When
-            transactionBodyStore.store(key, transaction);
+            transactionBodyStore.store(key, tableProperties.get(TABLE_ID), transaction);
             stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
 
             // Then

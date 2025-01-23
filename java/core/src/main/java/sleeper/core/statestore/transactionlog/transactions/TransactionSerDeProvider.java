@@ -61,4 +61,14 @@ public interface TransactionSerDeProvider {
             }
         };
     }
+
+    /**
+     * Creates a provider that returns a serialiser that only supports file transactions.
+     *
+     * @return the serialiser provider
+     */
+    static TransactionSerDeProvider forFileTransactions() {
+        TransactionSerDe serDe = TransactionSerDe.forFileTransactions();
+        return tableId -> serDe;
+    }
 }

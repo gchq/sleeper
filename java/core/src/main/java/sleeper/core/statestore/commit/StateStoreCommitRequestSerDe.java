@@ -27,7 +27,6 @@ import com.google.gson.JsonSerializer;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.GsonConfig;
@@ -62,8 +61,7 @@ public class StateStoreCommitRequestSerDe {
      * @return the serialiser
      */
     public static StateStoreCommitRequestSerDe forFileTransactions() {
-        TransactionSerDe transactionSerDe = TransactionSerDe.forFileTransactions();
-        return new StateStoreCommitRequestSerDe(tableId -> transactionSerDe);
+        return new StateStoreCommitRequestSerDe(TransactionSerDeProvider.forFileTransactions());
     }
 
     /**

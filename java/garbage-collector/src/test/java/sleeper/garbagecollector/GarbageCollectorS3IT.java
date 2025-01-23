@@ -255,7 +255,7 @@ public class GarbageCollectorS3IT {
 
     private StateStoreTransaction<?> readTransactionFromDataBucket(TableProperties tableProperties, StateStoreCommitRequest request) {
         return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
-                .getBody(request.getBodyKey(), request.getTransactionType());
+                .getTransaction(request);
     }
 
     private List<Message> receiveCommitMessages() {

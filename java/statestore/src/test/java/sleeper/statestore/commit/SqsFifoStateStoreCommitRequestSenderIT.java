@@ -139,7 +139,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     private StateStoreTransaction<?> readTransaction(String key, TransactionType transactionType) {
         return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
-                .getBody(key, transactionType);
+                .getBody(key, tableId, transactionType);
     }
 
 }

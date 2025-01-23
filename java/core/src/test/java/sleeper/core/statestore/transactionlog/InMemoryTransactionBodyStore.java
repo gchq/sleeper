@@ -30,12 +30,12 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore, Trans
     private final Map<String, StateStoreTransaction<?>> transactionByKey = new HashMap<>();
 
     @Override
-    public void store(String key, StateStoreTransaction<?> transaction) {
+    public void store(String key, String tableId, StateStoreTransaction<?> transaction) {
         transactionByKey.put(key, transaction);
     }
 
     @Override
-    public <T extends StateStoreTransaction<?>> T getBody(String key, TransactionType transactionType) {
+    public <T extends StateStoreTransaction<?>> T getBody(String key, String tableId, TransactionType transactionType) {
         T transaction = (T) Objects.requireNonNull(transactionByKey.get(key));
         Class<?> expectedClass = transactionType.getType();
         if (!expectedClass.isInstance(transaction)) {

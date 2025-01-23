@@ -71,8 +71,8 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
                     new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
 
             // When
-            store.store(key, transaction);
-            StateStoreTransaction<?> found = store.getBody(key, TransactionType.INITIALISE_PARTITIONS);
+            store.store(key, tableId, transaction);
+            StateStoreTransaction<?> found = store.getBody(key, tableId, TransactionType.INITIALISE_PARTITIONS);
 
             // Then
             assertThat(found).isEqualTo(transaction);
@@ -89,8 +89,8 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
                     new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
 
             // When
-            store.store(key, transaction);
-            StateStoreTransaction<?> found = store.getBody(key, TransactionType.INITIALISE_PARTITIONS);
+            store.store(key, tableId, transaction);
+            StateStoreTransaction<?> found = store.getBody(key, tableId, TransactionType.INITIALISE_PARTITIONS);
 
             // Then
             assertThat(found).isEqualTo(transaction);
@@ -112,8 +112,8 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
                     FileReferenceFactory.from(partitions).rootFile("test.parquet", 100))));
 
             // When
-            store.store(key, transaction);
-            StateStoreTransaction<?> found = store.getBody(key, TransactionType.ADD_FILES);
+            store.store(key, tableId, transaction);
+            StateStoreTransaction<?> found = store.getBody(key, tableId, TransactionType.ADD_FILES);
 
             // Then
             assertThat(found).isEqualTo(transaction);
@@ -127,11 +127,11 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
                     new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
 
             // When / Then
-            assertThatThrownBy(() -> store.store(key, transaction))
+            assertThatThrownBy(() -> store.store(key, tableId, transaction))
                     .isInstanceOf(UnsupportedOperationException.class);
             new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
-                    .store(key, transaction);
-            assertThatThrownBy(() -> store.getBody(key, TransactionType.INITIALISE_PARTITIONS))
+                    .store(key, tableId, transaction);
+            assertThatThrownBy(() -> store.getBody(key, tableId, TransactionType.INITIALISE_PARTITIONS))
                     .isInstanceOf(UnsupportedOperationException.class);
         }
     }

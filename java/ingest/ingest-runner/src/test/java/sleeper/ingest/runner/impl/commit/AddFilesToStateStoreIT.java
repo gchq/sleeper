@@ -155,6 +155,6 @@ public class AddFilesToStateStoreIT {
 
     private StateStoreTransaction<?> readTransactionFromDataBucket(StateStoreCommitRequest request) {
         return new S3TransactionBodyStore(instanceProperties, tableProperties, s3)
-                .getBody(request.getBodyKey(), request.getTransactionType());
+                .getTransaction(request);
     }
 }

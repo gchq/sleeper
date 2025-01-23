@@ -50,7 +50,7 @@ public class StateStoreCommitRequestUploaderTest {
         StateStoreCommitRequest found = new StateStoreCommitRequestSerDe(tableProperties).fromJson(resultJson);
         assertThat(found)
                 .isEqualTo(StateStoreCommitRequest.create(tableId, found.getBodyKey(), TransactionType.CLEAR_FILES));
-        assertThat(transactionBodyStore.<ClearFilesTransaction>getBody(found.getBodyKey(), TransactionType.CLEAR_FILES))
+        assertThat(transactionBodyStore.<ClearFilesTransaction>getTransaction(found))
                 .isEqualTo(new ClearFilesTransaction());
     }
 
