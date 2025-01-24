@@ -59,6 +59,7 @@ import java.util.UUID;
 
 import static sleeper.compaction.job.execution.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 
@@ -165,12 +166,8 @@ public class ECSCompactionTaskRunner {
 
     private static BatchedCommitQueueSender sendToSqsBatched(
             InstanceProperties instanceProperties, AmazonSQS sqsClient) {
-        return request -> {
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageDeduplicationId(UUID.randomUUID().toString())
-                    .withMessageGroupId(request.tableId())
-                    .withMessageBody(new CompactionCommitMessageSerDe().toJson(request)));
-        };
+        return request -> sqsClient.sendMessage(
+                instanceProperties.get(COMPACTION_COMMIT_QUEUE_URL),
+                new CompactionCommitMessageSerDe().toJson(request));
     }
 }
