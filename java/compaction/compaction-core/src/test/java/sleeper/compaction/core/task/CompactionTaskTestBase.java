@@ -62,6 +62,7 @@ import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -363,9 +364,23 @@ public class CompactionTaskTestBase {
                 .build();
     }
 
-    protected void setAsyncCommit(boolean enabled, TableProperties... tableProperties) {
+    protected void setSyncCommit(TableProperties... tableProperties) {
         for (TableProperties table : tableProperties) {
-            table.set(COMPACTION_JOB_COMMIT_ASYNC, "" + enabled);
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+        }
+    }
+
+    protected void setAsyncCommitNoBatching(TableProperties... tableProperties) {
+        for (TableProperties table : tableProperties) {
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
+            table.set(COMPACTION_JOB_ASYNC_BATCHING, "false");
+        }
+    }
+
+    protected void setAsyncCommitWithBatching(TableProperties... tableProperties) {
+        for (TableProperties table : tableProperties) {
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
+            table.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
         }
     }
 

@@ -44,7 +44,6 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -69,7 +68,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSendJobCommitRequestToQueue() throws Exception {
             // Given
-            setAsyncCommit(true, tableProperties);
+            setAsyncCommitNoBatching(tableProperties);
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
             Iterator<Instant> times = List.of(
@@ -102,7 +101,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSendJobCommitRequestsForDifferentTablesToQueue() throws Exception {
             // Given
-            setAsyncCommit(true, table1, table2);
+            setAsyncCommitNoBatching(table1, table2);
             Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
@@ -150,8 +149,8 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldOnlySendJobCommitRequestsForTablesConfiguredForAsyncCommit() throws Exception {
             // Given
-            setAsyncCommit(true, table1);
-            setAsyncCommit(false, table2);
+            setAsyncCommitNoBatching(table1);
+            setSyncCommit(table2);
             Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
@@ -198,7 +197,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldCorrelateAsynchronousCommitsAfterTwoRunsFinished() throws Exception {
             // Given
-            setAsyncCommit(true, tableProperties);
+            setAsyncCommitNoBatching(tableProperties);
             Instant startTime1 = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime1 = Instant.parse("2024-02-22T13:50:02Z");
             Instant startTime2 = Instant.parse("2024-02-22T13:50:03Z");
@@ -254,8 +253,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
         @Test
         void shouldSendJobCommitRequestToBatcher() throws Exception {
             // Given
-            setAsyncCommit(true, tableProperties);
-            tableProperties.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
+            setAsyncCommitWithBatching(tableProperties);
 
             Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
             Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
