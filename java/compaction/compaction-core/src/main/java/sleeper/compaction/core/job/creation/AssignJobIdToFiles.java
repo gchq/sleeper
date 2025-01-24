@@ -18,6 +18,7 @@ package sleeper.compaction.core.job.creation;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.table.TableStatus;
 
@@ -34,7 +35,7 @@ public interface AssignJobIdToFiles {
         };
     }
 
-    static AssignJobIdToFiles byQueue(AssignJobIdQueueSender queueSender) {
+    static AssignJobIdToFiles byQueue(StateStoreCommitRequestSender queueSender) {
         return (assignJobIdRequests, tableStatus) -> queueSender.send(
                 StateStoreCommitRequest.create(
                         tableStatus.getTableUniqueId(),

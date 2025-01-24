@@ -13,11 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.compaction.core.job.creation;
+package sleeper.core.statestore.commit;
 
-import sleeper.core.statestore.commit.StateStoreCommitRequest;
-
+/**
+ * Sends state store updates to the state store committer.
+ */
 @FunctionalInterface
-public interface AssignJobIdQueueSender {
-    void send(StateStoreCommitRequest commitRequest);
+public interface StateStoreCommitRequestSender {
+
+    /**
+     * Sends a state store update to the state store committer.
+     *
+     * @param request the request to commit a transaction
+     */
+    void send(StateStoreCommitRequest request);
+
 }

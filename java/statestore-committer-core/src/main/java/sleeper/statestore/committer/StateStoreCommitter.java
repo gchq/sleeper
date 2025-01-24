@@ -25,9 +25,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
@@ -37,7 +35,6 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -53,7 +50,7 @@ public class StateStoreCommitter {
     private final IngestJobTracker ingestJobTracker;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final TransactionBodyStoreProvider transactionBodyStoreProvider;
+    private final TransactionBodyStore transactionBodyStore;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
@@ -61,13 +58,13 @@ public class StateStoreCommitter {
             IngestJobTracker ingestJobTracker,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            TransactionBodyStoreProvider transactionBodyStoreProvider,
+            TransactionBodyStore transactionBodyStore,
             Supplier<Instant> timeSupplier) {
         this.compactionJobTracker = compactionJobTracker;
         this.ingestJobTracker = ingestJobTracker;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.transactionBodyStoreProvider = transactionBodyStoreProvider;
+        this.transactionBodyStore = transactionBodyStore;
         this.timeSupplier = timeSupplier;
     }
 
@@ -138,7 +135,7 @@ public class StateStoreCommitter {
             commitIngest(request, tableProperties, transactionStateStore);
         } else {
             transactionStateStore.addTransaction(
-                    AddTransactionRequest.withTransaction(getTransaction(tableProperties, request))
+                    AddTransactionRequest.withTransaction(transactionBodyStore.getTransaction(request))
                             .bodyKey(request.getBodyKey())
                             .build());
         }
@@ -147,7 +144,7 @@ public class StateStoreCommitter {
     }
 
     private void commitCompaction(StateStoreCommitRequest request, TableProperties tableProperties, TransactionLogStateStore stateStore) {
-        ReplaceFileReferencesTransaction transaction = getTransaction(tableProperties, request);
+        ReplaceFileReferencesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
                 .beforeApplyListener((number, state) -> transaction.reportJobCommits(
@@ -162,7 +159,7 @@ public class StateStoreCommitter {
     }
 
     private void commitIngest(StateStoreCommitRequest request, TableProperties tableProperties, TransactionLogStateStore stateStore) {
-        AddFilesTransaction transaction = getTransaction(tableProperties, request);
+        AddFilesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
                 .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
@@ -173,17 +170,6 @@ public class StateStoreCommitter {
         } catch (Exception e) {
             transaction.reportJobFailed(ingestJobTracker, tableProperties.getStatus(), e);
             throw e;
-        }
-    }
-
-    private <T extends StateStoreTransaction<?>> T getTransaction(
-            TableProperties tableProperties, StateStoreCommitRequest request) {
-        Optional<T> transaction = request.getTransactionIfHeld();
-        if (transaction.isPresent()) {
-            return transaction.get();
-        } else {
-            TransactionBodyStore store = transactionBodyStoreProvider.getTransactionBodyStore(tableProperties);
-            return store.getBody(request.getBodyKey(), request.getTransactionType());
         }
     }
 

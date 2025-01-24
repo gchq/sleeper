@@ -24,14 +24,16 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.SplitIntoBatches;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.commit.S3StateStoreCommitRequestUploader;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -67,7 +69,7 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
     }
 
     private void sendMessageBatch(List<StateStoreCommitRequest> batch) {
-        StateStoreCommitRequestUploader uploader = uploader();
+        S3StateStoreCommitRequestUploader uploader = uploader();
         sqs.sendMessageBatch(request -> request
                 .queueUrl(instance.getInstanceProperties().get(STATESTORE_COMMITTER_QUEUE_URL))
                 .entries(batch.stream()
@@ -75,15 +77,15 @@ public class AwsStateStoreCommitterDriver implements StateStoreCommitterDriver {
                                 .messageDeduplicationId(UUID.randomUUID().toString())
                                 .id(UUID.randomUUID().toString())
                                 .messageGroupId(message.getTableId())
-                                .messageBody(uploader.serialiseAndUploadIfTooBig(message))
+                                .messageBody(uploader.serialiseAndUploadIfTooBig(SqsFifoStateStoreCommitRequestSender.DEFAULT_MAX_TRANSACTION_BYTES, message))
                                 .build())
                         .collect(toUnmodifiableList())));
     }
 
-    private StateStoreCommitRequestUploader uploader() {
-        return new StateStoreCommitRequestUploader(instance.getTablePropertiesProvider(),
-                S3TransactionBodyStore.createProvider(instance.getInstanceProperties(), s3),
-                StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
+    private S3StateStoreCommitRequestUploader uploader() {
+        return new S3StateStoreCommitRequestUploader(instance.getInstanceProperties(),
+                TransactionSerDeProvider.from(instance.getTablePropertiesProvider()),
+                s3, Instant::now, () -> UUID.randomUUID().toString());
     }
 
     @Override

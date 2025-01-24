@@ -42,6 +42,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.localstack.test.SleeperLocalStackContainer;
@@ -153,12 +154,13 @@ public class StateStoreCommitterThroughputIT {
     }
 
     private StateStoreCommitter committer() {
+        TablePropertiesProvider tablePropertiesProvider = tablePropertiesProvider();
         return new StateStoreCommitter(
                 CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
                 IngestJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
-                tablePropertiesProvider(),
+                tablePropertiesProvider,
                 stateStoreProvider(),
-                S3TransactionBodyStore.createProvider(instanceProperties, s3),
+                new S3TransactionBodyStore(instanceProperties, s3, TransactionSerDeProvider.from(tablePropertiesProvider)),
                 Instant::now);
     }
 

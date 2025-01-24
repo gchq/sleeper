@@ -20,9 +20,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.Message;
-import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,32 +40,22 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
-import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -76,7 +63,6 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCF
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
-import static sleeper.garbagecollector.GarbageCollector.sendAsyncCommit;
 import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
@@ -140,77 +126,8 @@ public class GarbageCollectorS3IT {
                         List.of(oldFile1.getFilename())));
     }
 
-    @Test
-    void shouldSendAsyncCommit() throws Exception {
-        // Given
-        TableProperties tableProperties = createTableWithGCDelay(instanceProperties, 10);
-        tableProperties.set(GARBAGE_COLLECTOR_ASYNC_COMMIT, "true");
-        Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
-        Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-        StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
-        // Perform a compaction on an existing file to create a readyForGC file
-        s3Client.putObject(testBucket, "old-file.parquet", "abc");
-        s3Client.putObject(testBucket, "new-file.parquet", "def");
-        FileReference oldFile = factory.rootFile("s3a://" + testBucket + "/old-file.parquet", 100L);
-        FileReference newFile = factory.rootFile("s3a://" + testBucket + "/new-file.parquet", 100L);
-        stateStore.addFile(oldFile);
-        stateStore.assignJobIds(List.of(
-                assignJobOnPartitionToFiles("test-job", "root", List.of(oldFile.getFilename()))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "test-job", List.of(oldFile.getFilename()), newFile)));
-
-        // When
-        createGarbageCollector(instanceProperties, tableProperties, stateStore)
-                .runAtTime(currentTime, List.of(tableProperties));
-
-        // Then
-        assertThat(s3Client.doesObjectExist(testBucket, "old-file.parquet")).isFalse();
-        assertThat(s3Client.doesObjectExist(testBucket, "new-file.parquet")).isTrue();
-        assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(newFile), List.of(oldFile.getFilename())));
-        assertThat(receiveCommitRequests(tableProperties))
-                .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
-                        new DeleteFilesTransaction(List.of(oldFile.getFilename()))));
-    }
-
-    @Test
-    void shouldUploadCommitToS3IfTooBig() throws Exception {
-        // Given
-        TableProperties tableProperties = createTableWithGCDelay(instanceProperties, 10);
-        tableProperties.set(GARBAGE_COLLECTOR_ASYNC_COMMIT, "true");
-        Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
-        Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-        StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
-        // Perform a compaction on an existing file to create a readyForGC file
-        s3Client.putObject(testBucket, "old-file.parquet", "abc");
-        s3Client.putObject(testBucket, "new-file.parquet", "def");
-        FileReference oldFile = factory.rootFile("s3a://" + testBucket + "/old-file.parquet", 100L);
-        FileReference newFile = factory.rootFile("s3a://" + testBucket + "/new-file.parquet", 100L);
-        stateStore.addFile(oldFile);
-        stateStore.assignJobIds(List.of(
-                assignJobOnPartitionToFiles("test-job", "root", List.of(oldFile.getFilename()))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "test-job", List.of(oldFile.getFilename()), newFile)));
-
-        // When
-        createGarbageCollectorWithMaxCommitLength(1, instanceProperties, tableProperties, stateStore)
-                .runAtTime(currentTime, List.of(tableProperties));
-
-        // Then
-        assertThat(s3Client.doesObjectExist(testBucket, "old-file.parquet")).isFalse();
-        assertThat(s3Client.doesObjectExist(testBucket, "new-file.parquet")).isTrue();
-        assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(newFile), List.of(oldFile.getFilename())));
-        assertThat(receiveCommitRequests(tableProperties)).singleElement().satisfies(found -> {
-            assertThat(found).isEqualTo(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), found.getBodyKey(), TransactionType.DELETE_FILES));
-            assertThat(readTransactionFromDataBucket(tableProperties, found))
-                    .isEqualTo(new DeleteFilesTransaction(List.of(oldFile.getFilename())));
-        });
-    }
-
     private InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.set(DATA_BUCKET, testBucket);
         return instanceProperties;
@@ -223,15 +140,9 @@ public class GarbageCollectorS3IT {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
-        return createGarbageCollectorWithMaxCommitLength(
-                StateStoreCommitRequestUploader.MAX_SQS_LENGTH,
-                instanceProperties, tableProperties, stateStore);
-    }
-
-    private GarbageCollector createGarbageCollectorWithMaxCommitLength(int maxLength, InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
         return new GarbageCollector(deleteFileAndSketches(configuration), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
-                sendAsyncCommit(instanceProperties, new FixedTablePropertiesProvider(tableProperties), sqsClient, s3Client, maxLength));
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }
 
     private static Schema getSchema() {
@@ -239,29 +150,5 @@ public class GarbageCollectorS3IT {
                 .rowKeyFields(new Field("key", new IntType()))
                 .valueFields(new Field("value", new StringType()))
                 .build();
-    }
-
-    private String createFifoQueueGetUrl() {
-        return sqsClient.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
-    }
-
-    private List<StateStoreCommitRequest> receiveCommitRequests(TableProperties tableProperties) {
-        return receiveCommitMessages().stream()
-                .map(message -> new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody()))
-                .collect(Collectors.toList());
-    }
-
-    private StateStoreTransaction<?> readTransactionFromDataBucket(TableProperties tableProperties, StateStoreCommitRequest request) {
-        return new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
-                .getBody(request.getBodyKey(), request.getTransactionType());
-    }
-
-    private List<Message> receiveCommitMessages() {
-        ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMaxNumberOfMessages(10);
-        return sqsClient.receiveMessage(receiveMessageRequest).getMessages();
     }
 }
