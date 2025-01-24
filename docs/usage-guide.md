@@ -10,10 +10,23 @@ the [deployment guide](deployment-guide.md) for more information on deploying an
 If you just want to test locally, see the documentation on [deploying to localstack](usage/deploy-to-localstack.md).
 This has very limited functionality compared to a deployed instance.
 
-## Tables
+## Operations on data
 
 Data in Sleeper is held in a table. You can always add or remove Sleeper tables from an instance. See
 the [tables documentation](usage/tables.md) for how to define and edit a table.
+
+### Ingest
+
+Data is ingested in large, sorted files which are then added to a Sleeper table. There are a number of options available
+for creating these files and adding data to the system. See the [ingest documentation](usage/ingest.md) for details.
+
+### Retrieving data
+
+See the [data retrieval documentation](usage/data-retrieval.md) for ways to query a Sleeper table.
+
+### Export
+
+In the future it will be possible to export Sleeper table data in bulk. See the [data export documentation](usage/export.md).
 
 ## Clients and scripts
 
@@ -50,3 +63,12 @@ skipped by the compaction strategy:
 ```bash
 ./scripts/utility/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
 ```
+
+## Python API
+
+See the [Python API documentation](usage/python-api.md) for details of the Python client library for Sleeper.
+
+## Integrations
+
+Experimental integrations are available to interact with Sleeper
+via [Athena](usage/data-retrieval.md#use-athena-to-perform-sql-analytics-and-queries) and [Trino](usage/trino.md).
