@@ -77,6 +77,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ROW_GROUP_SIZE;
@@ -201,9 +202,8 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .defaultProperty(DEFAULT_PARQUET_WRITER_VERSION)
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.parquet.query.column.index.enabled")
-            .defaultValue("false")
-            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
-            .description("Used to determine if during parquet queries, whether the column indexes are used.")
+            .defaultProperty(DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED)
+            .description("Used to determine if during Parquet queries, whether the column indexes are used.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
