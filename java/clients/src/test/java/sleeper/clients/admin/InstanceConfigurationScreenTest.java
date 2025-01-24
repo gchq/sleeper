@@ -350,7 +350,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
-            after.set(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH, "128");
+            after.set(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH, "def");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -360,7 +360,6 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.compaction.job.creation.timeout.seconds\n" +
-
                     "The timeout for the lambda that creates compaction jobs in seconds.\n" +
                     "Unset before, default value: 900\n" +
                     "After (not valid, please change): abc\n" +
@@ -368,12 +367,13 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "sleeper.default.parquet.columnindex.truncate.length\n" +
                     "Used to set parquet.columnindex.truncate.length, see documentation here:\n" +
                     "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
-                    "The length in bytes to truncate binary values in a column index.\r\n" +
-                    "Unset before, default value: 128\r\n" +
-                    "After: 128\n" +
+                    "The length in bytes to truncate binary values in a column index.\n" +
+                    "Unset before, default value: 128\n" +
+                    "After (not valid, please change): def\n" +
                     "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.compaction.job.creation.timeout.seconds\n" +
+                    "sleeper.default.parquet.columnindex.truncate.length\n" +
                     "\n"));
         }
 
