@@ -38,12 +38,6 @@ public interface TableDefaultProperty {
             .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
-    UserDefinedInstanceProperty DEFAULT_S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.default.fs.s3a.readahead.range")
-            .description("The readahead range set on the Hadoop configuration when reading Parquet files in a query\n" +
-                    "(see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).")
-            .defaultValue("64K")
-            .validationPredicate(SleeperPropertyValueUtils::isValidHadoopLongBytes)
-            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.rowgroup.size")
             .description("The size of the row group in the Parquet files (default is 8MiB).")
             .defaultValue("" + (8 * 1024 * 1024)) // 8 MiB

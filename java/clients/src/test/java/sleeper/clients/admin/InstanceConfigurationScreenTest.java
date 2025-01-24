@@ -59,7 +59,6 @@ import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.ROW_GROUP_SIZE;
@@ -268,7 +267,6 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
             after.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
-            after.set(DEFAULT_S3A_READAHEAD_RANGE, "123");
             after.set(DEFAULT_PAGE_SIZE, "456");
 
             // When
@@ -277,7 +275,6 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Then
             assertThat(output).containsSubsequence(
                     "sleeper.optional.stacks",
-                    "sleeper.default.fs.s3a.readahead.range",
                     "sleeper.default.page.size");
         }
 
@@ -349,7 +346,6 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
-            after.set(DEFAULT_S3A_READAHEAD_RANGE, "def");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -363,15 +359,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "Unset before, default value: 900\n" +
                     "After (not valid, please change): abc\n" +
                     "\n" +
-                    "sleeper.default.fs.s3a.readahead.range\n" +
-                    "The readahead range set on the Hadoop configuration when reading Parquet files in a query\n" +
-                    "(see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).\n" +
-                    "Unset before, default value: 64K\n" +
-                    "After (not valid, please change): def\n" +
-                    "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.compaction.job.creation.timeout.seconds\n" +
-                    "sleeper.default.fs.s3a.readahead.range\n" +
                     "\n"));
         }
 

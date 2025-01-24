@@ -206,7 +206,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .description("Used to determine if during Parquet queries, whether the column indexes are used.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
-            .defaultProperty(DEFAULT_ROW_GROUP_SIZE)
+            .defaultProperty(ROW_GROUP_SIZE)
             .description("The S3 readahead range - defaults to the row group size.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
