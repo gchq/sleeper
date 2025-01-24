@@ -41,8 +41,7 @@ public class S3StateStoreCommitRequestUploader {
     private final Supplier<String> idSupplier;
 
     public S3StateStoreCommitRequestUploader(
-            InstanceProperties instanceProperties, AmazonS3 s3Client,
-            TransactionSerDeProvider transactionSerDeProvider,
+            InstanceProperties instanceProperties, TransactionSerDeProvider transactionSerDeProvider, AmazonS3 s3Client,
             Supplier<Instant> timeSupplier, Supplier<String> idSupplier) {
         this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, transactionSerDeProvider);
         this.transactionSerDeProvider = transactionSerDeProvider;

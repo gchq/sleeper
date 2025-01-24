@@ -59,7 +59,7 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
             TransactionSerDeProvider transactionSerDeProvider,
             int maxTransactionBytes, Supplier<Instant> timeSupplier, Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;
-        this.requestUploader = new S3StateStoreCommitRequestUploader(instanceProperties, s3Client, transactionSerDeProvider, timeSupplier, idSupplier);
+        this.requestUploader = new S3StateStoreCommitRequestUploader(instanceProperties, transactionSerDeProvider, s3Client, timeSupplier, idSupplier);
         this.sqsClient = sqsClient;
         this.maxTransactionBytes = maxTransactionBytes;
     }
