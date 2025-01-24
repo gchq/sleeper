@@ -304,7 +304,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty COMPACTION_JOB_ASYNC_BATCHING = Index.propertyBuilder("sleeper.table.compaction.job.async.commit.batching")
-            .defaultPropertyWithBehaviour(DEFAULT_COMPACTION_JOB_ASYNC_BATCHING, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
+            .defaultProperty(DEFAULT_COMPACTION_JOB_ASYNC_BATCHING)
             .description("If true, asynchronous commits will be batched if they are enabled. The commits will be " +
                     "gathered into a larger transaction per Sleeper table. If false, the commits will sent directly " +
                     "to the commit lambda. ")
