@@ -18,6 +18,7 @@ package sleeper.compaction.core.job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
@@ -32,6 +33,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
 
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 
 public class CompactionJobCommitterOrSendToLambda {
@@ -41,42 +43,50 @@ public class CompactionJobCommitterOrSendToLambda {
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobTracker tracker;
     private final CommitQueueSender jobCommitQueueSender;
+    private final BatchedCommitQueueSender batchedCommitQueueSender;
     private final Supplier<Instant> timeSupplier;
 
     public CompactionJobCommitterOrSendToLambda(
             TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobTracker tracker, CommitQueueSender jobCommitQueueSender) {
-        this(tablePropertiesProvider, stateStoreProvider, tracker, jobCommitQueueSender, Instant::now);
+            CompactionJobTracker tracker, CommitQueueSender jobCommitQueueSender, BatchedCommitQueueSender batchedCommitQueueSender) {
+        this(tablePropertiesProvider, stateStoreProvider, tracker, jobCommitQueueSender, batchedCommitQueueSender, Instant::now);
     }
 
     public CompactionJobCommitterOrSendToLambda(
-            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
-            CompactionJobTracker tracker, CommitQueueSender jobCommitQueueSender, Supplier<Instant> timeSupplier) {
+            TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider, CompactionJobTracker tracker,
+            CommitQueueSender jobCommitQueueSender, BatchedCommitQueueSender batchedCommitQueueSender, Supplier<Instant> timeSupplier) {
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
         this.tracker = tracker;
         this.jobCommitQueueSender = jobCommitQueueSender;
+        this.batchedCommitQueueSender = batchedCommitQueueSender;
         this.timeSupplier = timeSupplier;
     }
 
     public void commit(CompactionJob job, CompactionJobFinishedEvent finishedEvent) {
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         TableStatus table = tableProperties.getStatus();
-        boolean commitAsync = tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC);
         tracker.jobFinished(finishedEvent);
-        List<ReplaceFileReferencesRequest> requestsList = List.of(job.replaceFileReferencesRequestBuilder(finishedEvent.getRecordsProcessed().getRecordsWritten())
+        ReplaceFileReferencesRequest request = job.replaceFileReferencesRequestBuilder(finishedEvent.getRecordsProcessed().getRecordsWritten())
                 .taskId(finishedEvent.getTaskId())
                 .jobRunId(finishedEvent.getJobRunId())
-                .build());
-        if (commitAsync) {
-            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(requestsList);
-            StateStoreCommitRequest request = StateStoreCommitRequest.create(table.getTableUniqueId(), transaction);
-            LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
-            jobCommitQueueSender.send(request);
-            LOGGER.info("Sent compaction job {} to queue to be committed asynchronously to table {}", job.getId(), table);
+                .build();
+        if (tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC)) {
+            if (tableProperties.getBoolean(COMPACTION_JOB_ASYNC_BATCHING)) {
+                CompactionCommitMessage message = new CompactionCommitMessage(table.getTableUniqueId(), request);
+                LOGGER.debug("Sending asynchronous request to commit batcher: {}", message);
+                batchedCommitQueueSender.send(message);
+                LOGGER.info("Sent compaction job {} to batcher queue to be committed asynchronously to table {}", job.getId(), table);
+            } else {
+                StateStoreCommitRequest commitRequest = StateStoreCommitRequest.create(table.getTableUniqueId(),
+                        new ReplaceFileReferencesTransaction(List.of(request)));
+                LOGGER.debug("Sending asynchronous request to state store committer: {}", commitRequest);
+                jobCommitQueueSender.send(commitRequest);
+                LOGGER.info("Sent compaction job {} to state store queue to be committed asynchronously to table {}", job.getId(), table);
+            }
         } else {
             LOGGER.debug("Committing compaction job {} inside compaction task", job.getId());
-            stateStoreProvider.getStateStore(tableProperties).atomicallyReplaceFileReferencesWithNewOnes(requestsList);
+            stateStoreProvider.getStateStore(tableProperties).atomicallyReplaceFileReferencesWithNewOnes(List.of(request));
             tracker.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())
@@ -87,5 +97,9 @@ public class CompactionJobCommitterOrSendToLambda {
 
     public interface CommitQueueSender {
         void send(StateStoreCommitRequest commitRequest);
+    }
+
+    public interface BatchedCommitQueueSender {
+        void send(CompactionCommitMessage commitRequest);
     }
 }

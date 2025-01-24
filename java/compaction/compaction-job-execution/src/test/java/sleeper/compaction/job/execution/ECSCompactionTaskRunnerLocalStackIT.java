@@ -359,6 +359,8 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .containsExactly(onJob(job, fileReference));
     }
 
+    // TODO test sending commit request to batcher queue
+
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "");

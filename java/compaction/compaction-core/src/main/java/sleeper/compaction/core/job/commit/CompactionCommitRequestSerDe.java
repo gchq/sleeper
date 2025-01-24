@@ -34,7 +34,11 @@ public class CompactionCommitRequestSerDe {
     }
 
     public String toJson(String tableId, ReplaceFileReferencesRequest request) {
-        return gson.toJson(new CompactionCommitMessage(tableId, request));
+        return toJson(new CompactionCommitMessage(tableId, request));
+    }
+
+    public String toJson(CompactionCommitMessage message) {
+        return gson.toJson(message);
     }
 
     public String toJsonPrettyPrint(String tableId, ReplaceFileReferencesRequest request) {

@@ -28,7 +28,9 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.BatchedCommitQueueSender;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
+import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
@@ -144,7 +146,8 @@ public class ECSCompactionTaskRunner {
             CompactionJobTracker jobTracker, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
-                sendToSqs(instanceProperties, tablePropertiesProvider, sqsClient));
+                sendToSqs(instanceProperties, tablePropertiesProvider, sqsClient),
+                sendToSqsBatched(instanceProperties, sqsClient));
     }
 
     private static CommitQueueSender sendToSqs(
@@ -157,6 +160,17 @@ public class ECSCompactionTaskRunner {
                     .withMessageDeduplicationId(UUID.randomUUID().toString())
                     .withMessageGroupId(tableId)
                     .withMessageBody(new StateStoreCommitRequestSerDe(tablePropertiesProvider).toJson(request)));
+        };
+    }
+
+    private static BatchedCommitQueueSender sendToSqsBatched(
+            InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        return request -> {
+            sqsClient.sendMessage(new SendMessageRequest()
+                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
+                    .withMessageDeduplicationId(UUID.randomUUID().toString())
+                    .withMessageGroupId(request.tableId())
+                    .withMessageBody(new CompactionCommitRequestSerDe().toJson(request)));
         };
     }
 }

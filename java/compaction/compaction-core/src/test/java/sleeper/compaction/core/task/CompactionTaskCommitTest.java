@@ -16,7 +16,6 @@
 package sleeper.compaction.core.task;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -253,7 +252,6 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     class CommitBatcherQueue {
 
         @Test
-        @Disabled
         void shouldSendJobCommitRequestToBatcher() throws Exception {
             // Given
             setAsyncCommit(true, tableProperties);
