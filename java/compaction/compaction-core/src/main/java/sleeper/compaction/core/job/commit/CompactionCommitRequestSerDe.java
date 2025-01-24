@@ -19,7 +19,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import sleeper.core.statestore.FileReferenceSerDe;
-import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.util.GsonConfig;
 
 public class CompactionCommitRequestSerDe {
@@ -33,16 +32,12 @@ public class CompactionCommitRequestSerDe {
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(String tableId, ReplaceFileReferencesRequest request) {
-        return toJson(new CompactionCommitMessage(tableId, request));
-    }
-
     public String toJson(CompactionCommitMessage message) {
         return gson.toJson(message);
     }
 
-    public String toJsonPrettyPrint(String tableId, ReplaceFileReferencesRequest request) {
-        return gsonPrettyPrint.toJson(new CompactionCommitMessage(tableId, request));
+    public String toJsonPrettyPrint(CompactionCommitMessage message) {
+        return gsonPrettyPrint.toJson(message);
     }
 
     public CompactionCommitRequest fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {

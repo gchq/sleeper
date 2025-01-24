@@ -32,6 +32,7 @@ import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -137,7 +138,7 @@ public class CompactionCommitBatcherLambdaIT {
     private SQSMessage createMessage(String tableId, ReplaceFileReferencesRequest request) {
         SQSMessage message = new SQSMessage();
         message.setMessageId(UUID.randomUUID().toString());
-        message.setBody(compactionSerDe.toJson(tableId, request));
+        message.setBody(compactionSerDe.toJson(new CompactionCommitMessage(tableId, request)));
         return message;
     }
 

@@ -44,12 +44,13 @@ public class CompactionCommitRequestSerDeTest {
                 .inputFiles(List.of("test.parquet"))
                 .newReference(FileReferenceFactory.from(partitions).rootFile("output.parquet", 200))
                 .build();
+        CompactionCommitMessage message = new CompactionCommitMessage("test-table", filesRequest);
         Runnable callbackOnFail = () -> {
         };
 
         // When
-        String json = serDe.toJson("test-table", filesRequest);
-        String jsonPretty = serDe.toJsonPrettyPrint("test-table", filesRequest);
+        String json = serDe.toJson(message);
+        String jsonPretty = serDe.toJsonPrettyPrint(message);
         CompactionCommitRequest found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
 
         // Then
