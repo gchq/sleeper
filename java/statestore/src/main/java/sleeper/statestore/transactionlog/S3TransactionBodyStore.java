@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
@@ -39,10 +38,6 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
     private final TransactionSerDeProvider serDeProvider;
-
-    public S3TransactionBodyStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonS3 s3Client) {
-        this(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
-    }
 
     public S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDeProvider serDeProvider) {
         this.instanceProperties = instanceProperties;

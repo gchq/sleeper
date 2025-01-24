@@ -38,6 +38,7 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetu
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
@@ -127,7 +128,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             FileReference file = fileFactory(tree).rootFile("test.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             String key = TransactionBodyStore.createObjectKey(tableProperties);
-            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
+            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
 
             // When
             transactionBodyStore.store(key, tableProperties.get(TABLE_ID), transaction);

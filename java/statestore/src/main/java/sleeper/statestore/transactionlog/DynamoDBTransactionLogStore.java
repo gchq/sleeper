@@ -34,6 +34,7 @@ import sleeper.core.statestore.transactionlog.TransactionLogDeletionTracker;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
@@ -116,7 +117,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
         this.tableProperties = tableProperties;
         this.sleeperTable = tableProperties.getStatus();
         this.dynamoClient = dynamoClient;
-        this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
+        this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
         this.serDe = new TransactionSerDe(tableProperties.getSchema());
     }
 

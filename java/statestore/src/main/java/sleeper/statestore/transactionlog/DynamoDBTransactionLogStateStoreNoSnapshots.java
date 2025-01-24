@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
@@ -65,7 +66,7 @@ public class DynamoDBTransactionLogStateStoreNoSnapshots {
                         tableProperties.getLong(ADD_TRANSACTION_MAX_RETRY_WAIT_CEILING_MS) / 1000.0)))
                 .filesLogStore(DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoDB, s3))
                 .partitionsLogStore(DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoDB, s3))
-                .transactionBodyStore(new S3TransactionBodyStore(instanceProperties, tableProperties, s3));
+                .transactionBodyStore(new S3TransactionBodyStore(instanceProperties, s3, TransactionSerDeProvider.forOneTable(tableProperties)));
     }
 
 }

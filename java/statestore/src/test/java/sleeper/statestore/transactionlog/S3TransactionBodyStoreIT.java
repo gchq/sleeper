@@ -129,7 +129,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
             // When / Then
             assertThatThrownBy(() -> store.store(key, tableId, transaction))
                     .isInstanceOf(UnsupportedOperationException.class);
-            new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client)
+            new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties))
                     .store(key, tableId, transaction);
             assertThatThrownBy(() -> store.getBody(key, tableId, TransactionType.INITIALISE_PARTITIONS))
                     .isInstanceOf(UnsupportedOperationException.class);
