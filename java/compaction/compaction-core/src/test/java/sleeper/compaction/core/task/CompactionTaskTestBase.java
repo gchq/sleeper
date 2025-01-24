@@ -336,19 +336,31 @@ public class CompactionTaskTestBase {
     protected StateStoreCommitRequest commitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
         return StateStoreCommitRequest.create(job.getTableId(),
                 new ReplaceFileReferencesTransaction(List.of(
-                        ReplaceFileReferencesRequest.builder()
-                                .jobId(job.getId())
-                                .taskId(DEFAULT_TASK_ID)
-                                .jobRunId(runId)
-                                .inputFiles(job.getInputFiles())
-                                .newReference(FileReference.builder()
-                                        .filename(job.getOutputFile())
-                                        .partitionId(job.getPartitionId())
-                                        .numberOfRecords(summary.getRecordsWritten())
-                                        .countApproximate(false)
-                                        .onlyContainsDataForThisPartition(true)
-                                        .build())
-                                .build())));
+                        replaceFileReferencesRequest(job, runId, summary))));
+    }
+
+    protected CompactionCommitMessage batcherCommitRequestFor(CompactionJob job, JobRunSummary summary) {
+        return batcherCommitRequestFor(job, "test-job-run-1", summary);
+    }
+
+    protected CompactionCommitMessage batcherCommitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
+        return new CompactionCommitMessage(job.getTableId(), replaceFileReferencesRequest(job, runId, summary));
+    }
+
+    private ReplaceFileReferencesRequest replaceFileReferencesRequest(CompactionJob job, String runId, JobRunSummary summary) {
+        return ReplaceFileReferencesRequest.builder()
+                .jobId(job.getId())
+                .taskId(DEFAULT_TASK_ID)
+                .jobRunId(runId)
+                .inputFiles(job.getInputFiles())
+                .newReference(FileReference.builder()
+                        .filename(job.getOutputFile())
+                        .partitionId(job.getPartitionId())
+                        .numberOfRecords(summary.getRecordsWritten())
+                        .countApproximate(false)
+                        .onlyContainsDataForThisPartition(true)
+                        .build())
+                .build();
     }
 
     protected void setAsyncCommit(boolean enabled, TableProperties... tableProperties) {
