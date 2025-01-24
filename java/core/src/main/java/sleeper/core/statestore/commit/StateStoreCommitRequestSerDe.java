@@ -27,14 +27,11 @@ import com.google.gson.JsonSerializer;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.GsonConfig;
 
 import java.lang.reflect.Type;
-import java.util.Objects;
-
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * Serialises and deserialises a commit request for a transaction to be added to the state store.
@@ -44,24 +41,14 @@ public class StateStoreCommitRequestSerDe {
     private final Gson gsonPrettyPrint;
 
     public StateStoreCommitRequestSerDe(TablePropertiesProvider tablePropertiesProvider) {
-        this(tableId -> new TransactionSerDe(tablePropertiesProvider.getById(tableId).getSchema()));
+        this(TransactionSerDeProvider.from(tablePropertiesProvider));
     }
 
     public StateStoreCommitRequestSerDe(TableProperties tableProperties) {
-        this(tableProperties.get(TABLE_ID), new TransactionSerDe(tableProperties.getSchema()));
+        this(TransactionSerDeProvider.forOneTable(tableProperties));
     }
 
-    private StateStoreCommitRequestSerDe(String expectedTableId, TransactionSerDe serDe) {
-        this(tableId -> {
-            if (Objects.equals(tableId, expectedTableId)) {
-                return serDe;
-            } else {
-                throw new IllegalArgumentException("Expected table ID " + expectedTableId + ", found " + tableId);
-            }
-        });
-    }
-
-    private StateStoreCommitRequestSerDe(TransactionSerDeProvider transactionSerDeProvider) {
+    public StateStoreCommitRequestSerDe(TransactionSerDeProvider transactionSerDeProvider) {
         GsonBuilder builder = GsonConfig.standardBuilder()
                 .registerTypeAdapter(StateStoreCommitRequest.class, new RequestJsonSerDe(transactionSerDeProvider));
         gson = builder.create();
@@ -74,8 +61,7 @@ public class StateStoreCommitRequestSerDe {
      * @return the serialiser
      */
     public static StateStoreCommitRequestSerDe forFileTransactions() {
-        TransactionSerDe transactionSerDe = TransactionSerDe.forFileTransactions();
-        return new StateStoreCommitRequestSerDe(tableId -> transactionSerDe);
+        return new StateStoreCommitRequestSerDe(TransactionSerDeProvider.forFileTransactions());
     }
 
     /**
@@ -150,18 +136,5 @@ public class StateStoreCommitRequestSerDe {
             });
             return json;
         }
-    }
-
-    /**
-     * A way to retrieve a transaction serialiser by the table ID.
-     */
-    private interface TransactionSerDeProvider {
-        /**
-         * Gets the properties of a Sleeper table.
-         *
-         * @param  tableId the table ID
-         * @return         the properties
-         */
-        TransactionSerDe getByTableId(String tableId);
     }
 }

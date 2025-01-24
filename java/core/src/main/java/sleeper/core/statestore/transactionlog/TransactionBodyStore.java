@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 
 import java.time.Instant;
@@ -34,17 +35,31 @@ public interface TransactionBodyStore {
      * Stores a transaction at a given location.
      *
      * @param key         the object key in the data bucket
+     * @param tableId     the ID of the Sleeper table the transaction is for
      * @param transaction the transaction
      */
-    void store(String key, StateStoreTransaction<?> transaction);
+    void store(String key, String tableId, StateStoreTransaction<?> transaction);
 
     /**
      * Retrives a transaction from a given location.
      *
-     * @param  key the object key in the data bucket
-     * @return     the transaction
+     * @param  key             the object key in the data bucket
+     * @param  tableId         the ID of the Sleeper table the transaction is for
+     * @param  transactionType the type of the transaction
+     * @return                 the transaction
      */
-    <T extends StateStoreTransaction<?>> T getBody(String key, TransactionType transactionType);
+    <T extends StateStoreTransaction<?>> T getBody(String key, String tableId, TransactionType transactionType);
+
+    /**
+     * Retrives a transaction from commit request.
+     *
+     * @param  request the commit request
+     * @return         the transaction
+     */
+    default <T extends StateStoreTransaction<?>> T getTransaction(StateStoreCommitRequest request) {
+        return request.<T>getTransactionIfHeld()
+                .orElseGet(() -> getBody(request.getBodyKey(), request.getTableId(), request.getTransactionType()));
+    }
 
     /**
      * Creates an object key for a new transaction file with a randomly generated filename. The file will not yet exist.

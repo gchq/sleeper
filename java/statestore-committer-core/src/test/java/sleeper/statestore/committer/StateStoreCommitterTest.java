@@ -654,7 +654,7 @@ public class StateStoreCommitterTest {
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             ReplaceFileReferencesTransaction transaction = createAndFinishCompactionAsTransaction(job, createdTime, startTime, summary);
             String bodyKey = TransactionBodyStore.createObjectKey("test-table", finishTime, "test-transaction");
-            transactionLogs.getTransactionBodyStore().store(bodyKey, transaction);
+            transactionLogs.getTransactionBodyStore().store(bodyKey, "test-table", transaction);
             StateStoreCommitRequest request = StateStoreCommitRequest.create(job.getTableId(), bodyKey, TransactionType.REPLACE_FILE_REFERENCES);
 
             // When

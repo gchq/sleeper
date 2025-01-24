@@ -15,12 +15,12 @@
  */
 package sleeper.compaction.core.job.commit;
 
-import sleeper.compaction.core.job.commit.CompactionCommitBatcher.SendStateStoreCommit;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 
 import java.util.Queue;
 
-public class SendStateStoreCommitDummy implements SendStateStoreCommit {
+public class SendStateStoreCommitDummy implements StateStoreCommitRequestSender {
 
     private final Queue<StateStoreCommitRequest> queue;
     private final String failForTableId;
@@ -30,7 +30,7 @@ public class SendStateStoreCommitDummy implements SendStateStoreCommit {
         this.failForTableId = failForTableId;
     }
 
-    public static SendStateStoreCommit sendToQueueExceptForTable(
+    public static StateStoreCommitRequestSender sendToQueueExceptForTable(
             Queue<StateStoreCommitRequest> queue, String failForTableId) {
         return new SendStateStoreCommitDummy(queue, failForTableId);
     }

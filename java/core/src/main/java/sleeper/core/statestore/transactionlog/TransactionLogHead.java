@@ -258,7 +258,7 @@ class TransactionLogHead<T> {
                     entry.getTransactionType());
             return;
         }
-        transactionType.cast(entry.getTransactionOrLoadFromPointer(transactionBodyStore))
+        transactionType.cast(entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore))
                 .apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }

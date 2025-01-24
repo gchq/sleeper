@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 
 import java.util.HashMap;
@@ -25,33 +24,23 @@ import java.util.Objects;
 /**
  * An in memory store of the bodies of transactions that are not held directly in the log.
  */
-public class InMemoryTransactionBodyStore implements TransactionBodyStore, TransactionBodyStoreProvider, TransactionBodyStoreProviderByTableId {
+public class InMemoryTransactionBodyStore implements TransactionBodyStore {
 
     private final Map<String, StateStoreTransaction<?>> transactionByKey = new HashMap<>();
 
     @Override
-    public void store(String key, StateStoreTransaction<?> transaction) {
+    public void store(String key, String tableId, StateStoreTransaction<?> transaction) {
         transactionByKey.put(key, transaction);
     }
 
     @Override
-    public <T extends StateStoreTransaction<?>> T getBody(String key, TransactionType transactionType) {
+    public <T extends StateStoreTransaction<?>> T getBody(String key, String tableId, TransactionType transactionType) {
         T transaction = (T) Objects.requireNonNull(transactionByKey.get(key));
         Class<?> expectedClass = transactionType.getType();
         if (!expectedClass.isInstance(transaction)) {
             throw new IllegalArgumentException("Expected stored transaction to be of type " + expectedClass.getName() + ", found " + transaction.getClass().getName());
         }
         return transaction;
-    }
-
-    @Override
-    public TransactionBodyStore getTransactionBodyStore(TableProperties tableProperties) {
-        return this;
-    }
-
-    @Override
-    public TransactionBodyStore getTransactionBodyStore(String tableId) {
-        return this;
     }
 
     public Map<String, StateStoreTransaction<?>> getTransactionByKey() {

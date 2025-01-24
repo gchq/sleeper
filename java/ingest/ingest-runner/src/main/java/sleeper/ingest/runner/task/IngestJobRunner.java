@@ -35,7 +35,8 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
@@ -48,7 +49,7 @@ import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.utils.HadoopPathUtils;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -74,7 +75,7 @@ public class IngestJobRunner implements IngestJobHandler {
     private final IngestJobTracker tracker;
     private final AmazonSQS sqsClient;
     private final IngestFactory ingestFactory;
-    private final StateStoreCommitRequestUploader commitUploader;
+    private final StateStoreCommitRequestSender commitSender;
     private final PropertiesReloader propertiesReloader;
     private final Supplier<Instant> timeSupplier;
 
@@ -110,9 +111,8 @@ public class IngestJobRunner implements IngestJobHandler {
                 .instanceProperties(instanceProperties)
                 .s3AsyncClient(s3AsyncClient)
                 .build();
-        this.commitUploader = new StateStoreCommitRequestUploader(tablePropertiesProvider,
-                S3TransactionBodyStore.createProvider(instanceProperties, s3Client),
-                StateStoreCommitRequestUploader.MAX_SQS_LENGTH);
+        this.commitSender = new SqsFifoStateStoreCommitRequestSender(
+                instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
     }
 
     @Override
@@ -161,7 +161,7 @@ public class IngestJobRunner implements IngestJobHandler {
 
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(sqsClient, instanceProperties, tableProperties, commitUploader,
+            return AddFilesToStateStore.bySqs(tableProperties, commitSender,
                     transactionBuilder -> transactionBuilder.jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         } else {
             return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), tracker,

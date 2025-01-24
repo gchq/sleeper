@@ -19,6 +19,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.sqs.AmazonSQS;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.localstack.LocalStackContainer;
@@ -27,26 +29,32 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.localstack.test.SleeperLocalStackContainer;
 
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
+import static org.testcontainers.containers.localstack.LocalStackContainer.Service.SQS;
 import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public abstract class LocalStackTestBase {
 
     @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(S3, DYNAMODB, SQS);
     protected static AmazonDynamoDB dynamoDBClient;
     protected static AmazonS3 s3Client;
+    protected static AmazonSQS sqsClient;
 
     @BeforeAll
     public static void initClients() {
-        dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-        s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+        dynamoDBClient = buildAwsV1Client(localStackContainer, DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+        s3Client = buildAwsV1Client(localStackContainer, S3, AmazonS3ClientBuilder.standard());
+        sqsClient = buildAwsV1Client(localStackContainer, SQS, AmazonSQSClientBuilder.standard());
     }
 
     @AfterAll
     public static void shutdownClients() {
         dynamoDBClient.shutdown();
         s3Client.shutdown();
+        sqsClient.shutdown();
     }
 
 }

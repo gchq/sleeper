@@ -15,9 +15,6 @@
  */
 package sleeper.garbagecollector;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -26,16 +23,14 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -43,9 +38,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -61,12 +54,12 @@ public class GarbageCollector {
     private final DeleteFile deleteFile;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
-    private final SendAsyncCommit sendAsyncCommit;
+    private final StateStoreCommitRequestSender sendAsyncCommit;
 
     public GarbageCollector(DeleteFile deleteFile,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
-            SendAsyncCommit sendAsyncCommit) {
+            StateStoreCommitRequestSender sendAsyncCommit) {
         this.deleteFile = deleteFile;
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
@@ -135,7 +128,7 @@ public class GarbageCollector {
         try {
             boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
             if (asyncCommit) {
-                sendAsyncCommit.sendCommit(StateStoreCommitRequest.create(
+                sendAsyncCommit.send(StateStoreCommitRequest.create(
                         tableProperties.get(TABLE_ID), new DeleteFilesTransaction(deletedFilenames)));
             } else {
                 stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
@@ -187,25 +180,5 @@ public class GarbageCollector {
             throw new IOException("File could not be deleted: " + filename);
         }
         LOGGER.info("Deleted file {}", filename);
-    }
-
-    /**
-     * Sends state store updates to the state store committer.
-     */
-    @FunctionalInterface
-    public interface SendAsyncCommit {
-        void sendCommit(StateStoreCommitRequest commitRequest);
-    }
-
-    public static SendAsyncCommit sendAsyncCommit(
-            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
-            AmazonSQS sqs, AmazonS3 s3, int maxCommitLength) {
-        StateStoreCommitRequestUploader uploader = new StateStoreCommitRequestUploader(tablePropertiesProvider,
-                S3TransactionBodyStore.createProvider(instanceProperties, s3), maxCommitLength);
-        return request -> sqs.sendMessage(new SendMessageRequest()
-                .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMessageBody(uploader.serialiseAndUploadIfTooBig(request))
-                .withMessageGroupId(request.getTableId())
-                .withMessageDeduplicationId(UUID.randomUUID().toString()));
     }
 }

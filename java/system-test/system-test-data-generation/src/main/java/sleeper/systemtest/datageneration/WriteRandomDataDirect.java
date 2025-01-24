@@ -18,13 +18,13 @@ package sleeper.systemtest.datageneration;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.core.statestore.commit.StateStoreCommitRequestUploader;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
@@ -71,10 +71,9 @@ public class WriteRandomDataDirect {
 
     private static AddFilesToStateStore addFilesToStateStore(InstanceIngestSession session) {
         if (session.tableProperties().getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(session.sqs(), session.instanceProperties(), session.tableProperties(),
-                    new StateStoreCommitRequestUploader(session.tablePropertiesProvider(),
-                            S3TransactionBodyStore.createProvider(session.instanceProperties(), session.s3()),
-                            StateStoreCommitRequestUploader.MAX_SQS_LENGTH),
+            return AddFilesToStateStore.bySqs(session.tableProperties(),
+                    new SqsFifoStateStoreCommitRequestSender(session.instanceProperties(), session.sqs(), session.s3(),
+                            TransactionSerDeProvider.forOneTable(session.tableProperties())),
                     transactionBuilder -> {
                     });
         } else {
