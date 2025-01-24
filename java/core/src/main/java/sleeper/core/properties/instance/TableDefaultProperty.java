@@ -33,8 +33,8 @@ import static sleeper.core.properties.validation.SleeperPropertyValueUtils.descr
  * Definitions of instance properties that are defaults for table properties.
  */
 public interface TableDefaultProperty {
-    UserDefinedInstanceProperty DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.default.parquet.writer.version")
-            .description("Default tsed to determine if during Parquet queries, whether the column indexes are used.")
+    UserDefinedInstanceProperty DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.default.parquet.query.column.index.enabled")
+            .description("Default used to determine if during Parquet queries, whether the column indexes are used.")
             .defaultValue("false")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();

@@ -1281,8 +1281,8 @@ sleeper.athena.handler.timeout.seconds=900
 
 ## The following properties relate to default values used by table properties.
 
-# Default tsed to determine if during Parquet queries, whether the column indexes are used.
-sleeper.default.parquet.writer.version=false
+# Default used to determine if during Parquet queries, whether the column indexes are used.
+sleeper.default.parquet.query.column.index.enabled=false
 
 # The size of the row group in the Parquet files (default is 8MiB).
 sleeper.default.rowgroup.size=8388608
