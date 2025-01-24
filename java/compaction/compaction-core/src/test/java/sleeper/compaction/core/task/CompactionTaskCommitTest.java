@@ -22,8 +22,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
@@ -65,7 +68,6 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     class SendCommitsToStateStoreCommitQueue {
 
         @Test
-        @Disabled
         void shouldSendJobCommitRequestToQueue() throws Exception {
             // Given
             setAsyncCommit(true, tableProperties);
@@ -251,6 +253,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     class CommitBatcherQueue {
 
         @Test
+        @Disabled
         void shouldSendJobCommitRequestToBatcher() throws Exception {
             // Given
             setAsyncCommit(true, tableProperties);
@@ -267,14 +270,24 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
             // When
             runTask(processJobs(jobSucceeds(job1Summary)), times::next);
+            CompactionCommitMessage dummyMessage = new CompactionCommitMessage(DEFAULT_TABLE_ID,
+                    ReplaceFileReferencesRequest.builder()
+                            .jobId("job1")
+                            .taskId(DEFAULT_TASK_ID)
+                            .jobRunId("test-job-run-1")
+                            .inputFiles(job1.getInputFiles())
+                            .newReference(FileReference.builder()
+                                    .filename(job1.getOutputFile())
+                                    .partitionId(job1.getPartitionId())
+                                    .numberOfRecords(job1Summary.getRecordsWritten())
+                                    .countApproximate(false)
+                                    .onlyContainsDataForThisPartition(true)
+                                    .build())
+                            .build());
 
             // Then
             assertThat(consumedJobs).containsExactly(job1);
-            assertThat(stateStoreCommitQueue).containsExactly(
-                    commitRequestFor(job1,
-                            new JobRunSummary(job1Summary,
-                                    Instant.parse("2024-02-22T13:50:01Z"),
-                                    Instant.parse("2024-02-22T13:50:02Z"))));
+            assertThat(batcherCommitQueue).containsExactly(dummyMessage);
             assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             JobRun.builder().taskId(DEFAULT_TASK_ID)

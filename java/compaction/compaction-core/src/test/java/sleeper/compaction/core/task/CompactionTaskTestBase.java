@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.core.job.commit.CompactionCommitRequest;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
 import sleeper.core.properties.PropertiesReloader;
@@ -90,7 +90,7 @@ public class CompactionTaskTestBase {
     protected final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
     protected final List<Duration> sleeps = new ArrayList<>();
     protected final List<StateStoreCommitRequest> stateStoreCommitQueue = new ArrayList<>();
-    protected final List<CompactionCommitRequest> batcherCommitQueue = new ArrayList<>();
+    protected final List<CompactionCommitMessage> batcherCommitQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
 
