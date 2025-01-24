@@ -41,8 +41,8 @@ public class CompactionCommitMessageSerDe {
     }
 
     public CompactionCommitMessageHandle fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {
-        CompactionCommitMessageHandle jsonRequest = gson.fromJson(json, CompactionCommitMessageHandle.class);
-        return new CompactionCommitMessageHandle(jsonRequest.tableId(), jsonRequest.request(), callbackOnFail);
+        CompactionCommitMessage message = gson.fromJson(json, CompactionCommitMessage.class);
+        return new CompactionCommitMessageHandle(message.tableId(), message.request(), callbackOnFail);
     }
 
 }
