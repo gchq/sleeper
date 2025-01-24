@@ -58,6 +58,8 @@ import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_PARTITION_REFRESH_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.core.properties.table.TableProperty.DYNAMODB_STRONGLY_CONSISTENT_READS;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
@@ -268,6 +270,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             InstanceProperties after = InstanceProperties.copyOf(before);
             after.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
             after.set(DEFAULT_PAGE_SIZE, "456");
+            after.set(DEFAULT_COMPRESSION_CODEC, "zstd");
 
             // When
             String output = editConfigurationDiscardChangesGetOutput(before, after);
@@ -275,7 +278,8 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             // Then
             assertThat(output).containsSubsequence(
                     "sleeper.optional.stacks",
-                    "sleeper.default.page.size");
+                    "sleeper.default.page.size",
+                    "sleeper.default.compression.codec");
         }
 
         @Test
@@ -346,6 +350,7 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
             InstanceProperties before = createValidInstanceProperties();
             InstanceProperties after = InstanceProperties.copyOf(before);
             after.set(COMPACTION_JOB_CREATION_LAMBDA_TIMEOUT_IN_SECONDS, "abc");
+            after.set(DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH, "128");
 
             // When
             String output = editConfigurationDiscardInvalidChangesGetOutput(before, after);
@@ -355,9 +360,17 @@ class InstanceConfigurationScreenTest extends AdminClientMockStoreBase {
                     "Found changes to properties:\n" +
                     "\n" +
                     "sleeper.compaction.job.creation.timeout.seconds\n" +
+
                     "The timeout for the lambda that creates compaction jobs in seconds.\n" +
                     "Unset before, default value: 900\n" +
                     "After (not valid, please change): abc\n" +
+                    "\n" +
+                    "sleeper.default.parquet.columnindex.truncate.length\n" +
+                    "Used to set parquet.columnindex.truncate.length, see documentation here:\n" +
+                    "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
+                    "The length in bytes to truncate binary values in a column index.\r\n" +
+                    "Unset before, default value: 128\r\n" +
+                    "After: 128\n" +
                     "\n" +
                     "Found invalid properties:\n" +
                     "sleeper.compaction.job.creation.timeout.seconds\n" +
