@@ -33,6 +33,7 @@ import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.statestore.testutil.LocalStackTestBase;
 
@@ -64,8 +65,8 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         @Test
         void shouldSaveAndLoadPartitionTransactionByTableProperties() {
             // Given
-            TransactionBodyStore store = S3TransactionBodyStore.createProvider(instanceProperties, s3Client)
-                    .getTransactionBodyStore(tableProperties);
+            TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, s3Client,
+                    TransactionSerDeProvider.forOneTable(tableProperties));
             String key = TransactionBodyStore.createObjectKey(tableProperties);
             PartitionTransaction transaction = new InitialisePartitionsTransaction(
                     new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
@@ -81,9 +82,8 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         @Test
         void shouldSaveAndLoadPartitionTransactionByTableId() {
             // Given
-            TransactionBodyStore store = S3TransactionBodyStore.createProvider(instanceProperties, s3Client)
-                    .byTableId(new FixedTablePropertiesProvider(tableProperties))
-                    .getTransactionBodyStore(tableId);
+            TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, s3Client,
+                    TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties)));
             String key = TransactionBodyStore.createObjectKey(tableId);
             PartitionTransaction transaction = new InitialisePartitionsTransaction(
                     new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
@@ -101,7 +101,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
     @DisplayName("Support only file transactions")
     class SupportOnlyFileTransactions {
 
-        TransactionBodyStore store = S3TransactionBodyStore.createProviderForFileTransactions(instanceProperties, s3Client).getTransactionBodyStore(tableId);
+        TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forFileTransactions());
 
         @Test
         void shouldStoreFileTransaction() {

@@ -23,8 +23,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.TransactionBodyStoreProvider;
-import sleeper.core.statestore.transactionlog.TransactionBodyStoreProviderByTableId;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.LoggedDuration;
@@ -50,42 +48,6 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.serDeProvider = serDeProvider;
-    }
-
-    /**
-     * Creates a transaction body store provider that provides instances of this class.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  s3Client           an S3 client
-     * @return                    the provider
-     */
-    public static TransactionBodyStoreProvider createProvider(InstanceProperties instanceProperties, AmazonS3 s3Client) {
-        return tableProperties -> new S3TransactionBodyStore(instanceProperties, tableProperties, s3Client);
-    }
-
-    /**
-     * Creates a transaction body store provider that provides instances of this class that only support file
-     * transactions.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  s3Client           an S3 client
-     * @return                    the provider
-     */
-    public static TransactionBodyStoreProviderByTableId createProviderForFileTransactions(
-            InstanceProperties instanceProperties, AmazonS3 s3Client) {
-        TransactionBodyStore store = forFileTransactions(instanceProperties, s3Client);
-        return tableId -> store;
-    }
-
-    /**
-     * Creates an instance of this class that only supports file transactions.
-     *
-     * @param  instanceProperties the instance properties
-     * @param  s3Client           an S3 client
-     * @return                    the store
-     */
-    public static TransactionBodyStore forFileTransactions(InstanceProperties instanceProperties, AmazonS3 s3Client) {
-        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forFileTransactions());
     }
 
     @Override
