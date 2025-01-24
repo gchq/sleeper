@@ -203,7 +203,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.parquet.query.column.index.enabled")
             .defaultProperty(DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED)
-            .description("Used to determine if during Parquet queries, whether the column indexes are used.")
+            .description("Used during Parquet queries to determine whether the column indexes are used.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
             .defaultProperty(ROW_GROUP_SIZE)
