@@ -33,7 +33,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.compaction.core.job.commit.CompactionCommitMessage;
-import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
+import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -64,7 +64,7 @@ public class CompactionCommitBatcherLambdaIT {
     private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final CompactionCommitRequestSerDe compactionSerDe = new CompactionCommitRequestSerDe();
+    private final CompactionCommitMessageSerDe compactionSerDe = new CompactionCommitMessageSerDe();
     private final StateStoreCommitRequestSerDe stateStoreSerDe = StateStoreCommitRequestSerDe.forFileTransactions();
 
     @BeforeEach

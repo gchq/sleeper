@@ -30,7 +30,7 @@ import software.amazon.awssdk.services.ecs.EcsClient;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.BatchedCommitQueueSender;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
-import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
+import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
@@ -170,7 +170,7 @@ public class ECSCompactionTaskRunner {
                     .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                     .withMessageDeduplicationId(UUID.randomUUID().toString())
                     .withMessageGroupId(request.tableId())
-                    .withMessageBody(new CompactionCommitRequestSerDe().toJson(request)));
+                    .withMessageBody(new CompactionCommitMessageSerDe().toJson(request)));
         };
     }
 }

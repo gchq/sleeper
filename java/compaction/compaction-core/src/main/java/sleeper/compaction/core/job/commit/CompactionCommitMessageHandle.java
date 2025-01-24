@@ -25,5 +25,5 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
  * @param request        details of the compaction commit, to be included in a transaction
  * @param callbackOnFail a callback to be run if the commit fails
  */
-public record CompactionCommitRequest(String tableId, ReplaceFileReferencesRequest request, Runnable callbackOnFail) {
+public record CompactionCommitMessageHandle(String tableId, ReplaceFileReferencesRequest request, Runnable callbackOnFail) {
 }

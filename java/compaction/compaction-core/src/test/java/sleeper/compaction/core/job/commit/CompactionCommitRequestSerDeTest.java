@@ -31,7 +31,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class CompactionCommitRequestSerDeTest {
 
-    CompactionCommitRequestSerDe serDe = new CompactionCommitRequestSerDe();
+    CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
 
     @Test
     void shouldSerialiseCompactionCommitRequest() {
@@ -51,10 +51,10 @@ public class CompactionCommitRequestSerDeTest {
         // When
         String json = serDe.toJson(message);
         String jsonPretty = serDe.toJsonPrettyPrint(message);
-        CompactionCommitRequest found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
+        CompactionCommitMessageHandle found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
 
         // Then
-        assertThat(found).isEqualTo(new CompactionCommitRequest("test-table", filesRequest, callbackOnFail));
+        assertThat(found).isEqualTo(new CompactionCommitMessageHandle("test-table", filesRequest, callbackOnFail));
         Approvals.verify(jsonPretty, new Options().forFile().withExtension(".json"));
     }
 

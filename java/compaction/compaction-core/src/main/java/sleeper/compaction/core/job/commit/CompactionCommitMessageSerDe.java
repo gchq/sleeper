@@ -21,11 +21,11 @@ import com.google.gson.GsonBuilder;
 import sleeper.core.statestore.FileReferenceSerDe;
 import sleeper.core.util.GsonConfig;
 
-public class CompactionCommitRequestSerDe {
+public class CompactionCommitMessageSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public CompactionCommitRequestSerDe() {
+    public CompactionCommitMessageSerDe() {
         GsonBuilder builder = GsonConfig.standardBuilder()
                 .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes());
         gson = builder.create();
@@ -40,9 +40,9 @@ public class CompactionCommitRequestSerDe {
         return gsonPrettyPrint.toJson(message);
     }
 
-    public CompactionCommitRequest fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {
-        CompactionCommitRequest jsonRequest = gson.fromJson(json, CompactionCommitRequest.class);
-        return new CompactionCommitRequest(jsonRequest.tableId(), jsonRequest.request(), callbackOnFail);
+    public CompactionCommitMessageHandle fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {
+        CompactionCommitMessageHandle jsonRequest = gson.fromJson(json, CompactionCommitMessageHandle.class);
+        return new CompactionCommitMessageHandle(jsonRequest.tableId(), jsonRequest.request(), callbackOnFail);
     }
 
 }
