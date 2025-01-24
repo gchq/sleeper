@@ -24,15 +24,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -43,16 +37,15 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
  */
 public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitRequestSender {
     public static final Logger LOGGER = LoggerFactory.getLogger(SqsFifoStateStoreCommitRequestSender.class);
-    public static final int DEFAULT_MAX_TRANSACTION_BYTES = 262144;
+
+    // Max size of an SQS message is 256KiB. Leave space for request wrapper.
+    // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html
+    public static final int DEFAULT_MAX_TRANSACTION_BYTES = 250 * 1024;
 
     private final InstanceProperties instanceProperties;
-    private final S3TransactionBodyStore transactionBodyStore;
-    private final TransactionSerDeProvider transactionSerDeProvider;
-    private final StateStoreCommitRequestSerDe requestSerDe;
+    private final S3StateStoreCommitRequestUploader requestUploader;
     private final AmazonSQS sqsClient;
     private final int maxTransactionBytes;
-    private final Supplier<Instant> timeSupplier;
-    private final Supplier<String> idSupplier;
 
     public SqsFifoStateStoreCommitRequestSender(
             InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client,
@@ -66,13 +59,9 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
             TransactionSerDeProvider transactionSerDeProvider,
             int maxTransactionBytes, Supplier<Instant> timeSupplier, Supplier<String> idSupplier) {
         this.instanceProperties = instanceProperties;
-        this.transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, transactionSerDeProvider);
-        this.transactionSerDeProvider = transactionSerDeProvider;
-        this.requestSerDe = new StateStoreCommitRequestSerDe(transactionSerDeProvider);
+        this.requestUploader = new S3StateStoreCommitRequestUploader(instanceProperties, s3Client, transactionSerDeProvider, timeSupplier, idSupplier);
         this.sqsClient = sqsClient;
         this.maxTransactionBytes = maxTransactionBytes;
-        this.timeSupplier = timeSupplier;
-        this.idSupplier = idSupplier;
     }
 
     @Override
@@ -80,28 +69,10 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
         LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
         sqsClient.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMessageBody(serialiseAndUploadIfTooBig(request))
+                .withMessageBody(requestUploader.serialiseAndUploadIfTooBig(maxTransactionBytes, request))
                 .withMessageGroupId(request.getTableId())
                 .withMessageDeduplicationId(UUID.randomUUID().toString()));
         LOGGER.debug("Submitted asynchronous request of type {} via state store committer queue", request.getTransactionType());
-    }
-
-    private String serialiseAndUploadIfTooBig(StateStoreCommitRequest request) {
-        return requestSerDe.toJson(request.getTransactionIfHeld()
-                .flatMap(transaction -> uploadTransactionIfTooBig(request, transaction))
-                .orElse(request));
-    }
-
-    private Optional<StateStoreCommitRequest> uploadTransactionIfTooBig(StateStoreCommitRequest request, StateStoreTransaction<?> transaction) {
-        TransactionSerDe transactionSerDe = transactionSerDeProvider.getByTableId(request.getTableId());
-        String json = transactionSerDe.toJson(transaction);
-        if (json.length() < maxTransactionBytes) {
-            return Optional.empty();
-        } else {
-            String key = TransactionBodyStore.createObjectKey(request.getTableId(), timeSupplier.get(), idSupplier.get());
-            transactionBodyStore.store(key, json);
-            return Optional.of(StateStoreCommitRequest.create(request.getTableId(), key, request.getTransactionType()));
-        }
     }
 
 }
