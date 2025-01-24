@@ -305,8 +305,9 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .build();
     TableProperty COMPACTION_JOB_ASYNC_BATCHING = Index.propertyBuilder("sleeper.table.compaction.job.async.commit.batching")
             .defaultPropertyWithBehaviour(DEFAULT_COMPACTION_JOB_ASYNC_BATCHING, DefaultAsyncCommitBehaviour::computeAsyncCommitForUpdate)
-            .description("If true, the asynchronous commits will be batched. The commits will be gathered into a " +
-                    "larger transaction per Sleeper table. If false, the commits will sent directly to the commit lambda. ")
+            .description("If true, asynchronous commits will be batched if they are enabled. The commits will be " +
+                    "gathered into a larger transaction per Sleeper table. If false, the commits will sent directly " +
+                    "to the commit lambda. ")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
