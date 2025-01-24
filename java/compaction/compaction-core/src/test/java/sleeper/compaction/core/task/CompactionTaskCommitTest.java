@@ -270,7 +270,10 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
             // When
             runTask(processJobs(jobSucceeds(job1Summary)), times::next);
-            CompactionCommitMessage dummyMessage = new CompactionCommitMessage(DEFAULT_TABLE_ID,
+
+            // Then
+            assertThat(consumedJobs).containsExactly(job1);
+            assertThat(batcherCommitQueue).containsExactly(new CompactionCommitMessage(DEFAULT_TABLE_ID,
                     ReplaceFileReferencesRequest.builder()
                             .jobId("job1")
                             .taskId(DEFAULT_TASK_ID)
@@ -278,16 +281,12 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             .inputFiles(job1.getInputFiles())
                             .newReference(FileReference.builder()
                                     .filename(job1.getOutputFile())
-                                    .partitionId(job1.getPartitionId())
-                                    .numberOfRecords(job1Summary.getRecordsWritten())
+                                    .partitionId("root")
+                                    .numberOfRecords(5L)
                                     .countApproximate(false)
                                     .onlyContainsDataForThisPartition(true)
                                     .build())
-                            .build());
-
-            // Then
-            assertThat(consumedJobs).containsExactly(job1);
-            assertThat(batcherCommitQueue).containsExactly(dummyMessage);
+                            .build()));
             assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                     compactionJobCreated(job1, DEFAULT_CREATED_TIME,
                             JobRun.builder().taskId(DEFAULT_TASK_ID)
