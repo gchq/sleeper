@@ -292,9 +292,6 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                                     .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10, 5)))
                                     .build()));
         }
-
-        //Other test ideas
-        //If Async is disabled, shouldn't go to the batcher
     }
 
     @Nested
