@@ -50,7 +50,7 @@ public class CompactionStack extends NestedStack {
     public static final String COMPACTION_STACK_DLQ_URL = "CompactionStackDLQUrlKey";
     public static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
 
-    private Queue compactionJobsQueue;
+    private CompactionJobResources jobResources;
 
     public CompactionStack(
             Construct scope,
@@ -77,18 +77,16 @@ public class CompactionStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
-        // SQS queue for the compaction jobs
-        compactionJobsQueue = new CompactionJobResources(this,
-                instanceProperties, lambdaCode, jarsBucket, topic, coreStacks, errorMetrics)
-                .getCompactionJobsQueue();
+        jobResources = new CompactionJobResources(this,
+                instanceProperties, lambdaCode, jarsBucket, topic, coreStacks, errorMetrics);
 
         new CompactionTaskResources(this,
-                instanceProperties, lambdaCode, jarsBucket, compactionJobsQueue, topic, coreStacks, errorMetrics);
+                instanceProperties, lambdaCode, jarsBucket, jobResources, topic, coreStacks, errorMetrics);
 
         Utils.addStackTagIfSet(this, instanceProperties);
     }
 
     public Queue getCompactionJobsQueue() {
-        return compactionJobsQueue;
+        return jobResources.getCompactionJobsQueue();
     }
 }

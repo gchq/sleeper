@@ -24,6 +24,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -76,6 +78,7 @@ public class SqsQueues {
             COMPACTION_JOB_CREATION_QUEUE_URL,
             COMPACTION_JOB_QUEUE_URL,
             COMPACTION_PENDING_QUEUE_URL,
+            COMPACTION_COMMIT_QUEUE_URL,
             FIND_PARTITIONS_TO_SPLIT_QUEUE_URL,
             PARTITION_SPLITTING_JOB_QUEUE_URL,
             GARBAGE_COLLECTOR_QUEUE_URL,
@@ -97,6 +100,7 @@ public class SqsQueues {
             COMPACTION_JOB_CREATION_DLQ_URL,
             COMPACTION_JOB_DLQ_URL,
             COMPACTION_PENDING_DLQ_URL,
+            COMPACTION_COMMIT_DLQ_URL,
             FIND_PARTITIONS_TO_SPLIT_DLQ_URL,
             PARTITION_SPLITTING_JOB_DLQ_URL,
             GARBAGE_COLLECTOR_DLQ_URL,
