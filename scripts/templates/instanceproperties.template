@@ -1297,9 +1297,8 @@ sleeper.athena.handler.timeout.seconds=900
 
 ## The following properties relate to default values used by table properties.
 
-# The readahead range set on the Hadoop configuration when reading Parquet files in a query
-# (see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).
-sleeper.default.fs.s3a.readahead.range=64K
+# Default used during Parquet queries to determine whether the column indexes are used.
+sleeper.default.parquet.query.column.index.enabled=false
 
 # The size of the row group in the Parquet files (default is 8MiB).
 sleeper.default.rowgroup.size=8388608

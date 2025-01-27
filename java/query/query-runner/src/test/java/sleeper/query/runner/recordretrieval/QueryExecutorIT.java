@@ -1206,7 +1206,7 @@ public class QueryExecutorIT {
 
     private QueryExecutor queryExecutor(TableProperties tableProperties, StateStore stateStore) {
         return new QueryExecutor(ObjectFactory.noUserJars(),
-                tableProperties, stateStore, new LeafPartitionRecordRetrieverImpl(executorService, new Configuration()));
+                tableProperties, stateStore, new LeafPartitionRecordRetrieverImpl(executorService, new Configuration(), tableProperties));
     }
 
     private Query queryWithRegion(Region region) {

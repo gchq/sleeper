@@ -33,11 +33,10 @@ import static sleeper.core.properties.validation.SleeperPropertyValueUtils.descr
  * Definitions of instance properties that are defaults for table properties.
  */
 public interface TableDefaultProperty {
-    UserDefinedInstanceProperty DEFAULT_S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.default.fs.s3a.readahead.range")
-            .description("The readahead range set on the Hadoop configuration when reading Parquet files in a query\n" +
-                    "(see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).")
-            .defaultValue("64K")
-            .validationPredicate(SleeperPropertyValueUtils::isValidHadoopLongBytes)
+    UserDefinedInstanceProperty DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.default.parquet.query.column.index.enabled")
+            .description("Default used during Parquet queries to determine whether the column indexes are used.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.rowgroup.size")
             .description("The size of the row group in the Parquet files (default is 8MiB).")
@@ -82,6 +81,7 @@ public interface TableDefaultProperty {
             .defaultValue("2147483647")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+
     UserDefinedInstanceProperty DEFAULT_PARQUET_WRITER_VERSION = Index.propertyBuilder("sleeper.default.parquet.writer.version")
             .description("Used to set parquet.writer.version, see documentation here:\n" +
                     "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
