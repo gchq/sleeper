@@ -127,15 +127,12 @@ public class IngestJobStatusFromJobTestData {
      */
     public static JobRun acceptedRunWhichStarted(
             IngestJob job, String taskId, Instant validationTime, Instant startTime) {
-        return JobRun.builder()
-                .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
-                        validationTime, defaultUpdateTime(validationTime)))
-                .statusUpdate(
-                        IngestJobStartedStatus.withStartOfRun(false)
-                                .inputFileCount(job.getFileCount())
-                                .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
-                .build();
+        return jobRunOnTask(taskId,
+                IngestJobAcceptedStatus.from(job.getFileCount(),
+                        validationTime, defaultUpdateTime(validationTime)),
+                IngestJobStartedStatus.withStartOfRun(false)
+                        .inputFileCount(job.getFileCount())
+                        .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build());
     }
 
     /**
@@ -149,21 +146,18 @@ public class IngestJobStatusFromJobTestData {
      */
     public static JobRun acceptedRunWhichFinished(
             IngestJob job, String taskId, Instant validationTime, JobRunSummary summary, int numFilesWrittenByJob) {
-        return JobRun.builder()
-                .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
-                        validationTime, defaultUpdateTime(validationTime)))
-                .statusUpdate(
-                        IngestJobStartedStatus.withStartOfRun(false)
-                                .inputFileCount(job.getFileCount())
-                                .startTime(summary.getStartTime())
-                                .updateTime(defaultUpdateTime(summary.getStartTime())).build())
-                .finishedStatus(IngestJobFinishedStatus.builder()
+        return jobRunOnTask(taskId,
+                IngestJobAcceptedStatus.from(job.getFileCount(),
+                        validationTime, defaultUpdateTime(validationTime)),
+                IngestJobStartedStatus.withStartOfRun(false)
+                        .inputFileCount(job.getFileCount())
+                        .startTime(summary.getStartTime())
+                        .updateTime(defaultUpdateTime(summary.getStartTime())).build(),
+                IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(summary.getFinishTime()))
                         .finishTime(summary.getFinishTime())
                         .recordsProcessed(summary.getRecordsProcessed())
-                        .numFilesWrittenByJob(numFilesWrittenByJob).build())
-                .build();
+                        .numFilesWrittenByJob(numFilesWrittenByJob).build());
     }
 
     /**
@@ -178,21 +172,18 @@ public class IngestJobStatusFromJobTestData {
      */
     public static JobRun acceptedRunWhichFailed(
             IngestJob job, String taskId, Instant validationTime, JobRunTime runTime, List<String> failureReasons) {
-        return JobRun.builder()
-                .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
-                        validationTime, defaultUpdateTime(validationTime)))
-                .statusUpdate(
-                        IngestJobStartedStatus.withStartOfRun(false)
-                                .inputFileCount(job.getFileCount())
-                                .startTime(runTime.getStartTime())
-                                .updateTime(defaultUpdateTime(runTime.getStartTime())).build())
-                .finishedStatus(JobRunFailedStatus.builder()
+        return jobRunOnTask(taskId,
+                IngestJobAcceptedStatus.from(job.getFileCount(),
+                        validationTime, defaultUpdateTime(validationTime)),
+                IngestJobStartedStatus.withStartOfRun(false)
+                        .inputFileCount(job.getFileCount())
+                        .startTime(runTime.getStartTime())
+                        .updateTime(defaultUpdateTime(runTime.getStartTime())).build(),
+                JobRunFailedStatus.builder()
                         .updateTime(defaultUpdateTime(runTime.getFinishTime()))
                         .failureTime(runTime.getFinishTime())
                         .failureReasons(failureReasons)
-                        .build())
-                .build();
+                        .build());
     }
 
     /**
@@ -203,10 +194,8 @@ public class IngestJobStatusFromJobTestData {
      * @return                a {@link JobRun}
      */
     public static JobRun acceptedRun(IngestJob job, Instant validationTime) {
-        return JobRun.builder()
-                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
-                        validationTime, defaultUpdateTime(validationTime)))
-                .build();
+        return validationRun(
+                IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime)));
     }
 
     /**
@@ -219,11 +208,8 @@ public class IngestJobStatusFromJobTestData {
      * @return                a {@link JobRun}
      */
     public static JobRun acceptedRunOnTask(IngestJob job, String taskId, Instant validationTime) {
-        return JobRun.builder()
-                .taskId(taskId)
-                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(), validationTime,
-                        defaultUpdateTime(validationTime)))
-                .build();
+        return jobRunOnTask(taskId,
+                IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime)));
     }
 
     /**
@@ -362,15 +348,13 @@ public class IngestJobStatusFromJobTestData {
      */
     public static JobRun acceptedAndFailedToStartIngestRun(
             IngestJob job, Instant validationTime, Instant failureTime, List<String> failureReasons) {
-        return JobRun.builder()
-                .startedStatus(IngestJobAcceptedStatus.from(job.getFileCount(),
-                        validationTime, defaultUpdateTime(validationTime)))
-                .finishedStatus(JobRunFailedStatus.builder()
+        return validationRun(
+                IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime)),
+                JobRunFailedStatus.builder()
                         .updateTime(defaultUpdateTime(failureTime))
                         .failureTime(failureTime)
                         .failureReasons(failureReasons)
-                        .build())
-                .build();
+                        .build());
     }
 
     /**

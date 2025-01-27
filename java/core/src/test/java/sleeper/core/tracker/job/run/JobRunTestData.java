@@ -15,7 +15,6 @@
  */
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.util.Comparator;
@@ -37,11 +36,7 @@ public class JobRunTestData {
      * @return               the run
      */
     public static JobRun jobRunOnTask(String taskId, JobStatusUpdate... statusUpdates) {
-        JobRun.Builder builder = JobRun.builder().taskId(taskId);
-        Stream.of(statusUpdates)
-                .sorted(Comparator.comparing(JobStatusUpdate::getUpdateTime))
-                .forEach(builder::statusUpdateDetectType);
-        return builder.build();
+        return jobRun(JobRun.builder().taskId(taskId), statusUpdates);
     }
 
     /**
@@ -50,10 +45,21 @@ public class JobRunTestData {
      * @param  validationStatus the started status to set
      * @return                  the run
      */
-    public static JobRun validationRun(JobRunStartedUpdate validationStatus) {
-        return JobRun.builder()
-                .startedStatus(validationStatus)
-                .build();
+    public static JobRun validationRun(JobStatusUpdate... statusUpdates) {
+        return jobRun(JobRun.builder(), statusUpdates);
+    }
+
+    /**
+     * Creates a run with a started status that occurred on no task.
+     *
+     * @param  validationStatus the started status to set
+     * @return                  the run
+     */
+    private static JobRun jobRun(JobRun.Builder builder, JobStatusUpdate... statusUpdates) {
+        Stream.of(statusUpdates)
+                .sorted(Comparator.comparing(JobStatusUpdate::getUpdateTime))
+                .forEach(builder::statusUpdateDetectType);
+        return builder.build();
     }
 
 }

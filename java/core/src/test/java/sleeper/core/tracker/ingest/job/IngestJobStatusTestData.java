@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
+import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 
@@ -81,14 +82,12 @@ public class IngestJobStatusTestData {
      * @return                a {@link JobRun}
      */
     public static JobRun rejectedRun(String jobId, String jsonMessage, Instant validationTime, String... reasons) {
-        return JobRun.builder()
-                .startedStatus(IngestJobRejectedStatus.builder()
-                        .validationTime(validationTime)
-                        .updateTime(defaultUpdateTime(validationTime))
-                        .reasons(List.of(reasons))
-                        .jsonMessage(jsonMessage)
-                        .build())
-                .build();
+        return validationRun(IngestJobRejectedStatus.builder()
+                .validationTime(validationTime)
+                .updateTime(defaultUpdateTime(validationTime))
+                .reasons(List.of(reasons))
+                .jsonMessage(jsonMessage)
+                .build());
     }
 
     /**
