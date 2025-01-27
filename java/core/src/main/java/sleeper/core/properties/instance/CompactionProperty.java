@@ -289,8 +289,8 @@ public interface CompactionProperty {
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED = Index.propertyBuilder("sleeper.compaction.tracker.async.commit.updates.enabled")
-            .description("Flag to enable/disable tracking async commits of compaction jobs. This is primarily used " +
-                    "for testing, in particular when a large number of compactions are present.")
+            .description("Flag to enable/disable storing an update to the tracker during async commits of compaction jobs. " +
+                    "This is primarily used for testing, in particular when a large number of compactions are present.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
