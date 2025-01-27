@@ -510,12 +510,15 @@ sleeper.optional.stacks=CompactionStack,IngestStack,QueryStack
 
 Note that the system test stacks do not need to be specified. They will be included if you use the system test CDK app.
 
-## Administration clients
+## Scripts to edit an instance
 
-There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to work with an
+There are clients and scripts in the `scripts/deploy` and `scripts/utility` directories that can be used to adjust an
 existing instance.
 
-Also see the [tables documentation](usage/tables.md#addedit-a-table) for scripts to add/edit Sleeper tables.
+See the [usage guide](usage-guide.md) for information on how to interact with the instance. The admin client described
+there can be used to adjust the configuration of an instance by setting instance properties.
+
+See the [tables documentation](usage/tables.md#addedit-a-table) for how to add/edit Sleeper tables.
 
 ### Update Existing Instance
 
@@ -529,25 +532,6 @@ that have changed, update all the docker images, and perform a `cdk deploy`.
 We are planning to add support to this script for declarative deployment, so that you can set your full instance and
 tables configuration in a folder structure and pass it to this script to apply any changes. Currently such changes must
 be done with the admin client.
-
-### Sleeper Administration Client
-
-We have provided a command line client that will enable you to:
-
-1) List Sleeper instance properties
-2) List Sleeper table names
-3) List Sleeper table properties
-4) Change an instance/table property
-5) Get status reports (also see [checking the status of the system](usage/status.md))
-
-This client will prompt you for things like your instance ID as mentioned above and/or the name of the table you want to
-look at. To adjust property values it will open a text editor for a temporary file.
-
-You can run this client with the following command:
-
-```bash
-./scripts/utility/adminClient.sh ${INSTANCE_ID}
-```
 
 ### Pausing and Restarting the System
 
@@ -564,16 +548,6 @@ it is paused.
 
 # Restart the System
 ./scripts/utility/restartSystem.sh ${INSTANCE_ID}
-```
-
-### Compact all files
-
-If you want to fully compact all files in leaf partitions, but the compaction strategy is not compacting files in a
-partition, you can run the following script to force compactions to be created for files in leaf partitions that were
-skipped by the compaction strategy:
-
-```bash
-./scripts/utility/compactAllFiles.sh ${INSTANCE_ID} <table-name-1> <table-name-2> ...
 ```
 
 ### Tear Down

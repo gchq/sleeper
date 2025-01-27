@@ -145,12 +145,12 @@ Docker images.
 
 ### System test
 
-To run the system test, set the environment variable `ID` to be a globally unique string. This is the instance id. It
-will be used as part of the name of various AWS resources, such as an S3 bucket, lambdas, etc., and therefore should
-conform to the naming requirements of those services. In general stick to lowercase letters, numbers, and hyphens. We
-use the instance id as part of the name of all the resources that are deployed. This makes it easy to find the resources
-that Sleeper has deployed within each service (go to the service in the AWS console and type the instance id into the
-search box).
+The easiest way to deploy an instance of Sleeper is to use the scripts for manual system testing. First, set the
+environment variable `ID` to be a globally unique string. This is the instance id. It will be used as part of the name
+of various AWS resources, such as an S3 bucket, lambdas, etc., and therefore should conform to the naming requirements
+of those services. In general stick to lowercase letters, numbers, and hyphens. We use the instance id as part of the
+name of all the resources that are deployed. This makes it easy to find the resources that Sleeper has deployed within
+each service (go to the service in the AWS console and type the instance id into the search box).
 
 Avoid reusing the same instance id, as log groups from a deleted instance will still be present unless you delete them.
 An instance will fail to deploy if it would replace log groups from a deleted instance.
