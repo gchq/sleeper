@@ -94,7 +94,7 @@ public class SqsLeafPartitionQueryProcessor {
             queryTrackers.queryInProgress(leafPartitionQuery);
             Configuration conf = getConfiguration(tableProperties);
             LeafPartitionQueryExecutor leafPartitionQueryExecutor = new LeafPartitionQueryExecutor(
-                    objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf));
+                    objectFactory, tableProperties, new LeafPartitionRecordRetrieverImpl(executorService, conf, tableProperties));
             CloseableIterator<Record> results = leafPartitionQueryExecutor.getRecords(leafPartitionQuery);
             publishResults(results, query, tableProperties, queryTrackers);
         } catch (QueryException e) {

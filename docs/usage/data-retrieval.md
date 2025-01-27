@@ -272,3 +272,8 @@ sleeper.athena.handler.classes=sleeper.athena.composite.IteratorApplyingComposit
 ```
 
 When you add or remove a handler, an Athena data catalogue will be deployed for you.
+
+## Use SQL with Trino
+
+See the [Trino plugin documentation](trino.md) for how to interact with Sleeper via Trino. This functionality is
+experimental.

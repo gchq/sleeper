@@ -78,10 +78,10 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ROW_GROUP_SIZE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
@@ -202,9 +202,13 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "Can be either v1 or v2. The v2 pages store levels uncompressed while v1 pages compress levels with the data.")
             .defaultProperty(DEFAULT_PARQUET_WRITER_VERSION)
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
+    TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.parquet.query.column.index.enabled")
+            .defaultProperty(DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED)
+            .description("Used during Parquet queries to determine whether the column indexes are used.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
-            .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
-            .description("The S3 readahead range - defaults to the value in the instance properties.")
+            .defaultProperty(ROW_GROUP_SIZE)
+            .description("The S3 readahead range - defaults to the row group size.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPRESSION_CODEC = Index.propertyBuilder("sleeper.table.compression.codec")
