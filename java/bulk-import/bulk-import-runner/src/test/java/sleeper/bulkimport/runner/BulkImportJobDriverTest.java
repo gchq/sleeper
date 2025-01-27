@@ -57,11 +57,11 @@ import static sleeper.core.statestore.FileReferenceTestData.defaultFileOnRootPar
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedIngestStartedStatus;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
-import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 
 class BulkImportJobDriverTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -87,7 +87,7 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.toIngestJob(), runOnTask("test-task",
+                .containsExactly(ingestJobStatus(job.getId(), runOnTask("test-task",
                         ingestAcceptedStatus(validationTime, 1),
                         validatedIngestStartedStatus(startTime, 1),
                         ingestFinishedStatus(summary(startTime, finishTime, 100, 100), 1))));
@@ -116,7 +116,7 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.toIngestJob(), runOnTask("test-task",
+                .containsExactly(ingestJobStatus(job.getId(), runOnTask("test-task",
                         ingestAcceptedStatus(validationTime, 1),
                         validatedIngestStartedStatus(startTime, 1),
                         failedStatus(finishTime, List.of("Failed running job", "Some cause", "Root cause")))));
@@ -145,7 +145,7 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.toIngestJob(), runOnTask("test-task",
+                .containsExactly(ingestJobStatus(job.getId(), runOnTask("test-task",
                         ingestAcceptedStatus(validationTime, 1),
                         validatedIngestStartedStatus(startTime, 1),
                         failedStatus(finishTime, List.of("Failed updating files")))));
@@ -175,7 +175,7 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.toIngestJob(), runOnTask("test-task",
+                .containsExactly(ingestJobStatus(job.getId(), runOnTask("test-task",
                         ingestAcceptedStatus(validationTime, 1),
                         validatedIngestStartedStatus(startTime, 1),
                         failedStatus(finishTime, List.of("Failed updating files")))));
@@ -202,7 +202,7 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.toIngestJob(), runOnTask("test-task",
+                .containsExactly(ingestJobStatus(job.getId(), runOnTask("test-task",
                         ingestAcceptedStatus(validationTime, 1),
                         validatedIngestStartedStatus(startTime, 1),
                         ingestFinishedStatusUncommitted(finishTime, 2, new RecordsProcessed(300, 300)))));
