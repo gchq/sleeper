@@ -1113,7 +1113,9 @@ sleeper.compaction.ec2.root.size=50
 sleeper.compaction.tracker.enabled=true
 
 # Flag to enable/disable storing an update to the tracker during async commits of compaction jobs.
-# This is primarily used for testing, in particular when a large number of compactions are present.
+# This may be disabled if there are enough compactions that the system is unable to apply all the
+# updates to the tracker. This is mainly used for testing. Reports may show compactions as unfinished
+# if this update is not present in the tracker.
 sleeper.compaction.tracker.async.commit.updates.enabled=true
 
 # The time to live in seconds for compaction job updates in the job tracker. Default is 1 week.
