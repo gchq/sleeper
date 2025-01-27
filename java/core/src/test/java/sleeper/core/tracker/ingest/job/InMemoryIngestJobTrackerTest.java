@@ -343,7 +343,7 @@ public class InMemoryIngestJobTrackerTest {
             assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, runOnTask(taskId,
                             ingestAcceptedStatus(validationTime, 1),
-                            validatedIngestStartedStatus(1, startTime))));
+                            validatedIngestStartedStatus(startTime, 1))));
         }
 
         @Test
@@ -400,7 +400,7 @@ public class InMemoryIngestJobTrackerTest {
             assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, runOnTask(taskId,
                             ingestAcceptedStatus(validationTime, 1),
-                            validatedIngestStartedStatus(1, startTime))));
+                            validatedIngestStartedStatus(startTime, 1))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
@@ -426,7 +426,7 @@ public class InMemoryIngestJobTrackerTest {
             assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, runOnTask(taskId,
                             ingestAcceptedStatus(validationTime, 1),
-                            validatedIngestStartedStatus(1, startTime),
+                            validatedIngestStartedStatus(startTime, 1),
                             ingestFinishedStatus(summary, 2))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
@@ -478,7 +478,7 @@ public class InMemoryIngestJobTrackerTest {
             assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(ingestJobStatus(job, runOnTask(taskId,
                             ingestAcceptedStatus(validationTime, 1),
-                            validatedIngestStartedStatus(1, startTime),
+                            validatedIngestStartedStatus(startTime, 1),
                             failedStatus(failureTime, failureReasons))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)

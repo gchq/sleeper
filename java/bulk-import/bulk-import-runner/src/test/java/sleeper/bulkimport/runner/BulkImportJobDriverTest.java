@@ -124,7 +124,7 @@ class BulkImportJobDriverTest {
         assertThat(allJobsReported())
                 .containsExactly(ingestJobStatus(job.toIngestJob(), runOnTask("test-task",
                         ingestAcceptedStatus(validationTime, 1),
-                        validatedIngestStartedStatus(1, startTime),
+                        validatedIngestStartedStatus(startTime, 1),
                         failedStatus(finishTime, List.of("Failed running job", "Some cause", "Root cause")))));
         assertThat(stateStore.getFileReferences()).isEmpty();
         assertThat(commitRequestQueue).isEmpty();

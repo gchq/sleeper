@@ -403,7 +403,7 @@ public class IngestJobStatusFromJobTestData {
      * @return           an ingest job started status
      */
     public static IngestJobStartedStatus validatedIngestStartedStatus(IngestJob job, Instant startTime) {
-        return IngestJobStatusTestData.validatedIngestStartedStatus(job.getFileCount(), startTime);
+        return IngestJobStatusTestData.validatedIngestStartedStatus(startTime, job.getFileCount());
     }
 
 }

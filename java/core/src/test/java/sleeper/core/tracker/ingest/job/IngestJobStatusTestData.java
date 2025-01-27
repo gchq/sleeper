@@ -280,11 +280,11 @@ public class IngestJobStatusTestData {
     /**
      * Creates an ingest job started status.
      *
-     * @param  inputFileCount the number of input files in the job
      * @param  startTime      the start time
+     * @param  inputFileCount the number of input files in the job
      * @return                an ingest job started status
      */
-    public static IngestJobStartedStatus validatedIngestStartedStatus(int inputFileCount, Instant startTime) {
+    public static IngestJobStartedStatus validatedIngestStartedStatus(Instant startTime, int inputFileCount) {
         return IngestJobStartedStatus.withStartOfRun(false).inputFileCount(inputFileCount)
                 .startTime(startTime).updateTime(defaultUpdateTime(startTime))
                 .build();
