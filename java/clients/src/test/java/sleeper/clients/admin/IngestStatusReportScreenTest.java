@@ -60,7 +60,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
-import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
 import static sleeper.task.common.InMemoryQueueMessageCounts.visibleMessages;
 
 class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
@@ -210,7 +210,7 @@ class IngestStatusReportScreenTest extends AdminClientMockStoreBase {
         }
 
         private IngestJobStatus startedJobStatus(String jobId) {
-            return ingestJobStatus(jobId, startedRun("test-task",
+            return ingestJobStatus(jobId, runOnTask("test-task",
                     ingestStartedStatus(Instant.parse("2023-03-15T17:52:12.001Z"), 1)));
         }
 

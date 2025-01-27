@@ -15,7 +15,6 @@
  */
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.status.JobRunEndUpdate;
 import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
@@ -79,14 +78,7 @@ class JobRunsBuilder {
     }
 
     private void addToBuilder(JobStatusUpdateRecord record, JobRun.Builder builder) {
-        JobStatusUpdate statusUpdate = record.getStatusUpdate();
-        if (isStartedUpdateAndStartOfRun(statusUpdate)) {
-            builder.startedStatus((JobRunStartedUpdate) statusUpdate);
-        } else if (statusUpdate instanceof JobRunEndUpdate) {
-            builder.finishedStatus((JobRunEndUpdate) statusUpdate);
-        } else {
-            builder.statusUpdate(statusUpdate);
-        }
+        builder.statusUpdateDetectType(record.getStatusUpdate());
         if (record.getTaskId() != null) {
             builder.taskId(record.getTaskId());
         }

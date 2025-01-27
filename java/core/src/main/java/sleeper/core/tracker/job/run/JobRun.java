@@ -269,6 +269,28 @@ public class JobRun {
             return this;
         }
 
+        /**
+         * Adds a status update.
+         *
+         * @param  statusUpdate the status update to add
+         * @return              the builder
+         */
+        public Builder statusUpdateDetectType(JobStatusUpdate statusUpdate) {
+            if (isStartedUpdateAndStartOfRun(statusUpdate)) {
+                this.startedStatus = (JobRunStartedUpdate) statusUpdate;
+            }
+            if (statusUpdate instanceof JobRunEndUpdate) {
+                this.finishedStatus = (JobRunEndUpdate) statusUpdate;
+            }
+            this.statusUpdates.add(statusUpdate);
+            return this;
+        }
+
+        private static boolean isStartedUpdateAndStartOfRun(JobStatusUpdate statusUpdate) {
+            return statusUpdate instanceof JobRunStartedUpdate
+                    && ((JobRunStartedUpdate) statusUpdate).isStartOfRun();
+        }
+
         public JobRun build() {
             return new JobRun(this);
         }

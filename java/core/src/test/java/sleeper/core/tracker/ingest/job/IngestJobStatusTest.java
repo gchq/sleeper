@@ -51,7 +51,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
-import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
 import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
@@ -71,7 +71,7 @@ public class IngestJobStatusTest {
             Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
             // When
-            IngestJobStatus status = ingestJobStatus("test-job", startedRun("test-task", ingestStartedStatus(startTime)));
+            IngestJobStatus status = ingestJobStatus("test-job", runOnTask("test-task", ingestStartedStatus(startTime)));
 
             // Then
             assertThat(status)
