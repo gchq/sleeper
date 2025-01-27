@@ -18,6 +18,7 @@ package sleeper.statestore.committer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 
 /**
@@ -46,24 +48,27 @@ import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_U
 public class StateStoreCommitter {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitter.class);
 
-    private final CompactionJobTracker compactionJobTracker;
-    private final IngestJobTracker ingestJobTracker;
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final CompactionJobTracker compactionJobTracker;
+    private final IngestJobTracker ingestJobTracker;
     private final TransactionBodyStore transactionBodyStore;
     private final Supplier<Instant> timeSupplier;
 
     public StateStoreCommitter(
-            CompactionJobTracker compactionJobTracker,
-            IngestJobTracker ingestJobTracker,
+            InstanceProperties instanceProperties,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
+            CompactionJobTracker compactionJobTracker,
+            IngestJobTracker ingestJobTracker,
             TransactionBodyStore transactionBodyStore,
             Supplier<Instant> timeSupplier) {
-        this.compactionJobTracker = compactionJobTracker;
-        this.ingestJobTracker = ingestJobTracker;
+        this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
+        this.compactionJobTracker = compactionJobTracker;
+        this.ingestJobTracker = ingestJobTracker;
         this.transactionBodyStore = transactionBodyStore;
         this.timeSupplier = timeSupplier;
     }
@@ -129,7 +134,8 @@ public class StateStoreCommitter {
             throw new UnsupportedOperationException("Cannot add a transaction for a non-transaction log state store");
         }
         TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
-        if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES) {
+        if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES &&
+                instanceProperties.getBoolean(COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED)) {
             commitCompaction(request, tableProperties, transactionStateStore);
         } else if (request.getTransactionType() == TransactionType.ADD_FILES) {
             commitIngest(request, tableProperties, transactionStateStore);

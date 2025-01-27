@@ -76,6 +76,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -140,6 +141,36 @@ public class StateStoreCommitterTest {
                                     .startedStatus(compactionStartedStatus(startTime))
                                     .finishedStatus(compactionFinishedStatus(summary))
                                     .statusUpdate(compactionCommittedStatus(commitTime))
+                                    .build()));
+        }
+
+        @Test
+        void shouldNotApplyCompactionTrackerUpdateWhenPropertyIsDisabled() throws Exception {
+            // Given
+            instanceProperties.set(COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED, "false");
+
+            StateStore stateStore = createTableGetStateStore("test-table");
+            Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
+            Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
+            Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
+            JobRunSummary summary = summary(startTime, finishTime, 123, 123);
+            Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
+            FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
+            stateStore.addFile(inputFile);
+            CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
+            StateStoreCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
+
+            // When
+            apply(committerWithTimes(List.of(commitTime)), request);
+
+            // Then
+            assertThat(stateStore.getFileReferences()).containsExactly(
+                    fileFactory.rootFile(job.getOutputFile(), 123L));
+            assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
+                    compactionJobCreated(job, createdTime,
+                            JobRun.builder().taskId("test-task")
+                                    .startedStatus(compactionStartedStatus(startTime))
+                                    .finishedStatus(compactionFinishedStatus(summary))
                                     .build()));
         }
 
@@ -693,11 +724,12 @@ public class StateStoreCommitterTest {
     }
 
     private StateStoreCommitter committerWithTimes(Supplier<Instant> timeSupplier) {
-        return new StateStoreCommitter(compactionJobTracker, ingestJobTracker,
+        return new StateStoreCommitter(instanceProperties,
                 new FixedTablePropertiesProvider(propertiesByTableId.values()),
                 new StateStoreProvider(instanceProperties, this::stateStoreForCommitter),
-                transactionLogs.getTransactionBodyStore(),
-                timeSupplier);
+                compactionJobTracker,
+                ingestJobTracker,
+                transactionLogs.getTransactionBodyStore(), timeSupplier);
     }
 
     private StateStore createTableGetStateStore(String tableId) {

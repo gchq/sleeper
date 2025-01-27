@@ -156,12 +156,12 @@ public class StateStoreCommitterThroughputIT {
     private StateStoreCommitter committer() {
         TablePropertiesProvider tablePropertiesProvider = tablePropertiesProvider();
         return new StateStoreCommitter(
-                CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
-                IngestJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
+                instanceProperties,
                 tablePropertiesProvider,
                 stateStoreProvider(),
-                new S3TransactionBodyStore(instanceProperties, s3, TransactionSerDeProvider.from(tablePropertiesProvider)),
-                Instant::now);
+                CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
+                IngestJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
+                new S3TransactionBodyStore(instanceProperties, s3, TransactionSerDeProvider.from(tablePropertiesProvider)), Instant::now);
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {

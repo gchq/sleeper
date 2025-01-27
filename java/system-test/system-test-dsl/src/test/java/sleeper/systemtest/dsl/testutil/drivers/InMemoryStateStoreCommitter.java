@@ -89,9 +89,9 @@ public class InMemoryStateStoreCommitter {
             instance = context.instance();
             TablePropertiesProvider tablePropertiesProvider = instance.getTablePropertiesProvider();
             committer = new StateStoreCommitter(
-                    compaction.jobTracker(), ingest.jobTracker(),
-                    tablePropertiesProvider, instance.getStateStoreProvider(), transactionBodyStore,
-                    Instant::now);
+                    instance.getInstanceProperties(), tablePropertiesProvider,
+                    instance.getStateStoreProvider(), compaction.jobTracker(), ingest.jobTracker(),
+                    transactionBodyStore, Instant::now);
         }
 
         @Override

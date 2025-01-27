@@ -135,9 +135,9 @@ public class StateStoreCommitterLambdaTest {
     }
 
     private StateStoreCommitter committer(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
-        return new StateStoreCommitter(CompactionJobTracker.NONE, IngestJobTracker.NONE,
-                tablePropertiesProvider, stateStoreProvider, transactionLogs.getTransactionBodyStore(),
-                Instant::now);
+        return new StateStoreCommitter(instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, CompactionJobTracker.NONE, IngestJobTracker.NONE,
+                transactionLogs.getTransactionBodyStore(), Instant::now);
     }
 
     private SQSEvent event(SQSMessage... messages) {

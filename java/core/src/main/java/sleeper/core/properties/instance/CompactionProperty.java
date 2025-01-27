@@ -286,7 +286,17 @@ public interface CompactionProperty {
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED = Index.propertyBuilder("sleeper.compaction.tracker.async.commit.updates.enabled")
+            .description("Flag to enable/disable storing an update to the tracker during async commits of compaction " +
+                    "jobs. This may be disabled if there are enough compactions that the system is unable to apply " +
+                    "all the updates to the tracker. This is mainly used for testing. Reports may show compactions " +
+                    "as unfinished if this update is not present in the tracker.")
+            .defaultValue("true")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .build();
     UserDefinedInstanceProperty COMPACTION_JOB_STATUS_TTL_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.status.ttl")
             .description("The time to live in seconds for compaction job updates in the job tracker. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
