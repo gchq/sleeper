@@ -18,14 +18,14 @@ package sleeper.ingest.runner;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.SortedRecordIterator;
-import sleeper.core.iterator.impl.AdditionIterator;
-import sleeper.core.iterator.impl.AgeOffIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
+import sleeper.example.iterator.AdditionIterator;
+import sleeper.example.iterator.AgeOffIterator;
 import sleeper.ingest.core.IngestResult;
 
 import java.util.Arrays;
