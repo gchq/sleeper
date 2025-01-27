@@ -53,7 +53,12 @@ class JobRunsBuilder {
             return;
         }
         getBuilderIfCorrelatable(record)
-                .ifPresent(builder -> addToBuilder(record, builder));
+                .ifPresent(builder -> {
+                    builder.statusUpdate(record.getStatusUpdate());
+                    if (record.getTaskId() != null) {
+                        builder.taskId(record.getTaskId());
+                    }
+                });
     }
 
     private Optional<JobRun.Builder> getBuilderIfCorrelatable(JobStatusUpdateRecord record) {
@@ -75,13 +80,6 @@ class JobRunsBuilder {
         JobRun.Builder builder = JobRun.builder();
         orderedBuilders.add(builder);
         return builder;
-    }
-
-    private void addToBuilder(JobStatusUpdateRecord record, JobRun.Builder builder) {
-        builder.statusUpdate(record.getStatusUpdate());
-        if (record.getTaskId() != null) {
-            builder.taskId(record.getTaskId());
-        }
     }
 
     JobRuns build() {
