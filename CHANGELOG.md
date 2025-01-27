@@ -4,6 +4,17 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/development/system-tests.md#performance-benchmarks)
 
+## Version 0.28.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.28.0*
+
+This includes further batching to allow for much larger numbers of compaction jobs.
+
+Deployment:
+- Aligned configuration of GC lambda timeout to use seconds instead of minutes, similar to other lambdas
+- Added descriptions to some schedules and alarms which did not have one, this is visible in the AWS console
+
 ## Version 0.27.0
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
