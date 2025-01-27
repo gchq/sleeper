@@ -180,7 +180,7 @@ public class IngestJobStatusTestData {
      * @param  records the {@link TestJobStatusUpdateRecords} object
      * @return         a list of ingest job statuses
      */
-    public static List<IngestJobStatus> jobStatusListFrom(TestJobStatusUpdateRecords records) {
+    public static List<IngestJobStatus> ingestJobStatusListFrom(TestJobStatusUpdateRecords records) {
         return IngestJobStatus.streamFrom(records.stream()).collect(Collectors.toList());
     }
 
@@ -191,8 +191,8 @@ public class IngestJobStatusTestData {
      * @return                       an ingest job status
      * @throws IllegalStateException if there was not exactly 1 job
      */
-    public static IngestJobStatus singleJobStatusFrom(TestJobStatusUpdateRecords records) {
-        List<IngestJobStatus> jobs = jobStatusListFrom(records);
+    public static IngestJobStatus singleIngestJobStatusFrom(TestJobStatusUpdateRecords records) {
+        List<IngestJobStatus> jobs = ingestJobStatusListFrom(records);
         if (jobs.size() != 1) {
             throw new IllegalStateException("Expected single job, found " + jobs.size());
         }
