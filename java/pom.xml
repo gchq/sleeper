@@ -50,6 +50,7 @@
         <module>trino</module>
         <module>build</module>
         <module>build-uptime-lambda</module>
+        <module>example-iterators</module>
     </modules>
 
     <properties>

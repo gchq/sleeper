@@ -7,6 +7,6 @@
   ],
   "outputFile": "outputfile",
   "partitionId": "test-partition",
-  "iteratorClassName": "sleeper.core.iterator.impl.AgeOffIterator",
+  "iteratorClassName": "sleeper.example.iterator.AgeOffIterator",
   "iteratorConfig": "key,600000"
 }

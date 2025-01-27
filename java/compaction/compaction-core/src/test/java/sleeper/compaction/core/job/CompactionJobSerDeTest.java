@@ -19,7 +19,7 @@ import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.impl.AgeOffIterator;
+import sleeper.example.iterator.AgeOffIterator;
 
 import java.util.Arrays;
 import java.util.List;

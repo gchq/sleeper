@@ -37,6 +37,7 @@ on:
       - 'java/common/dynamodb-test/**'
       - 'java/parquet/**'
       - 'java/common/localstack-test/**'
+      - 'java/example-iterators/**'
       - 'java/core/**'
 
 jobs:

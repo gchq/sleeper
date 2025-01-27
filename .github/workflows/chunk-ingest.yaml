@@ -30,6 +30,7 @@ on:
       - 'java/parquet/**'
       - 'java/common/localstack-test/**'
       - 'java/sketches/**'
+      - 'java/example-iterators/**'
       - 'java/core/**'
 
 jobs:

@@ -10,6 +10,7 @@ on:
       - 'java/pom.xml'
       - 'java/common/pom.xml'
       - 'java/core/**'
+      - 'java/example-iterators/**'
       - 'java/configuration/**'
       - 'java/sketches/**'
       - 'java/parquet/**'
