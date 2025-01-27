@@ -30,7 +30,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
-import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
@@ -278,7 +278,7 @@ public class IngestJobStatusFromJobTestData {
      * @return           a {@link JobRun}
      */
     public static JobRun startedIngestRun(IngestJob job, String taskId, Instant startTime) {
-        return runOnTask(taskId, ingestStartedStatus(job, startTime));
+        return jobRunOnTask(taskId, ingestStartedStatus(job, startTime));
     }
 
     /**
@@ -305,7 +305,7 @@ public class IngestJobStatusFromJobTestData {
      */
     public static JobRun finishedIngestRun(
             IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 ingestStartedStatus(job, summary.getStartTime()),
                 IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(summary.getFinishTime()))
@@ -326,7 +326,7 @@ public class IngestJobStatusFromJobTestData {
      */
     public static JobRun finishedIngestRunUncommitted(
             IngestJob job, String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 ingestStartedStatus(job, summary.getStartTime()),
                 ingestFinishedStatusUncommitted(summary, numFilesWrittenByJob));
     }
@@ -342,7 +342,7 @@ public class IngestJobStatusFromJobTestData {
      */
     public static JobRun failedIngestRun(
             IngestJob job, String taskId, JobRunTime runTime, List<String> failureReasons) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 ingestStartedStatus(job, runTime.getStartTime()),
                 JobRunFailedStatus.builder()
                         .updateTime(defaultUpdateTime(runTime.getFinishTime()))

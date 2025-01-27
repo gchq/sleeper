@@ -36,7 +36,7 @@ import java.util.List;
 
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
@@ -57,30 +57,30 @@ public class CompactionJobStatusTestData {
     }
 
     public static JobRun startedCompactionRun(String taskId, Instant startTime) {
-        return runOnTask(taskId, compactionStartedStatus(startTime));
+        return jobRunOnTask(taskId, compactionStartedStatus(startTime));
     }
 
     public static JobRun uncommittedCompactionRun(String taskId, JobRunSummary summary) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 compactionStartedStatus(summary.getStartTime()),
                 compactionFinishedStatus(summary));
     }
 
     public static JobRun finishedCompactionRun(String taskId, JobRunSummary summary, Instant commitTime) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 compactionStartedStatus(summary.getStartTime()),
                 compactionFinishedStatus(summary),
                 compactionCommittedStatus(commitTime));
     }
 
     public static JobRun failedCompactionRun(String taskId, JobRunTime runTime, List<String> failureReasons) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 compactionStartedStatus(runTime.getStartTime()),
                 compactionFailedStatus(runTime.getFinishTime(), failureReasons));
     }
 
     public static JobRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 compactionStartedStatus(startTime),
                 compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)),
                 compactionFailedStatus(failureTime, failureReasons));

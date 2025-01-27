@@ -104,7 +104,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestAcceptedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.validatedIngestStartedStatus;
@@ -203,7 +203,7 @@ class BulkImportJobDriverIT {
         assertThat(readRecords).isEqualTo(expectedRecords);
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, runOnTask(taskId,
+                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
                         ingestAcceptedStatus(ingestJob, validationTime),
                         validatedIngestStartedStatus(ingestJob, startTime),
                         ingestFinishedStatus(summary(startTime, endTime, 200, 200), 1))));
@@ -249,7 +249,7 @@ class BulkImportJobDriverIT {
         assertThat(readRecords).isEqualTo(expectedRecords);
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, runOnTask(taskId,
+                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
                         ingestAcceptedStatus(ingestJob, validationTime),
                         validatedIngestStartedStatus(ingestJob, startTime),
                         ingestFinishedStatus(summary(startTime, endTime, 100, 100), 1))));
@@ -288,7 +288,7 @@ class BulkImportJobDriverIT {
                         tuple(100L, rightPartition));
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, runOnTask(taskId,
+                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
                         ingestAcceptedStatus(ingestJob, validationTime),
                         validatedIngestStartedStatus(ingestJob, startTime),
                         ingestFinishedStatus(summary(startTime, endTime, 200, 200), 2))));
@@ -356,7 +356,7 @@ class BulkImportJobDriverIT {
         }
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, runOnTask(taskId,
+                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
                         ingestAcceptedStatus(ingestJob, validationTime),
                         validatedIngestStartedStatus(ingestJob, startTime),
                         ingestFinishedStatus(summary(startTime, endTime, 100000, 100000), 50))));
@@ -390,7 +390,7 @@ class BulkImportJobDriverIT {
                 .containsExactly(tuple(200L, expectedPartitionId, records));
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, runOnTask(taskId,
+                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
                         ingestAcceptedStatus(ingestJob, validationTime),
                         validatedIngestStartedStatus(ingestJob, startTime),
                         ingestFinishedStatus(summary(startTime, endTime, 200, 200), 1))));
@@ -438,7 +438,7 @@ class BulkImportJobDriverIT {
         assertThat(readRecords).isEqualTo(expectedRecords);
         IngestJob ingestJob = job.toIngestJob();
         assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, runOnTask(taskId,
+                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
                         ingestAcceptedStatus(ingestJob, validationTime),
                         validatedIngestStartedStatus(ingestJob, startTime),
                         ingestFinishedStatus(summary(startTime, endTime, 200, 200), 1))));

@@ -31,7 +31,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusListFromUpdates;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_EXPIRY;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
@@ -64,10 +64,10 @@ class CompactionJobStatusFromRecordsTest {
         // Then
         assertThat(statuses).containsExactly(
                 CompactionJobStatus.builder().jobId("job2").createdStatus(created2)
-                        .singleJobRun(runOnTask(DEFAULT_TASK_ID, started2, finished2))
+                        .singleJobRun(jobRunOnTask(DEFAULT_TASK_ID, started2, finished2))
                         .expiryDate(DEFAULT_EXPIRY).build(),
                 CompactionJobStatus.builder().jobId("job1").createdStatus(created1)
-                        .singleJobRun(runOnTask(DEFAULT_TASK_ID, started1, finished1))
+                        .singleJobRun(jobRunOnTask(DEFAULT_TASK_ID, started1, finished1))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }
 
@@ -84,7 +84,7 @@ class CompactionJobStatusFromRecordsTest {
         // Then
         assertThat(statuses).containsExactly(
                 CompactionJobStatus.builder().jobId("test-job")
-                        .singleJobRun(runOnTask(DEFAULT_TASK_ID, started, finished))
+                        .singleJobRun(jobRunOnTask(DEFAULT_TASK_ID, started, finished))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }
 
@@ -106,7 +106,7 @@ class CompactionJobStatusFromRecordsTest {
         // Then
         assertThat(statuses).containsExactly(
                 CompactionJobStatus.builder().jobId("test-job").createdStatus(created)
-                        .singleJobRun(runOnTask(DEFAULT_TASK_ID, started, finished))
+                        .singleJobRun(jobRunOnTask(DEFAULT_TASK_ID, started, finished))
                         .expiryDate(DEFAULT_EXPIRY).build());
     }
 }

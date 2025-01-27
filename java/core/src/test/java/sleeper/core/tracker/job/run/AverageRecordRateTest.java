@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
 
@@ -183,7 +183,7 @@ public class AverageRecordRateTest {
         Instant finishTime = Instant.parse("2022-10-13T10:19:00.000Z");
 
         assertThat(AverageRecordRate.of(Stream.of(
-                runOnTask(DEFAULT_TASK_ID,
+                jobRunOnTask(DEFAULT_TASK_ID,
                         JobStatusUpdateTestHelper.startedStatus(startTime),
                         JobRunFailedStatus.builder()
                                 .updateTime(defaultUpdateTime(finishTime))
@@ -196,7 +196,7 @@ public class AverageRecordRateTest {
 
     private static AverageRecordRate rateFrom(JobRunSummary... summaries) {
         return AverageRecordRate.of(Stream.of(summaries)
-                .map(summary -> runOnTask(DEFAULT_TASK_ID,
+                .map(summary -> jobRunOnTask(DEFAULT_TASK_ID,
                         JobStatusUpdateTestHelper.startedStatus(summary.getStartTime()),
                         JobRunFinishedStatus.updateTimeAndSummary(summary.getFinishTime(), summary))));
     }

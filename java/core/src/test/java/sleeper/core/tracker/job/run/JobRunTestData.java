@@ -36,7 +36,7 @@ public class JobRunTestData {
      * @param  statusUpdates the status updates
      * @return               the run
      */
-    public static JobRun runOnTask(String taskId, JobStatusUpdate... statusUpdates) {
+    public static JobRun jobRunOnTask(String taskId, JobStatusUpdate... statusUpdates) {
         JobRun.Builder builder = JobRun.builder().taskId(taskId);
         Stream.of(statusUpdates)
                 .sorted(Comparator.comparing(JobStatusUpdate::getUpdateTime))

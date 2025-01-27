@@ -50,7 +50,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class TransactionLogStateStoreCompactionCommitByTransactionTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -305,7 +305,7 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     }
 
     private JobRun defaultFailedCommitRun(int numberOfRecords, List<String> reasons) {
-        return runOnTask(DEFAULT_TASK_ID,
+        return jobRunOnTask(DEFAULT_TASK_ID,
                 compactionStartedStatus(DEFAULT_START_TIME),
                 compactionFinishedStatus(DEFAULT_FINISH_TIME, new RecordsProcessed(numberOfRecords, numberOfRecords)),
                 compactionFailedStatus(DEFAULT_COMMIT_TIME, reasons));

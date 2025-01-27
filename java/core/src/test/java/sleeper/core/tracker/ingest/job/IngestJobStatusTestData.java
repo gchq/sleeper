@@ -34,7 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static sleeper.core.tracker.job.run.JobRunTestData.runOnTask;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 
@@ -99,7 +99,7 @@ public class IngestJobStatusTestData {
      * @return           a {@link JobRun}
      */
     public static JobRun startedIngestRun(String taskId, Instant startTime) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 ingestStartedStatus(1, startTime, defaultUpdateTime(startTime)));
     }
 
@@ -111,7 +111,7 @@ public class IngestJobStatusTestData {
      * @return         a {@link JobRun}
      */
     public static JobRun finishedIngestRun(String taskId, JobRunSummary summary) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 ingestStartedStatus(summary.getStartTime()),
                 ingestFinishedStatus(summary));
     }
@@ -125,7 +125,7 @@ public class IngestJobStatusTestData {
      * @return                      a {@link JobRun}
      */
     public static JobRun finishedIngestRun(String taskId, JobRunSummary summary, int numFilesWrittenByJob) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 ingestStartedStatus(summary.getStartTime()),
                 ingestFinishedStatus(summary, numFilesWrittenByJob));
     }
@@ -138,7 +138,7 @@ public class IngestJobStatusTestData {
      * @return         a {@link JobRun}
      */
     public static JobRun finishedIngestRunUncommitted(String taskId, JobRunSummary summary) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 ingestStartedStatus(summary.getStartTime()),
                 ingestFinishedStatusUncommitted(summary));
     }
@@ -153,7 +153,7 @@ public class IngestJobStatusTestData {
      * @return           a {@link JobRun}
      */
     public static JobRun failedIngestRun(String taskId, Instant startTime, Instant failTime, List<String> reasons) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 ingestStartedStatus(startTime),
                 failedStatus(failTime, reasons));
     }
@@ -168,7 +168,7 @@ public class IngestJobStatusTestData {
      * @return           a {@link JobRun}
      */
     public static JobRun failedIngestRun(String taskId, Instant startTime, Duration duration, List<String> reasons) {
-        return runOnTask(taskId,
+        return jobRunOnTask(taskId,
                 ingestStartedStatus(startTime),
                 failedStatus(startTime.plus(duration), reasons));
     }
