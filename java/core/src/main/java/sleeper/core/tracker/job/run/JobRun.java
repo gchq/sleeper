@@ -47,21 +47,6 @@ public class JobRun {
         return new Builder();
     }
 
-    /**
-     * Creates an instance of this class with a started status and a finished status.
-     *
-     * @param  taskId         the task ID to set
-     * @param  startedStatus  the started status to set
-     * @param  finishedStatus the finished status to set
-     * @return                an instance of this class
-     */
-    public static JobRun finished(String taskId, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
-        return builder().taskId(taskId)
-                .startedStatus(startedStatus)
-                .finishedStatus(finishedStatus)
-                .build();
-    }
-
     public String getTaskId() {
         return taskId;
     }
