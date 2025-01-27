@@ -26,4 +26,8 @@ public interface IngestJobValidatedStatus extends IngestJobInfoStatus {
      * @return whether the job passed validation checks
      */
     boolean isValid();
+
+    default boolean isTimeForRunSummary() {
+        return false;
+    }
 }

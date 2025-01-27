@@ -16,7 +16,6 @@
 
 package sleeper.core.tracker.ingest.job;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -203,6 +202,21 @@ public class IngestJobStatusTest {
     class ReportFinishedSummary {
 
         @Test
+        void shouldReportJobUnfinished() {
+            // Given
+            Instant startTime = Instant.parse("2025-01-27T13:00:00Z");
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("run", "task",
+                            startedStatusUpdate(startTime))));
+
+            // When / Then
+            assertThat(status.getJobRuns())
+                    .singleElement()
+                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .containsExactly(false, null);
+        }
+
+        @Test
         void shouldReportJobFinished() {
             // Given
             Instant startTime = Instant.parse("2025-01-27T13:00:00Z");
@@ -214,12 +228,12 @@ public class IngestJobStatusTest {
 
             // When / Then
             assertThat(status.getJobRuns())
-                    .extracting(JobRun::getFinishedSummary)
-                    .containsExactly(summary(startTime, finishTime));
+                    .singleElement()
+                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .containsExactly(true, summary(startTime, finishTime));
         }
 
         @Test
-        @Disabled("TODO")
         void shouldReportJobValidatedThenFinished() {
             // Given
             Instant validatedTime = Instant.parse("2025-01-27T13:00:00Z");
@@ -233,8 +247,9 @@ public class IngestJobStatusTest {
 
             // When / Then
             assertThat(status.getJobRuns())
-                    .extracting(JobRun::getFinishedSummary)
-                    .containsExactly(summary(startTime, finishTime));
+                    .singleElement()
+                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .containsExactly(true, summary(startTime, finishTime));
         }
     }
 

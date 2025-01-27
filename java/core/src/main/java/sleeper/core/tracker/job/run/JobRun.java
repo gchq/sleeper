@@ -32,15 +32,17 @@ import java.util.Optional;
  */
 public class JobRun {
     private final String taskId;
+    private final List<JobStatusUpdate> statusUpdates;
     private final JobRunStartedUpdate startedStatus;
     private final JobRunEndUpdate finishedStatus;
-    private final List<JobStatusUpdate> statusUpdates;
+    private final Instant summaryStartTime;
 
     private JobRun(Builder builder) {
         taskId = builder.taskId;
+        statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
         startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
-        statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
+        summaryStartTime = builder.summaryStartTime;
     }
 
     public static Builder builder() {
@@ -121,8 +123,7 @@ public class JobRun {
      */
     public JobRunSummary getFinishedSummary() {
         if (isFinished()) {
-            Instant startTime = Optional.ofNullable(startedStatus)
-                    .map(JobRunStartedUpdate::getStartTime)
+            Instant startTime = Optional.ofNullable(summaryStartTime)
                     .orElseGet(finishedStatus::getFinishTime);
             Instant finishTime = finishedStatus.getFinishTime();
             JobRunTime runTime = finishedStatus.getTimeInProcess()
@@ -184,9 +185,10 @@ public class JobRun {
      */
     public static final class Builder {
         private String taskId;
+        private final List<JobStatusUpdate> statusUpdates = new ArrayList<>();
         private JobRunStartedUpdate startedStatus;
         private JobRunEndUpdate finishedStatus;
-        private final List<JobStatusUpdate> statusUpdates = new ArrayList<>();
+        private Instant summaryStartTime;
 
         private Builder() {
         }
@@ -209,19 +211,20 @@ public class JobRun {
          * @return              the builder
          */
         public Builder statusUpdate(JobStatusUpdate statusUpdate) {
-            if (isStartedUpdateAndStartOfRun(statusUpdate)) {
-                this.startedStatus = (JobRunStartedUpdate) statusUpdate;
+            if (statusUpdate instanceof JobRunStartedUpdate) {
+                JobRunStartedUpdate startedStatus = (JobRunStartedUpdate) statusUpdate;
+                if (startedStatus.isStartOfRun()) {
+                    this.startedStatus = startedStatus;
+                }
+                if (startedStatus.isTimeForRunSummary()) {
+                    this.summaryStartTime = startedStatus.getStartTime();
+                }
             }
             if (statusUpdate instanceof JobRunEndUpdate) {
                 this.finishedStatus = (JobRunEndUpdate) statusUpdate;
             }
             this.statusUpdates.add(statusUpdate);
             return this;
-        }
-
-        private static boolean isStartedUpdateAndStartOfRun(JobStatusUpdate statusUpdate) {
-            return statusUpdate instanceof JobRunStartedUpdate
-                    && ((JobRunStartedUpdate) statusUpdate).isStartOfRun();
         }
 
         public JobRun build() {
