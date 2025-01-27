@@ -16,6 +16,7 @@
 
 package sleeper.core.tracker.ingest.job;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
@@ -193,6 +195,46 @@ public class IngestJobStatusTest {
             assertThat(status)
                     .extracting(IngestJobStatus::isUnfinishedOrAnyRunInProgress)
                     .isEqualTo(true);
+        }
+    }
+
+    @Nested
+    @DisplayName("Report finished run summary")
+    class ReportFinishedSummary {
+
+        @Test
+        void shouldReportJobFinished() {
+            // Given
+            Instant startTime = Instant.parse("2025-01-27T13:00:00Z");
+            Instant finishTime = Instant.parse("2025-01-27T13:00:01Z");
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("run", "task",
+                            startedStatusUpdate(startTime),
+                            finishedStatusUpdate(finishTime))));
+
+            // When / Then
+            assertThat(status.getJobRuns())
+                    .extracting(JobRun::getFinishedSummary)
+                    .containsExactly(summary(startTime, finishTime));
+        }
+
+        @Test
+        @Disabled("TODO")
+        void shouldReportJobValidatedThenFinished() {
+            // Given
+            Instant validatedTime = Instant.parse("2025-01-27T13:00:00Z");
+            Instant startTime = Instant.parse("2025-01-27T13:00:01Z");
+            Instant finishTime = Instant.parse("2025-01-27T13:00:02Z");
+            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("run", "task",
+                            acceptedStatusUpdate(validatedTime),
+                            startedStatusUpdateAfterValidation(startTime),
+                            finishedStatusUpdate(finishTime))));
+
+            // When / Then
+            assertThat(status.getJobRuns())
+                    .extracting(JobRun::getFinishedSummary)
+                    .containsExactly(summary(startTime, finishTime));
         }
     }
 
@@ -466,6 +508,10 @@ public class IngestJobStatusTest {
         return IngestJobStatusTestData.ingestFinishedStatus(summary(startTime, finishTime), 2);
     }
 
+    private IngestJobFinishedStatus finishedStatusUpdate(Instant finishTime) {
+        return IngestJobStatusTestData.ingestFinishedStatus(finishTime, 2, defaultRecordsProcessed());
+    }
+
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
             Instant startTime, Instant finishTime, int numFilesAddedByJob) {
         return IngestJobStatusTestData.ingestFinishedStatusUncommitted(summary(startTime, finishTime), numFilesAddedByJob);
@@ -480,7 +526,10 @@ public class IngestJobStatusTest {
     }
 
     private JobRunSummary summary(Instant startTime, Instant finishTime) {
-        return new JobRunSummary(
-                new RecordsProcessed(450L, 300L), startTime, finishTime);
+        return new JobRunSummary(defaultRecordsProcessed(), startTime, finishTime);
+    }
+
+    private RecordsProcessed defaultRecordsProcessed() {
+        return new RecordsProcessed(450L, 300L);
     }
 }

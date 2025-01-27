@@ -25,6 +25,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRuns;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
 
 import java.time.Duration;
@@ -350,10 +351,23 @@ public class IngestJobStatusTestData {
      * @return                      an ingest job started status
      */
     public static IngestJobFinishedStatus ingestFinishedStatus(JobRunSummary summary, int numFilesWrittenByJob) {
+        return ingestFinishedStatus(summary.getFinishTime(), numFilesWrittenByJob, summary.getRecordsProcessed());
+    }
+
+    /**
+     * Creates an ingest job finished status where files are committed.
+     *
+     * @param  finishTime           the time the job finished
+     * @param  numFilesWrittenByJob the number of files written by the job
+     * @param  recordsProcessed     the numbers of records processed by the job
+     * @return                      an ingest job started status
+     */
+    public static IngestJobFinishedStatus ingestFinishedStatus(
+            Instant finishTime, int numFilesWrittenByJob, RecordsProcessed recordsProcessed) {
         return IngestJobFinishedStatus.builder()
-                .updateTime(defaultUpdateTime(summary.getFinishTime()))
-                .finishTime(summary.getFinishTime())
-                .recordsProcessed(summary.getRecordsProcessed())
+                .updateTime(defaultUpdateTime(finishTime))
+                .finishTime(finishTime)
+                .recordsProcessed(recordsProcessed)
                 .numFilesWrittenByJob(numFilesWrittenByJob)
                 .committedBySeparateFileUpdates(false)
                 .build();
