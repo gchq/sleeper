@@ -29,7 +29,7 @@ public class JobRunTestData {
     }
 
     /**
-     * Creates a run with a started status.
+     * Creates a job run with the given status updates.
      *
      * @param  taskId        the task ID to set
      * @param  statusUpdates the status updates
@@ -40,25 +40,20 @@ public class JobRunTestData {
     }
 
     /**
-     * Creates a run with a started status that occurred on no task.
+     * Creates a job run with the given status updates, that occurred on no task. This usually happens when validation
+     * occurs outside of the task, but is still specific to the run, e.g. in the bulk import starter lambda.
      *
-     * @param  validationStatus the started status to set
-     * @return                  the run
+     * @param  statusUpdates the status updates
+     * @return               the run
      */
     public static JobRun validationRun(JobStatusUpdate... statusUpdates) {
         return jobRun(JobRun.builder(), statusUpdates);
     }
 
-    /**
-     * Creates a run with a started status that occurred on no task.
-     *
-     * @param  validationStatus the started status to set
-     * @return                  the run
-     */
     private static JobRun jobRun(JobRun.Builder builder, JobStatusUpdate... statusUpdates) {
         Stream.of(statusUpdates)
                 .sorted(Comparator.comparing(JobStatusUpdate::getUpdateTime))
-                .forEach(builder::statusUpdateDetectType);
+                .forEach(builder::statusUpdate);
         return builder.build();
     }
 

@@ -203,51 +203,12 @@ public class JobRun {
         }
 
         /**
-         * Sets the started status. This can also be a finished status, and will be set as the finished status if it is
-         * one.
-         *
-         * @param  startedStatus the started status to set
-         * @return               the builder
-         */
-        public Builder startedStatus(JobRunStartedUpdate startedStatus) {
-            this.startedStatus = startedStatus;
-            if (startedStatus instanceof JobRunEndUpdate) {
-                this.finishedStatus = (JobRunEndUpdate) startedStatus;
-            }
-            this.statusUpdates.add(startedStatus);
-            return this;
-        }
-
-        /**
-         * Sets the status update that ends the run.
-         *
-         * @param  finishedStatus the update to set
-         * @return                the builder
-         */
-        public Builder finishedStatus(JobRunEndUpdate finishedStatus) {
-            this.finishedStatus = finishedStatus;
-            this.statusUpdates.add(finishedStatus);
-            return this;
-        }
-
-        /**
          * Adds a status update.
          *
          * @param  statusUpdate the status update to add
          * @return              the builder
          */
         public Builder statusUpdate(JobStatusUpdate statusUpdate) {
-            this.statusUpdates.add(statusUpdate);
-            return this;
-        }
-
-        /**
-         * Adds a status update.
-         *
-         * @param  statusUpdate the status update to add
-         * @return              the builder
-         */
-        public Builder statusUpdateDetectType(JobStatusUpdate statusUpdate) {
             if (isStartedUpdateAndStartOfRun(statusUpdate)) {
                 this.startedStatus = (JobRunStartedUpdate) statusUpdate;
             }

@@ -78,7 +78,7 @@ class JobRunsBuilder {
     }
 
     private void addToBuilder(JobStatusUpdateRecord record, JobRun.Builder builder) {
-        builder.statusUpdateDetectType(record.getStatusUpdate());
+        builder.statusUpdate(record.getStatusUpdate());
         if (record.getTaskId() != null) {
             builder.taskId(record.getTaskId());
         }

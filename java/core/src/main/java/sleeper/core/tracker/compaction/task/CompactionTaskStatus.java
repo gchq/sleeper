@@ -110,8 +110,8 @@ public class CompactionTaskStatus {
      */
     public JobRun asAggregatedJobRun() {
         return JobRun.builder().taskId(taskId)
-                .statusUpdateDetectType(CompactionTaskStartedStatus.startTime(getStartTime()))
-                .statusUpdateDetectType(asFinishedStatus())
+                .statusUpdate(CompactionTaskStartedStatus.startTime(getStartTime()))
+                .statusUpdate(asFinishedStatus())
                 .build();
     }
 
