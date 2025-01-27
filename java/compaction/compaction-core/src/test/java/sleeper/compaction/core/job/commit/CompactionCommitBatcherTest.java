@@ -121,8 +121,8 @@ public class CompactionCommitBatcherTest {
 
         // When
         new CompactionCommitBatcher(sendCommits).sendBatch(List.of(
-                new CompactionCommitRequest("table1", request1, () -> failures.add("first")),
-                new CompactionCommitRequest("table2", request2, () -> failures.add("second"))));
+                new CompactionCommitMessageHandle("table1", request1, () -> failures.add("first")),
+                new CompactionCommitMessageHandle("table2", request2, () -> failures.add("second"))));
 
         // Then
         assertThat(queue).containsExactly(
@@ -146,16 +146,16 @@ public class CompactionCommitBatcherTest {
 
         // When
         new CompactionCommitBatcher(sendCommits).sendBatch(List.of(
-                new CompactionCommitRequest("some-table", request1, () -> failures.add("first")),
-                new CompactionCommitRequest("some-table", request2, () -> failures.add("second"))));
+                new CompactionCommitMessageHandle("some-table", request1, () -> failures.add("first")),
+                new CompactionCommitMessageHandle("some-table", request2, () -> failures.add("second"))));
 
         // Then
         assertThat(queue).isEmpty();
         assertThat(failures).containsExactlyInAnyOrder("first", "second");
     }
 
-    private CompactionCommitRequest commitRequest(String tableId, ReplaceFileReferencesRequest request) {
-        return new CompactionCommitRequest(tableId, request, () -> {
+    private CompactionCommitMessageHandle commitRequest(String tableId, ReplaceFileReferencesRequest request) {
+        return new CompactionCommitMessageHandle(tableId, request, () -> {
         });
     }
 

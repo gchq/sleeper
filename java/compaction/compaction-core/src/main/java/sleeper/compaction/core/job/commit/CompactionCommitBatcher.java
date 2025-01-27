@@ -40,16 +40,16 @@ public class CompactionCommitBatcher {
         this.sendStateStoreCommit = sendStateStoreCommit;
     }
 
-    public void sendBatch(List<CompactionCommitRequest> requests) {
-        Map<String, List<CompactionCommitRequest>> requestsByTableId = requests.stream()
-                .collect(groupingBy(CompactionCommitRequest::tableId));
+    public void sendBatch(List<CompactionCommitMessageHandle> requests) {
+        Map<String, List<CompactionCommitMessageHandle>> requestsByTableId = requests.stream()
+                .collect(groupingBy(CompactionCommitMessageHandle::tableId));
         requestsByTableId.forEach(this::sendTransaction);
     }
 
-    private void sendTransaction(String tableId, List<CompactionCommitRequest> requests) {
+    private void sendTransaction(String tableId, List<CompactionCommitMessageHandle> requests) {
         try {
             ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(
-                    requests.stream().map(CompactionCommitRequest::request).toList());
+                    requests.stream().map(CompactionCommitMessageHandle::request).toList());
             sendStateStoreCommit.send(StateStoreCommitRequest.create(tableId, transaction));
         } catch (Exception ex) {
             LOGGER.error("Failed to send message to state store commit queue with {} compactions for table ID {}", requests.size(), tableId, ex);

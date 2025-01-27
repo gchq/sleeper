@@ -32,6 +32,7 @@ import java.util.Queue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
@@ -186,6 +187,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         // Given
         instanceProperties.set(COMPACTION_TASK_WAIT_FOR_INPUT_FILE_ASSIGNMENT, "false");
         tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "true");
+        tableProperties.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
         CompactionJob job = createJob("test-job");
         send(job);
         stateStore.clearFileData();
@@ -205,6 +207,6 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         assertThat(jobTracker.getAllJobs(DEFAULT_TABLE_ID)).containsExactly(
                 compactionJobCreated(job, DEFAULT_CREATED_TIME,
                         uncommittedCompactionRun(DEFAULT_TASK_ID, expectedSummary)));
-        assertThat(commitRequestsOnQueue).containsExactly(commitRequestFor(job, expectedSummary));
+        assertThat(batcherCommitQueue).containsExactly(batcherCommitRequestFor(job, expectedSummary));
     }
 }

@@ -29,8 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.commit.CompactionCommitBatcher;
-import sleeper.compaction.core.job.commit.CompactionCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionCommitRequestSerDe;
+import sleeper.compaction.core.job.commit.CompactionCommitMessageHandle;
+import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
@@ -47,7 +47,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, SQSBatchResponse> {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(CompactionCommitBatcherLambda.class);
-    private final CompactionCommitRequestSerDe serDe = new CompactionCommitRequestSerDe();
+    private final CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
     private final CompactionCommitBatcher batcher;
 
     public CompactionCommitBatcherLambda() {
@@ -65,14 +65,14 @@ public class CompactionCommitBatcherLambda implements RequestHandler<SQSEvent, S
     @Override
     public SQSBatchResponse handleRequest(SQSEvent event, Context context) {
         List<BatchItemFailure> failures = new ArrayList<>();
-        List<CompactionCommitRequest> requests = event.getRecords().stream()
+        List<CompactionCommitMessageHandle> requests = event.getRecords().stream()
                 .map(message -> readMessageTrackingFailure(message, failures))
                 .toList();
         batcher.sendBatch(requests);
         return new SQSBatchResponse(failures);
     }
 
-    private CompactionCommitRequest readMessageTrackingFailure(SQSMessage message, List<BatchItemFailure> failures) {
+    private CompactionCommitMessageHandle readMessageTrackingFailure(SQSMessage message, List<BatchItemFailure> failures) {
         return serDe.fromJsonWithCallbackOnFail(message.getBody(),
                 () -> failures.add(new BatchItemFailure(message.getMessageId())));
     }

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
 import sleeper.core.properties.PropertiesReloader;
@@ -61,6 +62,7 @@ import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -88,7 +90,8 @@ public class CompactionTaskTestBase {
     protected final InMemoryCompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     protected final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
     protected final List<Duration> sleeps = new ArrayList<>();
-    protected final List<StateStoreCommitRequest> commitRequestsOnQueue = new ArrayList<>();
+    protected final List<StateStoreCommitRequest> stateStoreCommitQueue = new ArrayList<>();
+    protected final List<CompactionCommitMessage> batcherCommitQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
 
@@ -150,7 +153,7 @@ public class CompactionTaskTestBase {
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider(), stateStoreProvider(),
-                jobTracker, commitRequestsOnQueue::add, timeSupplier);
+                jobTracker, stateStoreCommitQueue::add, batcherCommitQueue::add, timeSupplier);
         CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
@@ -334,24 +337,50 @@ public class CompactionTaskTestBase {
     protected StateStoreCommitRequest commitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
         return StateStoreCommitRequest.create(job.getTableId(),
                 new ReplaceFileReferencesTransaction(List.of(
-                        ReplaceFileReferencesRequest.builder()
-                                .jobId(job.getId())
-                                .taskId(DEFAULT_TASK_ID)
-                                .jobRunId(runId)
-                                .inputFiles(job.getInputFiles())
-                                .newReference(FileReference.builder()
-                                        .filename(job.getOutputFile())
-                                        .partitionId(job.getPartitionId())
-                                        .numberOfRecords(summary.getRecordsWritten())
-                                        .countApproximate(false)
-                                        .onlyContainsDataForThisPartition(true)
-                                        .build())
-                                .build())));
+                        replaceFileReferencesRequest(job, runId, summary))));
     }
 
-    protected void setAsyncCommit(boolean enabled, TableProperties... tableProperties) {
+    protected CompactionCommitMessage batcherCommitRequestFor(CompactionJob job, JobRunSummary summary) {
+        return batcherCommitRequestFor(job, "test-job-run-1", summary);
+    }
+
+    protected CompactionCommitMessage batcherCommitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
+        return new CompactionCommitMessage(job.getTableId(), replaceFileReferencesRequest(job, runId, summary));
+    }
+
+    private ReplaceFileReferencesRequest replaceFileReferencesRequest(CompactionJob job, String runId, JobRunSummary summary) {
+        return ReplaceFileReferencesRequest.builder()
+                .jobId(job.getId())
+                .taskId(DEFAULT_TASK_ID)
+                .jobRunId(runId)
+                .inputFiles(job.getInputFiles())
+                .newReference(FileReference.builder()
+                        .filename(job.getOutputFile())
+                        .partitionId(job.getPartitionId())
+                        .numberOfRecords(summary.getRecordsWritten())
+                        .countApproximate(false)
+                        .onlyContainsDataForThisPartition(true)
+                        .build())
+                .build();
+    }
+
+    protected void setSyncCommit(TableProperties... tableProperties) {
         for (TableProperties table : tableProperties) {
-            table.set(COMPACTION_JOB_COMMIT_ASYNC, "" + enabled);
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+        }
+    }
+
+    protected void setAsyncCommitNoBatching(TableProperties... tableProperties) {
+        for (TableProperties table : tableProperties) {
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
+            table.set(COMPACTION_JOB_ASYNC_BATCHING, "false");
+        }
+    }
+
+    protected void setAsyncCommitWithBatching(TableProperties... tableProperties) {
+        for (TableProperties table : tableProperties) {
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
+            table.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
         }
     }
 

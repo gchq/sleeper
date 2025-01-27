@@ -17,41 +17,32 @@ package sleeper.compaction.core.job.commit;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
 
 import sleeper.core.statestore.FileReferenceSerDe;
-import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.util.GsonConfig;
 
-public class CompactionCommitRequestSerDe {
+public class CompactionCommitMessageSerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrint;
 
-    public CompactionCommitRequestSerDe() {
+    public CompactionCommitMessageSerDe() {
         GsonBuilder builder = GsonConfig.standardBuilder()
                 .addSerializationExclusionStrategy(FileReferenceSerDe.excludeUpdateTimes());
         gson = builder.create();
         gsonPrettyPrint = builder.setPrettyPrinting().create();
     }
 
-    public String toJson(String tableId, ReplaceFileReferencesRequest request) {
-        return gson.toJson(toJsonObject(tableId, request));
+    public String toJson(CompactionCommitMessage message) {
+        return gson.toJson(message);
     }
 
-    public String toJsonPrettyPrint(String tableId, ReplaceFileReferencesRequest request) {
-        return gsonPrettyPrint.toJson(toJsonObject(tableId, request));
+    public String toJsonPrettyPrint(CompactionCommitMessage message) {
+        return gsonPrettyPrint.toJson(message);
     }
 
-    private JsonObject toJsonObject(String tableId, ReplaceFileReferencesRequest request) {
-        JsonObject json = new JsonObject();
-        json.addProperty("tableId", tableId);
-        json.add("request", gson.toJsonTree(request));
-        return json;
-    }
-
-    public CompactionCommitRequest fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {
-        CompactionCommitRequest jsonRequest = gson.fromJson(json, CompactionCommitRequest.class);
-        return new CompactionCommitRequest(jsonRequest.tableId(), jsonRequest.request(), callbackOnFail);
+    public CompactionCommitMessageHandle fromJsonWithCallbackOnFail(String json, Runnable callbackOnFail) {
+        CompactionCommitMessage message = gson.fromJson(json, CompactionCommitMessage.class);
+        return new CompactionCommitMessageHandle(message.tableId(), message.request(), callbackOnFail);
     }
 
 }

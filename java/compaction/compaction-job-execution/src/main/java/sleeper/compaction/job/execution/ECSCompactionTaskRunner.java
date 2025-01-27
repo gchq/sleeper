@@ -28,7 +28,9 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.BatchedCommitQueueSender;
 import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda.CommitQueueSender;
+import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.task.CompactionTask;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
@@ -57,6 +59,7 @@ import java.util.UUID;
 
 import static sleeper.compaction.job.execution.AwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 
@@ -144,7 +147,8 @@ public class ECSCompactionTaskRunner {
             CompactionJobTracker jobTracker, InstanceProperties instanceProperties, AmazonSQS sqsClient) {
         return new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
-                sendToSqs(instanceProperties, tablePropertiesProvider, sqsClient));
+                sendToSqs(instanceProperties, tablePropertiesProvider, sqsClient),
+                sendToSqsBatched(instanceProperties, sqsClient));
     }
 
     private static CommitQueueSender sendToSqs(
@@ -158,5 +162,12 @@ public class ECSCompactionTaskRunner {
                     .withMessageGroupId(tableId)
                     .withMessageBody(new StateStoreCommitRequestSerDe(tablePropertiesProvider).toJson(request)));
         };
+    }
+
+    private static BatchedCommitQueueSender sendToSqsBatched(
+            InstanceProperties instanceProperties, AmazonSQS sqsClient) {
+        return request -> sqsClient.sendMessage(
+                instanceProperties.get(COMPACTION_COMMIT_QUEUE_URL),
+                new CompactionCommitMessageSerDe().toJson(request));
     }
 }

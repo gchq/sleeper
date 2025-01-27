@@ -56,6 +56,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
@@ -304,6 +305,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "compaction tasks.\n" +
                     "This is only applied if async commits are enabled for the table. The default value is set in an " +
                     "instance property.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_ASYNC_BATCHING = Index.propertyBuilder("sleeper.table.compaction.job.async.commit.batching")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_ASYNC_BATCHING)
+            .description("This property affects whether commits of compaction jobs are batched before being sent " +
+                    "to the state store commit queue to be applied by the committer lambda. If this property is true and " +
+                    "asynchronous commits are enabled then commits of compactions will be batched. If this property is " +
+                    "false and asynchronous commits are enabled then commits of compactions will not be batched and will " +
+                    "be sent directly to the committer lambda.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
