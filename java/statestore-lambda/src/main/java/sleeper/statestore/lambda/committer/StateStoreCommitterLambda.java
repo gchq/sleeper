@@ -82,11 +82,11 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
         committer = new StateStoreCommitter(
-                CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
+                instanceProperties,
+                tablePropertiesProvider,
+                stateStoreProvider, CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
                 IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
-                tablePropertiesProvider, stateStoreProvider,
-                new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)),
-                Instant::now);
+                new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)), Instant::now);
         throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
     }
 
