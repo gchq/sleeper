@@ -251,6 +251,25 @@ public class IngestJobStatusTest {
                     .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
                     .containsExactly(true, summary(startTime, finishTime));
         }
+
+        @Test
+        void shouldReportJobValidatedAfterStartTime() {
+            // Given
+            Instant startTime = Instant.parse("2025-01-27T13:00:00Z");
+            Instant validatedTime = Instant.parse("2025-01-27T13:00:01Z");
+            Instant finishTime = Instant.parse("2025-01-27T13:00:02Z");
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("run", "task",
+                            startedStatusUpdateAfterValidation(startTime),
+                            acceptedStatusUpdate(validatedTime),
+                            finishedStatusUpdate(finishTime))));
+
+            // When / Then
+            assertThat(status.getJobRuns())
+                    .singleElement()
+                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .containsExactly(true, summary(startTime, finishTime));
+        }
     }
 
     @Nested
