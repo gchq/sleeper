@@ -119,12 +119,6 @@ public interface CommonProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .runCdkDeployWhenChanged(true)
             .includedInBasicTemplate(true).build();
-    UserDefinedInstanceProperty QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.queue.visibility.timeout.seconds")
-            .description("The visibility timeout on the queues used in ingest, query, etc.")
-            .defaultValue("900")
-            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty LOG_RETENTION_IN_DAYS = Index.propertyBuilder("sleeper.log.retention.days")
             .description("The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are retained.\n" +
                     "See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html for valid options.\n" +
