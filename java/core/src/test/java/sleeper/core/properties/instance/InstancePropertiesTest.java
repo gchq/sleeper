@@ -33,7 +33,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.core.properties.instance.BatcherProperty.INGEST_BATCHER_JOB_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_AUTO_SCALING_GROUP;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -271,7 +270,6 @@ class InstancePropertiesTest {
         instanceProperties.set(SUBNETS, "subnet1");
         instanceProperties.setNumber(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES, 20);
         instanceProperties.setNumber(GARBAGE_COLLECTOR_LAMBDA_TIMEOUT_IN_SECONDS, 840);
-        instanceProperties.setNumber(INGEST_BATCHER_JOB_VISIBILITY_TIMEOUT_IN_SECONDS, 20);
         instanceProperties.setNumber(INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 600);
         instanceProperties.setNumber(QUERY_RESULTS_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 600);
         instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 700);
