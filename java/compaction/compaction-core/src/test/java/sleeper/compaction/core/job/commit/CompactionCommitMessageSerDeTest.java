@@ -29,7 +29,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class CompactionCommitRequestSerDeTest {
+public class CompactionCommitMessageSerDeTest {
 
     CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
 
