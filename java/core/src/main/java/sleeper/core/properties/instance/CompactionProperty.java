@@ -43,9 +43,29 @@ public interface CompactionProperty {
             .defaultValue("1")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-
+    UserDefinedInstanceProperty COMPACTION_COMMIT_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.commit.batch.size")
+            .description("The number of finished compaction commits to gather in the batcher before committing to " +
+                    "the state store. This will be the batch size for a lambda as an SQS event source.\n" +
+                    "This can be a maximum of 10,000. In practice the effective maximum is limited by the number of " +
+                    "messages that fit in a synchronous lambda invocation payload, see the AWS documentation:\n" +
+                    "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html")
+            .defaultValue("1000")
+            .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 10_000))
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.commit.batching.window.seconds")
+            .description("The time in seconds that the batcher will wait for compaction commits to appear if the " +
+                    "batch size is not filled. This will be set in the SQS event source for the lambda. This can be " +
+                    "a maximum of 300, i.e. 5 minutes.")
+            .defaultValue("30")
+            .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 300))
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
+            .defaultValue("900")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty PENDING_COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.pending.queue.visibility.timeout.seconds")
+            .description("The visibility timeout for the queue of pending compaction job batches.")
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
@@ -193,6 +213,20 @@ public interface CompactionProperty {
             .description("The maximum number of times that a compaction job can be taken off the job definition queue " +
                     "before it is moved to the dead letter queue.\n" +
                     "This property is used to configure the maxReceiveCount of the compaction job definition queue.")
+            .defaultValue("3")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_DISPATCH_MAX_RETRIES = Index.propertyBuilder("sleeper.compaction.job.dispatch.max.retries")
+            .description("The maximum number of times that a batch of compaction jobs can be taken off the pending queue " +
+                    "before it is moved to the dead letter queue.\n" +
+                    "This property is used to configure the maxReceiveCount of the pending compaction job batch queue.")
+            .defaultValue("3")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_COMMIT_MAX_RETRIES = Index.propertyBuilder("sleeper.compaction.job.commit.max.retries")
+            .description("The maximum number of times that a compaction job can be taken off the batch committer queue " +
+                    "before it is moved to the dead letter queue.\n" +
+                    "This property is used to configure the maxReceiveCount of the compaction job committer queue.")
             .defaultValue("3")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();

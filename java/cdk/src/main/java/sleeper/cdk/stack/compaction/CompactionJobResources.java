@@ -65,6 +65,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_MAX_RETRIES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_DISPATCH_MAX_RETRIES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED;
@@ -77,6 +81,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_DISPATCH_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_MAX_RETRIES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.PENDING_COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
@@ -284,11 +289,11 @@ public class CompactionJobResources {
                 .create(stack, "PendingCompactionJobBatchQ")
                 .queueName(queueName)
                 .deadLetterQueue(DeadLetterQueue.builder()
-                        .maxReceiveCount(instanceProperties.getInt(COMPACTION_JOB_MAX_RETRIES))
+                        .maxReceiveCount(instanceProperties.getInt(COMPACTION_DISPATCH_MAX_RETRIES))
                         .queue(pendingDLQ)
                         .build())
                 .visibilityTimeout(
-                        Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                        Duration.seconds(instanceProperties.getInt(PENDING_COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, pendingQ.getQueueUrl());
         instanceProperties.set(COMPACTION_PENDING_QUEUE_ARN, pendingQ.getQueueArn());
@@ -322,8 +327,9 @@ public class CompactionJobResources {
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_COMMIT_BATCHER)));
 
         function.addEventSource(SqsEventSource.Builder.create(batcherQueue)
-                .batchSize(1)
-                .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM))
+                .batchSize(instanceProperties.getInt(COMPACTION_COMMIT_BATCH_SIZE))
+                .maxBatchingWindow(Duration.seconds(instanceProperties.getInt(COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS)))
+                .maxConcurrency(1)
                 .build());
         coreStacks.grantSendStateStoreCommits(function);
     }
@@ -338,7 +344,7 @@ public class CompactionJobResources {
                 .create(stack, "CompactionCommitQueue")
                 .queueName(String.join("-", "sleeper", instanceId, "CompactionCommitQ"))
                 .deadLetterQueue(DeadLetterQueue.builder()
-                        .maxReceiveCount(1)
+                        .maxReceiveCount(instanceProperties.getInt(COMPACTION_COMMIT_MAX_RETRIES))
                         .queue(deadLetterQueue)
                         .build())
                 .visibilityTimeout(
