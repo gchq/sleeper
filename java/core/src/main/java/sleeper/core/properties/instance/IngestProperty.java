@@ -47,8 +47,9 @@ public interface IngestProperty {
                     "This should be less than the value of sleeper.ingest.queue.visibility.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
-    UserDefinedInstanceProperty INGEST_QUEUE_VISIBILITY_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.queue.visibility.seconds")
-            .description("The visibility is seconds for ingest job queue.")
+    UserDefinedInstanceProperty INGEST_QUEUE_VISIBILITY_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.queue.visibility.timeout.seconds")
+            .description("The visibility timeout in seconds used for ingest queues. " +
+                    "This should be greater than sleeper.ingest.keepalive.period.seconds.")
             .defaultValue("900")
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.INGEST).build();

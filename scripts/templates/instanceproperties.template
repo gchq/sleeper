@@ -298,8 +298,9 @@ sleeper.ingest.task.creation.period.minutes=1
 # This should be less than the value of sleeper.ingest.queue.visibility.seconds.
 sleeper.ingest.keepalive.period.seconds=300
 
-# The visibility is seconds for ingest job queue.
-sleeper.ingest.queue.visibility.seconds=900
+# The visibility timeout in seconds used for ingest queues. This should be greater than
+# sleeper.ingest.keepalive.period.seconds.
+sleeper.ingest.queue.visibility.timeout.seconds=900
 
 # This sets the value of fs.s3a.experimental.input.fadvise on the Hadoop configuration used to read
 # and write files to and from S3 in ingest jobs. Changing this value allows you to fine-tune how files
@@ -418,7 +419,8 @@ sleeper.ingest.batcher.submitter.memory.mb=1024
 # The timeout in seconds for the lambda that receives submitted requests to ingest files.
 sleeper.ingest.batcher.submitter.timeout.seconds=20
 
-# The timeout in seconds for the visibility of the queue that submits jobs to the ingest batcher. 
+# The timeout in seconds for the visibility of the queue that submits jobs to the ingest batcher.
+# Aligned with the property sleeper.ingest.batcher.submitter.timeout.seconds.
 sleeper.ingest.batcher.visibility.timeout.seconds=20
 
 # The amount of memory in MB for the lambda that creates ingest jobs from submitted file ingest
@@ -1230,8 +1232,8 @@ sleeper.query.tracker.ttl.days=1
 # The length of time the results of queries remain in the query results bucket before being deleted.
 sleeper.query.results.bucket.expiry.days=7
 
-# The visibility in seconds of the query results queue.
-sleeper.query.results.queue.visibility.seconds=900
+# The visibility timeout in seconds of the query results queue.
+sleeper.query.results.queue.visibility.timeout.seconds=900
 
 # The default value of the rowgroup size used when the results of queries are written to Parquet
 # files. The value given below is 8MiB. This value can be overridden using the query config.

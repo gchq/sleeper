@@ -37,7 +37,8 @@ public interface BatcherProperty {
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_BATCHER_JOB_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.visibility.timeout.seconds")
-            .description("The timeout in seconds for the visibility of the queue that submits jobs to the ingest batcher. ")
+            .description("The timeout in seconds for the visibility of the queue that submits jobs to the ingest batcher. " +
+                    "Aligned with the property sleeper.ingest.batcher.submitter.timeout.seconds.")
             .defaultValue("20")
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.INGEST)
