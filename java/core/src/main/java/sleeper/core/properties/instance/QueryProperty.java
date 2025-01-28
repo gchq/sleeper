@@ -75,7 +75,7 @@ public interface QueryProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty QUERY_RESULTS_QUEUE_VISIBILITY_IN_SECONDS = Index.propertyBuilder("sleeper.query.results.queue.visibility.timeout.seconds")
+    UserDefinedInstanceProperty QUERY_RESULTS_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.query.results.queue.visibility.timeout.seconds")
             .description("The visibility timeout in seconds of the query results queue.")
             .defaultValue("900")
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)

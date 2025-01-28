@@ -71,7 +71,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.QueryProperty.QUERY_RESULTS_BUCKET_EXPIRY_IN_DAYS;
-import static sleeper.core.properties.instance.QueryProperty.QUERY_RESULTS_QUEUE_VISIBILITY_IN_SECONDS;
+import static sleeper.core.properties.instance.QueryProperty.QUERY_RESULTS_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 /**
  * Deploys resources to run queries. This consists of lambda {@link Function}s to
@@ -282,7 +282,7 @@ public class QueryStack extends NestedStack {
         Queue resultsQueue = Queue.Builder
                 .create(this, "QueryResultsQueue")
                 .queueName(queueName)
-                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_RESULTS_QUEUE_VISIBILITY_IN_SECONDS)))
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUERY_RESULTS_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_URL, resultsQueue.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.QUERY_RESULTS_QUEUE_ARN, resultsQueue.getQueueArn());
