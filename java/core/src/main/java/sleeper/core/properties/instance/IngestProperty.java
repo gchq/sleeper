@@ -44,12 +44,12 @@ public interface IngestProperty {
     UserDefinedInstanceProperty INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the ingest queue so that they are not processed by other processes.\n" +
-                    "This should be less than the value of sleeper.queue.visibility.timeout.seconds.")
+                    "This should be less than the value of sleeper.ingest.queue.visibility.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
-    UserDefinedInstanceProperty INGEST_KEEP_ALIVE_VISIBILITY_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.keepalive.visibility.seconds")
-            .description("The visibility is seconds of the keep alive queue for job ingest ")
-            .defaultValue("300")
+    UserDefinedInstanceProperty INGEST_QUEUE_VISIBILITY_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.queue.visibility.seconds")
+            .description("The visibility is seconds for ingest job queue.")
+            .defaultValue("900")
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty S3A_INPUT_FADVISE = Index.propertyBuilder("sleeper.ingest.fs.s3a.experimental.input.fadvise")
