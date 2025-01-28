@@ -59,7 +59,10 @@ public class CompactionCommitMessageSerDeTest {
                 .mapToObj(i -> filePaths.constructPartitionParquetFilePath(
                         partitions.getRootPartition(), numberedUUID("file", i)))
                 .toList();
-        FileReference outputFile = FileReferenceFactory.from(partitions).rootFile(exampleUUID("file", 'N'), 200);
+        FileReference outputFile = FileReferenceFactory.from(partitions).rootFile(
+                filePaths.constructPartitionParquetFilePath(
+                        partitions.getRootPartition(), exampleUUID("file", 'N')),
+                10_000_000);
         ReplaceFileReferencesRequest filesRequest = ReplaceFileReferencesRequest.builder()
                 .jobId(exampleUUID("job", 1))
                 .taskId(exampleUUID("task", 1))

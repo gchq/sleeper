@@ -18,9 +18,9 @@
       "s3a://sleeper-IIIIIIIIIIIIIIIIIIII-table-data/60b420bb/data/partition_partn000-0000-0000-0000-000000000000/file0000-0000-0000-0000-000000000011.parquet"
     ],
     "newReference": {
-      "filename": "fileNNNN-NNNN-NNNN-NNNN-NNNNNNNNNNNN",
+      "filename": "s3a://sleeper-IIIIIIIIIIIIIIIIIIII-table-data/60b420bb/data/partition_partn000-0000-0000-0000-000000000000/fileNNNN-NNNN-NNNN-NNNN-NNNNNNNNNNNN.parquet",
       "partitionId": "partn000-0000-0000-0000-000000000000",
-      "numberOfRecords": 200,
+      "numberOfRecords": 10000000,
       "countApproximate": false,
       "onlyContainsDataForThisPartition": true
     }
