@@ -34,7 +34,6 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
@@ -60,6 +59,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.startedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
 
@@ -187,11 +187,10 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
 
     protected static CompactionJobStatus finishedThenCommittedStatusWithDefaults(CompactionJob job, JobRunSummary summary) {
         return compactionJobCreated(job, ignoredUpdateTime(),
-                JobRun.builder().taskId(DEFAULT_TASK_ID)
-                        .startedStatus(compactionStartedStatus(summary.getStartTime()))
-                        .finishedStatus(compactionFinishedStatus(summary))
-                        .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
-                        .build());
+                jobRunOnTask(DEFAULT_TASK_ID,
+                        compactionStartedStatus(summary.getStartTime()),
+                        compactionFinishedStatus(summary),
+                        compactionCommittedStatus(defaultCommitTime())));
     }
 
     protected static CompactionJobStatus failedStatusWithDefaults(CompactionJob job, List<String> failureReasons) {

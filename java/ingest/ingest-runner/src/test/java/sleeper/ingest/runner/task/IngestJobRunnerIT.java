@@ -55,7 +55,6 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.runner.testutils.RecordGenerator;
@@ -86,6 +85,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
 import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
@@ -259,11 +259,9 @@ class IngestJobRunnerIT {
         assertThat(SketchesDeciles.fromFileReferences(records1.sleeperSchema, actualFiles, hadoopConfiguration))
                 .isEqualTo(SketchesDeciles.from(records1.sleeperSchema, expectedRecords));
         assertThat(tracker.getAllJobs(tableId)).containsExactly(
-                ingestJobStatus(ingestJob, JobRun.builder()
-                        .taskId("test-task")
-                        .startedStatus(ingestStartedStatus(ingestJob, Instant.parse("2024-06-20T15:33:01Z")))
-                        .statusUpdate(ingestAddedFilesStatus(Instant.parse("2024-06-20T15:33:10Z"), 1))
-                        .build()));
+                ingestJobStatus(ingestJob, jobRunOnTask("test-task",
+                        ingestStartedStatus(ingestJob, Instant.parse("2024-06-20T15:33:01Z")),
+                        ingestAddedFilesStatus(Instant.parse("2024-06-20T15:33:10Z"), 1))));
     }
 
     @Test

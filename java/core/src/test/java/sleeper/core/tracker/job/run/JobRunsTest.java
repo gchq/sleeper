@@ -447,7 +447,9 @@ class JobRunsTest {
 
             // Then
             assertThat(runs.getRunsLatestFirst())
-                    .containsExactly(JobRun.started(DEFAULT_TASK_ID, startedStatus));
+                    .singleElement()
+                    .extracting(JobRun::getStartedStatus, JobRun::getStatusUpdates)
+                    .containsExactly(startedStatus, List.of(startedStatus));
         }
 
         @Test
@@ -463,11 +465,9 @@ class JobRunsTest {
 
             // Then
             assertThat(runs.getRunsLatestFirst())
-                    .containsExactly(JobRun.builder()
-                            .taskId(DEFAULT_TASK_ID)
-                            .startedStatus(startedStatus)
-                            .statusUpdate(startedStatusNotStartOfRun)
-                            .build());
+                    .singleElement()
+                    .extracting(JobRun::getStartedStatus, JobRun::getStatusUpdates)
+                    .containsExactly(startedStatus, List.of(startedStatus, startedStatusNotStartOfRun));
         }
 
         @Test
@@ -481,11 +481,9 @@ class JobRunsTest {
 
             // Then
             assertThat(runs.getRunsLatestFirst())
-                    .containsExactly(JobRun.builder()
-                            .taskId(DEFAULT_TASK_ID)
-                            .startedStatus(startedStatus)
-                            .statusUpdate(customStatus)
-                            .build());
+                    .singleElement()
+                    .extracting(JobRun::getStartedStatus, JobRun::getStatusUpdates)
+                    .containsExactly(startedStatus, List.of(startedStatus, customStatus));
         }
 
         @Test
@@ -499,7 +497,9 @@ class JobRunsTest {
 
             // Then
             assertThat(runs.getRunsLatestFirst())
-                    .containsExactly(JobRun.started("a-task", startedStatus));
+                    .singleElement()
+                    .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getStatusUpdates)
+                    .containsExactly("a-task", startedStatus, List.of(startedStatus));
         }
 
         @Test
@@ -513,7 +513,9 @@ class JobRunsTest {
 
             // Then
             assertThat(runs.getRunsLatestFirst())
-                    .containsExactly(JobRun.started("a-task", startedStatus));
+                    .singleElement()
+                    .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getStatusUpdates)
+                    .containsExactly("a-task", startedStatus, List.of(startedStatus));
         }
     }
 
@@ -533,7 +535,9 @@ class JobRunsTest {
 
             // Then
             assertThat(runs.getRunsLatestFirst())
-                    .containsExactly(JobRun.started(DEFAULT_TASK_ID, status));
+                    .singleElement()
+                    .extracting(JobRun::getStartedStatus, JobRun::getFinishedStatus, JobRun::getStatusUpdates)
+                    .containsExactly(status, status, List.of(status));
             assertThat(runs.isStarted()).isTrue();
         }
 
@@ -549,9 +553,11 @@ class JobRunsTest {
             JobRuns runs = runsFromUpdates(startedAndFinished, started);
 
             // Then
-            assertThat(runs.getRunsLatestFirst()).containsExactly(
-                    JobRun.started(DEFAULT_TASK_ID, started),
-                    JobRun.started(DEFAULT_TASK_ID, startedAndFinished));
+            assertThat(runs.getRunsLatestFirst())
+                    .extracting(JobRun::getStartedStatus, JobRun::getFinishedStatus, JobRun::getStatusUpdates)
+                    .containsExactly(
+                            tuple(started, null, List.of(started)),
+                            tuple(startedAndFinished, startedAndFinished, List.of(startedAndFinished)));
             assertThat(runs.isStarted()).isTrue();
         }
 
@@ -568,9 +574,11 @@ class JobRunsTest {
             JobRuns runs = runsFromUpdates(startedAndFinished, started, finished);
 
             // Then
-            assertThat(runs.getRunsLatestFirst()).containsExactly(
-                    JobRun.finished(DEFAULT_TASK_ID, started, finished),
-                    JobRun.started(DEFAULT_TASK_ID, startedAndFinished));
+            assertThat(runs.getRunsLatestFirst())
+                    .extracting(JobRun::getStartedStatus, JobRun::getFinishedStatus, JobRun::getStatusUpdates)
+                    .containsExactly(
+                            tuple(started, finished, List.of(started, finished)),
+                            tuple(startedAndFinished, startedAndFinished, List.of(startedAndFinished)));
             assertThat(runs.isStarted()).isTrue();
         }
     }

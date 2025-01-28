@@ -22,7 +22,6 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.ingest.core.job.IngestJob;
@@ -36,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichFailed;
@@ -100,15 +100,13 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobTrackerTestBase {
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(ingestJobStatus(job, JobRun.builder()
-                        .taskId(taskId)
-                        .statusUpdate(IngestJobAddedFilesStatus.builder()
+                .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
+                        IngestJobAddedFilesStatus.builder()
                                 .fileCount(2)
-                                .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime)).build())
-                        .startedStatus(IngestJobStartedStatus.withStartOfRun(true)
+                                .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime)).build(),
+                        IngestJobStartedStatus.withStartOfRun(true)
                                 .inputFileCount(1)
-                                .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())
-                        .build()));
+                                .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())));
     }
 
     @Test

@@ -29,6 +29,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
 import java.util.List;
@@ -44,10 +45,12 @@ import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFil
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionFinishedEventBuilder;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionStartedEventBuilder;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionJobCreated;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRun;
-import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.finishedCompactionRunBuilder;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class TransactionLogStateStoreCompactionCommitByTransactionTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -302,8 +305,9 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     }
 
     private JobRun defaultFailedCommitRun(int numberOfRecords, List<String> reasons) {
-        return finishedCompactionRunBuilder(DEFAULT_TASK_ID, defaultSummary(numberOfRecords))
-                .statusUpdate(compactionFailedStatus(DEFAULT_COMMIT_TIME, reasons))
-                .build();
+        return jobRunOnTask(DEFAULT_TASK_ID,
+                compactionStartedStatus(DEFAULT_START_TIME),
+                compactionFinishedStatus(DEFAULT_FINISH_TIME, new RecordsProcessed(numberOfRecords, numberOfRecords)),
+                compactionFailedStatus(DEFAULT_COMMIT_TIME, reasons));
     }
 }

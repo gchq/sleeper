@@ -32,47 +32,21 @@ import java.util.Optional;
  */
 public class JobRun {
     private final String taskId;
+    private final List<JobStatusUpdate> statusUpdates;
     private final JobRunStartedUpdate startedStatus;
     private final JobRunEndUpdate finishedStatus;
-    private final List<JobStatusUpdate> statusUpdates;
+    private final Instant summaryStartTime;
 
     private JobRun(Builder builder) {
         taskId = builder.taskId;
+        statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
         startedStatus = builder.startedStatus;
         finishedStatus = builder.finishedStatus;
-        statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
+        summaryStartTime = builder.summaryStartTime;
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Creates an instance of this class with a started status.
-     *
-     * @param  taskId        the task ID to set
-     * @param  startedStatus the started status to set
-     * @return               an instance of this class
-     */
-    public static JobRun started(String taskId, JobRunStartedUpdate startedStatus) {
-        return builder().taskId(taskId)
-                .startedStatus(startedStatus)
-                .build();
-    }
-
-    /**
-     * Creates an instance of this class with a started status and a finished status.
-     *
-     * @param  taskId         the task ID to set
-     * @param  startedStatus  the started status to set
-     * @param  finishedStatus the finished status to set
-     * @return                an instance of this class
-     */
-    public static JobRun finished(String taskId, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
-        return builder().taskId(taskId)
-                .startedStatus(startedStatus)
-                .finishedStatus(finishedStatus)
-                .build();
     }
 
     public String getTaskId() {
@@ -149,8 +123,7 @@ public class JobRun {
      */
     public JobRunSummary getFinishedSummary() {
         if (isFinished()) {
-            Instant startTime = Optional.ofNullable(startedStatus)
-                    .map(JobRunStartedUpdate::getStartTime)
+            Instant startTime = Optional.ofNullable(summaryStartTime)
                     .orElseGet(finishedStatus::getFinishTime);
             Instant finishTime = finishedStatus.getFinishTime();
             JobRunTime runTime = finishedStatus.getTimeInProcess()
@@ -212,9 +185,10 @@ public class JobRun {
      */
     public static final class Builder {
         private String taskId;
+        private final List<JobStatusUpdate> statusUpdates = new ArrayList<>();
         private JobRunStartedUpdate startedStatus;
         private JobRunEndUpdate finishedStatus;
-        private final List<JobStatusUpdate> statusUpdates = new ArrayList<>();
+        private Instant summaryStartTime;
 
         private Builder() {
         }
@@ -231,40 +205,24 @@ public class JobRun {
         }
 
         /**
-         * Sets the started status. This can also be a finished status, and will be set as the finished status if it is
-         * one.
-         *
-         * @param  startedStatus the started status to set
-         * @return               the builder
-         */
-        public Builder startedStatus(JobRunStartedUpdate startedStatus) {
-            this.startedStatus = startedStatus;
-            if (startedStatus instanceof JobRunEndUpdate) {
-                this.finishedStatus = (JobRunEndUpdate) startedStatus;
-            }
-            this.statusUpdates.add(startedStatus);
-            return this;
-        }
-
-        /**
-         * Sets the status update that ends the run.
-         *
-         * @param  finishedStatus the update to set
-         * @return                the builder
-         */
-        public Builder finishedStatus(JobRunEndUpdate finishedStatus) {
-            this.finishedStatus = finishedStatus;
-            this.statusUpdates.add(finishedStatus);
-            return this;
-        }
-
-        /**
          * Adds a status update.
          *
          * @param  statusUpdate the status update to add
          * @return              the builder
          */
         public Builder statusUpdate(JobStatusUpdate statusUpdate) {
+            if (statusUpdate instanceof JobRunStartedUpdate) {
+                JobRunStartedUpdate startedStatus = (JobRunStartedUpdate) statusUpdate;
+                if (startedStatus.isStartOfRun()) {
+                    this.startedStatus = startedStatus;
+                }
+                if (startedStatus.isTimeForRunSummary()) {
+                    this.summaryStartTime = startedStatus.getStartTime();
+                }
+            }
+            if (statusUpdate instanceof JobRunEndUpdate) {
+                this.finishedStatus = (JobRunEndUpdate) statusUpdate;
+            }
             this.statusUpdates.add(statusUpdate);
             return this;
         }

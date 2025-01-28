@@ -42,7 +42,7 @@ import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTe
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedStatusUpdate;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.jobStatusListFrom;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatusListFrom;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnNoTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forNoRunNoTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
@@ -135,7 +135,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         void shouldReportJobAcceptedThenRejected() throws Exception {
             // Given
             IngestJob job = createJob(1, 2);
-            List<IngestJobStatus> status = jobStatusListFrom(records().fromUpdates(
+            List<IngestJobStatus> status = ingestJobStatusListFrom(records().fromUpdates(
                     forJobRunOnNoTask(job.getId(), "run-1",
                             acceptedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"))),
                     forNoRunNoTask(job.getId(),
@@ -156,7 +156,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
                     "]\n" +
                     "}";
             IngestJob job = createJob(1, 2);
-            List<IngestJobStatus> status = jobStatusListFrom(records().fromUpdates(
+            List<IngestJobStatus> status = ingestJobStatusListFrom(records().fromUpdates(
                     rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
 
             // When / Then
@@ -168,7 +168,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         void shouldReportRejectedJobWithInvalidJsonMessageSaved() throws IOException {
             String json = "{";
             IngestJob job = createJob(1, 2);
-            List<IngestJobStatus> status = jobStatusListFrom(records().fromUpdates(
+            List<IngestJobStatus> status = ingestJobStatusListFrom(records().fromUpdates(
                     rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
 
             // When / Then

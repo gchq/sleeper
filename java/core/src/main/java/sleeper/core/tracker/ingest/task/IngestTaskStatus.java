@@ -140,8 +140,8 @@ public class IngestTaskStatus {
      */
     public JobRun asAggregatedJobRun() {
         return JobRun.builder().taskId(taskId)
-                .startedStatus(IngestTaskStartedStatus.startTime(getStartTime()))
-                .finishedStatus(asFinishedStatus())
+                .statusUpdate(IngestTaskStartedStatus.startTime(getStartTime()))
+                .statusUpdate(asFinishedStatus())
                 .build();
     }
 

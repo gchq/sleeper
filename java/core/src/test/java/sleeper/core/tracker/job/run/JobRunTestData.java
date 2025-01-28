@@ -15,9 +15,10 @@
  */
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.status.JobRunEndUpdate;
-import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
+
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 /**
  * A helper for creating job runs for tests.
@@ -28,76 +29,31 @@ public class JobRunTestData {
     }
 
     /**
-     * Creates a run with a started status.
+     * Creates a job run with the given status updates.
      *
      * @param  taskId        the task ID to set
-     * @param  startedStatus the started status to set
+     * @param  statusUpdates the status updates
      * @return               the run
      */
-    public static JobRun startedRun(String taskId, JobRunStartedUpdate startedStatus) {
-        return JobRun.builder()
-                .taskId(taskId)
-                .startedStatus(startedStatus)
-                .build();
+    public static JobRun jobRunOnTask(String taskId, JobStatusUpdate... statusUpdates) {
+        return jobRun(JobRun.builder().taskId(taskId), statusUpdates);
     }
 
     /**
-     * Creates a run with a started status and a finished status.
+     * Creates a job run with the given status updates, that occurred on no task. This usually happens when validation
+     * occurs outside of the task, but is still specific to the run, e.g. in the bulk import starter lambda.
      *
-     * @param  taskId         the task ID to set
-     * @param  startedStatus  the started status to set
-     * @param  finishedStatus the finished status to set
-     * @return                the run
-     */
-    public static JobRun finishedRun(String taskId, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
-        return JobRun.builder()
-                .taskId(taskId)
-                .startedStatus(startedStatus)
-                .finishedStatus(finishedStatus)
-                .build();
-    }
-
-    /**
-     * Creates a run with a validated status, a started status and a finished status.
-     *
-     * @param  taskId         the task ID to set
-     * @param  startedStatus  the started status to set
-     * @param  finishedStatus the finished status to set
-     * @return                the run
-     */
-    public static JobRun validatedFinishedRun(String taskId, JobRunStartedUpdate validatedStatus, JobRunStartedUpdate startedStatus, JobRunEndUpdate finishedStatus) {
-        return JobRun.builder()
-                .taskId(taskId)
-                .startedStatus(validatedStatus)
-                .statusUpdate(startedStatus)
-                .finishedStatus(finishedStatus)
-                .build();
-    }
-
-    /**
-     * Creates a run with a started status that occurred on no task.
-     *
-     * @param  validationStatus the started status to set
-     * @return                  the run
-     */
-    public static JobRun validationRun(JobRunStartedUpdate validationStatus) {
-        return JobRun.builder()
-                .startedStatus(validationStatus)
-                .build();
-    }
-
-    /**
-     * Creates a run with a started status that occurred on no task.
-     *
-     * @param  startedStatus the started status to set
-     * @param  updates       the other updates
+     * @param  statusUpdates the status updates
      * @return               the run
      */
-    public static JobRun unfinishedRun(String taskId, JobRunStartedUpdate startedStatus, JobStatusUpdate... updates) {
-        JobRun.Builder builder = JobRun.builder().taskId(taskId).startedStatus(startedStatus);
-        for (JobStatusUpdate update : updates) {
-            builder.statusUpdate(update);
-        }
+    public static JobRun validationRun(JobStatusUpdate... statusUpdates) {
+        return jobRun(JobRun.builder(), statusUpdates);
+    }
+
+    private static JobRun jobRun(JobRun.Builder builder, JobStatusUpdate... statusUpdates) {
+        Stream.of(statusUpdates)
+                .sorted(Comparator.comparing(JobStatusUpdate::getUpdateTime))
+                .forEach(builder::statusUpdate);
         return builder.build();
     }
 

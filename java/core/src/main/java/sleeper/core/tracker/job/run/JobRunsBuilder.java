@@ -15,7 +15,6 @@
  */
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.status.JobRunEndUpdate;
 import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
@@ -54,7 +53,12 @@ class JobRunsBuilder {
             return;
         }
         getBuilderIfCorrelatable(record)
-                .ifPresent(builder -> addToBuilder(record, builder));
+                .ifPresent(builder -> {
+                    builder.statusUpdate(record.getStatusUpdate());
+                    if (record.getTaskId() != null) {
+                        builder.taskId(record.getTaskId());
+                    }
+                });
     }
 
     private Optional<JobRun.Builder> getBuilderIfCorrelatable(JobStatusUpdateRecord record) {
@@ -76,20 +80,6 @@ class JobRunsBuilder {
         JobRun.Builder builder = JobRun.builder();
         orderedBuilders.add(builder);
         return builder;
-    }
-
-    private void addToBuilder(JobStatusUpdateRecord record, JobRun.Builder builder) {
-        JobStatusUpdate statusUpdate = record.getStatusUpdate();
-        if (isStartedUpdateAndStartOfRun(statusUpdate)) {
-            builder.startedStatus((JobRunStartedUpdate) statusUpdate);
-        } else if (statusUpdate instanceof JobRunEndUpdate) {
-            builder.finishedStatus((JobRunEndUpdate) statusUpdate);
-        } else {
-            builder.statusUpdate(statusUpdate);
-        }
-        if (record.getTaskId() != null) {
-            builder.taskId(record.getTaskId());
-        }
     }
 
     JobRuns build() {
