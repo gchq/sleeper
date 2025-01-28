@@ -71,11 +71,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_KEEP_ALIVE_VISIBILITY_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CPU;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
@@ -143,7 +143,7 @@ public class IngestStack extends NestedStack {
                 .create(this, "IngestJobQueue")
                 .queueName(queueName)
                 .deadLetterQueue(ingestJobDeadLetterQueue)
-                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(INGEST_KEEP_ALIVE_VISIBILITY_IN_SECONDS)))
                 .build();
         instanceProperties.set(INGEST_JOB_QUEUE_URL, ingestJobQueue.getQueueUrl());
         instanceProperties.set(INGEST_JOB_QUEUE_ARN, ingestJobQueue.getQueueArn());

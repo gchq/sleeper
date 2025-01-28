@@ -46,9 +46,9 @@ import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_QUEUE_WAIT_TIME;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_KEEP_ALIVE_VISIBILITY_IN_SECONDS;
 import static sleeper.core.properties.instance.MetricsProperty.METRICS_NAMESPACE;
 
 public class IngestJobQueueConsumer implements MessageReceiver {
@@ -72,7 +72,7 @@ public class IngestJobQueueConsumer implements MessageReceiver {
         this.instanceProperties = instanceProperties;
         this.sqsJobQueueUrl = instanceProperties.get(INGEST_JOB_QUEUE_URL);
         this.keepAlivePeriod = instanceProperties.getInt(INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS);
-        this.visibilityTimeoutInSeconds = instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS);
+        this.visibilityTimeoutInSeconds = instanceProperties.getInt(INGEST_KEEP_ALIVE_VISIBILITY_IN_SECONDS);
         this.ingestJobMessageHandler = messageHandler(instanceProperties, configuration, tableIndex, ingestJobTracker).build();
     }
 

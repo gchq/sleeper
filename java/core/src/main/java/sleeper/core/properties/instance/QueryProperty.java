@@ -75,6 +75,13 @@ public interface QueryProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty QUERY_RESULTS_QUEUE_VISIBILITY_IN_SECONDS = Index.propertyBuilder("sleeper.query.results.queue.visibility.seconds")
+            .description("The visibility in seconds of the query results queue.")
+            .defaultValue("900")
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty DEFAULT_RESULTS_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.query.results.rowgroup.size")
             .description("The default value of the rowgroup size used when the results of queries are written to Parquet files. The " +
                     "value given below is 8MiB. This value can be overridden using the query config.")

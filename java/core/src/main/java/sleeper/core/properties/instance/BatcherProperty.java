@@ -36,6 +36,13 @@ public interface BatcherProperty {
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty INGEST_BATCHER_JOB_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.visibility.timeout.seconds")
+            .description("The timeout in seconds for the visibility of the queue that submits jobs to the ingest batcher. ")
+            .defaultValue("20")
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty INGEST_BATCHER_JOB_CREATION_MEMORY_IN_MB = Index.propertyBuilder("sleeper.ingest.batcher.job.creation.memory.mb")
             .description("The amount of memory in MB for the lambda that creates ingest jobs from submitted file ingest requests.")
             .defaultValue("1024")

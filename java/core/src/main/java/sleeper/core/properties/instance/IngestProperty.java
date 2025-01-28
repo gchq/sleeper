@@ -47,6 +47,11 @@ public interface IngestProperty {
                     "This should be less than the value of sleeper.queue.visibility.timeout.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+    UserDefinedInstanceProperty INGEST_KEEP_ALIVE_VISIBILITY_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.keepalive.visibility.seconds")
+            .description("TODO")
+            .defaultValue("300")
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty S3A_INPUT_FADVISE = Index.propertyBuilder("sleeper.ingest.fs.s3a.experimental.input.fadvise")
             .description("This sets the value of fs.s3a.experimental.input.fadvise on the Hadoop configuration used to read and write " +
                     "files to and from S3 in ingest jobs. Changing this value allows you to fine-tune how files are read. Possible " +
