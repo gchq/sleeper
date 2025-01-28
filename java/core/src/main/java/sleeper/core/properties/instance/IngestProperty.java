@@ -48,7 +48,7 @@ public interface IngestProperty {
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_KEEP_ALIVE_VISIBILITY_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.keepalive.visibility.seconds")
-            .description("TODO")
+            .description("The visibility is seconds of the keep alive queue for job ingest ")
             .defaultValue("300")
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
