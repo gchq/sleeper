@@ -939,14 +939,15 @@ sleeper.default.gc.delay.minutes=15
 sleeper.compaction.job.creation.batch.size=1
 
 # The number of finished compaction commits to gather in the batcher before committing to the state
-# store. This will be the batch size for a lambda as an SQS event source. This can be a maximum of
-# 10,000.
-sleeper.compaction.job.commit.batch.size=10000
+# store. This will be the batch size for a lambda as an SQS event source.
+# This can be a maximum of 10,000. In practice the effective maximum is limited by the number of
+# messages that fit in a synchronous lambda invocation payload, see the AWS documentation:
+sleeper.compaction.job.commit.batch.size=1000
 
 # The time in seconds that the batcher will wait for compaction commits to appear if the batch size is
 # not filled. This will be set in the SQS event source for the lambda. This can be a maximum of 300,
 # i.e. 5 minutes.
-sleeper.compaction.job.commit.batching.window.seconds=2
+sleeper.compaction.job.commit.batching.window.seconds=30
 
 # The visibility timeout for the queue of compaction jobs.
 sleeper.compaction.queue.visibility.timeout.seconds=900
