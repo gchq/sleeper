@@ -34,6 +34,7 @@ import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTe
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJobWhichStarted;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedStatusUpdate;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.createJob;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.finishedBulkImportJob;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
@@ -91,6 +92,17 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
     @Nested
     @DisplayName("Bulk Import job reporting")
     class BulkImportJobReporting {
+
+        @Test
+        void shouldReportFinishedBulkImportJob() throws Exception {
+            // Given
+            List<IngestJobStatus> jobs = finishedBulkImportJob();
+
+            // When / Then
+            assertThat(getStandardReport(JobQuery.Type.DETAILED, jobs, 0)).hasToString(
+                    example("reports/ingest/job/standard/detailed/bulkImport/finishedJob.txt"));
+        }
+
         @Test
         void shouldReportPendingJobWithValidationAccepted() throws Exception {
             // Given
