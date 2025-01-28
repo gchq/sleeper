@@ -54,6 +54,63 @@ public class CompactionCommitMessageSerDeTest {
     @Test
     void shouldSerialiseCompactionCommitRequest() {
         // Given
+        PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
+        ReplaceFileReferencesRequest filesRequest = ReplaceFileReferencesRequest.builder()
+                .jobId("test-job")
+                .taskId("test-task")
+                .jobRunId("test-run")
+                .inputFiles(List.of("test.parquet"))
+                .newReference(FileReferenceFactory.from(partitions).rootFile("output.parquet", 200))
+                .build();
+        CompactionCommitMessage message = new CompactionCommitMessage("test-table", filesRequest);
+        Runnable callbackOnFail = () -> {
+        };
+
+        // When
+        String json = serDe.toJson(message);
+        CompactionCommitMessageHandle found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
+
+        // Then
+        assertThat(found).isEqualTo(new CompactionCommitMessageHandle("test-table", filesRequest, callbackOnFail));
+    }
+
+    @Test
+    void shouldSerialiseRepresentativeCompactionCommitRequest() {
+        // Given
+        ReplaceFileReferencesRequest filesRequest = createExampleFilesRequestOfRepresentativeSize();
+        CompactionCommitMessage message = new CompactionCommitMessage(tableId, filesRequest);
+        Runnable callbackOnFail = () -> {
+        };
+
+        // When
+        String json = serDe.toJson(message);
+        CompactionCommitMessageHandle found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
+
+        // Then
+        assertThat(found).isEqualTo(new CompactionCommitMessageHandle(tableId, filesRequest, callbackOnFail));
+    }
+
+    @Test
+    void shouldGenerateExpectedJson() {
+        // Given
+        CompactionCommitMessage message = new CompactionCommitMessage(tableId, createExampleFilesRequestOfRepresentativeSize());
+
+        // When / Then
+        Approvals.verify(serDe.toJson(message), new Options().forFile()
+                .withName("example-compaction-commit", ".json"));
+    }
+
+    @Test
+    void shouldGenerateExpectedPrettyJson() {
+        // Given
+        CompactionCommitMessage message = new CompactionCommitMessage(tableId, createExampleFilesRequestOfRepresentativeSize());
+
+        // When / Then
+        Approvals.verify(serDe.toJsonPrettyPrint(message), new Options().forFile()
+                .withName("example-compaction-commit-pretty", ".json"));
+    }
+
+    private ReplaceFileReferencesRequest createExampleFilesRequestOfRepresentativeSize() {
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition(exampleUUID("partn", 0)).buildTree();
         List<String> inputFiles = IntStream.rangeClosed(1, 11)
                 .mapToObj(i -> filePaths.constructPartitionParquetFilePath(
@@ -63,25 +120,13 @@ public class CompactionCommitMessageSerDeTest {
                 filePaths.constructPartitionParquetFilePath(
                         partitions.getRootPartition(), exampleUUID("file", 'N')),
                 10_000_000);
-        ReplaceFileReferencesRequest filesRequest = ReplaceFileReferencesRequest.builder()
+        return ReplaceFileReferencesRequest.builder()
                 .jobId(exampleUUID("job", 1))
                 .taskId(exampleUUID("task", 1))
                 .jobRunId(exampleUUID("run", 1))
                 .inputFiles(inputFiles)
                 .newReference(outputFile)
                 .build();
-        CompactionCommitMessage message = new CompactionCommitMessage(tableId, filesRequest);
-        Runnable callbackOnFail = () -> {
-        };
-
-        // When
-        String json = serDe.toJson(message);
-        String jsonPretty = serDe.toJsonPrettyPrint(message);
-        CompactionCommitMessageHandle found = serDe.fromJsonWithCallbackOnFail(json, callbackOnFail);
-
-        // Then
-        assertThat(found).isEqualTo(new CompactionCommitMessageHandle(tableId, filesRequest, callbackOnFail));
-        Approvals.verify(jsonPretty, new Options().forFile().withExtension(".json"));
     }
 
     private static TableProperties createTestTableProperties(InstanceProperties instanceProperties, Schema schema, String tableId) {
