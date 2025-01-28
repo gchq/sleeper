@@ -47,7 +47,8 @@ public interface CompactionProperty {
             .description("The number of finished compaction commits to gather in the batcher before committing to " +
                     "the state store. This will be the batch size for a lambda as an SQS event source.\n" +
                     "This can be a maximum of 10,000. In practice the effective maximum is limited by the number of " +
-                    "messages that fit in a synchronous lambda invocation payload, see the AWS documentation:\n")
+                    "messages that fit in a synchronous lambda invocation payload, see the AWS documentation:\n" +
+                    "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html")
             .defaultValue("1000")
             .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 10_000))
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
