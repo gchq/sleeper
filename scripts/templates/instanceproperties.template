@@ -98,9 +98,6 @@ sleeper.filesystem=s3a://
 # An email address used by the TopicStack to publish SNS notifications of errors.
 # sleeper.errors.email=
 
-# The visibility timeout on the queues used in ingest, query, etc.
-sleeper.queue.visibility.timeout.seconds=900
-
 # The length of time in days that CloudWatch logs from lambda functions, ECS containers, etc., are
 # retained.
 # See https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-logs-loggroup.html
