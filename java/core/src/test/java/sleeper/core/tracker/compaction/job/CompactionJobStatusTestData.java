@@ -25,6 +25,7 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords;
@@ -35,6 +36,7 @@ import java.util.List;
 
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEvent;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
@@ -55,41 +57,33 @@ public class CompactionJobStatusTestData {
     }
 
     public static JobRun startedCompactionRun(String taskId, Instant startTime) {
-        return JobRun.started(taskId, compactionStartedStatus(startTime));
+        return jobRunOnTask(taskId, compactionStartedStatus(startTime));
     }
 
     public static JobRun uncommittedCompactionRun(String taskId, JobRunSummary summary) {
-        return JobRun.finished(taskId,
+        return jobRunOnTask(taskId,
                 compactionStartedStatus(summary.getStartTime()),
                 compactionFinishedStatus(summary));
     }
 
     public static JobRun finishedCompactionRun(String taskId, JobRunSummary summary, Instant commitTime) {
-        return JobRun.builder().taskId(taskId)
-                .startedStatus(compactionStartedStatus(summary.getStartTime()))
-                .finishedStatus(compactionFinishedStatus(summary))
-                .statusUpdate(compactionCommittedStatus(commitTime))
-                .build();
-    }
-
-    public static JobRun.Builder finishedCompactionRunBuilder(String taskId, JobRunSummary summary) {
-        return JobRun.builder().taskId(taskId)
-                .startedStatus(compactionStartedStatus(summary.getStartTime()))
-                .finishedStatus(compactionFinishedStatus(summary));
+        return jobRunOnTask(taskId,
+                compactionStartedStatus(summary.getStartTime()),
+                compactionFinishedStatus(summary),
+                compactionCommittedStatus(commitTime));
     }
 
     public static JobRun failedCompactionRun(String taskId, JobRunTime runTime, List<String> failureReasons) {
-        return JobRun.finished(taskId,
+        return jobRunOnTask(taskId,
                 compactionStartedStatus(runTime.getStartTime()),
                 compactionFailedStatus(runTime.getFinishTime(), failureReasons));
     }
 
     public static JobRun failedCompactionRun(String taskId, Instant startTime, Instant finishTime, Instant failureTime, List<String> failureReasons) {
-        return JobRun.builder().taskId(taskId)
-                .startedStatus(compactionStartedStatus(startTime))
-                .finishedStatus(compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)))
-                .statusUpdate(compactionFailedStatus(failureTime, failureReasons))
-                .build();
+        return jobRunOnTask(taskId,
+                compactionStartedStatus(startTime),
+                compactionFinishedStatus(summary(startTime, finishTime, 10L, 10L)),
+                compactionFailedStatus(failureTime, failureReasons));
     }
 
     public static CompactionJobStartedStatus compactionStartedStatus(Instant startTime) {
@@ -97,10 +91,14 @@ public class CompactionJobStatusTestData {
     }
 
     public static CompactionJobFinishedStatus compactionFinishedStatus(JobRunSummary summary) {
+        return compactionFinishedStatus(summary.getFinishTime(), summary.getRecordsProcessed());
+    }
+
+    public static CompactionJobFinishedStatus compactionFinishedStatus(Instant finishTime, RecordsProcessed recordsProcessed) {
         return CompactionJobFinishedStatus.builder()
-                .updateTime(defaultUpdateTime(summary.getFinishTime()))
-                .finishTime(summary.getFinishTime())
-                .recordsProcessed(summary.getRecordsProcessed())
+                .updateTime(defaultUpdateTime(finishTime))
+                .finishTime(finishTime)
+                .recordsProcessed(recordsProcessed)
                 .build();
     }
 

@@ -56,10 +56,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestReje
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.validatedIngestStartedStatus;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.run.JobRunTestData.finishedRun;
-import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
-import static sleeper.core.tracker.job.run.JobRunTestData.unfinishedRun;
-import static sleeper.core.tracker.job.run.JobRunTestData.validatedFinishedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 
@@ -79,7 +76,7 @@ public class InMemoryIngestJobTrackerTest {
 
             tracker.jobStarted(job);
             assertThat(tracker.getAllJobs(tableId)).containsExactly(
-                    ingestJobStatus(job, startedRun(taskId, ingestStartedStatus(startTime, 0))));
+                    ingestJobStatus(job, jobRunOnTask(taskId, ingestStartedStatus(startTime, 0))));
         }
 
         @Test
@@ -90,7 +87,7 @@ public class InMemoryIngestJobTrackerTest {
 
             tracker.jobStarted(job);
             assertThat(tracker.getAllJobs(tableId)).containsExactly(
-                    ingestJobStatus(job, startedRun(taskId, ingestStartedStatus(startTime, 2))));
+                    ingestJobStatus(job, jobRunOnTask(taskId, ingestStartedStatus(startTime, 2))));
         }
 
         @Test
@@ -105,7 +102,7 @@ public class InMemoryIngestJobTrackerTest {
             tracker.jobStarted(job);
             tracker.jobFinished(ingestJobFinishedEventBuilder(job, summary).taskId(taskId).numFilesWrittenByJob(1).build());
             assertThat(tracker.getAllJobs(tableId)).containsExactly(
-                    ingestJobStatus(job, finishedRun(taskId,
+                    ingestJobStatus(job, jobRunOnTask(taskId,
                             ingestStartedStatus(startTime, 2),
                             ingestFinishedStatus(summary, 1))));
         }
@@ -144,8 +141,8 @@ public class InMemoryIngestJobTrackerTest {
 
             assertThat(tracker.getAllJobs(tableId)).containsExactly(
                     ingestJobStatus(jobId,
-                            finishedRun(taskId, ingestStartedStatus(startTime2, 2), ingestFinishedStatus(summary2, 2)),
-                            finishedRun(taskId, ingestStartedStatus(startTime1, 2), ingestFinishedStatus(summary1, 1))));
+                            jobRunOnTask(taskId, ingestStartedStatus(startTime2, 2), ingestFinishedStatus(summary2, 2)),
+                            jobRunOnTask(taskId, ingestStartedStatus(startTime1, 2), ingestFinishedStatus(summary1, 1))));
         }
 
         @Test
@@ -166,8 +163,8 @@ public class InMemoryIngestJobTrackerTest {
             tracker.jobFinished(ingestJobFinishedEventBuilder(job2, summary2).taskId(taskId).numFilesWrittenByJob(4).build());
 
             assertThat(tracker.getAllJobs(tableId)).containsExactly(
-                    ingestJobStatus(job2, finishedRun(taskId, ingestStartedStatus(startTime2, 2), ingestFinishedStatus(summary2, 4))),
-                    ingestJobStatus(job1, finishedRun(taskId, ingestStartedStatus(startTime1, 1), ingestFinishedStatus(summary1, 3))));
+                    ingestJobStatus(job2, jobRunOnTask(taskId, ingestStartedStatus(startTime2, 2), ingestFinishedStatus(summary2, 4))),
+                    ingestJobStatus(job1, jobRunOnTask(taskId, ingestStartedStatus(startTime1, 1), ingestFinishedStatus(summary1, 3))));
         }
 
         @Test
@@ -193,9 +190,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId2)).containsExactly(
-                    ingestJobStatus(job2, finishedRun(taskId, ingestStartedStatus(startTime2, 2), ingestFinishedStatus(summary2, 4))));
+                    ingestJobStatus(job2, jobRunOnTask(taskId, ingestStartedStatus(startTime2, 2), ingestFinishedStatus(summary2, 4))));
             assertThat(tracker.getAllJobs(tableId1)).containsExactly(
-                    ingestJobStatus(job1, finishedRun(taskId, ingestStartedStatus(startTime1, 1), ingestFinishedStatus(summary1, 3))));
+                    ingestJobStatus(job1, jobRunOnTask(taskId, ingestStartedStatus(startTime1, 1), ingestFinishedStatus(summary1, 3))));
         }
 
         @Test
@@ -221,9 +218,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId2)).containsExactly(
-                    ingestJobStatus(jobId, startedRun(taskId, ingestStartedStatus(startTime2, 1))));
+                    ingestJobStatus(jobId, jobRunOnTask(taskId, ingestStartedStatus(startTime2, 1))));
             assertThat(tracker.getAllJobs(tableId1)).containsExactly(
-                    ingestJobStatus(jobId, startedRun(taskId, ingestStartedStatus(startTime1, 2))));
+                    ingestJobStatus(jobId, jobRunOnTask(taskId, ingestStartedStatus(startTime1, 2))));
         }
     }
 
@@ -344,9 +341,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, unfinishedRun(taskId,
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
                             ingestAcceptedStatus(validationTime, 1),
-                            validatedIngestStartedStatus(1, startTime))));
+                            validatedIngestStartedStatus(startTime, 1))));
         }
 
         @Test
@@ -401,9 +398,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, unfinishedRun(taskId,
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
                             ingestAcceptedStatus(validationTime, 1),
-                            validatedIngestStartedStatus(1, startTime))));
+                            validatedIngestStartedStatus(startTime, 1))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
@@ -427,9 +424,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, validatedFinishedRun(taskId,
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
                             ingestAcceptedStatus(validationTime, 1),
-                            validatedIngestStartedStatus(1, startTime),
+                            validatedIngestStartedStatus(startTime, 1),
                             ingestFinishedStatus(summary, 2))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
@@ -452,7 +449,7 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, finishedRun(taskId,
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
                             ingestStartedStatus(startTime, 1),
                             ingestFinishedStatus(summary, 2))));
             assertThat(tracker.streamTableRecords(tableId))
@@ -479,9 +476,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, validatedFinishedRun(taskId,
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
                             ingestAcceptedStatus(validationTime, 1),
-                            validatedIngestStartedStatus(1, startTime),
+                            validatedIngestStartedStatus(startTime, 1),
                             failedStatus(failureTime, failureReasons))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
@@ -535,11 +532,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, JobRun.builder()
-                            .taskId(taskId)
-                            .startedStatus(ingestStartedStatus(startTime, 2))
-                            .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
-                            .build()));
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
+                            ingestStartedStatus(startTime, 2),
+                            ingestAddedFilesStatus(writtenTime, 1))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
@@ -567,11 +562,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, JobRun.builder()
-                            .taskId(taskId)
-                            .startedStatus(ingestStartedStatus(startTime))
-                            .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
-                            .build()));
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
+                            ingestStartedStatus(startTime),
+                            ingestAddedFilesStatus(writtenTime, 1))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
@@ -596,11 +589,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, JobRun.builder()
-                            .taskId(taskId)
-                            .startedStatus(ingestStartedStatus(startTime))
-                            .statusUpdate(ingestAddedFilesStatus(writtenTime, 2))
-                            .build()));
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
+                            ingestStartedStatus(startTime),
+                            ingestAddedFilesStatus(writtenTime, 2))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);
@@ -627,11 +618,9 @@ public class InMemoryIngestJobTrackerTest {
 
             // Then
             assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, JobRun.builder()
-                            .taskId(taskId)
-                            .startedStatus(ingestStartedStatus(startTime))
-                            .statusUpdate(ingestFinishedStatusUncommitted(summary, 1))
-                            .build()));
+                    .containsExactly(ingestJobStatus(job, jobRunOnTask(taskId,
+                            ingestStartedStatus(startTime),
+                            ingestFinishedStatusUncommitted(summary, 1))));
             assertThat(tracker.streamTableRecords(tableId))
                     .extracting(JobStatusUpdateRecord::getJobRunId)
                     .containsExactly(jobRunId, jobRunId);

@@ -22,7 +22,6 @@ import sleeper.compaction.core.job.CompactionJobStatusFromJobTestData;
 import sleeper.compaction.tracker.testutils.DynamoDBCompactionJobTrackerTestBase;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.tracker.job.run.JobRun;
 
 import java.util.List;
 
@@ -30,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestBase {
 
@@ -149,15 +149,13 @@ public class StoreCompactionJobRunIdIT extends DynamoDBCompactionJobTrackerTestB
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
                 .containsExactly(CompactionJobStatusFromJobTestData.compactionJobCreated(job, ignoredUpdateTime(),
-                        JobRun.builder().taskId("test-task")
-                                .startedStatus(compactionStartedStatus(defaultStartTime()))
-                                .finishedStatus(compactionFinishedStatus(defaultSummary()))
-                                .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
-                                .build(),
-                        JobRun.builder().taskId("test-task")
-                                .startedStatus(compactionStartedStatus(defaultStartTime()))
-                                .finishedStatus(compactionFinishedStatus(defaultSummary()))
-                                .statusUpdate(compactionCommittedStatus(defaultCommitTime()))
-                                .build()));
+                        jobRunOnTask("test-task",
+                                compactionStartedStatus(defaultStartTime()),
+                                compactionFinishedStatus(defaultSummary()),
+                                compactionCommittedStatus(defaultCommitTime())),
+                        jobRunOnTask("test-task",
+                                compactionStartedStatus(defaultStartTime()),
+                                compactionFinishedStatus(defaultSummary()),
+                                compactionCommittedStatus(defaultCommitTime()))));
     }
 }

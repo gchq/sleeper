@@ -24,6 +24,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
@@ -39,17 +40,17 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIn
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRunUncommitted;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatusListFrom;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestRejectedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.jobStatusListFrom;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleJobStatusFrom;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleIngestJobStatusFrom;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.startedIngestRun;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.ACCEPTED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FAILED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusType.UNCOMMITTED;
-import static sleeper.core.tracker.job.run.JobRunTestData.startedRun;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
@@ -69,7 +70,7 @@ public class IngestJobStatusTest {
             Instant startTime = Instant.parse("2022-09-22T13:33:10.001Z");
 
             // When
-            IngestJobStatus status = ingestJobStatus("test-job", startedRun("test-task", ingestStartedStatus(startTime)));
+            IngestJobStatus status = ingestJobStatus("test-job", jobRunOnTask("test-task", ingestStartedStatus(startTime)));
 
             // Then
             assertThat(status)
@@ -197,12 +198,68 @@ public class IngestJobStatusTest {
     }
 
     @Nested
+    @DisplayName("Report finished run summary")
+    class ReportFinishedSummary {
+
+        @Test
+        void shouldReportJobUnfinished() {
+            // Given
+            Instant startTime = Instant.parse("2025-01-27T13:00:00Z");
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("run", "task",
+                            startedStatusUpdate(startTime))));
+
+            // When / Then
+            assertThat(status.getJobRuns())
+                    .singleElement()
+                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .containsExactly(false, null);
+        }
+
+        @Test
+        void shouldReportJobFinished() {
+            // Given
+            Instant startTime = Instant.parse("2025-01-27T13:00:00Z");
+            Instant finishTime = Instant.parse("2025-01-27T13:00:01Z");
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("run", "task",
+                            startedStatusUpdate(startTime),
+                            finishedStatusUpdate(finishTime))));
+
+            // When / Then
+            assertThat(status.getJobRuns())
+                    .singleElement()
+                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .containsExactly(true, summary(startTime, finishTime));
+        }
+
+        @Test
+        void shouldReportJobValidatedThenFinished() {
+            // Given
+            Instant validatedTime = Instant.parse("2025-01-27T13:00:00Z");
+            Instant startTime = Instant.parse("2025-01-27T13:00:01Z");
+            Instant finishTime = Instant.parse("2025-01-27T13:00:02Z");
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
+                    forRunOnTask("run", "task",
+                            acceptedStatusUpdate(validatedTime),
+                            startedStatusUpdateAfterValidation(startTime),
+                            finishedStatusUpdate(finishTime))));
+
+            // When / Then
+            assertThat(status.getJobRuns())
+                    .singleElement()
+                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .containsExactly(true, summary(startTime, finishTime));
+        }
+    }
+
+    @Nested
     @DisplayName("Report furthest status")
     class ReportFurthestStatus {
         @Test
         void shouldReportValidatedWithOneRun() {
             // Given
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnNoTask("test-run",
                             acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:10.001Z")))));
 
@@ -215,7 +272,7 @@ public class IngestJobStatusTest {
         @Test
         void shouldReportStartedWithOneRun() {
             // Given
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnNoTask("run",
                             acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:10Z"))),
                     forRunOnTask("run", "task",
@@ -233,7 +290,7 @@ public class IngestJobStatusTest {
             Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
             Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
 
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnNoTask("run", acceptedStatusUpdate(validationTime)),
                     forRunOnTask("run", "task",
                             startedStatusUpdateAfterValidation(startTime),
@@ -248,7 +305,7 @@ public class IngestJobStatusTest {
         @Test
         void shouldReportStartedWhenAnotherRunAcceptedAfterwards() {
             // Given
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnNoTask("run-1",
                             acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:00Z"))),
                     forRunOnTask("run-1", "task",
@@ -265,7 +322,7 @@ public class IngestJobStatusTest {
         @Test
         void shouldReportStartedWhenAnotherRunAcceptedBefore() {
             // Given
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnNoTask("run-1",
                             acceptedStatusUpdate(Instant.parse("2022-09-22T13:33:00Z"))),
                     forRunOnNoTask("run-2",
@@ -285,7 +342,7 @@ public class IngestJobStatusTest {
             Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
             Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
 
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnNoTask("run-1", acceptedStatusUpdate(validationTime1)),
                     forRunOnTask("run-1", "task",
                             startedStatusUpdateAfterValidation(startTime),
@@ -306,7 +363,7 @@ public class IngestJobStatusTest {
             Instant startTime2 = Instant.parse("2022-09-22T14:33:11Z");
             Instant finishTime2 = Instant.parse("2022-09-22T14:40:10Z");
 
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnNoTask("run-1", acceptedStatusUpdate(validationTime1)),
                     forRunOnTask("run-1", "task",
                             startedStatusUpdateAfterValidation(startTime1),
@@ -330,7 +387,7 @@ public class IngestJobStatusTest {
             Instant validationTime2 = Instant.parse("2022-09-22T14:33:10Z");
             Instant startTime2 = Instant.parse("2022-09-22T14:33:11Z");
 
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnNoTask("run-1", acceptedStatusUpdate(validationTime1)),
                     forRunOnTask("run-1", "task",
                             startedStatusUpdateAfterValidation(startTime1),
@@ -350,7 +407,7 @@ public class IngestJobStatusTest {
             Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
             Instant writtenTime = Instant.parse("2022-09-22T13:40:10Z");
 
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnTask("some-run", "some-task",
                             startedStatusUpdate(startTime),
                             filesAddedStatusUpdate(writtenTime, 1))));
@@ -366,7 +423,7 @@ public class IngestJobStatusTest {
             Instant startTime = Instant.parse("2022-09-22T13:33:11Z");
             Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
 
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnTask("some-run", "some-task",
                             startedStatusUpdate(startTime),
                             finishedStatusUpdateExpectingFileCommits(startTime, finishTime, 1))));
@@ -383,7 +440,7 @@ public class IngestJobStatusTest {
             Instant writtenTime = Instant.parse("2022-09-22T13:39:10Z");
             Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
 
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnTask("some-run", "some-task",
                             startedStatusUpdate(startTime),
                             filesAddedStatusUpdate(writtenTime, 1),
@@ -401,7 +458,7 @@ public class IngestJobStatusTest {
             Instant writtenTime = Instant.parse("2022-09-22T13:39:10Z");
             Instant finishTime = Instant.parse("2022-09-22T13:40:10Z");
 
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forRunOnTask("some-run", "some-task",
                             startedStatusUpdate(startTime),
                             filesAddedStatusUpdate(writtenTime, 2),
@@ -425,7 +482,7 @@ public class IngestJobStatusTest {
             Instant finishTime = Instant.parse("2022-12-14T15:29:42.001Z");
             Instant finishExpiryTime = Instant.parse("2022-12-21T15:29:42.001Z");
 
-            IngestJobStatus status = singleJobStatusFrom(records().fromUpdates(
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
                     forJob("test-job", withExpiry(startExpiryTime,
                             startedStatusUpdate(startTime))),
                     forJob("test-job", withExpiry(finishExpiryTime,
@@ -439,7 +496,7 @@ public class IngestJobStatusTest {
             Instant startTime = Instant.parse("2022-12-14T15:28:42.001Z");
             Instant finishTime = Instant.parse("2022-12-14T15:29:42.001Z");
 
-            List<IngestJobStatus> statuses = jobStatusListFrom(records().fromUpdates(
+            List<IngestJobStatus> statuses = ingestJobStatusListFrom(records().fromUpdates(
                     forJob("test-job", finishedStatusUpdate(startTime, finishTime))));
 
             assertThat(statuses).isEmpty();
@@ -466,6 +523,10 @@ public class IngestJobStatusTest {
         return IngestJobStatusTestData.ingestFinishedStatus(summary(startTime, finishTime), 2);
     }
 
+    private IngestJobFinishedStatus finishedStatusUpdate(Instant finishTime) {
+        return IngestJobStatusTestData.ingestFinishedStatus(finishTime, 2, defaultRecordsProcessed());
+    }
+
     private IngestJobFinishedStatus finishedStatusUpdateExpectingFileCommits(
             Instant startTime, Instant finishTime, int numFilesAddedByJob) {
         return IngestJobStatusTestData.ingestFinishedStatusUncommitted(summary(startTime, finishTime), numFilesAddedByJob);
@@ -480,7 +541,10 @@ public class IngestJobStatusTest {
     }
 
     private JobRunSummary summary(Instant startTime, Instant finishTime) {
-        return new JobRunSummary(
-                new RecordsProcessed(450L, 300L), startTime, finishTime);
+        return new JobRunSummary(defaultRecordsProcessed(), startTime, finishTime);
+    }
+
+    private RecordsProcessed defaultRecordsProcessed() {
+        return new RecordsProcessed(450L, 300L);
     }
 }

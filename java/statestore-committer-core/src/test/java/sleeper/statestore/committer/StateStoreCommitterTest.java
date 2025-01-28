@@ -56,7 +56,6 @@ import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransac
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.statestore.StateStoreFactory;
@@ -93,6 +92,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStartedStatus;
@@ -136,12 +136,10 @@ public class StateStoreCommitterTest {
             assertThat(stateStore.getFileReferences()).containsExactly(
                     fileFactory.rootFile(job.getOutputFile(), 123L));
             assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
-                    compactionJobCreated(job, createdTime,
-                            JobRun.builder().taskId("test-task")
-                                    .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatus(summary))
-                                    .statusUpdate(compactionCommittedStatus(commitTime))
-                                    .build()));
+                    compactionJobCreated(job, createdTime, jobRunOnTask("test-task",
+                            compactionStartedStatus(startTime),
+                            compactionFinishedStatus(summary),
+                            compactionCommittedStatus(commitTime))));
         }
 
         @Test
@@ -167,11 +165,9 @@ public class StateStoreCommitterTest {
             assertThat(stateStore.getFileReferences()).containsExactly(
                     fileFactory.rootFile(job.getOutputFile(), 123L));
             assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
-                    compactionJobCreated(job, createdTime,
-                            JobRun.builder().taskId("test-task")
-                                    .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatus(summary))
-                                    .build()));
+                    compactionJobCreated(job, createdTime, jobRunOnTask("test-task",
+                            compactionStartedStatus(startTime),
+                            compactionFinishedStatus(summary))));
         }
 
         @Test
@@ -196,13 +192,10 @@ public class StateStoreCommitterTest {
             assertThat(failures).isEmpty();
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
-                    compactionJobCreated(job, createdTime,
-                            JobRun.builder().taskId("test-task")
-                                    .startedStatus(compactionStartedStatus(startTime))
-                                    .statusUpdate(compactionFinishedStatus(summary))
-                                    .finishedStatus(compactionFailedStatus(failedTime,
-                                            List.of("File not found: input.parquet")))
-                                    .build()));
+                    compactionJobCreated(job, createdTime, jobRunOnTask("test-task",
+                            compactionStartedStatus(startTime),
+                            compactionFinishedStatus(summary),
+                            compactionFailedStatus(failedTime, List.of("File not found: input.parquet")))));
         }
 
         @Test
@@ -233,13 +226,10 @@ public class StateStoreCommitterTest {
                     .extracting(Exception::getCause)
                     .isSameAs(failure);
             assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
-                    compactionJobCreated(job, createdTime,
-                            JobRun.builder().taskId("test-task")
-                                    .startedStatus(compactionStartedStatus(startTime))
-                                    .statusUpdate(compactionFinishedStatus(summary))
-                                    .finishedStatus(compactionFailedStatus(failedTime,
-                                            List.of("Failed adding transaction", "Unexpected failure")))
-                                    .build()));
+                    compactionJobCreated(job, createdTime, jobRunOnTask("test-task",
+                            compactionStartedStatus(startTime),
+                            compactionFinishedStatus(summary),
+                            compactionFailedStatus(failedTime, List.of("Failed adding transaction", "Unexpected failure")))));
         }
     }
 
@@ -333,11 +323,9 @@ public class StateStoreCommitterTest {
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(outputFile);
             assertThat(ingestJobTracker.getAllJobs("test-table"))
-                    .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
-                            .taskId("test-task-id")
-                            .startedStatus(ingestStartedStatus(ingestJob, startTime))
-                            .statusUpdate(ingestAddedFilesStatus(writtenTime, 1))
-                            .build()));
+                    .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask("test-task-id",
+                            ingestStartedStatus(ingestJob, startTime),
+                            ingestAddedFilesStatus(writtenTime, 1))));
         }
 
         @Test
@@ -387,12 +375,9 @@ public class StateStoreCommitterTest {
                     .isInstanceOf(FileAlreadyExistsException.class));
             assertThat(stateStore.getFileReferences()).containsExactly(file);
             assertThat(ingestJobTracker.getAllJobs("test-table"))
-                    .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
-                            .taskId("test-task-id")
-                            .startedStatus(ingestStartedStatus(ingestJob, startTime))
-                            .finishedStatus(failedStatus(writtenTime,
-                                    List.of("File already exists: output.parquet")))
-                            .build()));
+                    .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask("test-task-id",
+                            ingestStartedStatus(ingestJob, startTime),
+                            failedStatus(writtenTime, List.of("File already exists: output.parquet")))));
         }
 
         @Test
@@ -432,12 +417,9 @@ public class StateStoreCommitterTest {
                     .hasCause(failure));
             assertThat(stateStore.getFileReferences()).isEmpty();
             assertThat(ingestJobTracker.getAllJobs("test-table"))
-                    .containsExactly(ingestJobStatus(ingestJob, JobRun.builder()
-                            .taskId("test-task-id")
-                            .startedStatus(ingestStartedStatus(ingestJob, startTime))
-                            .finishedStatus(failedStatus(writtenTime,
-                                    List.of("Failed adding transaction", "Unexpected failure")))
-                            .build()));
+                    .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask("test-task-id",
+                            ingestStartedStatus(ingestJob, startTime),
+                            failedStatus(writtenTime, List.of("Failed adding transaction", "Unexpected failure")))));
         }
     }
 
@@ -695,12 +677,10 @@ public class StateStoreCommitterTest {
             assertThat(stateStore.getFileReferences()).containsExactly(
                     fileFactory.rootFile(job.getOutputFile(), 123L));
             assertThat(compactionJobTracker.getAllJobs("test-table")).containsExactly(
-                    compactionJobCreated(job, createdTime,
-                            JobRun.builder().taskId("test-task")
-                                    .startedStatus(compactionStartedStatus(startTime))
-                                    .finishedStatus(compactionFinishedStatus(summary))
-                                    .statusUpdate(compactionCommittedStatus(commitTime))
-                                    .build()));
+                    compactionJobCreated(job, createdTime, jobRunOnTask("test-task",
+                            compactionStartedStatus(startTime),
+                            compactionFinishedStatus(summary),
+                            compactionCommittedStatus(commitTime))));
         }
     }
 

@@ -56,6 +56,7 @@ import static sleeper.core.properties.instance.IngestProperty.INGEST_JOB_STATUS_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.filesWithReferences;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.failedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.finishedIngestJob;
@@ -156,15 +157,13 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobAddedFilesStatus(IngestJob job, Instant startedTime, Instant writtenTime, int fileCount) {
-        return ingestJobStatus(job, JobRun.builder()
-                .taskId(DEFAULT_TASK_ID)
-                .startedStatus(ingestStartedStatus(job, startedTime))
-                .statusUpdate(IngestJobAddedFilesStatus.builder()
+        return ingestJobStatus(job, jobRunOnTask(DEFAULT_TASK_ID,
+                ingestStartedStatus(job, startedTime),
+                IngestJobAddedFilesStatus.builder()
                         .writtenTime(writtenTime)
                         .updateTime(defaultUpdateTime(writtenTime))
                         .fileCount(fileCount)
-                        .build())
-                .build());
+                        .build()));
     }
 
     protected static IngestJobStatus defaultJobFinishedStatus(IngestJob job, Instant startedTime, Instant finishedTime) {
@@ -176,36 +175,32 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStatus defaultJobFinishedButUncommittedStatus(IngestJob job, Instant startedTime, Instant finishedTime, int numFiles) {
-        return ingestJobStatus(job, JobRun.builder()
-                .taskId(DEFAULT_TASK_ID)
-                .startedStatus(ingestStartedStatus(job, startedTime))
-                .finishedStatus(IngestJobFinishedStatus.builder()
+        return ingestJobStatus(job, jobRunOnTask(DEFAULT_TASK_ID,
+                ingestStartedStatus(job, startedTime),
+                IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(finishedTime))
                         .finishTime(finishedTime)
                         .recordsProcessed(defaultRecordsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
-                        .build())
-                .build());
+                        .build()));
     }
 
     protected static IngestJobStatus defaultJobFinishedAndCommittedStatus(IngestJob job, Instant startedTime, Instant writtenTime, Instant finishedTime, int numFiles) {
-        return ingestJobStatus(job, JobRun.builder()
-                .taskId(DEFAULT_TASK_ID)
-                .startedStatus(ingestStartedStatus(job, startedTime))
-                .finishedStatus(IngestJobFinishedStatus.builder()
+        return ingestJobStatus(job, jobRunOnTask(DEFAULT_TASK_ID,
+                ingestStartedStatus(job, startedTime),
+                IngestJobFinishedStatus.builder()
                         .updateTime(defaultUpdateTime(finishedTime))
                         .finishTime(finishedTime)
                         .recordsProcessed(defaultRecordsProcessed())
                         .committedBySeparateFileUpdates(true)
                         .numFilesWrittenByJob(numFiles)
-                        .build())
-                .statusUpdate(IngestJobAddedFilesStatus.builder()
+                        .build(),
+                IngestJobAddedFilesStatus.builder()
                         .writtenTime(writtenTime)
                         .updateTime(defaultUpdateTime(writtenTime))
                         .fileCount(numFiles)
-                        .build())
-                .build());
+                        .build()));
     }
 
     protected static IngestJobStatus defaultJobFailedStatus(IngestJob job, Instant startedTime, Instant finishedTime, List<String> failureReasons) {

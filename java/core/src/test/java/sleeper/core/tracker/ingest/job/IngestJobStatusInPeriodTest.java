@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleJobStatusFrom;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleIngestJobStatusFrom;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
@@ -222,7 +222,7 @@ public class IngestJobStatusInPeriodTest {
     }
 
     private IngestJobStatus statusFromUpdates(JobStatusUpdate... updates) {
-        return singleJobStatusFrom(records().fromUpdates(updates));
+        return singleIngestJobStatusFrom(records().fromUpdates(updates));
     }
 
     private JobStatusUpdate startedRun(Instant startedTime) {

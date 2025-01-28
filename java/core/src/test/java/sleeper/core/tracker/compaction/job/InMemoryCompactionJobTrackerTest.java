@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 
@@ -42,6 +41,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobOnTask;
@@ -474,15 +474,13 @@ class InMemoryCompactionJobTrackerTest {
             // Then
             assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(compactionJobCreated(job, createdTime,
-                            JobRun.builder().taskId(taskId)
-                                    .startedStatus(compactionStartedStatus(startedTime2))
-                                    .finishedStatus(compactionFailedStatus(summary2.getFinishTime(), List.of("Could not commit same compaction twice")))
-                                    .build(),
-                            JobRun.builder().taskId(taskId)
-                                    .startedStatus(compactionStartedStatus(startedTime1))
-                                    .finishedStatus(compactionFinishedStatus(summary1))
-                                    .statusUpdate(compactionCommittedStatus(committedTime1))
-                                    .build()));
+                            jobRunOnTask(taskId,
+                                    compactionStartedStatus(startedTime2),
+                                    compactionFailedStatus(summary2.getFinishTime(), List.of("Could not commit same compaction twice"))),
+                            jobRunOnTask(taskId,
+                                    compactionStartedStatus(startedTime1),
+                                    compactionFinishedStatus(summary1),
+                                    compactionCommittedStatus(committedTime1))));
         }
     }
 
