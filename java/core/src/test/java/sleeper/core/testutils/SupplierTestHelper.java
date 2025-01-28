@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -46,14 +47,14 @@ public class SupplierTestHelper {
 
     /**
      * Creates a supplier of IDs that would usually be generated with UUID.randomUUID. The IDs will be generated with
-     * numbers from 1 to 9, and then throw an exception when these are exhausted.
+     * each number embedded in the digits of the UUID.
      *
      * @param  prefix the string to start each ID, at most 8 characters
      * @return        the supplier
      */
     public static Supplier<String> supplyNumberedIdsWithPrefix(String prefix) {
         return IntStream.range(1, 10)
-                .mapToObj(i -> exampleUUID(prefix, i))
+                .mapToObj(i -> numberedUUID(prefix, i))
                 .iterator()::next;
     }
 
@@ -105,6 +106,36 @@ public class SupplierTestHelper {
         char character = characterToRepeat(uuidChar);
         return start + IntStream.of(8 - start.length(), 4, 4, 4, 12)
                 .mapToObj(size -> uuidPart(size, character))
+                .collect(Collectors.joining("-"));
+    }
+
+    /**
+     * Creates an example UUID with the first few characters replaced with a string, and the rest set to all zeroes
+     * except for a given number at the end.
+     *
+     * @param  start  the string for the start of the UUID, at most 8 characters
+     * @param  number the number to put at the end
+     * @return        the example UUID as a string
+     */
+    public static String numberedUUID(String start, int number) {
+        if (start.length() > 8) {
+            throw new IllegalArgumentException("Start must be shorter than 8 characters: " + start);
+        }
+        int remainingCharacters = 32 - start.length();
+        Iterator<Character> characters = IntStream.range(0, remainingCharacters)
+                .mapToObj(i -> {
+                    int exponent = remainingCharacters - i - 1;
+                    int digit = number / (int) Math.pow(10, exponent) % 10;
+                    return (char) ('0' + digit);
+                }).iterator();
+        return start + IntStream.of(8 - start.length(), 4, 4, 4, 12)
+                .mapToObj(size -> {
+                    StringBuilder builder = new StringBuilder();
+                    for (int i = 0; i < size; i++) {
+                        builder.append(characters.next());
+                    }
+                    return builder.toString();
+                })
                 .collect(Collectors.joining("-"));
     }
 
