@@ -44,15 +44,17 @@ public interface IngestProperty {
     UserDefinedInstanceProperty INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the ingest queue so that they are not processed by other processes.\n" +
-                    "This should be less than the value of sleeper.ingest.queue.visibility.seconds.")
+                    "This should be less than the value of sleeper.ingest.queue.visibility.timeout.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.queue.visibility.timeout.seconds")
-            .description("The visibility timeout in seconds used for ingest queues. " +
+            .description("The visibility timeout in seconds used for standard ingest job queue. " +
                     "This should be greater than sleeper.ingest.keepalive.period.seconds.")
             .defaultValue("900")
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
-            .propertyGroup(InstancePropertyGroup.INGEST).build();
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty S3A_INPUT_FADVISE = Index.propertyBuilder("sleeper.ingest.fs.s3a.experimental.input.fadvise")
             .description("This sets the value of fs.s3a.experimental.input.fadvise on the Hadoop configuration used to read and write " +
                     "files to and from S3 in ingest jobs. Changing this value allows you to fine-tune how files are read. Possible " +

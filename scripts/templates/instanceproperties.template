@@ -292,10 +292,10 @@ sleeper.ingest.task.creation.period.minutes=1
 
 # The frequency, in seconds, with which change message visibility requests are sent to extend the
 # visibility of messages on the ingest queue so that they are not processed by other processes.
-# This should be less than the value of sleeper.ingest.queue.visibility.seconds.
+# This should be less than the value of sleeper.ingest.queue.visibility.timeout.seconds.
 sleeper.ingest.keepalive.period.seconds=300
 
-# The visibility timeout in seconds used for ingest queues. This should be greater than
+# The visibility timeout in seconds used for standard ingest job queue. This should be greater than
 # sleeper.ingest.keepalive.period.seconds.
 sleeper.ingest.queue.visibility.timeout.seconds=900
 
