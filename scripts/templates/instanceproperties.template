@@ -295,7 +295,7 @@ sleeper.ingest.task.creation.period.minutes=1
 # This should be less than the value of sleeper.ingest.queue.visibility.timeout.seconds.
 sleeper.ingest.keepalive.period.seconds=300
 
-# The visibility timeout in seconds used for standard ingest job queue. This should be greater than
+# The visibility timeout in seconds for the standard ingest job queue. This should be greater than
 # sleeper.ingest.keepalive.period.seconds.
 sleeper.ingest.queue.visibility.timeout.seconds=900
 
