@@ -20,6 +20,7 @@ import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
@@ -32,6 +33,7 @@ import java.util.stream.IntStream;
 
 import static sleeper.clients.status.report.StatusReporterTestHelper.job;
 import static sleeper.clients.status.report.StatusReporterTestHelper.task;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
@@ -49,6 +51,7 @@ import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestStart
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestJob;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.startedIngestRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.validatedIngestStartedStatus;
 
 public class IngestJobStatusReporterTestData {
     private IngestJobStatusReporterTestData() {
@@ -175,6 +178,16 @@ public class IngestJobStatusReporterTestData {
         IngestJob job = createJob(1, 2);
         return List.of(ingestJobStatus(job,
                 rejectedRun(job, Instant.parse("2023-06-05T17:20:00Z"), reasons)));
+    }
+
+    public static List<IngestJobStatus> finishedBulkImportJob() {
+        IngestJob job8 = createJob(8, 8);
+        Instant startTime8 = Instant.parse("2022-09-28T13:34:12.001Z");
+        return List.of(ingestJobStatus(job8, jobRunOnTask("bulk-import-cluster-8",
+                ingestAcceptedStatus(startTime8, 8),
+                validatedIngestStartedStatus(job8, startTime8.plus(Duration.ofMinutes(5))),
+                ingestFinishedStatusUncommitted(startTime8.plus(Duration.ofMinutes(10)), 1, new RecordsProcessed(3000, 1500)),
+                ingestAddedFilesStatus(startTime8.plus(Duration.ofMinutes(11)), 1))));
     }
 
     public static IngestJob createJob(int jobNum, int inputFileCount) {

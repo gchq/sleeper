@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJob;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.finishedBulkImportJob;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
@@ -90,6 +91,17 @@ public class StandardIngestJobStatusReporterAllQueryTest {
     @Nested
     @DisplayName("Bulk Import job reporting")
     class BulkImportJobReporting {
+
+        @Test
+        void shouldReportFinishedBulkImportJob() throws Exception {
+            // Given
+            List<IngestJobStatus> jobs = finishedBulkImportJob();
+
+            // When / Then
+            assertThat(IngestJobStatusReporterTestHelper.getStandardReport(JobQuery.Type.ALL, jobs, 0)).hasToString(
+                    example("reports/ingest/job/standard/all/bulkImport/finishedJob.txt"));
+        }
+
         @Test
         void shouldReportPendingBulkImportJobWithValidationAccepted() throws Exception {
             // Given
