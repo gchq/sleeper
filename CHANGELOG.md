@@ -11,9 +11,49 @@ to version 0.28.0*
 
 This includes further batching to allow for much larger numbers of compaction jobs.
 
+Compaction:
+- Added a step to combine commits of finished compactions into one transaction in the state store
+  - This is done in a new lambda and SQS queue, and enabled by default
+- Added an option to disable updating the job tracker when a compaction is committed to the state store asynchronously
+- Efficiency improvements to library configuration in DataFusion and Java based compaction
+- Reduced number of S3 GET requests made during DataFusion compaction
+- Added further metrics in logging during DataFusion compaction
+
+State store:
+- Improved throughput in the state store committer by avoiding writes to S3
+  - Transactions are now created before being sent to the committer, rather than derived from separate requests
+  - Large transactions are uploaded to S3 before being sent
+
+Bulk import:
+- Switched bulk import on EMR to run on Graviton by default
+
 Deployment:
 - Aligned configuration of GC lambda timeout to use seconds instead of minutes, similar to other lambdas
 - Added descriptions to some schedules and alarms which did not have one, this is visible in the AWS console
+
+Reporting:
+- The stores used to generate reports are now referred to as job trackers and task trackers rather than status stores
+- Job started times are now only reported once, rather than duplicated in finished and failed status updates
+
+Documentation:
+- Reorganised documentation into folders
+- Added usage guide
+- Updated out of date information under common problems and their solutions
+- Added an explanation of record batch types in standard ingest
+- Added further information about environment deployment with `sleeper environment` CLI commands
+
+Build:
+- Upgraded LocalStack to latest version
+- Moved example iterator classes to their own module and created an example user jar that includes them
+
+System tests:
+- Scheduled rules for background processes are now enabled during system tests
+  - Some system tests handle this by taking tables offline or online
+- Some improvements to test isolation and preparation for concurrent execution
+
+Bugfixes:
+- Prevented an intermittent failure during teardown where the CDK tried to delete managed policies before the roles that use them
+- Dev container no longer requires AWS, Maven or SSH configuration folders to exist before it starts
 
 ## Version 0.27.0
 
