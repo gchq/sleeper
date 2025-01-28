@@ -180,17 +180,6 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
-     * Checks if a property value is a whole positive number of seconds within the maximum timeout for visibility of a
-     * queue.
-     *
-     * @param  timeout the value
-     * @return         true if the value meets the requirement
-     */
-    public static boolean isValidVisibilityTimeout(String timeout) {
-        return parseAndCheckInteger(timeout, num -> num <= 900 && num > 0);
-    }
-
-    /**
      * Checks if a property value is a valid setting for the Hadoop configuration property
      * `fs.s3a.experimental.input.fadvise`.
      *

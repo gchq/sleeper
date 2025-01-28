@@ -32,7 +32,7 @@ public interface BatcherProperty {
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.batcher.submitter.timeout.seconds")
             .description("The timeout in seconds for the lambda that receives submitted requests to ingest files. " +
-                    "Also used to define the visibility timeout for the batcher submit queue")
+                    "Also used to define the visibility timeout for the batcher submit queue.")
             .defaultValue("20")
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.INGEST)

@@ -51,7 +51,7 @@ public interface IngestProperty {
             .description("The visibility timeout in seconds used for standard ingest job queue. " +
                     "This should be greater than sleeper.ingest.keepalive.period.seconds.")
             .defaultValue("900")
-            .validationPredicate(SleeperPropertyValueUtils::isValidVisibilityTimeout)
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true)
             .build();
