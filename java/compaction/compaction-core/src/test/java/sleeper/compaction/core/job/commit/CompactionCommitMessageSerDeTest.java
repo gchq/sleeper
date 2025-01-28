@@ -40,6 +40,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstancePropertiesWithId;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.testutils.SupplierTestHelper.exampleUUID;
+import static sleeper.core.testutils.SupplierTestHelper.numberedUUID;
 
 public class CompactionCommitMessageSerDeTest {
 
@@ -54,11 +55,11 @@ public class CompactionCommitMessageSerDeTest {
     void shouldSerialiseCompactionCommitRequest() {
         // Given
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition(exampleUUID("partn", 0)).buildTree();
-        List<String> inputFiles = IntStream.range(0, 9)
+        List<String> inputFiles = IntStream.rangeClosed(1, 11)
                 .mapToObj(i -> filePaths.constructPartitionParquetFilePath(
-                        partitions.getRootPartition(), exampleUUID("file", i)))
+                        partitions.getRootPartition(), numberedUUID("file", i)))
                 .toList();
-        FileReference outputFile = FileReferenceFactory.from(partitions).rootFile(exampleUUID("file", 9), 200);
+        FileReference outputFile = FileReferenceFactory.from(partitions).rootFile(exampleUUID("file", 'N'), 200);
         ReplaceFileReferencesRequest filesRequest = ReplaceFileReferencesRequest.builder()
                 .jobId(exampleUUID("job", 1))
                 .taskId(exampleUUID("task", 1))
