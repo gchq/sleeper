@@ -36,7 +36,7 @@ openssl = { version = '0.10.69', features = [
 ] } # Use vendored feature to build from source for cross compilation
 
 [dev-dependencies]
-rand = { version = "0.8.5" }
+rand = { version = "0.9.0" }
 
 # Ensure up to date image for cross compilation
 [package.metadata.cross.target.x86_64-unknown-linux-gnu]
