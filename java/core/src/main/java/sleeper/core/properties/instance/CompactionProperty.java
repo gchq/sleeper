@@ -45,16 +45,17 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.commit.batch.size")
             .description("The number of finished compaction commits to gather in the batcher before committing to " +
-                    "the state store. This will be the batch size for a lambda as an SQS event source. This can " +
-                    "be a maximum of 10,000.")
-            .defaultValue("10000")
+                    "the state store. This will be the batch size for a lambda as an SQS event source.\n" +
+                    "This can be a maximum of 10,000. In practice the effective maximum is limited by the number of " +
+                    "messages that fit in a synchronous lambda invocation payload, see the AWS documentation:\n")
+            .defaultValue("1000")
             .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 10_000))
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.commit.batching.window.seconds")
             .description("The time in seconds that the batcher will wait for compaction commits to appear if the " +
                     "batch size is not filled. This will be set in the SQS event source for the lambda. This can be " +
                     "a maximum of 300, i.e. 5 minutes.")
-            .defaultValue("2")
+            .defaultValue("30")
             .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 300))
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
