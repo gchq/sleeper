@@ -141,9 +141,10 @@ sleeper.properties.force.reload=false
 # A comma-separated list of up to 5 security group IDs to be used when running ECS tasks.
 # sleeper.ecs.security.groups=
 
-# Default value for the reserved concurrency for each lambda within the Sleeper instance. By default
-# no concurrency is reserved for the lambdas. Each lambda also has its own property that overrides the
-# value found here.
+# Default value for the reserved concurrency for each lambda in the Sleeper instance that scales
+# according to the number of Sleeper tables.
+# By default no concurrency is reserved for the lambdas. Each lambda also has its own property that
+# overrides the value found here.
 # See reserved concurrency overview at:
 # https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
 # sleeper.default.lambda.concurrency.reserved=
@@ -1049,12 +1050,12 @@ sleeper.compaction.commit.batcher.timeout.seconds=900
 # The reserved concurrency for the lambda that batches up compaction commits.
 # See reserved concurrency overview at:
 # https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
-# sleeper.compaction.commit.batcher.concurrency.reserved=
+sleeper.compaction.commit.batcher.concurrency.reserved=1
 
-# The maximum given concurrency allowed for the lambda that batches up compaction commits.
+# The maximum concurrency allowed for the lambda that batches up compaction commits.
 # See maximum concurrency overview at:
 # https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
-sleeper.compaction.commit.batcher.concurrency.max=10
+sleeper.compaction.commit.batcher.concurrency.max=2
 
 # The maximum number of concurrent compaction tasks to run.
 sleeper.compaction.max.concurrent.tasks=300
