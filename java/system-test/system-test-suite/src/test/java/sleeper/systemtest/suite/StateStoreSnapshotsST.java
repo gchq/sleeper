@@ -18,6 +18,7 @@ package sleeper.systemtest.suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.compaction.core.job.creation.strategy.impl.BasicCompactionStrategy;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.AllReferencesToAllFiles;
@@ -37,6 +38,8 @@ import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.testutils.SupplierTestHelper.exampleUUID;
 import static sleeper.core.testutils.SupplierTestHelper.numberedUUID;
@@ -54,8 +57,10 @@ public class StateStoreSnapshotsST {
     @Test
     void shouldAddManyFiles(SleeperSystemTest sleeper) throws Exception {
         // Given we create fake references for 10,000 files
-        sleeper.tables().createWithProperties("snapshots", DEFAULT_SCHEMA,
-                Map.of(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName()));
+        sleeper.tables().createWithProperties("snapshots", DEFAULT_SCHEMA, Map.of(
+                STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName(),
+                COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
+                COMPACTION_FILES_BATCH_SIZE, "100000")); // Prevent compaction while waiting for snapshot
         String partitionId = exampleUUID("partn", 0);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(partitionId).buildTree();
         sleeper.partitioning().setPartitions(partitions);
