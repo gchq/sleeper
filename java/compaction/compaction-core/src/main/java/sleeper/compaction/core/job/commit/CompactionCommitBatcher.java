@@ -51,6 +51,7 @@ public class CompactionCommitBatcher {
             ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(
                     requests.stream().map(CompactionCommitMessageHandle::request).toList());
             sendStateStoreCommit.send(StateStoreCommitRequest.create(tableId, transaction));
+            LOGGER.info("Submitted asynchronous request to state store committer with {} compaction commits for table ID {}", requests.size(), tableId);
         } catch (Exception ex) {
             LOGGER.error("Failed to send message to state store commit queue with {} compactions for table ID {}", requests.size(), tableId, ex);
             requests.forEach(request -> request.callbackOnFail().run());

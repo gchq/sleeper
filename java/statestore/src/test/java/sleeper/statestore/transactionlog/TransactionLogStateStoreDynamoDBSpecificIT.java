@@ -284,7 +284,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     instanceProperties, tableProperties, dynamoDBClient);
             new DynamoDBTransactionLogSnapshotCreator(
                     instanceProperties, tableProperties,
-                    snapshotSetup.getFilesLog(), snapshotSetup.getPartitionsLog(),
+                    snapshotSetup.getFilesLog(), snapshotSetup.getPartitionsLog(), snapshotSetup.getTransactionBodyStore(),
                     configuration, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot)
                     .createSnapshot();
         }

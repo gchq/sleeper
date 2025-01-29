@@ -66,7 +66,7 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
 
     @Override
     public void send(StateStoreCommitRequest request) {
-        LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
+        LOGGER.debug("Sending asynchronous request to state store committer of type: {}", request.getTransactionType());
         sqsClient.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMessageBody(requestUploader.serialiseAndUploadIfTooBig(maxTransactionBytes, request))
