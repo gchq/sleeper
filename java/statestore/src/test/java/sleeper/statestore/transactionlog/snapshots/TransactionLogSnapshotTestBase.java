@@ -36,8 +36,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
@@ -139,6 +140,7 @@ public class TransactionLogSnapshotTestBase {
                 instanceProperties, table,
                 transactionLogs.forTable(table).getFilesLogStore(),
                 transactionLogs.forTable(table).getPartitionsLogStore(),
+                transactionLogs.getTransactionBodyStore(),
                 configuration, latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
@@ -155,11 +157,15 @@ public class TransactionLogSnapshotTestBase {
                 .deleteSnapshots(deletionTime);
     }
 
-    protected StateStore createStateStoreWithInMemoryTransactionLog(TableProperties table) {
-        StateStore stateStore = transactionLogs.stateStoreBuilder(table).build();
+    protected TransactionLogStateStore createStateStoreWithInMemoryTransactionLog(TableProperties table) {
+        TransactionLogStateStore stateStore = transactionLogs.stateStoreBuilder(table).build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;
+    }
+
+    protected InMemoryTransactionBodyStore transactionBodyStore() {
+        return transactionLogs.getTransactionBodyStore();
     }
 
     protected DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {

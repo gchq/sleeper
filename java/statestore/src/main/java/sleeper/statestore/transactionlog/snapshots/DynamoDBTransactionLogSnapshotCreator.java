@@ -25,12 +25,15 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshotCreator;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
@@ -45,6 +48,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
     private final TableStatus tableStatus;
     private final TransactionLogStore filesLogStore;
     private final TransactionLogStore partitionsLogStore;
+    private final TransactionBodyStore transactionBodyStore;
     private final LatestSnapshotsMetadataLoader latestMetadataLoader;
     private final DynamoDBTransactionLogSnapshotStore snapshotStore;
 
@@ -65,20 +69,22 @@ public class DynamoDBTransactionLogSnapshotCreator {
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
         TransactionLogStore partitionTransactionStore = DynamoDBTransactionLogStore.forPartitions(
                 instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
                 instanceProperties, tableProperties, dynamoDBClient);
         return new DynamoDBTransactionLogSnapshotCreator(instanceProperties, tableProperties,
-                fileTransactionStore, partitionTransactionStore, configuration,
+                fileTransactionStore, partitionTransactionStore, transactionBodyStore, configuration,
                 snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
     public DynamoDBTransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
-            TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
+            TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, TransactionBodyStore transactionBodyStore,
             Configuration configuration, LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver snapshotSaver) {
         this.tableStatus = tableProperties.getStatus();
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
+        this.transactionBodyStore = transactionBodyStore;
         this.latestMetadataLoader = latestMetadataLoader;
         this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(
                 latestMetadataLoader, snapshotSaver, instanceProperties, tableProperties, configuration);
@@ -99,7 +105,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
         TransactionLogSnapshot oldSnapshot = snapshotStore.loadFilesSnapshot(latestSnapshots);
         try {
             Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                    oldSnapshot, filesLogStore, FileReferenceTransaction.class, tableStatus);
+                    oldSnapshot, filesLogStore, transactionBodyStore, FileReferenceTransaction.class, tableStatus);
             if (newSnapshot.isPresent()) {
                 snapshotStore.saveFilesSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new files snapshot");
@@ -114,7 +120,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
         TransactionLogSnapshot oldSnapshot = snapshotStore.loadPartitionsSnapshot(latestSnapshots);
         try {
             Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                    oldSnapshot, partitionsLogStore, PartitionTransaction.class, tableStatus);
+                    oldSnapshot, partitionsLogStore, transactionBodyStore, PartitionTransaction.class, tableStatus);
             if (newSnapshot.isPresent()) {
                 snapshotStore.savePartitionsSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new partitions snapshot");
