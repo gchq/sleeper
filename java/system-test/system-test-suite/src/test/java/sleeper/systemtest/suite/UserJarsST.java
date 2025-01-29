@@ -56,6 +56,22 @@ public class UserJarsST {
     }
 
     @Test
+    void shouldApplyTableIteratorFromUserJarDuringIngest(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.range(0, 100));
+        sleeper.updateTableProperties(Map.of(
+                ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
+                ITERATOR_CONFIG, "timestamp,50"));
+
+        // When
+        sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+    }
+
+    @Test
     void shouldApplyTableIteratorFromUserJarDuringCompaction(SleeperSystemTest sleeper) throws Exception {
         // Given
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
