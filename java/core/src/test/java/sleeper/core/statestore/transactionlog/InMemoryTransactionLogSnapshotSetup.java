@@ -30,6 +30,7 @@ public class InMemoryTransactionLogSnapshotSetup {
     private final TableStatus sleeperTable;
     private final TransactionLogStore filesLog;
     private final TransactionLogStore partitionsLog;
+    private final TransactionBodyStore transactionBodyStore;
 
     /**
      * Sets up in-memory transaction logs with the given state. Sets up state by performing the requested interactions
@@ -45,16 +46,18 @@ public class InMemoryTransactionLogSnapshotSetup {
             TableStatus sleeperTable, Schema schema, SetupStateStore setupState) throws StateStoreException {
         InMemoryTransactionLogStore fileTransactions = new InMemoryTransactionLogStore();
         InMemoryTransactionLogStore partitionTransactions = new InMemoryTransactionLogStore();
+        InMemoryTransactionBodyStore transactionBodyStore = new InMemoryTransactionBodyStore();
         StateStore stateStore = TransactionLogStateStore.builder()
                 .sleeperTable(sleeperTable)
                 .schema(schema)
                 .filesLogStore(fileTransactions)
                 .partitionsLogStore(partitionTransactions)
+                .transactionBodyStore(transactionBodyStore)
                 .build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         setupState.run(stateStore);
-        return new InMemoryTransactionLogSnapshotSetup(sleeperTable, fileTransactions, partitionTransactions);
+        return new InMemoryTransactionLogSnapshotSetup(sleeperTable, fileTransactions, partitionTransactions, transactionBodyStore);
     }
 
     /**
@@ -72,10 +75,13 @@ public class InMemoryTransactionLogSnapshotSetup {
         void run(StateStore stateStore) throws StateStoreException;
     }
 
-    InMemoryTransactionLogSnapshotSetup(TableStatus sleeperTable, TransactionLogStore filesLog, TransactionLogStore partitionsLog) {
+    private InMemoryTransactionLogSnapshotSetup(
+            TableStatus sleeperTable, TransactionLogStore filesLog, TransactionLogStore partitionsLog,
+            TransactionBodyStore transactionBodyStore) {
         this.sleeperTable = sleeperTable;
         this.filesLog = filesLog;
         this.partitionsLog = partitionsLog;
+        this.transactionBodyStore = transactionBodyStore;
     }
 
     /**
@@ -89,7 +95,7 @@ public class InMemoryTransactionLogSnapshotSetup {
     public TransactionLogSnapshot createFilesSnapshot(long transactionNumber) throws StateStoreException {
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.filesInitialState();
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                snapshot, filesLog, FileReferenceTransaction.class, sleeperTable)
+                snapshot, filesLog, transactionBodyStore, FileReferenceTransaction.class, sleeperTable)
                 .orElse(snapshot);
         return new TransactionLogSnapshot((StateStoreFiles) snapshot.getState(), transactionNumber);
     }
@@ -105,7 +111,7 @@ public class InMemoryTransactionLogSnapshotSetup {
     public TransactionLogSnapshot createPartitionsSnapshot(long transactionNumber) throws StateStoreException {
         TransactionLogSnapshot snapshot = TransactionLogSnapshot.partitionsInitialState();
         snapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
-                snapshot, partitionsLog, PartitionTransaction.class, sleeperTable)
+                snapshot, partitionsLog, transactionBodyStore, PartitionTransaction.class, sleeperTable)
                 .orElse(snapshot);
         return new TransactionLogSnapshot((StateStorePartitions) snapshot.getState(), transactionNumber);
     }
@@ -116,5 +122,9 @@ public class InMemoryTransactionLogSnapshotSetup {
 
     public TransactionLogStore getPartitionsLog() {
         return partitionsLog;
+    }
+
+    public TransactionBodyStore getTransactionBodyStore() {
+        return transactionBodyStore;
     }
 }

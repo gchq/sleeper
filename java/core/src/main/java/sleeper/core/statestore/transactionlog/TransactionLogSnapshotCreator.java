@@ -48,10 +48,11 @@ public class TransactionLogSnapshotCreator {
     public static <T> Optional<TransactionLogSnapshot> createSnapshotIfChanged(
             TransactionLogSnapshot lastSnapshot,
             TransactionLogStore logStore,
+            TransactionBodyStore transactionBodyStore,
             Class<? extends StateStoreTransaction<T>> transactionType,
             TableStatus tableStatus) {
         TransactionLogSnapshot newSnapshot = updateState(
-                lastSnapshot, transactionType, logStore, tableStatus);
+                lastSnapshot, transactionType, logStore, transactionBodyStore, tableStatus);
         if (lastSnapshot.getTransactionNumber() >= newSnapshot.getTransactionNumber()) {
             LOGGER.info("No new {}s found after transaction number {}, skipping snapshot creation.",
                     transactionType.getSimpleName(),
@@ -66,12 +67,15 @@ public class TransactionLogSnapshotCreator {
 
     private static <T> TransactionLogSnapshot updateState(
             TransactionLogSnapshot lastSnapshot,
-            Class<? extends StateStoreTransaction<T>> transactionType, TransactionLogStore logStore,
+            Class<? extends StateStoreTransaction<T>> transactionType,
+            TransactionLogStore logStore,
+            TransactionBodyStore transactionBodyStore,
             TableStatus table) {
         T state = lastSnapshot.getState();
         TransactionLogHead<T> head = TransactionLogHead.builder()
                 .transactionType(transactionType)
                 .logStore(logStore)
+                .transactionBodyStore(transactionBodyStore)
                 .lastTransactionNumber(lastSnapshot.getTransactionNumber())
                 .state(state)
                 .sleeperTable(table)
