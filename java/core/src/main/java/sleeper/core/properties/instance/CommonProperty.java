@@ -178,7 +178,8 @@ public interface CommonProperty {
             .runCdkDeployWhenChanged(true)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.default.lambda.concurrency.reserved")
-            .description("Default value for the reserved concurrency for each lambda within the Sleeper instance. " +
+            .description("Default value for the reserved concurrency for each lambda in the Sleeper instance " +
+                    "that scales according to the number of Sleeper tables.\n" +
                     "By default no concurrency is reserved for the lambdas. Each lambda also has its own property " +
                     "that overrides the value found here.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
@@ -191,7 +192,7 @@ public interface CommonProperty {
                     "If there are more online tables, this number may need to be increased. Each lambda also has its own property that " +
                     "overrides the value found here.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerOrNull)
+            .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
             .defaultValue("10")
             .propertyGroup(InstancePropertyGroup.COMMON).build();
 
