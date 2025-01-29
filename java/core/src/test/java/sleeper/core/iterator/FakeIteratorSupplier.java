@@ -39,7 +39,7 @@ public class FakeIteratorSupplier implements Supplier<CloseableIterator<Record>>
 
     /**
      * Checks if the fake has returned an iterator.
-     * 
+     *
      * @return true if an iterator was retrieved
      */
     public boolean hasSupplied() {
