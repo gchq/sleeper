@@ -15,25 +15,60 @@
  */
 package sleeper.systemtest.suite;
 
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.schema.Field;
+import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
+import sleeper.core.schema.type.StringType;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.suite.testutil.SystemTest;
 
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.stream.LongStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
+import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
-@Disabled("TODO")
+@SystemTest
 public class UserJarsST {
+    @TempDir
+    private Path tempDir;
+
+    @BeforeEach
+    void setUp(SleeperSystemTest sleeper) {
+        sleeper.connectToInstanceNoTables(MAIN);
+        sleeper.tables().create("test", Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("timestamp", new LongType()))
+                .build());
+        sleeper.setGeneratorOverrides(
+                overrideField("key",
+                        numberStringAndZeroPadTo(3).then(addPrefix("row-"))));
+    }
 
     @Test
-    void shouldApplyTableIteratorDuringCompaction(SleeperSystemTest sleeper) throws Exception {
+    void shouldApplyTableIteratorFromUserJarDuringCompaction(SleeperSystemTest sleeper) throws Exception {
         // Given
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
         sleeper.updateTableProperties(Map.of(
                 ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
-                ITERATOR_CONFIG, "securityLabel,public"));
+                ITERATOR_CONFIG, "timestamp,50"));
+
+        // When
+        sleeper.compaction().forceCreateJobs(1);
+
+        // Then
+        assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
     }
 
 }
