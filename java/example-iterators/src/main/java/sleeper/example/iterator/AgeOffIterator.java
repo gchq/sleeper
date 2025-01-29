@@ -16,11 +16,11 @@
 package sleeper.example.iterator;
 
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.FilteringIterator;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -52,59 +52,9 @@ public class AgeOffIterator implements SortedRecordIterator {
 
     @Override
     public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
-        return new AgeOffIteratorInternal(input, fieldName, ageOff);
-    }
-
-    /**
-     * Discards records in the input iterator when the timestamp is older than the limit.
-     */
-    public static class AgeOffIteratorInternal implements CloseableIterator<Record> {
-        private final CloseableIterator<Record> input;
-        private final String fieldName;
-        private final long age;
-        private Record next;
-
-        public AgeOffIteratorInternal(
-                CloseableIterator<Record> input,
-                String fieldName,
-                long age) {
-            this.input = input;
-            this.fieldName = fieldName;
-            this.age = age;
-            this.next = null;
-            advance();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return null != next;
-        }
-
-        @Override
-        public Record next() {
-            Record record = new Record(next);
-            if (!input.hasNext()) {
-                next = null;
-            }
-            advance();
-            return record;
-        }
-
-        @Override
-        public void close() throws IOException {
-            input.close();
-        }
-
-        private void advance() {
-            while (input.hasNext()) {
-                next = input.next();
-                Long value = (Long) next.get(fieldName);
-                if (null != value && System.currentTimeMillis() - value < age) {
-                    break;
-                } else {
-                    next = null;
-                }
-            }
-        }
+        return new FilteringIterator<>(input, record -> {
+            Long value = (Long) record.get(fieldName);
+            return null != value && System.currentTimeMillis() - value < ageOff;
+        });
     }
 }
