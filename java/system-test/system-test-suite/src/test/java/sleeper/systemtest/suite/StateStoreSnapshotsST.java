@@ -53,7 +53,7 @@ public class StateStoreSnapshotsST {
 
     @Test
     void shouldAddManyFiles(SleeperSystemTest sleeper) throws Exception {
-        // Given we have 10,000 files
+        // Given we create fake references for 10,000 files
         sleeper.tables().createWithProperties("snapshots", DEFAULT_SCHEMA,
                 Map.of(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName()));
         String partitionId = exampleUUID("partn", 0);
