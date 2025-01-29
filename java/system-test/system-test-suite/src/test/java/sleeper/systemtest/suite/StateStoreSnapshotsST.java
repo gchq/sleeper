@@ -64,6 +64,7 @@ public class StateStoreSnapshotsST {
         String partitionId = exampleUUID("partn", 0);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(partitionId).buildTree();
         sleeper.partitioning().setPartitions(partitions);
+
         // And we create fake references for 10,000 files
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         TableFilePaths filePaths = TableFilePaths.buildDataFilePathPrefix(sleeper.instanceProperties(), sleeper.tableProperties());
