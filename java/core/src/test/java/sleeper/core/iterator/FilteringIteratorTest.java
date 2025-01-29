@@ -21,6 +21,7 @@ import sleeper.core.record.Record;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,5 +40,19 @@ public class FilteringIteratorTest {
 
         // Then
         assertThat(filtered).toIterable().containsExactly(record1);
+        assertThat(iterator).isExhausted();
+    }
+
+    @Test
+    void shouldCloseSourceIterator() throws Exception {
+        // Given
+        AtomicBoolean closed = new AtomicBoolean(false);
+        EmptyIteratorWithFakeOnClose iterator = new EmptyIteratorWithFakeOnClose(() -> closed.set(true));
+
+        // When
+        new FilteringIterator<>(iterator, record -> true).close();
+
+        // Then
+        assertThat(closed).isTrue();
     }
 }
