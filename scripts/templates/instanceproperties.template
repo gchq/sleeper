@@ -1056,7 +1056,7 @@ sleeper.compaction.commit.batcher.timeout.seconds=900
 # The reserved concurrency for the lambda that batches up compaction commits.
 # See reserved concurrency overview at:
 # https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
-sleeper.compaction.commit.batcher.concurrency.reserved=1
+sleeper.compaction.commit.batcher.concurrency.reserved=2
 
 # The maximum concurrency allowed for the lambda that batches up compaction commits.
 # See maximum concurrency overview at:
