@@ -17,11 +17,13 @@
 package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
+import sleeper.query.core.model.Query;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class SystemTestQuery {
     private final SystemTestContext context;
@@ -63,6 +65,12 @@ public class SystemTestQuery {
 
     public List<Record> byRowKey(String key, QueryRange... ranges) {
         return driver.run(queryCreator().byRowKey(key, List.of(ranges)));
+    }
+
+    public List<Record> withConfiguration(Consumer<Query.Builder> config) {
+        Query.Builder builder = queryCreator().allRecordsBuilder();
+        config.accept(builder);
+        return driver.run(builder.build());
     }
 
     public void emptyResultsBucket() {

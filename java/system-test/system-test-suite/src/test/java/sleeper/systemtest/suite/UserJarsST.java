@@ -19,20 +19,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
@@ -46,10 +50,12 @@ public class UserJarsST {
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
         sleeper.connectToInstanceNoTables(MAIN);
-        sleeper.tables().create("test", Schema.builder()
-                .rowKeyFields(new Field("key", new StringType()))
-                .valueFields(new Field("timestamp", new LongType()))
-                .build());
+        sleeper.tables().createWithProperties("test",
+                Schema.builder()
+                        .rowKeyFields(new Field("key", new StringType()))
+                        .valueFields(new Field("timestamp", new LongType()))
+                        .build(),
+                Map.of(TABLE_ONLINE, "false"));
         sleeper.setGeneratorOverrides(
                 overrideField("key",
                         numberStringAndZeroPadTo(3).then(addPrefix("row-"))));
@@ -84,6 +90,39 @@ public class UserJarsST {
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+    }
+
+    @Test
+    void shouldApplyTableIteratorFromUserJarDuringQuery(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+        sleeper.updateTableProperties(Map.of(
+                ITERATOR_CLASS_NAME, "sleeper.example.iterator.FixedAgeOffIterator",
+                ITERATOR_CONFIG, "timestamp,50"));
+
+        // When
+        List<Record> records = sleeper.query().byQueue().allRecordsInTable();
+
+        // Then
+        assertThat(records)
+                .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
+    }
+
+    @Test
+    void shouldApplyQueryIteratorFromUserJar(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
+
+        // When
+        List<Record> records = sleeper.query().byQueue().withConfiguration(builder -> builder.processingConfig(
+                QueryProcessingConfig.builder()
+                        .queryTimeIteratorClassName("sleeper.example.iterator.FixedAgeOffIterator")
+                        .queryTimeIteratorConfig("timestamp,50")
+                        .build()));
+
+        // Then
+        assertThat(records)
                 .containsExactlyInAnyOrderElementsOf(sleeper.generateNumberedRecords(LongStream.range(50, 100)));
     }
 
