@@ -192,8 +192,8 @@ public interface CompactionProperty {
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.commit.batcher.concurrency.reserved")
             .description("The reserved concurrency for the lambda that batches up compaction commits.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
-            .defaultValue("1")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerOrNull)
+            .defaultValue("2")
+            .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.commit.batcher.concurrency.max")
             .defaultValue("2")

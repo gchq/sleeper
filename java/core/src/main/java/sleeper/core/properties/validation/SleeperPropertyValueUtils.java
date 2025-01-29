@@ -191,7 +191,7 @@ public class SleeperPropertyValueUtils {
      * @return        true if the value meets the requirement
      */
     public static boolean isValidSqsLambdaMaximumConcurrency(String string) {
-        return parseAndCheckInteger(string, num -> num >= 2);
+        return string == null || parseAndCheckInteger(string, num -> num >= 2);
     }
 
     /**

@@ -187,7 +187,7 @@ public interface CommonProperty {
                     "By default no concurrency is reserved for the lambdas. Each lambda also has its own property " +
                     "that overrides the value found here.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerOrNull)
+            .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.default.lambda.concurrency.max")
