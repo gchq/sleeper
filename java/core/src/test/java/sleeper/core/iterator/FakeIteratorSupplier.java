@@ -20,6 +20,9 @@ import sleeper.core.record.Record;
 import java.util.List;
 import java.util.function.Supplier;
 
+/**
+ * A test fake to supply an iterator of records.
+ */
 public class FakeIteratorSupplier implements Supplier<CloseableIterator<Record>> {
     private final List<Record> records;
     private boolean hasSupplied = false;
@@ -34,6 +37,11 @@ public class FakeIteratorSupplier implements Supplier<CloseableIterator<Record>>
         return new WrappedIterator<>(records.iterator());
     }
 
+    /**
+     * Checks if the fake has returned an iterator.
+     * 
+     * @return true if an iterator was retrieved
+     */
     public boolean hasSupplied() {
         return hasSupplied;
     }
