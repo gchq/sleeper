@@ -24,7 +24,6 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
@@ -115,11 +114,9 @@ public class UserJarsST {
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.range(0, 100));
 
         // When
-        List<Record> records = sleeper.query().byQueue().withConfiguration(builder -> builder.processingConfig(
-                QueryProcessingConfig.builder()
-                        .queryTimeIteratorClassName("sleeper.example.iterator.FixedAgeOffIterator")
-                        .queryTimeIteratorConfig("timestamp,50")
-                        .build()));
+        List<Record> records = sleeper.query().byQueue().allRecordsWithProcessingConfig(builder -> builder
+                .queryTimeIteratorClassName("sleeper.example.iterator.FixedAgeOffIterator")
+                .queryTimeIteratorConfig("timestamp,50"));
 
         // Then
         assertThat(records)

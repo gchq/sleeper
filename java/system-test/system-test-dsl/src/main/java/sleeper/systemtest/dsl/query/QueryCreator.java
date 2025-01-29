@@ -24,6 +24,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
@@ -58,8 +59,8 @@ public class QueryCreator {
         return allRecordsBuilder().build();
     }
 
-    public Query.Builder allRecordsBuilder() {
-        return builder().regions(List.of(getPartitionTree().getRootPartition().getRegion()));
+    public Query allRecordsQuery(QueryProcessingConfig config) {
+        return allRecordsBuilder().processingConfig(config).build();
     }
 
     public Query byRowKey(String key, List<QueryRange> ranges) {
@@ -69,6 +70,10 @@ public class QueryCreator {
                         .map(range -> new Region(rangeFactory.createRange(key, range.getMin(), range.getMax())))
                         .toList())
                 .build();
+    }
+
+    private Query.Builder allRecordsBuilder() {
+        return builder().regions(List.of(getPartitionTree().getRootPartition().getRegion()));
     }
 
     private Query.Builder builder() {
