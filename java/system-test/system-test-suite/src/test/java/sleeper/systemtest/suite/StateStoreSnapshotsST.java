@@ -56,7 +56,7 @@ public class StateStoreSnapshotsST {
 
     @Test
     void shouldAddManyFiles(SleeperSystemTest sleeper) throws Exception {
-        // Given we create fake references for 10,000 files
+        // Given we create a table
         sleeper.tables().createWithProperties("snapshots", DEFAULT_SCHEMA, Map.of(
                 STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName(),
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
@@ -64,6 +64,7 @@ public class StateStoreSnapshotsST {
         String partitionId = exampleUUID("partn", 0);
         PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(partitionId).buildTree();
         sleeper.partitioning().setPartitions(partitions);
+        // And we create fake references for 10,000 files
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         TableFilePaths filePaths = TableFilePaths.buildDataFilePathPrefix(sleeper.instanceProperties(), sleeper.tableProperties());
         Map<String, Long> recordsByFilename = LongStream
