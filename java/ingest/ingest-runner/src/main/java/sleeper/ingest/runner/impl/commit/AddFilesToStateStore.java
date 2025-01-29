@@ -62,7 +62,7 @@ public interface AddFilesToStateStore {
             transactionConfig.accept(requestBuilder);
             AddFilesTransaction transaction = requestBuilder.build();
             commitSender.send(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction));
-            LOGGER.info("Submitted asynchronous request to add {} files with {} references", files.size(), references.size());
+            LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}", files.size(), references.size(), tableProperties.getStatus());
         };
     }
 }

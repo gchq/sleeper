@@ -122,7 +122,7 @@ public class BulkImportJobDriver {
                         .files(AllReferencesToAFile.newFilesWithReferences(output.fileReferences()))
                         .build();
                 asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(), transaction));
-                LOGGER.info("Submitted {} files to statestore committer for job {} in table {}", output.numFiles(), job.getId(), table);
+                LOGGER.info("Submitted asynchronous request to state store committer to add {} files for job {} in table {}", output.numFiles(), job.getId(), table);
             } else {
                 stateStoreProvider.getStateStore(tableProperties)
                         .addFiles(output.fileReferences());
