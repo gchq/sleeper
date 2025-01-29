@@ -19,6 +19,9 @@ import sleeper.core.record.Record;
 
 import java.io.IOException;
 
+/**
+ * A test fake for an empty iterator that applies some action when it is closed.
+ */
 public class EmptyIteratorWithFakeOnClose implements CloseableIterator<Record> {
 
     private final OnClose onClose;
@@ -27,7 +30,17 @@ public class EmptyIteratorWithFakeOnClose implements CloseableIterator<Record> {
         this.onClose = onClose;
     }
 
+    /**
+     * Performs some test action when the iterator is closed.
+     */
+    @FunctionalInterface
     public interface OnClose {
+
+        /**
+         * Triggers the test action.
+         *
+         * @throws IOException if the close method should throw an exception
+         */
         void close() throws IOException;
     }
 
