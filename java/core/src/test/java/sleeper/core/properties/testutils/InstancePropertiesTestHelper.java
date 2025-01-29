@@ -73,6 +73,16 @@ public class InstancePropertiesTestHelper {
      */
     public static InstanceProperties createTestInstanceProperties() {
         String id = UUID.randomUUID().toString().toLowerCase(Locale.ROOT).substring(0, 18);
+        return createTestInstancePropertiesWithId(id);
+    }
+
+    /**
+     * Creates properties for a Sleeper instance. Pre-populates various properties set during deployment.
+     *
+     * @param  id the instance ID
+     * @return    the instance properties
+     */
+    public static InstanceProperties createTestInstancePropertiesWithId(String id) {
         InstanceProperties instanceProperties = new InstanceProperties();
         instanceProperties.set(ID, id);
         instanceProperties.set(CONFIG_BUCKET, InstanceProperties.getConfigBucketFromInstanceId(id));
