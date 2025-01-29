@@ -55,22 +55,26 @@ public class QueryCreator {
     }
 
     public Query allRecordsQuery() {
-        return byRegions(List.of(getPartitionTree().getRootPartition().getRegion()));
+        return allRecordsBuilder().build();
+    }
+
+    public Query.Builder allRecordsBuilder() {
+        return builder().regions(List.of(getPartitionTree().getRootPartition().getRegion()));
     }
 
     public Query byRowKey(String key, List<QueryRange> ranges) {
-        return byRegions(ranges.stream()
-                .map(range -> new Region(new Range.RangeFactory(schema)
-                        .createRange(key, range.getMin(), range.getMax())))
-                .collect(Collectors.toList()));
+        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
+        return builder()
+                .regions(ranges.stream()
+                        .map(range -> new Region(rangeFactory.createRange(key, range.getMin(), range.getMax())))
+                        .toList())
+                .build();
     }
 
-    private Query byRegions(List<Region> regions) {
+    private Query.Builder builder() {
         return Query.builder()
                 .tableName(tableName)
-                .queryId(UUID.randomUUID().toString())
-                .regions(regions)
-                .build();
+                .queryId(UUID.randomUUID().toString());
     }
 
     private PartitionTree getPartitionTree() {
