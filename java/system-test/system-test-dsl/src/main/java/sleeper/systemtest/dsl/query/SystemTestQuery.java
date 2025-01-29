@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.query;
 
 import sleeper.core.record.Record;
-import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 
@@ -67,10 +67,10 @@ public class SystemTestQuery {
         return driver.run(queryCreator().byRowKey(key, List.of(ranges)));
     }
 
-    public List<Record> withConfiguration(Consumer<Query.Builder> config) {
-        Query.Builder builder = queryCreator().allRecordsBuilder();
+    public List<Record> allRecordsWithProcessingConfig(Consumer<QueryProcessingConfig.Builder> config) {
+        QueryProcessingConfig.Builder builder = QueryProcessingConfig.builder();
         config.accept(builder);
-        return driver.run(builder.build());
+        return driver.run(queryCreator().allRecordsQuery(builder.build()));
     }
 
     public void emptyResultsBucket() {
