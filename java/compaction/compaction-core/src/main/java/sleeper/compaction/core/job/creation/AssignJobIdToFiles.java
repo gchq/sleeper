@@ -15,6 +15,9 @@
  */
 package sleeper.compaction.core.job.creation;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -26,6 +29,7 @@ import java.util.List;
 
 @FunctionalInterface
 public interface AssignJobIdToFiles {
+    Logger LOGGER = LoggerFactory.getLogger(AssignJobIdToFiles.class);
 
     void assignJobIds(List<AssignJobIdRequest> requests, TableStatus tableStatus);
 
@@ -36,10 +40,12 @@ public interface AssignJobIdToFiles {
     }
 
     static AssignJobIdToFiles byQueue(StateStoreCommitRequestSender queueSender) {
-        return (assignJobIdRequests, tableStatus) -> queueSender.send(
-                StateStoreCommitRequest.create(
-                        tableStatus.getTableUniqueId(),
-                        new AssignJobIdsTransaction(assignJobIdRequests)));
+        return (assignJobIdRequests, tableStatus) -> {
+            queueSender.send(StateStoreCommitRequest.create(
+                    tableStatus.getTableUniqueId(),
+                    new AssignJobIdsTransaction(assignJobIdRequests)));
+            LOGGER.info("Submitted asynchronous request to state store committer for {} job ID assignments in table {}", assignJobIdRequests.size(), tableStatus);
+        };
     }
 
 }

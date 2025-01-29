@@ -16,6 +16,8 @@
 package sleeper.statestore.commit;
 
 import com.amazonaws.services.s3.AmazonS3;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -34,6 +36,8 @@ import java.util.function.Supplier;
  * Uploads transactions to S3 if they are larger than a certain limit.
  */
 public class S3StateStoreCommitRequestUploader {
+    public static final Logger LOGGER = LoggerFactory.getLogger(S3StateStoreCommitRequestUploader.class);
+
     private final S3TransactionBodyStore transactionBodyStore;
     private final TransactionSerDeProvider transactionSerDeProvider;
     private final StateStoreCommitRequestSerDe requestSerDe;
@@ -71,7 +75,9 @@ public class S3StateStoreCommitRequestUploader {
             return Optional.empty();
         } else {
             String key = TransactionBodyStore.createObjectKey(request.getTableId(), timeSupplier.get(), idSupplier.get());
+            LOGGER.debug("Uploading large transaction of type {} to S3 at: {}", request.getTransactionType(), key);
             transactionBodyStore.store(key, json);
+            LOGGER.debug("Uploaded large transaction of type {} to S3 at: {}", request.getTransactionType(), key);
             return Optional.of(StateStoreCommitRequest.create(request.getTableId(), key, request.getTransactionType()));
         }
     }

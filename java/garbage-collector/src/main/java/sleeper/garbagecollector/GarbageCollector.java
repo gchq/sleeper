@@ -130,6 +130,7 @@ public class GarbageCollector {
             if (asyncCommit) {
                 sendAsyncCommit.send(StateStoreCommitRequest.create(
                         tableProperties.get(TABLE_ID), new DeleteFilesTransaction(deletedFilenames)));
+                LOGGER.info("Submitted asynchronous request to state store committer for {} deleted files in table {}", deletedFilenames.size(), tableProperties.getStatus());
             } else {
                 stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
                 LOGGER.info("Applied deletion to state store");
