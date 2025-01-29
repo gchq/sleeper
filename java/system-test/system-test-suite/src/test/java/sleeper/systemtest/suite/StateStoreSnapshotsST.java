@@ -21,7 +21,9 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.AllReferencesToAllFiles;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.table.TableFilePaths;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -29,13 +31,15 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
+import static sleeper.core.testutils.SupplierTestHelper.exampleUUID;
+import static sleeper.core.testutils.SupplierTestHelper.numberedUUID;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
 
@@ -49,30 +53,34 @@ public class StateStoreSnapshotsST {
 
     @Test
     void shouldAddManyFiles(SleeperSystemTest sleeper) throws Exception {
-        // Given
+        // Given we have 10,000 files
         sleeper.tables().createWithProperties("snapshots", DEFAULT_SCHEMA,
                 Map.of(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName()));
-        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+        String partitionId = exampleUUID("partn", 0);
+        PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition(partitionId).buildTree();
         sleeper.partitioning().setPartitions(partitions);
-
-        // When
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+        TableFilePaths filePaths = TableFilePaths.buildDataFilePathPrefix(sleeper.instanceProperties(), sleeper.tableProperties());
+        Map<String, Long> recordsByFilename = LongStream
+                .rangeClosed(1, 10_000).mapToObj(i -> i)
+                .collect(toMap(i -> filePaths.constructPartitionParquetFilePath(partitionId, numberedUUID("file", i)), i -> i));
+        List<FileReference> files = recordsByFilename.entrySet().stream()
+                .map(entry -> fileFactory.rootFile(entry.getKey(), entry.getValue()))
+                .toList();
+
+        // When we send them to the state store committer as two big transactions
         sleeper.stateStore().fakeCommits()
-                .sendBatched(IntStream.rangeClosed(1, 1000)
-                        .mapToObj(i -> fileFactory.rootFile("file-" + i + ".parquet", i))
-                        .map(StateStoreCommitMessage::addFile));
+                .send(StateStoreCommitMessage.addFiles(files.subList(0, 5_000)))
+                .send(StateStoreCommitMessage.addFiles(files.subList(5_000, 10_000)));
 
         // Then a snapshot will be created
         AllReferencesToAllFiles snapshotFiles = sleeper.stateStore().waitForFilesSnapshot(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)),
-                files -> files.getFiles().size() == 1000);
-        Map<String, Long> expectedRecordsByFilename = LongStream
-                .rangeClosed(1, 1000).mapToObj(i -> i)
-                .collect(toMap(i -> "file-" + i + ".parquet", i -> i));
+                snapshot -> snapshot.getFiles().size() == 1000);
         assertThat(snapshotFiles.recordsByFilename())
-                .isEqualTo(expectedRecordsByFilename);
+                .isEqualTo(recordsByFilename);
         assertThat(sleeper.tableFiles().recordsByFilename())
-                .isEqualTo(expectedRecordsByFilename);
+                .isEqualTo(recordsByFilename);
     }
 
 }
