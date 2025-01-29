@@ -62,7 +62,7 @@ public class StateStoreSnapshotsST {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         TableFilePaths filePaths = TableFilePaths.buildDataFilePathPrefix(sleeper.instanceProperties(), sleeper.tableProperties());
         Map<String, Long> recordsByFilename = LongStream
-                .rangeClosed(1, 10_000).mapToObj(i -> i)
+                .range(0, 10_000).mapToObj(i -> i)
                 .collect(toMap(i -> filePaths.constructPartitionParquetFilePath(partitionId, numberedUUID("file", i)), i -> i));
         List<FileReference> files = recordsByFilename.entrySet().stream()
                 .map(entry -> fileFactory.rootFile(entry.getKey(), entry.getValue()))
@@ -76,7 +76,7 @@ public class StateStoreSnapshotsST {
         // Then a snapshot will be created
         AllReferencesToAllFiles snapshotFiles = sleeper.stateStore().waitForFilesSnapshot(
                 PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(20), Duration.ofMinutes(10)),
-                snapshot -> snapshot.getFiles().size() == 1000);
+                snapshot -> snapshot.getFiles().size() == 10_000);
         assertThat(snapshotFiles.recordsByFilename())
                 .isEqualTo(recordsByFilename);
         assertThat(sleeper.tableFiles().recordsByFilename())
