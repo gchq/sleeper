@@ -117,15 +117,16 @@ public class SupplierTestHelper {
      * @param  number the number to put at the end
      * @return        the example UUID as a string
      */
-    public static String numberedUUID(String start, int number) {
+    public static String numberedUUID(String start, Number number) {
         if (start.length() > 8) {
             throw new IllegalArgumentException("Start must be shorter than 8 characters: " + start);
         }
+        int numberInt = number.intValue();
         int remainingCharacters = 32 - start.length();
         Iterator<Character> characters = IntStream.range(0, remainingCharacters)
                 .mapToObj(i -> {
                     int exponent = remainingCharacters - i - 1;
-                    int digit = number / (int) Math.pow(10, exponent) % 10;
+                    int digit = numberInt / (int) Math.pow(10, exponent) % 10;
                     return (char) ('0' + digit);
                 }).iterator();
         return start + IntStream.of(8 - start.length(), 4, 4, 4, 12)
