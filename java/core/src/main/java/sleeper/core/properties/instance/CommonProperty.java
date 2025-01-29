@@ -180,6 +180,10 @@ public interface CommonProperty {
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.default.lambda.concurrency.reserved")
             .description("Default value for the reserved concurrency for each lambda in the Sleeper instance " +
                     "that scales according to the number of Sleeper tables.\n" +
+                    "The state store committer lambda is an exception to this, as it has reserved concurrency by " +
+                    "default. This is set in the property sleeper.statestore.committer.concurrency.reserved. " +
+                    "Other lambdas are present that do not scale by the number of Sleeper tables, and are not " +
+                    "set from this property.\n" +
                     "By default no concurrency is reserved for the lambdas. Each lambda also has its own property " +
                     "that overrides the value found here.\n" +
                     "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
@@ -187,7 +191,10 @@ public interface CommonProperty {
             .defaultValue(null)
             .propertyGroup(InstancePropertyGroup.COMMON).build();
     UserDefinedInstanceProperty DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.default.lambda.concurrency.max")
-            .description("Default value for the maximum concurrency for each lambda within the Sleeper instance. " +
+            .description("Default value for the maximum concurrency for each lambda in the Sleeper instance that " +
+                    "scales according to the number of Sleeper tables.\n" +
+                    "Other lambdas are present that do not scale by the number of Sleeper tables, and are not " +
+                    "set from this property.\n" +
                     "By default the maximum concurrency is set to 10, which is enough for 10 online tables. " +
                     "If there are more online tables, this number may need to be increased. Each lambda also has its own property that " +
                     "overrides the value found here.\n" +
