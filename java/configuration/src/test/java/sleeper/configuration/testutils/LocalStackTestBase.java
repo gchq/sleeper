@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.localstack.test.SleeperLocalStackContainer;
@@ -33,10 +32,9 @@ import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Clie
 @Testcontainers
 public abstract class LocalStackTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
-    protected final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    protected final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    protected final AmazonS3 s3Client = buildAwsV1Client(CONTAINER, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    protected final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(CONTAINER, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
 
 }
