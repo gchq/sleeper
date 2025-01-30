@@ -16,20 +16,16 @@
 package sleeper.configuration.jars;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.google.common.io.ByteStreams;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
+import sleeper.configuration.testutils.LocalStackTestBase;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.localstack.test.SleeperLocalStackContainer;
 
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
@@ -55,20 +51,11 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class S3UserJarsLoaderIT {
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(
-            LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
+class S3UserJarsLoaderIT extends LocalStackTestBase {
 
     @TempDir
     public Path folder;
-
-    private AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
 
     private InstanceProperties createInstanceProperties(AmazonS3 s3Client) {
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -119,7 +106,6 @@ public class S3UserJarsLoaderIT {
         ByteStreams.copy(fis, jos);
         jos.close();
         // Upload jar to S3
-        AmazonS3 s3Client = createS3Client();
         InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         instanceProperties.set(USER_JARS, "iterator.jar");
         PutObjectRequest pubObjectRequest = new PutObjectRequest(instanceProperties.get(JARS_BUCKET), "iterator.jar", new File(jarFileLocation));
@@ -133,10 +119,10 @@ public class S3UserJarsLoaderIT {
         assertThat(sri).hasToString("MyIterator");
     }
 
-    public static class MySimpleJavaFileObject extends SimpleJavaFileObject {
+    static class MySimpleJavaFileObject extends SimpleJavaFileObject {
         private final String code;
 
-        public MySimpleJavaFileObject(String name, String code) {
+        MySimpleJavaFileObject(String name, String code) {
             super(create(name), Kind.SOURCE);
             this.code = code;
         }

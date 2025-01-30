@@ -21,20 +21,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.configuration.testutils.LocalStackTestBase;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.dynamodb.test.DynamoDBTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBTableIndexIT extends DynamoDBTestBase {
+public class DynamoDBTableIndexIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final DynamoDBTableIndex index = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
