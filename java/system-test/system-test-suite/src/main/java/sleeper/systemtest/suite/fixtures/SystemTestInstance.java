@@ -86,7 +86,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::createMainConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::createIngestPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("cptprf", SystemTestInstance::createCompactionPerformanceConfiguration);
-    public static final SystemTestInstanceConfiguration COMPACTION_ON_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionOnDataFusionConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionPerformanceOnDataFusionConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_CREATION = SystemTestInstanceConfiguration.builder()
             .shortName("cpt-cr")
             .deployConfig(SystemTestInstance::createCompactionCreationConfiguration)
@@ -181,8 +181,8 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createCompactionOnDataFusionConfiguration() {
-        InstanceProperties properties = createInstanceProperties();
+    private static DeployInstanceConfiguration createCompactionPerformanceOnDataFusionConfiguration() {
+        InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");
