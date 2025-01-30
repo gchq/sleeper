@@ -40,6 +40,14 @@ public class SleeperLocalStackContainer {
                 .withEnv("LOCALSTACK_HOST", getHostAddress());
     }
 
+    public static LocalStackContainer start(LocalStackContainer.Service... services) {
+        LocalStackContainer container = new LocalStackContainer(DockerImageName.parse(LOCALSTACK_DOCKER_IMAGE))
+                .withServices(services)
+                .withEnv("LOCALSTACK_HOST", getHostAddress());
+        container.start();
+        return container;
+    }
+
     private static String getHostAddress() {
         String dockerHost = DockerClientFactory.instance().dockerHostIpAddress();
         try {
