@@ -21,8 +21,10 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.cdk.testutils.LocalStackTestBase;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -81,6 +83,18 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
         // Given
         new S3StateStoreCreator(instanceProperties, dynamoClientV1).create();
         setupTablesPropertiesFile(temporaryFolder, "example-table", S3StateStore.class.getName());
+
+        // When
+        assertThatThrownBy(this::validate)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageStartingWith("Sleeper state store table exists: ");
+    }
+
+    @Test
+    void shouldThrowAnErrorWhenTransactionLogStateStoreExists() throws IOException {
+        // Given
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoClientV1).create();
+        setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBTransactionLogStateStore.class.getName());
 
         // When
         assertThatThrownBy(this::validate)
