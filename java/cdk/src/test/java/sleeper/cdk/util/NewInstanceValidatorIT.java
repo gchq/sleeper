@@ -93,7 +93,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenTransactionLogStateStoreExists() throws IOException {
         // Given
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoClientV1).create();
         setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBTransactionLogStateStore.class.getName());
 
         // When
