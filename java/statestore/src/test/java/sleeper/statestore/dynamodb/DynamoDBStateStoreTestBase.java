@@ -19,7 +19,7 @@ package sleeper.statestore.dynamodb;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestore.testutil.LocalStackTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 

@@ -39,7 +39,7 @@ import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
-import sleeper.statestore.testutil.LocalStackTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Instant;

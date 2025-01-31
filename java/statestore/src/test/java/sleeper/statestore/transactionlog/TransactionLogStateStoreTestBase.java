@@ -15,15 +15,13 @@
  */
 package sleeper.statestore.transactionlog;
 
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
-import sleeper.statestore.testutil.LocalStackTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -32,7 +30,6 @@ import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 public class TransactionLogStateStoreTestBase extends LocalStackTestBase {
 
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
 
     @BeforeEach
     void setUpBase() {
@@ -52,6 +49,6 @@ public class TransactionLogStateStoreTestBase extends LocalStackTestBase {
     }
 
     protected TransactionLogStateStore.Builder stateStoreBuilder(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration);
+        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client, hadoopConf);
     }
 }
