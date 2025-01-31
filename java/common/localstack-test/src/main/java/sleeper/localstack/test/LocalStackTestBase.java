@@ -25,7 +25,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -43,19 +42,18 @@ import static sleeper.localstack.test.LocalStackHadoopConfigurationProvider.getH
 /**
  * A base class for tests to run against LocalStack.
  */
-@Testcontainers
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public abstract class LocalStackTestBase {
 
-    protected static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(Service.S3, Service.DYNAMODB, Service.SQS);
+    public static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(Service.S3, Service.DYNAMODB, Service.SQS);
 
-    protected static final AmazonS3 S3_CLIENT = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
-    protected static final AmazonDynamoDB DYNAMO_CLIENT = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    protected static final AmazonSQS SQS_CLIENT = buildAwsV1Client(CONTAINER, Service.SQS, AmazonSQSClientBuilder.standard());
-    protected static final S3Client S3_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
-    protected static final DynamoDbClient DYNAMO_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
-    protected static final SqsClient SQS_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
-    protected static final Configuration HADOOP_CONF = getHadoopConfiguration(CONTAINER);
+    public static final AmazonS3 S3_CLIENT = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
+    public static final AmazonDynamoDB DYNAMO_CLIENT = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    public static final AmazonSQS SQS_CLIENT = buildAwsV1Client(CONTAINER, Service.SQS, AmazonSQSClientBuilder.standard());
+    public static final S3Client S3_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
+    public static final DynamoDbClient DYNAMO_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
+    public static final SqsClient SQS_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
+    public static final Configuration HADOOP_CONF = getHadoopConfiguration(CONTAINER);
 
     protected static void createBucket(String bucketName) {
         S3_CLIENT_V2.createBucket(builder -> builder.bucket(bucketName));
