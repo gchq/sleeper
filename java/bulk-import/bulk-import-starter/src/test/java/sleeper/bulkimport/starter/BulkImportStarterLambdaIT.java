@@ -73,7 +73,7 @@ public class BulkImportStarterLambdaIT extends LocalStackTestBase {
         return BulkImportStarterLambda.messageHandlerBuilder()
                 .tableIndex(tableIndex)
                 .ingestJobTracker(tracker)
-                .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, HADOOP_CONF, new InstanceProperties()));
+                .expandDirectories(files -> HadoopPathUtils.expandDirectories(files, hadoopConf, new InstanceProperties()));
     }
 
     @Nested

@@ -73,7 +73,7 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {
         return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA,
-                dynamoClient, s3Client, HADOOP_CONF, 2018, 2019, 2020);
+                dynamoClient, s3Client, hadoopConf, 2018, 2019, 2020);
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {
