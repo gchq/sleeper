@@ -83,7 +83,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<String> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() >= 2020)
@@ -132,7 +132,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         // When
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() <= 2018)
@@ -183,7 +183,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -235,7 +235,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -284,7 +284,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -357,7 +357,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         // Make query
         SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == Integer.MIN_VALUE || (Integer) p.getRegion().getRange("year").getMin() == 2019)
@@ -485,7 +485,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)

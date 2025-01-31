@@ -85,7 +85,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
                 s3Client, dynamoClient, instance.get(CONFIG_BUCKET),
                 mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class), mock(AmazonAthena.class),
                 "spillBucket", "spillPrefix");
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         TableName tableName = new TableName(table.get(TABLE_NAME), table.get(TABLE_NAME));
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", tableName));
@@ -172,7 +172,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -215,7 +215,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))
@@ -271,7 +271,7 @@ public class IteratorApplyingMetadataHandlerIT extends MetadataHandlerITBase {
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, hadoopConf).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> p.getRegion().getRange("year").getMin().equals(2018))

@@ -50,17 +50,17 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
         DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoClient).sqsClient(sqsClientV2)
-                .configuration(HADOOP_CONF).extraTableProperties(extraProperties)
+                .configuration(hadoopConf).extraTableProperties(extraProperties)
                 .build().deploy(instanceId);
     }
 
     public CloseableIterator<Record> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, HADOOP_CONF)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
-                new LeafPartitionRecordRetrieverImpl(Executors.newSingleThreadExecutor(), HADOOP_CONF, tableProperties));
+                new LeafPartitionRecordRetrieverImpl(Executors.newSingleThreadExecutor(), hadoopConf, tableProperties));
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }

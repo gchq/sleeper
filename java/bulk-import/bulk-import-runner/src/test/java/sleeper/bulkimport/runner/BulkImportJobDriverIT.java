@@ -553,7 +553,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
     private StateStore createTable(InstanceProperties instanceProperties, TableProperties tableProperties, List<Object> splitPoints) {
         tablePropertiesStore(instanceProperties).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, HADOOP_CONF).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
         stateStore.initialise(new PartitionsFromSplitPoints(getSchema(), splitPoints).construct());
         return stateStore;
     }
@@ -569,7 +569,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
     private void runJob(BulkImportJobRunner runner, InstanceProperties properties, BulkImportJob job, Supplier<Instant> timeSupplier) throws IOException {
         tracker.jobValidated(job.toIngestJob().acceptedEventBuilder(validationTime).jobRunId(jobRunId).build());
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, HADOOP_CONF);
+        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
         StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
                 properties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
         BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(

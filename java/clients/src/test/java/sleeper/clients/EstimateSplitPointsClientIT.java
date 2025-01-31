@@ -63,7 +63,7 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
 
         // When
         List<Object> splitPoints = EstimateSplitPointsClient.estimate(
-                schema, HADOOP_CONF, 4, 32, List.of(dataFile));
+                schema, hadoopConf, 4, 32, List.of(dataFile));
 
         // Then
         assertThat(splitPoints).containsExactly(3L, 6L, 8L);
@@ -74,7 +74,7 @@ public class EstimateSplitPointsClientIT extends LocalStackTestBase {
     }
 
     private void writeRecords(Path path, Schema schema, List<Record> records) throws IOException {
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema, HADOOP_CONF)) {
+        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema, hadoopConf)) {
             for (Record record : records) {
                 writer.write(record);
             }
