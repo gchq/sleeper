@@ -50,10 +50,10 @@ public abstract class LocalStackTestBase {
     private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(Service.S3, Service.DYNAMODB, Service.SQS);
 
     protected final AmazonS3 s3Client = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
-    protected final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    protected final AmazonDynamoDB dynamoClient = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     protected final AmazonSQS sqsClient = buildAwsV1Client(CONTAINER, Service.SQS, AmazonSQSClientBuilder.standard());
     protected final S3Client s3ClientV2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
-    protected final DynamoDbClient dynamoDbClientV2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
+    protected final DynamoDbClient dynamoClientV2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
     protected final SqsClient sqsClientV2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
     protected final Configuration hadoopConf = getHadoopConfiguration(CONTAINER);
 

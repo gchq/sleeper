@@ -43,12 +43,12 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 class S3PropertiesReloaderIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
 
     @BeforeEach
     void setUp() {
         s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 
     @Test
@@ -93,7 +93,7 @@ class S3PropertiesReloaderIT extends LocalStackTestBase {
                 .get(TABLE_NAME);
         updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));
-        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         provider.getByName(tableName);
         PropertiesReloader reloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, provider);
 
@@ -114,7 +114,7 @@ class S3PropertiesReloaderIT extends LocalStackTestBase {
         String tableName = createTestTable(schemaWithKey("key"),
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "123"))
                 .get(TABLE_NAME);
-        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+        TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         provider.getByName(tableName);
         updatePropertiesInS3(tableName,
                 properties -> properties.set(PARTITION_SPLIT_THRESHOLD, "456"));

@@ -40,6 +40,6 @@ public abstract class S3StateStoreTestBase extends LocalStackTestBase {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
     }
 }

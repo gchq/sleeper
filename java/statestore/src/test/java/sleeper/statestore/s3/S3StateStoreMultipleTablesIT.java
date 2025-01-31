@@ -36,7 +36,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class S3StateStoreMultipleTablesIT extends S3StateStoreTestBase {
     private final Schema schema = schemaWithKey("key", new LongType());
-    private final StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, null, dynamoDBClient, new Configuration());
+    private final StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, null, dynamoClient, new Configuration());
     private final FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
 
     @Test
