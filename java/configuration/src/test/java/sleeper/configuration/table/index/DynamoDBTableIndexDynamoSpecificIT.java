@@ -32,11 +32,11 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 public class DynamoDBTableIndexDynamoSpecificIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final DynamoDBTableIndex index = new DynamoDBTableIndex(instanceProperties, dynamoClient);
+    private final DynamoDBTableIndex index = new DynamoDBTableIndex(instanceProperties, DYNAMO_CLIENT);
 
     @BeforeEach
     void setUp() {
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        DynamoDBTableIndexCreator.create(DYNAMO_CLIENT, instanceProperties);
     }
 
     @Test

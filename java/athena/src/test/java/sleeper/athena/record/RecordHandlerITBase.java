@@ -17,15 +17,11 @@ package sleeper.athena.record;
 
 import com.amazonaws.athena.connector.lambda.data.Block;
 import com.amazonaws.athena.connector.lambda.data.SchemaBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.athena.TestUtils;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -45,7 +41,6 @@ import java.nio.file.Path;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
@@ -73,22 +68,14 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     @BeforeAll
     public static void createSpillBucket() {
-        AmazonS3 s3Client = createS3Client();
-        s3Client.createBucket(SPILL_BUCKET_NAME);
-        s3Client.shutdown();
+        createBucket(SPILL_BUCKET_NAME);
     }
 
     @BeforeEach
     public void createInstance() throws IOException {
-        this.instanceProperties = TestUtils.createInstance(s3Client, dynamoClient,
+        this.instanceProperties = TestUtils.createInstance(S3_CLIENT, DYNAMO_CLIENT,
                 createTempDirectory(tempDir, null).toString());
-        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf);
-    }
-
-    @AfterEach
-    void tearDown() {
-        s3Client.shutdown();
-        dynamoClient.shutdown();
+        this.stateStoreFactory = new StateStoreFactory(instanceProperties, S3_CLIENT, DYNAMO_CLIENT, HADOOP_CONF);
     }
 
     protected InstanceProperties getInstanceProperties() {
@@ -105,21 +92,17 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     protected TableProperties createTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties, initialSplits);
-        TestUtils.ingestData(s3Client, dynamoClient, createTempDirectory(tempDir, null).toString(),
+        TestUtils.ingestData(S3_CLIENT, DYNAMO_CLIENT, createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, SCHEMA, dynamoClient, s3Client, hadoopConf, initialSplits);
+        return TestUtils.createTable(instanceProperties, SCHEMA, DYNAMO_CLIENT, S3_CLIENT, HADOOP_CONF, initialSplits);
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, schema, dynamoClient, s3Client, hadoopConf, initialSplits);
-    }
-
-    private static AmazonS3 createS3Client() {
-        return buildAwsV1Client(CONTAINER, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+        return TestUtils.createTable(instanceProperties, schema, DYNAMO_CLIENT, S3_CLIENT, HADOOP_CONF, initialSplits);
     }
 
     protected static org.apache.arrow.vector.types.pojo.Schema createArrowSchema() {

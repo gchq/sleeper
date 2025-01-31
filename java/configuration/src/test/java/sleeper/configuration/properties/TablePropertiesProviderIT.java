@@ -29,7 +29,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesProviderIT extends TablePropertiesITBase {
 
-    private final TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+    private final TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, S3_CLIENT, DYNAMO_CLIENT);
 
     @Test
     void shouldLoadByName() {
@@ -76,7 +76,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     @Test
     void shouldThrowExceptionWhenTableExistsInIndexButNotConfigBucket() {
         // Given
-        new DynamoDBTableIndex(instanceProperties, dynamoClient)
+        new DynamoDBTableIndex(instanceProperties, DYNAMO_CLIENT)
                 .create(tableProperties.getStatus());
 
         // When / Then
@@ -88,7 +88,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     void shouldNotLoadByIdWhenNotInIndex() {
         // Given
         store.save(tableProperties);
-        new DynamoDBTableIndex(instanceProperties, dynamoClient)
+        new DynamoDBTableIndex(instanceProperties, DYNAMO_CLIENT)
                 .delete(tableProperties.getStatus());
 
         // When / Then

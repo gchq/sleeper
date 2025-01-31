@@ -128,7 +128,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             FileReference file = fileFactory(tree).rootFile("test.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             String key = TransactionBodyStore.createObjectKey(tableProperties);
-            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
+            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, S3_CLIENT, TransactionSerDeProvider.forOneTable(tableProperties));
 
             // When
             transactionBodyStore.store(key, tableProperties.get(TABLE_ID), transaction);
@@ -281,11 +281,11 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     tableProperties.getStatus(), tableProperties.getSchema(), setupState);
 
             DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
-                    instanceProperties, tableProperties, dynamoClient);
+                    instanceProperties, tableProperties, DYNAMO_CLIENT);
             new DynamoDBTransactionLogSnapshotCreator(
                     instanceProperties, tableProperties,
                     snapshotSetup.getFilesLog(), snapshotSetup.getPartitionsLog(), snapshotSetup.getTransactionBodyStore(),
-                    hadoopConf, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot)
+                    HADOOP_CONF, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot)
                     .createSnapshot();
         }
     }
@@ -295,7 +295,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     }
 
     private StateStoreFactory stateStoreFactory() {
-        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf);
+        return new StateStoreFactory(instanceProperties, S3_CLIENT, DYNAMO_CLIENT, HADOOP_CONF);
     }
 
     private FileReferenceFactory fileFactory(PartitionTree tree) {

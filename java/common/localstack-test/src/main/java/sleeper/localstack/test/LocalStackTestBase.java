@@ -49,25 +49,25 @@ public abstract class LocalStackTestBase {
 
     protected static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(Service.S3, Service.DYNAMODB, Service.SQS);
 
-    protected final AmazonS3 s3Client = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
-    protected final AmazonDynamoDB dynamoClient = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    protected final AmazonSQS sqsClient = buildAwsV1Client(CONTAINER, Service.SQS, AmazonSQSClientBuilder.standard());
-    protected final S3Client s3ClientV2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
-    protected final DynamoDbClient dynamoClientV2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
-    protected final SqsClient sqsClientV2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
-    protected final Configuration hadoopConf = getHadoopConfiguration(CONTAINER);
+    protected static final AmazonS3 S3_CLIENT = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
+    protected static final AmazonDynamoDB DYNAMO_CLIENT = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    protected static final AmazonSQS SQS_CLIENT = buildAwsV1Client(CONTAINER, Service.SQS, AmazonSQSClientBuilder.standard());
+    protected static final S3Client S3_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
+    protected static final DynamoDbClient DYNAMO_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
+    protected static final SqsClient SQS_CLIENT_V2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
+    protected static final Configuration HADOOP_CONF = getHadoopConfiguration(CONTAINER);
 
-    protected void createBucket(String bucketName) {
-        s3ClientV2.createBucket(builder -> builder.bucket(bucketName));
+    protected static void createBucket(String bucketName) {
+        S3_CLIENT_V2.createBucket(builder -> builder.bucket(bucketName));
     }
 
-    protected PutObjectResponse putObject(String bucketName, String key, String content) {
-        return s3ClientV2.putObject(builder -> builder.bucket(bucketName).key(key),
+    protected static PutObjectResponse putObject(String bucketName, String key, String content) {
+        return S3_CLIENT_V2.putObject(builder -> builder.bucket(bucketName).key(key),
                 RequestBody.fromString(content));
     }
 
-    protected List<String> listObjectKeys(String bucketName) {
-        return s3ClientV2.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
+    protected static List<String> listObjectKeys(String bucketName) {
+        return S3_CLIENT_V2.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
                 .contents().stream().map(S3Object::key)
                 .collect(toUnmodifiableList());
     }

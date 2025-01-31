@@ -74,8 +74,8 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, sqsClient.createQueue(new CreateQueueRequest()
+        S3_CLIENT.createBucket(instanceProperties.get(DATA_BUCKET));
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, SQS_CLIENT.createQueue(new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
                 .withAttributes(Map.of("FifoQueue", "true")))
                 .getQueueUrl());
@@ -117,7 +117,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     void shouldSendCommitWithTooManyFilesForSqs() throws Exception {
         // Given
         instanceProperties.set(DATA_BUCKET, "test-data-bucket-" + UUID.randomUUID().toString());
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
+        S3_CLIENT.createBucket(instanceProperties.get(DATA_BUCKET));
         FileReferenceFactory factory = FileReferenceFactory.forSinglePartition("root", tableProperties);
         List<FileReference> fileReferences = IntStream.range(0, 1350)
                 .mapToObj(i -> factory.rootFile("s3a://test-data-bucket/test-table/data/partition_root/test-file" + i + ".parquet", 100L))
@@ -146,7 +146,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     private StateStoreCommitRequestSender senderWithMaxTransactionBytes(int maxBytes) {
         TransactionSerDeProvider serDeProvider = TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties));
         return new SqsFifoStateStoreCommitRequestSender(
-                instanceProperties, sqsClient, s3Client, serDeProvider, maxBytes, timeSupplier, idSupplier);
+                instanceProperties, SQS_CLIENT, S3_CLIENT, serDeProvider, maxBytes, timeSupplier, idSupplier);
     }
 
     private List<StateStoreCommitRequest> receiveCommitRequests() {
@@ -159,7 +159,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMaxNumberOfMessages(10);
-        return sqsClient.receiveMessage(receiveMessageRequest);
+        return SQS_CLIENT.receiveMessage(receiveMessageRequest);
     }
 
     private StateStoreCommitRequest readCommitRequest(Message message) {
@@ -167,7 +167,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     }
 
     private StateStoreTransaction<?> readTransaction(String key, TransactionType transactionType) {
-        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties))
+        return new S3TransactionBodyStore(instanceProperties, S3_CLIENT, TransactionSerDeProvider.forOneTable(tableProperties))
                 .getBody(key, tableId, transactionType);
     }
 
