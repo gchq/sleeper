@@ -15,8 +15,6 @@
  */
 package sleeper.invoke.tables;
 
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
@@ -28,8 +26,6 @@ import sleeper.core.table.TableNotFoundException;
 import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -118,13 +114,6 @@ public class InvokeForTablesIT extends LocalStackTestBase {
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(receiveTableIdMessages(queueUrl, 10))
                 .isEmpty();
-    }
-
-    private String createFifoQueueGetUrl() {
-        CreateQueueResult result = sqsClient.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true")));
-        return result.getQueueUrl();
     }
 
     private List<String> receiveTableIdMessages(String queueUrl, int maxMessages) {
