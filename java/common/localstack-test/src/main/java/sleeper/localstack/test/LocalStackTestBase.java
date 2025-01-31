@@ -22,9 +22,20 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.sqs.SqsClient;
 
+import java.util.List;
+
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * A base class for tests to run against LocalStack.
@@ -32,10 +43,28 @@ import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Clie
 @Testcontainers
 public abstract class LocalStackTestBase {
 
-    private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(Service.S3, Service.DYNAMODB, Service.SQS);
 
-    protected final AmazonS3 s3Client = buildAwsV1Client(CONTAINER, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    protected final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(CONTAINER, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    protected final AmazonSQS sqsClient = buildAwsV1Client(CONTAINER, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
+    protected final AmazonS3 s3Client = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
+    protected final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    protected final AmazonSQS sqsClient = buildAwsV1Client(CONTAINER, Service.SQS, AmazonSQSClientBuilder.standard());
+    protected final S3Client s3ClientV2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
+    protected final DynamoDbClient dynamoDbClientV2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
+    protected final SqsClient sqsClientV2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
+
+    protected void createBucket(String bucketName) {
+        s3ClientV2.createBucket(builder -> builder.bucket(bucketName));
+    }
+
+    protected PutObjectResponse putObject(String bucketName, String key, String content) {
+        return s3ClientV2.putObject(builder -> builder.bucket(bucketName).key(key),
+                RequestBody.fromString(content));
+    }
+
+    protected List<String> listObjectKeys(String bucketName) {
+        return s3ClientV2.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
+                .contents().stream().map(S3Object::key)
+                .collect(toUnmodifiableList());
+    }
 
 }
