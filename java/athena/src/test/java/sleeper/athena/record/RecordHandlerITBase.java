@@ -17,20 +17,15 @@ package sleeper.athena.record;
 
 import com.amazonaws.athena.connector.lambda.data.Block;
 import com.amazonaws.athena.connector.lambda.data.SchemaBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.arrow.vector.complex.reader.FieldReader;
 import org.apache.arrow.vector.types.Types;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.athena.TestUtils;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -42,7 +37,7 @@ import sleeper.core.schema.type.ListType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.MapType;
 import sleeper.core.schema.type.StringType;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -51,13 +46,9 @@ import java.nio.file.Path;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
-@Testcontainers
-public abstract class AbstractRecordHandlerIT {
+public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
     // For storing data
     @TempDir
     public static Path tempDir;
@@ -77,9 +68,6 @@ public abstract class AbstractRecordHandlerIT {
             .build();
     protected static final String SPILL_BUCKET_NAME = "spillbucket";
     protected static final String MIN_VALUE = Integer.toString(Integer.MIN_VALUE);
-    protected final AmazonS3 s3Client = createS3Client();
-    protected final AmazonDynamoDB dynamoClient = createDynamoClient();
-    protected final Configuration configuration = getHadoopConfiguration(localStackContainer);
     protected StateStoreFactory stateStoreFactory;
     private InstanceProperties instanceProperties;
 
@@ -94,7 +82,7 @@ public abstract class AbstractRecordHandlerIT {
     public void createInstance() throws IOException {
         this.instanceProperties = TestUtils.createInstance(s3Client, dynamoClient,
                 createTempDirectory(tempDir, null).toString());
-        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration);
+        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf);
     }
 
     @AfterEach
@@ -123,19 +111,15 @@ public abstract class AbstractRecordHandlerIT {
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, SCHEMA, dynamoClient, s3Client, configuration, initialSplits);
+        return TestUtils.createTable(instanceProperties, SCHEMA, dynamoClient, s3Client, hadoopConf, initialSplits);
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, schema, dynamoClient, s3Client, configuration, initialSplits);
+        return TestUtils.createTable(instanceProperties, schema, dynamoClient, s3Client, hadoopConf, initialSplits);
     }
 
-    protected static AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
-    protected static AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+    private static AmazonS3 createS3Client() {
+        return buildAwsV1Client(CONTAINER, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     }
 
     protected static org.apache.arrow.vector.types.pojo.Schema createArrowSchema() {

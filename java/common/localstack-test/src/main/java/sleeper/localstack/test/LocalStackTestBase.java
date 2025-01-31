@@ -47,7 +47,7 @@ import static sleeper.localstack.test.LocalStackHadoopConfigurationProvider.getH
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public abstract class LocalStackTestBase {
 
-    private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(Service.S3, Service.DYNAMODB, Service.SQS);
+    protected static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(Service.S3, Service.DYNAMODB, Service.SQS);
 
     protected final AmazonS3 s3Client = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
     protected final AmazonDynamoDB dynamoClient = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
