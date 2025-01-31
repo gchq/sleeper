@@ -16,6 +16,8 @@
 package sleeper.localstack.test;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
@@ -29,25 +31,21 @@ import java.net.UnknownHostException;
  * A helper class to create test containers to run LocalStack.
  */
 public class SleeperLocalStackContainer {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SleeperLocalStackContainer.class);
     public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:4.0.3";
 
     private SleeperLocalStackContainer() {
     }
 
-    public static final LocalStackContainer INSTANCE = start(Service.S3, Service.DYNAMODB, Service.SQS, Service.STS, Service.CLOUDWATCH);
+    public static final LocalStackContainer INSTANCE = start();
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
-    public static LocalStackContainer create(LocalStackContainer.Service... services) {
-        return new LocalStackContainer(DockerImageName.parse(LOCALSTACK_DOCKER_IMAGE))
-                .withServices(services)
-                .withEnv("LOCALSTACK_HOST", getHostAddress());
-    }
-
-    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
-    public static LocalStackContainer start(LocalStackContainer.Service... services) {
+    private static LocalStackContainer start() {
         LocalStackContainer container = new LocalStackContainer(DockerImageName.parse(LOCALSTACK_DOCKER_IMAGE))
-                .withServices(services)
-                .withEnv("LOCALSTACK_HOST", getHostAddress());
+                .withServices(Service.S3, Service.DYNAMODB, Service.SQS, Service.STS, Service.CLOUDWATCH)
+                .withEnv("LOCALSTACK_HOST", getHostAddress())
+                .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()))
+                .withEnv("DEBUG", "1");
         container.start();
         return container;
     }

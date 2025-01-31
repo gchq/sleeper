@@ -16,7 +16,6 @@
 package sleeper.systemtest.drivers.testutil;
 
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.systemtest.dsl.extension.SleeperSystemTestExtension;
@@ -25,7 +24,7 @@ import sleeper.systemtest.dsl.testutil.SystemTestParametersTestHelper;
 
 public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
-    public static final LocalStackContainer CONTAINER = startContainer();
+    private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.INSTANCE;
     private static final SystemTestDeploymentContext CONTEXT = new SystemTestDeploymentContext(
             SystemTestParametersTestHelper.parametersBuilder()
                     .shortTestId("localstack")
@@ -35,13 +34,6 @@ public class LocalStackSystemTestExtension extends SleeperSystemTestExtension {
 
     private LocalStackSystemTestExtension() {
         super(CONTEXT);
-    }
-
-    @SuppressWarnings("resource") // Will be cleaned up by Ryuk
-    private static LocalStackContainer startContainer() {
-        LocalStackContainer container = SleeperLocalStackContainer.create(Service.S3, Service.DYNAMODB, Service.SQS);
-        container.start();
-        return container;
     }
 
 }

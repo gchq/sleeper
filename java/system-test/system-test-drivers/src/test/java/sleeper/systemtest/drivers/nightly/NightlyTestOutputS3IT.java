@@ -15,17 +15,14 @@
  */
 package sleeper.systemtest.drivers.nightly;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.io.CharStreams;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 
-import sleeper.systemtest.drivers.testutil.LocalStackSystemTestExtension;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -39,23 +36,17 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.systemtest.drivers.nightly.NightlyTestOutputTestHelper.outputWithStatusCodeByTest;
 
-class NightlyTestOutputS3IT {
+class NightlyTestOutputS3IT extends LocalStackTestBase {
 
-    private final AmazonS3 s3Client = createS3Client();
     private final String bucketName = UUID.randomUUID().toString();
     @TempDir
     private Path tempDir;
 
     @BeforeEach
     public void setup() {
-        s3Client.createBucket(bucketName);
-    }
-
-    private AmazonS3 createS3Client() {
-        return buildAwsV1Client(LocalStackSystemTestExtension.CONTAINER, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+        createBucket(bucketName);
     }
 
     @Test
