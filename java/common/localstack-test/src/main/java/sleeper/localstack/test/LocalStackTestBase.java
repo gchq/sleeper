@@ -42,9 +42,7 @@ import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT_V2;
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public abstract class LocalStackTestBase {
 
-    public static final AmazonSQS SQS_CLIENT = SleeperLocalStackClients.SQS_CLIENT;
     public static final S3AsyncClient S3_ASYNC_CLIENT = SleeperLocalStackClients.S3_ASYNC_CLIENT;
-    public static final SqsClient SQS_CLIENT_V2 = SleeperLocalStackClients.SQS_CLIENT_V2;
     public static final Configuration HADOOP_CONF = SleeperLocalStackClients.HADOOP_CONF;
 
     protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
