@@ -15,8 +15,6 @@
  */
 package sleeper.compaction.job.creation;
 
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
@@ -50,7 +48,6 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -180,13 +177,6 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         return instanceProperties;
-    }
-
-    private String createFifoQueueGetUrl() {
-        CreateQueueResult result = sqsClient.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true")));
-        return result.getQueueUrl();
     }
 
     private StateStore createAndInitialiseStateStore(TableProperties tableProperties) {

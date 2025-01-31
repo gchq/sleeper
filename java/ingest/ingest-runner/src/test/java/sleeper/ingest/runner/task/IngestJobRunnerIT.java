@@ -15,8 +15,6 @@
  */
 package sleeper.ingest.runner.task;
 
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import org.apache.hadoop.fs.FileSystem;
@@ -58,7 +56,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -346,13 +343,6 @@ class IngestJobRunnerIT extends LocalStackTestBase {
 
     private void fixTimes(Instant... times) {
         timeSupplier = List.of(times).iterator()::next;
-    }
-
-    private String createFifoQueueGetUrl() {
-        CreateQueueResult result = sqsClient.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true")));
-        return result.getQueueUrl();
     }
 
     private TableProperties createTableProperties(Schema schema) {
