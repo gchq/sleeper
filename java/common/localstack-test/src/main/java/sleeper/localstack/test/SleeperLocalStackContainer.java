@@ -34,7 +34,7 @@ public class SleeperLocalStackContainer {
     private SleeperLocalStackContainer() {
     }
 
-    public static final LocalStackContainer INSTANCE = start(Service.S3, Service.DYNAMODB, Service.SQS, Service.STS);
+    public static final LocalStackContainer INSTANCE = start(Service.S3, Service.DYNAMODB, Service.SQS, Service.STS, Service.CLOUDWATCH);
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     public static LocalStackContainer create(LocalStackContainer.Service... services) {
