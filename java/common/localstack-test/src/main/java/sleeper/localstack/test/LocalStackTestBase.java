@@ -21,6 +21,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -41,6 +42,7 @@ import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Clie
  * A base class for tests to run against LocalStack.
  */
 @Testcontainers
+@SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public abstract class LocalStackTestBase {
 
     private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.start(Service.S3, Service.DYNAMODB, Service.SQS);
