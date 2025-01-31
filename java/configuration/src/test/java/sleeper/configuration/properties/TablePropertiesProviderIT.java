@@ -19,7 +19,6 @@ package sleeper.configuration.properties;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.configuration.testutils.TablePropertiesITBase;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableNotFoundException;
