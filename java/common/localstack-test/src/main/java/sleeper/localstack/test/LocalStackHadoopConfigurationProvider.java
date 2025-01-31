@@ -20,6 +20,9 @@ import org.testcontainers.containers.localstack.LocalStackContainer;
 
 public class LocalStackHadoopConfigurationProvider {
 
+    private LocalStackHadoopConfigurationProvider() {
+    }
+
     /**
      * Only use one Hadoop configuration from here at once if your code uses the Hadoop file system, for example if you
      * write Parquet files to S3A. The Hadoop FileSystem caches the S3AFileSystem objects which actually communicate
