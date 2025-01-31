@@ -97,7 +97,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithUnrecognisedType() throws Exception {
         // Given
-        DYNAMO_CLIENT.putItem(new PutItemRequest()
+        dynamoClient.putItem(new PutItemRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
@@ -114,7 +114,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithRecognisedTypeButInvalidJson() throws Exception {
         // Given
-        DYNAMO_CLIENT.putItem(new PutItemRequest()
+        dynamoClient.putItem(new PutItemRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
@@ -267,11 +267,11 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private TransactionLogStore fileLogStore() {
-        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, DYNAMO_CLIENT, s3Client);
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
     }
 
     private TransactionLogStore partitionLogStore() {
-        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, DYNAMO_CLIENT, s3Client);
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
     }
 
     private String singleFileInDataBucket() {

@@ -67,7 +67,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         String file = stateStore.getFileReferences().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, DYNAMO_CLIENT,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -112,7 +112,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         String file = stateStore.getFileReferences().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, DYNAMO_CLIENT,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -160,7 +160,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 .orElseThrow(RuntimeException::new);
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, DYNAMO_CLIENT,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -210,7 +210,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 .orElseThrow(RuntimeException::new);
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, DYNAMO_CLIENT,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -254,7 +254,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
         String file = stateStore.getFileReferences().get(0).getFilename();
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, DYNAMO_CLIENT,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 
@@ -307,7 +307,7 @@ public class SimpleRecordHandlerIT extends RecordHandlerITBase {
                 .orElseThrow(RuntimeException::new);
 
         SimpleRecordHandler sleeperRecordHandler = new SimpleRecordHandler(
-                s3Client, DYNAMO_CLIENT,
+                s3Client, dynamoClient,
                 instanceProperties.get(CONFIG_BUCKET),
                 mock(AWSSecretsManager.class), mock(AmazonAthena.class));
 

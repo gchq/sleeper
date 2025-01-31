@@ -107,7 +107,7 @@ public class S3FileReferenceStoreS3SpecificIT extends S3StateStoreOneTableTestBa
     }
 
     private String getCurrentFilesRevision() {
-        S3RevisionIdStore revisionStore = new S3RevisionIdStore(DYNAMO_CLIENT, instanceProperties, tableProperties);
+        S3RevisionIdStore revisionStore = new S3RevisionIdStore(dynamoClient, instanceProperties, tableProperties);
         return revisionStore.getCurrentFilesRevisionId().getRevision();
     }
 

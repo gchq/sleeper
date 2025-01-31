@@ -33,7 +33,7 @@ public class TransactionLogStateStoreTestBase extends LocalStackTestBase {
 
     @BeforeEach
     void setUpBase() {
-        new TransactionLogStateStoreCreator(instanceProperties, DYNAMO_CLIENT).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
@@ -49,6 +49,6 @@ public class TransactionLogStateStoreTestBase extends LocalStackTestBase {
     }
 
     protected TransactionLogStateStore.Builder stateStoreBuilder(TableProperties tableProperties) {
-        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, DYNAMO_CLIENT, s3Client, HADOOP_CONF);
+        return DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoClient, s3Client, HADOOP_CONF);
     }
 }

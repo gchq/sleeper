@@ -48,7 +48,7 @@ public class S3StateStoreOneTableTestBase extends S3StateStoreTestBase {
 
     private void createStore(Schema schema) {
         tableProperties.setSchema(schema);
-        store = new S3StateStore(instanceProperties, tableProperties, DYNAMO_CLIENT, new Configuration());
+        store = new S3StateStore(instanceProperties, tableProperties, dynamoClient, new Configuration());
         store.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
     }
 

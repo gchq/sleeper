@@ -73,9 +73,9 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     @BeforeEach
     public void createInstance() throws IOException {
-        this.instanceProperties = TestUtils.createInstance(s3Client, DYNAMO_CLIENT,
+        this.instanceProperties = TestUtils.createInstance(s3Client, dynamoClient,
                 createTempDirectory(tempDir, null).toString());
-        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, DYNAMO_CLIENT, HADOOP_CONF);
+        this.stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, HADOOP_CONF);
     }
 
     protected InstanceProperties getInstanceProperties() {
@@ -92,17 +92,17 @@ public abstract class RecordHandlerITBase extends LocalStackTestBase {
 
     protected TableProperties createTable(InstanceProperties instanceProperties, Object... initialSplits) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties, initialSplits);
-        TestUtils.ingestData(s3Client, DYNAMO_CLIENT, createTempDirectory(tempDir, null).toString(),
+        TestUtils.ingestData(s3Client, dynamoClient, createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, SCHEMA, DYNAMO_CLIENT, s3Client, HADOOP_CONF, initialSplits);
+        return TestUtils.createTable(instanceProperties, SCHEMA, dynamoClient, s3Client, HADOOP_CONF, initialSplits);
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties, Schema schema, Object... initialSplits) {
-        return TestUtils.createTable(instanceProperties, schema, DYNAMO_CLIENT, s3Client, HADOOP_CONF, initialSplits);
+        return TestUtils.createTable(instanceProperties, schema, dynamoClient, s3Client, HADOOP_CONF, initialSplits);
     }
 
     protected static org.apache.arrow.vector.types.pojo.Schema createArrowSchema() {
