@@ -18,6 +18,7 @@ package sleeper.localstack.test;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.utility.DockerImageName;
 
 import java.io.UncheckedIOException;
@@ -31,6 +32,12 @@ public class SleeperLocalStackContainer {
     public static final String LOCALSTACK_DOCKER_IMAGE = "localstack/localstack:4.0.3";
 
     private SleeperLocalStackContainer() {
+    }
+
+    private static final LocalStackContainer INSTANCE = start(Service.S3, Service.DYNAMODB, Service.SQS, Service.STS);
+
+    public static LocalStackContainer getInstance() {
+        return INSTANCE;
     }
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")

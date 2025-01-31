@@ -47,7 +47,7 @@ public abstract class JarsBucketITBase extends LocalStackTestBase {
         return SyncJars.builder()
                 .s3(S3_CLIENT_V2)
                 .jarsDirectory(tempDir)
-                .region(CONTAINER.getRegion())
+                .region(localStackContainer.getRegion())
                 .bucketName(bucketName)
                 .deleteOldJars(deleteOld)
                 .build().sync();
