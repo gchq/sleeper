@@ -569,7 +569,7 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, HADOOP_CONF);
         StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
-                properties, SQS_CLIENT, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
+                properties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
         BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                 runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
                 tablePropertiesProvider, stateStoreProvider, tracker, commitSender, timeSupplier);

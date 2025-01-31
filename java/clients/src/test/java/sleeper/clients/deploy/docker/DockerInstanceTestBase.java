@@ -49,7 +49,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
     }
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
-        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoClient).sqsClient(SQS_CLIENT_V2)
+        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoClient).sqsClient(sqsClientV2)
                 .configuration(HADOOP_CONF).extraTableProperties(extraProperties)
                 .build().deploy(instanceId);
     }
@@ -66,7 +66,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
     }
 
     protected IngestJob receiveIngestJob(String queueUrl) {
-        List<Message> messages = SQS_CLIENT_V2.receiveMessage(request -> request.queueUrl(queueUrl)).messages();
+        List<Message> messages = sqsClientV2.receiveMessage(request -> request.queueUrl(queueUrl)).messages();
         if (messages.size() != 1) {
             throw new IllegalStateException("Expected to receive one message, found: " + messages);
         }
@@ -75,7 +75,7 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
     }
 
     protected IngestJob receiveIngestJobV1(String queueUrl) {
-        List<com.amazonaws.services.sqs.model.Message> messages = SQS_CLIENT.receiveMessage(queueUrl).getMessages();
+        List<com.amazonaws.services.sqs.model.Message> messages = sqsClient.receiveMessage(queueUrl).getMessages();
         if (messages.size() != 1) {
             throw new IllegalStateException("Expected to receive one message, found: " + messages);
         }
