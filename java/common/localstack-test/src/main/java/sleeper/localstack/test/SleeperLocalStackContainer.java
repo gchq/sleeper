@@ -40,6 +40,7 @@ public class SleeperLocalStackContainer {
                 .withEnv("LOCALSTACK_HOST", getHostAddress());
     }
 
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     public static LocalStackContainer start(LocalStackContainer.Service... services) {
         LocalStackContainer container = new LocalStackContainer(DockerImageName.parse(LOCALSTACK_DOCKER_IMAGE))
                 .withServices(services)
