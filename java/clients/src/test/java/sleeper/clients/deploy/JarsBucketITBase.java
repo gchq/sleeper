@@ -45,7 +45,7 @@ public abstract class JarsBucketITBase extends LocalStackTestBase {
 
     protected boolean syncJarsToBucket(String bucketName, boolean deleteOld) throws IOException {
         return SyncJars.builder()
-                .s3(S3_CLIENT_V2)
+                .s3(s3ClientV2)
                 .jarsDirectory(tempDir)
                 .region(localStackContainer.getRegion())
                 .bucketName(bucketName)
@@ -54,17 +54,17 @@ public abstract class JarsBucketITBase extends LocalStackTestBase {
     }
 
     protected Stream<String> listObjectKeys() {
-        return S3_CLIENT_V2.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
+        return s3ClientV2.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
                 .flatMap(response -> response.contents().stream())
                 .map(S3Object::key);
     }
 
     protected Instant getObjectLastModified(String key) {
-        return S3_CLIENT_V2.headObject(builder -> builder.bucket(bucketName).key(key)).lastModified();
+        return s3ClientV2.headObject(builder -> builder.bucket(bucketName).key(key)).lastModified();
     }
 
     protected String getObjectContents(String key) {
-        return S3_CLIENT_V2.getObject(builder -> builder.bucket(bucketName).key(key),
+        return s3ClientV2.getObject(builder -> builder.bucket(bucketName).key(key),
                 (metadata, inputStream) -> CharStreams.toString(new InputStreamReader(inputStream)));
     }
 }

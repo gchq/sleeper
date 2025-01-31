@@ -267,11 +267,11 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private TransactionLogStore fileLogStore() {
-        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, DYNAMO_CLIENT, S3_CLIENT);
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, DYNAMO_CLIENT, s3Client);
     }
 
     private TransactionLogStore partitionLogStore() {
-        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, DYNAMO_CLIENT, S3_CLIENT);
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, DYNAMO_CLIENT, s3Client);
     }
 
     private String singleFileInDataBucket() {
@@ -284,7 +284,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private List<String> filesInDataBucket() {
-        return S3_CLIENT.listObjects(new ListObjectsRequest()
+        return s3Client.listObjects(new ListObjectsRequest()
                 .withBucketName(instanceProperties.get(DATA_BUCKET))
                 .withPrefix(tableProperties.get(TableProperty.TABLE_ID)))
                 .getObjectSummaries().stream()

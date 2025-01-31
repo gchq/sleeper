@@ -128,7 +128,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             FileReference file = fileFactory(tree).rootFile("test.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             String key = TransactionBodyStore.createObjectKey(tableProperties);
-            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, S3_CLIENT, TransactionSerDeProvider.forOneTable(tableProperties));
+            TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
 
             // When
             transactionBodyStore.store(key, tableProperties.get(TABLE_ID), transaction);
@@ -295,7 +295,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     }
 
     private StateStoreFactory stateStoreFactory() {
-        return new StateStoreFactory(instanceProperties, S3_CLIENT, DYNAMO_CLIENT, HADOOP_CONF);
+        return new StateStoreFactory(instanceProperties, s3Client, DYNAMO_CLIENT, HADOOP_CONF);
     }
 
     private FileReferenceFactory fileFactory(PartitionTree tree) {

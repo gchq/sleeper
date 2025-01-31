@@ -45,7 +45,7 @@ public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
     public void shouldCreateSplitForEachFileInAPartition() throws Exception {
         // Given
         InstanceProperties instance = createInstance();
-        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(S3_CLIENT, DYNAMO_CLIENT,
+        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(s3Client, DYNAMO_CLIENT,
                 instance.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
                 mock(AmazonAthena.class), "abc", "def");
 
@@ -68,7 +68,7 @@ public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
     public void shouldOnlyCreateOneSplitForEachFileAcrossMultiplePartitions() throws Exception {
         // Given
         InstanceProperties instance = createInstance();
-        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(S3_CLIENT, DYNAMO_CLIENT,
+        SimpleMetadataHandler simpleMetadataHandler = new SimpleMetadataHandler(s3Client, DYNAMO_CLIENT,
                 instance.get(CONFIG_BUCKET), mock(EncryptionKeyFactory.class), mock(AWSSecretsManager.class),
                 mock(AmazonAthena.class), "abc", "def");
 

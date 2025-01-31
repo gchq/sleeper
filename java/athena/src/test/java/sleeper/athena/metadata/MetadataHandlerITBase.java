@@ -67,18 +67,18 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
     }
 
     protected InstanceProperties createInstance() throws IOException {
-        return TestUtils.createInstance(S3_CLIENT, DYNAMO_CLIENT,
+        return TestUtils.createInstance(s3Client, DYNAMO_CLIENT,
                 createTempDirectory(tempDir, null).toString());
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {
         return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA,
-                DYNAMO_CLIENT, S3_CLIENT, HADOOP_CONF, 2018, 2019, 2020);
+                DYNAMO_CLIENT, s3Client, HADOOP_CONF, 2018, 2019, 2020);
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties);
-        TestUtils.ingestData(S3_CLIENT, DYNAMO_CLIENT, createTempDirectory(tempDir, null).toString(),
+        TestUtils.ingestData(s3Client, DYNAMO_CLIENT, createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }

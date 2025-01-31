@@ -45,13 +45,13 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
         // Given
         String instanceId = UUID.randomUUID().toString().substring(0, 18);
         deployInstance(instanceId);
-        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(S3_CLIENT, instanceId);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
         Path filePath = tempDir.resolve("test-file.parquet");
         Files.writeString(filePath, "abc");
 
         // When
-        SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, "system-test", List.of(filePath), S3_CLIENT, SQS_CLIENT_V2);
+        SendFilesToIngest.uploadFilesAndSendJob(instanceProperties, "system-test", List.of(filePath), s3Client, SQS_CLIENT_V2);
 
         // Then
         assertThat(getObjectContents(instanceProperties.get(DATA_BUCKET), "ingest/test-file.parquet"))
@@ -64,6 +64,6 @@ public class SendFilesToIngestIT extends DockerInstanceTestBase {
     }
 
     private String getObjectContents(String bucketName, String key) throws IOException {
-        return CharStreams.toString(new InputStreamReader(S3_CLIENT.getObject(bucketName, key).getObjectContent()));
+        return CharStreams.toString(new InputStreamReader(s3Client.getObject(bucketName, key).getObjectContent()));
     }
 }
