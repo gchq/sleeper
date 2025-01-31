@@ -15,11 +15,8 @@
  */
 package sleeper.clients.deploy;
 
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 import software.amazon.awssdk.regions.Region;
 
 import sleeper.core.deploy.PopulateInstanceProperties;
@@ -39,11 +36,8 @@ import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION
 import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 public class PopulateInstancePropertiesAwsIT extends LocalStackTestBase {
-
-    private final AWSSecurityTokenService sts = buildAwsV1Client(CONTAINER, LocalStackContainer.Service.STS, AWSSecurityTokenServiceClientBuilder.standard());
 
     @Test
     void shouldPopulateInstancePropertiesCorrectly() {
@@ -62,14 +56,14 @@ public class PopulateInstancePropertiesAwsIT extends LocalStackTestBase {
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
-        expected.set(ACCOUNT, sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
-        expected.set(REGION, CONTAINER.getRegion());
+        expected.set(ACCOUNT, stsClient.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
+        expected.set(REGION, localStackContainer.getRegion());
 
         assertThat(properties).isEqualTo(expected);
     }
 
     private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
-        return PopulateInstancePropertiesAws.builder(sts, () -> Region.of(CONTAINER.getRegion()))
+        return PopulateInstancePropertiesAws.builder(stsClient, () -> Region.of(localStackContainer.getRegion()))
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 }

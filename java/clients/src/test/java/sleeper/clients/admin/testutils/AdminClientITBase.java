@@ -30,7 +30,7 @@ import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.task.common.QueueMessageCount;
 
 import java.nio.file.Path;
@@ -42,8 +42,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public abstract class AdminClientITBase extends AdminClientTestBase {
 
-    protected final AmazonS3 s3 = LocalStackTestBase.S3_CLIENT;
-    protected final AmazonDynamoDB dynamoDB = LocalStackTestBase.DYNAMO_CLIENT;
+    protected final AmazonS3 s3 = SleeperLocalStackClients.S3_CLIENT;
+    protected final AmazonDynamoDB dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
     protected final UploadDockerImages uploadDockerImages = mock(UploadDockerImages.class);
     protected TablePropertiesStore tablePropertiesStore;
