@@ -82,7 +82,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenDynamoStateStoreExists() throws IOException {
         // Given
-        new DynamoDBStateStoreCreator(instanceProperties, DYNAMO_CLIENT).create();
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
         setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBStateStore.class.getName());
 
         // When
@@ -94,7 +94,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenS3StateStoreExists() throws IOException {
         // Given
-        new S3StateStoreCreator(instanceProperties, DYNAMO_CLIENT).create();
+        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
         setupTablesPropertiesFile(temporaryFolder, "example-table", S3StateStore.class.getName());
 
         // When
@@ -106,7 +106,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenTransactionLogStateStoreExists() throws IOException {
         // Given
-        new DynamoDBStateStoreCreator(instanceProperties, DYNAMO_CLIENT).create();
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
         setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBTransactionLogStateStore.class.getName());
 
         // When
@@ -118,6 +118,6 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     private void validate() throws IOException {
         Path instancePropertiesPath = temporaryFolder.resolve("instance.properties");
         Files.writeString(instancePropertiesPath, instanceProperties.saveAsString());
-        new NewInstanceValidator(s3ClientV2, DYNAMO_CLIENT_V2).validate(instanceProperties, instancePropertiesPath);
+        new NewInstanceValidator(s3ClientV2, dynamoClientV2).validate(instanceProperties, instancePropertiesPath);
     }
 }

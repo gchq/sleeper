@@ -81,9 +81,9 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         // Make query
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, DYNAMO_CLIENT, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<String> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() >= 2020)
@@ -131,8 +131,8 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         // Make query
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, DYNAMO_CLIENT, HADOOP_CONF).getStateStore(table);
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() <= 2018)
@@ -181,9 +181,9 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         // Make query
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, DYNAMO_CLIENT, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -233,9 +233,9 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         // Make query
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, DYNAMO_CLIENT, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -282,9 +282,9 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         // Make query
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, DYNAMO_CLIENT, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .map(Partition::getId)
@@ -330,7 +330,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         String tableName = createEmptyTable(instance).get(TABLE_NAME);
 
         // When
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         GetTableResponse getTableResponse = sleeperMetadataHandler.doGetTable(new BlockAllocatorImpl(),
                 new GetTableRequest(TestUtils.createIdentity(), "abc", "def", new TableName("unused", tableName)));
@@ -355,9 +355,9 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
 
         // When
         // Make query
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, DYNAMO_CLIENT, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
         Map<String, List<String>> partitionToFiles = stateStore.getPartitionToReferencedFilesMap();
         List<List<String>> relevantFiles = stateStore.getLeafPartitions().stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == Integer.MIN_VALUE || (Integer) p.getRegion().getRange("year").getMin() == 2019)
@@ -405,7 +405,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         InstanceProperties instance = createInstance();
 
         // When
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         ListSchemasResponse listSchemasResponse = sleeperMetadataHandler.doListSchemaNames(new BlockAllocatorImpl(), new ListSchemasRequest(TestUtils.createIdentity(), "abc", "def"));
 
@@ -422,7 +422,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         String table3 = createEmptyTable(instance).get(TABLE_NAME);
 
         // When
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         ListTablesResponse listTablesResponse = sleeperMetadataHandler.doListTables(new BlockAllocatorImpl(),
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", "next", -1));
@@ -442,7 +442,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         String table2 = createEmptyTable(instance).get(TABLE_NAME);
 
         // When
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         ListTablesResponse listTablesResponse = sleeperMetadataHandler.doListTables(new BlockAllocatorImpl(),
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", null, 1));
@@ -466,7 +466,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         List<String> sorted = Lists.newArrayList(table1, table2).stream().sorted().collect(Collectors.toList());
 
         // When
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         ListTablesResponse listTablesResponse = sleeperMetadataHandler.doListTables(new BlockAllocatorImpl(),
                 new ListTablesRequest(TestUtils.createIdentity(), "abc", "def", "mySchema", "1", 1));
@@ -481,11 +481,11 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
         // Given
         InstanceProperties instance = createInstance();
         TableProperties table = createTable(instance);
-        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl sleeperMetadataHandler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
         TableName tableName = new TableName(instance.get(ID), table.get(TABLE_NAME));
 
         // When
-        StateStore stateStore = new StateStoreFactory(instance, s3Client, DYNAMO_CLIENT, HADOOP_CONF).getStateStore(table);
+        StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoClient, HADOOP_CONF).getStateStore(table);
         Partition partition2018 = stateStore.getLeafPartitions()
                 .stream()
                 .filter(p -> (Integer) p.getRegion().getRange("year").getMin() == 2018)
@@ -525,7 +525,7 @@ public class SleeperMetadataHandlerIT extends MetadataHandlerITBase {
     public void shouldCallExtraSchemaEnhancementMethodWhenEnhanceingSchema() throws IOException {
         // Given
         InstanceProperties instance = createInstance();
-        SleeperMetadataHandlerImpl handler = new SleeperMetadataHandlerImpl(s3Client, DYNAMO_CLIENT, instance.get(CONFIG_BUCKET));
+        SleeperMetadataHandlerImpl handler = new SleeperMetadataHandlerImpl(s3Client, dynamoClient, instance.get(CONFIG_BUCKET));
 
         // When
         handler.enhancePartitionSchema(new SchemaBuilder(), null);
