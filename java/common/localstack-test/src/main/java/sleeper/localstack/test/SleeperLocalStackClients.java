@@ -44,7 +44,7 @@ public class SleeperLocalStackClients {
     private SleeperLocalStackClients() {
     }
 
-    private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.getInstance();
+    private static final LocalStackContainer CONTAINER = SleeperLocalStackContainer.INSTANCE;
     public static final AmazonS3 S3_CLIENT = buildAwsV1Client(CONTAINER, Service.S3, AmazonS3ClientBuilder.standard());
     public static final AmazonDynamoDB DYNAMO_CLIENT = buildAwsV1Client(CONTAINER, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     public static final AmazonSQS SQS_CLIENT = buildAwsV1Client(CONTAINER, Service.SQS, AmazonSQSClientBuilder.standard());
