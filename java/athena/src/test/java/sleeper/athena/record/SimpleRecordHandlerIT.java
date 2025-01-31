@@ -55,7 +55,7 @@ import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIEL
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-public class SimpleRecordHandlerIT extends AbstractRecordHandlerIT {
+public class SimpleRecordHandlerIT extends RecordHandlerITBase {
 
     @Test
     public void shouldReturnNoRecordsWhenFileDoesNotContainExactValue() throws Exception {
