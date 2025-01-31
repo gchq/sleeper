@@ -18,6 +18,8 @@ package sleeper.cdk.custom;
 import com.amazonaws.services.lambda.runtime.events.CloudFormationCustomResourceEvent;
 import org.junit.jupiter.api.Test;
 
+import sleeper.localstack.test.LocalStackTestBase;
+
 import java.util.Map;
 import java.util.UUID;
 
@@ -102,7 +104,7 @@ public class AutoDeleteS3ObjectsLambdaIT extends LocalStackTestBase {
     }
 
     private AutoDeleteS3ObjectsLambda lambdaWithBatchSize(int batchSize) {
-        return new AutoDeleteS3ObjectsLambda(s3Client, batchSize);
+        return new AutoDeleteS3ObjectsLambda(s3ClientV2, batchSize);
     }
 
 }
