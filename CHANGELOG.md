@@ -15,7 +15,6 @@ Compaction:
 - Added a step to combine commits of finished compactions into one transaction in the state store
   - This is done in a new lambda and SQS queue, and enabled by default
 - Added an option to disable updating the job tracker when a compaction is committed to the state store asynchronously
-- Efficiency improvements to library configuration in DataFusion and Java based compaction
 - Reduced number of S3 GET requests made during DataFusion compaction
 - Added further metrics in logging during DataFusion compaction
 
@@ -46,10 +45,15 @@ Build:
 - Upgraded LocalStack to latest version
 - Moved example iterator classes to their own module and created an example user jar that includes them
 
+Misc:
+- Efficiency improvements to library configuration for working with Parquet files in DataFusion and Java
+- Split configuration property for queue visibility timeout into two, for ingest and query results
+
 System tests:
 - Scheduled rules for background processes are now enabled during system tests
   - Some system tests handle this by taking tables offline or online
 - Some improvements to test isolation and preparation for concurrent execution
+- Added system tests for custom iterators defined in a user jar
 
 Bugfixes:
 - Prevented an intermittent failure during teardown where the CDK tried to delete managed policies before the roles that use them
