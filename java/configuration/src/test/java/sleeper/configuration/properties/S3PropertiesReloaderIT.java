@@ -20,13 +20,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.configuration.testutils.LocalStackTestBase;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Schema;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.function.Consumer;
 

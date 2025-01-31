@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.configuration.testutils.LocalStackTestBase;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;
 import java.nio.file.Path;

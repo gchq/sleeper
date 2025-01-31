@@ -21,11 +21,11 @@ import com.google.common.io.ByteStreams;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.configuration.testutils.LocalStackTestBase;
 import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
