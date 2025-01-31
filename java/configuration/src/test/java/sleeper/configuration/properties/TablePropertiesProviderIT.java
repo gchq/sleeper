@@ -29,7 +29,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesProviderIT extends TablePropertiesITBase {
 
-    private final TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, S3_CLIENT, DYNAMO_CLIENT);
+    private final TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, DYNAMO_CLIENT);
 
     @Test
     void shouldLoadByName() {

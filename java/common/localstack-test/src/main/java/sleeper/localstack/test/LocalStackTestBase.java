@@ -34,6 +34,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import java.util.List;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT_V2;
 
 /**
  * A base class for tests to run against LocalStack.
@@ -41,26 +42,24 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public abstract class LocalStackTestBase {
 
-    public static final AmazonS3 S3_CLIENT = SleeperLocalStackClients.S3_CLIENT;
     public static final AmazonDynamoDB DYNAMO_CLIENT = SleeperLocalStackClients.DYNAMO_CLIENT;
     public static final AmazonSQS SQS_CLIENT = SleeperLocalStackClients.SQS_CLIENT;
-    public static final S3Client S3_CLIENT_V2 = SleeperLocalStackClients.S3_CLIENT_V2;
     public static final S3AsyncClient S3_ASYNC_CLIENT = SleeperLocalStackClients.S3_ASYNC_CLIENT;
     public static final DynamoDbClient DYNAMO_CLIENT_V2 = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
     public static final SqsClient SQS_CLIENT_V2 = SleeperLocalStackClients.SQS_CLIENT_V2;
     public static final Configuration HADOOP_CONF = SleeperLocalStackClients.HADOOP_CONF;
 
     protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.getInstance();
-    protected final AmazonS3 s3Client = S3_CLIENT;
-    protected final AmazonDynamoDB dynamoClient = DYNAMO_CLIENT;
-    protected final AmazonSQS sqsClient = SQS_CLIENT;
+    protected final AmazonS3 s3Client = SleeperLocalStackClients.S3_CLIENT;
+    protected final AmazonDynamoDB dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
+    protected final AmazonSQS sqsClient = SleeperLocalStackClients.SQS_CLIENT;
     protected final AWSSecurityTokenService stsClient = SleeperLocalStackClients.STS_CLIENT;
-    protected final S3Client s3ClientV2 = S3_CLIENT_V2;
-    protected final S3AsyncClient s3AsyncClient = S3_ASYNC_CLIENT;
-    protected final DynamoDbClient dynamoClientV2 = DYNAMO_CLIENT_V2;
-    protected final SqsClient sqsClientV2 = SQS_CLIENT_V2;
+    protected final S3Client s3ClientV2 = SleeperLocalStackClients.S3_CLIENT_V2;
+    protected final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
+    protected final DynamoDbClient dynamoClientV2 = SleeperLocalStackClients.DYNAMO_CLIENT_V2;
+    protected final SqsClient sqsClientV2 = SleeperLocalStackClients.SQS_CLIENT_V2;
     protected final StsClient stsClientV2 = SleeperLocalStackClients.STS_CLIENT_V2;
-    protected final Configuration hadoopConf = HADOOP_CONF;
+    protected final Configuration hadoopConf = SleeperLocalStackClients.HADOOP_CONF;
 
     protected static void createBucket(String bucketName) {
         S3_CLIENT_V2.createBucket(builder -> builder.bucket(bucketName));

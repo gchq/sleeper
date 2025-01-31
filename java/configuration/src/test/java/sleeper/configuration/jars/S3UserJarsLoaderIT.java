@@ -106,14 +106,14 @@ class S3UserJarsLoaderIT extends LocalStackTestBase {
         ByteStreams.copy(fis, jos);
         jos.close();
         // Upload jar to S3
-        InstanceProperties instanceProperties = createInstanceProperties(S3_CLIENT);
+        InstanceProperties instanceProperties = createInstanceProperties(s3Client);
         instanceProperties.set(USER_JARS, "iterator.jar");
         PutObjectRequest pubObjectRequest = new PutObjectRequest(instanceProperties.get(JARS_BUCKET), "iterator.jar", new File(jarFileLocation));
-        S3_CLIENT.putObject(pubObjectRequest);
+        s3Client.putObject(pubObjectRequest);
         // Delete local class file
         Files.delete(new File("MyIterator.class").toPath());
         // Create ObjectFactory and use to create iterator
-        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, S3_CLIENT, createTempDirectory(folder, null).toString()).buildObjectFactory();
+        ObjectFactory objectFactory = new S3UserJarsLoader(instanceProperties, s3Client, createTempDirectory(folder, null).toString()).buildObjectFactory();
         SortedRecordIterator sri = objectFactory.getObject("MyIterator", SortedRecordIterator.class);
 
         assertThat(sri).hasToString("MyIterator");

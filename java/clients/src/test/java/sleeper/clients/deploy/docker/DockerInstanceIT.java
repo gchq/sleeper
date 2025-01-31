@@ -70,8 +70,8 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
 
             // Then
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(S3_CLIENT, instanceId);
-            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, S3_CLIENT, DYNAMO_CLIENT)
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, DYNAMO_CLIENT)
                     .loadByName("system-test");
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
             assertThatCode(() -> DYNAMO_CLIENT.describeTable(instanceProperties.get(ACTIVE_FILES_TABLENAME)))
@@ -85,15 +85,15 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             // Given
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName()));
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(S3_CLIENT, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, S3_CLIENT, DYNAMO_CLIENT, SQS_CLIENT_V2);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, DYNAMO_CLIENT, SQS_CLIENT_V2);
 
             // Then
-            assertThatThrownBy(() -> S3_CLIENT.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
+            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
-            assertThatThrownBy(() -> S3_CLIENT.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
+            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
             assertThatThrownBy(() -> DYNAMO_CLIENT.describeTable(instanceProperties.get(ACTIVE_FILES_TABLENAME)))
                     .isInstanceOf(ResourceNotFoundException.class);
@@ -112,8 +112,8 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
 
             // Then
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(S3_CLIENT, instanceId);
-            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, S3_CLIENT, DYNAMO_CLIENT)
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, DYNAMO_CLIENT)
                     .loadByName("system-test");
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
             assertThatCode(() -> DYNAMO_CLIENT.describeTable(instanceProperties.get(REVISION_TABLENAME)))
@@ -125,15 +125,15 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             // Given
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName()));
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(S3_CLIENT, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, S3_CLIENT, DYNAMO_CLIENT, SQS_CLIENT_V2);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, DYNAMO_CLIENT, SQS_CLIENT_V2);
 
             // Then
-            assertThatThrownBy(() -> S3_CLIENT.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
+            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
-            assertThatThrownBy(() -> S3_CLIENT.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
+            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
             assertThatThrownBy(() -> DYNAMO_CLIENT.describeTable(instanceProperties.get(REVISION_TABLENAME)))
                     .isInstanceOf(ResourceNotFoundException.class);
@@ -150,8 +150,8 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName()));
 
             // Then
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(S3_CLIENT, instanceId);
-            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, S3_CLIENT, DYNAMO_CLIENT)
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, DYNAMO_CLIENT)
                     .loadByName("system-test");
             assertThat(queryAllRecords(instanceProperties, tableProperties)).isExhausted();
             assertThatCode(() -> describeTables(instanceProperties,
@@ -167,15 +167,15 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             // Given
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId, tableProperties -> tableProperties.set(STATESTORE_CLASSNAME, DynamoDBTransactionLogStateStore.class.getName()));
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(S3_CLIENT, instanceId);
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
 
             // When
-            TearDownDockerInstance.tearDown(instanceId, S3_CLIENT, DYNAMO_CLIENT, SQS_CLIENT_V2);
+            TearDownDockerInstance.tearDown(instanceId, s3Client, DYNAMO_CLIENT, SQS_CLIENT_V2);
 
             // Then
-            assertThatThrownBy(() -> S3_CLIENT.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
+            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(CONFIG_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
-            assertThatThrownBy(() -> S3_CLIENT.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
+            assertThatThrownBy(() -> s3Client.headBucket(new HeadBucketRequest(instanceProperties.get(DATA_BUCKET))))
                     .isInstanceOf(AmazonServiceException.class);
             assertThatThrownBy(() -> DYNAMO_CLIENT.describeTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME)))
                     .isInstanceOf(ResourceNotFoundException.class);
@@ -207,8 +207,8 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
             // Given
             String instanceId = UUID.randomUUID().toString().substring(0, 18);
             deployInstance(instanceId);
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(S3_CLIENT, instanceId);
-            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, S3_CLIENT, DYNAMO_CLIENT)
+            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+            TableProperties tableProperties = S3TableProperties.createStore(instanceProperties, s3Client, DYNAMO_CLIENT)
                     .loadByName("system-test");
 
             // When
@@ -229,7 +229,7 @@ public class DockerInstanceIT extends DockerInstanceTestBase {
                     .objectFactory(ObjectFactory.noUserJars())
                     .localDir(tempDir.toString())
                     .hadoopConfiguration(HADOOP_CONF)
-                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, S3_CLIENT, DYNAMO_CLIENT, HADOOP_CONF))
+                    .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, DYNAMO_CLIENT, HADOOP_CONF))
                     .s3AsyncClient(S3_ASYNC_CLIENT)
                     .build().ingestFromRecordIteratorAndClose(tableProperties, new WrappedIterator<>(records.iterator()));
         }

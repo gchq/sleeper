@@ -49,14 +49,14 @@ public abstract class DockerInstanceTestBase extends LocalStackTestBase {
     }
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
-        DeployDockerInstance.builder().s3Client(S3_CLIENT).dynamoDB(DYNAMO_CLIENT).sqsClient(SQS_CLIENT_V2)
+        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(DYNAMO_CLIENT).sqsClient(SQS_CLIENT_V2)
                 .configuration(HADOOP_CONF).extraTableProperties(extraProperties)
                 .build().deploy(instanceId);
     }
 
     public CloseableIterator<Record> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
-        StateStore stateStore = new StateStoreFactory(instanceProperties, S3_CLIENT, DYNAMO_CLIENT, HADOOP_CONF)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, DYNAMO_CLIENT, HADOOP_CONF)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,

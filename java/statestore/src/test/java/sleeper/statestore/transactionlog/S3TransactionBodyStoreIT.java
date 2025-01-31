@@ -55,7 +55,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
-        S3_CLIENT.createBucket(instanceProperties.get(DATA_BUCKET));
+        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     @Nested
@@ -65,7 +65,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         @Test
         void shouldSaveAndLoadPartitionTransactionByTableProperties() {
             // Given
-            TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, S3_CLIENT,
+            TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, s3Client,
                     TransactionSerDeProvider.forOneTable(tableProperties));
             String key = TransactionBodyStore.createObjectKey(tableProperties);
             PartitionTransaction transaction = new InitialisePartitionsTransaction(
@@ -82,7 +82,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         @Test
         void shouldSaveAndLoadPartitionTransactionByTableId() {
             // Given
-            TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, S3_CLIENT,
+            TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, s3Client,
                     TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties)));
             String key = TransactionBodyStore.createObjectKey(tableId);
             PartitionTransaction transaction = new InitialisePartitionsTransaction(
@@ -101,7 +101,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
     @DisplayName("Support only file transactions")
     class SupportOnlyFileTransactions {
 
-        TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, S3_CLIENT, TransactionSerDeProvider.forFileTransactions());
+        TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forFileTransactions());
 
         @Test
         void shouldStoreFileTransaction() {
@@ -129,7 +129,7 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
             // When / Then
             assertThatThrownBy(() -> store.store(key, tableId, transaction))
                     .isInstanceOf(UnsupportedOperationException.class);
-            new S3TransactionBodyStore(instanceProperties, S3_CLIENT, TransactionSerDeProvider.forOneTable(tableProperties))
+            new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties))
                     .store(key, tableId, transaction);
             assertThatThrownBy(() -> store.getBody(key, tableId, TransactionType.INITIALISE_PARTITIONS))
                     .isInstanceOf(UnsupportedOperationException.class);
