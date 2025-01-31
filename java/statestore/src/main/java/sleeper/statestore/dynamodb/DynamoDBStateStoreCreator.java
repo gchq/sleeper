@@ -18,22 +18,12 @@ package sleeper.statestore.dynamodb;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.dynamodb.tools.DynamoDBUtils;
 
 import java.util.List;
 import java.util.Objects;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.FILE_NAME;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.PARTITION_ID_AND_FILENAME;
-import static sleeper.statestore.dynamodb.DynamoDBStateStore.TABLE_ID;
 
 /**
  * Creates the tables necessary for a DynamoDB state store. Mainly used for testing purposes as the creation of the
@@ -57,31 +47,11 @@ public class DynamoDBStateStoreCreator {
     }
 
     private void createFileReferenceTables() {
-        List<AttributeDefinition> activeFilesAttributeDefinitions = List.of(
-                new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
-                new AttributeDefinition(PARTITION_ID_AND_FILENAME, ScalarAttributeType.S));
-        List<KeySchemaElement> activeFilesKeySchemaElements = List.of(
-                new KeySchemaElement(TABLE_ID, KeyType.HASH),
-                new KeySchemaElement(PARTITION_ID_AND_FILENAME, KeyType.RANGE));
-        initialiseTable(instanceProperties.get(ACTIVE_FILES_TABLENAME), activeFilesAttributeDefinitions, activeFilesKeySchemaElements);
-        List<AttributeDefinition> fileReferenceCountAttributeDefinitions = List.of(
-                new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
-                new AttributeDefinition(FILE_NAME, ScalarAttributeType.S));
-        List<KeySchemaElement> fileReferenceCountKeySchemaElements = List.of(
-                new KeySchemaElement(TABLE_ID, KeyType.HASH),
-                new KeySchemaElement(FILE_NAME, KeyType.RANGE));
-        initialiseTable(instanceProperties.get(FILE_REFERENCE_COUNT_TABLENAME),
-                fileReferenceCountAttributeDefinitions, fileReferenceCountKeySchemaElements);
+
     }
 
     private void createPartitionInfoTable() {
-        List<AttributeDefinition> attributeDefinitions = List.of(
-                new AttributeDefinition(TABLE_ID, ScalarAttributeType.S),
-                new AttributeDefinition(PARTITION_ID, ScalarAttributeType.S));
-        List<KeySchemaElement> keySchemaElements = List.of(
-                new KeySchemaElement(TABLE_ID, KeyType.HASH),
-                new KeySchemaElement(PARTITION_ID, KeyType.RANGE));
-        initialiseTable(instanceProperties.get(PARTITION_TABLENAME), attributeDefinitions, keySchemaElements);
+
     }
 
     private void initialiseTable(

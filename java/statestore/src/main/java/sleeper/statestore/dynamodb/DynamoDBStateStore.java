@@ -26,19 +26,13 @@ import sleeper.core.statestore.DelegatingStateStore;
  */
 public class DynamoDBStateStore extends DelegatingStateStore {
 
-    public static final String FILE_NAME = DynamoDBFileReferenceFormat.FILENAME;
-
-    public static final String PARTITION_ID_AND_FILENAME = DynamoDBFileReferenceFormat.PARTITION_ID_AND_FILENAME;
     public static final String TABLE_ID = "TableId";
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        this(DynamoDBFileReferenceStore.builder().dynamoDB(dynamoDB)
-                .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties)
-                .build());
+        this();
     }
 
-    DynamoDBStateStore(DynamoDBFileReferenceStore fileReferenceStore) {
-        super(fileReferenceStore, null);
+    DynamoDBStateStore() {
+        super(null, null);
     }
 }
