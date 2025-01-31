@@ -40,7 +40,7 @@ class SaveLocalPropertiesS3IT extends LocalStackTestBase {
     private Path tempDir;
 
     private InstanceProperties saveFromS3(String instanceId) throws IOException {
-        return S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoDBClient, instanceId, tempDir);
+        return S3InstanceProperties.saveToLocalWithTableProperties(s3Client, dynamoClient, instanceId, tempDir);
     }
 
     @Test
@@ -98,13 +98,13 @@ class SaveLocalPropertiesS3IT extends LocalStackTestBase {
     private InstanceProperties createTestInstance() {
         InstanceProperties instanceProperties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3Client);
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
         return instanceProperties;
     }
 
     private TableProperties createTestTable(InstanceProperties instanceProperties, Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient).save(tableProperties);
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
         return tableProperties;
     }
 }

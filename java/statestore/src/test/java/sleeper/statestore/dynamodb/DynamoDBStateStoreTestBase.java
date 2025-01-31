@@ -29,6 +29,6 @@ public class DynamoDBStateStoreTestBase extends LocalStackTestBase {
 
     @BeforeEach
     void setUpBase() {
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 }

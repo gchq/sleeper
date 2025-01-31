@@ -35,7 +35,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStateStoreTestBase {
     private final Schema schema = schemaWithKey("key", new LongType());
-    private final StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, new Configuration());
+    private final StateStoreFactory stateStoreFactory = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, new Configuration());
     private final FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
 
     @Test
