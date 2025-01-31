@@ -49,7 +49,7 @@ public abstract class LocalStackTestBase {
     public static final SqsClient SQS_CLIENT_V2 = SleeperLocalStackClients.SQS_CLIENT_V2;
     public static final Configuration HADOOP_CONF = SleeperLocalStackClients.HADOOP_CONF;
 
-    protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.getInstance();
+    protected final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
     protected final AmazonS3 s3Client = SleeperLocalStackClients.S3_CLIENT;
     protected final AmazonDynamoDB dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final AmazonSQS sqsClient = SleeperLocalStackClients.SQS_CLIENT;
