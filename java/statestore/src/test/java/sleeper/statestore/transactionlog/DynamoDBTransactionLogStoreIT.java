@@ -97,7 +97,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithUnrecognisedType() throws Exception {
         // Given
-        dynamoClient.putItem(new PutItemRequest()
+        DYNAMO_CLIENT.putItem(new PutItemRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
@@ -114,7 +114,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithRecognisedTypeButInvalidJson() throws Exception {
         // Given
-        dynamoClient.putItem(new PutItemRequest()
+        DYNAMO_CLIENT.putItem(new PutItemRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
@@ -267,11 +267,11 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private TransactionLogStore fileLogStore() {
-        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, DYNAMO_CLIENT, S3_CLIENT);
     }
 
     private TransactionLogStore partitionLogStore() {
-        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, DYNAMO_CLIENT, S3_CLIENT);
     }
 
     private String singleFileInDataBucket() {
@@ -284,7 +284,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private List<String> filesInDataBucket() {
-        return s3Client.listObjects(new ListObjectsRequest()
+        return S3_CLIENT.listObjects(new ListObjectsRequest()
                 .withBucketName(instanceProperties.get(DATA_BUCKET))
                 .withPrefix(tableProperties.get(TableProperty.TABLE_ID)))
                 .getObjectSummaries().stream()

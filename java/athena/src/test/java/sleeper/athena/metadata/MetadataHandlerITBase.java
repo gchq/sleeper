@@ -64,23 +64,21 @@ public abstract class MetadataHandlerITBase extends LocalStackTestBase {
         System.clearProperty(ACCESS_KEY_SYSTEM_PROPERTY);
         System.clearProperty(SECRET_KEY_SYSTEM_PROPERTY);
         System.clearProperty(AWS_REGION_SYSTEM_PROPERTY);
-        s3Client.shutdown();
-        dynamoClient.shutdown();
     }
 
     protected InstanceProperties createInstance() throws IOException {
-        return TestUtils.createInstance(s3Client, dynamoClient,
+        return TestUtils.createInstance(S3_CLIENT, DYNAMO_CLIENT,
                 createTempDirectory(tempDir, null).toString());
     }
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {
         return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA,
-                dynamoClient, s3Client, hadoopConf, 2018, 2019, 2020);
+                DYNAMO_CLIENT, S3_CLIENT, HADOOP_CONF, 2018, 2019, 2020);
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {
         TableProperties table = createEmptyTable(instanceProperties);
-        TestUtils.ingestData(s3Client, dynamoClient, createTempDirectory(tempDir, null).toString(),
+        TestUtils.ingestData(S3_CLIENT, DYNAMO_CLIENT, createTempDirectory(tempDir, null).toString(),
                 instanceProperties, table);
         return table;
     }

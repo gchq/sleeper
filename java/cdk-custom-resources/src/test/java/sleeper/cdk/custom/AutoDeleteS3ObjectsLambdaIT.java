@@ -104,7 +104,7 @@ public class AutoDeleteS3ObjectsLambdaIT extends LocalStackTestBase {
     }
 
     private AutoDeleteS3ObjectsLambda lambdaWithBatchSize(int batchSize) {
-        return new AutoDeleteS3ObjectsLambda(s3ClientV2, batchSize);
+        return new AutoDeleteS3ObjectsLambda(S3_CLIENT_V2, batchSize);
     }
 
 }
