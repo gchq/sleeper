@@ -22,6 +22,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -37,6 +38,7 @@ import java.util.List;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.localstack.test.LocalStackHadoopConfigurationProvider.getHadoopConfiguration;
 
 /**
  * A base class for tests to run against LocalStack.
@@ -53,6 +55,7 @@ public abstract class LocalStackTestBase {
     protected final S3Client s3ClientV2 = buildAwsV2Client(CONTAINER, Service.S3, S3Client.builder());
     protected final DynamoDbClient dynamoDbClientV2 = buildAwsV2Client(CONTAINER, Service.DYNAMODB, DynamoDbClient.builder());
     protected final SqsClient sqsClientV2 = buildAwsV2Client(CONTAINER, Service.SQS, SqsClient.builder());
+    protected final Configuration hadoopConf = getHadoopConfiguration(CONTAINER);
 
     protected void createBucket(String bucketName) {
         s3ClientV2.createBucket(builder -> builder.bucket(bucketName));

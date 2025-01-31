@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestore.testutil.LocalStackTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.nio.file.Path;
 
