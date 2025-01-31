@@ -230,7 +230,7 @@ class SyncJarsIT extends JarsBucketITBase {
 
             // Then
             assertThat(s3.listObjectVersionsPaginator(builder -> builder
-                    .bucket(bucketName).keyMarker("test.jar").maxKeys(1)))
+                    .bucket(bucketName).prefix("test.jar").maxKeys(1)))
                     .flatMap(ListObjectVersionsResponse::versions)
                     .hasSize(2);
         }

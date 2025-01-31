@@ -24,7 +24,7 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import software.amazon.awssdk.services.ecr.EcrClient;
 import software.amazon.awssdk.services.emr.EmrClient;
 
-import sleeper.clients.admin.AdminClientStatusStoreFactory;
+import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.AdminMainScreen;
 import sleeper.clients.admin.CompactionStatusReportScreen;
 import sleeper.clients.admin.FilesStatusReportScreen;
@@ -57,19 +57,19 @@ import java.util.function.Function;
 public class AdminClient {
     private final TableIndex tableIndex;
     private final AdminClientPropertiesStore store;
-    private final AdminClientStatusStoreFactory statusStores;
+    private final AdminClientTrackerFactory trackers;
     private final UpdatePropertiesWithTextEditor editor;
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final QueueMessageCount.Client queueClient;
     private final Function<InstanceProperties, Map<String, Integer>> getStepCount;
 
-    public AdminClient(TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores,
+    public AdminClient(TableIndex tableIndex, AdminClientPropertiesStore store, AdminClientTrackerFactory trackers,
             UpdatePropertiesWithTextEditor editor, ConsoleOutput out, ConsoleInput in,
             QueueMessageCount.Client queueClient, Function<InstanceProperties, Map<String, Integer>> getStepCount) {
         this.tableIndex = tableIndex;
         this.store = store;
-        this.statusStores = statusStores;
+        this.trackers = trackers;
         this.editor = editor;
         this.out = out;
         this.in = in;
@@ -133,7 +133,7 @@ public class AdminClient {
         new AdminClient(
                 new DynamoDBTableIndex(instanceProperties, dynamoDB),
                 store,
-                AdminClientStatusStoreFactory.from(dynamoDB),
+                AdminClientTrackerFactory.from(dynamoDB),
                 editor,
                 out, in,
                 queueClient, getStepCount)
@@ -162,14 +162,14 @@ public class AdminClient {
     }
 
     public CompactionStatusReportScreen compactionStatusReportScreen() {
-        return new CompactionStatusReportScreen(out, in, store, statusStores);
+        return new CompactionStatusReportScreen(out, in, store, trackers);
     }
 
     public IngestStatusReportScreen ingestStatusReportScreen() {
-        return new IngestStatusReportScreen(out, in, store, statusStores, queueClient, getStepCount);
+        return new IngestStatusReportScreen(out, in, store, trackers, queueClient, getStepCount);
     }
 
     public IngestBatcherReportScreen ingestBatcherReportScreen() {
-        return new IngestBatcherReportScreen(out, in, tableIndex, store, statusStores);
+        return new IngestBatcherReportScreen(out, in, tableIndex, store, trackers);
     }
 }

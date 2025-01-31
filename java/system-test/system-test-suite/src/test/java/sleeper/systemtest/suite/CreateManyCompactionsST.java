@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.compaction.FoundCompactionJobs;
+import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
@@ -32,21 +33,25 @@ import java.util.stream.LongStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_STRATEGY_CLASS;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.createPartitionTreeWithRecordsPerPartitionAndTotal;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_CREATION;
 
 @SystemTest
+@Slow // Slow because it deploys its own instance so it can drain the whole compaction jobs queue
 public class CreateManyCompactionsST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(COMPACTION_CREATION);
+        sleeper.connectToInstanceNoTables(COMPACTION_CREATION);
     }
 
     @Test
     void shouldCreateLargeQuantitiesOfCompactionJobsAtOnce(SleeperSystemTest sleeper) throws Exception {
         // Given
-        sleeper.updateTableProperties(Map.of(
+        sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false",
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));
         PartitionTree partitions = createPartitionTreeWithRecordsPerPartitionAndTotal(10, 655360, sleeper);
@@ -60,7 +65,7 @@ public class CreateManyCompactionsST {
 
         // When
         FoundCompactionJobs jobs = sleeper.compaction()
-                .createJobs(65536,
+                .putTableOnlineWaitForJobCreation(65536,
                         PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)))
                 .drainJobsQueueForWholeInstance();
 

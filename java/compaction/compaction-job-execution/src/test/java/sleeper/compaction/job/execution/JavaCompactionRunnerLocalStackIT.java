@@ -27,21 +27,20 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestBase;
 import sleeper.compaction.job.execution.testutils.CompactionRunnerTestData;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobStatusStoreCreator;
-import sleeper.core.CommonTestConstants;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -53,21 +52,20 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 @Testcontainers
 public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(
-            DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(S3, DYNAMODB);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(S3, DYNAMODB);
     private static AmazonDynamoDB dynamoDBClient;
     private static AmazonS3 s3Client;
     private static S3AsyncClient s3AsyncClient;
@@ -96,7 +94,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         instanceProperties.unset(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE);
         s3Client.createBucket(dataBucket);
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
-        DynamoDBCompactionJobStatusStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDBClient);
     }
 
     @Test

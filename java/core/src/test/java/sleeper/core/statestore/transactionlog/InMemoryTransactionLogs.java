@@ -37,25 +37,46 @@ public class InMemoryTransactionLogs {
     private final InMemoryTransactionLogSnapshots filesSnapshots = new InMemoryTransactionLogSnapshots();
     private final InMemoryTransactionLogStore partitionsLogStore = new InMemoryTransactionLogStore();
     private final InMemoryTransactionLogSnapshots partitionsSnapshots = new InMemoryTransactionLogSnapshots();
-    private final List<Duration> retryWaits = new ArrayList<>();
+    private final InMemoryTransactionBodyStore transactionBodyStore;
+    private final List<Duration> retryWaits;
     private final ThreadSleep retryWaiter;
 
     public InMemoryTransactionLogs() {
-        retryWaiter = ThreadSleepTestHelper.recordWaits(retryWaits);
+        this(new InMemoryTransactionBodyStore());
     }
 
-    private InMemoryTransactionLogs(ThreadSleep extraWaiter) {
-        retryWaiter = ThreadSleepTestHelper.multipleWaitActions(ThreadSleepTestHelper.recordWaits(retryWaits), extraWaiter);
+    public InMemoryTransactionLogs(InMemoryTransactionBodyStore transactionBodyStore) {
+        this(transactionBodyStore, new ArrayList<>());
+    }
+
+    private InMemoryTransactionLogs(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits) {
+        this(transactionBodyStore, retryWaits, ThreadSleepTestHelper.recordWaits(retryWaits));
+    }
+
+    private InMemoryTransactionLogs(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits, ThreadSleep retryWaiter) {
+        this.transactionBodyStore = transactionBodyStore;
+        this.retryWaits = retryWaits;
+        this.retryWaiter = retryWaiter;
     }
 
     /**
-     * Creates an instance of this class that will record the waits during transaction retries in an additional list.
+     * Creates an instance of this class that will record the waits during transaction retries in a given list.
+     *
+     * @param  retryWaits the list to record retry waits in
+     * @return            an instance of this class
+     */
+    public static InMemoryTransactionLogs recordRetryWaits(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits) {
+        return new InMemoryTransactionLogs(transactionBodyStore, retryWaits);
+    }
+
+    /**
+     * Creates an instance of this class that will record the waits during transaction retries in a given list.
      *
      * @param  retryWaits the list to record retry waits in
      * @return            an instance of this class
      */
     public static InMemoryTransactionLogs recordRetryWaits(List<Duration> retryWaits) {
-        return new InMemoryTransactionLogs(ThreadSleepTestHelper.recordWaits(retryWaits));
+        return new InMemoryTransactionLogs(new InMemoryTransactionBodyStore(), retryWaits);
     }
 
     /**
@@ -74,6 +95,7 @@ public class InMemoryTransactionLogs {
                 .partitionsLogStore(partitionsLogStore)
                 .partitionsSnapshotLoader(partitionsSnapshots)
                 .maxAddTransactionAttempts(10)
+                .transactionBodyStore(transactionBodyStore)
                 .retryBackoff(new ExponentialBackoffWithJitter(
                         TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE,
                         constantJitterFraction(0.5), retryWaiter));
@@ -93,6 +115,10 @@ public class InMemoryTransactionLogs {
 
     public InMemoryTransactionLogSnapshots getPartitionsSnapshots() {
         return partitionsSnapshots;
+    }
+
+    public InMemoryTransactionBodyStore getTransactionBodyStore() {
+        return transactionBodyStore;
     }
 
     public List<Duration> getRetryWaits() {

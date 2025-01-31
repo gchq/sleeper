@@ -16,10 +16,10 @@
 
 package sleeper.clients.status.report.ingest.task;
 
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.ingest.core.task.IngestTaskFinishedStatus;
-import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskFinishedStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -44,7 +44,7 @@ public class IngestTaskStatusReportTestHelper {
     }
 
     public static IngestTaskStatus finishedTask(
-            String taskId, String startTime, String finishTime, RecordsProcessedSummary... summaries) {
+            String taskId, String startTime, String finishTime, JobRunSummary... summaries) {
         return startedTaskBuilder(taskId, startTime)
                 .finished(Instant.parse(finishTime),
                         IngestTaskFinishedStatus.builder().jobSummaries(Stream.of(summaries)))
@@ -64,9 +64,9 @@ public class IngestTaskStatusReportTestHelper {
                 .addJobSummary(createSummary(startTime, finishTime, recordsRead, recordsWritten));
     }
 
-    private static RecordsProcessedSummary createSummary(
+    private static JobRunSummary createSummary(
             String startTime, String finishTime, long recordsRead, long recordsWritten) {
-        return new RecordsProcessedSummary(
+        return new JobRunSummary(
                 new RecordsProcessed(recordsRead, recordsWritten),
                 Instant.parse(startTime), Instant.parse(finishTime));
     }

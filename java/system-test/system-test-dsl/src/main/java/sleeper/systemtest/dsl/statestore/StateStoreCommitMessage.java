@@ -16,21 +16,13 @@
 package sleeper.systemtest.dsl.statestore;
 
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 
 import java.util.List;
 
 public class StateStoreCommitMessage {
 
-    private final String tableId;
-    private final String body;
-
-    private StateStoreCommitMessage(String tableId, String body) {
-        this.tableId = tableId;
-        this.body = body;
-    }
-
-    public static StateStoreCommitMessage tableIdAndBody(String tableId, String body) {
-        return new StateStoreCommitMessage(tableId, body);
+    private StateStoreCommitMessage() {
     }
 
     public static Commit addFileWithJob(FileReference file) {
@@ -56,16 +48,8 @@ public class StateStoreCommitMessage {
                         .build()));
     }
 
-    public String getTableId() {
-        return tableId;
-    }
-
-    public String getBody() {
-        return body;
-    }
-
     public interface Commit {
-        StateStoreCommitMessage createMessage(StateStoreCommitMessageFactory factory);
+        StateStoreCommitRequest createMessage(StateStoreCommitMessageFactory factory);
     }
 
 }

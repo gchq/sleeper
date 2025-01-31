@@ -19,7 +19,7 @@ package sleeper.clients.status.report.ingest.task;
 import com.google.gson.Gson;
 
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.ingest.core.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
 
 import java.io.PrintStream;
 import java.util.List;

@@ -17,6 +17,8 @@ package sleeper.core.statestore.transactionlog.transactions;
 
 import org.apache.commons.lang.StringUtils;
 import org.approvaltests.Approvals;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -27,6 +29,7 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.StateStoreTransaction;
@@ -40,6 +43,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
@@ -167,9 +171,9 @@ public class TransactionSerDeTest {
         String json = new TransactionSerDe(schema).toJson(transaction);
 
         // Then
-        assertThat(NumberFormatUtils.formatBytes(json.getBytes().length))
-                .isEqualTo("454486B (454.5KB)");
         assertThat(partitions.getAllPartitions()).hasSize(499);
+        assertThat(NumberFormatUtils.formatBytes(json.getBytes().length))
+                .isEqualTo("454439B (454.4KB)");
     }
 
     @Test
@@ -192,9 +196,9 @@ public class TransactionSerDeTest {
         String json = new TransactionSerDe(schema).toJson(transaction);
 
         // Then
-        assertThat(NumberFormatUtils.formatBytes(json.length()))
-                .isEqualTo("363136B (363.1KB)");
         assertThat(partitions.getAllPartitions()).hasSize(399);
+        assertThat(NumberFormatUtils.formatBytes(json.length()))
+                .isEqualTo("363089B (363.1KB)");
     }
 
     @Test
@@ -206,8 +210,27 @@ public class TransactionSerDeTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
         FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
                 replaceJobFileReferences(
-                        "job", "root", List.of("file1.parquet", "file2.parquet"),
-                        fileFactory.rootFile("file3.parquet", 100))));
+                        "job", List.of("file1.parquet", "file2.parquet"), fileFactory.rootFile("file3.parquet", 100))));
+
+        // When / Then
+        whenSerDeThenMatchAndVerify(schema, transaction);
+    }
+
+    @Test
+    void shouldSerDeReplaceFileReferencesWithTrackingIds() throws Exception {
+        // Given
+        Schema schema = schemaWithKey("key");
+        PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+        Instant updateTime = Instant.parse("2023-03-26T10:05:01Z");
+        FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, updateTime);
+        FileReferenceTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                ReplaceFileReferencesRequest.builder()
+                        .jobId("job")
+                        .taskId("task")
+                        .jobRunId("run")
+                        .inputFiles(List.of("file1.parquet", "file2.parquet"))
+                        .newReference(fileFactory.rootFile("file3.parquet", 100))
+                        .build()));
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
@@ -250,5 +273,44 @@ public class TransactionSerDeTest {
 
         // When / Then
         whenSerDeThenMatchAndVerify(schema, transaction);
+    }
+
+    @Nested
+    @DisplayName("Serialisation without schema")
+    class NoSchema {
+
+        TransactionSerDe serDe = TransactionSerDe.forFileTransactions();
+
+        @Test
+        void shouldSerialiseFileTransactionWithoutSchema() {
+            // Given
+            PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
+            FileReferenceTransaction transaction = new AddFilesTransaction(
+                    AllReferencesToAFile.newFilesWithReferences(List.of(
+                            FileReferenceFactory.from(partitions).rootFile("file.parquet", 100))));
+
+            // When
+            String json = serDe.toJson(transaction);
+
+            // Then
+            assertThat(serDe.toTransaction(TransactionType.ADD_FILES, json)).isEqualTo(transaction);
+        }
+
+        @Test
+        void shouldRefusePartitionTransactionWithoutSchema() {
+            // Given
+            Schema schema = schemaWithKey("key");
+            PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
+            PartitionTransaction transaction = new InitialisePartitionsTransaction(partitions.getAllPartitions());
+
+            // When / Then
+            assertThatThrownBy(() -> serDe.toJson(transaction))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessage("Attempted serialisation of unsupported class sleeper.core.partition.Partition");
+            String json = new TransactionSerDe(schema).toJson(transaction);
+            assertThatThrownBy(() -> serDe.toTransaction(TransactionType.INITIALISE_PARTITIONS, json))
+                    .isInstanceOf(UnsupportedOperationException.class)
+                    .hasMessage("Attempted deserialisation of unsupported class sleeper.core.partition.Partition");
+        }
     }
 }

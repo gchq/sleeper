@@ -1,0 +1,7 @@
+Unreferenced files: 6
+Referenced files: 4
+File references: 4
+Partition at LL: 50 records in file 1
+Partition at LR: 50 records in file 2
+Partition at RL: 50 records in file 3
+Partition at RR: 50 records in file 4

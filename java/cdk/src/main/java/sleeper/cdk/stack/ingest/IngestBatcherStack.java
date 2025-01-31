@@ -67,7 +67,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_REQUEST_FUNCTION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 
 public class IngestBatcherStack extends NestedStack {
 
@@ -98,7 +97,7 @@ public class IngestBatcherStack extends NestedStack {
                 .create(this, "IngestBatcherSubmitQueue")
                 .queueName(String.join("-", "sleeper", instanceId, "IngestBatcherSubmitQ"))
                 .deadLetterQueue(ingestJobDeadLetterQueue)
-                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(INGEST_BATCHER_SUBMITTER_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(INGEST_BATCHER_SUBMIT_QUEUE_URL, submitQueue.getQueueUrl());
         instanceProperties.set(INGEST_BATCHER_SUBMIT_QUEUE_ARN, submitQueue.getQueueArn());
@@ -173,7 +172,7 @@ public class IngestBatcherStack extends NestedStack {
         Rule rule = Rule.Builder
                 .create(this, "IngestBatcherJobCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the ingest batcher job creation lambda")
+                .description(SleeperScheduleRule.INGEST_BATCHER_JOB_CREATION.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_BATCHER_JOB_CREATION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(jobCreatorLambda)))

@@ -24,9 +24,9 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.logs.ILogGroup;
 import software.amazon.awscdk.services.sqs.IQueue;
 
-import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
+import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
+import sleeper.cdk.stack.ingest.IngestTrackerResources;
 
 import javax.annotation.Nullable;
 
@@ -41,14 +41,14 @@ public class CoreStacks {
     private final StateStoreStacks stateStoreStacks;
     private final TableDataStack dataStack;
     private final StateStoreCommitterStack stateStoreCommitterStack;
-    private final IngestStatusStoreResources ingestStatusStore;
-    private final CompactionStatusStoreResources compactionStatusStore;
+    private final IngestTrackerResources ingestTracker;
+    private final CompactionTrackerResources compactionTracker;
 
     public CoreStacks(LoggingStack loggingStack, ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack,
             ManagedPoliciesStack policiesStack, StateStoreStacks stateStoreStacks, TableDataStack dataStack,
             StateStoreCommitterStack stateStoreCommitterStack,
-            IngestStatusStoreResources ingestStatusStore,
-            CompactionStatusStoreResources compactionStatusStore) {
+            IngestTrackerResources ingestTracker,
+            CompactionTrackerResources compactionTracker) {
         this.loggingStack = loggingStack;
         this.configBucketStack = configBucketStack;
         this.tableIndexStack = tableIndexStack;
@@ -56,8 +56,8 @@ public class CoreStacks {
         this.stateStoreStacks = stateStoreStacks;
         this.dataStack = dataStack;
         this.stateStoreCommitterStack = stateStoreCommitterStack;
-        this.ingestStatusStore = ingestStatusStore;
-        this.compactionStatusStore = compactionStatusStore;
+        this.ingestTracker = ingestTracker;
+        this.compactionTracker = compactionTracker;
     }
 
     public ILogGroup getLogGroup(LogGroupRef logGroupRef) {
@@ -106,7 +106,7 @@ public class CoreStacks {
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitions(grantee);
         policiesStack.grantReadIngestSources(grantee);
-        ingestStatusStore.grantWriteJobEvent(grantee);
+        ingestTracker.grantWriteJobEvent(grantee);
     }
 
     public void grantIngest(IRole grantee) {
@@ -116,8 +116,8 @@ public class CoreStacks {
         dataStack.grantReadWrite(grantee);
         policiesStack.grantReadIngestSources(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
-        ingestStatusStore.grantWriteJobEvent(grantee);
-        ingestStatusStore.grantWriteTaskEvent(grantee);
+        ingestTracker.grantWriteJobEvent(grantee);
+        ingestTracker.grantWriteTaskEvent(grantee);
     }
 
     public void grantGarbageCollection(IGrantable grantee) {
@@ -132,7 +132,7 @@ public class CoreStacks {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadPartitionsReadWriteActiveFiles(grantee);
-        compactionStatusStore.grantWriteJobEvent(grantee);
+        compactionTracker.grantWriteJobEvent(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
     }
 
@@ -143,8 +143,8 @@ public class CoreStacks {
         stateStoreStacks.grantReadPartitions(grantee);
         dataStack.grantReadWrite(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
-        compactionStatusStore.grantWriteJobEvent(grantee);
-        compactionStatusStore.grantWriteTaskEvent(grantee);
+        compactionTracker.grantWriteJobEvent(grantee);
+        compactionTracker.grantWriteTaskEvent(grantee);
     }
 
     public void grantSplitPartitions(IGrantable grantee) {
@@ -153,6 +153,12 @@ public class CoreStacks {
         stateStoreStacks.grantReadWritePartitions(grantee);
         dataStack.grantRead(grantee);
         stateStoreCommitterStack.grantSendCommits(grantee);
+    }
+
+    public void grantSendStateStoreCommits(IGrantable grantee) {
+        configBucketStack.grantRead(grantee);
+        stateStoreCommitterStack.grantSendCommits(grantee);
+        dataStack.grantReadWrite(grantee); // Needed to write transaction body to S3
     }
 
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.

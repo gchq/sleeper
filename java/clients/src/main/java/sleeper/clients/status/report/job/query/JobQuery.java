@@ -16,11 +16,11 @@
 package sleeper.clients.status.report.job.query;
 
 import sleeper.clients.util.console.ConsoleInput;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.table.TableStatus;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Clock;
 import java.util.List;
@@ -28,9 +28,9 @@ import java.util.Map;
 
 public interface JobQuery {
 
-    List<CompactionJobStatus> run(CompactionJobStatusStore statusStore);
+    List<CompactionJobStatus> run(CompactionJobTracker tracker);
 
-    List<IngestJobStatus> run(IngestJobStatusStore statusStore);
+    List<IngestJobStatus> run(IngestJobTracker tracker);
 
     Type getType();
 

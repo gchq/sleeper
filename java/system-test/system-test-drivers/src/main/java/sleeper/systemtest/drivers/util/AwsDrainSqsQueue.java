@@ -51,7 +51,7 @@ public class AwsDrainSqsQueue {
         ReceiveMessageResponse receiveResult = sqs.receiveMessage(request -> request
                 .queueUrl(queueUrl)
                 .maxNumberOfMessages(10)
-                .waitTimeSeconds(5));
+                .waitTimeSeconds(10));
         List<Message> messages = receiveResult.messages();
         if (messages.isEmpty()) {
             return List.of();

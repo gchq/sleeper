@@ -113,7 +113,7 @@ class SleeperClient:
         :param files: list of the files containing the records to ingest
         :param id: the id of the bulk import job - if one is not provided then a UUID will be assigned
         :param platform: the platform to use - either "EMR" or "PersistentEMR" or "EKS"
-        :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
+        :param platform_spec: a dict containing details of the platform to use - see docs/usage/python-api.md
         """
         _bulk_import(table_name, files, self._emr_bulk_import_queue, self._persistent_emr_bulk_import_queue,
                      self._eks_bulk_import_queue, self._emr_serverless_bulk_import_queue, id, platform, platform_spec,
@@ -424,7 +424,7 @@ def _bulk_import(table_name: str, files_to_ingest: list,
     :param eks_bulk_import_queue: name of the Sleeper instance's EKS bulk import queue
     :param job_id: the id of the bulk import job, will be randomly generated if not provided 
     :param platform: the platform to use - either "EMR", "PersistentEMR", "EKS", or "EMRServerless"
-    :param platform_spec: a dict containing details of the platform to use - see docs/python-api.md
+    :param platform_spec: a dict containing details of the platform to use - see docs/usage/python-api.md
     """
     if platform != "EMR" and platform != "EKS" and platform != "PersistentEMR" and platform != "EMRServerless":
         raise Exception("Platform must be 'EMR' or 'PersistentEMR' or 'EKS' or 'EMRServerless'")

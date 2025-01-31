@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use crate::aws_s3::ObjectStoreFactory;
+use crate::s3::ObjectStoreFactory;
 use arrow::array::ArrayAccessor;
 use arrow::datatypes::DataType;
 use bytes::{Buf, BufMut};
@@ -169,7 +169,7 @@ impl DataSketchVariant {
     /// Calls the update method of the underlying sketch.
     ///
     /// # Panics
-    /// If the value provided cannot be converted to the type of this [`DataSketch`], i.e.
+    /// If the value provided cannot be converted to the type of this `DataSketch`, i.e.
     /// if you try to update an i32 sketch with a string.
     pub fn update<T>(&mut self, value: &T)
     where
@@ -197,7 +197,7 @@ impl DataSketchVariant {
     /// Gets the total number of items in this sketch.
     ///
     /// Note that as this sketches are approximate, only a fraction of this amount
-    /// is retained by the sketch. Please see [`get_num_retained`].
+    /// is retained by the sketch. Please see [`DataSketchVariant::get_num_retained`].
     ///
     /// Please see Apache data sketch C++ documentation for full explanation.
     #[must_use]

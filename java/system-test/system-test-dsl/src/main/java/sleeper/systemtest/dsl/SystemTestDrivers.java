@@ -24,7 +24,7 @@ import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByAnyQueueDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
 import sleeper.systemtest.dsl.ingest.IngestLocalFileByAnyQueueDriver;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
@@ -86,7 +86,7 @@ public interface SystemTestDrivers {
 
     IngestBatcherDriver ingestBatcher(SystemTestContext context);
 
-    InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context);
+    IngestTasksDriver ingestTasks(SystemTestContext context);
 
     WaitForJobs waitForIngest(SystemTestContext context);
 

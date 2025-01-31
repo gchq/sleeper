@@ -37,24 +37,24 @@ import static sleeper.clients.admin.AdminCommonPrompts.confirmReturnToMainScreen
 import static sleeper.clients.admin.AdminCommonPrompts.tryLoadInstanceProperties;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForJobId;
 import static sleeper.clients.admin.JobStatusScreenHelper.promptForRange;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 
 public class CompactionStatusReportScreen {
     private final ConsoleOutput out;
     private final ConsoleInput in;
     private final ConsoleHelper consoleHelper;
     private final AdminClientPropertiesStore store;
-    private final AdminClientStatusStoreFactory statusStores;
+    private final AdminClientTrackerFactory trackers;
     private final TableSelectHelper tableSelectHelper;
 
     public CompactionStatusReportScreen(
             ConsoleOutput out, ConsoleInput in,
-            AdminClientPropertiesStore store, AdminClientStatusStoreFactory statusStores) {
+            AdminClientPropertiesStore store, AdminClientTrackerFactory trackers) {
         this.out = out;
         this.in = in;
         this.consoleHelper = new ConsoleHelper(out, in);
         this.store = store;
-        this.statusStores = statusStores;
+        this.trackers = trackers;
         this.tableSelectHelper = new TableSelectHelper(out, in, store);
     }
 
@@ -62,9 +62,9 @@ public class CompactionStatusReportScreen {
         Optional<InstanceProperties> propertiesOpt = tryLoadInstanceProperties(out, in, store, instanceId);
         if (propertiesOpt.isPresent()) {
             InstanceProperties properties = propertiesOpt.get();
-            if (!properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+            if (!properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
                 out.println("");
-                out.println("Compaction status store not enabled. Please enable in instance properties to access this screen");
+                out.println("Compaction tracker not enabled. Please enable in instance properties to access this screen");
                 confirmReturnToMainScreen(out, in);
             } else {
                 out.clearScreen("");
@@ -98,13 +98,13 @@ public class CompactionStatusReportScreen {
     }
 
     private void runCompactionJobStatusReport(InstanceProperties properties, TableStatus table, JobQuery.Type queryType, String queryParameters) {
-        new CompactionJobStatusReport(statusStores.loadCompactionJobStatusStore(properties),
+        new CompactionJobStatusReport(trackers.loadCompactionJobTracker(properties),
                 new StandardCompactionJobStatusReporter(out.printStream()), table, queryType, queryParameters).run();
         confirmReturnToMainScreen(out, in);
     }
 
     private void runCompactionTaskStatusReport(InstanceProperties properties, CompactionTaskQuery queryType) {
-        new CompactionTaskStatusReport(statusStores.loadCompactionTaskStatusStore(properties),
+        new CompactionTaskStatusReport(trackers.loadCompactionTaskTracker(properties),
                 new StandardCompactionTaskStatusReporter(out.printStream()), queryType).run();
         confirmReturnToMainScreen(out, in);
     }

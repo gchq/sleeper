@@ -66,7 +66,7 @@ public interface TableStateProperty {
             .description("The timeout in seconds for lambdas that create batches of tables to run some operation against, " +
                     "eg. create compaction jobs, run garbage collection, perform partition splitting.")
             .defaultValue("60")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
     UserDefinedInstanceProperty TABLE_PROPERTIES_PROVIDER_TIMEOUT_IN_MINS = Index.propertyBuilder("sleeper.cache.table.properties.provider.timeout.minutes")
@@ -112,7 +112,7 @@ public interface TableStateProperty {
     UserDefinedInstanceProperty SNAPSHOT_CREATION_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.statestore.snapshot.creation.lambda.timeout.seconds")
             .description("The timeout in seconds after which to terminate the transaction log snapshot creation lambda.")
             .defaultValue("900")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.TABLE_STATE)
             .build();
     UserDefinedInstanceProperty SNAPSHOT_CREATION_LAMBDA_MEMORY = Index.propertyBuilder("sleeper.statestore.snapshot.creation.memory.mb")
@@ -178,7 +178,7 @@ public interface TableStateProperty {
             .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
     UserDefinedInstanceProperty TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS = Index.propertyBuilder("sleeper.statestore.transaction.deletion.lambda.timeout.seconds")
             .description("The maximum timeout for the transaction deletion lambda in seconds.")
-            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
     UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")

@@ -19,7 +19,7 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.AdminClient;
-import sleeper.clients.admin.AdminClientStatusStoreFactory;
+import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.clients.admin.properties.AdminClientPropertiesStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -60,8 +60,8 @@ public abstract class AdminClientMockStoreBase extends AdminClientTestBase {
     }
 
     @Override
-    public void startClient(AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient) throws InterruptedException {
-        new AdminClient(tableIndex, store, statusStores,
+    public void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws InterruptedException {
+        new AdminClient(tableIndex, store, trackers,
                 editor, out.consoleOut(), in.consoleIn(),
                 queueClient, (properties -> Collections.emptyMap()))
                 .start(instanceId);

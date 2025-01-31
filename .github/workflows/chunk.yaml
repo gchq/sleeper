@@ -24,9 +24,9 @@ jobs:
         with:
           java-version: '17'
           distribution: 'corretto'
-      - uses: dtolnay/rust-toolchain@1.79.0
+      - uses: dtolnay/rust-toolchain@stable
         if: ${{ ! inputs.skipRust }}
-      - uses: mozilla-actions/sccache-action@v0.0.5
+      - uses: mozilla-actions/sccache-action@v0.0.7
         if: ${{ ! inputs.skipRust }}
       - name: Install cargo cross
         run: cargo install cross

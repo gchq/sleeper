@@ -31,15 +31,15 @@ import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -53,7 +53,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
@@ -63,6 +62,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.getBasePath;
 
 @Testcontainers
@@ -73,8 +73,7 @@ public class TransactionLogSnapshotTestBase {
     protected final Schema schema = schemaWithKey("key", new LongType());
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
     protected static AmazonDynamoDB dynamoDBClient;
     protected static AmazonS3 s3Client;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -141,6 +140,7 @@ public class TransactionLogSnapshotTestBase {
                 instanceProperties, table,
                 transactionLogs.forTable(table).getFilesLogStore(),
                 transactionLogs.forTable(table).getPartitionsLogStore(),
+                transactionLogs.getTransactionBodyStore(),
                 configuration, latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
@@ -157,11 +157,15 @@ public class TransactionLogSnapshotTestBase {
                 .deleteSnapshots(deletionTime);
     }
 
-    protected StateStore createStateStoreWithInMemoryTransactionLog(TableProperties table) {
-        StateStore stateStore = transactionLogs.stateStoreBuilder(table).build();
+    protected TransactionLogStateStore createStateStoreWithInMemoryTransactionLog(TableProperties table) {
+        TransactionLogStateStore stateStore = transactionLogs.stateStoreBuilder(table).build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;
+    }
+
+    protected InMemoryTransactionBodyStore transactionBodyStore() {
+        return transactionLogs.getTransactionBodyStore();
     }
 
     protected DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {

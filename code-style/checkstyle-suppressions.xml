@@ -60,8 +60,8 @@
     <suppress files="[\\/]ingest[\\/]ingest-runner[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]ingest[\\/]ingest-starter[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]ingest[\\/]ingest-starter[\\/].*" id="missingJavadocType"/>
-    <suppress files="[\\/]ingest[\\/]ingest-status-store[\\/].*" id="missingJavadocMethod"/>
-    <suppress files="[\\/]ingest[\\/]ingest-status-store[\\/].*" id="missingJavadocType"/>
+    <suppress files="[\\/]ingest[\\/]ingest-tracker[\\/].*" id="missingJavadocMethod"/>
+    <suppress files="[\\/]ingest[\\/]ingest-tracker[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]query[\\/].*" id="missingJavadocMethod"/>
     <suppress files="[\\/]query[\\/].*" id="missingJavadocType"/>
     <suppress files="[\\/]trino[\\/].*" id="missingJavadocMethod"/>

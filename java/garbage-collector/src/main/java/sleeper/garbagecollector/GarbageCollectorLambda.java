@@ -38,12 +38,13 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -54,7 +55,6 @@ import java.util.Map.Entry;
 import static java.util.stream.Collectors.groupingBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
-import static sleeper.garbagecollector.GarbageCollector.sendAsyncCommit;
 
 /**
  * Runs the garbage collector in AWS Lambda. Builds and invokes {@link GarbageCollector} for a batch of tables.
@@ -85,7 +85,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
         garbageCollector = new GarbageCollector(deleteFileAndSketches(conf),
                 instanceProperties, stateStoreProvider,
-                sendAsyncCommit(instanceProperties, sqsClient, new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject)));
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));
     }
 
     @Override

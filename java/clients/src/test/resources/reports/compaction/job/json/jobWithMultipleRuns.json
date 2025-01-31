@@ -25,19 +25,10 @@
           },
           {
             "updateTime": "2022-10-12T10:01:45.123Z",
-            "summary": {
-              "recordsProcessed": {
-                "recordsRead": 300,
-                "recordsWritten": 150
-              },
-              "runTime": {
-                "startTime": "2022-10-12T10:01:15.001Z",
-                "finishTime": "2022-10-12T10:01:45.001Z",
-                "durationInSeconds": 30.0,
-                "timeInProcessInSeconds": 30.0
-              },
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0
+            "finishTime": "2022-10-12T10:01:45.001Z",
+            "recordsProcessed": {
+              "recordsRead": 300,
+              "recordsWritten": 150
             },
             "type": "FINISHED_WHEN_COMMITTED"
           },
@@ -58,19 +49,10 @@
           },
           {
             "updateTime": "2022-10-12T10:01:30.123Z",
-            "summary": {
-              "recordsProcessed": {
-                "recordsRead": 300,
-                "recordsWritten": 150
-              },
-              "runTime": {
-                "startTime": "2022-10-12T10:01:00.001Z",
-                "finishTime": "2022-10-12T10:01:30.001Z",
-                "durationInSeconds": 30.0,
-                "timeInProcessInSeconds": 30.0
-              },
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0
+            "finishTime": "2022-10-12T10:01:30.001Z",
+            "recordsProcessed": {
+              "recordsRead": 300,
+              "recordsWritten": 150
             },
             "type": "FINISHED_WHEN_COMMITTED"
           },
@@ -109,12 +91,7 @@
           },
           {
             "updateTime": "2022-10-11T10:01:30.123Z",
-            "runTime": {
-              "startTime": "2022-10-11T10:01:00.001Z",
-              "finishTime": "2022-10-11T10:01:30.001Z",
-              "durationInSeconds": 30.0,
-              "timeInProcessInSeconds": 30.0
-            },
+            "failureTime": "2022-10-11T10:01:30.001Z",
             "failureReasons": [
               "Unexpected failure reading input file",
               "Some temporary IO problem"
@@ -141,12 +118,7 @@
           },
           {
             "updateTime": "2022-10-10T10:01:45.123Z",
-            "runTime": {
-              "startTime": "2022-10-10T10:01:15.001Z",
-              "finishTime": "2022-10-10T10:01:45.001Z",
-              "durationInSeconds": 30.0,
-              "timeInProcessInSeconds": 30.0
-            },
+            "failureTime": "2022-10-10T10:01:45.001Z",
             "failureReasons": [
               "Compaction has already been committed",
               "Failed database update"
@@ -165,19 +137,10 @@
           },
           {
             "updateTime": "2022-10-10T10:01:20.123Z",
-            "summary": {
-              "recordsProcessed": {
-                "recordsRead": 200,
-                "recordsWritten": 100
-              },
-              "runTime": {
-                "startTime": "2022-10-10T10:01:00.001Z",
-                "finishTime": "2022-10-10T10:01:20.001Z",
-                "durationInSeconds": 20.0,
-                "timeInProcessInSeconds": 20.0
-              },
-              "recordsReadPerSecond": 10.0,
-              "recordsWrittenPerSecond": 5.0
+            "finishTime": "2022-10-10T10:01:20.001Z",
+            "recordsProcessed": {
+              "recordsRead": 200,
+              "recordsWritten": 100
             },
             "type": "FINISHED_WHEN_COMMITTED"
           },

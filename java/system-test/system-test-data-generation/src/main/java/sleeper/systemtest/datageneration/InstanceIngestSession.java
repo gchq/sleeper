@@ -33,6 +33,7 @@ import sleeper.clients.util.AssumeSleeperRoleV2;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
@@ -44,7 +45,9 @@ public class InstanceIngestSession implements AutoCloseable {
     private final S3AsyncClient s3Async;
     private final Configuration hadoopConfiguration;
     private final InstanceProperties instanceProperties;
+    private final TablePropertiesProvider tablePropertiesProvider;
     private final TableProperties tableProperties;
+    private final StateStoreProvider stateStoreProvider;
 
     private InstanceIngestSession(AssumeSleeperRole assumeRole, AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties,
             String tableName) {
@@ -57,8 +60,9 @@ public class InstanceIngestSession implements AutoCloseable {
         this.s3Async = roleV2.buildClient(S3AsyncClient.builder());
         this.hadoopConfiguration = roleHadoop.setS3ACredentials(HadoopConfigurationProvider.getConfigurationForECS(instanceProperties));
         this.instanceProperties = instanceProperties;
-        this.tableProperties = S3TableProperties.createProvider(instanceProperties, s3, dynamo)
-                .getByName(tableName);
+        this.tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamo);
+        this.tableProperties = tablePropertiesProvider.getByName(tableName);
+        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamo, hadoopConfiguration);
     }
 
     public static InstanceIngestSession direct(AWSSecurityTokenService stsClientV1, StsClient stsClientV2, InstanceProperties instanceProperties, String tableName) {
@@ -95,8 +99,12 @@ public class InstanceIngestSession implements AutoCloseable {
         return tableProperties;
     }
 
-    public StateStoreProvider createStateStoreProvider() {
-        return StateStoreFactory.createProvider(instanceProperties, s3, dynamo, hadoopConfiguration);
+    public TablePropertiesProvider tablePropertiesProvider() {
+        return tablePropertiesProvider;
+    }
+
+    public StateStoreProvider stateStoreProvider() {
+        return stateStoreProvider;
     }
 
     @Override

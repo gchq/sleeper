@@ -31,29 +31,29 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateJobsTestUtils;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequestSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
+import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -65,11 +65,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestTestHelper.requestToAssignFilesToJobs;
 import static sleeper.compaction.core.job.creation.CreateJobsTestUtils.assertAllReferencesHaveJobId;
 import static sleeper.compaction.core.job.creation.CreateJobsTestUtils.createInstanceProperties;
 import static sleeper.compaction.core.job.creation.CreateJobsTestUtils.createTableProperties;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -78,12 +76,13 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
 @Testcontainers
 public class AwsCreateCompactionJobsIT {
 
     @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
+    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(
             LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
 
     private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
@@ -148,13 +147,14 @@ public class AwsCreateCompactionJobsIT {
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(files);
         List<CompactionJobDispatchRequest> batches = receivePendingBatches();
-        List<CompactionJobIdAssignmentCommitRequest> jobIdAssignmentRequests = receiveJobIdAssignmentRequests();
+        List<StateStoreCommitRequest> jobIdAssignmentRequests = receiveJobIdAssignmentRequests();
         assertThat(batches).singleElement().satisfies(batch -> {
             assertThat(loadBatchJobs(batch)).singleElement().satisfies(job -> {
                 assertThat(job.getInputFiles()).containsExactlyInAnyOrder("file1", "file2", "file3", "file4");
                 assertThat(job.getPartitionId()).isEqualTo("root");
                 assertThat(jobIdAssignmentRequests).containsExactly(
-                        requestToAssignFilesToJobs(List.of(job), tableProperties.get(TABLE_ID)));
+                        StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), new AssignJobIdsTransaction(
+                                List.of(job.createAssignJobIdRequest()))));
             });
         });
     }
@@ -174,7 +174,7 @@ public class AwsCreateCompactionJobsIT {
         return new CompactionJobSerDe().batchFromJson(json);
     }
 
-    private List<CompactionJobIdAssignmentCommitRequest> receiveJobIdAssignmentRequests() {
+    private List<StateStoreCommitRequest> receiveJobIdAssignmentRequests() {
         return receiveAssignJobIdQueueMessage().getMessages().stream()
                 .map(this::readAssignJobIdRequest)
                 .collect(Collectors.toList());
@@ -187,8 +187,8 @@ public class AwsCreateCompactionJobsIT {
         return sqs.receiveMessage(receiveMessageRequest);
     }
 
-    private CompactionJobIdAssignmentCommitRequest readAssignJobIdRequest(Message message) {
-        return new CompactionJobIdAssignmentCommitRequestSerDe().fromJson(message.getBody());
+    private StateStoreCommitRequest readAssignJobIdRequest(Message message) {
+        return new StateStoreCommitRequestSerDe(tableProperties).fromJson(message.getBody());
     }
 
     private InstanceProperties createInstance() {
@@ -227,7 +227,6 @@ public class AwsCreateCompactionJobsIT {
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
         return AwsCreateCompactionJobs.from(ObjectFactory.noUserJars(),
-                instanceProperties, stateStoreProvider, CompactionJobStatusStore.NONE,
-                s3, sqs);
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties), stateStoreProvider, s3, sqs);
     }
 }

@@ -51,7 +51,7 @@ public class PythonIngestST {
         // When
         sleeper.pythonApi()
                 .ingestByQueue().uploadingLocalFile(tempDir, "file.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -69,7 +69,7 @@ public class PythonIngestST {
         // When
         sleeper.pythonApi()
                 .ingestByQueue().fromS3("file1.parquet", "file2.parquet")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())
@@ -87,7 +87,7 @@ public class PythonIngestST {
         // When
         sleeper.pythonApi()
                 .ingestByQueue().fromS3("test-dir")
-                .invokeTask().waitForJobs();
+                .waitForTask().waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())

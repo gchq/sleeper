@@ -16,14 +16,13 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
 import sleeper.core.table.TableNotFoundException;
-import sleeper.statestore.committer.StateStoreCommitRequest;
-import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
-import sleeper.systemtest.dsl.statestore.StateStoreCommitMessage;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
@@ -41,14 +40,16 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class InMemoryStateStoreCommitter {
 
+    private final InMemoryTransactionBodyStore transactionBodyStore;
     private final InMemoryIngestByQueue ingest;
     private final InMemoryCompaction compaction;
-    private final Queue<StateStoreCommitMessage> queue = new LinkedList<>();
+    private final Queue<StateStoreCommitRequest> queue = new LinkedList<>();
     private final Map<String, Integer> numCommitsByTableId = new HashMap<>();
     private final Map<String, Double> commitsPerSecondByTableId = new HashMap<>();
     private final Map<String, Boolean> runCommitterOnSendByTableId = new HashMap<>();
 
-    public InMemoryStateStoreCommitter(InMemoryIngestByQueue ingest, InMemoryCompaction compaction) {
+    public InMemoryStateStoreCommitter(InMemoryTransactionBodyStore transactionBodyStore, InMemoryIngestByQueue ingest, InMemoryCompaction compaction) {
+        this.transactionBodyStore = transactionBodyStore;
         this.ingest = ingest;
         this.compaction = compaction;
     }
@@ -81,27 +82,25 @@ public class InMemoryStateStoreCommitter {
 
     public class Driver implements StateStoreCommitterDriver {
         private final SystemTestInstanceContext instance;
-        private final StateStoreCommitRequestDeserialiser deserialiser;
         private final StateStoreCommitter committer;
         private boolean committerPaused = false;
 
         private Driver(SystemTestContext context) {
             instance = context.instance();
             TablePropertiesProvider tablePropertiesProvider = instance.getTablePropertiesProvider();
-            deserialiser = new StateStoreCommitRequestDeserialiser(tablePropertiesProvider, InMemoryStateStoreCommitter::failToLoadS3Object);
             committer = new StateStoreCommitter(
-                    compaction.jobStore(), ingest.jobStore(),
-                    tablePropertiesProvider, instance.getStateStoreProvider(),
-                    Instant::now);
+                    instance.getInstanceProperties(), tablePropertiesProvider,
+                    instance.getStateStoreProvider(), compaction.jobTracker(), ingest.jobTracker(),
+                    transactionBodyStore, Instant::now);
         }
 
         @Override
-        public void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitMessage> messages) {
+        public void sendCommitMessagesInParallelBatches(Stream<StateStoreCommitRequest> messages) {
             sendCommitMessagesInSequentialBatches(messages);
         }
 
         @Override
-        public void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitMessage> messages) {
+        public void sendCommitMessagesInSequentialBatches(Stream<StateStoreCommitRequest> messages) {
             messages.forEach(queue::add);
             if (!committerPaused && isRunCommitterOnSend()) {
                 runCommitter();
@@ -109,12 +108,11 @@ public class InMemoryStateStoreCommitter {
         }
 
         private void runCommitter() {
-            for (StateStoreCommitMessage message = queue.poll(); message != null; message = queue.poll()) {
+            for (StateStoreCommitRequest message = queue.poll(); message != null; message = queue.poll()) {
                 try {
-                    StateStoreCommitRequest request = deserialiser.fromJson(message.getBody());
-                    committer.apply(request);
+                    committer.apply(message);
                     numCommitsByTableId.compute(
-                            request.getTableId(),
+                            message.getTableId(),
                             (id, count) -> count == null ? 1 : count + 1);
                 } catch (TableNotFoundException e) {
                     // Discard messages from other tests
@@ -167,10 +165,6 @@ public class InMemoryStateStoreCommitter {
             return tableIds.stream()
                     .collect(toMap(id -> id, id -> commitsPerSecondByTableId.getOrDefault(id, 1.0)));
         }
-    }
-
-    private static String failToLoadS3Object(String key) {
-        throw new UnsupportedOperationException();
     }
 
 }

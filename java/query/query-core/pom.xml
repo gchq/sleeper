@@ -19,7 +19,7 @@
     <parent>
         <artifactId>query</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.27.0</version>
+        <version>0.28.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,6 +38,12 @@
             <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>example-iterators</artifactId>
+            <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

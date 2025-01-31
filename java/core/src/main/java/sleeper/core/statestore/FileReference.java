@@ -15,10 +15,7 @@
  */
 package sleeper.core.statestore;
 
-import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
-
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -49,21 +46,6 @@ public class FileReference {
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Validates that a job's output file is not the same as any of its input files.
-     *
-     * @param  inputFiles                              the input filenames
-     * @param  newReference                            the output file reference
-     * @throws NewReferenceSameAsOldReferenceException thrown if any of the input files are the same as the output file
-     */
-    public static void validateNewReferenceForJobOutput(Collection<String> inputFiles, FileReference newReference) throws NewReferenceSameAsOldReferenceException {
-        for (String inputFile : inputFiles) {
-            if (inputFile.equals(newReference.getFilename())) {
-                throw new NewReferenceSameAsOldReferenceException(inputFile);
-            }
-        }
     }
 
     public String getFilename() {

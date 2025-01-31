@@ -166,27 +166,27 @@ async fn main() -> color_eyre::Result<()> {
 mod path_test {
     use crate::path_absolute;
 
-    #[cfg(unix)]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     fn cd_to_tmp() {
         std::env::set_current_dir("/tmp").unwrap();
     }
 
     #[test]
-    #[cfg(unix)]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     fn relative_path_converts() {
         cd_to_tmp();
         assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("foo/bar/baz.txt"));
     }
 
     #[test]
-    #[cfg(unix)]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     fn relative_path_converts_with_one_dot() {
         cd_to_tmp();
         assert_eq!("/tmp/foo/bar/baz.txt", path_absolute("./foo/bar/baz.txt"));
     }
 
     #[test]
-    #[cfg(unix)]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     fn relative_path_converts_with_double_dot() {
         cd_to_tmp();
         assert_eq!(
@@ -196,7 +196,7 @@ mod path_test {
     }
 
     #[test]
-    #[cfg(unix)]
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     fn absolute_path_unchanged() {
         cd_to_tmp();
         assert_eq!("/tmp/foo/bar", path_absolute("/tmp/foo/bar"));

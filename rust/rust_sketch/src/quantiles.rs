@@ -75,7 +75,6 @@
     clippy::must_use_candidate,
     clippy::missing_errors_doc
 )]
-
 pub mod i32 {
 
     unsafe extern "C++" {
@@ -419,10 +418,10 @@ mod i32_tests {
     #[test]
     fn test_serialize_random() {
         let mut sketch = create_empty();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..N {
-            let r: i32 = rng.gen();
+            let r: i32 = rng.random();
             sketch.pin_mut().update(r);
         }
 
@@ -772,10 +771,10 @@ mod i64_tests {
     #[test]
     fn test_serialize_random() {
         let mut sketch = create_empty();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         for _ in 0..N {
-            let r: i64 = rng.gen();
+            let r: i64 = rng.random();
             sketch.pin_mut().update(r);
         }
 
@@ -915,7 +914,7 @@ mod str_tests {
         *,
     };
     use cxx::UniquePtr;
-    use rand::distributions::{Alphanumeric, DistString};
+    use rand::distr::{Alphanumeric, SampleString};
 
     // convenience alias
     use string_sketch_t as sketch_type;
@@ -1134,7 +1133,7 @@ mod str_tests {
         let mut sketch = create_empty();
 
         for _ in 0..N {
-            let r = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+            let r = Alphanumeric.sample_string(&mut rand::rng(), 16);
             sketch.pin_mut().update(&r);
         }
 
@@ -1274,7 +1273,7 @@ mod byte_tests {
         *,
     };
     use cxx::UniquePtr;
-    use rand::distributions::{Alphanumeric, DistString};
+    use rand::distr::{Alphanumeric, SampleString};
 
     // convenience alias
     use byte_sketch_t as sketch_type;
@@ -1491,7 +1490,7 @@ mod byte_tests {
         let mut sketch = create_empty();
 
         for _ in 0..N {
-            let r = Alphanumeric.sample_string(&mut rand::thread_rng(), 16);
+            let r = Alphanumeric.sample_string(&mut rand::rng(), 16);
             sketch.pin_mut().update(r.as_bytes());
         }
 

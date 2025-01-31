@@ -16,7 +16,7 @@
 
 package sleeper.clients.status.report.partitions;
 
-import sleeper.clients.status.report.job.StandardProcessRunReporter;
+import sleeper.clients.status.report.job.StandardJobRunReporter;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
@@ -78,7 +78,7 @@ public class PartitionsStatusReporter {
                 .value(LEAF, partition.isLeafPartition() ? "yes" : "no")
                 .value(WILL_BE_SPLIT, willBeSplitString(status))
                 .value(MAY_SPLIT_IF_COMPACTED, maySplitIfCompactedString(status))
-                .value(SPLIT_FIELD, StandardProcessRunReporter.getOrNull(status.getSplitField(), Field::getName))
+                .value(SPLIT_FIELD, StandardJobRunReporter.getOrNull(status.getSplitField(), Field::getName))
                 .value(SPLIT_VALUE, splitValueString(status));
     }
 

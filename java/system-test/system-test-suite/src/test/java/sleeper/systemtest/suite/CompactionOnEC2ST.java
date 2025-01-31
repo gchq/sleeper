@@ -34,7 +34,9 @@ import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_ON_EC2;
 import static sleeper.systemtest.suite.testutil.TestResources.exampleString;
 
@@ -46,7 +48,7 @@ public class CompactionOnEC2ST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(COMPACTION_ON_EC2);
+        sleeper.connectToInstanceNoTables(COMPACTION_ON_EC2);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
@@ -58,7 +60,8 @@ public class CompactionOnEC2ST {
     @Test
     void shouldCompactFilesUsingDefaultCompactionStrategy(SleeperSystemTest sleeper) {
         // Given
-        sleeper.updateTableProperties(Map.of(
+        sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA, Map.of(
+                TABLE_ONLINE, "false",
                 COMPACTION_FILES_BATCH_SIZE, "5"));
         // Files with records 9, 9, 9, 9, 10 (which match SizeRatioStrategy criteria)
         RecordNumbers numbers = sleeper.scrambleNumberedRecords(LongStream.range(0, 46));
@@ -70,7 +73,7 @@ public class CompactionOnEC2ST {
                 .numberedRecords(numbers.range(36, 46));
 
         // When
-        sleeper.compaction().createJobs(1).invokeTasks(1).waitForJobs();
+        sleeper.compaction().createJobs(1).waitForTasks(1).waitForJobs();
 
         // Then
         assertThat(sleeper.directQuery().allRecordsInTable())

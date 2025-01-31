@@ -268,8 +268,8 @@ class DynamoDBFileReferenceStore implements FileReferenceStore {
     }
 
     private void atomicallyReplaceFileReferencesWithNewOne(ReplaceFileReferencesRequest request) throws StateStoreException {
+        request.validateNewReference();
         FileReference newReference = request.getNewReference();
-        FileReference.validateNewReferenceForJobOutput(request.getInputFiles(), newReference);
         // Delete record for file for current status
         Instant updateTime = clock.instant();
         List<TransactWriteItem> writes = new ArrayList<>();

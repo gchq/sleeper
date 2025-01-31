@@ -22,7 +22,6 @@ import com.amazonaws.services.lambda.runtime.events.SQSEvent.SQSMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -31,19 +30,21 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.FilesReportTestHelper;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.PollWithRetries;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
 import sleeper.statestore.committer.StateStoreCommitter;
 
 import java.time.Duration;
@@ -126,21 +127,17 @@ public class StateStoreCommitterLambdaTest {
         StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties, stateStore());
         return new StateStoreCommitterLambda(
                 tablePropertiesProvider, stateStoreProvider,
-                deserialiser(), committer(tablePropertiesProvider, stateStoreProvider), PollWithRetries.noRetries());
+                serDe(), committer(tablePropertiesProvider, stateStoreProvider), PollWithRetries.noRetries());
     }
 
-    private StateStoreCommitRequestDeserialiser deserialiser() {
-        return new StateStoreCommitRequestDeserialiser(
-                new FixedTablePropertiesProvider(tableProperties),
-                s3Key -> {
-                    throw new IllegalArgumentException("Unexpected request to load from data bucket key " + s3Key);
-                });
+    private StateStoreCommitRequestSerDe serDe() {
+        return new StateStoreCommitRequestSerDe(new FixedTablePropertiesProvider(tableProperties));
     }
 
     private StateStoreCommitter committer(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
-        return new StateStoreCommitter(CompactionJobStatusStore.NONE, IngestJobStatusStore.NONE,
-                tablePropertiesProvider, stateStoreProvider,
-                Instant::now);
+        return new StateStoreCommitter(instanceProperties, tablePropertiesProvider,
+                stateStoreProvider, CompactionJobTracker.NONE, IngestJobTracker.NONE,
+                transactionLogs.getTransactionBodyStore(), Instant::now);
     }
 
     private SQSEvent event(SQSMessage... messages) {
@@ -150,13 +147,11 @@ public class StateStoreCommitterLambdaTest {
     }
 
     private SQSMessage addFilesMessage(String messageId, FileReference... files) {
-        IngestAddFilesCommitRequest request = IngestAddFilesCommitRequest.builder()
-                .tableId(tableProperties.get(TABLE_ID))
-                .fileReferences(List.of(files))
-                .build();
+        StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
+                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(files))));
         SQSMessage message = new SQSMessage();
         message.setMessageId(messageId);
-        message.setBody(new IngestAddFilesCommitRequestSerDe().toJson(request));
+        message.setBody(new StateStoreCommitRequestSerDe(tableProperties).toJson(request));
         return message;
     }
 

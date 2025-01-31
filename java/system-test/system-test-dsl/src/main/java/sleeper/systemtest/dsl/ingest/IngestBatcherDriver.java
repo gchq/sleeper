@@ -16,13 +16,13 @@
 
 package sleeper.systemtest.dsl.ingest;
 
+import sleeper.ingest.batcher.core.IngestBatcherStore;
+
 import java.util.List;
 
 public interface IngestBatcherDriver {
 
     void sendFiles(List<String> files);
 
-    List<String> invokeGetJobIds();
-
-    void clearStore();
+    IngestBatcherStore batcherStore();
 }

@@ -71,11 +71,11 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_TASK_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.VERSION;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.instance.CommonProperty.QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
+import static sleeper.core.properties.instance.IngestProperty.INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CPU;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.IngestProperty.INGEST_TASK_MEMORY;
@@ -143,7 +143,7 @@ public class IngestStack extends NestedStack {
                 .create(this, "IngestJobQueue")
                 .queueName(queueName)
                 .deadLetterQueue(ingestJobDeadLetterQueue)
-                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                .visibilityTimeout(Duration.seconds(instanceProperties.getInt(INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(INGEST_JOB_QUEUE_URL, ingestJobQueue.getQueueUrl());
         instanceProperties.set(INGEST_JOB_QUEUE_ARN, ingestJobQueue.getQueueArn());
@@ -276,8 +276,8 @@ public class IngestStack extends NestedStack {
         // Cloudwatch rule to trigger this lambda
         Rule rule = Rule.Builder
                 .create(this, "IngestTasksCreationPeriodicTrigger")
-                .ruleName(SleeperScheduleRule.INGEST.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the ingest tasks lambda")
+                .ruleName(SleeperScheduleRule.INGEST_TASK_CREATION.buildRuleName(instanceProperties))
+                .description(SleeperScheduleRule.INGEST_TASK_CREATION.getDescription())
                 .enabled(!shouldDeployPaused(this))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(INGEST_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))

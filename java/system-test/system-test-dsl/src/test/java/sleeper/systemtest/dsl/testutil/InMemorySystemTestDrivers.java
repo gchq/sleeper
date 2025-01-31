@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil;
 
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
 import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -24,7 +25,7 @@ import sleeper.systemtest.dsl.gc.GarbageCollectionDriver;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.ingest.IngestBatcherDriver;
 import sleeper.systemtest.dsl.ingest.IngestByQueue;
-import sleeper.systemtest.dsl.ingest.InvokeIngestTasksDriver;
+import sleeper.systemtest.dsl.ingest.IngestTasksDriver;
 import sleeper.systemtest.dsl.instance.AssumeAdminRoleDriver;
 import sleeper.systemtest.dsl.instance.DeployedSystemTestResources;
 import sleeper.systemtest.dsl.instance.ScheduleRulesDriver;
@@ -73,14 +74,15 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
     private final InMemoryDataStore sourceFiles = new InMemoryDataStore();
     private final InMemoryDataStore data = new InMemoryDataStore();
     private final InMemorySketchesStore sketches = new InMemorySketchesStore();
-    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver();
+    private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
+    private final InMemorySleeperTablesDriver tablesDriver = new InMemorySleeperTablesDriver(transactionLogs);
     private final SleeperInstanceDriver instanceDriver = new InMemorySleeperInstanceDriver(tablesDriver);
     private final InMemoryIngestBatcherStore batcherStore = new InMemoryIngestBatcherStore();
     private final InMemoryIngestByQueue ingestByQueue = new InMemoryIngestByQueue(sourceFiles, data, sketches);
     private final InMemoryCompaction compaction = new InMemoryCompaction(data, sketches);
     private final InMemoryTableMetrics metrics = new InMemoryTableMetrics();
     private final InMemoryReports reports = new InMemoryReports(ingestByQueue, compaction);
-    private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(ingestByQueue, compaction);
+    private final InMemoryStateStoreCommitter stateStoreCommitter = new InMemoryStateStoreCommitter(transactionLogs.getTransactionBodyStore(), ingestByQueue, compaction);
     private long fileSizeBytesForBatcher = 1024;
 
     @Override
@@ -130,11 +132,11 @@ public class InMemorySystemTestDrivers extends SystemTestDriversBase {
 
     @Override
     public IngestByQueue ingestByQueue(SystemTestContext context) {
-        return new IngestByQueue(context.instance(), ingestByQueue.byQueueDriver());
+        return new IngestByQueue(context.instance(), ingestByQueue.byQueueDriver(context));
     }
 
     @Override
-    public InvokeIngestTasksDriver invokeIngestTasks(SystemTestContext context) {
+    public IngestTasksDriver ingestTasks(SystemTestContext context) {
         return ingestByQueue.tasksDriver(context);
     }
 

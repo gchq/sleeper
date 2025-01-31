@@ -15,18 +15,18 @@
  */
 package sleeper.clients.status.report.ingest.task;
 
-import sleeper.ingest.core.task.IngestTaskStatus;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.core.tracker.ingest.task.IngestTaskStatus;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 
 import java.time.Instant;
 import java.util.List;
 
 @FunctionalInterface
 public interface IngestTaskQuery {
-    IngestTaskQuery ALL = IngestTaskStatusStore::getAllTasks;
-    IngestTaskQuery UNFINISHED = IngestTaskStatusStore::getTasksInProgress;
+    IngestTaskQuery ALL = IngestTaskTracker::getAllTasks;
+    IngestTaskQuery UNFINISHED = IngestTaskTracker::getTasksInProgress;
 
-    List<IngestTaskStatus> run(IngestTaskStatusStore store);
+    List<IngestTaskStatus> run(IngestTaskTracker tracker);
 
     static IngestTaskQuery from(String type) {
         switch (type) {

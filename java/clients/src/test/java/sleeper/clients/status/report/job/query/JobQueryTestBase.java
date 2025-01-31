@@ -20,13 +20,12 @@ import sleeper.clients.status.report.job.query.JobQuery.Type;
 import sleeper.clients.testutil.TestConsoleInput;
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.CompactionJobStatusTestData;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -35,6 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.Mockito.mock;
+import static sleeper.compaction.core.job.CompactionJobStatusFromJobTestData.compactionJobCreated;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -45,13 +45,13 @@ public class JobQueryTestBase {
     private final TableProperties tableProperties = createTableProperties();
     protected static final String TABLE_NAME = "test-table";
     protected final String tableId = tableProperties.get(TABLE_ID);
-    protected final CompactionJobStatusStore statusStore = mock(CompactionJobStatusStore.class);
+    protected final CompactionJobTracker tracker = mock(CompactionJobTracker.class);
     private final CompactionJobTestDataHelper dataHelper = CompactionJobTestDataHelper.forTable(instanceProperties, tableProperties);
     protected final CompactionJob exampleJob1 = dataHelper.singleFileCompaction();
     protected final CompactionJob exampleJob2 = dataHelper.singleFileCompaction();
-    protected final CompactionJobStatus exampleStatus1 = CompactionJobStatusTestData.jobCreated(
+    protected final CompactionJobStatus exampleStatus1 = compactionJobCreated(
             exampleJob1, Instant.parse("2022-09-22T13:33:12.001Z"));
-    protected final CompactionJobStatus exampleStatus2 = CompactionJobStatusTestData.jobCreated(
+    protected final CompactionJobStatus exampleStatus2 = compactionJobCreated(
             exampleJob2, Instant.parse("2022-09-22T13:53:12.001Z"));
     protected final List<CompactionJobStatus> exampleStatusList = Arrays.asList(exampleStatus2, exampleStatus1);
     protected final ToStringConsoleOutput out = new ToStringConsoleOutput();
@@ -75,7 +75,7 @@ public class JobQueryTestBase {
     }
 
     private List<CompactionJobStatus> queryStatuses(Type queryType, String queryParameters, Clock clock) {
-        return queryFrom(queryType, queryParameters, clock).run(statusStore);
+        return queryFrom(queryType, queryParameters, clock).run(tracker);
     }
 
     private JobQuery queryFrom(Type queryType, String queryParameters, Clock clock) {

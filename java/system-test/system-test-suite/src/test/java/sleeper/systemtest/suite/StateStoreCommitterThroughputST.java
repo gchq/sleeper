@@ -37,13 +37,13 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.parallel.ExecutionMode.SAME_THREAD;
-import static sleeper.core.record.process.RecordsProcessedSummaryTestHelper.summary;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMMITTER_THROUGHPUT;
 
@@ -91,7 +91,7 @@ public class StateStoreCommitterThroughputST {
         // Then
         assertThat(sleeper.tableFiles().references()).hasSize(1000);
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
+                .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
     }
 
     @Test
@@ -170,7 +170,7 @@ public class StateStoreCommitterThroughputST {
                                 .mapToObj(i -> withJobId(jobId(i), fileFactory.rootFile(filename(i), i)))
                                 .collect(toUnmodifiableList()))));
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
+                .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
     }
 
     @Test
@@ -210,7 +210,7 @@ public class StateStoreCommitterThroughputST {
                                 .flatMap(i -> Stream.of(filename(i), filename(i + 1000)))
                                 .collect(toUnmodifiableList()))));
         assertThat(sleeper.stateStore().commitsPerSecondForTable())
-                .satisfies(expectedCommitsPerSecondForTransactionLogAndStatusStore());
+                .satisfies(expectedCommitsPerSecondForTransactionLogAndTracker());
     }
 
     @Test
@@ -232,8 +232,7 @@ public class StateStoreCommitterThroughputST {
                     .collect(toUnmodifiableList()));
             store.atomicallyReplaceFileReferencesWithNewOnes(IntStream.rangeClosed(1, 1000)
                     .mapToObj(i -> replaceJobFileReferences(
-                            jobId(i), "root", List.of(filename(i), filename(i + 1000)),
-                            fileFactory.rootFile(filename(i + 2000), i * 2)))
+                            jobId(i), List.of(filename(i), filename(i + 1000)), fileFactory.rootFile(filename(i + 2000), i * 2)))
                     .collect(toUnmodifiableList()));
         });
 
@@ -308,7 +307,7 @@ public class StateStoreCommitterThroughputST {
                 .isGreaterThan(50.0);
     }
 
-    private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAndStatusStore() {
+    private static Consumer<Double> expectedCommitsPerSecondForTransactionLogAndTracker() {
         return commitsPerSecond -> assertThat(commitsPerSecond)
                 .isGreaterThan(35.0);
     }

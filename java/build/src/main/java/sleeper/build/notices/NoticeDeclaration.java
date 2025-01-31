@@ -32,6 +32,7 @@ public record NoticeDeclaration(int number, String declaration, Pattern groupId,
         int number = 0;
         while (matcher.find()) {
             matches.add(NoticeDeclaration.from(number, matcher.group(), matcher.group(1), matcher.group(2), matcher.group(3)));
+            number++;
         }
         return matches;
     }

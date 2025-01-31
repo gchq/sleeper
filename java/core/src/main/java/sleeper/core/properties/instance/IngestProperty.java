@@ -44,9 +44,17 @@ public interface IngestProperty {
     UserDefinedInstanceProperty INGEST_KEEP_ALIVE_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.keepalive.period.seconds")
             .description("The frequency, in seconds, with which change message visibility requests are sent to extend the " +
                     "visibility of messages on the ingest queue so that they are not processed by other processes.\n" +
-                    "This should be less than the value of sleeper.queue.visibility.timeout.seconds.")
+                    "This should be less than the value of sleeper.ingest.queue.visibility.timeout.seconds.")
             .defaultValue("300")
             .propertyGroup(InstancePropertyGroup.INGEST).build();
+    UserDefinedInstanceProperty INGEST_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.ingest.queue.visibility.timeout.seconds")
+            .description("The visibility timeout in seconds for the standard ingest job queue. " +
+                    "This should be greater than sleeper.ingest.keepalive.period.seconds.")
+            .defaultValue("900")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.INGEST)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty S3A_INPUT_FADVISE = Index.propertyBuilder("sleeper.ingest.fs.s3a.experimental.input.fadvise")
             .description("This sets the value of fs.s3a.experimental.input.fadvise on the Hadoop configuration used to read and write " +
                     "files to and from S3 in ingest jobs. Changing this value allows you to fine-tune how files are read. Possible " +
@@ -82,19 +90,19 @@ public interface IngestProperty {
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
 
-    UserDefinedInstanceProperty INGEST_STATUS_STORE_ENABLED = IngestProperty.Index.propertyBuilder("sleeper.ingest.status.store.enabled")
+    UserDefinedInstanceProperty INGEST_TRACKER_ENABLED = IngestProperty.Index.propertyBuilder("sleeper.ingest.tracker.enabled")
             .description("Flag to enable/disable storage of tracking information for ingest jobs and tasks.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.INGEST)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty INGEST_JOB_STATUS_TTL_IN_SECONDS = IngestProperty.Index.propertyBuilder("sleeper.ingest.job.status.ttl")
-            .description("The time to live in seconds for ingest job updates in the status store. Default is 1 week.\n" +
+            .description("The time to live in seconds for ingest job updates in the job tracker. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.INGEST).build();
     UserDefinedInstanceProperty INGEST_TASK_STATUS_TTL_IN_SECONDS = IngestProperty.Index.propertyBuilder("sleeper.ingest.task.status.ttl")
-            .description("The time to live in seconds for ingest task updates in the status store. Default is 1 week.\n" +
+            .description("The time to live in seconds for ingest task updates in the job tracker. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)

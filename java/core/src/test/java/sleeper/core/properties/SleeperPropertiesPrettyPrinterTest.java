@@ -317,11 +317,11 @@ class SleeperPropertiesPrettyPrinterTest {
             assertThat(output)
                     .contains(InstanceProperty.getAll().stream()
                             .filter(property -> property.getPropertyGroup().equals(InstancePropertyGroup.COMMON))
-                            .map(SleeperProperty::getPropertyName)
+                            .map(property -> property.getPropertyName() + "=")
                             .collect(Collectors.toList()))
                     .doesNotContain(InstanceProperty.getAll().stream()
                             .filter(not(property -> property.getPropertyGroup().equals(InstancePropertyGroup.COMMON)))
-                            .map(SleeperProperty::getPropertyName)
+                            .map(property -> property.getPropertyName() + "=")
                             .collect(Collectors.toList()));
         }
 

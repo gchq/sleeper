@@ -77,7 +77,7 @@ public class CompactionTaskResources {
             InstanceProperties instanceProperties,
             LambdaCode lambdaCode,
             IBucket jarsBucket,
-            Queue compactionJobsQueue,
+            CompactionJobResources jobResources,
             Topic topic,
             CoreStacks coreStacks,
             List<IMetric> errorMetrics) {
@@ -85,15 +85,15 @@ public class CompactionTaskResources {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
 
-        ecsClusterForCompactionTasks(coreStacks, jarsBucket, lambdaCode, compactionJobsQueue);
-        lambdaToCreateCompactionTasks(coreStacks, lambdaCode, compactionJobsQueue);
+        ecsClusterForCompactionTasks(coreStacks, jarsBucket, lambdaCode, jobResources);
+        lambdaToCreateCompactionTasks(coreStacks, lambdaCode, jobResources.getCompactionJobsQueue());
 
         // Allow running compaction tasks
         coreStacks.getInvokeCompactionPolicyForGrants().addStatements(runTasksPolicyStatement());
 
     }
 
-    private void ecsClusterForCompactionTasks(CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, Queue compactionJobsQueue) {
+    private void ecsClusterForCompactionTasks(CoreStacks coreStacks, IBucket jarsBucket, LambdaCode taskCreatorJar, CompactionJobResources jobResources) {
         VpcLookupOptions vpcLookupOptions = VpcLookupOptions.builder()
                 .vpcId(instanceProperties.get(VPC_ID))
                 .build();
@@ -133,7 +133,8 @@ public class CompactionTaskResources {
                 .actions(List.of("ecs:DescribeContainerInstances"))
                 .build());
 
-        compactionJobsQueue.grantConsumeMessages(taskDefinition.getTaskRole());
+        jobResources.getCompactionJobsQueue().grantConsumeMessages(taskDefinition.getTaskRole());
+        jobResources.getCommitBatcherQueue().grantSendMessages(taskDefinition.getTaskRole());
 
         CfnOutputProps compactionClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
@@ -175,7 +176,7 @@ public class CompactionTaskResources {
         Rule rule = Rule.Builder
                 .create(stack, "CompactionTasksCreationPeriodicTrigger")
                 .ruleName(SleeperScheduleRule.COMPACTION_TASK_CREATION.buildRuleName(instanceProperties))
-                .description("A rule to periodically trigger the compaction task creation lambda")
+                .description(SleeperScheduleRule.COMPACTION_TASK_CREATION.getDescription())
                 .enabled(!shouldDeployPaused(stack))
                 .schedule(Schedule.rate(Duration.minutes(instanceProperties.getInt(COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES))))
                 .targets(Collections.singletonList(new LambdaFunction(handler)))

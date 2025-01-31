@@ -35,11 +35,13 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
@@ -47,6 +49,7 @@ import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.utils.HadoopPathUtils;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -69,10 +72,10 @@ public class IngestJobRunner implements IngestJobHandler {
     private final Configuration hadoopConfiguration;
     private final String taskId;
     private final StateStoreProvider stateStoreProvider;
-    private final IngestJobStatusStore statusStore;
-    private final AmazonS3 s3Client;
+    private final IngestJobTracker tracker;
     private final AmazonSQS sqsClient;
     private final IngestFactory ingestFactory;
+    private final StateStoreCommitRequestSender commitSender;
     private final PropertiesReloader propertiesReloader;
     private final Supplier<Instant> timeSupplier;
 
@@ -82,7 +85,7 @@ public class IngestJobRunner implements IngestJobHandler {
             TablePropertiesProvider tablePropertiesProvider,
             PropertiesReloader propertiesReloader,
             StateStoreProvider stateStoreProvider,
-            IngestJobStatusStore statusStore,
+            IngestJobTracker tracker,
             String taskId,
             String localDir,
             AmazonS3 s3Client,
@@ -97,8 +100,7 @@ public class IngestJobRunner implements IngestJobHandler {
         this.hadoopConfiguration = hadoopConfiguration;
         this.taskId = taskId;
         this.stateStoreProvider = stateStoreProvider;
-        this.statusStore = statusStore;
-        this.s3Client = s3Client;
+        this.tracker = tracker;
         this.sqsClient = sqsClient;
         this.timeSupplier = timeSupplier;
         this.ingestFactory = IngestFactory.builder()
@@ -109,6 +111,8 @@ public class IngestJobRunner implements IngestJobHandler {
                 .instanceProperties(instanceProperties)
                 .s3AsyncClient(s3AsyncClient)
                 .build();
+        this.commitSender = new SqsFifoStateStoreCommitRequestSender(
+                instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
     }
 
     @Override
@@ -157,11 +161,11 @@ public class IngestJobRunner implements IngestJobHandler {
 
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(sqsClient, s3Client, instanceProperties,
-                    requestBuilder -> requestBuilder.ingestJob(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
+            return AddFilesToStateStore.bySqs(tableProperties, commitSender,
+                    transactionBuilder -> transactionBuilder.jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
         } else {
-            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), statusStore,
-                    updateBuilder -> updateBuilder.job(job).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
+            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), tracker,
+                    job.addedFilesEventBuilder(timeSupplier.get()).taskId(taskId).jobRunId(jobRunId));
         }
     }
 }

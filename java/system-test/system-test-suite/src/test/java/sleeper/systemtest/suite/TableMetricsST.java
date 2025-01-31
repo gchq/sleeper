@@ -28,9 +28,11 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.addPrefix;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValue.numberStringAndZeroPadTo;
 import static sleeper.systemtest.dsl.sourcedata.GenerateNumberedValueOverrides.overrideField;
@@ -46,6 +48,7 @@ public class TableMetricsST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
+        sleeper.connectToInstanceNoTables(MAIN);
         sleeper.setGeneratorOverrides(
                 overrideField(SystemTestSchema.ROW_KEY_FIELD_NAME,
                         numberStringAndZeroPadTo(2).then(addPrefix("row-"))));
@@ -54,7 +57,8 @@ public class TableMetricsST {
     @Test
     void shouldReportTableMetrics(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstance(MAIN);
+        sleeper.tables().createWithProperties("test", DEFAULT_SCHEMA,
+                Map.of(TABLE_ONLINE, "false"));
         sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")
@@ -77,15 +81,16 @@ public class TableMetricsST {
     @Test
     void shouldReportTableMetricsForMoreTablesThanBatchSize(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstanceNoTables(MAIN);
-        sleeper.tables().create(List.of("A", "B", "C"), DEFAULT_SCHEMA).forEach(() -> {
-            sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
-                    .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "row-50")
-                    .buildTree());
-            sleeper.ingest().direct(tempDir)
-                    .numberedRecords(LongStream.range(0, 100));
-        });
+        sleeper.tables().createWithProperties(
+                List.of("A", "B", "C"), DEFAULT_SCHEMA, Map.of(TABLE_ONLINE, "false"))
+                .forEach(() -> {
+                    sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
+                            .rootFirst("root")
+                            .splitToNewChildren("root", "L", "R", "row-50")
+                            .buildTree());
+                    sleeper.ingest().direct(tempDir)
+                            .numberedRecords(LongStream.range(0, 100));
+                });
         sleeper.table("A").ingest().direct(tempDir)
                 .numberedRecords(LongStream.range(0, 23));
 

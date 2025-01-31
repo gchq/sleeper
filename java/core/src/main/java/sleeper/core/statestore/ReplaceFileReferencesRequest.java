@@ -15,6 +15,18 @@
  */
 package sleeper.core.statestore;
 
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.transactionlog.StateStoreFile;
+import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
+import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -24,7 +36,8 @@ import java.util.Objects;
  */
 public class ReplaceFileReferencesRequest {
     private final String jobId;
-    private final String partitionId;
+    private final String taskId;
+    private final String jobRunId;
     private final List<String> inputFiles;
     private final FileReference newReference;
 
@@ -32,21 +45,30 @@ public class ReplaceFileReferencesRequest {
      * Creates a request to commit one job.
      *
      * @param  jobId        the job ID
-     * @param  partitionId  the ID of the partition the job ran against
      * @param  inputFiles   the filenames of the job's input files
      * @param  newReference the new reference to replace the input file references on the partition
+     *
      * @return              the request
      */
     public static ReplaceFileReferencesRequest replaceJobFileReferences(
-            String jobId, String partitionId, List<String> inputFiles, FileReference newReference) {
-        return new ReplaceFileReferencesRequest(jobId, partitionId, inputFiles, newReference);
+            String jobId, List<String> inputFiles, FileReference newReference) {
+        return ReplaceFileReferencesRequest.builder()
+                .jobId(jobId)
+                .inputFiles(inputFiles)
+                .newReference(newReference)
+                .build();
     }
 
-    private ReplaceFileReferencesRequest(String jobId, String partitionId, List<String> inputFiles, FileReference newReference) {
-        this.jobId = jobId;
-        this.partitionId = partitionId;
-        this.inputFiles = inputFiles;
-        this.newReference = newReference;
+    private ReplaceFileReferencesRequest(Builder builder) {
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        taskId = builder.taskId;
+        jobRunId = builder.jobRunId;
+        inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
+        newReference = Objects.requireNonNull(builder.newReference, "newReference must not be null");
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -56,16 +78,98 @@ public class ReplaceFileReferencesRequest {
      * @return the copy
      */
     public ReplaceFileReferencesRequest withNoUpdateTime() {
-        return new ReplaceFileReferencesRequest(jobId, partitionId, inputFiles,
-                newReference.toBuilder().lastStateStoreUpdateTime(null).build());
+        return builder().jobId(jobId).taskId(taskId).jobRunId(jobRunId).inputFiles(inputFiles)
+                .newReference(newReference.toBuilder().lastStateStoreUpdateTime(null).build())
+                .build();
+    }
+
+    /**
+     * Validates the request against the current state.
+     *
+     * @param  stateStoreFiles                        the state
+     * @throws FileNotFoundException                  if an input file does not exist
+     * @throws FileReferenceNotFoundException         if an input file is not referenced on the same partition
+     * @throws FileReferenceNotAssignedToJobException if an input file is not assigned to the job on this partition
+     * @throws FileAlreadyExistsException             if the new file already exists in the state store
+     */
+    public void validateStateChange(StateStoreFiles stateStoreFiles) throws StateStoreException {
+        for (String filename : inputFiles) {
+            StateStoreFile file = stateStoreFiles.file(filename)
+                    .orElseThrow(() -> new FileNotFoundException(filename));
+            FileReference reference = file.getReferenceForPartitionId(newReference.getPartitionId())
+                    .orElseThrow(() -> new FileReferenceNotFoundException(filename, newReference.getPartitionId()));
+            if (!jobId.equals(reference.getJobId())) {
+                throw new FileReferenceNotAssignedToJobException(reference, jobId);
+            }
+        }
+        if (stateStoreFiles.file(newReference.getFilename()).isPresent()) {
+            throw new FileAlreadyExistsException(newReference.getFilename());
+        }
+    }
+
+    /**
+     * Validates that the output file is not the same as any of the input files.
+     *
+     * @throws NewReferenceSameAsOldReferenceException thrown if any of the input files are the same as the output file
+     */
+    public void validateNewReference() throws NewReferenceSameAsOldReferenceException {
+        for (String inputFile : inputFiles) {
+            if (inputFile.equals(newReference.getFilename())) {
+                throw new NewReferenceSameAsOldReferenceException(inputFile);
+            }
+        }
+    }
+
+    /**
+     * Creates an event for when this request has been committed to the state store.
+     *
+     * @param  sleeperTable the table being updated
+     * @param  now          the current time
+     * @return              the event
+     */
+    public CompactionJobCommittedEvent createCommittedEvent(TableStatus sleeperTable, Instant now) {
+        return CompactionJobCommittedEvent.builder()
+                .jobId(jobId)
+                .tableId(sleeperTable.getTableUniqueId())
+                .taskId(taskId)
+                .jobRunId(jobRunId)
+                .commitTime(now)
+                .build();
+    }
+
+    /**
+     * Creates an event for when this request failed to commit to the state store.
+     *
+     * @param  sleeperTable the table being updated
+     * @param  now          the current time
+     * @param  e            the failure
+     * @return              the event
+     */
+    public CompactionJobFailedEvent createFailedEvent(TableStatus sleeperTable, Instant now, Exception e) {
+        return CompactionJobFailedEvent.builder()
+                .jobId(jobId)
+                .tableId(sleeperTable.getTableUniqueId())
+                .taskId(taskId)
+                .jobRunId(jobRunId)
+                .failureTime(now)
+                .failure(e)
+                .build();
     }
 
     public String getJobId() {
         return jobId;
     }
 
+    public String getTaskId() {
+        return taskId;
+    }
+
+    public String getJobRunId() {
+        return jobRunId;
+    }
+
     public String getPartitionId() {
-        return partitionId;
+        return newReference.getPartitionId();
     }
 
     public List<String> getInputFiles() {
@@ -78,7 +182,7 @@ public class ReplaceFileReferencesRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, partitionId, inputFiles, newReference);
+        return Objects.hash(jobId, taskId, jobRunId, inputFiles, newReference);
     }
 
     @Override
@@ -90,12 +194,87 @@ public class ReplaceFileReferencesRequest {
             return false;
         }
         ReplaceFileReferencesRequest other = (ReplaceFileReferencesRequest) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(partitionId, other.partitionId) && Objects.equals(inputFiles, other.inputFiles) && Objects.equals(newReference, other.newReference);
+        return Objects.equals(jobId, other.jobId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(inputFiles, other.inputFiles)
+                && Objects.equals(newReference, other.newReference);
     }
 
     @Override
     public String toString() {
-        return "ReplaceFileReferencesRequest{jobId=" + jobId + ", partitionId=" + partitionId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
+        return "ReplaceFileReferencesRequest{jobId=" + jobId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", inputFiles=" + inputFiles + ", newReference=" + newReference + "}";
     }
 
+    /**
+     * Builder for replace file references requests.
+     */
+    public static final class Builder {
+
+        private String jobId;
+        private String taskId;
+        private String jobRunId;
+        private List<String> inputFiles;
+        private FileReference newReference;
+
+        private Builder() {
+        }
+
+        public ReplaceFileReferencesRequest build() {
+            return new ReplaceFileReferencesRequest(this);
+        }
+
+        /**
+         * Sets the ID of the compaction job being committed.
+         *
+         * @param  jobId the job ID
+         * @return       this builder
+         */
+        public Builder jobId(String jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
+        /**
+         * Sets the ID of the compaction task that ran the job. If set this is used by the compaction job tracker.
+         *
+         * @param  taskId the task ID
+         * @return        this builder
+         */
+        public Builder taskId(String taskId) {
+            this.taskId = taskId;
+            return this;
+        }
+
+        /**
+         * Sets the ID of the job run. If set this is used by the compaction job tracker.
+         *
+         * @param  jobRunId the job run ID
+         * @return          this builder
+         */
+        public Builder jobRunId(String jobRunId) {
+            this.jobRunId = jobRunId;
+            return this;
+        }
+
+        /**
+         * Sets the filenames of the job's input files.
+         *
+         * @param  inputFiles the input files
+         * @return            this builder
+         */
+        public Builder inputFiles(List<String> inputFiles) {
+            this.inputFiles = inputFiles;
+            return this;
+        }
+
+        /**
+         * Sets the new reference to replace the input file references on the partition.
+         *
+         * @param  newReference the output file reference
+         * @return              this builder
+         */
+        public Builder newReference(FileReference newReference) {
+            this.newReference = newReference;
+            return this;
+        }
+
+    }
 }

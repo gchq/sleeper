@@ -33,17 +33,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ConcatenatingIteratorTest {
 
-    private TestSupplier testSupplier1;
-    private TestSupplier testSupplier2;
+    private FakeIteratorSupplier testSupplier1;
+    private FakeIteratorSupplier testSupplier2;
 
     @BeforeEach
     public void resetSuppliers() {
-        testSupplier1 = new TestSupplier(Lists.newArrayList(
+        testSupplier1 = new FakeIteratorSupplier(List.of(
                 new Record(Maps.toMap(Lists.newArrayList("1", "2", "3"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("4", "5", "6"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("7", "8", "9"), Integer::valueOf))));
 
-        testSupplier2 = new TestSupplier(Lists.newArrayList(
+        testSupplier2 = new FakeIteratorSupplier(Lists.newArrayList(
                 new Record(Maps.toMap(Lists.newArrayList("10", "11", "12"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("13", "14", "15"), Integer::valueOf)),
                 new Record(Maps.toMap(Lists.newArrayList("16", "17", "18"), Integer::valueOf))));
@@ -85,7 +85,7 @@ public class ConcatenatingIteratorTest {
     @Test
     public void shouldReturnFalseForHasNextIfSupplierProvidesEmptyList() {
         // Given
-        TestSupplier testSupplier = new TestSupplier(new ArrayList<>());
+        FakeIteratorSupplier testSupplier = new FakeIteratorSupplier(new ArrayList<>());
 
         // When
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier));
@@ -109,8 +109,8 @@ public class ConcatenatingIteratorTest {
     @Test
     public void shouldReturnFalseForHasNextIfSuppliedWithMultipleEmptyIterators() {
         // Given
-        TestSupplier testSupplier = new TestSupplier(new ArrayList<>());
-        TestSupplier otherTestSupplier = new TestSupplier(new ArrayList<>());
+        FakeIteratorSupplier testSupplier = new FakeIteratorSupplier(new ArrayList<>());
+        FakeIteratorSupplier otherTestSupplier = new FakeIteratorSupplier(new ArrayList<>());
 
         // When
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier, otherTestSupplier));
@@ -122,9 +122,9 @@ public class ConcatenatingIteratorTest {
     @Test
     public void shouldReturnFalseForHasNextIfSuppliedWithBothNullsAndMultipleEmptyIterators() {
         // Given
-        TestSupplier testSupplier = new TestSupplier(new ArrayList<>());
+        FakeIteratorSupplier testSupplier = new FakeIteratorSupplier(new ArrayList<>());
         Supplier<CloseableIterator<Record>> nullSupplier = () -> null;
-        TestSupplier otherTestSupplier = new TestSupplier(new ArrayList<>());
+        FakeIteratorSupplier otherTestSupplier = new FakeIteratorSupplier(new ArrayList<>());
 
         // When
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier, nullSupplier, null, otherTestSupplier));
@@ -138,9 +138,9 @@ public class ConcatenatingIteratorTest {
     @Test
     public void shouldReturnTrueForHasNextIfSuppliedWithBothNullsAndMultipleEmptyIteratorsAndOnePopulatedIterator() {
         // Given
-        TestSupplier testSupplier = new TestSupplier(new ArrayList<>());
+        FakeIteratorSupplier testSupplier = new FakeIteratorSupplier(new ArrayList<>());
         Supplier<CloseableIterator<Record>> nullSupplier = () -> null;
-        TestSupplier otherTestSupplier = new TestSupplier(new ArrayList<>());
+        FakeIteratorSupplier otherTestSupplier = new FakeIteratorSupplier(new ArrayList<>());
 
         // When
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList(testSupplier,
@@ -175,7 +175,7 @@ public class ConcatenatingIteratorTest {
     public void shouldCloseIterablesAfterTheyComplete() {
         // Given
         AtomicBoolean closed = new AtomicBoolean(false);
-        TestIterator testIterator = new TestIterator(() -> closed.set(true));
+        EmptyIteratorWithFakeOnClose testIterator = new EmptyIteratorWithFakeOnClose(() -> closed.set(true));
 
         // When
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<Record>>) () -> testIterator));
@@ -197,7 +197,9 @@ public class ConcatenatingIteratorTest {
     @Test
     public void shouldThrowExceptionIfSubIteratorThrowsWhenClosing() {
         // Given
-        FailingIterator failingIterator = new FailingIterator();
+        EmptyIteratorWithFakeOnClose failingIterator = new EmptyIteratorWithFakeOnClose(() -> {
+            throw new IOException("Unexpected failure");
+        });
 
         // When
         ConcatenatingIterator concatenatingIterator = new ConcatenatingIterator(Lists.newArrayList((Supplier<CloseableIterator<Record>>) () -> failingIterator));
@@ -206,60 +208,8 @@ public class ConcatenatingIteratorTest {
         assertThatThrownBy(concatenatingIterator::hasNext)
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Failed to close iterator")
-                .hasCauseInstanceOf(IOException.class);
-    }
-
-    private static class FailingIterator extends TestIterator {
-        @Override
-        public void close() throws IOException {
-            throw new IOException("AAAAHHHH");
-        }
-    }
-
-    private static class TestIterator implements CloseableIterator<Record> {
-        private final Runnable onClose;
-
-        private TestIterator() {
-            this(() -> {
-            });
-        }
-
-        private TestIterator(Runnable onClose) {
-            this.onClose = onClose;
-        }
-
-        @Override
-        public void close() throws IOException {
-            onClose.run();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return false;
-        }
-
-        @Override
-        public Record next() {
-            return null;
-        }
-    }
-
-    private static class TestSupplier implements Supplier<CloseableIterator<Record>> {
-        private final List<Record> records;
-        private boolean hasSupplied = false;
-
-        private TestSupplier(List<Record> records) {
-            this.records = records;
-        }
-
-        @Override
-        public CloseableIterator<Record> get() {
-            hasSupplied = true;
-            return new WrappedIterator<>(records.iterator());
-        }
-
-        private boolean hasSupplied() {
-            return hasSupplied;
-        }
+                .cause()
+                .isInstanceOf(IOException.class)
+                .hasMessage("Unexpected failure");
     }
 }

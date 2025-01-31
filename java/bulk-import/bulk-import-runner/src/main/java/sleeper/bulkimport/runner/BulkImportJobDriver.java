@@ -25,7 +25,6 @@ import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityResult;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.google.gson.JsonSyntaxException;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -38,35 +37,32 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.commit.StateStoreCommitRequestInS3Uploader;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.time.Instant;
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
-import static sleeper.ingest.core.job.status.IngestJobFailedEvent.ingestJobFailed;
-import static sleeper.ingest.core.job.status.IngestJobFinishedEvent.ingestJobFinished;
-import static sleeper.ingest.core.job.status.IngestJobStartedEvent.validatedIngestJobStarted;
 
 /**
  * Executes a Spark job that reads input Parquet files and writes to a Sleeper table. This takes a
@@ -79,21 +75,21 @@ public class BulkImportJobDriver {
     private final SessionRunner sessionRunner;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
-    private final IngestJobStatusStore statusStore;
-    private final AddFilesAsynchronously addFilesAsync;
+    private final IngestJobTracker tracker;
+    private final StateStoreCommitRequestSender asyncSender;
     private final Supplier<Instant> getTime;
 
     public BulkImportJobDriver(SessionRunner sessionRunner,
             TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
-            IngestJobStatusStore statusStore,
-            AddFilesAsynchronously addFilesAsync,
+            IngestJobTracker tracker,
+            StateStoreCommitRequestSender asyncSender,
             Supplier<Instant> getTime) {
         this.sessionRunner = sessionRunner;
         this.tablePropertiesProvider = tablePropertiesProvider;
         this.stateStoreProvider = stateStoreProvider;
-        this.statusStore = statusStore;
-        this.addFilesAsync = addFilesAsync;
+        this.tracker = tracker;
+        this.asyncSender = asyncSender;
         this.getTime = getTime;
     }
 
@@ -103,51 +99,51 @@ public class BulkImportJobDriver {
         Instant startTime = getTime.get();
         LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
         LOGGER.info("Job is for table {}: {}", table, job);
-        statusStore.jobStarted(validatedIngestJobStarted(job.toIngestJob(), startTime)
+        tracker.jobStarted(job.toIngestJob()
+                .startedAfterValidationEventBuilder(startTime)
                 .jobRunId(jobRunId).taskId(taskId).build());
 
         BulkImportJobOutput output;
         try {
             output = sessionRunner.run(job);
         } catch (RuntimeException e) {
-            statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
+            tracker.jobFailed(job.toIngestJob()
+                    .failedEventBuilder(getTime.get())
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw e;
         }
 
+        Instant finishTime = getTime.get();
         boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
         try {
             if (asyncCommit) {
-                IngestAddFilesCommitRequest request = IngestAddFilesCommitRequest.builder()
-                        .ingestJob(job.toIngestJob())
-                        .fileReferences(output.fileReferences())
-                        .jobRunId(jobRunId).taskId(taskId)
-                        .writtenTime(getTime.get())
+                AddFilesTransaction transaction = AddFilesTransaction.builder()
+                        .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
+                        .files(AllReferencesToAFile.newFilesWithReferences(output.fileReferences()))
                         .build();
-                LOGGER.debug("Sending asynchronous request to state store committer: {}", request);
-                addFilesAsync.submit(request);
-                LOGGER.info("Submitted {} files to statestore committer for job {} in table {}", output.numFiles(), job.getId(), table);
+                asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(), transaction));
+                LOGGER.info("Submitted asynchronous request to state store committer to add {} files for job {} in table {}", output.numFiles(), job.getId(), table);
             } else {
                 stateStoreProvider.getStateStore(tableProperties)
                         .addFiles(output.fileReferences());
                 LOGGER.info("Added {} files to statestore for job {} in table {}", output.numFiles(), job.getId(), table);
             }
         } catch (RuntimeException e) {
-            statusStore.jobFailed(ingestJobFailed(job.toIngestJob(), new ProcessRunTime(startTime, getTime.get()))
+            tracker.jobFailed(job.toIngestJob()
+                    .failedEventBuilder(finishTime)
                     .jobRunId(jobRunId).taskId(taskId).failure(e).build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
         }
 
-        Instant finishTime = getTime.get();
         LoggedDuration duration = LoggedDuration.withFullOutput(startTime, finishTime);
         LOGGER.info("Finished bulk import job {} at time {}", job.getId(), finishTime);
         long numRecords = output.numRecords();
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
 
-        statusStore.jobFinished(ingestJobFinished(job.toIngestJob(),
-                new RecordsProcessedSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
+        tracker.jobFinished(job.toIngestJob()
+                .finishedEventBuilder(new JobRunSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
                 .jobRunId(jobRunId).taskId(taskId)
                 .fileReferencesAddedByJob(output.fileReferences())
                 .committedBySeparateFileUpdates(asyncCommit)
@@ -200,11 +196,12 @@ public class BulkImportJobDriver {
 
             TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
             StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, configuration);
-            IngestJobStatusStore statusStore = IngestJobStatusStoreFactory.getStatusStore(dynamoClient, instanceProperties);
-            AddFilesAsynchronously addFilesAsync = submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties);
+            IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
+            StateStoreCommitRequestSender commitSender = new SqsFifoStateStoreCommitRequestSender(
+                    instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider));
             BulkImportJobDriver driver = new BulkImportJobDriver(new BulkImportSparkSessionRunner(
                     runner, instanceProperties, tablePropertiesProvider, stateStoreProvider),
-                    tablePropertiesProvider, stateStoreProvider, statusStore, addFilesAsync, Instant::now);
+                    tablePropertiesProvider, stateStoreProvider, tracker, commitSender, Instant::now);
             driver.run(bulkImportJob, jobRunId, taskId);
         } finally {
             s3Client.shutdown();
@@ -249,29 +246,5 @@ public class BulkImportJobDriver {
         } finally {
             sts.shutdown();
         }
-    }
-
-    public interface AddFilesAsynchronously {
-        void submit(IngestAddFilesCommitRequest request);
-    }
-
-    public static AddFilesAsynchronously submitFilesToCommitQueue(
-            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties) {
-        return submitFilesToCommitQueue(sqsClient, s3Client, instanceProperties, () -> UUID.randomUUID().toString());
-    }
-
-    public static AddFilesAsynchronously submitFilesToCommitQueue(
-            AmazonSQS sqsClient, AmazonS3 s3Client, InstanceProperties instanceProperties, Supplier<String> s3FilenameSupplier) {
-        IngestAddFilesCommitRequestSerDe serDe = new IngestAddFilesCommitRequestSerDe();
-        StateStoreCommitRequestInS3Uploader s3Uploader = new StateStoreCommitRequestInS3Uploader(instanceProperties, s3Client::putObject,
-                StateStoreCommitRequestInS3Uploader.MAX_JSON_LENGTH, s3FilenameSupplier);
-        return request -> {
-            String json = s3Uploader.uploadAndWrapIfTooBig(request.getTableId(), serDe.toJson(request));
-            sqsClient.sendMessage(new SendMessageRequest()
-                    .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                    .withMessageBody(json)
-                    .withMessageGroupId(request.getTableId())
-                    .withMessageDeduplicationId(UUID.randomUUID().toString()));
-        };
     }
 }

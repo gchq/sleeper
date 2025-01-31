@@ -1,0 +1,46 @@
+{
+  "queueMessages": {
+    "ingestMessages": 0
+  },
+  "jobList": [
+    {
+      "jobId": "job88888-8888-8888-8888-888888888888",
+      "jobRuns": [
+        {
+          "taskId": "bulk-import-cluster-8",
+          "updates": [
+            {
+              "validationTime": "2022-09-28T13:34:12.001Z",
+              "updateTime": "2022-09-28T13:34:12.123Z",
+              "inputFileCount": 8,
+              "type": "ACCEPTED"
+            },
+            {
+              "inputFileCount": 8,
+              "startTime": "2022-09-28T13:39:12.001Z",
+              "updateTime": "2022-09-28T13:39:12.123Z",
+              "type": "STARTED"
+            },
+            {
+              "updateTime": "2022-09-28T13:44:12.123Z",
+              "finishTime": "2022-09-28T13:44:12.001Z",
+              "recordsProcessed": {
+                "recordsRead": 3000,
+                "recordsWritten": 1500
+              },
+              "numFilesWrittenByJob": 1,
+              "committedBySeparateFileUpdates": true,
+              "type": "FINISHED_WHEN_FILES_COMMITTED"
+            },
+            {
+              "writtenTime": "2022-09-28T13:45:12.001Z",
+              "updateTime": "2022-09-28T13:45:12.123Z",
+              "fileCount": 1,
+              "type": "ADDED_FILES"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

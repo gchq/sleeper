@@ -25,8 +25,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.IteratorCreationException;
-import sleeper.core.iterator.impl.AgeOffIterator;
-import sleeper.core.iterator.impl.SecurityFilteringIterator;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -45,6 +43,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.example.iterator.AgeOffIterator;
+import sleeper.example.iterator.SecurityFilteringIterator;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.query.core.model.LeafPartitionQuery;
 import sleeper.query.core.model.Query;
@@ -1206,7 +1206,7 @@ public class QueryExecutorIT {
 
     private QueryExecutor queryExecutor(TableProperties tableProperties, StateStore stateStore) {
         return new QueryExecutor(ObjectFactory.noUserJars(),
-                tableProperties, stateStore, new LeafPartitionRecordRetrieverImpl(executorService, new Configuration()));
+                tableProperties, stateStore, new LeafPartitionRecordRetrieverImpl(executorService, new Configuration(), tableProperties));
     }
 
     private Query queryWithRegion(Region region) {

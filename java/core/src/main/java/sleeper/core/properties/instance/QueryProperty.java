@@ -41,6 +41,7 @@ public interface QueryProperty {
     UserDefinedInstanceProperty QUERY_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.query.processor.timeout.seconds")
             .description("The timeout for the lambda that executes queries in seconds.")
             .defaultValue("900")
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .propertyGroup(InstancePropertyGroup.QUERY)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty QUERY_PROCESSING_LAMBDA_STATE_REFRESHING_PERIOD_IN_SECONDS = Index.propertyBuilder("sleeper.query.processor.state.refresh.period.seconds")
@@ -74,6 +75,13 @@ public interface QueryProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.QUERY)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty QUERY_RESULTS_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.query.results.queue.visibility.timeout.seconds")
+            .description("The visibility timeout in seconds of the query results queue.")
+            .defaultValue("900")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.QUERY)
+            .runCdkDeployWhenChanged(true)
+            .build();
     UserDefinedInstanceProperty DEFAULT_RESULTS_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.query.results.rowgroup.size")
             .description("The default value of the rowgroup size used when the results of queries are written to Parquet files. The " +
                     "value given below is 8MiB. This value can be overridden using the query config.")

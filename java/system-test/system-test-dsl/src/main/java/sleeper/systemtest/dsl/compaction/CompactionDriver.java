@@ -17,22 +17,17 @@
 package sleeper.systemtest.dsl.compaction;
 
 import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.core.util.PollWithRetries;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.util.List;
 
 public interface CompactionDriver {
 
-    CompactionJobStatusStore getJobStatusStore();
+    CompactionJobTracker getJobTracker();
 
     void triggerCreateJobs();
 
     void forceCreateJobs();
-
-    void invokeTasks(int expectedTasks, PollWithRetries poll);
-
-    void forceStartTasks(int numberOfTasks, PollWithRetries poll);
 
     void scaleToZero();
 

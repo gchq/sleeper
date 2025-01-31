@@ -30,11 +30,13 @@ import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 public class InMemoryTransactionLogStateStoreTestBase {
 
     protected final TableStatus sleeperTable = uniqueIdAndName("test-table-id", "test-table");
+    protected final String tableId = sleeperTable.getTableUniqueId();
     protected final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     protected final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
     protected final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
+    protected final InMemoryTransactionBodyStore transactionBodyStore = transactionLogs.getTransactionBodyStore();
     protected final List<Duration> retryWaits = transactionLogs.getRetryWaits();
-    private PartitionsBuilder partitions;
+    protected PartitionsBuilder partitions;
     protected FileReferenceFactory factory;
     protected StateStore store;
 

@@ -229,10 +229,8 @@ public class RegionSerDe {
         }
 
         private Object getObject(String key, String fieldName, JsonObject json, boolean stringsBase64Encoded) {
-            if (!json.has(key)) {
-                throw new JsonParseException("Missing " + key + " in " + json);
-            }
-            if (json.get(key).isJsonNull()) {
+            JsonElement element = json.get(key);
+            if (element == null || element.isJsonNull()) {
                 return null;
             }
             Optional<Type> optional = schema.getRowKeyFields()
@@ -247,12 +245,12 @@ public class RegionSerDe {
             Object object;
             PrimitiveType type = (PrimitiveType) optional.get();
             if (type instanceof IntType) {
-                object = json.get(key).getAsInt();
+                object = element.getAsInt();
             } else if (type instanceof LongType) {
-                object = json.get(key).getAsLong();
+                object = element.getAsLong();
             } else if (type instanceof StringType) {
                 if (stringsBase64Encoded) {
-                    String encodedString = json.get(key).getAsString();
+                    String encodedString = element.getAsString();
                     try {
                         byte[] stringAsBytes = Base64.getDecoder().decode(encodedString);
                         object = new String(stringAsBytes, Charsets.UTF_8);
@@ -260,10 +258,10 @@ public class RegionSerDe {
                         throw new JsonParseException("IllegalArgumentException base64 decoding the string " + encodedString, e);
                     }
                 } else {
-                    object = json.get(key).getAsString();
+                    object = element.getAsString();
                 }
             } else if (type instanceof ByteArrayType) {
-                String encodedBytes = json.get(key).getAsString();
+                String encodedBytes = element.getAsString();
                 object = Base64.getDecoder().decode(encodedBytes);
             } else {
                 throw new JsonParseException("Unknown primitive type: " + type);

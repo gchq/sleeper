@@ -21,14 +21,14 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import sleeper.compaction.core.job.CompactionJobStatusStore;
-import sleeper.compaction.core.job.status.CompactionJobStatus;
-import sleeper.compaction.core.job.status.CompactionJobStatusType;
-import sleeper.core.record.process.status.ProcessRun;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobStatusType;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.util.GsonConfig;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusType;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -62,12 +62,12 @@ public class WaitForJobsStatus {
         longestInProgressDuration = builder.longestInProgressDuration;
     }
 
-    public static WaitForJobsStatus forIngest(IngestJobStatusStore store, Collection<String> jobIds, Instant now) {
-        return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
+    public static WaitForJobsStatus forIngest(IngestJobTracker tracker, Collection<String> jobIds, Instant now) {
+        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 
-    public static WaitForJobsStatus forCompaction(CompactionJobStatusStore store, Collection<String> jobIds, Instant now) {
-        return forJobStore(jobId -> store.getJob(jobId).map(JobStatus::new), jobIds, now);
+    public static WaitForJobsStatus forCompaction(CompactionJobTracker tracker, Collection<String> jobIds, Instant now) {
+        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
     }
 
     public boolean areAllJobsFinished() {
@@ -78,12 +78,12 @@ public class WaitForJobsStatus {
         return GSON.toJson(this);
     }
 
-    private static WaitForJobsStatus forJobStore(
-            JobStatusStore store,
+    private static WaitForJobsStatus forJobTracker(
+            JobTracker tracker,
             Collection<String> jobIds, Instant now) {
         Builder builder = new Builder(now);
         jobIds.stream().parallel()
-                .map(jobId -> store.getJob(jobId)
+                .map(jobId -> tracker.getJob(jobId)
                         .orElseGet(JobStatus::none))
                 .collect(Collectors.toUnmodifiableList())
                 .forEach(builder::addJob);
@@ -98,15 +98,15 @@ public class WaitForJobsStatus {
         return (duration, type, context) -> new JsonPrimitive(duration.toString());
     }
 
-    private interface JobStatusStore {
+    private interface JobTracker {
         Optional<JobStatus> getJob(String jobId);
     }
 
     private static class JobStatus {
-        private final List<ProcessRun> runsLatestFirst;
+        private final List<JobRun> runsLatestFirst;
         private final String furthestStatusType;
         private final boolean finished;
-        private final Predicate<ProcessRun> isRunFinished;
+        private final Predicate<JobRun> isRunFinished;
 
         JobStatus(IngestJobStatus status) {
             IngestJobStatusType statusType = status.getFurthestRunStatusType();
@@ -149,12 +149,12 @@ public class WaitForJobsStatus {
         }
 
         public void addJob(JobStatus status) {
-            List<ProcessRun> runsLatestFirst = status.runsLatestFirst;
+            List<JobRun> runsLatestFirst = status.runsLatestFirst;
             if (runsLatestFirst.isEmpty()) {
                 numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
                 numUnfinished++;
             } else if (!status.finished) {
-                for (ProcessRun run : runsLatestFirst) {
+                for (JobRun run : runsLatestFirst) {
                     if (status.isRunFinished.test(run)) {
                         continue;
                     }

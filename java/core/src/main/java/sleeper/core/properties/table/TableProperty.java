@@ -56,6 +56,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ADD_
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_COMPRESSION_CODEC;
@@ -77,10 +78,10 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_RECORD_BATCH_TYPE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ROW_GROUP_SIZE;
-import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_S3A_READAHEAD_RANGE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATISTICS_TRUNCATE_LENGTH;
@@ -201,9 +202,13 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "Can be either v1 or v2. The v2 pages store levels uncompressed while v1 pages compress levels with the data.")
             .defaultProperty(DEFAULT_PARQUET_WRITER_VERSION)
             .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
+    TableProperty PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.table.parquet.query.column.index.enabled")
+            .defaultProperty(DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED)
+            .description("Used during Parquet queries to determine whether the column indexes are used.")
+            .propertyGroup(TablePropertyGroup.DATA_STORAGE).build();
     TableProperty S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.table.fs.s3a.readahead.range")
-            .defaultProperty(DEFAULT_S3A_READAHEAD_RANGE)
-            .description("The S3 readahead range - defaults to the value in the instance properties.")
+            .defaultProperty(ROW_GROUP_SIZE)
+            .description("The S3 readahead range - defaults to the row group size.")
             .propertyGroup(TablePropertyGroup.DATA_STORAGE)
             .build();
     TableProperty COMPRESSION_CODEC = Index.propertyBuilder("sleeper.table.compression.codec")
@@ -300,6 +305,15 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "compaction tasks.\n" +
                     "This is only applied if async commits are enabled for the table. The default value is set in an " +
                     "instance property.")
+            .propertyGroup(TablePropertyGroup.COMPACTION)
+            .build();
+    TableProperty COMPACTION_JOB_ASYNC_BATCHING = Index.propertyBuilder("sleeper.table.compaction.job.async.commit.batching")
+            .defaultProperty(DEFAULT_COMPACTION_JOB_ASYNC_BATCHING)
+            .description("This property affects whether commits of compaction jobs are batched before being sent " +
+                    "to the state store commit queue to be applied by the committer lambda. If this property is true and " +
+                    "asynchronous commits are enabled then commits of compactions will be batched. If this property is " +
+                    "false and asynchronous commits are enabled then commits of compactions will not be batched and will " +
+                    "be sent directly to the committer lambda.")
             .propertyGroup(TablePropertyGroup.COMPACTION)
             .build();
     TableProperty SIZE_RATIO_COMPACTION_STRATEGY_RATIO = Index.propertyBuilder("sleeper.table.compaction.strategy.sizeratio.ratio")
@@ -443,35 +457,35 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE)
             .description("(Non-persistent EMR mode only) Which architecture to be used for EC2 instance types " +
                     "in the EMR cluster. Must be either \"x86_64\" \"arm64\" or \"x86_64,arm64\". " +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.x86.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_X86_INSTANCE_TYPES)
             .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types and weights to be used for " +
                     "the master node of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.x86.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES)
             .description("(Non-persistent EMR mode only) The EC2 x86_64 instance types and weights to be used for " +
                     "the executor nodes of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.master.arm.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_MASTER_ARM_INSTANCE_TYPES)
             .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types and weights to be used for the " +
                     "master node of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.arm.instance.types")
             .defaultProperty(DEFAULT_BULK_IMPORT_EMR_EXECUTOR_ARM_INSTANCE_TYPES)
             .description("(Non-persistent EMR mode only) The EC2 ARM64 instance types and weights to be used for the " +
                     "executor nodes of the EMR cluster.\n" +
-                    "For more information, see the Bulk import using EMR - Instance types section in docs/05-ingest.md")
+                    "For more information, see the Bulk import using EMR - Instance types section in docs/usage/ingest.md")
             .propertyGroup(TablePropertyGroup.BULK_IMPORT)
             .build();
     TableProperty BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE = Index.propertyBuilder("sleeper.table.bulk.import.emr.executor.market.type")

@@ -45,7 +45,7 @@ public class CompactionTaskHostScaler {
     private final CheckInstanceType ec2Query;
     private final Map<String, InstanceType> instanceTypeCache = new HashMap<>();
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(EC2Scaler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CompactionTaskHostScaler.class);
 
     public CompactionTaskHostScaler(
             InstanceProperties instanceProperties,

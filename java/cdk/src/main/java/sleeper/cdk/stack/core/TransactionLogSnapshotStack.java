@@ -105,6 +105,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
         Rule rule = Rule.Builder.create(this, "TransactionLogSnapshotCreationSchedule")
                 .ruleName(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION.buildRuleName(instanceProperties))
+                .description(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_CREATION.getDescription())
                 .schedule(Schedule.rate(Duration.seconds(
                         instanceProperties.getInt(SNAPSHOT_CREATION_LAMBDA_PERIOD_IN_SECONDS))))
                 .targets(List.of(new LambdaFunction(snapshotCreationTrigger)))
@@ -171,6 +172,7 @@ public class TransactionLogSnapshotStack extends NestedStack {
 
         Rule rule = Rule.Builder.create(this, "TransactionLogSnapshotDeletionSchedule")
                 .ruleName(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_DELETION.buildRuleName(instanceProperties))
+                .description(SleeperScheduleRule.TRANSACTION_LOG_SNAPSHOT_DELETION.getDescription())
                 .schedule(Schedule.rate(Duration.minutes(
                         instanceProperties.getLong(SNAPSHOT_DELETION_LAMBDA_PERIOD_IN_MINUTES))))
                 .targets(List.of(new LambdaFunction(snapshotDeletionTrigger)))

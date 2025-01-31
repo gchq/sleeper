@@ -15,15 +15,21 @@
  */
 package sleeper.compaction.core.job.creation;
 
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
+import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.table.TableStatus;
 
 import java.util.List;
 
 @FunctionalInterface
 public interface AssignJobIdToFiles {
+    Logger LOGGER = LoggerFactory.getLogger(AssignJobIdToFiles.class);
 
     void assignJobIds(List<AssignJobIdRequest> requests, TableStatus tableStatus);
 
@@ -33,9 +39,13 @@ public interface AssignJobIdToFiles {
         };
     }
 
-    static AssignJobIdToFiles byQueue(AssignJobIdQueueSender queueSender) {
-        return (assignJobIdRequests, tableStatus) -> queueSender.send(
-                CompactionJobIdAssignmentCommitRequest.tableRequests(tableStatus.getTableUniqueId(), assignJobIdRequests));
+    static AssignJobIdToFiles byQueue(StateStoreCommitRequestSender queueSender) {
+        return (assignJobIdRequests, tableStatus) -> {
+            queueSender.send(StateStoreCommitRequest.create(
+                    tableStatus.getTableUniqueId(),
+                    new AssignJobIdsTransaction(assignJobIdRequests)));
+            LOGGER.info("Submitted asynchronous request to state store committer for {} job ID assignments in table {}", assignJobIdRequests.size(), tableStatus);
+        };
     }
 
 }

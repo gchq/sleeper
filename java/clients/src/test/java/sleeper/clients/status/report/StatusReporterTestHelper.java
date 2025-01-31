@@ -16,7 +16,7 @@
 
 package sleeper.clients.status.report;
 
-import static sleeper.clients.testutil.ClientTestUtils.exampleUUID;
+import static sleeper.core.testutils.SupplierTestHelper.exampleUUID;
 
 public class StatusReporterTestHelper {
     private StatusReporterTestHelper() {

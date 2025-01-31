@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.clients.status.report.job.query.JobQuery;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.status.IngestJobStatus;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -34,6 +34,7 @@ import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTe
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedJobWhichStarted;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.acceptedStatusUpdate;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.createJob;
+import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.finishedBulkImportJob;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobWithMultipleRuns;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.jobsWithLargeAndDecimalStatistics;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.mixedJobStatuses;
@@ -42,10 +43,10 @@ import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTe
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestData.rejectedStatusUpdate;
 import static sleeper.clients.status.report.ingest.job.IngestJobStatusReporterTestHelper.getStandardReport;
 import static sleeper.clients.testutil.ClientTestUtils.example;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forJobRunOnNoTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.forNoRunNoTask;
-import static sleeper.core.record.process.status.TestProcessStatusUpdateRecords.records;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatusListFrom;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatusListFrom;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnNoTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forNoRunNoTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class StandardIngestJobStatusReporterDetailedQueryTest {
     @Test
@@ -91,6 +92,17 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
     @Nested
     @DisplayName("Bulk Import job reporting")
     class BulkImportJobReporting {
+
+        @Test
+        void shouldReportFinishedBulkImportJob() throws Exception {
+            // Given
+            List<IngestJobStatus> jobs = finishedBulkImportJob();
+
+            // When / Then
+            assertThat(getStandardReport(JobQuery.Type.DETAILED, jobs, 0)).hasToString(
+                    example("reports/ingest/job/standard/detailed/bulkImport/finishedJob.txt"));
+        }
+
         @Test
         void shouldReportPendingJobWithValidationAccepted() throws Exception {
             // Given
@@ -135,7 +147,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         void shouldReportJobAcceptedThenRejected() throws Exception {
             // Given
             IngestJob job = createJob(1, 2);
-            List<IngestJobStatus> status = jobStatusListFrom(records().fromUpdates(
+            List<IngestJobStatus> status = ingestJobStatusListFrom(records().fromUpdates(
                     forJobRunOnNoTask(job.getId(), "run-1",
                             acceptedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"))),
                     forNoRunNoTask(job.getId(),
@@ -156,7 +168,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
                     "]\n" +
                     "}";
             IngestJob job = createJob(1, 2);
-            List<IngestJobStatus> status = jobStatusListFrom(records().fromUpdates(
+            List<IngestJobStatus> status = ingestJobStatusListFrom(records().fromUpdates(
                     rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
 
             // When / Then
@@ -168,7 +180,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         void shouldReportRejectedJobWithInvalidJsonMessageSaved() throws IOException {
             String json = "{";
             IngestJob job = createJob(1, 2);
-            List<IngestJobStatus> status = jobStatusListFrom(records().fromUpdates(
+            List<IngestJobStatus> status = ingestJobStatusListFrom(records().fromUpdates(
                     rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
 
             // When / Then

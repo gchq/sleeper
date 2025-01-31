@@ -15,7 +15,7 @@
  */
 package sleeper.clients.admin.testutils;
 
-import sleeper.clients.admin.AdminClientStatusStoreFactory;
+import sleeper.clients.admin.AdminClientTrackerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.task.common.QueueMessageCount;
@@ -36,5 +36,5 @@ public interface AdminConfigStoreTestHarness {
         }
     }
 
-    void startClient(AdminClientStatusStoreFactory statusStores, QueueMessageCount.Client queueClient) throws Exception;
+    void startClient(AdminClientTrackerFactory trackers, QueueMessageCount.Client queueClient) throws Exception;
 }

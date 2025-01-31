@@ -58,7 +58,7 @@ public class CreateManyCompactionsTest {
         // When
         sleeper.compaction()
                 .createJobs(1024)
-                .invokeTasks(1).waitForJobs();
+                .waitForTasks(1).waitForJobs();
 
         // Then
         AllReferencesToAllFiles files = sleeper.tableFiles().all();

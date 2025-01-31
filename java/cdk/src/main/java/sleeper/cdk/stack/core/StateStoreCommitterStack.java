@@ -35,15 +35,14 @@ import software.constructs.Construct;
 
 import sleeper.cdk.jars.BuiltJars;
 import sleeper.cdk.jars.LambdaCode;
-import sleeper.cdk.stack.compaction.CompactionStatusStoreResources;
+import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
-import sleeper.cdk.stack.ingest.IngestStatusStoreResources;
+import sleeper.cdk.stack.ingest.IngestTrackerResources;
 import sleeper.cdk.util.Utils;
 import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
-import java.util.Map;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_DLQ_ARN;
@@ -72,8 +71,8 @@ public class StateStoreCommitterStack extends NestedStack {
             ConfigBucketStack configBucketStack,
             TableIndexStack tableIndexStack,
             StateStoreStacks stateStoreStacks,
-            IngestStatusStoreResources ingestStatusStore,
-            CompactionStatusStoreResources compactionStatusStore,
+            IngestTrackerResources ingestTracker,
+            CompactionTrackerResources compactionTracker,
             ManagedPoliciesStack policiesStack,
             Topic topic,
             List<IMetric> errorMetrics) {
@@ -86,7 +85,7 @@ public class StateStoreCommitterStack extends NestedStack {
         lambdaToCommitStateStoreUpdates(
                 loggingStack, policiesStack, lambdaCode,
                 configBucketStack, tableIndexStack, stateStoreStacks,
-                compactionStatusStore, ingestStatusStore);
+                compactionTracker, ingestTracker);
     }
 
     private Queue sqsQueueForStateStoreCommitter(ManagedPoliciesStack policiesStack, Topic topic, List<IMetric> errorMetrics) {
@@ -126,9 +125,8 @@ public class StateStoreCommitterStack extends NestedStack {
     private void lambdaToCommitStateStoreUpdates(
             LoggingStack loggingStack, ManagedPoliciesStack policiesStack, LambdaCode lambdaCode,
             ConfigBucketStack configBucketStack, TableIndexStack tableIndexStack, StateStoreStacks stateStoreStacks,
-            CompactionStatusStoreResources compactionStatusStore,
-            IngestStatusStoreResources ingestStatusStore) {
-        Map<String, String> environmentVariables = Utils.createDefaultEnvironment(instanceProperties);
+            CompactionTrackerResources compactionTracker,
+            IngestTrackerResources ingestTracker) {
 
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "statestore-committer");
@@ -140,7 +138,7 @@ public class StateStoreCommitterStack extends NestedStack {
                 .description("Commits updates to the state store. Used to commit compaction and ingest jobs asynchronously.")
                 .memorySize(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(STATESTORE_COMMITTER_LAMBDA_TIMEOUT_IN_SECONDS)))
-                .environment(environmentVariables)
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
                 .reservedConcurrentExecutions(instanceProperties.getIntOrNull(STATESTORE_COMMITTER_LAMBDA_CONCURRENCY_RESERVED))
                 .logGroup(logGroup));
 
@@ -167,8 +165,8 @@ public class StateStoreCommitterStack extends NestedStack {
         configBucketStack.grantRead(handlerFunction);
         tableIndexStack.grantRead(handlerFunction);
         stateStoreStacks.grantReadWriteAllFilesAndPartitions(handlerFunction);
-        compactionStatusStore.grantWriteJobEvent(handlerFunction);
-        ingestStatusStore.grantWriteJobEvent(handlerFunction);
+        compactionTracker.grantWriteJobEvent(handlerFunction);
+        ingestTracker.grantWriteJobEvent(handlerFunction);
     }
 
     public void grantSendCommits(IGrantable grantee) {

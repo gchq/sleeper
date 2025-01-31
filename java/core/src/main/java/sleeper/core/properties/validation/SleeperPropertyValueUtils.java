@@ -78,17 +78,6 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
-     * Checks if a property value is a whole positive number of minutes within the maximum timeout for an invocation of
-     * AWS Lambda.
-     *
-     * @param  integer the value
-     * @return         true if the value meets the requirement
-     */
-    public static boolean isPositiveIntegerLtEq15(String integer) {
-        return parseAndCheckInteger(integer, num -> num > 0 && num <= 15);
-    }
-
-    /**
      * Checks if a property value is an integer greater than or equal to 0.
      *
      * @param  integer the value
@@ -188,6 +177,21 @@ public class SleeperPropertyValueUtils {
      */
     public static boolean isValidLambdaTimeout(String timeout) {
         return parseAndCheckInteger(timeout, num -> num <= 900 && num > 0);
+    }
+
+    /**
+     * Checks if a property value is a valid value for the maximum concurrency for an AWS Lambda SQS event source.
+     * Also see the AWS documentation:
+     * <p>
+     * https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+     * <p>
+     * https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html#events-sqs-max-concurrency
+     *
+     * @param  string the value
+     * @return        true if the value meets the requirement
+     */
+    public static boolean isValidSqsLambdaMaximumConcurrency(String string) {
+        return string == null || parseAndCheckInteger(string, num -> num >= 2);
     }
 
     /**
