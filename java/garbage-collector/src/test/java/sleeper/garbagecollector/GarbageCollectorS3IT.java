@@ -16,7 +16,6 @@
 
 package sleeper.garbagecollector;
 
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +34,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Duration;
@@ -61,7 +59,6 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     private static final Schema TEST_SCHEMA = getSchema();
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final FileReferenceFactory factory = FileReferenceFactory.from(partitions);
-    private final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
     private final String testBucket = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
 
@@ -126,7 +123,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
-        return new GarbageCollector(deleteFileAndSketches(configuration), instanceProperties,
+        return new GarbageCollector(deleteFileAndSketches(hadoopConf), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }

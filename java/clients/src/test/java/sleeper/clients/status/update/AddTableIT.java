@@ -16,7 +16,6 @@
 
 package sleeper.clients.status.update;
 
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -49,14 +48,13 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
 public class AddTableIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
     private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-    private final Configuration configuration = getHadoopConfiguration(localStackContainer);
+
     @TempDir
     private Path tempDir;
 
@@ -80,7 +78,7 @@ public class AddTableIT extends LocalStackTestBase {
         TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
         assertThat(foundProperties).isEqualTo(tableProperties);
         assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration).getStateStore(foundProperties);
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(foundProperties);
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
@@ -120,7 +118,7 @@ public class AddTableIT extends LocalStackTestBase {
         addTable(tableProperties);
 
         // Then
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
         assertThat(stateStore.getAllPartitions())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
@@ -130,6 +128,6 @@ public class AddTableIT extends LocalStackTestBase {
     }
 
     private void addTable(TableProperties tableProperties) throws IOException {
-        new AddTable(s3Client, dynamoClient, instanceProperties, tableProperties, configuration).run();
+        new AddTable(s3Client, dynamoClient, instanceProperties, tableProperties, hadoopConf).run();
     }
 }

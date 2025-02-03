@@ -39,7 +39,6 @@ import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvi
 import sleeper.core.util.LoggedDuration;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -155,8 +154,7 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient,
-                HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
+        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
     }
 
 }
