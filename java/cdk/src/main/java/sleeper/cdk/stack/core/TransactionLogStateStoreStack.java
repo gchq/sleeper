@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.core;
 
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
@@ -22,11 +23,25 @@ import software.amazon.awscdk.services.dynamodb.BillingMode;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.MetricType;
+import software.amazon.awscdk.services.lambda.MetricsConfig;
+import software.amazon.awscdk.services.lambda.StartingPosition;
+import software.amazon.awscdk.services.lambda.eventsources.DynamoEventSource;
+import software.amazon.awscdk.services.s3.Bucket;
+import software.amazon.awscdk.services.s3.IBucket;
 import software.constructs.Construct;
 
+import sleeper.cdk.jars.BuiltJars;
+import sleeper.cdk.jars.LambdaCode;
+import sleeper.cdk.stack.core.LoggingStack.LogGroupRef;
+import sleeper.cdk.util.Utils;
+import sleeper.core.deploy.LambdaHandler;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+
+import java.util.List;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME;
@@ -34,6 +49,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSACTION_LOG_PARTITIONS_TABLENAME;
 import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
+import static sleeper.core.properties.instance.TableStateProperty.TRACKER_FROM_LOG_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.TableStateProperty.TRACKER_FROM_LOG_LAMBDA_MEMORY;
+import static sleeper.core.properties.instance.TableStateProperty.TRACKER_FROM_LOG_LAMBDA_TIMEOUT_SECS;
 
 public class TransactionLogStateStoreStack extends NestedStack {
     private final Table partitionsLogTable;
@@ -43,13 +62,17 @@ public class TransactionLogStateStoreStack extends NestedStack {
     private final TableDataStack dataStack;
 
     public TransactionLogStateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties, TableDataStack dataStack) {
+            Construct scope, String id, InstanceProperties instanceProperties,
+            BuiltJars jars, LoggingStack loggingStack, TableDataStack dataStack) {
         super(scope, id);
         this.dataStack = dataStack;
+        IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
+        LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
         partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
         filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log");
         latestSnapshotsTable = createLatestSnapshotsTable(instanceProperties, "TransactionLogLatestSnapshotsTable", "transaction-log-latest-snapshots");
         allSnapshotsTable = createAllSnapshotsTable(instanceProperties, "TransactionLogAllSnapshotsTable", "transaction-log-all-snapshots");
+        createFunctionToFollowTransactionLog(instanceProperties, lambdaCode, loggingStack);
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, partitionsLogTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, filesLogTable.getTableName());
         instanceProperties.set(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME, latestSnapshotsTable.getTableName());
@@ -101,6 +124,26 @@ public class TransactionLogStateStoreStack extends NestedStack {
                         .type(AttributeType.NUMBER)
                         .build())
                 .build();
+    }
+
+    private void createFunctionToFollowTransactionLog(InstanceProperties instanceProperties, LambdaCode lambdaCode, LoggingStack loggingStack) {
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String functionName = String.join("-", "sleeper", instanceId, "state-transaction-tracker");
+        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.STATESTORE_TRACKER, "TransactionLogTracker", builder -> builder
+                .functionName(functionName)
+                .description("Updates trackers by following the transaction log")
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(TRACKER_FROM_LOG_LAMBDA_CONCURRENCY_RESERVED))
+                .memorySize(instanceProperties.getInt(TRACKER_FROM_LOG_LAMBDA_MEMORY))
+                .timeout(Duration.seconds(instanceProperties.getInt(TRACKER_FROM_LOG_LAMBDA_TIMEOUT_SECS)))
+                .logGroup(loggingStack.getLogGroup(LogGroupRef.STATESTORE_TRACKER)));
+
+        lambda.addEventSource(DynamoEventSource.Builder.create(filesLogTable)
+                .startingPosition(StartingPosition.LATEST)
+                .metricsConfig(MetricsConfig.builder()
+                        .metrics(List.of(MetricType.EVENT_COUNT))
+                        .build())
+                .build());
     }
 
     public void grantAccess(StateStoreGrants grants, IGrantable grantee) {

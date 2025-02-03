@@ -181,6 +181,26 @@ public interface TableStateProperty {
             .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TRACKER_FROM_LOG_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.statestore.transaction.tracker.concurrency.reserved")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_RESERVED)
+            .description("The reserved concurrency for the lambda that updates trackers by following the transaction log.\n" +
+                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TRACKER_FROM_LOG_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.statestore.transaction.tracker.concurrency.max")
+            .defaultProperty(DEFAULT_LAMBDA_CONCURRENCY_MAXIMUM)
+            .description("The maximum given concurrency allowed for the lambda that updates trackers by following the transaction log.\n" +
+                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TRACKER_FROM_LOG_LAMBDA_TIMEOUT_SECS = Index.propertyBuilder("sleeper.statestore.transaction.tracker.lambda.timeout.seconds")
+            .description("The maximum timeout in seconds for the lambda that updates trackers by following the transaction log.")
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
+            .defaultValue("900")
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE).build();
+    UserDefinedInstanceProperty TRACKER_FROM_LOG_LAMBDA_MEMORY = Index.propertyBuilder("sleeper.statestore.transaction.tracker.memory.mb")
+            .description("The amount of memory in MB for the lambda that updates trackers by following the transaction log.")
+            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
+            .propertyGroup(InstancePropertyGroup.TABLE_STATE)
+            .build();
     UserDefinedInstanceProperty TABLE_INDEX_DYNAMO_POINT_IN_TIME_RECOVERY = Index.propertyBuilder("sleeper.tables.index.dynamo.pointintimerecovery")
             .description("This specifies whether point in time recovery is enabled for the Sleeper table index. " +
                     "This is set on the DynamoDB tables.")
