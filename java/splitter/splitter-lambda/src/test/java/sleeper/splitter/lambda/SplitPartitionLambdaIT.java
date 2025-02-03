@@ -19,8 +19,6 @@ import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer.Service;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -65,7 +63,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 public class SplitPartitionLambdaIT extends LocalStackTestBase {
 
@@ -179,7 +176,7 @@ public class SplitPartitionLambdaIT extends LocalStackTestBase {
                 .stateStoreProvider(stateStoreProvider())
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConf)
-                .s3AsyncClient(buildAwsV2Client(localStackContainer, Service.S3, S3AsyncClient.builder()))
+                .s3AsyncClient(s3AsyncClient)
                 .build().ingestFromRecordIterator(tableProperties, records.iterator());
         return result.getFileReferenceList().stream()
                 .map(FileReference::getFilename)

@@ -34,8 +34,8 @@ import sleeper.systemtest.dsl.snapshot.SnapshotsDriver;
 import sleeper.systemtest.dsl.util.NoSnapshotsDriver;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 
-import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.configureHadoop;
 
 public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
