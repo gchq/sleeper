@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.28.0-SNAPSHOT</version>
+    <version>0.29.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -126,7 +126,7 @@
         <logback.version>1.5.16</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.30.8</aws-java-sdk-v2.version>
-        <aws-crt.version>0.33.10</aws-crt.version>
+        <aws-crt.version>0.33.11</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
@@ -149,7 +149,7 @@
         <cdk.version>2.177.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.4.2</constructs.version>
-        <gson.version>2.12.0</gson.version>
+        <gson.version>2.12.1</gson.version>
         <slf4j.version>2.0.16</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
@@ -183,7 +183,7 @@
         <testcontainers.version>1.20.4</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.27.3</assertj.version>
-        <approvaltests.version>24.14.2</approvaltests.version>
+        <approvaltests.version>24.15.0</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.0</xmlunit.version>
         <jsonunit.version>4.1.0</jsonunit.version>
@@ -214,7 +214,7 @@
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
         <dependency.plugin.version>3.8.1</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
-        <dependency-check.plugin.version>12.0.1</dependency-check.plugin.version>
+        <dependency-check.plugin.version>12.0.2</dependency-check.plugin.version>
         <site.plugin.version>3.21.0</site.plugin.version>
         <exec.plugin.version>3.5.0</exec.plugin.version>
         <resources.plugin.version>3.3.1</resources.plugin.version>

@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.suite.fixtures;
 
+import sleeper.core.SleeperVersion;
 import sleeper.core.deploy.DeployInstanceConfiguration;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -40,6 +41,7 @@ import static sleeper.core.properties.instance.AsyncIngestPartitionFileWriterPro
 import static sleeper.core.properties.instance.CommonProperty.FORCE_RELOAD_PROPERTIES;
 import static sleeper.core.properties.instance.CommonProperty.OPTIONAL_STACKS;
 import static sleeper.core.properties.instance.CommonProperty.RETAIN_INFRA_AFTER_DESTROY;
+import static sleeper.core.properties.instance.CommonProperty.USER_JARS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS_LAUNCHTYPE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_FAILED_VISIBILITY_TIMEOUT_IN_SECONDS;
@@ -84,7 +86,7 @@ public class SystemTestInstance {
     public static final SystemTestInstanceConfiguration MAIN = usingSystemTestDefaults("main", SystemTestInstance::createMainConfiguration);
     public static final SystemTestInstanceConfiguration INGEST_PERFORMANCE = usingSystemTestDefaults("ingest", SystemTestInstance::createIngestPerformanceConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE = usingSystemTestDefaults("cptprf", SystemTestInstance::createCompactionPerformanceConfiguration);
-    public static final SystemTestInstanceConfiguration COMPACTION_ON_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionOnDataFusionConfiguration);
+    public static final SystemTestInstanceConfiguration COMPACTION_PERFORMANCE_DATAFUSION = usingSystemTestDefaults("cpt-df", SystemTestInstance::createCompactionPerformanceOnDataFusionConfiguration);
     public static final SystemTestInstanceConfiguration COMPACTION_CREATION = SystemTestInstanceConfiguration.builder()
             .shortName("cpt-cr")
             .deployConfig(SystemTestInstance::createCompactionCreationConfiguration)
@@ -138,6 +140,7 @@ public class SystemTestInstance {
         properties.set(METRICS_TABLE_BATCH_SIZE, "2");
         properties.setNumber(DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 1);
         properties.setNumber(GARBAGE_COLLECTOR_PERIOD_IN_MINUTES, 1);
+        properties.set(USER_JARS, "example-iterators-" + SleeperVersion.getVersion() + ".jar");
         return properties;
     }
 
@@ -178,8 +181,8 @@ public class SystemTestInstance {
         return createInstanceConfiguration(properties);
     }
 
-    private static DeployInstanceConfiguration createCompactionOnDataFusionConfiguration() {
-        InstanceProperties properties = createInstanceProperties();
+    private static DeployInstanceConfiguration createCompactionPerformanceOnDataFusionConfiguration() {
+        InstanceProperties properties = createInstancePropertiesWithDefaults();
         properties.setEnum(OPTIONAL_STACKS, OptionalStack.CompactionStack);
         properties.set(COMPACTION_ECS_LAUNCHTYPE, "EC2");
         properties.set(COMPACTION_TASK_CPU_ARCHITECTURE, "X86_64");

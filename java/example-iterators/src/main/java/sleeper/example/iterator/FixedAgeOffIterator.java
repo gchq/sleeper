@@ -21,40 +21,37 @@ import sleeper.core.iterator.SortedRecordIterator;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
- * Filters out records older than a specified age. If the specified timestamp field is more than a certain length of
- * time ago then the record is removed. This is an example implementation of {@link SortedRecordIterator}.
+ * Filter to exclude records from before a certain date. This is an example implementation of
+ * {@link SortedRecordIterator}.
  */
-public class AgeOffIterator implements SortedRecordIterator {
+public class FixedAgeOffIterator implements SortedRecordIterator {
     private String fieldName;
-    private long ageOff;
+    private long minValue;
 
-    public AgeOffIterator() {
+    @Override
+    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
+        return new FilteringIterator<>(input, record -> {
+            Long value = (Long) record.get(fieldName);
+            return null != value && value >= minValue;
+        });
     }
 
     @Override
     public void init(String configString, Schema schema) {
         String[] fields = configString.split(",");
         if (2 != fields.length) {
-            throw new IllegalArgumentException("Configuration string should have 2 fields: field name and age off time");
+            throw new IllegalArgumentException("Configuration string should have 2 fields: field name and minimum value");
         }
         fieldName = fields[0];
-        ageOff = Long.parseLong(fields[1]);
+        minValue = Long.parseLong(fields[1]);
     }
 
     @Override
     public List<String> getRequiredValueFields() {
-        return Collections.singletonList(fieldName);
+        return List.of(fieldName);
     }
 
-    @Override
-    public CloseableIterator<Record> apply(CloseableIterator<Record> input) {
-        return new FilteringIterator<>(input, record -> {
-            Long value = (Long) record.get(fieldName);
-            return null != value && System.currentTimeMillis() - value < ageOff;
-        });
-    }
 }
