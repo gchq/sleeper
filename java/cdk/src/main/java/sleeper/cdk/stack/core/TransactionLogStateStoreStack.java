@@ -26,7 +26,6 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.constructs.Construct;
 
-import sleeper.cdk.jars.BuiltJars;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
@@ -46,7 +45,7 @@ public class TransactionLogStateStoreStack extends NestedStack {
     private final TableDataStack dataStack;
 
     public TransactionLogStateStoreStack(
-            Construct scope, String id, InstanceProperties instanceProperties, BuiltJars jars, TableDataStack dataStack) {
+            Construct scope, String id, InstanceProperties instanceProperties, TableDataStack dataStack) {
         super(scope, id);
         this.dataStack = dataStack;
         partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
