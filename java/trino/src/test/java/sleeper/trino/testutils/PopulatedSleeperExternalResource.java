@@ -45,7 +45,6 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.trino.SleeperConfig;
 import sleeper.trino.remotesleeperconnection.HadoopConfigurationProvider;
@@ -164,7 +163,6 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
         DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
         new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
 
         this.tableDefinitions.forEach(tableDefinition -> {
