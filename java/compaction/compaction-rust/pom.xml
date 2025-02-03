@@ -58,9 +58,8 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>sketches</artifactId>
+            <artifactId>localstack-test</artifactId>
             <version>${project.parent.version}</version>
-            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -71,8 +70,15 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>localstack-test</artifactId>
+            <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>sketches</artifactId>
+            <version>${project.parent.version}</version>
+            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
     </dependencies>
