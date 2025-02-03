@@ -41,7 +41,6 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
 
 public class PartitionsStatusReportIT extends LocalStackTestBase {
@@ -72,7 +71,7 @@ public class PartitionsStatusReportIT extends LocalStackTestBase {
     }
 
     private StateStore stateStore() {
-        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient, getHadoopConfiguration(localStackContainer))
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .getStateStore(tableProperties);
     }
 
