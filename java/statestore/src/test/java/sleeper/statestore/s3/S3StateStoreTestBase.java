@@ -20,7 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestore.testutil.LocalStackTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.nio.file.Path;
 
@@ -40,6 +40,6 @@ public abstract class S3StateStoreTestBase extends LocalStackTestBase {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.setNumber(MAXIMUM_CONNECTIONS_TO_S3, 5);
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
     }
 }

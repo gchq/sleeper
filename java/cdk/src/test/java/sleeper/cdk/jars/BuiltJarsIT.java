@@ -18,9 +18,9 @@ package sleeper.cdk.jars;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 
-import sleeper.cdk.testutils.LocalStackTestBase;
 import sleeper.core.deploy.LambdaJar;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.UUID;
 
@@ -32,12 +32,12 @@ public class BuiltJarsIT extends LocalStackTestBase {
 
     private final String bucketName = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final BuiltJars builtJars = BuiltJars.from(s3Client, instanceProperties);
+    private final BuiltJars builtJars = BuiltJars.from(s3ClientV2, instanceProperties);
 
     @Test
     void shouldGetLatestVersionOfAJar() {
         createBucket(bucketName);
-        s3Client.putBucketVersioning(put -> put.bucket(bucketName)
+        s3ClientV2.putBucketVersioning(put -> put.bucket(bucketName)
                 .versioningConfiguration(config -> config.status(BucketVersioningStatus.ENABLED)));
         String versionId = putObject(bucketName, "test.jar", "data").versionId();
 

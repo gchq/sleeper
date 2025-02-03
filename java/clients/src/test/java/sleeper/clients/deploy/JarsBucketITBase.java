@@ -18,13 +18,9 @@ package sleeper.clients.deploy;
 
 import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,14 +29,7 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
-
-@Testcontainers
-public abstract class JarsBucketITBase {
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3);
-
-    protected final S3Client s3 = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3Client.builder());
+public abstract class JarsBucketITBase extends LocalStackTestBase {
 
     @TempDir
     protected Path tempDir;
@@ -56,7 +45,7 @@ public abstract class JarsBucketITBase {
 
     protected boolean syncJarsToBucket(String bucketName, boolean deleteOld) throws IOException {
         return SyncJars.builder()
-                .s3(s3)
+                .s3(s3ClientV2)
                 .jarsDirectory(tempDir)
                 .region(localStackContainer.getRegion())
                 .bucketName(bucketName)
@@ -65,17 +54,17 @@ public abstract class JarsBucketITBase {
     }
 
     protected Stream<String> listObjectKeys() {
-        return s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
+        return s3ClientV2.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
                 .flatMap(response -> response.contents().stream())
                 .map(S3Object::key);
     }
 
     protected Instant getObjectLastModified(String key) {
-        return s3.headObject(builder -> builder.bucket(bucketName).key(key)).lastModified();
+        return s3ClientV2.headObject(builder -> builder.bucket(bucketName).key(key)).lastModified();
     }
 
     protected String getObjectContents(String key) {
-        return s3.getObject(builder -> builder.bucket(bucketName).key(key),
+        return s3ClientV2.getObject(builder -> builder.bucket(bucketName).key(key),
                 (metadata, inputStream) -> CharStreams.toString(new InputStreamReader(inputStream)));
     }
 }

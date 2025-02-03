@@ -39,7 +39,7 @@ import static org.mockito.Mockito.mock;
 import static sleeper.athena.metadata.SleeperMetadataHandler.RELEVANT_FILES_FIELD;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
-public class SimpleMetadataHandlerIT extends AbstractMetadataHandlerIT {
+public class SimpleMetadataHandlerIT extends MetadataHandlerITBase {
 
     @Test
     public void shouldCreateSplitForEachFileInAPartition() throws Exception {

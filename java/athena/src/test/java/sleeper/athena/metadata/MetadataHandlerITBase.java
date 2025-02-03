@@ -15,17 +15,9 @@
  */
 package sleeper.athena.metadata;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.athena.TestUtils;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -34,7 +26,7 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,14 +35,8 @@ import static com.amazonaws.SDKGlobalConfiguration.ACCESS_KEY_SYSTEM_PROPERTY;
 import static com.amazonaws.SDKGlobalConfiguration.AWS_REGION_SYSTEM_PROPERTY;
 import static com.amazonaws.SDKGlobalConfiguration.SECRET_KEY_SYSTEM_PROPERTY;
 import static java.nio.file.Files.createTempDirectory;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
-@Testcontainers
-public abstract class AbstractMetadataHandlerIT {
-
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+public abstract class MetadataHandlerITBase extends LocalStackTestBase {
 
     // For storing data
     @TempDir
@@ -63,10 +49,6 @@ public abstract class AbstractMetadataHandlerIT {
                     new Field("day", new IntType()))
             .valueFields(new Field("count", new LongType()))
             .build();
-
-    protected final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    protected final AmazonDynamoDB dynamoClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    protected final Configuration configuration = getHadoopConfiguration(localStackContainer);
 
     @BeforeEach
     public void setUpCredentials() {
@@ -82,8 +64,6 @@ public abstract class AbstractMetadataHandlerIT {
         System.clearProperty(ACCESS_KEY_SYSTEM_PROPERTY);
         System.clearProperty(SECRET_KEY_SYSTEM_PROPERTY);
         System.clearProperty(AWS_REGION_SYSTEM_PROPERTY);
-        s3Client.shutdown();
-        dynamoClient.shutdown();
     }
 
     protected InstanceProperties createInstance() throws IOException {
@@ -93,7 +73,7 @@ public abstract class AbstractMetadataHandlerIT {
 
     protected TableProperties createEmptyTable(InstanceProperties instanceProperties) {
         return TestUtils.createTable(instanceProperties, TIME_SERIES_SCHEMA,
-                dynamoClient, s3Client, getHadoopConfiguration(localStackContainer), 2018, 2019, 2020);
+                dynamoClient, s3Client, hadoopConf, 2018, 2019, 2020);
     }
 
     protected TableProperties createTable(InstanceProperties instanceProperties) throws IOException {

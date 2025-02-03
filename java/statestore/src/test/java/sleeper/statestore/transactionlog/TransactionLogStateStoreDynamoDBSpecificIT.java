@@ -281,11 +281,11 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     tableProperties.getStatus(), tableProperties.getSchema(), setupState);
 
             DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
-                    instanceProperties, tableProperties, dynamoDBClient);
+                    instanceProperties, tableProperties, dynamoClient);
             new DynamoDBTransactionLogSnapshotCreator(
                     instanceProperties, tableProperties,
                     snapshotSetup.getFilesLog(), snapshotSetup.getPartitionsLog(), snapshotSetup.getTransactionBodyStore(),
-                    configuration, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot)
+                    hadoopConf, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot)
                     .createSnapshot();
         }
     }
@@ -295,7 +295,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
     }
 
     private StateStoreFactory stateStoreFactory() {
-        return new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf);
     }
 
     private FileReferenceFactory fileFactory(PartitionTree tree) {

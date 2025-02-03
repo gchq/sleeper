@@ -16,17 +16,8 @@
 
 package sleeper.garbagecollector;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.containers.localstack.LocalStackContainer.Service;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -42,8 +33,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
-import sleeper.localstack.test.SleeperLocalStackContainer;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Duration;
@@ -63,25 +53,18 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCF
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class GarbageCollectorS3IT {
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(Service.S3, Service.SQS);
-    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
+public class GarbageCollectorS3IT extends LocalStackTestBase {
 
     private static final Schema TEST_SCHEMA = getSchema();
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final FileReferenceFactory factory = FileReferenceFactory.from(partitions);
-    private final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
     private final String testBucket = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
 
     @BeforeEach
     void setUp() {
-        s3Client.createBucket(testBucket);
+        createBucket(testBucket);
     }
 
     StateStore setupStateStoreAndFixTime(Instant fixedTime) {
@@ -140,7 +123,7 @@ public class GarbageCollectorS3IT {
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
-        return new GarbageCollector(deleteFileAndSketches(configuration), instanceProperties,
+        return new GarbageCollector(deleteFileAndSketches(hadoopConf), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }

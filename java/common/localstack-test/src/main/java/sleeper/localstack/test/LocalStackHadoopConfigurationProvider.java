@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.parquet.utils;
+package sleeper.localstack.test;
 
 import org.apache.hadoop.conf.Configuration;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 
-public class HadoopConfigurationLocalStackUtils {
+public class LocalStackHadoopConfigurationProvider {
 
-    private HadoopConfigurationLocalStackUtils() {
+    private LocalStackHadoopConfigurationProvider() {
     }
 
     /**
@@ -39,7 +39,7 @@ public class HadoopConfigurationLocalStackUtils {
     }
 
     public static void configureHadoop(Configuration configuration, LocalStackContainer container) {
-        configuration.setClassLoader(HadoopConfigurationLocalStackUtils.class.getClassLoader());
+        configuration.setClassLoader(LocalStackHadoopConfigurationProvider.class.getClassLoader());
         configuration.set("fs.s3a.endpoint", container.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
         configuration.set("fs.s3a.access.key", container.getAccessKey());
@@ -53,4 +53,5 @@ public class HadoopConfigurationLocalStackUtils {
         // configuration.set("fs.s3a.connection.establish.timeout", "1");
         // configuration.set("fs.s3a.attempts.maximum", "1");
     }
+
 }

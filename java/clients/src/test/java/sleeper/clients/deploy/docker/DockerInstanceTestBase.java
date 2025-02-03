@@ -16,19 +16,6 @@
 
 package sleeper.clients.deploy.docker;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.apache.hadoop.conf.Configuration;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.clients.docker.DeployDockerInstance;
@@ -41,7 +28,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.recordretrieval.QueryExecutor;
 import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
@@ -53,21 +40,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-public class DockerInstanceTestBase {
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.SQS);
-    protected final AmazonS3 s3Client = buildAwsV1Client(
-            localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    protected final AmazonDynamoDB dynamoDB = buildAwsV1Client(
-            localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    protected final SqsClient sqsClient = buildAwsV2Client(localStackContainer, LocalStackContainer.Service.SQS, SqsClient.builder());
-    protected final AmazonSQS sqsClientV1 = buildAwsV1Client(
-            localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
-
-    static {
-        localStackContainer.start();
-    }
+public abstract class DockerInstanceTestBase extends LocalStackTestBase {
 
     public void deployInstance(String instanceId) {
         deployInstance(instanceId, tableProperties -> {
@@ -75,24 +49,24 @@ public class DockerInstanceTestBase {
     }
 
     public void deployInstance(String instanceId, Consumer<TableProperties> extraProperties) {
-        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoDB).sqsClient(sqsClient)
-                .configuration(getHadoopConfiguration()).extraTableProperties(extraProperties)
+        DeployDockerInstance.builder().s3Client(s3Client).dynamoDB(dynamoClient).sqsClient(sqsClientV2)
+                .configuration(hadoopConf).extraTableProperties(extraProperties)
                 .build().deploy(instanceId);
     }
 
     public CloseableIterator<Record> queryAllRecords(
             InstanceProperties instanceProperties, TableProperties tableProperties) throws Exception {
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDB, getHadoopConfiguration())
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .getStateStore(tableProperties);
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
-                new LeafPartitionRecordRetrieverImpl(Executors.newSingleThreadExecutor(), getHadoopConfiguration(), tableProperties));
+                new LeafPartitionRecordRetrieverImpl(Executors.newSingleThreadExecutor(), hadoopConf, tableProperties));
         executor.init(tree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor.execute(createQueryAllRecords(tree, tableProperties.get(TABLE_NAME)));
     }
 
     protected IngestJob receiveIngestJob(String queueUrl) {
-        List<Message> messages = sqsClient.receiveMessage(request -> request.queueUrl(queueUrl)).messages();
+        List<Message> messages = sqsClientV2.receiveMessage(request -> request.queueUrl(queueUrl)).messages();
         if (messages.size() != 1) {
             throw new IllegalStateException("Expected to receive one message, found: " + messages);
         }
@@ -101,7 +75,7 @@ public class DockerInstanceTestBase {
     }
 
     protected IngestJob receiveIngestJobV1(String queueUrl) {
-        List<com.amazonaws.services.sqs.model.Message> messages = sqsClientV1.receiveMessage(queueUrl).getMessages();
+        List<com.amazonaws.services.sqs.model.Message> messages = sqsClient.receiveMessage(queueUrl).getMessages();
         if (messages.size() != 1) {
             throw new IllegalStateException("Expected to receive one message, found: " + messages);
         }
@@ -114,26 +88,6 @@ public class DockerInstanceTestBase {
                 .tableName(tableName)
                 .queryId(UUID.randomUUID().toString())
                 .regions(List.of(tree.getRootPartition().getRegion()))
-                .build();
-    }
-
-    public Configuration getHadoopConfiguration() {
-        Configuration configuration = new Configuration();
-        configuration.setClassLoader(this.getClass().getClassLoader());
-        configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
-        configuration.set("fs.s3a.access.key", localStackContainer.getAccessKey());
-        configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
-        configuration.setBoolean("fs.s3a.connection.ssl.enabled", false);
-        return configuration;
-    }
-
-    private static <B extends AwsClientBuilder<B, T>, T> T buildAwsV2Client(LocalStackContainer localStackContainer, LocalStackContainer.Service service, B builder) {
-        return builder
-                .endpointOverride(localStackContainer.getEndpointOverride(service))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-                .region(Region.of(localStackContainer.getRegion()))
                 .build();
     }
 }

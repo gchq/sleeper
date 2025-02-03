@@ -15,31 +15,19 @@
  */
 package sleeper.localstack.test;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class SleeperLocalStackContainerIT {
-
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3);
+public class SleeperLocalStackContainerIT extends LocalStackTestBase {
 
     @Test
     void shouldCreateS3Bucket() {
-        AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-
         String bucketName = UUID.randomUUID().toString();
-        s3Client.createBucket(bucketName);
-        assertThat(s3Client.listObjects(bucketName).getObjectSummaries()).isEmpty();
+        createBucket(bucketName);
+        assertThat(listObjectKeys(bucketName)).isEmpty();
     }
 
 }

@@ -19,7 +19,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.configuration.testutils.TablePropertiesITBase;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;

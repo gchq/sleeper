@@ -15,17 +15,12 @@
  */
 package sleeper.splitter.lambda;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -43,7 +38,7 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
 import sleeper.ingest.runner.impl.partitionfilewriter.DirectPartitionFileWriterFactory;
 import sleeper.ingest.runner.impl.recordbatch.arraylist.ArrayListRecordBatchFactory;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.splitter.core.find.FindPartitionsToSplit;
 import sleeper.splitter.core.find.SplitPartitionJobDefinition;
 import sleeper.splitter.core.find.SplitPartitionJobDefinitionSerDe;
@@ -67,18 +62,12 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class FindPartitionsToSplitIT {
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.SQS);
+public class FindPartitionsToSplitIT extends LocalStackTestBase {
 
     @TempDir
     public Path tempDir;
 
-    private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer,
-            LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);

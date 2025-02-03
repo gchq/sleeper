@@ -15,22 +15,10 @@
  */
 package sleeper.compaction.job.creation;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.CreateQueueRequest;
-import com.amazonaws.services.sqs.model.CreateQueueResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
@@ -53,14 +41,12 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.localstack.test.SleeperLocalStackContainer;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -76,31 +62,14 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class AwsCreateCompactionJobsIT {
+public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(
-            LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
-
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
     private final Schema schema = CreateJobsTestUtils.createSchema();
-    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB,
-            HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
+    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
     private final TableProperties tableProperties = createTableProperties(schema, instanceProperties);
     private final StateStore stateStore = createAndInitialiseStateStore(tableProperties);
-
-    @AfterEach
-    void tearDown() {
-        s3.shutdown();
-        dynamoDB.shutdown();
-        sqs.shutdown();
-    }
 
     @Test
     public void shouldCompactAllFilesInSinglePartition() throws Exception {
@@ -160,7 +129,7 @@ public class AwsCreateCompactionJobsIT {
     }
 
     private List<CompactionJobDispatchRequest> receivePendingBatches() {
-        ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest()
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
                 .withMaxNumberOfMessages(10));
         return result.getMessages().stream()
@@ -170,7 +139,7 @@ public class AwsCreateCompactionJobsIT {
     }
 
     private List<CompactionJob> loadBatchJobs(CompactionJobDispatchRequest batch) {
-        String json = s3.getObjectAsString(instanceProperties.get(DATA_BUCKET), batch.getBatchKey());
+        String json = s3Client.getObjectAsString(instanceProperties.get(DATA_BUCKET), batch.getBatchKey());
         return new CompactionJobSerDe().batchFromJson(json);
     }
 
@@ -184,7 +153,7 @@ public class AwsCreateCompactionJobsIT {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
                 .withMaxNumberOfMessages(10);
-        return sqs.receiveMessage(receiveMessageRequest);
+        return sqsClient.receiveMessage(receiveMessageRequest);
     }
 
     private StateStoreCommitRequest readAssignJobIdRequest(Message message) {
@@ -194,25 +163,18 @@ public class AwsCreateCompactionJobsIT {
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createInstanceProperties();
         instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, createFifoQueueGetUrl());
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(FILE_SYSTEM, "");
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
 
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3.createBucket(instanceProperties.get(DATA_BUCKET));
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
         instanceProperties.set(COMPACTION_PENDING_QUEUE_URL,
-                sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        S3InstanceProperties.saveToS3(s3, instanceProperties);
+                sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         return instanceProperties;
-    }
-
-    private String createFifoQueueGetUrl() {
-        CreateQueueResult result = sqs.createQueue(new CreateQueueRequest()
-                .withQueueName(UUID.randomUUID().toString() + ".fifo")
-                .withAttributes(Map.of("FifoQueue", "true")));
-        return result.getQueueUrl();
     }
 
     private StateStore createAndInitialiseStateStore(TableProperties tableProperties) {
@@ -227,6 +189,6 @@ public class AwsCreateCompactionJobsIT {
 
     private CreateCompactionJobs jobCreator() throws ObjectFactoryException {
         return AwsCreateCompactionJobs.from(ObjectFactory.noUserJars(),
-                instanceProperties, new FixedTablePropertiesProvider(tableProperties), stateStoreProvider, s3, sqs);
+                instanceProperties, new FixedTablePropertiesProvider(tableProperties), stateStoreProvider, s3Client, sqsClient);
     }
 }

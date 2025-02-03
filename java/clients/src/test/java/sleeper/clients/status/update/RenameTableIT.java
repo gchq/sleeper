@@ -16,15 +16,8 @@
 
 package sleeper.clients.status.update;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -35,7 +28,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.table.TableAlreadyExistsException;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,23 +39,17 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class RenameTableIT {
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+public class RenameTableIT extends LocalStackTestBase {
 
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
-    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
 
     @BeforeEach
     void setUp() {
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 
     @Test
