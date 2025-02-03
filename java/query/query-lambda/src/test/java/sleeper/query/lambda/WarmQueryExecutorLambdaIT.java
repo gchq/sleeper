@@ -18,7 +18,6 @@ package sleeper.query.lambda;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -50,6 +49,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
@@ -81,13 +81,6 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         String dataDir = createTempDirectory(tempDir, null).toString();
         createInstanceProperties(dataDir);
         lambda = new WarmQueryExecutorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-    }
-
-    @AfterEach
-    void tearDown() {
-        s3Client.shutdown();
-        dynamoClient.shutdown();
-        sqsClient.shutdown();
     }
 
     @Test
@@ -128,7 +121,7 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
                 .tableName(tableName)
                 .regions(List.of(region))
                 .processingConfig(QueryProcessingConfig.builder()
-                        .resultsPublisherConfig(Collections.singletonMap(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
+                        .resultsPublisherConfig(Map.of(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
                         .statusReportDestinations(Collections.emptyList())
                         .build())
                 .build();
