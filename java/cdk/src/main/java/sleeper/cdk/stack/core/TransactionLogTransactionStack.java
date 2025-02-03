@@ -22,6 +22,10 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.MetricType;
+import software.amazon.awscdk.services.lambda.MetricsConfig;
+import software.amazon.awscdk.services.lambda.StartingPosition;
+import software.amazon.awscdk.services.lambda.eventsources.DynamoEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -50,6 +54,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.TableStateProperty.TRACKER_FROM_LOG_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.TableStateProperty.TRACKER_FROM_LOG_LAMBDA_MEMORY;
+import static sleeper.core.properties.instance.TableStateProperty.TRACKER_FROM_LOG_LAMBDA_TIMEOUT_SECS;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED;
@@ -65,6 +72,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        createFunctionToFollowTransactionLog(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack);
         createTransactionDeletionLambda(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -135,5 +143,26 @@ public class TransactionLogTransactionStack extends NestedStack {
         coreStacks.grantInvokeScheduled(transactionDeletionTrigger, queue);
         coreStacks.grantReadTablesStatus(transactionDeletionLambda);
         transactionLogStateStoreStack.grantDeleteTransactions(transactionDeletionLambda);
+    }
+
+    private void createFunctionToFollowTransactionLog(
+            InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String functionName = String.join("-", "sleeper", instanceId, "state-transaction-tracker");
+        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.STATESTORE_TRACKER, "TransactionLogTracker", builder -> builder
+                .functionName(functionName)
+                .description("Updates trackers by following the transaction log")
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(TRACKER_FROM_LOG_LAMBDA_CONCURRENCY_RESERVED))
+                .memorySize(instanceProperties.getInt(TRACKER_FROM_LOG_LAMBDA_MEMORY))
+                .timeout(Duration.seconds(instanceProperties.getInt(TRACKER_FROM_LOG_LAMBDA_TIMEOUT_SECS)))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.STATESTORE_TRACKER)));
+
+        lambda.addEventSource(DynamoEventSource.Builder.create(transactionLogStateStoreStack.getFilesLogTable())
+                .startingPosition(StartingPosition.LATEST)
+                .metricsConfig(MetricsConfig.builder()
+                        .metrics(List.of(MetricType.EVENT_COUNT))
+                        .build())
+                .build());
     }
 }

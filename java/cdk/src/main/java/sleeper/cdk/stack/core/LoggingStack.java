@@ -64,11 +64,11 @@ public class LoggingStack extends NestedStack {
         TABLE_DATA_AUTODELETE("table-data-autodelete"),
         TABLE_DATA_AUTODELETE_PROVIDER("table-data-autodelete-provider"),
         STATESTORE_COMMITTER("statestore-committer"),
-        STATESTORE_TRACKER("statestore-tracker"),
 
         // Accessed via CoreStacks getters
         PROPERTIES_WRITER("properties-writer"),
         PROPERTIES_WRITER_PROVIDER("properties-writer-provider"),
+        STATESTORE_TRACKER("statestore-tracker"),
         STATE_SNAPSHOT_CREATION_TRIGGER("state-snapshot-creation-trigger"),
         STATE_SNAPSHOT_CREATION("state-snapshot-creation"),
         STATE_SNAPSHOT_DELETION_TRIGGER("state-snapshot-deletion-trigger"),
