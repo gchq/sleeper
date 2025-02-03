@@ -68,7 +68,7 @@ public class LoggingStack extends NestedStack {
         // Accessed via CoreStacks getters
         PROPERTIES_WRITER("properties-writer"),
         PROPERTIES_WRITER_PROVIDER("properties-writer-provider"),
-        STATESTORE_TRACKER("statestore-tracker"),
+        STATESTORE_TRACKER("state-transaction-tracker"),
         STATE_SNAPSHOT_CREATION_TRIGGER("state-snapshot-creation-trigger"),
         STATE_SNAPSHOT_CREATION("state-snapshot-creation"),
         STATE_SNAPSHOT_DELETION_TRIGGER("state-snapshot-deletion-trigger"),
