@@ -146,6 +146,7 @@
                                 <configuration>
                                     <executable>cross</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
+                                    <useMavenLogger>true</useMavenLogger>
                                     <arguments>
                                         <argument>build</argument>
                                         <argument>--release</argument>
@@ -163,6 +164,7 @@
                                 <configuration>
                                     <executable>cross</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
+                                    <useMavenLogger>true</useMavenLogger>
                                     <arguments>
                                         <argument>build</argument>
                                         <argument>--release</argument>
