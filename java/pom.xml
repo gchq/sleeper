@@ -1323,6 +1323,20 @@
                                     <excludes>
                                     </excludes>
                                 </artifactSet>
+                                <transformers>
+                                    <!--
+                                    This is needed to merge META-INFO/services/org.apache.hadoop.fs.FileSystem, which
+                                    is provided by different libraries.
+                                    Otherwise depending on the order Maven processes the jars, sometimes it takes the
+                                    version of this file from hadoop-aws, which only declares
+                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem.
+                                    This prevents Hadoop from loading the local file system, and we see errors like this:
+                                    org.apache.hadoop.fs.UnsupportedFileSystemException: No FileSystem for scheme "file"
+                                    This is only strictly needed for modules that use Hadoop, but in practice this is
+                                    most fat jars.
+                                    -->
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                </transformers>
                             </configuration>
                         </execution>
                     </executions>
