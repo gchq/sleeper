@@ -15,17 +15,20 @@
  */
 package sleeper.cdk.stack.core;
 
+import software.amazon.awscdk.Duration;
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
-import software.amazon.awscdk.services.dynamodb.ITable;
-import software.amazon.awscdk.services.dynamodb.StreamViewType;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
+import software.amazon.awscdk.services.kinesis.IStream;
+import software.amazon.awscdk.services.kinesis.Stream;
+import software.amazon.awscdk.services.kinesis.StreamMode;
 import software.constructs.Construct;
 
+import sleeper.cdk.util.Utils;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
@@ -39,7 +42,9 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 
 public class TransactionLogStateStoreStack extends NestedStack {
     private final Table partitionsLogTable;
+    private final Stream partitionsLogStream;
     private final Table filesLogTable;
+    private final Stream filesLogStream;
     private final Table latestSnapshotsTable;
     private final Table allSnapshotsTable;
     private final TableDataStack dataStack;
@@ -48,8 +53,10 @@ public class TransactionLogStateStoreStack extends NestedStack {
             Construct scope, String id, InstanceProperties instanceProperties, TableDataStack dataStack) {
         super(scope, id);
         this.dataStack = dataStack;
-        partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log");
-        filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log");
+        partitionsLogStream = createTransactionLogStream(instanceProperties, "PartitionTransactionLogStream", "partition-transaction-log");
+        partitionsLogTable = createTransactionLogTable(instanceProperties, "PartitionTransactionLogTable", "partition-transaction-log", partitionsLogStream);
+        filesLogStream = createTransactionLogStream(instanceProperties, "FileTransactionLogStream", "file-transaction-log");
+        filesLogTable = createTransactionLogTable(instanceProperties, "FileTransactionLogTable", "file-transaction-log", filesLogStream);
         latestSnapshotsTable = createLatestSnapshotsTable(instanceProperties, "TransactionLogLatestSnapshotsTable", "transaction-log-latest-snapshots");
         allSnapshotsTable = createAllSnapshotsTable(instanceProperties, "TransactionLogAllSnapshotsTable", "transaction-log-all-snapshots");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, partitionsLogTable.getTableName());
@@ -58,10 +65,10 @@ public class TransactionLogStateStoreStack extends NestedStack {
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, allSnapshotsTable.getTableName());
     }
 
-    private Table createTransactionLogTable(InstanceProperties instanceProperties, String id, String name) {
+    private Table createTransactionLogTable(InstanceProperties instanceProperties, String id, String name, IStream kinesisStream) {
         return Table.Builder
                 .create(this, id)
-                .tableName(String.join("-", "sleeper", instanceProperties.get(ID), name))
+                .tableName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties.get(ID)), name))
                 .removalPolicy(removalPolicy(instanceProperties))
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
@@ -72,14 +79,23 @@ public class TransactionLogStateStoreStack extends NestedStack {
                         .name(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER)
                         .type(AttributeType.NUMBER)
                         .build())
-                .stream(StreamViewType.NEW_IMAGE)
+                .kinesisStream(kinesisStream)
+                .build();
+    }
+
+    private Stream createTransactionLogStream(InstanceProperties instanceProperties, String id, String name) {
+        return Stream.Builder.create(this, id)
+                .streamName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties.get(ID)), name))
+                .removalPolicy(removalPolicy(instanceProperties))
+                .retentionPeriod(Duration.hours(24))
+                .streamMode(StreamMode.ON_DEMAND)
                 .build();
     }
 
     private Table createLatestSnapshotsTable(InstanceProperties instanceProperties, String id, String name) {
         return Table.Builder
                 .create(this, id)
-                .tableName(String.join("-", "sleeper", instanceProperties.get(ID), name))
+                .tableName(String.join("-", "sleeper", Utils.cleanInstanceId(instanceProperties.get(ID)), name))
                 .removalPolicy(removalPolicy(instanceProperties))
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()
@@ -162,7 +178,7 @@ public class TransactionLogStateStoreStack extends NestedStack {
         dataStack.grantReadDelete(grantee);
     }
 
-    public ITable getFilesLogTable() {
-        return filesLogTable;
+    public IStream getFilesLogStream() {
+        return filesLogStream;
     }
 }
