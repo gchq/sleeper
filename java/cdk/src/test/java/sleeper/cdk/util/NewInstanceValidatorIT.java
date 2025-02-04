@@ -21,8 +21,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
@@ -70,25 +68,13 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenTheQueryResultsBucketExists() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBStateStore.class.getName());
+        setupTablesPropertiesFile(temporaryFolder, "example-table", S3StateStore.class.getName());
         createBucket(instanceProperties.get(QUERY_RESULTS_BUCKET));
 
         // When / Then
         assertThatThrownBy(this::validate)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Sleeper query results bucket exists: " + instanceProperties.get(QUERY_RESULTS_BUCKET));
-    }
-
-    @Test
-    void shouldThrowAnErrorWhenDynamoStateStoreExists() throws IOException {
-        // Given
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
-        setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBStateStore.class.getName());
-
-        // When
-        assertThatThrownBy(this::validate)
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageStartingWith("Sleeper state store table exists: ");
     }
 
     @Test
@@ -106,7 +92,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenTransactionLogStateStoreExists() throws IOException {
         // Given
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
+        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
         setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBTransactionLogStateStore.class.getName());
 
         // When

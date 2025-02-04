@@ -44,7 +44,6 @@ import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
-import sleeper.cdk.stack.core.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
@@ -139,7 +138,6 @@ public class SleeperCdkApp extends Stack {
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
         StateStoreStacks stateStoreStacks = new StateStoreStacks(
-                new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
                 new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
                 transactionLogStateStoreStack, policiesStack);
         IngestTrackerResources ingestTracker = IngestTrackerResources.from(

@@ -21,30 +21,17 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.DelegatingStateStore;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
-
 /**
  * An implementation of StateStore that uses DynamoDB to store the state.
  */
 public class DynamoDBStateStore extends DelegatingStateStore {
-
-    public static final String FILE_NAME = DynamoDBFileReferenceFormat.FILENAME;
-    public static final String PARTITION_ID = DynamoDBPartitionFormat.ID;
-    public static final String PARTITION_ID_AND_FILENAME = DynamoDBFileReferenceFormat.PARTITION_ID_AND_FILENAME;
     public static final String TABLE_ID = "TableId";
 
     public DynamoDBStateStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB) {
-        this(DynamoDBFileReferenceStore.builder().dynamoDB(dynamoDB)
-                .instanceProperties(instanceProperties)
-                .tableProperties(tableProperties)
-                .build(),
-                DynamoDBPartitionStore.builder().dynamoDB(dynamoDB)
-                        .dynamoTableName(instanceProperties.get(PARTITION_TABLENAME))
-                        .tableProperties(tableProperties)
-                        .build());
+        this();
     }
 
-    DynamoDBStateStore(DynamoDBFileReferenceStore fileReferenceStore, DynamoDBPartitionStore partitionStore) {
-        super(fileReferenceStore, partitionStore);
+    DynamoDBStateStore() {
+        super(null, null);
     }
 }

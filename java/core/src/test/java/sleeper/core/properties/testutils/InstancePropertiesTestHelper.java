@@ -30,11 +30,8 @@ import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_SINGLE_WRITE_TO_FILE_RECORDS;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.ACTIVE_FILES_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.FILE_REFERENCE_COUNT_TABLENAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
@@ -94,9 +91,6 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
-        instanceProperties.set(ACTIVE_FILES_TABLENAME, "sleeper-" + id + "-active-files");
-        instanceProperties.set(FILE_REFERENCE_COUNT_TABLENAME, "sleeper-" + id + "-file-ref-count");
-        instanceProperties.set(PARTITION_TABLENAME, "sleeper-" + id + "-partitions");
         instanceProperties.set(REVISION_TABLENAME, "sleeper-" + id + "-table-revisions");
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, "sleeper-" + id + "-file-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, "sleeper-" + id + "-partition-transaction-log");
