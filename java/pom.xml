@@ -1323,6 +1323,9 @@
                                     <excludes>
                                     </excludes>
                                 </artifactSet>
+                                <transformers>
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                </transformers>
                             </configuration>
                         </execution>
                     </executions>
