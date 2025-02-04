@@ -17,18 +17,18 @@ package sleeper.statestore.lambda.transaction;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * A lambda that follows the transaction log of a Sleeper state store.
  */
-public class TransactionLogTrackerLambda implements RequestHandler<DynamodbEvent, Void> {
+public class TransactionLogTrackerLambda implements RequestHandler<KinesisEvent, Void> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogTrackerLambda.class);
 
     @Override
-    public Void handleRequest(DynamodbEvent event, Context context) {
+    public Void handleRequest(KinesisEvent event, Context context) {
         LOGGER.debug("Received event: {}", event);
         return null;
     }
