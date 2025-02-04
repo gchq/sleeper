@@ -18,6 +18,7 @@ package sleeper.statestore.lambda.transaction;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.KinesisEvent;
+import com.amazonaws.services.lambda.runtime.events.KinesisEvent.KinesisEventRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,10 @@ public class TransactionLogTrackerLambda implements RequestHandler<KinesisEvent,
 
     @Override
     public Void handleRequest(KinesisEvent event, Context context) {
-        LOGGER.debug("Received event: {}", event);
+        for (KinesisEventRecord record : event.getRecords()) {
+            LOGGER.debug("Received record: {}", record);
+            LOGGER.debug("Data: {}", record.getKinesis().getData().asCharBuffer());
+        }
         return null;
     }
 
