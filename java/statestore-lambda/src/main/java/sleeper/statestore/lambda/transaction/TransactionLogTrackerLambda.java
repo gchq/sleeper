@@ -30,6 +30,7 @@ public class TransactionLogTrackerLambda implements RequestHandler<KinesisEvent,
 
     @Override
     public Void handleRequest(KinesisEvent event, Context context) {
+        LOGGER.debug("Received event with {} records", event.getRecords().size());
         for (KinesisEventRecord record : event.getRecords()) {
             LOGGER.debug("Received record: {}", record);
             LOGGER.debug("Data: {}", record.getKinesis().getData().asCharBuffer());
