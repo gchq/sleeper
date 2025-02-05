@@ -82,9 +82,14 @@ pub async fn compact(
         })
         .inspect_err(|e| warn!("Error getting total input size {e}"));
     let multipart_size = std::cmp::max(
+        crate::store::MULTIPART_BUF_SIZE,
+        input_size.unwrap_or_default() / 5000,
+    );
+    store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?
         .set_multipart_size_hint(multipart_size);
+    info!(
         "Setting multipart size hint to {} bytes.",
         multipart_size.to_formatted_string(&Locale::en)
     );
