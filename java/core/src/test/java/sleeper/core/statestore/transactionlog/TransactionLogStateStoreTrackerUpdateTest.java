@@ -16,19 +16,20 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.util.List;
 
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
-public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransactionLogStateStoreTestBase {
+public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
@@ -42,14 +43,21 @@ public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransacti
     }
 
     @Test
-    @Disabled
     void shouldUpdateTransactionLogBasedOnStateStoreProvided() {
+        // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
-
         committerStore.addFiles(List.of(oldFile));
         committerStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
+        CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
+        trackJobRun(trackedJob, "test-run");
+        ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId("test-run").build()));
+        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
+
+        // When
+        // followerStore.followTransaction(...);
 
     }
 }
