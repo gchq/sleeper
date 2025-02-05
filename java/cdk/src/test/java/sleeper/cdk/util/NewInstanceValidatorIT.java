@@ -46,7 +46,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldNotThrowAnErrorWhenNoBucketsOrTablesExist() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.s3.S3StateStore");
 
         // When / Then
         assertThatCode(this::validate)
@@ -56,7 +56,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenDataBucketExists() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.s3.S3StateStore");
         createBucket(instanceProperties.get(DATA_BUCKET));
 
         // When / Then
