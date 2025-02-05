@@ -1,9 +1,9 @@
 # A C++ Nvidia RAPIDS development image
-FROM rapidsai/base:24.10-cuda12.5-py3.12 AS base
+FROM rapidsai/base:24.12-cuda12.5-py3.12 AS base
 
 USER root
 # Install tools
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata htop dstat less nano sudo software-properties-common wget unzip && apt-get clean
+RUN apt-get update && apt-get install -y pcp && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata htop dstat less nano sudo software-properties-common wget unzip && apt-get clean
 
 # Use shell form for redirection and enable sudo
 ARG USERNAME=rapids
@@ -20,7 +20,7 @@ USER root
 # Install aws
 RUN wget -q "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -O "awscliv2.zip" && unzip -q awscliv2.zip && ./aws/install && rm -rf aws awscliv2.zip 
 
-# Enable gcc-13
+# Enable gcc-14
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test
 
 # Install certs and Amazon repository
@@ -45,22 +45,22 @@ RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100 \
 
 # Install certs and LLVM repository
 RUN wget -O- "https://apt.llvm.org/llvm-snapshot.gpg.key" | apt-key add -
-RUN printf 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main\ndeb-src http://apt.llvm.org/jammy/ llvm-toolchain-jammy-17 main' >/etc/apt/sources.list.d/llvm.list
+RUN printf 'deb http://apt.llvm.org/noble/ llvm-toolchain-noble-19 main\ndeb-src http://apt.llvm.org/noble/ llvm-toolchain-noble-19 main' >/etc/apt/sources.list.d/llvm.list
 
 # Install Clang
-RUN apt-get update && apt-get install -y clang-17 clang-format-17 clang-tidy-17 libclang-17-dev && apt-get clean
+RUN apt-get update && apt-get install -y clang-19 clang-format-19 clang-tidy-19 libclang-19-dev && apt-get clean
 
 # Install CMake
-RUN wget -q "https://github.com/Kitware/CMake/releases/download/v3.30.5/cmake-3.30.5-linux-x86_64.tar.gz" \
+RUN wget -q "https://github.com/Kitware/CMake/releases/download/v3.31.5/cmake-3.31.5-linux-x86_64.tar.gz" \
     && mkdir -p /opt/cmake \
-    && tar --strip-components 1 -C /opt/cmake -zxf cmake-3.30.5-linux-x86_64.tar.gz \
-    && rm -rf cmake-3.30.5-linux-x86_64.tar.gz \
+    && tar --strip-components 1 -C /opt/cmake -zxf cmake-3.31.5-linux-x86_64.tar.gz \
+    && rm -rf cmake-3.31.5-linux-x86_64.tar.gz \
     && echo "export PATH=\$PATH:/opt/cmake/bin" >"/etc/profile.d/cmake.sh" \
     && chmod 755 /etc/profile.d/cmake.sh
 
 # Install include-what-you-use
-RUN git clone https://github.com/include-what-you-use/include-what-you-use.git -b clang_17 \
-    && /opt/cmake/bin/cmake -DCMAKE_PREFIX_PATH=/usr/lib/llvm-17 -S include-what-you-use/ -B build \
+RUN git clone https://github.com/include-what-you-use/include-what-you-use.git -b clang_19 \
+    && /opt/cmake/bin/cmake -DCMAKE_PREFIX_PATH=/usr/lib/llvm-19 -S include-what-you-use/ -B build \
     && cd build \
     && make -j $(nproc) \
     && make install \
