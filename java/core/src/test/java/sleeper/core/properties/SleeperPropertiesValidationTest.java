@@ -163,33 +163,6 @@ public class SleeperPropertiesValidationTest {
             assertThatThrownBy(tableProperties::validate)
                     .hasMessage("Property sleeper.table.name was invalid. It was unset.");
         }
-
-        @Test
-        void shouldFailValidationIfCompactionFilesBatchSizeTooLargeForDynamoDBStateStore() {
-            // Given
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
-            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 50);
-
-            // When/Then
-            assertThatThrownBy(tableProperties::validate)
-                    .isInstanceOf(SleeperPropertiesInvalidException.class)
-                    .hasMessage("Property sleeper.table.compaction.files.batch.size was invalid. " +
-                            "It was \"50\".");
-        }
-
-        @Test
-        void shouldPassValidationIfCompactionFilesBatchSizeTooLargeForDynamoDBStateStoreButS3StateStoreChosen() {
-            // Given
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
-            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 50);
-
-            // When/Then
-            assertThatCode(tableProperties::validate).doesNotThrowAnyException();
-        }
     }
 
     @Nested
