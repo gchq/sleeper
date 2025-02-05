@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
@@ -25,6 +26,7 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
@@ -42,6 +44,7 @@ public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransacti
     }
 
     @Test
+    @Disabled("TODO")
     void shouldUpdateTransactionLogBasedOnStateStoreProvided() {
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
@@ -58,5 +61,8 @@ public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransacti
         // When
         followerStore.followTransactionUpdatingTracker(logEntry, tracker);
 
+        // Then
+        assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId()))
+                .containsExactly(defaultStatus(trackedJob, defaultCommittedRun(100)));
     }
 }

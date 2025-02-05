@@ -19,7 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.LoggedDuration;
 
@@ -260,6 +262,23 @@ class TransactionLogHead<T> {
         }
         transactionType.cast(entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore))
                 .apply(state, entry.getUpdateTime());
+        lastTransactionNumber = entry.getTransactionNumber();
+    }
+
+    void followTransaction(TransactionLogEntry entry, CompactionJobTracker tracker) {
+        if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
+            LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
+                    sleeperTable, entry.getTransactionNumber(),
+                    transactionType.getName(),
+                    entry.getTransactionType());
+            return;
+        }
+        StateStoreTransaction<T> transaction = transactionType.cast(
+                entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore));
+        if (transaction instanceof ReplaceFileReferencesTransaction) {
+            ((ReplaceFileReferencesTransaction) transaction).reportJobCommits(tracker, sleeperTable, (StateStoreFiles) state, stateUpdateClock.get());
+        }
+        transaction.apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }
 

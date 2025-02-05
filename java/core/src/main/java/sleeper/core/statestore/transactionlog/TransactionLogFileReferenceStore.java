@@ -34,6 +34,7 @@ import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.SplitFileReferencesTransaction;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -146,6 +147,10 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     void addTransaction(AddTransactionRequest request) {
         head.addTransaction(clock.instant(), request);
+    }
+
+    <T> void followTransactionUpdatingTracker(TransactionLogEntry logEntry, CompactionJobTracker tracker) {
+        head.followTransaction(logEntry, tracker);
     }
 
     private StateStoreFiles files() throws StateStoreException {

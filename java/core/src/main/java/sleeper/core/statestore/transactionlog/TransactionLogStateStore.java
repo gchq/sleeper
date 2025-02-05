@@ -113,6 +113,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
      * @param tracker  the compaction job tracker
      */
     public <T> void followTransactionUpdatingTracker(TransactionLogEntry logEntry, CompactionJobTracker tracker) {
+        files.followTransactionUpdatingTracker(logEntry, tracker);
     }
 
     public static Builder builder() {
