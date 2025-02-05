@@ -48,9 +48,29 @@ public interface CompactionProperty {
             .defaultValue("1")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
-
+    UserDefinedInstanceProperty COMPACTION_COMMIT_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.commit.batch.size")
+            .description("The number of finished compaction commits to gather in the batcher before committing to " +
+                    "the state store. This will be the batch size for a lambda as an SQS event source.\n" +
+                    "This can be a maximum of 10,000. In practice the effective maximum is limited by the number of " +
+                    "messages that fit in a synchronous lambda invocation payload, see the AWS documentation:\n" +
+                    "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html")
+            .defaultValue("1000")
+            .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 10_000))
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.commit.batching.window.seconds")
+            .description("The time in seconds that the batcher will wait for compaction commits to appear if the " +
+                    "batch size is not filled. This will be set in the SQS event source for the lambda. This can be " +
+                    "a maximum of 300, i.e. 5 minutes.")
+            .defaultValue("30")
+            .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 300))
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
+            .defaultValue("900")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty PENDING_COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.pending.queue.visibility.timeout.seconds")
+            .description("The visibility timeout for the queue of pending compaction job batches.")
             .defaultValue("900")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
             .runCdkDeployWhenChanged(true).build();
@@ -163,6 +183,29 @@ public interface CompactionProperty {
             .description("The maximum concurrency allowed for the lambda that sends batches of compaction jobs.\n" +
                     "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_MEMORY_IN_MB = Index.propertyBuilder("sleeper.compaction.commit.batcher.memory.mb")
+            .description("The amount of memory in MB for the lambda that batches up compaction commits.")
+            .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.commit.batcher.timeout.seconds")
+            .description("The timeout for the lambda that batches up compaction commits in seconds.")
+            .defaultValue("900")
+            .validationPredicate(SleeperPropertyValueUtils::isValidLambdaTimeout)
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_RESERVED = Index.propertyBuilder("sleeper.compaction.commit.batcher.concurrency.reserved")
+            .description("The reserved concurrency for the lambda that batches up compaction commits.\n" +
+                    "See reserved concurrency overview at: https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html")
+            .defaultValue("2")
+            .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_MAXIMUM = Index.propertyBuilder("sleeper.compaction.commit.batcher.concurrency.max")
+            .defaultValue("2")
+            .description("The maximum concurrency allowed for the lambda that batches up compaction commits.\n" +
+                    "See maximum concurrency overview at: https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/")
+            .validationPredicate(SleeperPropertyValueUtils::isValidSqsLambdaMaximumConcurrency)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty MAXIMUM_CONCURRENT_COMPACTION_TASKS = Index.propertyBuilder("sleeper.compaction.max.concurrent.tasks")
             .description("The maximum number of concurrent compaction tasks to run.")
             .defaultValue("300")
@@ -177,6 +220,20 @@ public interface CompactionProperty {
             .description("The maximum number of times that a compaction job can be taken off the job definition queue " +
                     "before it is moved to the dead letter queue.\n" +
                     "This property is used to configure the maxReceiveCount of the compaction job definition queue.")
+            .defaultValue("3")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_DISPATCH_MAX_RETRIES = Index.propertyBuilder("sleeper.compaction.job.dispatch.max.retries")
+            .description("The maximum number of times that a batch of compaction jobs can be taken off the pending queue " +
+                    "before it is moved to the dead letter queue.\n" +
+                    "This property is used to configure the maxReceiveCount of the pending compaction job batch queue.")
+            .defaultValue("3")
+            .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
+            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+    UserDefinedInstanceProperty COMPACTION_COMMIT_MAX_RETRIES = Index.propertyBuilder("sleeper.compaction.job.commit.max.retries")
+            .description("The maximum number of times that a compaction job can be taken off the batch committer queue " +
+                    "before it is moved to the dead letter queue.\n" +
+                    "This property is used to configure the maxReceiveCount of the compaction job committer queue.")
             .defaultValue("3")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
@@ -285,20 +342,30 @@ public interface CompactionProperty {
             .defaultValue("50")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION)
-            .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty COMPACTION_STATUS_STORE_ENABLED = Index.propertyBuilder("sleeper.compaction.status.store.enabled")
+            .build();
+    UserDefinedInstanceProperty COMPACTION_TRACKER_ENABLED = Index.propertyBuilder("sleeper.compaction.tracker.enabled")
             .description("Flag to enable/disable storage of tracking information for compaction jobs and tasks.")
             .defaultValue("true")
             .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED = Index.propertyBuilder("sleeper.compaction.tracker.async.commit.updates.enabled")
+            .description("Flag to enable/disable storing an update to the tracker during async commits of compaction " +
+                    "jobs. This may be disabled if there are enough compactions that the system is unable to apply " +
+                    "all the updates to the tracker. This is mainly used for testing. Reports may show compactions " +
+                    "as unfinished if this update is not present in the tracker.")
+            .defaultValue("true")
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .build();
     UserDefinedInstanceProperty COMPACTION_JOB_STATUS_TTL_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.status.ttl")
-            .description("The time to live in seconds for compaction job updates in the status store. Default is 1 week.\n" +
+            .description("The time to live in seconds for compaction job updates in the job tracker. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty COMPACTION_TASK_STATUS_TTL_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.task.status.ttl")
-            .description("The time to live in seconds for compaction task updates in the status store. Default is 1 week.\n" +
+            .description("The time to live in seconds for compaction task updates in the job tracker. Default is 1 week.\n" +
                     "The expiry time is fixed when an update is saved to the store, so changing this will only affect new data.")
             .defaultValue("604800") // Default is 1 week
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)

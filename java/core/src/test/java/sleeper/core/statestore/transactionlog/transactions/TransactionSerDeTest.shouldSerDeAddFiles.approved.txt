@@ -6,7 +6,6 @@
         {
           "partitionId": "root",
           "numberOfRecords": 100,
-          "jobId": null,
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }
@@ -18,7 +17,6 @@
         {
           "partitionId": "root",
           "numberOfRecords": 200,
-          "jobId": null,
           "countApproximate": false,
           "onlyContainsDataForThisPartition": true
         }

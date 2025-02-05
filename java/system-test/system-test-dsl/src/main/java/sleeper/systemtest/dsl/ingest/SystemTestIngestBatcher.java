@@ -17,8 +17,10 @@
 package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.util.PollWithRetries;
+import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
+import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -31,8 +33,10 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toUnmodifiableSet;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class SystemTestIngestBatcher {
+    private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
     private final IngestBatcherDriver driver;
     private final IngestTasksDriver tasksDriver;
@@ -42,6 +46,7 @@ public class SystemTestIngestBatcher {
     private List<String> createdJobIds = new ArrayList<>();
 
     public SystemTestIngestBatcher(SystemTestContext context, SystemTestDrivers drivers) {
+        instance = context.instance();
         sourceFiles = context.sourceFiles();
         driver = drivers.ingestBatcher(context);
         tasksDriver = drivers.ingestTasks(context);
@@ -51,15 +56,15 @@ public class SystemTestIngestBatcher {
     }
 
     public SystemTestIngestBatcher sendSourceFilesExpectingJobs(int expectedJobs, String... filenames) {
-        Set<String> jobIdsBefore = driver.allJobIdsInStore().collect(toUnmodifiableSet());
+        Set<String> jobIdsBefore = jobIdsInStore().collect(toUnmodifiableSet());
         driver.sendFiles(sourceFiles.getIngestJobFilesInBucket(Stream.of(filenames)));
         try {
             List<String> newJobIds = pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(5), Duration.ofMinutes(2))
                     .queryUntil("expected jobs are found",
-                            () -> driver.allJobIdsInStore().filter(not(jobIdsBefore::contains)).toList(),
+                            () -> jobIdsInStore().filter(not(jobIdsBefore::contains)).toList(),
                             ids -> ids.size() >= expectedJobs);
             if (newJobIds.size() > expectedJobs) {
-                throw new IllegalStateException("More jobs were created than expected, found " + newJobIds.size() + ", expected" + expectedJobs);
+                throw new IllegalStateException("More jobs were created than expected, found " + newJobIds.size() + ", expected " + expectedJobs);
             }
             createdJobIds.addAll(newJobIds);
         } catch (InterruptedException e) {
@@ -84,7 +89,12 @@ public class SystemTestIngestBatcher {
         return this;
     }
 
-    public void clearStore() {
-        driver.clearStore();
+    private Stream<String> jobIdsInStore() {
+        Set<String> tableIds = instance.streamTableProperties().map(table -> table.get(TABLE_ID)).collect(toUnmodifiableSet());
+        return driver.batcherStore().getAllFilesNewestFirst().stream()
+                .filter(request -> tableIds.contains(request.getTableId()))
+                .filter(request -> request.getJobId() != null)
+                .map(FileIngestRequest::getJobId)
+                .distinct();
     }
 }

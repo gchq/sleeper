@@ -22,7 +22,7 @@ import java.util.List;
 
 public class DynamoDBContainer extends GenericContainer<DynamoDBContainer> {
 
-    private static final String DYNAMO_CONTAINER_IMAGE = "amazon/dynamodb-local:1.21.0";
+    private static final String DYNAMO_CONTAINER_IMAGE = "amazon/dynamodb-local:2.5.4";
     private static final int DYNAMO_PORT = 8000;
 
     public DynamoDBContainer() {

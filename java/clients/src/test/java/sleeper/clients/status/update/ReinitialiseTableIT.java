@@ -15,30 +15,21 @@
  */
 package sleeper.clients.status.update;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -50,6 +41,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.dynamodb.DynamoDBStateStore;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3RevisionId;
@@ -69,7 +61,6 @@ import java.util.UUID;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -82,8 +73,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
 
-@Testcontainers
-public class ReinitialiseTableIT {
+public class ReinitialiseTableIT extends LocalStackTestBase {
     private static final String FILE_SHOULD_NOT_BE_DELETED_1 = "file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_2 = "for_ingest/file0.parquet";
     private static final String FILE_SHOULD_NOT_BE_DELETED_3 = "partition.parquet";
@@ -96,16 +86,9 @@ public class ReinitialiseTableIT {
             .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
             .build();
 
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3);
-
-    private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoDBClient);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final String s3StateStorePath = tableProperties.get(TABLE_ID) + "/statestore";
 
     @TempDir
@@ -113,15 +96,9 @@ public class ReinitialiseTableIT {
 
     @BeforeEach
     public void beforeEach() {
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3Client.createBucket(instanceProperties.get(DATA_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
-    }
-
-    @AfterEach
-    public void afterEach() {
-        s3Client.shutdown();
-        dynamoDBClient.shutdown();
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 
     @Test
@@ -130,13 +107,13 @@ public class ReinitialiseTableIT {
         String tableName = UUID.randomUUID().toString();
 
         // When
-        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, "", tableName, false))
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoClient, "", tableName, false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void shouldThrowExceptionIfTableNameIsEmpty() {
-        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoDBClient, instanceProperties.get(ID), "", false))
+        assertThatThrownBy(() -> new ReinitialiseTable(s3Client, dynamoClient, instanceProperties.get(ID), "", false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -147,7 +124,7 @@ public class ReinitialiseTableIT {
         @BeforeEach
         public void setup() {
             tableProperties.set(STATESTORE_CLASSNAME, DynamoDBStateStore.class.getName());
-            new DynamoDBStateStoreCreator(instanceProperties, dynamoDBClient).create();
+            new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
         }
 
         @Test
@@ -340,7 +317,7 @@ public class ReinitialiseTableIT {
 
     private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
             String expectedFilesVersion, String expectedPartitionsVersion) {
-        S3RevisionIdStore revisionIdStore = new S3RevisionIdStore(dynamoDBClient, instanceProperties, tableProperties);
+        S3RevisionIdStore revisionIdStore = new S3RevisionIdStore(dynamoClient, instanceProperties, tableProperties);
         S3RevisionId filesRevisionId = revisionIdStore.getCurrentFilesRevisionId();
         S3RevisionId partitionsRevisionId = revisionIdStore.getCurrentPartitionsRevisionId();
 
@@ -407,25 +384,25 @@ public class ReinitialiseTableIT {
 
     private void reinitialiseTableAndDeletePartitions(TableProperties tableProperties) throws IOException {
         new ReinitialiseTable(s3Client,
-                dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), true)
+                dynamoClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), true)
                 .run();
     }
 
     private void reinitialiseTable(TableProperties tableProperties) throws IOException {
         new ReinitialiseTable(s3Client,
-                dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), false)
+                dynamoClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), false)
                 .run();
     }
 
     private void reinitialiseTableFromSplitPoints(TableProperties tableProperties, String splitPointsFile) throws IOException {
         new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, false)
+                dynamoClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, false)
                 .run();
     }
 
     private void reinitialiseTableFromSplitPointsEncoded(TableProperties tableProperties, String splitPointsFile) throws IOException {
         new ReinitialiseTableFromSplitPoints(s3Client,
-                dynamoDBClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, true)
+                dynamoClient, instanceProperties.get(ID), tableProperties.get(TABLE_NAME), splitPointsFile, true)
                 .run();
     }
 
@@ -454,7 +431,7 @@ public class ReinitialiseTableIT {
     private DynamoDBStateStore setupDynamoStateStore(TableProperties tableProperties) throws IOException {
         //  - Create DynamoDBStateStore
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        DynamoDBStateStore dynamoDBStateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoDBClient);
+        DynamoDBStateStore dynamoDBStateStore = new DynamoDBStateStore(instanceProperties, tableProperties, dynamoClient);
         dynamoDBStateStore.initialise();
         setupPartitionsAndAddFiles(dynamoDBStateStore);
 
@@ -474,7 +451,7 @@ public class ReinitialiseTableIT {
 
     private S3StateStore setupS3StateStore(TableProperties tableProperties) throws IOException {
         //  - CreateS3StateStore
-        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
         Configuration configuration = new Configuration();
         configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
@@ -482,7 +459,7 @@ public class ReinitialiseTableIT {
         configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
         configuration.setBoolean("fs.s3a.connection.ssl.enabled", false);
 
-        S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
+        S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties, dynamoClient, configuration);
         s3StateStore.initialise();
 
         setupPartitionsAndAddFiles(s3StateStore);

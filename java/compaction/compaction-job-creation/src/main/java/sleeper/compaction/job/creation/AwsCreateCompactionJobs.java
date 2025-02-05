@@ -22,8 +22,11 @@ import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.util.ObjectFactory;
+import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Instant;
 import java.util.Random;
@@ -36,6 +39,7 @@ public class AwsCreateCompactionJobs {
     public static CreateCompactionJobs from(
             ObjectFactory objectFactory,
             InstanceProperties instanceProperties,
+            TablePropertiesProvider tablePropertiesProvider,
             StateStoreProvider stateStoreProvider,
             AmazonS3 s3Client,
             AmazonSQS sqsClient) {
@@ -43,7 +47,7 @@ public class AwsCreateCompactionJobs {
                 objectFactory, instanceProperties, stateStoreProvider,
                 new CompactionBatchJobsWriterToS3(s3Client),
                 new CompactionBatchMessageSenderToSqs(instanceProperties, sqsClient),
-                new SendAssignJobIdToSqs(instanceProperties, sqsClient, s3Client),
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)),
                 GenerateJobId.random(), GenerateBatchId.random(), new Random(), Instant::now);
     }
 }

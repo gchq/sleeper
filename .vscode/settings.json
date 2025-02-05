@@ -32,7 +32,9 @@
     "sleeper.configuration.properties.table.TablePropertiesTestHelper.*",
     "sleeper.core.util.ExponentialBackoffWithJitterTestHelper.*",
     "sleeper.core.testutils.SupplierTestHelper.*",
-    "sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.*"
+    "sleeper.systemtest.dsl.testutil.SystemTestPartitionsTestHelper.*",
+    "sleeper.core.tracker.compaction.job.CompactionJobEventTestData",
+    "sleeper.core.tracker.compaction.job.CompactionJobStatusTestData"
   ],
   "comment.java.configuration.runtimes": [
     {
@@ -85,7 +87,9 @@
   "java.codeGeneration.hashCodeEquals.useInstanceof": true,
   "java.codeGeneration.toString.template": "${object.className}{${member.name()}=${member.value}, ${otherMembers}}",
   "cmake.sourceDirectory": "/workspace/cpp",
+  "C_Cpp.default.compilerPath": "/usr/bin/g++",
   "files.associations": {
+    "NOTICES": "notices",
     "*.inc": "cpp",
     "memory": "cpp",
     "cstddef": "cpp",
@@ -93,5 +97,7 @@
     "string_view": "cpp",
     "tuple": "cpp"
   },
-  "C_Cpp.default.compilerPath": "/usr/bin/g++"
+  "[notices]": {
+    "editor.formatOnSave": false
+  }
 }

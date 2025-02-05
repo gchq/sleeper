@@ -18,43 +18,38 @@
 * limitations under the License.
 */
 use crate::{
-    aws_s3::{ExtendedObjectStore, ObjectStoreFactory},
     datafusion::{sketch::serialise_sketches, udf::SketchUDF},
     details::create_sketch_path,
+    s3::ObjectStoreFactory,
+    store::SizeHintableStore,
     ColRange, CompactionInput, CompactionResult, PartitionBound,
 };
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
-    common::{
-        tree_node::{Transformed, TreeNode},
-        DFSchema, DFSchemaRef,
-    },
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
         config::SessionConfig, context::SessionContext, options::ParquetReadOptions,
         FunctionRegistry,
     },
-    logical_expr::{LogicalPlan, LogicalPlanBuilder, ScalarUDF, SortExpr},
+    logical_expr::{LogicalPlanBuilder, ScalarUDF, SortExpr},
     parquet::basic::{BrotliLevel, GzipLevel, ZstdLevel},
-    physical_plan::{
-        accept, collect, filter::FilterExec, projection::ProjectionExec, ExecutionPlan,
-        ExecutionPlanVisitor,
-    },
-    physical_planner::{DefaultPhysicalPlanner, PhysicalPlanner},
+    physical_plan::{accept, collect},
     prelude::*,
 };
 use log::{error, info, warn};
+use metrics::{log_metrics, RowCounts};
 use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, iter::once, sync::Arc};
 use url::Url;
 
+mod metrics;
 pub mod sketch;
 mod udf;
 
 /// Starts a Sleeper compaction.
 ///
-/// The object store factory must be able to produce an [`ObjectStore`] capable of reading
+/// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
 /// from the input URLs and writing to the output URL. A sketch file will be produced for
 /// the output file.
 pub async fn compact(
@@ -87,17 +82,9 @@ pub async fn compact(
         })
         .inspect_err(|e| warn!("Error getting total input size {e}"));
     let multipart_size = std::cmp::max(
-        crate::aws_s3::MULTIPART_BUF_SIZE,
-        input_size.as_ref().unwrap_or(&0) / 5000,
-    );
-    store.set_total_predicted(input_size.ok());
-
-    store_factory
         .get_object_store(output_path)
         .map_err(|e| DataFusionError::External(e.into()))?
         .set_multipart_size_hint(multipart_size);
-
-    info!(
         "Setting multipart size hint to {} bytes.",
         multipart_size.to_formatted_string(&Locale::en)
     );
@@ -139,9 +126,6 @@ pub async fn compact(
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
 
-    // Store schema before applying the sketch function so we can reapply it later
-    let input_schema = frame.schema().clone();
-
     // Build compaction query
     frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
@@ -165,9 +149,7 @@ pub async fn compact(
     }
 
     // Write the frame out and collect stats
-    let stats = collect_stats(frame.clone(), output_path, pqo, input_schema).await?;
-
-    show_store_stats(&store);
+    let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
 
     // Write sketches out to file in Sleeper compatible way
     let binding = sketch_func.inner();
@@ -203,7 +185,7 @@ pub async fn compact(
 /// The given store is queried for the size of each object.
 async fn calculate_input_size(
     input_paths: &[Url],
-    store: &Arc<dyn ExtendedObjectStore>,
+    store: &Arc<dyn SizeHintableStore>,
 ) -> Result<usize, DataFusionError> {
     let mut total_input = 0usize;
     for path in input_paths {
@@ -215,20 +197,20 @@ async fn calculate_input_size(
 
 /// Write the frame out to the output path and collect statistics.
 ///
-/// The rows read and written are returned in the [`RowCount`] object.
+/// The rows read and written are returned in the [`RowCounts`] object.
 /// These are read from different stages in the physical plan, rows read
 /// are determined by the number of filtered rows, output rows are determined
 /// from the number of rows coalsced before being written.
 async fn collect_stats(
     frame: DataFrame,
+    input_paths: &[Url],
     output_path: &Url,
     pqo: datafusion::config::TableParquetOptions,
-    schema: DFSchema,
 ) -> Result<RowCounts, DataFusionError> {
     // Deconstruct frame into parts, we need to do this so we can extract the physical plan before executing it.
     let task_ctx = frame.task_ctx();
     let (session_state, logical_plan) = frame.into_parts();
-    let mut logical_plan = LogicalPlanBuilder::copy_to(
+    let logical_plan = LogicalPlanBuilder::copy_to(
         logical_plan,
         output_path.as_str().into(),
         format_as_file_type(Arc::new(ParquetFormatFactory::new_with_options(pqo))),
@@ -237,87 +219,13 @@ async fn collect_stats(
     )?
     .build()?;
 
-    // Use a tree-node walker to change the schema in the projection node
-    // to eliminate nullable columns
-    logical_plan = session_state
-        // Run the query optimizer
-        .optimize(&logical_plan)?
-        // Fix schema to remove nullable columns
-        .transform(|node| {
-            if let LogicalPlan::Projection(mut projection) = node {
-                projection.schema = DFSchemaRef::new(schema.clone());
-                return Ok(Transformed::yes(LogicalPlan::Projection(projection)));
-            }
-            Ok(Transformed::no(node))
-        })?
-        .data;
-
-    // Convert optimised plan to physical plan
-    let query_planner = DefaultPhysicalPlanner::default();
-    let physical_plan = query_planner
-        .create_physical_plan(&logical_plan, &session_state)
-        .await?;
-
+    // Optimise plan and generate physical plan
+    let physical_plan = session_state.create_physical_plan(&logical_plan).await?;
     let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
-    let mut stats = RowCounts::default();
+    let mut stats = RowCounts::new(input_paths);
     accept(physical_plan.as_ref(), &mut stats)?;
+    log_metrics(&stats.file_metrics);
     Ok(stats)
-}
-
-/// Simple struct used for storing the collected statistics from an execution plan.
-#[derive(Default)]
-struct RowCounts {
-    rows_read: usize,
-    rows_written: usize,
-}
-
-impl From<&RowCounts> for CompactionResult {
-    fn from(value: &RowCounts) -> Self {
-        Self {
-            rows_read: value.rows_read,
-            rows_written: value.rows_written,
-        }
-    }
-}
-
-impl ExecutionPlanVisitor for RowCounts {
-    type Error = DataFusionError;
-
-    fn pre_visit(&mut self, plan: &dyn ExecutionPlan) -> Result<bool, Self::Error> {
-        // read output records from here
-        let maybe_coalesce = plan
-            .as_any()
-            .downcast_ref::<ProjectionExec>()
-            .and_then(ExecutionPlan::metrics);
-        // read input records from here
-        let maybe_parq_read = plan
-            .as_any()
-            .downcast_ref::<FilterExec>()
-            .and_then(ExecutionPlan::metrics);
-        if let Some(m) = maybe_coalesce {
-            self.rows_written = m.output_rows().unwrap_or_default();
-        }
-        if let Some(m) = maybe_parq_read {
-            self.rows_read = m.output_rows().unwrap_or_default();
-        }
-        Ok(true)
-    }
-}
-
-/// Show some basic statistics from the [`ExtendedObjectStore`].
-///
-fn show_store_stats(store: &Arc<dyn ExtendedObjectStore>) {
-    info!(
-        "Object store read {} bytes from {} GETs",
-        store
-            .get_bytes_read()
-            .unwrap_or(0)
-            .to_formatted_string(&Locale::en),
-        store
-            .get_count()
-            .unwrap_or(0)
-            .to_formatted_string(&Locale::en)
-    );
 }
 
 /// Create the `DataFusion` filtering expression from a Sleeper region.
@@ -468,20 +376,20 @@ fn sort_order(input_data: &CompactionInput) -> Vec<SortExpr> {
 }
 
 /// Takes the first Url in `input_paths` list and `output_path`
-/// and registers the appropriate [`ObjectStore`] for it.
+/// and registers the appropriate [`object_store::ObjectStore`] for it.
 ///
 /// `DataFusion` doesn't seem to like loading a single file set from different object stores
 /// so we only register the first one.
 ///
 /// # Errors
-/// If we can't create an [`ObjectStore`] for a known URL then this will fail.
+/// If we can't create an [`object_store::ObjectStore`] for a known URL then this will fail.
 ///
 fn register_store(
     store_factory: &ObjectStoreFactory,
     input_paths: &[Url],
     output_path: &Url,
     ctx: &SessionContext,
-) -> Result<Arc<dyn ExtendedObjectStore>, DataFusionError> {
+) -> Result<Arc<dyn SizeHintableStore>, DataFusionError> {
     let in_store = store_factory
         .get_object_store(&input_paths[0])
         .map_err(|e| DataFusionError::External(e.into()))?;

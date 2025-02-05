@@ -3,7 +3,6 @@
     {
       "partitionId": "root",
       "isLeafPartition": false,
-      "parentPartitionId": null,
       "childPartitionIds": [
         "L",
         "R"
@@ -12,7 +11,6 @@
         "key": {
           "min": "",
           "minInclusive": true,
-          "max": null,
           "maxInclusive": false
         },
         "stringsBase64Encoded": true
@@ -50,7 +48,6 @@
         "key": {
           "min": "cA\u003d\u003d",
           "minInclusive": true,
-          "max": null,
           "maxInclusive": false
         },
         "stringsBase64Encoded": true
@@ -114,7 +111,6 @@
         "key": {
           "min": "dQ\u003d\u003d",
           "minInclusive": true,
-          "max": null,
           "maxInclusive": false
         },
         "stringsBase64Encoded": true

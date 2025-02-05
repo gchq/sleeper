@@ -78,13 +78,13 @@ public class ParallelCompactionsST {
         sleeper.compaction()
                 .putTableOnlineWaitForJobCreation(8192,
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(10)))
+                                Duration.ofSeconds(10), Duration.ofMinutes(2)))
                 .waitForTasks(300)
                 .waitForJobsToFinishThenCommit(
                         PollWithRetries.intervalAndPollingTimeout(
                                 Duration.ofSeconds(10), Duration.ofMinutes(5)),
                         PollWithRetries.intervalAndPollingTimeout(
-                                Duration.ofSeconds(10), Duration.ofMinutes(5)));
+                                Duration.ofSeconds(10), Duration.ofMinutes(2)));
 
         // Then we have one file per partition
         assertThat(sleeper.tableFiles().references())

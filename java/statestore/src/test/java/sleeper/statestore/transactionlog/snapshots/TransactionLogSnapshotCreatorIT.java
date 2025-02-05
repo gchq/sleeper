@@ -23,12 +23,18 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 
 public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestBase {
@@ -285,7 +291,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
 
     @Test
     void shouldNotCreateSnapshotIfLoadingPreviousFileSnapshotFails() throws Exception {
-        // Given Given we create a snapshot
+        // Given we create a snapshot
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise();
@@ -305,8 +311,31 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                         partitionsSnapshotPath(table, 1));
     }
 
+    @Test
+    void shouldCreateSnapshotFromTransactionInBodyStore() throws Exception {
+        // Given we create a transaction with its body held in a store
+        TableProperties table = createTable("test-table-id-1", "test-table-1");
+        TransactionLogStateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
+        PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 50L)
+                .buildList());
+        String key = TransactionBodyStore.createObjectKey(table);
+        transactionBodyStore().store(key, table.get(TABLE_ID), transaction);
+        stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
+
+        // When we create a snapshot
+        createSnapshots(table);
+
+        // Then
+        assertThat(snapshotStore(table).getPartitionsSnapshots()).containsExactly(partitionsSnapshot(table, 1));
+        assertThat(tableFiles(table))
+                .containsExactlyInAnyOrder(
+                        partitionsSnapshotPath(table, 1));
+    }
+
     private StateStore createStateStore(TableProperties tableProperties) {
-        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDBClient, s3Client, configuration).build();
+        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoClient, s3Client, hadoopConf).build();
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         stateStore.fixPartitionUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;

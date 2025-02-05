@@ -15,24 +15,16 @@
  */
 package sleeper.clients;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -40,24 +32,15 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-@Testcontainers
-public class EstimateSplitPointsClientIT {
+public class EstimateSplitPointsClientIT extends LocalStackTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(
-            DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
-
-    private final Configuration conf = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final String bucketName = UUID.randomUUID().toString();
 
     @BeforeEach
     void setUp() {
-        s3.createBucket(bucketName);
+        createBucket(bucketName);
     }
 
     @Test
@@ -80,7 +63,7 @@ public class EstimateSplitPointsClientIT {
 
         // When
         List<Object> splitPoints = EstimateSplitPointsClient.estimate(
-                schema, conf, 4, 32, List.of(dataFile));
+                schema, hadoopConf, 4, 32, List.of(dataFile));
 
         // Then
         assertThat(splitPoints).containsExactly(3L, 6L, 8L);
@@ -91,7 +74,7 @@ public class EstimateSplitPointsClientIT {
     }
 
     private void writeRecords(Path path, Schema schema, List<Record> records) throws IOException {
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema, conf)) {
+        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(path, schema, hadoopConf)) {
             for (Record record : records) {
                 writer.write(record);
             }

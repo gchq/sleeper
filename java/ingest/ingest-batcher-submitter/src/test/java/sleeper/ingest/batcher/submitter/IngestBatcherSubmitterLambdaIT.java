@@ -16,20 +16,11 @@
 
 package sleeper.ingest.batcher.submitter;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
@@ -37,40 +28,29 @@ import sleeper.core.table.TableStatusTestHelper;
 import sleeper.ingest.batcher.core.FileIngestRequest;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
 import sleeper.ingest.batcher.core.testutil.InMemoryIngestBatcherStore;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-@Testcontainers
-public class IngestBatcherSubmitterLambdaIT {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
-
-    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
+public class IngestBatcherSubmitterLambdaIT extends LocalStackTestBase {
 
     private static final String TEST_TABLE_ID = "test-table-id";
-    private static final String TEST_BUCKET = "test-bucket";
     private static final Instant RECEIVED_TIME = Instant.parse("2023-06-16T10:57:00Z");
+    private final String testBucket = UUID.randomUUID().toString();
     private final IngestBatcherStore store = new InMemoryIngestBatcherStore();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final IngestBatcherSubmitterLambda lambda = new IngestBatcherSubmitterLambda(
-            store, instanceProperties, tableIndex, createHadoopConfiguration());
+            store, instanceProperties, tableIndex, hadoopConf);
 
     @BeforeEach
     void setup() {
         tableIndex.create(TableStatusTestHelper.uniqueIdAndName(TEST_TABLE_ID, "test-table"));
-        s3.createBucket(TEST_BUCKET);
-    }
-
-    @AfterEach
-    void tearDown() {
-        s3.listObjects(TEST_BUCKET).getObjectSummaries().forEach(s3ObjectSummary -> s3.deleteObject(TEST_BUCKET, s3ObjectSummary.getKey()));
-        s3.deleteBucket(TEST_BUCKET);
+        createBucket(testBucket);
     }
 
     @Nested
@@ -81,7 +61,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-file-1.parquet");
             String json = "{" +
-                    "\"files\":[\"test-bucket/test-file-1.parquet\"]," +
+                    "\"files\":[\"" + testBucket + "/test-file-1.parquet\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -91,15 +71,15 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest("test-bucket/test-file-1.parquet"));
+                            fileRequest(testBucket + "/test-file-1.parquet"));
         }
 
         @Test
         void shouldStoreFileWithCustomSize() {
             // Given
-            s3.putObject(TEST_BUCKET, "test-file-1.parquet", "a".repeat(123));
+            putObject(testBucket, "test-file-1.parquet", "a".repeat(123));
             String json = "{" +
-                    "\"files\":[\"test-bucket/test-file-1.parquet\"]," +
+                    "\"files\":[\"" + testBucket + "/test-file-1.parquet\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -109,7 +89,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(FileIngestRequest.builder()
-                            .file(TEST_BUCKET + "/test-file-1.parquet")
+                            .file(testBucket + "/test-file-1.parquet")
                             .fileSizeBytes(123)
                             .tableId(TEST_TABLE_ID)
                             .receivedTime(RECEIVED_TIME)
@@ -125,7 +105,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-directory/test-file-1.parquet");
             String json = "{" +
-                    "\"files\":[\"test-bucket/test-directory\"]," +
+                    "\"files\":[\"" + testBucket + "/test-directory\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -135,7 +115,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-directory/test-file-1.parquet"));
+                            fileRequest(testBucket + "/test-directory/test-file-1.parquet"));
         }
 
         @Test
@@ -144,7 +124,7 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/test-file-1.parquet");
             uploadFileToS3("test-directory/test-file-2.parquet");
             String json = "{" +
-                    "\"files\":[\"test-bucket/test-directory\"]," +
+                    "\"files\":[\"" + testBucket + "/test-directory\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -154,8 +134,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-directory/test-file-1.parquet"),
-                            fileRequest(TEST_BUCKET + "/test-directory/test-file-2.parquet"));
+                            fileRequest(testBucket + "/test-directory/test-file-1.parquet"),
+                            fileRequest(testBucket + "/test-directory/test-file-2.parquet"));
         }
 
         @Test
@@ -163,7 +143,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Given
             uploadFileToS3("test-directory/nested/test-file-1.parquet");
             String json = "{" +
-                    "\"files\":[\"test-bucket/test-directory\"]," +
+                    "\"files\":[\"" + testBucket + "/test-directory\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -173,7 +153,7 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-directory/nested/test-file-1.parquet"));
+                            fileRequest(testBucket + "/test-directory/nested/test-file-1.parquet"));
         }
 
         @Test
@@ -182,7 +162,7 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-directory/nested-1/test-file-1.parquet");
             uploadFileToS3("test-directory/nested-2/test-file-2.parquet");
             String json = "{" +
-                    "\"files\":[\"test-bucket/test-directory\"]," +
+                    "\"files\":[\"" + testBucket + "/test-directory\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -192,8 +172,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-directory/nested-1/test-file-1.parquet"),
-                            fileRequest(TEST_BUCKET + "/test-directory/nested-2/test-file-2.parquet"));
+                            fileRequest(testBucket + "/test-directory/nested-1/test-file-1.parquet"),
+                            fileRequest(testBucket + "/test-directory/nested-2/test-file-2.parquet"));
         }
 
         @Test
@@ -202,7 +182,7 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-file-1.parquet");
             uploadFileToS3("test-file-2.parquet");
             String json = "{" +
-                    "\"files\":[\"test-bucket\"]," +
+                    "\"files\":[\"" + testBucket + "\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -212,8 +192,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest(TEST_BUCKET + "/test-file-1.parquet"),
-                            fileRequest(TEST_BUCKET + "/test-file-2.parquet"));
+                            fileRequest(testBucket + "/test-file-1.parquet"),
+                            fileRequest(testBucket + "/test-file-2.parquet"));
         }
     }
 
@@ -227,8 +207,8 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-file-2.parquet");
             String json = "{" +
                     "\"files\":[" +
-                    "\"test-bucket/test-file-1.parquet\"," +
-                    "\"test-bucket/test-file-2.parquet\"" +
+                    "\"" + testBucket + "/test-file-1.parquet\"," +
+                    "\"" + testBucket + "/test-file-2.parquet\"" +
                     "]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
@@ -239,8 +219,8 @@ public class IngestBatcherSubmitterLambdaIT {
             // Then
             assertThat(store.getAllFilesNewestFirst())
                     .containsExactly(
-                            fileRequest("test-bucket/test-file-1.parquet"),
-                            fileRequest("test-bucket/test-file-2.parquet"));
+                            fileRequest(testBucket + "/test-file-1.parquet"),
+                            fileRequest(testBucket + "/test-file-2.parquet"));
         }
 
         @Test
@@ -249,8 +229,8 @@ public class IngestBatcherSubmitterLambdaIT {
             uploadFileToS3("test-file-2.parquet");
             String json = "{" +
                     "\"files\":[" +
-                    "\"test-bucket/not-found.parquet\"," +
-                    "\"test-bucket/test-file-2.parquet\"" +
+                    "\"" + testBucket + "/not-found.parquet\"," +
+                    "\"" + testBucket + "/test-file-2.parquet\"" +
                     "]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
@@ -284,7 +264,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreAndLogMessageIfTableDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"files\":[\"test-bucket/test-file-1.parquet\"]," +
+                    "\"files\":[\"" + testBucket + "/test-file-1.parquet\"]," +
                     "\"tableName\":\"not-a-table\"" +
                     "}";
 
@@ -299,7 +279,7 @@ public class IngestBatcherSubmitterLambdaIT {
         void shouldIgnoreMessageIfFileDoesNotExist() {
             // Given
             String json = "{" +
-                    "\"files\":[\"test-bucket/not-exists.parquet\"]," +
+                    "\"files\":[\"" + testBucket + "/not-exists.parquet\"]," +
                     "\"tableName\":\"test-table\"" +
                     "}";
 
@@ -327,7 +307,7 @@ public class IngestBatcherSubmitterLambdaIT {
     }
 
     private void uploadFileToS3(String filePath) {
-        s3.putObject(TEST_BUCKET, filePath, "test");
+        s3Client.putObject(testBucket, filePath, "test");
     }
 
     private static FileIngestRequest fileRequest(String filePath) {
@@ -336,13 +316,5 @@ public class IngestBatcherSubmitterLambdaIT {
                 .fileSizeBytes(4)
                 .tableId(TEST_TABLE_ID)
                 .receivedTime(RECEIVED_TIME).build();
-    }
-
-    private static Configuration createHadoopConfiguration() {
-        Configuration conf = new Configuration();
-        conf.set("fs.s3a.bucket.test-bucket.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        conf.set("fs.s3a.access.key", localStackContainer.getAccessKey());
-        conf.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
-        return conf;
     }
 }

@@ -19,7 +19,6 @@ package sleeper.ingest.runner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.iterator.impl.AdditionIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -30,6 +29,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.example.iterator.AdditionIterator;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.ArrayList;

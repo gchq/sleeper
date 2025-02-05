@@ -42,7 +42,7 @@ echo "Started at $(recorded_time_str "$START_TIME")"
 
 pushd "$MAVEN_DIR"
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
-mvn -pl core,build-uptime-lambda,cdk-environment "${MAVEN_PARAMS[@]}"
+mvn -pl build-uptime-lambda,cdk-environment -am "${MAVEN_PARAMS[@]}"
 popd
 
 echo "$VERSION" > "$VERSION_FILE"

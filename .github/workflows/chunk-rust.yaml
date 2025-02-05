@@ -12,17 +12,13 @@ on:
       - 'java/compaction/pom.xml'
       - 'java/compaction/compaction-rust/**'
       - 'java/compaction/compaction-core/**'
-      - 'java/ingest/ingest-runner/**'
-      - 'java/common/common-job/**'
-      - 'java/ingest/ingest-status-store/**'
       - 'java/sketches/**'
-      - 'java/statestore/**'
-      - 'java/ingest/ingest-core/**'
       - 'java/parquet/**'
-      - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
       - 'java/core/**'
+      - 'java/example-iterators/**'
       - 'java/common/dynamodb-test/**'
+      - 'java/common/localstack-test/**'
 
 jobs:
   chunk-workflow:

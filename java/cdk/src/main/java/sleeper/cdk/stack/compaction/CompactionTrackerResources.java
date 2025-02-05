@@ -21,7 +21,7 @@ import software.constructs.Construct;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 
 public interface CompactionTrackerResources {
 
@@ -32,7 +32,7 @@ public interface CompactionTrackerResources {
     }
 
     static CompactionTrackerResources from(Construct scope, String id, InstanceProperties properties, ManagedPoliciesStack policiesStack) {
-        if (properties.getBoolean(COMPACTION_STATUS_STORE_ENABLED)) {
+        if (properties.getBoolean(COMPACTION_TRACKER_ENABLED)) {
             return new CompactionTrackerStack(scope, id, properties, policiesStack);
         } else {
             return none();

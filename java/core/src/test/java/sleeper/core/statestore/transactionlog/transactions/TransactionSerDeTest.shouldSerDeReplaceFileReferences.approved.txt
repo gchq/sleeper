@@ -10,7 +10,6 @@
         "filename": "file3.parquet",
         "partitionId": "root",
         "numberOfRecords": 100,
-        "jobId": null,
         "countApproximate": false,
         "onlyContainsDataForThisPartition": true
       }

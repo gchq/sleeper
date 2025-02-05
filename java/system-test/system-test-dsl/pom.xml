@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>system-test</artifactId>
-        <version>0.28.0-SNAPSHOT</version>
+        <version>0.29.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>system-test-dsl</artifactId>
@@ -47,6 +47,11 @@
         <dependency>
             <groupId>sleeper</groupId>
             <artifactId>ingest-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>ingest-batcher-core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
@@ -80,12 +85,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>ingest-batcher-core</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
@@ -106,13 +105,6 @@
             <groupId>sleeper</groupId>
             <artifactId>garbage-collector</artifactId>
             <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>compaction-core</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
             <scope>test</scope>
         </dependency>
         <dependency>

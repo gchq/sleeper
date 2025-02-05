@@ -104,7 +104,11 @@ class S3FileReferenceStore implements FileReferenceStore {
     @Override
     public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
         try {
-            updateS3Files(clock.instant(), new ReplaceFileReferencesTransaction(requests));
+            updateS3Files(clock.instant(), new ReplaceFileReferencesTransaction(requests), state -> {
+                for (ReplaceFileReferencesRequest request : requests) {
+                    request.validateStateChange(state);
+                }
+            });
         } catch (StateStoreException e) {
             throw new ReplaceRequestsFailedException(requests, e);
         }
@@ -154,10 +158,14 @@ class S3FileReferenceStore implements FileReferenceStore {
     }
 
     private void updateS3Files(Instant updateTime, FileReferenceTransaction transaction) throws StateStoreException {
+        updateS3Files(updateTime, transaction, transaction::validate);
+    }
+
+    private void updateS3Files(Instant updateTime, FileReferenceTransaction transaction, ThrowingFileReferencesConditionCheck condition) throws StateStoreException {
         s3StateStoreFile.updateWithAttempts(10, files -> {
             transaction.apply(files, updateTime);
             return files;
-        }, (ThrowingFileReferencesConditionCheck) transaction::validate);
+        }, condition);
     }
 
     /**

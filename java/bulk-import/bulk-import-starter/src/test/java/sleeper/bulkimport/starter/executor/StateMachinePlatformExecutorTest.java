@@ -30,8 +30,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Instant;
 import java.util.List;
@@ -55,8 +55,8 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 
 class StateMachinePlatformExecutorTest {
     private final AWSStepFunctions stepFunctions = mock(AWSStepFunctions.class);
@@ -65,7 +65,7 @@ class StateMachinePlatformExecutorTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
             inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));
-    private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
 
     @BeforeEach
     public void setUpStepFunctions() {
@@ -147,8 +147,8 @@ class StateMachinePlatformExecutorTest {
         stateMachineExecutor.runJob(myJob);
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The input files must be set to a non-null and non-empty value.")));
     }
@@ -301,8 +301,8 @@ class StateMachinePlatformExecutorTest {
         stateMachineExecutor.runJob(myJob);
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
@@ -313,7 +313,7 @@ class StateMachinePlatformExecutorTest {
 
     private BulkImportExecutor createExecutorWithValidationTime(Instant validationTime) {
         return new BulkImportExecutor(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
-                stateStoreProvider, ingestJobStatusStore, (job, jobRunId) -> {
+                stateStoreProvider, tracker, (job, jobRunId) -> {
                 },
                 createPlatformExecutor(), List.of(validationTime).iterator()::next);
     }

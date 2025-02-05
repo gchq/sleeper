@@ -17,13 +17,13 @@ package sleeper.clients.admin.testutils;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
-import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -33,61 +33,61 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     @Test
     void shouldSetCompactionJobTracker() {
         // Given
-        CompactionJobTracker store = new InMemoryCompactionJobTracker();
+        CompactionJobTracker tracker = new InMemoryCompactionJobTracker();
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().tracker(store);
+        RunAdminClient runner = runClient().tracker(tracker);
 
         // Then
         assertThat(runner.trackers().loadCompactionJobTracker(properties))
-                .isSameAs(store);
+                .isSameAs(tracker);
     }
 
     @Test
-    void shouldSetCompactionTaskStatusStore() {
+    void shouldSetCompactionTaskTracker() {
         // Given
-        InMemoryCompactionTaskStatusStore store = new InMemoryCompactionTaskStatusStore();
+        InMemoryCompactionTaskTracker tracker = new InMemoryCompactionTaskTracker();
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().tracker(store);
+        RunAdminClient runner = runClient().tracker(tracker);
 
         // Then
-        assertThat(runner.trackers().loadCompactionTaskStatusStore(properties))
-                .isSameAs(store);
+        assertThat(runner.trackers().loadCompactionTaskTracker(properties))
+                .isSameAs(tracker);
     }
 
     @Test
-    void shouldSetIngestJobStatusStore() {
+    void shouldSetIngestJobTracker() {
         // Given
-        IngestJobStatusStore store = mock(IngestJobStatusStore.class);
+        IngestJobTracker tracker = mock(IngestJobTracker.class);
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().tracker(store);
+        RunAdminClient runner = runClient().tracker(tracker);
 
         // Then
-        assertThat(runner.trackers().loadIngestJobStatusStore(properties))
-                .isSameAs(store);
+        assertThat(runner.trackers().loadIngestJobTracker(properties))
+                .isSameAs(tracker);
     }
 
     @Test
-    void shouldSetIngestTaskStatusStore() {
+    void shouldSetIngestTaskTracker() {
         // Given
-        IngestTaskStatusStore store = mock(IngestTaskStatusStore.class);
+        IngestTaskTracker tracker = mock(IngestTaskTracker.class);
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When
-        RunAdminClient runner = runClient().tracker(store);
+        RunAdminClient runner = runClient().tracker(tracker);
 
         // Then
-        assertThat(runner.trackers().loadIngestTaskStatusStore(properties))
-                .isSameAs(store);
+        assertThat(runner.trackers().loadIngestTaskTracker(properties))
+                .isSameAs(tracker);
     }
 
     @Test
@@ -102,35 +102,35 @@ class AdminClientProcessTrackerHolderTest extends AdminClientMockStoreBase {
     }
 
     @Test
-    void shouldReturnNoCompactionTaskStatusStore() {
+    void shouldReturnNoCompactionTaskTracker() {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().trackers().loadCompactionTaskStatusStore(properties))
-                .isSameAs(CompactionTaskStatusStore.NONE);
+        assertThat(runClient().trackers().loadCompactionTaskTracker(properties))
+                .isSameAs(CompactionTaskTracker.NONE);
     }
 
     @Test
-    void shouldReturnNoIngestJobStatusStore() {
+    void shouldReturnNoIngestJobTracker() {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().trackers().loadIngestJobStatusStore(properties))
-                .isSameAs(IngestJobStatusStore.NONE);
+        assertThat(runClient().trackers().loadIngestJobTracker(properties))
+                .isSameAs(IngestJobTracker.NONE);
     }
 
     @Test
-    void shouldReturnNoIngestTaskStatusStore() {
+    void shouldReturnNoIngestTaskTracker() {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
         setInstanceProperties(properties);
 
         // When / Then
-        assertThat(runClient().trackers().loadIngestTaskStatusStore(properties))
-                .isSameAs(IngestTaskStatusStore.NONE);
+        assertThat(runClient().trackers().loadIngestTaskTracker(properties))
+                .isSameAs(IngestTaskTracker.NONE);
     }
 }

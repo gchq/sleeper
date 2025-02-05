@@ -15,48 +15,34 @@
  */
 package sleeper.compaction.job.execution;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionJobSerDe;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
+import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.task.CompactionTask;
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
 import sleeper.compaction.core.task.StateStoreWaitForFiles;
-import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobTrackerCreator;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStoreCreator;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTrackerCreator;
+import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
+import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTrackerCreator;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperty;
@@ -64,8 +50,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.record.Record;
-import sleeper.core.record.process.RecordsProcessed;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
@@ -74,12 +58,19 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.impl.IngestCoordinator;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -87,10 +78,8 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -105,7 +94,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdsToInputFiles;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -121,44 +110,30 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.core.testutils.SupplierTestHelper.fixIds;
+import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 
-@Testcontainers
-public class ECSCompactionTaskRunnerLocalStackIT {
+public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
-
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    private final AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
-    private final Configuration configuration = getHadoopConfiguration(localStackContainer);
-    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, configuration);
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
-    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3, dynamoDB);
+    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+    private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties);
-    private final CompactionTaskStatusStore taskStatusStore = CompactionTaskStatusStoreFactory.getStatusStore(dynamoDB, instanceProperties);
-
-    @AfterEach
-    void tearDown() {
-        s3.shutdown();
-        dynamoDB.shutdown();
-        sqs.shutdown();
-    }
+    private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
+    private final CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
     @BeforeEach
     void setUp() {
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDB);
-        DynamoDBCompactionTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @TempDir
@@ -314,9 +289,10 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     @Test
-    void shouldSendCommitRequestToQueueIfAsyncCommitsEnabled() throws Exception {
+    void shouldSendCommitRequestToBatcherQueueIfEnabled() throws Exception {
         // Given
         tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
+        tableProperties.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
         tablePropertiesStore.save(tableProperties);
         configureJobQueuesWithMaxReceiveCount(1);
         StateStore stateStore = getStateStore();
@@ -327,15 +303,61 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference);
         assignJobIdsToInputFiles(stateStore, job);
         sendJob(job);
-        Queue<Instant> times = new LinkedList<>(List.of(
+        Supplier<Instant> times = supplyTimes(
                 Instant.parse("2024-05-09T12:52:00Z"),      // Start task
                 Instant.parse("2024-05-09T12:55:00Z"),      // Job started
                 Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
-                Instant.parse("2024-05-09T12:58:00Z")));    // Finished task
-        Queue<String> jobRunIds = new LinkedList<>(List.of("job-run-id"));
+                Instant.parse("2024-05-09T12:58:00Z"));    // Finished task
+        Supplier<String> jobRunIds = fixIds("job-run-id");
 
         // When
-        createTaskWithRunIdsAndTimes("task-id", jobRunIds::poll, times::poll).run();
+        createTaskWithRunIdsAndTimes("task-id", jobRunIds, times).run();
+
+        // Then
+        // - The compaction job should not be on the input queue or DLQ
+        assertThat(messagesOnQueue(COMPACTION_JOB_QUEUE_URL)).isEmpty();
+        assertThat(messagesOnQueue(COMPACTION_JOB_DLQ_URL)).isEmpty();
+        // - A compaction commit request should be on the job commit queue
+        assertThat(messagesOnQueue(COMPACTION_COMMIT_QUEUE_URL))
+                .extracting(Message::getBody)
+                .containsExactly(
+                        batchedCommitRequestOnQueue(job, "task-id", "job-run-id",
+                                new JobRunSummary(new RecordsProcessed(100, 100),
+                                        Instant.parse("2024-05-09T12:55:00Z"),
+                                        Instant.parse("2024-05-09T12:56:00Z"))));
+        // - Check new output file has been created with the correct records
+        assertThat(readRecords("output1.parquet", schema))
+                .containsExactlyElementsOf(expectedRecords);
+        // - Check DynamoDBStateStore does not yet have correct file references
+        assertThat(stateStore.getFileReferences())
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
+                .containsExactly(onJob(job, fileReference));
+    }
+
+    @Test
+    void shouldSendCommitRequestToStateStoreQueueIfBatchingDisabled() throws Exception {
+        // Given
+        tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
+        tableProperties.set(COMPACTION_JOB_ASYNC_BATCHING, "false");
+        tablePropertiesStore.save(tableProperties);
+        configureJobQueuesWithMaxReceiveCount(1);
+        StateStore stateStore = getStateStore();
+        FileReference fileReference = ingestFileWith100Records();
+        List<Record> expectedRecords = IntStream.range(0, 100)
+                .mapToObj(defaultRecordCreator()::apply)
+                .collect(Collectors.toList());
+        CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference);
+        assignJobIdsToInputFiles(stateStore, job);
+        sendJob(job);
+        Supplier<Instant> times = supplyTimes(
+                Instant.parse("2024-05-09T12:52:00Z"),      // Start task
+                Instant.parse("2024-05-09T12:55:00Z"),      // Job started
+                Instant.parse("2024-05-09T12:56:00Z"),      // Job finished
+                Instant.parse("2024-05-09T12:58:00Z"));    // Finished task
+        Supplier<String> jobRunIds = fixIds("job-run-id");
+
+        // When
+        createTaskWithRunIdsAndTimes("task-id", jobRunIds, times).run();
 
         // Then
         // - The compaction job should not be on the input queue or DLQ
@@ -346,7 +368,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .extracting(Message::getBody, this::getMessageGroupId)
                 .containsExactly(tuple(
                         commitRequestOnQueue(job, "task-id", "job-run-id",
-                                new RecordsProcessedSummary(new RecordsProcessed(100, 100),
+                                new JobRunSummary(new RecordsProcessed(100, 100),
                                         Instant.parse("2024-05-09T12:55:00Z"),
                                         Instant.parse("2024-05-09T12:56:00Z"))),
                         tableId));
@@ -370,11 +392,11 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
         instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 1);
         instanceProperties.setNumber(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
 
         return instanceProperties;
     }
@@ -404,7 +426,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private Stream<Message> messagesOnQueue(InstanceProperty queueProperty) {
-        return sqs.receiveMessage(new ReceiveMessageRequest()
+        return sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(queueProperty))
                 .withAttributeNames("MessageGroupId")
                 .withWaitTimeSeconds(2))
@@ -412,12 +434,12 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private void configureJobQueuesWithMaxReceiveCount(int maxReceiveCount) {
-        String jobQueueUrl = sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl();
-        String jobDlqUrl = sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl();
-        String jobDlqArn = sqs.getQueueAttributes(new GetQueueAttributesRequest()
+        String jobQueueUrl = sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        String jobDlqUrl = sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        String jobDlqArn = sqsClient.getQueueAttributes(new GetQueueAttributesRequest()
                 .withQueueUrl(jobDlqUrl)
                 .withAttributeNames("QueueArn")).getAttributes().get("QueueArn");
-        sqs.setQueueAttributes(new SetQueueAttributesRequest()
+        sqsClient.setQueueAttributes(new SetQueueAttributesRequest()
                 .withQueueUrl(jobQueueUrl)
                 .addAttributesEntry("RedrivePolicy",
                         "{\"maxReceiveCount\":\"" + maxReceiveCount + "\", " + "\"deadLetterTargetArn\":\"" + jobDlqArn + "\"}"));
@@ -427,10 +449,12 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     }
 
     private void configureJobCommitterQueues(int maxReceiveCount) {
-        String jobCommitQueueUrl = sqs.createQueue(new CreateQueueRequest()
+        String jobCommitQueueUrl = sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+        String stateStoreCommitQueueUrl = sqsClient.createQueue(new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString() + ".fifo")
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
-        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, jobCommitQueueUrl);
+        instanceProperties.set(COMPACTION_COMMIT_QUEUE_URL, jobCommitQueueUrl);
+        instanceProperties.set(STATESTORE_COMMITTER_QUEUE_URL, stateStoreCommitQueueUrl);
     }
 
     private CompactionTask createTaskWithRunIdsAndTimes(
@@ -450,14 +474,14 @@ public class ECSCompactionTaskRunnerLocalStackIT {
             String taskId, StateStoreProvider stateStoreProvider,
             Supplier<String> jobRunIdSupplier, Supplier<Instant> timeSupplier) {
         DefaultCompactionRunnerFactory selector = new DefaultCompactionRunnerFactory(
-                ObjectFactory.noUserJars(), configuration);
+                ObjectFactory.noUserJars(), hadoopConf);
         CompactionJobCommitterOrSendToLambda committer = ECSCompactionTaskRunner.committerOrSendToLambda(
                 tablePropertiesProvider, stateStoreProvider, jobTracker,
-                instanceProperties, sqs);
+                instanceProperties, sqsClient);
         StateStoreWaitForFiles waitForFiles = new StateStoreWaitForFiles(tablePropertiesProvider, stateStoreProvider, jobTracker);
         CompactionTask task = new CompactionTask(instanceProperties, tablePropertiesProvider,
-                PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqs, instanceProperties),
-                waitForFiles, committer, jobTracker, taskStatusStore, selector, taskId,
+                PropertiesReloader.neverReload(), stateStoreProvider, new SqsCompactionQueueHandler(sqsClient, instanceProperties),
+                waitForFiles, committer, jobTracker, taskTracker, selector, taskId,
                 jobRunIdSupplier, timeSupplier, duration -> {
                 });
         return task;
@@ -477,7 +501,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
     private FileReference ingestFileWith100Records(Function<Integer, Record> recordCreator) throws Exception {
         IngestFactory ingestFactory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
-                .hadoopConfiguration(configuration)
+                .hadoopConfiguration(hadoopConf)
                 .localDir(tempDir.toString())
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, getStateStore()))
                 .instanceProperties(instanceProperties)
@@ -504,7 +528,7 @@ public class ECSCompactionTaskRunnerLocalStackIT {
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMessageBody(jobJson);
-        sqs.sendMessage(sendMessageRequest);
+        sqsClient.sendMessage(sendMessageRequest);
         return jobJson;
     }
 
@@ -524,8 +548,23 @@ public class ECSCompactionTaskRunnerLocalStackIT {
                 .outputFile(tempDir + "/" + outputFilename).build();
     }
 
-    private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, RecordsProcessedSummary summary) {
-        return new CompactionJobCommitRequestSerDe().toJson(new CompactionJobCommitRequest(job, taskId, jobRunId, summary));
+    private String commitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, JobRunSummary summary) {
+        return new StateStoreCommitRequestSerDe(tablePropertiesProvider)
+                .toJson(StateStoreCommitRequest.create(tableId,
+                        new ReplaceFileReferencesTransaction(List.of(
+                                job.replaceFileReferencesRequestBuilder(summary.getRecordsProcessed().getRecordsWritten())
+                                        .taskId(taskId)
+                                        .jobRunId(jobRunId)
+                                        .build()))));
+    }
+
+    private String batchedCommitRequestOnQueue(CompactionJob job, String taskId, String jobRunId, JobRunSummary summary) {
+        return new CompactionCommitMessageSerDe()
+                .toJson(new CompactionCommitMessage(tableId,
+                        job.replaceFileReferencesRequestBuilder(summary.getRecordsProcessed().getRecordsWritten())
+                                .taskId(taskId)
+                                .jobRunId(jobRunId)
+                                .build()));
     }
 
     private FileReference onJob(CompactionJob job, FileReference reference) {

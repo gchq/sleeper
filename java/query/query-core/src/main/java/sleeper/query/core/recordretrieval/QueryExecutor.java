@@ -85,7 +85,7 @@ public class QueryExecutor {
      * frequently extracting all the information about the files and the partitions
      * from the state store.
      *
-     * @throws StateStoreException if the statestore can't be accessed.
+     * @throws StateStoreException if the state store can't be accessed
      */
     public void init() throws StateStoreException {
         init(Instant.now());
@@ -133,8 +133,8 @@ public class QueryExecutor {
      * leaf partition are opened at a time.
      *
      * @param  query          the query
-     * @return                An iterator containing the relevant records
-     * @throws QueryException if it errors.
+     * @return                an iterator containing the relevant records
+     * @throws QueryException if it errors
      */
     public CloseableIterator<Record> execute(Query query) throws QueryException {
         List<LeafPartitionQuery> leafPartitionQueries = splitIntoLeafPartitionQueries(query);
@@ -153,7 +153,7 @@ public class QueryExecutor {
      * to the parent to the sub query.
      *
      * @param  query the query to be split up
-     * @return       A list of {@link LeafPartitionQuery}s
+     * @return       a list of {@link LeafPartitionQuery}s
      */
     public List<LeafPartitionQuery> splitIntoLeafPartitionQueries(Query query) {
         // Get mapping from leaf partitions to ranges from the query that overlap
@@ -212,9 +212,7 @@ public class QueryExecutor {
     }
 
     /**
-     * Gets the leaf partitions which are relevant to a query. This method is
-     * called by the default implementation of {@code getPartitionFiles()} If
-     * you overwrite getPartitionFiles() then you may make this method a no-op.
+     * Gets the leaf partitions which are relevant to a query.
      *
      * @param  query the query
      * @return       the relevant leaf partitions

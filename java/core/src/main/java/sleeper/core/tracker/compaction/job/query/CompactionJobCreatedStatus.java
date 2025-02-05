@@ -15,14 +15,14 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.record.process.status.ProcessStatusUpdate;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobCreatedStatus implements ProcessStatusUpdate {
+public class CompactionJobCreatedStatus implements JobStatusUpdate {
 
     private final Instant updateTime;
     private final String partitionId;

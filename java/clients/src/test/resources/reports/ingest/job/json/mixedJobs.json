@@ -24,22 +24,13 @@
             {
               "type": "FINISHED_WHEN_FILES_COMMITTED",
               "updateTime": "2022-09-27T13:35:12.123Z",
+              "finishTime": "2022-09-27T13:35:12.001Z",
+              "recordsProcessed": {
+                "recordsRead": 600,
+                "recordsWritten": 300
+              },
               "committedBySeparateFileUpdates": true,
-              "numFilesWrittenByJob": 2,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 600,
-                  "recordsWritten": 300
-                },
-                "runTime": {
-                  "startTime": "2022-09-27T13:34:12.001Z",
-                  "finishTime": "2022-09-27T13:35:12.001Z",
-                  "durationInSeconds": 60.0,
-                  "timeInProcessInSeconds": 60.0
-                },
-                "recordsReadPerSecond": 10.0,
-                "recordsWrittenPerSecond": 5.0
-              }
+              "numFilesWrittenByJob": 2
             }
           ]
         }
@@ -82,22 +73,13 @@
             {
               "type": "FINISHED_WHEN_FILES_COMMITTED",
               "updateTime": "2022-09-25T13:35:12.123Z",
+              "finishTime": "2022-09-25T13:35:12.001Z",
+              "recordsProcessed": {
+                "recordsRead": 600,
+                "recordsWritten": 300
+              },
               "committedBySeparateFileUpdates": true,
-              "numFilesWrittenByJob": 3,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 600,
-                  "recordsWritten": 300
-                },
-                "runTime": {
-                  "startTime": "2022-09-25T13:34:12.001Z",
-                  "finishTime": "2022-09-25T13:35:12.001Z",
-                  "durationInSeconds": 60.0,
-                  "timeInProcessInSeconds": 60.0
-                },
-                "recordsReadPerSecond": 10.0,
-                "recordsWrittenPerSecond": 5.0
-              }
+              "numFilesWrittenByJob": 3
             }
           ]
         }
@@ -118,22 +100,13 @@
             {
               "type": "FINISHED",
               "updateTime": "2022-09-24T13:35:12.123Z",
+              "finishTime": "2022-09-24T13:35:12.001Z",
+              "recordsProcessed": {
+                "recordsRead": 600,
+                "recordsWritten": 300
+              },
               "committedBySeparateFileUpdates": false,
-              "numFilesWrittenByJob": 2,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 600,
-                  "recordsWritten": 300
-                },
-                "runTime": {
-                  "startTime": "2022-09-24T13:34:12.001Z",
-                  "finishTime": "2022-09-24T13:35:12.001Z",
-                  "durationInSeconds": 60.0,
-                  "timeInProcessInSeconds": 60.0
-                },
-                "recordsReadPerSecond": 10.0,
-                "recordsWrittenPerSecond": 5.0
-              }
+              "numFilesWrittenByJob": 2
             }
           ]
         }
@@ -170,22 +143,13 @@
             {
               "type": "FINISHED",
               "updateTime": "2022-09-22T13:35:12.123Z",
+              "finishTime": "2022-09-22T13:35:12.001Z",
+              "recordsProcessed": {
+                "recordsRead": 600,
+                "recordsWritten": 300
+              },
               "committedBySeparateFileUpdates": false,
-              "numFilesWrittenByJob": 1,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 600,
-                  "recordsWritten": 300
-                },
-                "runTime": {
-                  "startTime": "2022-09-22T13:34:12.001Z",
-                  "finishTime": "2022-09-22T13:35:12.001Z",
-                  "durationInSeconds": 60.0,
-                  "timeInProcessInSeconds": 60.0
-                },
-                "recordsReadPerSecond": 10.0,
-                "recordsWrittenPerSecond": 5.0
-              }
+              "numFilesWrittenByJob": 1
             }
           ]
         }
@@ -205,17 +169,12 @@
             },
             {
               "type": "FAILED",
+              "updateTime": "2022-09-21T13:35:12.123Z",
+              "failureTime": "2022-09-21T13:35:12.001Z",
               "failureReasons": [
                 "Something went wrong",
                 "More details"
-              ],
-              "runTime": {
-                "startTime": "2022-09-21T13:34:12.001Z",
-                "finishTime": "2022-09-21T13:35:12.001Z",
-                "durationInSeconds": 60.0,
-                "timeInProcessInSeconds": 60.0
-              },
-              "updateTime": "2022-09-21T13:35:12.123Z"
+              ]
             }
           ]
         }

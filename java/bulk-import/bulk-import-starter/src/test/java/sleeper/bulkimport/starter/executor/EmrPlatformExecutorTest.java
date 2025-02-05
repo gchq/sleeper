@@ -42,9 +42,10 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.record.process.status.ProcessStatusUpdateRecord;
+import sleeper.core.properties.validation.EmrInstanceArchitecture;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -62,6 +63,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
+import static sleeper.core.properties.instance.NonPersistentEMRProperty.DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_MARKET_TYPE;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_EMR_EXECUTOR_X86_INSTANCE_TYPES;
@@ -75,9 +77,9 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.acceptedRun;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 
 class EmrPlatformExecutorTest {
     private final EmrClient emr = mock(EmrClient.class);
@@ -85,7 +87,7 @@ class EmrPlatformExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final String tableId = tableProperties.get(TABLE_ID);
-    private final InMemoryIngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final InMemoryIngestJobTracker tracker = new InMemoryIngestJobTracker();
 
     @BeforeEach
     public void setUpEmr() {
@@ -94,6 +96,7 @@ class EmrPlatformExecutorTest {
                     requested.set(invocation.getArgument(0));
                     return RunJobFlowResponse.builder().build();
                 });
+        instanceProperties.set(DEFAULT_BULK_IMPORT_EMR_INSTANCE_ARCHITECTURE, EmrInstanceArchitecture.X86_64.toString());
         instanceProperties.set(DEFAULT_BULK_IMPORT_MIN_LEAF_PARTITION_COUNT, "1");
         instanceProperties.set(BULK_IMPORT_BUCKET, "myBucket");
         instanceProperties.set(SUBNETS, "subnet-abc");
@@ -425,14 +428,14 @@ class EmrPlatformExecutorTest {
         // Then
         assertThat(requested.get())
                 .isNull();
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+        assertThat(tracker.getAllJobs(tableId))
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         rejectedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"),
                                 "The minimum partition count was not reached")));
     }
 
     @Test
-    void shouldReportJobRunIdToStatusStore() {
+    void shouldReportJobRunIdToTracker() {
         // Given
         BulkImportJob myJob = singleFileJob();
         BulkImportExecutor executor = executorWithValidationTime(Instant.parse("2023-06-02T15:41:00Z"));
@@ -441,11 +444,11 @@ class EmrPlatformExecutorTest {
         executor.runJob(myJob, "test-job-run");
 
         // Then
-        assertThat(ingestJobStatusStore.getAllJobs(tableId))
-                .containsExactly(jobStatus(myJob.toIngestJob(),
+        assertThat(tracker.getAllJobs(tableId))
+                .containsExactly(ingestJobStatus(myJob.toIngestJob(),
                         acceptedRun(myJob.toIngestJob(), Instant.parse("2023-06-02T15:41:00Z"))));
-        assertThat(ingestJobStatusStore.streamTableRecords(tableId))
-                .extracting(ProcessStatusUpdateRecord::getJobRunId)
+        assertThat(tracker.streamTableRecords(tableId))
+                .extracting(JobStatusUpdateRecord::getJobRunId)
                 .containsExactly("test-job-run");
     }
 
@@ -467,7 +470,7 @@ class EmrPlatformExecutorTest {
         return new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
                 new FixedStateStoreProvider(tableProperties,
                         inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema())),
-                ingestJobStatusStore, (job, jobRunId) -> {
+                tracker, (job, jobRunId) -> {
                 },
                 new EmrPlatformExecutor(emr, instanceProperties, tablePropertiesProvider, configuration),
                 validationTimeSupplier);

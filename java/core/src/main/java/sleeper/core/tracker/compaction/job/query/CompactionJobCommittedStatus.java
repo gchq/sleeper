@@ -15,12 +15,12 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.record.process.status.ProcessStatusUpdate;
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobCommittedStatus implements ProcessStatusUpdate {
+public class CompactionJobCommittedStatus implements JobStatusUpdate {
 
     private final Instant commitTime;
     private final Instant updateTime;

@@ -64,6 +64,12 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction putTableOnlineUntilJobsAreCreated(int expectedJobs) {
+        putTablesOnlineWaitForJobCreation(expectedJobs);
+        instance.updateTableProperties(Map.of(TABLE_ONLINE, "false"));
+        return this;
+    }
+
     public SystemTestCompaction putTableOnlineWaitForJobCreation(int expectedJobs) {
         return putTablesOnlineWaitForJobCreation(expectedJobs);
     }
@@ -100,7 +106,7 @@ public class SystemTestCompaction {
     public SystemTestCompaction waitForTasks(int expectedTasks) {
         new WaitForTasks(driver.getJobTracker())
                 .waitUntilNumTasksStartedAJob(expectedTasks, lastJobIds,
-                        pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(3)));
+                        pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
         return this;
     }
 

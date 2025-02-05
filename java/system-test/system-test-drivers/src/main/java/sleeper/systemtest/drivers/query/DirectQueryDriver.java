@@ -78,7 +78,8 @@ public class DirectQueryDriver implements QueryDriver {
 
     private QueryExecutor executor(TableProperties tableProperties, StateStore stateStore, PartitionTree partitionTree) {
         QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), tableProperties, stateStore,
-                new LeafPartitionRecordRetrieverImpl(EXECUTOR_SERVICE, clients.createHadoopConf()));
+                new LeafPartitionRecordRetrieverImpl(EXECUTOR_SERVICE, clients.createHadoopConf(),
+                        tableProperties));
         executor.init(partitionTree.getAllPartitions(), stateStore.getPartitionToReferencedFilesMap());
         return executor;
     }

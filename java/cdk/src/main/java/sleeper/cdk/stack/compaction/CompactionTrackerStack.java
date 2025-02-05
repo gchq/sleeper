@@ -25,9 +25,9 @@ import software.amazon.awscdk.services.iam.IGrantable;
 import software.constructs.Construct;
 
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
-import sleeper.compaction.status.store.job.DynamoDBCompactionJobTracker;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusFormat;
-import sleeper.compaction.status.store.task.DynamoDBCompactionTaskStatusStore;
+import sleeper.compaction.tracker.job.DynamoDBCompactionJobTracker;
+import sleeper.compaction.tracker.task.DynamoDBCompactionTaskStatusFormat;
+import sleeper.compaction.tracker.task.DynamoDBCompactionTaskTracker;
 import sleeper.core.properties.instance.InstanceProperties;
 
 import static sleeper.cdk.util.Utils.removalPolicy;
@@ -77,7 +77,7 @@ public class CompactionTrackerStack extends NestedStack implements CompactionTra
 
         tasksTable = Table.Builder
                 .create(this, "DynamoDBCompactionTaskStatusTable")
-                .tableName(DynamoDBCompactionTaskStatusStore.taskStatusTableName(instanceId))
+                .tableName(DynamoDBCompactionTaskTracker.taskStatusTableName(instanceId))
                 .removalPolicy(removalPolicy)
                 .billingMode(BillingMode.PAY_PER_REQUEST)
                 .partitionKey(Attribute.builder()

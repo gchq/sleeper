@@ -16,83 +16,55 @@
 
 package sleeper.task.common;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.QueueDoesNotExistException;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.localstack.test.LocalStackTestBase;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-class QueueMessageCountIT {
-    private static final String TEST_QUEUE_NAME = "test-queue-url";
+class QueueMessageCountIT extends LocalStackTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.SQS);
-
-    private AmazonSQS createSQSClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
-    }
-
-    private String createQueue(AmazonSQS sqs) {
-        return sqs.createQueue(TEST_QUEUE_NAME).getQueueUrl();
+    private String createQueue() {
+        return sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
     }
 
     @Test
     void shouldReportNoMessagesWhenQueueIsEmpty() {
-        // Given / When
-        AmazonSQS sqsClient = createSQSClient();
-        String queueUrl = createQueue(sqsClient);
+        // Given
+        String queueUrl = createQueue();
+
+        // When
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+                .getApproximateNumberOfMessages();
 
         // Then
-        try {
-            int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
-                    .getApproximateNumberOfMessages();
-            assertThat(numberOfMessages).isZero();
-        } finally {
-            sqsClient.deleteQueue(queueUrl);
-            sqsClient.shutdown();
-        }
+        assertThat(numberOfMessages).isZero();
     }
 
     @Test
     void shouldReportNumberOfMessagesWhenQueueIsNotEmpty() {
         // Given
-        AmazonSQS sqsClient = createSQSClient();
-        String queueUrl = createQueue(sqsClient);
-
-        // When
+        String queueUrl = createQueue();
         for (int i = 1; i <= 10; i++) {
             sqsClient.sendMessage(queueUrl, "{testMessageId:" + i + "}");
         }
 
+        // When
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+                .getApproximateNumberOfMessages();
+
         // Then
-        try {
-            int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
-                    .getApproximateNumberOfMessages();
-            assertThat(numberOfMessages).isEqualTo(10);
-        } finally {
-            sqsClient.deleteQueue(queueUrl);
-            sqsClient.shutdown();
-        }
+        assertThat(numberOfMessages).isEqualTo(10);
     }
 
     @Test
-    void shouldReportNumberOfMessagesWhenSomeMessagesHasBeenProcessed() {
+    void shouldReportNumberOfMessagesWhenSomeMessagesHaveBeenProcessed() {
         // Given
-        AmazonSQS sqsClient = createSQSClient();
-        String queueUrl = createQueue(sqsClient);
-
-        // When
+        String queueUrl = createQueue();
         for (int i = 1; i <= 10; i++) {
             sqsClient.sendMessage(queueUrl, "{testMessageId:" + i + "}");
         }
@@ -100,21 +72,17 @@ class QueueMessageCountIT {
             sqsClient.receiveMessage(queueUrl);
         }
 
+        // When
+        int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
+                .getApproximateNumberOfMessages();
+
         // Then
-        try {
-            int numberOfMessages = QueueMessageCount.withSqsClient(sqsClient).getQueueMessageCount(queueUrl)
-                    .getApproximateNumberOfMessages();
-            assertThat(numberOfMessages).isEqualTo(7);
-        } finally {
-            sqsClient.deleteQueue(queueUrl);
-            sqsClient.shutdown();
-        }
+        assertThat(numberOfMessages).isEqualTo(7);
     }
 
     @Test
     void shouldFailWhenQueueDoesNotExist() {
         // Given
-        AmazonSQS sqsClient = createSQSClient();
         QueueMessageCount.Client queueClient = QueueMessageCount.withSqsClient(sqsClient);
 
         // When / Then

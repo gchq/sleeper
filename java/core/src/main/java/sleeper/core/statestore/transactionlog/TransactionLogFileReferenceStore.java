@@ -75,6 +75,10 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     @Override
     public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
         try {
+            for (ReplaceFileReferencesRequest request : requests) {
+                request.validateNewReference();
+                request.validateStateChange(head.state());
+            }
             head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(requests));
         } catch (StateStoreException e) {
             throw new ReplaceRequestsFailedException(requests, e);
@@ -136,13 +140,12 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         }
     }
 
-    /**
-     * Updates the local state from the transaction log.
-     *
-     * @throws StateStoreException thrown if there's any failure reading transactions or applying them to the state
-     */
-    public void updateFromLog() throws StateStoreException {
+    void updateFromLog() throws StateStoreException {
         head.update();
+    }
+
+    void addTransaction(AddTransactionRequest request) {
+        head.addTransaction(clock.instant(), request);
     }
 
     private StateStoreFiles files() throws StateStoreException {

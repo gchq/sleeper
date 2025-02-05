@@ -16,15 +16,8 @@
 package sleeper.clients.admin.testutils;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.clients.AdminClient;
 import sleeper.clients.admin.AdminClientTrackerFactory;
@@ -34,29 +27,23 @@ import sleeper.clients.util.cdk.InvokeCdkForInstance;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.task.common.QueueMessageCount;
 
 import java.nio.file.Path;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
-@Testcontainers
 public abstract class AdminClientITBase extends AdminClientTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-
-    protected final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    protected final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+    protected final AmazonS3 s3 = SleeperLocalStackClients.S3_CLIENT;
+    protected final AmazonDynamoDB dynamoDB = SleeperLocalStackClients.DYNAMO_CLIENT;
     protected final InvokeCdkForInstance cdk = mock(InvokeCdkForInstance.class);
     protected final UploadDockerImages uploadDockerImages = mock(UploadDockerImages.class);
     protected TablePropertiesStore tablePropertiesStore;
@@ -76,11 +63,6 @@ public abstract class AdminClientITBase extends AdminClientTestBase {
 
     protected AdminClientPropertiesStore storeWithGeneratedDirectory(Path path) {
         return new AdminClientPropertiesStore(s3, dynamoDB, cdk, path, uploadDockerImages);
-    }
-
-    @AfterEach
-    public void tearDownITBase() {
-        s3.shutdown();
     }
 
     @Override

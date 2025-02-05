@@ -17,20 +17,18 @@ package sleeper.systemtest.dsl.statestore;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequestSerDe;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobIdAssignmentCommitRequestSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.process.RecordsProcessedSummary;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequest;
-import sleeper.core.statestore.commit.GarbageCollectionCommitRequestSerDe;
-import sleeper.ingest.core.job.IngestJob;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequestSerDe;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -49,60 +47,52 @@ public class StateStoreCommitMessageFactory {
         this.tableProperties = tableProperties;
     }
 
-    public StateStoreCommitMessage addFiles(List<FileReference> files) {
-        return ingest(builder -> builder.fileReferences(files));
+    public StateStoreCommitRequest addFiles(List<FileReference> files) {
+        return ingest(builder -> builder.files(AllReferencesToAFile.newFilesWithReferences(files)));
     }
 
-    public StateStoreCommitMessage addFileWithJob(FileReference file) {
+    public StateStoreCommitRequest addFileWithJob(FileReference file) {
         return addFilesWithJob(List.of(file));
     }
 
-    public StateStoreCommitMessage addFilesWithJob(List<FileReference> files) {
+    public StateStoreCommitRequest addFilesWithJob(List<FileReference> files) {
         String jobId = UUID.randomUUID().toString();
-        IngestJob job = IngestJob.builder()
-                .id(jobId)
-                .tableId(tableId())
-                .files(List.of("test-file-" + jobId + ".parquet"))
-                .build();
         return ingest(builder -> builder
-                .fileReferences(files)
-                .ingestJob(job)
+                .files(AllReferencesToAFile.newFilesWithReferences(files))
+                .jobId(jobId)
                 .taskId(jobId)
                 .jobRunId(jobId)
                 .writtenTime(Instant.now()));
     }
 
-    public StateStoreCommitMessage assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
-        CompactionJobIdAssignmentCommitRequest request = CompactionJobIdAssignmentCommitRequest.tableRequests(tableId(),
-                List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
-        return StateStoreCommitMessage.tableIdAndBody(tableId(),
-                new CompactionJobIdAssignmentCommitRequestSerDe().toJson(request));
+    public StateStoreCommitRequest assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
+        return message(new AssignJobIdsTransaction(
+                List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames))));
     }
 
-    public StateStoreCommitMessage commitCompactionForPartitionOnTaskInRun(
-            String jobId, String partitionId, List<String> filenames, String taskId, String jobRunId, RecordsProcessedSummary recordsProcessed) {
+    public StateStoreCommitRequest commitCompactionForPartitionOnTaskInRun(
+            String jobId, String partitionId, List<String> filenames, String taskId, String jobRunId, JobRunSummary recordsProcessed) {
         CompactionJobFactory factory = new CompactionJobFactory(instanceProperties, tableProperties);
         CompactionJob job = factory.createCompactionJobWithFilenames(jobId, filenames, partitionId);
-        CompactionJobCommitRequest request = new CompactionJobCommitRequest(job, taskId, jobRunId, recordsProcessed);
-        return StateStoreCommitMessage.tableIdAndBody(tableId(),
-                new CompactionJobCommitRequestSerDe().toJson(request));
+        return message(new ReplaceFileReferencesTransaction(List.of(
+                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsProcessed().getRecordsWritten())
+                        .taskId(taskId)
+                        .jobRunId(jobRunId)
+                        .build())));
     }
 
-    public StateStoreCommitMessage filesDeleted(List<String> filenames) {
-        GarbageCollectionCommitRequest request = new GarbageCollectionCommitRequest(tableId(), filenames);
-        return StateStoreCommitMessage.tableIdAndBody(tableId(),
-                new GarbageCollectionCommitRequestSerDe().toJson(request));
+    public StateStoreCommitRequest filesDeleted(List<String> filenames) {
+        return message(new DeleteFilesTransaction(filenames));
     }
 
-    private StateStoreCommitMessage ingest(Consumer<IngestAddFilesCommitRequest.Builder> config) {
-        IngestAddFilesCommitRequest.Builder builder = IngestAddFilesCommitRequest.builder().tableId(tableId());
+    private StateStoreCommitRequest ingest(Consumer<AddFilesTransaction.Builder> config) {
+        AddFilesTransaction.Builder builder = AddFilesTransaction.builder();
         config.accept(builder);
-        return StateStoreCommitMessage.tableIdAndBody(tableId(),
-                new IngestAddFilesCommitRequestSerDe().toJson(builder.build()));
+        return message(builder.build());
     }
 
-    private String tableId() {
-        return tableProperties.get(TABLE_ID);
+    private StateStoreCommitRequest message(StateStoreTransaction<?> transaction) {
+        return StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
     }
 
 }

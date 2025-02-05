@@ -20,16 +20,10 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.cloudwatchevents.CloudWatchEventsClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
-import software.amazon.awssdk.services.s3.S3Client;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -49,20 +43,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static java.util.stream.Collectors.joining;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.build.uptime.lambda.LocalStackTestHelper.localStackClient;
 import static sleeper.build.uptime.lambda.WiremockTestHelper.wiremockClient;
 
 @WireMockTest
-@Testcontainers
-public class BuildUptimeLambdaIT {
-
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
+public class BuildUptimeLambdaIT extends LocalStackTestBase {
 
     private final BuildUptimeEventSerDe serDe = new BuildUptimeEventSerDe();
     private BuildUptimeLambda lambda;
-    private final S3Client s3 = localStackClient(localStackContainer, LocalStackContainer.Service.S3, S3Client.builder());
     private final Queue<Instant> times = new LinkedList<>();
 
     @BeforeEach
@@ -70,7 +57,7 @@ public class BuildUptimeLambdaIT {
         lambda = new BuildUptimeLambda(
                 wiremockClient(runtimeInfo, Ec2Client.builder()),
                 wiremockClient(runtimeInfo, CloudWatchEventsClient.builder()),
-                s3, times::poll);
+                s3ClientV2, times::poll);
         stubFor(post("/").willReturn(aResponse().withStatus(200)));
     }
 
@@ -128,7 +115,7 @@ public class BuildUptimeLambdaIT {
     void shouldDoNothingWhenConditionNotMet() {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3.createBucket(builder -> builder.bucket(bucketName));
+        createBucket(bucketName);
         times.add(Instant.parse("2024-10-02T15:02:00Z"));
 
         // When
@@ -146,11 +133,11 @@ public class BuildUptimeLambdaIT {
     void shouldPerformOperationWhenConditionIsMet() {
         // Given
         String bucketName = UUID.randomUUID().toString();
-        s3.createBucket(builder -> builder.bucket(bucketName));
-        s3.putObject(builder -> builder.bucket(bucketName).key("summary.json"), RequestBody.fromString("{" +
+        createBucket(bucketName);
+        putObject(bucketName, "summary.json", "{" +
                 "\"executions\": [{" +
                 "\"startTime\": \"2024-10-02T03:00:00Z\"" +
-                "}]}"));
+                "}]}");
         times.add(Instant.parse("2024-10-02T15:02:00Z"));
 
         // When

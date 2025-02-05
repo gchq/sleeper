@@ -25,11 +25,11 @@ import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.clients.admin.testutils.RunAdminClient;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobTestDataHelper;
-import sleeper.compaction.core.task.CompactionTaskStatus;
-import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,8 +37,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_JOB_STATUS_REPORT_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_REPORT_OPTION;
-import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_TASK_STATUS_REPORT_OPTION;
+import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.COMPACTION_TRACKER_NOT_ENABLED_MESSAGE;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.DISPLAY_MAIN_SCREEN;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_ALL_OPTION;
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.JOB_QUERY_DETAILED_OPTION;
@@ -51,7 +51,7 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TASK_QU
 import static sleeper.clients.status.report.compaction.task.CompactionTaskStatusReportTestHelper.startedTask;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
-import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_STATUS_STORE_ENABLED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 
 class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
@@ -158,7 +158,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
     @Nested
     @DisplayName("Compaction task status report")
     class CompactionTaskStatusReport {
-        private final InMemoryCompactionTaskStatusStore compactionTaskStatusStore = new InMemoryCompactionTaskStatusStore();
+        private final InMemoryCompactionTaskTracker compactionTaskTracker = new InMemoryCompactionTaskTracker();
 
         private List<CompactionTaskStatus> exampleTaskStartedStatuses() {
             return List.of(startedTask("task-1", "2023-03-15T18:53:12.001Z"));
@@ -167,7 +167,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeAll() throws Exception {
             // Given
-            exampleTaskStartedStatuses().forEach(compactionTaskStatusStore::taskStarted);
+            exampleTaskStartedStatuses().forEach(compactionTaskTracker::taskStarted);
 
             // When/Then
             String output = runCompactionTaskStatusReport()
@@ -189,7 +189,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         @Test
         void shouldRunCompactionTaskStatusReportWithQueryTypeUnfinished() throws Exception {
             // Given
-            exampleTaskStartedStatuses().forEach(compactionTaskStatusStore::taskStarted);
+            exampleTaskStartedStatuses().forEach(compactionTaskTracker::taskStarted);
 
             // When/Then
             String output = runCompactionTaskStatusReport()
@@ -210,15 +210,15 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             InstanceProperties properties = createValidInstanceProperties();
             setInstanceProperties(properties);
             return runClient().enterPrompts(COMPACTION_STATUS_REPORT_OPTION, COMPACTION_TASK_STATUS_REPORT_OPTION)
-                    .tracker(compactionTaskStatusStore);
+                    .tracker(compactionTaskTracker);
         }
     }
 
     @Test
-    void shouldReturnToMainMenuIfCompactionStatusStoreNotEnabled() throws Exception {
+    void shouldReturnToMainMenuIfCompactionTrackerNotEnabled() throws Exception {
         // Given
         InstanceProperties properties = createValidInstanceProperties();
-        properties.set(COMPACTION_STATUS_STORE_ENABLED, "false");
+        properties.set(COMPACTION_TRACKER_ENABLED, "false");
         setInstanceProperties(properties);
 
         // When
@@ -229,7 +229,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
         // Then
         assertThat(output)
                 .isEqualTo(DISPLAY_MAIN_SCREEN +
-                        COMPACTION_STATUS_STORE_NOT_ENABLED_MESSAGE +
+                        COMPACTION_TRACKER_NOT_ENABLED_MESSAGE +
                         PROMPT_RETURN_TO_MAIN + DISPLAY_MAIN_SCREEN);
         verifyWithNumberOfPromptsBeforeExit(1);
     }

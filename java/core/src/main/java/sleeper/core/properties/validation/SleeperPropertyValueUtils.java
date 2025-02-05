@@ -180,6 +180,21 @@ public class SleeperPropertyValueUtils {
     }
 
     /**
+     * Checks if a property value is a valid value for the maximum concurrency for an AWS Lambda SQS event source.
+     * Also see the AWS documentation:
+     * <p>
+     * https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+     * <p>
+     * https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-scaling.html#events-sqs-max-concurrency
+     *
+     * @param  string the value
+     * @return        true if the value meets the requirement
+     */
+    public static boolean isValidSqsLambdaMaximumConcurrency(String string) {
+        return string == null || parseAndCheckInteger(string, num -> num >= 2);
+    }
+
+    /**
      * Checks if a property value is a valid setting for the Hadoop configuration property
      * `fs.s3a.experimental.input.fadvise`.
      *

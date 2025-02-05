@@ -18,25 +18,30 @@ package sleeper.compaction.core.task;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobCommitterOrSendToLambda;
 import sleeper.compaction.core.job.CompactionRunner;
-import sleeper.compaction.core.job.commit.CompactionJobCommitRequest;
-import sleeper.compaction.core.job.commit.CompactionJobCommitterOrSendToLambda;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.task.CompactionTask.MessageHandle;
 import sleeper.compaction.core.task.CompactionTask.MessageReceiver;
-import sleeper.compaction.core.testutils.InMemoryCompactionTaskStatusStore;
-import sleeper.compaction.core.testutils.StateStoreWaitForFilesTestHelper;
 import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
+import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
 
@@ -57,6 +62,7 @@ import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -82,9 +88,10 @@ public class CompactionTaskTestBase {
     protected final List<CompactionJob> consumedJobs = new ArrayList<>();
     protected final List<CompactionJob> jobsReturnedToQueue = new ArrayList<>();
     protected final InMemoryCompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
-    protected final CompactionTaskStatusStore taskStore = new InMemoryCompactionTaskStatusStore();
+    protected final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
     protected final List<Duration> sleeps = new ArrayList<>();
-    protected final List<CompactionJobCommitRequest> commitRequestsOnQueue = new ArrayList<>();
+    protected final List<StateStoreCommitRequest> stateStoreCommitQueue = new ArrayList<>();
+    protected final List<CompactionCommitMessage> batcherCommitQueue = new ArrayList<>();
     protected final List<Duration> foundWaitsForFileAssignment = new ArrayList<>();
     private ThreadSleep waiterForFileAssignment = ThreadSleepTestHelper.recordWaits(foundWaitsForFileAssignment);
 
@@ -146,11 +153,11 @@ public class CompactionTaskTestBase {
             String taskId, Supplier<String> jobRunIdSupplier) throws Exception {
         CompactionJobCommitterOrSendToLambda committer = new CompactionJobCommitterOrSendToLambda(
                 tablePropertiesProvider(), stateStoreProvider(),
-                jobTracker, commitRequestsOnQueue::add, timeSupplier);
-        CompactionRunnerFactory selector = (job, instProperties ,properties) -> compactor;
+                jobTracker, stateStoreCommitQueue::add, batcherCommitQueue::add, timeSupplier);
+        CompactionRunnerFactory selector = (job, properties) -> compactor;
         new CompactionTask(instanceProperties, tablePropertiesProvider(), PropertiesReloader.neverReload(),
                 stateStoreProvider(), messageReceiver, fileAssignmentCheck,
-                committer, jobTracker, taskStore, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
+                committer, jobTracker, taskTracker, selector, taskId, jobRunIdSupplier, timeSupplier, sleeps::add)
                 .run();
     }
 
@@ -323,9 +330,57 @@ public class CompactionTaskTestBase {
         };
     }
 
-    protected void setAsyncCommit(boolean enabled, TableProperties... tableProperties) {
+    protected StateStoreCommitRequest commitRequestFor(CompactionJob job, JobRunSummary summary) {
+        return commitRequestFor(job, "test-job-run-1", summary);
+    }
+
+    protected StateStoreCommitRequest commitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
+        return StateStoreCommitRequest.create(job.getTableId(),
+                new ReplaceFileReferencesTransaction(List.of(
+                        replaceFileReferencesRequest(job, runId, summary))));
+    }
+
+    protected CompactionCommitMessage batcherCommitRequestFor(CompactionJob job, JobRunSummary summary) {
+        return batcherCommitRequestFor(job, "test-job-run-1", summary);
+    }
+
+    protected CompactionCommitMessage batcherCommitRequestFor(CompactionJob job, String runId, JobRunSummary summary) {
+        return new CompactionCommitMessage(job.getTableId(), replaceFileReferencesRequest(job, runId, summary));
+    }
+
+    private ReplaceFileReferencesRequest replaceFileReferencesRequest(CompactionJob job, String runId, JobRunSummary summary) {
+        return ReplaceFileReferencesRequest.builder()
+                .jobId(job.getId())
+                .taskId(DEFAULT_TASK_ID)
+                .jobRunId(runId)
+                .inputFiles(job.getInputFiles())
+                .newReference(FileReference.builder()
+                        .filename(job.getOutputFile())
+                        .partitionId(job.getPartitionId())
+                        .numberOfRecords(summary.getRecordsWritten())
+                        .countApproximate(false)
+                        .onlyContainsDataForThisPartition(true)
+                        .build())
+                .build();
+    }
+
+    protected void setSyncCommit(TableProperties... tableProperties) {
         for (TableProperties table : tableProperties) {
-            table.set(COMPACTION_JOB_COMMIT_ASYNC, "" + enabled);
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
+        }
+    }
+
+    protected void setAsyncCommitNoBatching(TableProperties... tableProperties) {
+        for (TableProperties table : tableProperties) {
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
+            table.set(COMPACTION_JOB_ASYNC_BATCHING, "false");
+        }
+    }
+
+    protected void setAsyncCommitWithBatching(TableProperties... tableProperties) {
+        for (TableProperties table : tableProperties) {
+            table.set(COMPACTION_JOB_COMMIT_ASYNC, "true");
+            table.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
         }
     }
 

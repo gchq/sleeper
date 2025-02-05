@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.compaction.FoundCompactionJobs;
+import sleeper.systemtest.suite.testutil.Slow;
 import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
@@ -38,6 +39,7 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_CREATION;
 
 @SystemTest
+@Slow // Slow because it deploys its own instance so it can drain the whole compaction jobs queue
 public class CreateManyCompactionsST {
 
     @BeforeEach

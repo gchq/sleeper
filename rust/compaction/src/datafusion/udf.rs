@@ -26,8 +26,9 @@ use arrow::{
     },
 };
 use datafusion::{
-    common::{internal_err, DFSchema, Result},
-    logical_expr::{ColumnarValue, ScalarUDFImpl, Signature, Volatility},
+    common::{internal_err, DFSchema, ExprSchema, Result},
+    logical_expr::{ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility},
+    prelude::Expr,
     scalar::ScalarValue,
 };
 use log::info;
@@ -43,13 +44,12 @@ use std::{
 
 use super::sketch::{update_sketch, DataSketchVariant, K};
 
-struct BenchStats {
-    start_time: Instant,
-    last_instant_measure: Instant,
-    last_instant_row_speed: u64,
-    rows_since_instant: usize,
-    rows_since_start: usize,
-}
+/// A UDF for producing quantile sketches of Sleeper tables. It operates on row key columns.
+/// This function works by taking each row key column as an argument. It returns a clone of the 0'th column.
+/// The column values aren't transformed at all. We just use the UDF as a way to get to see the column values
+/// so we can inject them into a sketch for later retrieval. The query should look something like:
+/// `SELECT sketch(row_key_col1, row_key_col2, ...), row_key_col2, value_col1, value_col2, ... FROM blah...`
+/// so the sketch function can see each row key column, but only returns the first.
 
 pub(crate) struct SketchUDF {
     signature: Signature,
@@ -145,7 +145,7 @@ fn get_row_key_types(schema: &DFSchema, row_keys: &[String]) -> Vec<DataType> {
 /// Create a vector of Data Sketches.
 ///
 /// This creates the appropriate data sketch implementations based on on the row key fields
-/// and the data types in the schema. Each type is wrapped in a [`SketchEnum`] variant type.
+/// and the data types in the schema. Each type is wrapped in a [`DataSketchVariant`] variant type.
 ///
 /// # Panics
 /// If a row key field can't be found in the schema.
@@ -172,7 +172,7 @@ impl ScalarUDFImpl for SketchUDF {
     fn as_any(&self) -> &dyn Any {
         self
     }
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "sketch"
     }
     fn signature(&self) -> &Signature {
@@ -183,12 +183,12 @@ impl ScalarUDFImpl for SketchUDF {
         Ok(args[0].clone())
     }
 
-    fn invoke(&self, columns: &[ColumnarValue]) -> Result<ColumnarValue> {
+    fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
         *self.invoke_count.lock().unwrap() += 1;
 
         let mut sk_lock = self.sketch.lock().unwrap();
 
-        for (sketch, col) in zip(sk_lock.iter_mut(), columns) {
+        for (sketch, col) in zip(sk_lock.iter_mut(), &args.args) {
             match col {
                 ColumnarValue::Array(array) => {
                     self.bench_report(array.len());
@@ -257,6 +257,11 @@ impl ScalarUDFImpl for SketchUDF {
             }
         }
 
-        Ok(columns[0].clone())
+        Ok(args.args[0].clone())
+    }
+
+    /// Sleeper tables cannot contains nullable row key columns.
+    fn is_nullable(&self, _args: &[Expr], _schema: &dyn ExprSchema) -> bool {
+        false
     }
 }

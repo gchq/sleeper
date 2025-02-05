@@ -24,6 +24,7 @@ import sleeper.core.range.Region;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.query.core.model.Query;
+import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
 import java.util.List;
@@ -55,22 +56,30 @@ public class QueryCreator {
     }
 
     public Query allRecordsQuery() {
-        return byRegions(List.of(getPartitionTree().getRootPartition().getRegion()));
+        return allRecordsBuilder().build();
+    }
+
+    public Query allRecordsQuery(QueryProcessingConfig config) {
+        return allRecordsBuilder().processingConfig(config).build();
     }
 
     public Query byRowKey(String key, List<QueryRange> ranges) {
-        return byRegions(ranges.stream()
-                .map(range -> new Region(new Range.RangeFactory(schema)
-                        .createRange(key, range.getMin(), range.getMax())))
-                .collect(Collectors.toList()));
+        Range.RangeFactory rangeFactory = new Range.RangeFactory(schema);
+        return builder()
+                .regions(ranges.stream()
+                        .map(range -> new Region(rangeFactory.createRange(key, range.getMin(), range.getMax())))
+                        .toList())
+                .build();
     }
 
-    private Query byRegions(List<Region> regions) {
+    private Query.Builder allRecordsBuilder() {
+        return builder().regions(List.of(getPartitionTree().getRootPartition().getRegion()));
+    }
+
+    private Query.Builder builder() {
         return Query.builder()
                 .tableName(tableName)
-                .queryId(UUID.randomUUID().toString())
-                .regions(regions)
-                .build();
+                .queryId(UUID.randomUUID().toString());
     }
 
     private PartitionTree getPartitionTree() {

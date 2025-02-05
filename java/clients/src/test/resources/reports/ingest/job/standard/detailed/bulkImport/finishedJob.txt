@@ -1,0 +1,23 @@
+
+Ingest Job Status Report
+------------------------
+Details for job job88888-8888-8888-8888-888888888888:
+State: FINISHED
+Number of input files: 8
+
+Run on task bulk-import-cluster-8
+Validation time: 2022-09-28T13:34:12.001Z
+Validation update time: 2022-09-28T13:34:12.123Z
+Job was accepted
+Start time: 2022-09-28T13:39:12.001Z
+Start update time: 2022-09-28T13:39:12.123Z
+Finish time: 2022-09-28T13:44:12.001Z
+Finish update time: 2022-09-28T13:44:12.123Z
+Duration: 5m
+Records read: 3,000
+Records written: 1,500
+Read rate (reads per second): 10.00
+Write rate (writes per second): 5.00
+1 files written at: 2022-09-28T13:45:12.001Z
+Files added to table at: 2022-09-28T13:45:12.123Z
+------------------------

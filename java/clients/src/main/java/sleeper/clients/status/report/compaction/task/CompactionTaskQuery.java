@@ -15,18 +15,18 @@
  */
 package sleeper.clients.status.report.compaction.task;
 
-import sleeper.compaction.core.task.CompactionTaskStatus;
-import sleeper.compaction.core.task.CompactionTaskStatusStore;
+import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
+import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 
 import java.time.Instant;
 import java.util.List;
 
 @FunctionalInterface
 public interface CompactionTaskQuery {
-    CompactionTaskQuery UNFINISHED = CompactionTaskStatusStore::getTasksInProgress;
-    CompactionTaskQuery ALL = CompactionTaskStatusStore::getAllTasks;
+    CompactionTaskQuery UNFINISHED = CompactionTaskTracker::getTasksInProgress;
+    CompactionTaskQuery ALL = CompactionTaskTracker::getAllTasks;
 
-    List<CompactionTaskStatus> run(CompactionTaskStatusStore store);
+    List<CompactionTaskStatus> run(CompactionTaskTracker tracker);
 
     static CompactionTaskQuery from(String type) {
         switch (type) {

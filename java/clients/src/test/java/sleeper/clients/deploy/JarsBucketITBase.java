@@ -18,17 +18,9 @@ package sleeper.clients.deploy;
 
 import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,18 +29,7 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-@Testcontainers
-public abstract class JarsBucketITBase {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3);
-
-    protected final S3Client s3 = S3Client.builder()
-            .endpointOverride(localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3))
-            .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-            .region(Region.of(localStackContainer.getRegion()))
-            .build();
+public abstract class JarsBucketITBase extends LocalStackTestBase {
 
     @TempDir
     protected Path tempDir;
@@ -64,7 +45,7 @@ public abstract class JarsBucketITBase {
 
     protected boolean syncJarsToBucket(String bucketName, boolean deleteOld) throws IOException {
         return SyncJars.builder()
-                .s3(s3)
+                .s3(s3ClientV2)
                 .jarsDirectory(tempDir)
                 .region(localStackContainer.getRegion())
                 .bucketName(bucketName)
@@ -73,17 +54,17 @@ public abstract class JarsBucketITBase {
     }
 
     protected Stream<String> listObjectKeys() {
-        return s3.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
+        return s3ClientV2.listObjectsV2Paginator(builder -> builder.bucket(bucketName)).stream()
                 .flatMap(response -> response.contents().stream())
                 .map(S3Object::key);
     }
 
     protected Instant getObjectLastModified(String key) {
-        return s3.headObject(builder -> builder.bucket(bucketName).key(key)).lastModified();
+        return s3ClientV2.headObject(builder -> builder.bucket(bucketName).key(key)).lastModified();
     }
 
     protected String getObjectContents(String key) {
-        return s3.getObject(builder -> builder.bucket(bucketName).key(key),
+        return s3ClientV2.getObject(builder -> builder.bucket(bucketName).key(key),
                 (metadata, inputStream) -> CharStreams.toString(new InputStreamReader(inputStream)));
     }
 }

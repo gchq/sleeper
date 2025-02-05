@@ -28,13 +28,12 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -45,6 +44,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
+import sleeper.localstack.test.SleeperLocalStackClients;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -59,14 +60,14 @@ import java.util.stream.Stream;
 
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.Objects.requireNonNull;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
+import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.localstack.test.LocalStackAwsV2ClientHelper.buildAwsV2Client;
 
 /**
  * This class is a JUnit plugin which starts a local S3 and DynamoDB within a Docker
@@ -81,17 +82,13 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     private final Map<String, String> extraPropertiesForQueryRunner;
     private final List<TableDefinition> tableDefinitions;
     private final SleeperConfig sleeperConfig;
-    private final LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.DYNAMODB, LocalStackContainer.Service.S3)
-            .withLogConsumer(outputFrame -> System.out.print("LocalStack log: " + outputFrame.getUtf8String()))
-            .withEnv("DEBUG", "1");
-    private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack(localStackContainer);
+    private final LocalStackContainer localStackContainer = SleeperLocalStackContainer.INSTANCE;
+    private final HadoopConfigurationProvider hadoopConfigurationProvider = new HadoopConfigurationProviderForLocalStack();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private Configuration configuration;
-
-    private AmazonS3 s3Client;
-    private S3AsyncClient s3AsyncClient;
-    private AmazonDynamoDB dynamoDBClient;
+    private final Configuration configuration = SleeperLocalStackClients.HADOOP_CONF;
+    private final AmazonS3 s3Client = SleeperLocalStackClients.S3_CLIENT;
+    private final S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
+    private final AmazonDynamoDB dynamoDBClient = SleeperLocalStackClients.DYNAMO_CLIENT;
     private QueryAssertions queryAssertions;
 
     public PopulatedSleeperExternalResource(List<TableDefinition> tableDefinitions) {
@@ -104,18 +101,6 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         this.extraPropertiesForQueryRunner = requireNonNull(extraPropertiesForQueryRunner);
         this.tableDefinitions = requireNonNull(tableDefinitions);
         this.sleeperConfig = requireNonNull(sleeperConfig);
-    }
-
-    private AmazonDynamoDB createDynamoClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    }
-
-    private AmazonS3 createS3Client() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
-
-    private S3AsyncClient createS3AsyncClient() {
-        return buildAwsV2Client(localStackContainer, LocalStackContainer.Service.S3, S3AsyncClient.builder());
     }
 
     private void ingestData(
@@ -150,12 +135,6 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
 
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {
-        localStackContainer.start();
-        configuration = hadoopConfigurationProvider.getHadoopConfiguration(instanceProperties);
-        s3Client = createS3Client();
-        s3AsyncClient = createS3AsyncClient();
-        dynamoDBClient = createDynamoClient();
-
         System.out.println("S3 endpoint:       " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
         System.out.println("DynamoDB endpoint: " + localStackContainer.getEndpointOverride(LocalStackContainer.Service.DYNAMODB).toString());
 
@@ -195,9 +174,9 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
         DistributedQueryRunner distributedQueryRunner = SleeperQueryRunner.createSleeperQueryRunner(
                 extraPropertiesForQueryRunner,
                 sleeperConfig,
-                s3Client,
-                s3AsyncClient,
-                dynamoDBClient,
+                buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard()),
+                buildAwsV2Client(localStackContainer, Service.S3, S3AsyncClient.builder()),
+                buildAwsV1Client(localStackContainer, Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard()),
                 hadoopConfigurationProvider);
         queryAssertions = new QueryAssertions(distributedQueryRunner);
     }
@@ -205,10 +184,6 @@ public class PopulatedSleeperExternalResource implements BeforeAllCallback, Afte
     @Override
     public void afterAll(ExtensionContext context) {
         this.queryAssertions.close();
-        this.s3Client.shutdown();
-        this.dynamoDBClient.shutdown();
-        this.localStackContainer.stop();
-
         // The Hadoop file system maintains a cache of the file system object to use. The S3AFileSystem object
         // retains the endpoint URL and so the cache needs to be cleared whenever the localstack instance changes.
         try {

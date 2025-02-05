@@ -16,22 +16,12 @@
 
 package sleeper.clients.status.update;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -41,6 +31,7 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableAlreadyExistsException;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -50,7 +41,6 @@ import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -58,29 +48,22 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
-@Testcontainers
-public class AddTableIT {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+public class AddTableIT extends LocalStackTestBase {
 
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
-    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
-    private final Configuration configuration = getHadoopConfiguration(localStackContainer);
+    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+
     @TempDir
     private Path tempDir;
 
     @BeforeEach
     void setUp() {
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 
     @Test
@@ -95,7 +78,7 @@ public class AddTableIT {
         TableProperties foundProperties = propertiesStore.loadByName(tableProperties.get(TABLE_NAME));
         assertThat(foundProperties).isEqualTo(tableProperties);
         assertThat(foundProperties.get(TABLE_ID)).isNotEmpty();
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3, dynamoDB, configuration).getStateStore(foundProperties);
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(foundProperties);
         assertThat(stateStore.getAllPartitions())
                 .containsExactlyElementsOf(new PartitionsBuilder(schema)
                         .rootFirst("root")
@@ -135,7 +118,7 @@ public class AddTableIT {
         addTable(tableProperties);
 
         // Then
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3, dynamoDB, configuration).getStateStore(tableProperties);
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
         assertThat(stateStore.getAllPartitions())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "parentPartitionId", "childPartitionIds")
                 .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
@@ -145,6 +128,6 @@ public class AddTableIT {
     }
 
     private void addTable(TableProperties tableProperties) throws IOException {
-        new AddTable(s3, dynamoDB, instanceProperties, tableProperties, configuration).run();
+        new AddTable(s3Client, dynamoClient, instanceProperties, tableProperties, hadoopConf).run();
     }
 }

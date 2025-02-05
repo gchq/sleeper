@@ -16,25 +16,15 @@
 
 package sleeper.clients.status.update;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -49,6 +39,7 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecords;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
@@ -63,7 +54,6 @@ import java.util.stream.Stream;
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -73,31 +63,23 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
-@Testcontainers
-public class DeleteTableIT {
+public class DeleteTableIT extends LocalStackTestBase {
     @TempDir
     private Path tempDir;
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
 
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key1");
-    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
-    private final Configuration conf = getHadoopConfiguration(localStackContainer);
+    private final TablePropertiesStore propertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private String inputFolderName;
 
     @BeforeEach
     void setUp() throws IOException {
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         inputFolderName = createTempDirectory(tempDir, null).toString();
     }
 
@@ -180,7 +162,7 @@ public class DeleteTableIT {
                 new Record(Map.of("key1", 100L))));
         FileReference rootFile = result.getFileReferenceList().get(0);
 
-        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3, dynamoDB, conf)
+        DynamoDBTransactionLogSnapshotCreator.from(instanceProperties, table, s3Client, dynamoClient, hadoopConf)
                 .createSnapshot();
 
         List<String> tableFilesInS3 = streamTableObjects(table)
@@ -213,8 +195,8 @@ public class DeleteTableIT {
     }
 
     private void deleteTable(String tableName) throws Exception {
-        new DeleteTable(instanceProperties, s3, propertiesStore,
-                StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf))
+        new DeleteTable(instanceProperties, s3Client, propertiesStore,
+                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
                 .delete(tableName);
     }
 
@@ -227,16 +209,16 @@ public class DeleteTableIT {
     }
 
     private StateStore createStateStore(TableProperties tableProperties) {
-        return new StateStoreFactory(instanceProperties, s3, dynamoDB, conf).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
     }
 
     private IngestResult ingestRecords(TableProperties tableProperties, List<Record> records) throws Exception {
         IngestFactory factory = IngestFactory.builder()
                 .objectFactory(ObjectFactory.noUserJars())
                 .localDir(inputFolderName)
-                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf))
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
                 .instanceProperties(instanceProperties)
-                .hadoopConfiguration(conf)
+                .hadoopConfiguration(hadoopConf)
                 .build();
 
         IngestRecords ingestRecords = factory.createIngestRecords(tableProperties);
@@ -248,7 +230,7 @@ public class DeleteTableIT {
     }
 
     private Stream<S3ObjectSummary> streamTableObjects(TableProperties tableProperties) {
-        return s3.listObjects(new ListObjectsRequest()
+        return s3Client.listObjects(new ListObjectsRequest()
                 .withBucketName(instanceProperties.get(DATA_BUCKET))
                 .withPrefix(tableProperties.get(TABLE_ID) + "/"))
                 .getObjectSummaries().stream()

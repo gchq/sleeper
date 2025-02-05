@@ -17,10 +17,10 @@ package sleeper.core.tracker.compaction.job;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.job.run.JobRun;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -77,13 +77,13 @@ public class CompactionJobStatusTaskIdAssignedTest {
                         Instant.parse("2022-10-12T11:29:00.000Z")));
     }
 
-    private static List<ProcessRun> runsWithTaskIds(String... taskIds) {
+    private static List<JobRun> runsWithTaskIds(String... taskIds) {
         return Stream.of(taskIds)
                 .map(CompactionJobStatusTaskIdAssignedTest::runWithTaskId)
                 .collect(Collectors.toList());
     }
 
-    private static ProcessRun runWithTaskId(String taskId) {
+    private static JobRun runWithTaskId(String taskId) {
         return startedCompactionRun(taskId, Instant.now());
     }
 }

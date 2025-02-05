@@ -38,15 +38,15 @@ import sleeper.core.properties.PropertiesReloader;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
-import sleeper.ingest.core.task.IngestTask;
-import sleeper.ingest.core.task.IngestTaskStatusStore;
+import sleeper.ingest.core.IngestTask;
 import sleeper.ingest.runner.impl.partitionfilewriter.AsyncS3PartitionFileWriterFactory;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
@@ -110,18 +110,18 @@ public class ECSIngestTaskRunner {
             S3AsyncClient s3AsyncClient, Configuration hadoopConfiguration) {
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, hadoopConfiguration);
-        IngestTaskStatusStore taskStore = IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
-        IngestJobStatusStore jobStore = IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, instanceProperties);
+        IngestTaskTracker taskTracker = IngestTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+        IngestJobTracker jobTracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
         PropertiesReloader propertiesReloader = S3PropertiesReloader.ifConfigured(
                 s3Client, instanceProperties, tablePropertiesProvider);
         IngestJobRunner ingestJobRunner = new IngestJobRunner(objectFactory, instanceProperties, tablePropertiesProvider,
-                propertiesReloader, stateStoreProvider, jobStore, taskId, localDir,
+                propertiesReloader, stateStoreProvider, jobTracker, taskId, localDir,
                 s3Client, s3AsyncClient, sqsClient, hadoopConfiguration, Instant::now);
         IngestJobQueueConsumer queueConsumer = new IngestJobQueueConsumer(
                 sqsClient, cloudWatchClient, instanceProperties, hadoopConfiguration,
-                new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobStore);
+                new DynamoDBTableIndex(instanceProperties, dynamoDBClient), jobTracker);
         return new IngestTask(() -> UUID.randomUUID().toString(), Instant::now,
-                queueConsumer, ingestJobRunner, jobStore, taskStore, taskId);
+                queueConsumer, ingestJobRunner, jobTracker, taskTracker, taskId);
     }
 
     private static Configuration ingestHadoopConfiguration(InstanceProperties instanceProperties) {

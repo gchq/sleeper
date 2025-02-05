@@ -1,0 +1,56 @@
+{
+  "tableId": "test-table",
+  "transactionType": "INITIALISE_PARTITIONS",
+  "transaction": {
+    "partitions": [
+      {
+        "partitionId": "root",
+        "isLeafPartition": false,
+        "childPartitionIds": [
+          "L",
+          "R"
+        ],
+        "region": {
+          "key": {
+            "min": -9223372036854775808,
+            "minInclusive": true,
+            "maxInclusive": false
+          },
+          "stringsBase64Encoded": true
+        },
+        "dimension": 0
+      },
+      {
+        "partitionId": "L",
+        "isLeafPartition": true,
+        "parentPartitionId": "root",
+        "childPartitionIds": [],
+        "region": {
+          "key": {
+            "min": -9223372036854775808,
+            "minInclusive": true,
+            "max": 50,
+            "maxInclusive": false
+          },
+          "stringsBase64Encoded": true
+        },
+        "dimension": -1
+      },
+      {
+        "partitionId": "R",
+        "isLeafPartition": true,
+        "parentPartitionId": "root",
+        "childPartitionIds": [],
+        "region": {
+          "key": {
+            "min": 50,
+            "minInclusive": true,
+            "maxInclusive": false
+          },
+          "stringsBase64Encoded": true
+        },
+        "dimension": -1
+      }
+    ]
+  }
+}

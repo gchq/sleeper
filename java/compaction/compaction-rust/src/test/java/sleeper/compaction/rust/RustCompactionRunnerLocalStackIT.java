@@ -15,32 +15,28 @@
  */
 package sleeper.compaction.rust;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-import software.amazon.awssdk.services.s3.S3Client;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.CompactionRunner;
 import sleeper.compaction.rust.RustCompactionRunner.AwsConfig;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.core.record.process.RecordsProcessed;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.table.TableFilePaths;
+import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.localstack.test.SleeperLocalStackContainer;
 import sleeper.parquet.record.ParquetReaderIterator;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.parquet.record.RecordReadSupport;
@@ -62,15 +58,8 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
-import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
-@Testcontainers
-public class RustCompactionRunnerLocalStackIT {
-
-    @Container
-    private static final LocalStackContainer CONTAINER = new LocalStackContainer(
-            DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(S3);
+public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
@@ -80,9 +69,7 @@ public class RustCompactionRunnerLocalStackIT {
 
     @BeforeEach
     void setUp() {
-        try (S3Client s3 = buildAwsV2Client(CONTAINER, S3, S3Client.builder())) {
-            s3.createBucket(builder -> builder.bucket(instanceProperties.get(DATA_BUCKET)));
-        }
+        createBucket(instanceProperties.get(DATA_BUCKET));
     }
 
     @Test
@@ -119,11 +106,12 @@ public class RustCompactionRunnerLocalStackIT {
     }
 
     private static AwsConfig createAwsConfig() {
+        LocalStackContainer container = SleeperLocalStackContainer.INSTANCE;
         return AwsConfig.builder()
-                .region(CONTAINER.getRegion())
-                .endpoint(CONTAINER.getEndpointOverride(S3).toString())
-                .accessKey(CONTAINER.getAccessKey())
-                .secretKey(CONTAINER.getSecretKey())
+                .region(container.getRegion())
+                .endpoint(container.getEndpointOverride(S3).toString())
+                .accessKey(container.getAccessKey())
+                .secretKey(container.getSecretKey())
                 .allowHttp(true)
                 .build();
     }
@@ -131,16 +119,15 @@ public class RustCompactionRunnerLocalStackIT {
     private String writeFileForPartition(String partitionId, List<Record> records) throws Exception {
         Schema schema = tableProperties.getSchema();
         Sketches sketches = Sketches.from(schema);
-        Configuration configuration = getHadoopConfiguration(CONTAINER);
         String dataFile = buildPartitionFilePath(partitionId, UUID.randomUUID().toString() + ".parquet");
-        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, configuration)) {
+        try (ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(new org.apache.hadoop.fs.Path(dataFile), schema, hadoopConf)) {
             for (Record record : records) {
                 writer.write(record);
                 sketches.update(record);
             }
         }
         org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(dataFile);
-        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, configuration);
+        new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, hadoopConf);
         return dataFile;
     }
 
@@ -157,7 +144,7 @@ public class RustCompactionRunnerLocalStackIT {
         List<Record> results = new ArrayList<>();
         try (ParquetReaderIterator reader = new ParquetReaderIterator(
                 ParquetReader.builder(new RecordReadSupport(schema), new org.apache.hadoop.fs.Path(filename))
-                        .withConf(getHadoopConfiguration(CONTAINER)).build())) {
+                        .withConf(hadoopConf).build())) {
             while (reader.hasNext()) {
                 results.add(new Record(reader.next()));
             }
@@ -167,6 +154,6 @@ public class RustCompactionRunnerLocalStackIT {
 
     private Sketches readSketches(Schema schema, String filename) throws IOException {
         org.apache.hadoop.fs.Path sketchesPath = SketchesSerDeToS3.sketchesPathForDataFile(filename);
-        return new SketchesSerDeToS3(schema).loadFromHadoopFS(sketchesPath, getHadoopConfiguration(CONTAINER));
+        return new SketchesSerDeToS3(schema).loadFromHadoopFS(sketchesPath, hadoopConf);
     }
 }

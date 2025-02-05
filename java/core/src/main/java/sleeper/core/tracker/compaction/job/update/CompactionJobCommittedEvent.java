@@ -19,7 +19,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * An event for when a compaction job was committed to the state store. Used in the compaction job status store.
+ * An event for when a compaction job was committed to the state store. Used in the compaction job tracker.
  */
 public class CompactionJobCommittedEvent {
     private final String jobId;

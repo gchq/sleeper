@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.drivers.statestore;
 
-import com.amazonaws.services.s3.AmazonS3;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.sqs.SqsClient;
@@ -25,11 +24,12 @@ import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.ingest.core.job.commit.IngestAddFilesCommitRequest;
-import sleeper.statestore.committer.StateStoreCommitRequest;
-import sleeper.statestore.committer.StateStoreCommitRequestDeserialiser;
+import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
+import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -44,7 +44,6 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
@@ -54,14 +53,12 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 public class AwsStateStoreCommitterDriverIT {
 
     private SqsClient sqs;
-    private AmazonS3 s3;
     private SystemTestInstanceContext instance;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
         sleeper.connectToInstance(LOCALSTACK_MAIN);
         sqs = drivers.clients().getSqsV2();
-        s3 = drivers.clients().getS3();
         instance = context.instance();
     }
 
@@ -78,10 +75,8 @@ public class AwsStateStoreCommitterDriverIT {
         assertThat(receiveCommitRequests(sleeper))
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactly(tuple(tableId,
-                        StateStoreCommitRequest.forIngestAddFiles(IngestAddFilesCommitRequest.builder()
-                                .tableId(tableId)
-                                .fileReferences(List.of(file))
-                                .build())));
+                        StateStoreCommitRequest.create(tableId,
+                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))))));
     }
 
     @Test
@@ -100,10 +95,8 @@ public class AwsStateStoreCommitterDriverIT {
         assertThat(receiveCommitRequestsForBatches(sleeper, 2))
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactlyInAnyOrderElementsOf(files.stream().map(file -> tuple(tableId,
-                        StateStoreCommitRequest.forIngestAddFiles(IngestAddFilesCommitRequest.builder()
-                                .tableId(tableId)
-                                .fileReferences(List.of(file))
-                                .build())))
+                        StateStoreCommitRequest.create(tableId,
+                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))))))
                         .collect(toUnmodifiableList()));
     }
 
@@ -145,8 +138,7 @@ public class AwsStateStoreCommitterDriverIT {
     }
 
     private StateStoreCommitRequest readCommitRequest(Message message) {
-        return new StateStoreCommitRequestDeserialiser(instance.getTablePropertiesProvider(),
-                key -> s3.getObjectAsString(instance.getInstanceProperties().get(DATA_BUCKET), key))
+        return new StateStoreCommitRequestSerDe(instance.getTablePropertiesProvider())
                 .fromJson(message.body());
     }
 

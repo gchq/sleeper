@@ -17,18 +17,18 @@
 package sleeper.clients.status.report.compaction.job;
 
 import sleeper.clients.status.report.job.AverageRecordRateReport;
-import sleeper.clients.status.report.job.StandardProcessRunReporter;
+import sleeper.clients.status.report.job.StandardJobRunReporter;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.record.process.AverageRecordRate;
-import sleeper.core.record.process.status.ProcessRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
+import sleeper.core.tracker.job.run.AverageRecordRate;
+import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.util.DurationStatistics;
 
 import java.io.PrintStream;
@@ -37,8 +37,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.clients.status.report.job.StandardProcessRunReporter.formatDurationString;
-import static sleeper.clients.status.report.job.StandardProcessRunReporter.printUpdateType;
+import static sleeper.clients.status.report.job.StandardJobRunReporter.formatDurationString;
+import static sleeper.clients.status.report.job.StandardJobRunReporter.printUpdateType;
 
 public class StandardCompactionJobStatusReporter implements CompactionJobStatusReporter {
 
@@ -47,7 +47,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
     private final TableField jobIdField;
     private final TableField partitionIdField;
     private final TableField inputFilesCount;
-    private final StandardProcessRunReporter runReporter;
+    private final StandardJobRunReporter runReporter;
     private final TableField commitTimeField;
     private final List<TableFieldDefinition> finishedFields;
     private final TableWriterFactory tableFactory;
@@ -66,7 +66,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         jobIdField = tableFactoryBuilder.addField("JOB_ID");
         inputFilesCount = tableFactoryBuilder.addNumericField("INPUT_FILES");
         partitionIdField = tableFactoryBuilder.addField("PARTITION_ID");
-        StandardProcessRunReporter.Builder runReporterBuilder = StandardProcessRunReporter.withTable(tableFactoryBuilder)
+        StandardJobRunReporter.Builder runReporterBuilder = StandardJobRunReporter.withTable(tableFactoryBuilder)
                 .addProgressFields();
         commitTimeField = tableFactoryBuilder.addField(commitTimeFieldDef);
         runReporter = runReporterBuilder.addResultsFields().build(out);
@@ -125,7 +125,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.println("--------------------------");
     }
 
-    private void printJobRun(ProcessRun run) {
+    private void printJobRun(JobRun run) {
         runReporter.printProcessJobRunWithUpdatePrinter(run,
                 printUpdateType(CompactionJobCommittedStatus.class, committedStatus -> printCommitStatus(run, committedStatus)));
         CompactionJobStatusType runStatusType = CompactionJobStatusType.statusTypeOfJobRun(run);
@@ -136,7 +136,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         }
     }
 
-    private void printCommitStatus(ProcessRun run, CompactionJobCommittedStatus committedStatus) {
+    private void printCommitStatus(JobRun run, CompactionJobCommittedStatus committedStatus) {
         out.printf("State store commit time: %s%n", committedStatus.getCommitTime());
         if (run.isFinished()) {
             Duration delay = Duration.between(run.getFinishTime(), committedStatus.getCommitTime());

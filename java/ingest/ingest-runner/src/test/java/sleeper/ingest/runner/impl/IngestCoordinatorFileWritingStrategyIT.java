@@ -16,23 +16,13 @@
 
 package sleeper.ingest.runner.impl;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.commons.text.RandomStringGenerator;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -48,6 +38,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.runner.testutils.TestIngestType;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -65,7 +56,6 @@ import java.util.stream.LongStream;
 import static java.nio.file.Files.createTempDirectory;
 import static java.util.stream.LongStream.range;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -81,18 +71,12 @@ import static sleeper.ingest.runner.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
 import static sleeper.ingest.runner.testutils.TestIngestType.directWriteBackedByArrowWriteToLocalFile;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 
-@Testcontainers
-public class IngestCoordinatorFileWritingStrategyIT {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
+public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
+
     @TempDir
     public Path temporaryFolder;
-    private final Configuration hadoopConfiguration = getHadoopConfiguration(localStackContainer);
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
+
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
@@ -101,13 +85,13 @@ public class IngestCoordinatorFileWritingStrategyIT {
 
     private StateStore createStateStore(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(instanceProperties, s3, dynamoDB, hadoopConfiguration).getStateStore(tableProperties);
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
     }
 
     @BeforeEach
     public void before() {
-        s3.createBucket(dataBucketName);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
+        createBucket(dataBucketName);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     @Nested
@@ -144,12 +128,12 @@ public class IngestCoordinatorFileWritingStrategyIT {
             FileReference rootFile = fileReferenceFactory.rootFile(
                     ingestType.getFilePrefix(parameters) + "/data/partition_root/rootFile.parquet", 100L);
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
-                    rootFile, hadoopConfiguration);
+                    rootFile, hadoopConf);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(rootFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -181,12 +165,12 @@ public class IngestCoordinatorFileWritingStrategyIT {
             FileReference lFile = fileReferenceFactory.partitionFile("L",
                     ingestType.getFilePrefix(parameters) + "/data/partition_L/lFile.parquet", 25L);
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
-                    lFile, hadoopConfiguration);
+                    lFile, hadoopConf);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(lFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -227,12 +211,12 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     ingestType.getFilePrefix(parameters) + "/data/partition_RR/rrFile.parquet", 20L);
 
             List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
-                    List.of(llFile, lrFile, rlFile, rrFile), hadoopConfiguration);
+                    List.of(llFile, lrFile, rlFile, rrFile), hadoopConf);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(llFile, lrFile, rlFile, rrFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -279,12 +263,12 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .onlyContainsDataForThisPartition(true)
                     .build();
             List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
-                    List.of(leftFile1, rightFile1, leftFile2, rightFile2), hadoopConfiguration);
+                    List.of(leftFile1, rightFile1, leftFile2, rightFile2), hadoopConf);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, rightFile1, leftFile2, rightFile2);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
     }
@@ -324,12 +308,12 @@ public class IngestCoordinatorFileWritingStrategyIT {
                     .onlyContainsDataForThisPartition(true)
                     .build();
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
-                    rootFile, hadoopConfiguration);
+                    rootFile, hadoopConf);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(rootFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -362,12 +346,12 @@ public class IngestCoordinatorFileWritingStrategyIT {
             FileReference lReference = fileReferenceFactory.partitionFile("L", rootFilename, 25L);
 
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
-                    lReference, hadoopConfiguration);
+                    lReference, hadoopConf);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(lReference);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -406,12 +390,12 @@ public class IngestCoordinatorFileWritingStrategyIT {
             FileReference rrReference = accurateSplitFileReference(rootFile, "RR", 20L, stateStoreUpdateTime);
 
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
-                    rootFile, hadoopConfiguration);
+                    rootFile, hadoopConf);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(llReference, lrReference, rlReference, rrReference);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
 
@@ -454,12 +438,12 @@ public class IngestCoordinatorFileWritingStrategyIT {
             FileReference leftFile2 = accurateSplitFileReference(rootFile2, "L", 6L, stateStoreUpdateTime);
             FileReference rightFile2 = accurateSplitFileReference(rootFile2, "R", 4L, stateStoreUpdateTime);
             List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
-                    List.of(rootFile1, rootFile2), hadoopConfiguration);
+                    List.of(rootFile1, rootFile2), hadoopConf);
 
             assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(leftFile1, rightFile1, leftFile2, rightFile2);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
-            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+            assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                     .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
         }
     }
@@ -503,7 +487,7 @@ public class IngestCoordinatorFileWritingStrategyIT {
         return IngestCoordinatorTestParameters
                 .builder()
                 .temporaryFolder(temporaryFolder)
-                .hadoopConfiguration(hadoopConfiguration)
+                .hadoopConfiguration(hadoopConf)
                 .dataBucketName(dataBucketName)
                 .tableId(tableProperties.get(TABLE_ID))
                 .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));

@@ -2,7 +2,62 @@ Releases
 =========
 
 This page documents the releases of Sleeper. Performance figures for each release
-are available [here](docs/13-system-tests.md#performance-benchmarks)
+are available [here](docs/development/system-tests.md#performance-benchmarks)
+
+## Version 0.28.0
+
+*Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
+to version 0.28.0*
+
+This includes further batching to allow for much larger numbers of compaction jobs.
+
+Compaction:
+- Added a step to combine commits of finished compactions into one transaction in the state store
+  - This is done in a new lambda and SQS queue, and enabled by default
+- Added an option to disable updating the job tracker when a compaction is committed to the state store asynchronously
+- Reduced number of S3 GET requests made during DataFusion compaction
+- Added further metrics in logging during DataFusion compaction
+
+State store:
+- Improved throughput in the state store committer by avoiding writes to S3
+  - Transactions are now created before being sent to the committer, rather than derived from separate requests
+  - Large transactions are uploaded to S3 before being sent
+
+Bulk import:
+- Switched bulk import on EMR to run on Graviton by default
+
+Deployment:
+- Aligned configuration of GC lambda timeout to use seconds instead of minutes, similar to other lambdas
+- Added descriptions to some schedules and alarms which did not have one, this is visible in the AWS console
+
+Reporting:
+- The stores used to generate reports are now referred to as job trackers and task trackers rather than status stores
+- Job started times are now only reported once, rather than duplicated in finished and failed status updates
+
+Documentation:
+- Reorganised documentation into folders
+- Added usage guide
+- Updated out of date information under common problems and their solutions
+- Added an explanation of record batch types in standard ingest
+- Added further information about environment deployment with `sleeper environment` CLI commands
+
+Build:
+- Upgraded LocalStack to latest version
+- Moved example iterator classes to their own module and created an example user jar that includes them
+
+Misc:
+- Efficiency improvements to library configuration for working with Parquet files in DataFusion and Java
+- Split configuration property for queue visibility timeout into two, for ingest and query results
+
+System tests:
+- Scheduled rules for background processes are now enabled during system tests
+  - Some system tests handle this by taking tables offline or online
+- Some improvements to test isolation and preparation for concurrent execution
+- Added system tests for custom iterators defined in a user jar
+
+Bugfixes:
+- Prevented an intermittent failure during teardown where the CDK tried to delete managed policies before the roles that use them
+- Dev container no longer requires AWS, Maven or SSH configuration folders to exist before it starts
 
 ## Version 0.27.0
 
@@ -313,7 +368,7 @@ Tables:
 - Added ability to take a table offline and put a table online using the scripts `scripts/utility/takeTableOffline.sh`
 and `scripts/utility/putTableOnline.sh` respectively. Partition splitting and compactions will not be performed on
 offline tables, but you will still be able to perform ingests and queries against them.
-See the documentation [here](docs/12-design.md#tables) for more information.
+See the documentation [here](docs/design.md#tables) for more information.
 
 Compaction:
 
@@ -344,7 +399,7 @@ This contains the following improvements:
 Compactions:
 
 - The concept of splitting compactions has been removed. More information about how splits are now done can be
-  found [here](docs/12-design.md#compactions).
+  found [here](docs/design.md#compactions).
 - Compactions now use references and the partitions they exist in to only read and compact data within that partition.
 - File splitting now happens in the compaction job creation lambda, before compaction jobs are created.
 - Updated javadoc for `CompactionStrategy` and `LeafStrategy` classes.
@@ -353,7 +408,7 @@ Compactions:
 State store:
 
 - Files are now split by storing references to them in the state store. More information about how file references are
-  stored can be found [here](docs/12-design.md#state-store).
+  stored can be found [here](docs/design.md#state-store).
 - `FileInfo` has been renamed to `FileReference`.
 - Renamed several state store methods to reflect new file reference changes.
 - Improved logging in the `S3StateStore` update process.
@@ -591,8 +646,8 @@ This contains the following improvements:
 
 Ingest batcher:
 
-- Added a new system for batching files into ingest jobs. See [docs/05-ingest.md](./docs/05-ingest.md)
-  and [docs/10-design.md](./docs/12-design.md) for more information.
+- Added a new system for batching files into ingest jobs. See [docs/usage/ingest.md](./docs/usage/ingest.md)
+  and [docs/design.md](./docs/design.md) for more information.
 
 Bulk Import:
 
@@ -629,7 +684,7 @@ This contains the following improvements:
 
 Trino:
 
-- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/09-trino.md). This is an
+- Added the ability to query Sleeper tables using Trino, see the documentation [here](docs/usage/trino.md). This is an
   experimental feature.
 
 Bulk Import:

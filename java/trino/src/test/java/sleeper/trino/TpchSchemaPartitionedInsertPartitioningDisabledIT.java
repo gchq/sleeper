@@ -60,8 +60,8 @@ public class TpchSchemaPartitionedInsertPartitioningDisabledIT {
     private static final Map<String, String> EXTRA_PROPERTIES_FOR_QUERY_RUNNER = ImmutableMap.of("task.writer-count", "4");
     private static final SleeperConfig SLEEPER_CONFIG = (new SleeperConfig()).setEnableTrinoPartitioning(false);
     @RegisterExtension
-    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE = new PopulatedSleeperExternalResource(EXTRA_PROPERTIES_FOR_QUERY_RUNNER, TABLE_DEFINITIONS,
-            SLEEPER_CONFIG);
+    public static final PopulatedSleeperExternalResource POPULATED_SLEEPER_EXTERNAL_RESOURCE = new PopulatedSleeperExternalResource(
+            EXTRA_PROPERTIES_FOR_QUERY_RUNNER, TABLE_DEFINITIONS, SLEEPER_CONFIG);
 
     private static QueryAssertions assertions;
 

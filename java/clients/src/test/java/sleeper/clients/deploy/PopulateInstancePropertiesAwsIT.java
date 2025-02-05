@@ -15,22 +15,13 @@
  */
 package sleeper.clients.deploy;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
-import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.securitytoken.model.GetCallerIdentityRequest;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.regions.Region;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.deploy.PopulateInstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.Map;
 
@@ -47,19 +38,7 @@ import static sleeper.core.properties.instance.EKSProperty.BULK_IMPORT_REPO;
 import static sleeper.core.properties.instance.EMRServerlessProperty.BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO;
 import static sleeper.core.properties.instance.IngestProperty.ECR_INGEST_REPO;
 
-@Testcontainers
-public class PopulateInstancePropertiesAwsIT {
-
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.STS);
-    private final AWSSecurityTokenService sts = AWSSecurityTokenServiceClientBuilder.standard()
-            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                    localStackContainer.getEndpointOverride(LocalStackContainer.Service.STS).toString(),
-                    localStackContainer.getRegion()))
-            .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(
-                    localStackContainer.getAccessKey(), localStackContainer.getSecretKey())))
-            .build();
+public class PopulateInstancePropertiesAwsIT extends LocalStackTestBase {
 
     @Test
     void shouldPopulateInstancePropertiesCorrectly() {
@@ -79,14 +58,14 @@ public class PopulateInstancePropertiesAwsIT {
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
-        expected.set(ACCOUNT, sts.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
+        expected.set(ACCOUNT, stsClient.getCallerIdentity(new GetCallerIdentityRequest()).getAccount());
         expected.set(REGION, localStackContainer.getRegion());
 
         assertThat(properties).isEqualTo(expected);
     }
 
     private PopulateInstanceProperties.Builder populateInstancePropertiesBuilder() {
-        return PopulateInstancePropertiesAws.builder(sts, () -> Region.of(localStackContainer.getRegion()))
+        return PopulateInstancePropertiesAws.builder(stsClient, () -> Region.of(localStackContainer.getRegion()))
                 .instanceId("test-instance").vpcId("some-vpc").subnetIds("some-subnet");
     }
 }

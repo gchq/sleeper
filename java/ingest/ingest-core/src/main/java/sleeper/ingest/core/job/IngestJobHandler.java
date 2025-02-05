@@ -31,7 +31,7 @@ public interface IngestJobHandler {
      * state store.
      *
      * @param  job                       the ingest job to run
-     * @param  jobRunId                  the run ID for tracking the job in the status store
+     * @param  jobRunId                  the run ID for correlation in the job tracker
      * @return                           an {@link IngestResult} object
      * @throws IteratorCreationException if the Sleeper table iterator could not be created
      * @throws StateStoreException       if an error occurs adding the files to the state store

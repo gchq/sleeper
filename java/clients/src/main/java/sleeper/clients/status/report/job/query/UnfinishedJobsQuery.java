@@ -18,8 +18,8 @@ package sleeper.clients.status.report.job.query;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.util.List;
 
@@ -36,7 +36,7 @@ public class UnfinishedJobsQuery implements JobQuery {
     }
 
     @Override
-    public List<IngestJobStatus> run(IngestJobStatusStore tracker) {
+    public List<IngestJobStatus> run(IngestJobTracker tracker) {
         return tracker.getUnfinishedJobs(tableId);
     }
 

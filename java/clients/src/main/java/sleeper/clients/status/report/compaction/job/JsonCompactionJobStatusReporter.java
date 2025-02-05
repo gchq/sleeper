@@ -18,26 +18,26 @@ package sleeper.clients.status.report.compaction.job;
 
 import com.google.gson.Gson;
 
-import sleeper.clients.status.report.job.JsonProcessRunTime;
-import sleeper.clients.status.report.job.JsonRecordsProcessedSummary;
+import sleeper.clients.status.report.job.JsonJobRunSummary;
+import sleeper.clients.status.report.job.JsonJobRunTime;
 import sleeper.clients.status.report.job.query.JobQuery;
 import sleeper.clients.util.ClientsGsonConfig;
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
-import sleeper.core.record.process.status.ProcessRuns;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobUpdateTypeInRun;
+import sleeper.core.tracker.job.run.JobRunSummary;
+import sleeper.core.tracker.job.run.JobRunTime;
+import sleeper.core.tracker.job.run.JobRuns;
 
 import java.io.PrintStream;
 import java.util.List;
 
-import static sleeper.clients.status.report.job.JsonProcessRunReporter.processRunsJsonSerializer;
+import static sleeper.clients.status.report.job.JsonJobRunReporter.jobRunsJsonSerializer;
 
 public class JsonCompactionJobStatusReporter implements CompactionJobStatusReporter {
     private final Gson gson = ClientsGsonConfig.standardBuilder()
-            .registerTypeAdapter(RecordsProcessedSummary.class, JsonRecordsProcessedSummary.serializer())
-            .registerTypeAdapter(ProcessRunTime.class, JsonProcessRunTime.serializer())
-            .registerTypeAdapter(ProcessRuns.class, processRunsJsonSerializer(CompactionJobUpdateTypeInRun::typeOfUpdateInRun))
+            .registerTypeAdapter(JobRunSummary.class, JsonJobRunSummary.serializer())
+            .registerTypeAdapter(JobRunTime.class, JsonJobRunTime.serializer())
+            .registerTypeAdapter(JobRuns.class, jobRunsJsonSerializer(CompactionJobUpdateTypeInRun::typeOfUpdateInRun))
             .create();
     private final PrintStream out;
 

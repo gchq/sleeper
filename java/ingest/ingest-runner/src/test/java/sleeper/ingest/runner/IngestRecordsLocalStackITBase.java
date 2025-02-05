@@ -16,38 +16,23 @@
 
 package sleeper.ingest.runner;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import org.junit.jupiter.api.BeforeEach;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
 import sleeper.core.statestore.StateStore;
+import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
-
-@Testcontainers
 public class IngestRecordsLocalStackITBase extends IngestRecordsTestBase {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-
-    private final AmazonDynamoDB dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
 
     @BeforeEach
     void setUp() {
-        new S3StateStoreCreator(instanceProperties, dynamoDBClient).create();
+        new S3StateStoreCreator(instanceProperties, SleeperLocalStackClients.DYNAMO_CLIENT).create();
     }
 
     protected StateStore initialiseStateStore() {
-        StateStore stateStore = new S3StateStore(instanceProperties, tableProperties, dynamoDBClient,
-                getHadoopConfiguration(localStackContainer));
+        StateStore stateStore = new S3StateStore(instanceProperties, tableProperties,
+                SleeperLocalStackClients.DYNAMO_CLIENT, SleeperLocalStackClients.HADOOP_CONF);
         stateStore.initialise();
         return stateStore;
     }

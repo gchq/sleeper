@@ -31,3 +31,4 @@ cp -r "$MAVEN_DIR/system-test/system-test-data-generation/target/system-test-dat
 cp -r "$MAVEN_DIR/system-test/system-test-data-generation/target/system-test-data-generation-${VERSION}-utility.jar"  "$JARS_DIR/system-test-data-generation-${VERSION}.jar"
 cp -r "$MAVEN_DIR/system-test/system-test-drivers/target/system-test-drivers-${VERSION}-utility.jar" "$JARS_DIR/system-test-${VERSION}-utility.jar"
 cp -r "$MAVEN_DIR/system-test/system-test-cdk/target/system-test-cdk-${VERSION}-utility.jar" "$JARS_DIR/system-test-cdk-${VERSION}.jar"
+cp -r "$MAVEN_DIR/example-iterators/target/example-iterators-${VERSION}-utility.jar" "$JARS_DIR/example-iterators-${VERSION}.jar"

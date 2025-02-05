@@ -33,11 +33,10 @@ import static sleeper.core.properties.validation.SleeperPropertyValueUtils.descr
  * Definitions of instance properties that are defaults for table properties.
  */
 public interface TableDefaultProperty {
-    UserDefinedInstanceProperty DEFAULT_S3A_READAHEAD_RANGE = Index.propertyBuilder("sleeper.default.fs.s3a.readahead.range")
-            .description("The readahead range set on the Hadoop configuration when reading Parquet files in a query\n" +
-                    "(see https://hadoop.apache.org/docs/current/hadoop-aws/tools/hadoop-aws/index.html).")
-            .defaultValue("64K")
-            .validationPredicate(SleeperPropertyValueUtils::isValidHadoopLongBytes)
+    UserDefinedInstanceProperty DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED = Index.propertyBuilder("sleeper.default.parquet.query.column.index.enabled")
+            .description("Default used during Parquet queries to determine whether the column indexes are used.")
+            .defaultValue("false")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_ROW_GROUP_SIZE = Index.propertyBuilder("sleeper.default.rowgroup.size")
             .description("The size of the row group in the Parquet files (default is 8MiB).")
@@ -82,6 +81,7 @@ public interface TableDefaultProperty {
             .defaultValue("2147483647")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+
     UserDefinedInstanceProperty DEFAULT_PARQUET_WRITER_VERSION = Index.propertyBuilder("sleeper.default.parquet.writer.version")
             .description("Used to set parquet.writer.version, see documentation here:\n" +
                     "https://github.com/apache/parquet-mr/blob/master/parquet-hadoop/README.md\n" +
@@ -291,6 +291,16 @@ public interface TableDefaultProperty {
             .description("This is the default for whether compaction tasks will commit finished jobs asynchronously " +
                     "via the state store committer, if asynchronous commit is enabled. Otherwise, compaction tasks " +
                     "will commit finished jobs directly to the state store.")
+            .defaultValue("true")
+            .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_COMPACTION_JOB_ASYNC_BATCHING = Index.propertyBuilder("sleeper.default.compaction.job.async.commit.batching")
+            .description("This property is the default for whether commits of compaction jobs are batched before " +
+                    "being sent to the state store commit queue to be applied by the committer lambda. If this property " +
+                    "is true and asynchronous commits are enabled then commits of compactions will be batched. If this " +
+                    "property is false and asynchronous commits are enabled then commits of compactions will not be " +
+                    "batched and will be sent directly to the committer lambda. This property can be overridden for " +
+                    "individual tables.")
             .defaultValue("true")
             .validationPredicate(SleeperPropertyValueUtils::isTrueOrFalse)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();

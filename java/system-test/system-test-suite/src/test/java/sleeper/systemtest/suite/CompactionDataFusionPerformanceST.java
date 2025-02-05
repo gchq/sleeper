@@ -38,7 +38,7 @@ import static sleeper.systemtest.configuration.SystemTestProperty.INGEST_MODE;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_RECORDS_PER_INGEST;
 import static sleeper.systemtest.configuration.SystemTestProperty.NUMBER_OF_WRITERS;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
-import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_ON_DATAFUSION;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_PERFORMANCE_DATAFUSION;
 import static sleeper.systemtest.suite.testutil.FileReferenceSystemTestHelper.numberOfRecordsIn;
 
 @SystemTest
@@ -47,7 +47,7 @@ public class CompactionDataFusionPerformanceST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstanceNoTables(COMPACTION_ON_DATAFUSION);
+        sleeper.connectToInstanceNoTables(COMPACTION_PERFORMANCE_DATAFUSION);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::compactionTasksAndJobs);
     }
 
@@ -70,7 +70,7 @@ public class CompactionDataFusionPerformanceST {
                 .waitForTotalFileReferences(110);
 
         // When
-        sleeper.compaction().putTableOnlineWaitForJobCreation(10).waitForTasks(10)
+        sleeper.compaction().putTableOnlineUntilJobsAreCreated(10).waitForTasks(10)
                 .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(30), Duration.ofHours(1)));
 
         // Then

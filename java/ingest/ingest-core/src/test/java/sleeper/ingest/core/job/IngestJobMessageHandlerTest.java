@@ -25,9 +25,9 @@ import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStatus;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,13 +37,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.jobStatus;
-import static sleeper.ingest.core.job.status.IngestJobStatusTestHelper.rejectedRun;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.rejectedRun;
 
 public class IngestJobMessageHandlerTest {
 
     private final TableIndex tableIndex = new InMemoryTableIndex();
-    private final IngestJobStatusStore ingestJobStatusStore = new InMemoryIngestJobStatusStore();
+    private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final TableStatus table = TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table");
     private final String tableId = table.getTableUniqueId();
 
@@ -74,8 +74,8 @@ public class IngestJobMessageHandlerTest {
                             .tableId("test-table-id")
                             .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
-            assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
+            assertThat(tracker.getInvalidJobs()).isEmpty();
+            assertThat(tracker.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
@@ -97,8 +97,8 @@ public class IngestJobMessageHandlerTest {
                             .tableId("test-table-id")
                             .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
-            assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
+            assertThat(tracker.getInvalidJobs()).isEmpty();
+            assertThat(tracker.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
@@ -121,8 +121,8 @@ public class IngestJobMessageHandlerTest {
                             .tableId("test-table-id")
                             .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
-            assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
+            assertThat(tracker.getInvalidJobs()).isEmpty();
+            assertThat(tracker.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
@@ -143,8 +143,8 @@ public class IngestJobMessageHandlerTest {
                             .tableId("test-table-id")
                             .files(List.of("file1.parquet", "file2.parquet"))
                             .build());
-            assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
+            assertThat(tracker.getInvalidJobs()).isEmpty();
+            assertThat(tracker.getAllJobs(tableId)).isEmpty();
         }
     }
 
@@ -169,8 +169,8 @@ public class IngestJobMessageHandlerTest {
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json))
                     .get().extracting(IngestJob::getTableName, IngestJob::getFiles)
                     .containsExactly("test-table", List.of("dir1/file1a.parquet", "dir1/file1b.parquet", "dir2/file2.parquet"));
-            assertThat(ingestJobStatusStore.getInvalidJobs()).isEmpty();
-            assertThat(ingestJobStatusStore.getAllJobs(tableId)).isEmpty();
+            assertThat(tracker.getInvalidJobs()).isEmpty();
+            assertThat(tracker.getAllJobs(tableId)).isEmpty();
         }
 
         @Test
@@ -188,13 +188,13 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expected = jobStatus("test-job-id",
+            IngestJobStatus expected = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Could not find one or more files"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
+            assertThat(tracker.getInvalidJobs())
                     .containsExactly(expected);
-            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(expected);
         }
 
@@ -213,12 +213,12 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expected = jobStatus("test-job-id",
+            IngestJobStatus expected = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Could not find one or more files"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs()).containsExactly(expected);
-            assertThat(ingestJobStatusStore.getAllJobs(tableId)).containsExactly(expected);
+            assertThat(tracker.getInvalidJobs()).containsExactly(expected);
+            assertThat(tracker.getAllJobs(tableId)).containsExactly(expected);
         }
     }
 
@@ -237,11 +237,11 @@ public class IngestJobMessageHandlerTest {
 
             // When / Then
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
+            assertThat(tracker.getInvalidJobs())
+                    .containsExactly(ingestJobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Error parsing JSON. Reason: End of input at line 1 column 2 path $.")));
-            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .isEmpty();
         }
 
@@ -259,11 +259,11 @@ public class IngestJobMessageHandlerTest {
 
             // When / Then
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
+            assertThat(tracker.getInvalidJobs())
+                    .containsExactly(ingestJobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Table not found")));
-            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .isEmpty();
         }
 
@@ -280,13 +280,13 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expected = jobStatus("test-job-id",
+            IngestJobStatus expected = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Missing property \"files\""));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
+            assertThat(tracker.getInvalidJobs())
                     .containsExactly(expected);
-            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(expected);
         }
 
@@ -305,11 +305,11 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expectedStatus = jobStatus("test-job-id",
+            IngestJobStatus expectedStatus = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Table not found"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
+            assertThat(tracker.getInvalidJobs())
                     .containsExactly(expectedStatus);
         }
 
@@ -328,11 +328,11 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expectedStatus = jobStatus("test-job-id",
+            IngestJobStatus expectedStatus = ingestJobStatus("test-job-id",
                     rejectedRun("test-job-id", json, validationTime,
                             "Table not found"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
+            assertThat(tracker.getInvalidJobs())
                     .containsExactly(expectedStatus);
         }
 
@@ -348,12 +348,12 @@ public class IngestJobMessageHandlerTest {
 
             // When / Then
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
-                    .containsExactly(jobStatus("test-job-id",
+            assertThat(tracker.getInvalidJobs())
+                    .containsExactly(ingestJobStatus("test-job-id",
                             rejectedRun("test-job-id", json, validationTime,
                                     "Missing property \"files\"",
                                     "Table not found")));
-            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .isEmpty();
         }
 
@@ -371,13 +371,13 @@ public class IngestJobMessageHandlerTest {
                     "}";
 
             // When / Then
-            IngestJobStatus expected = jobStatus("invalid-job-1",
+            IngestJobStatus expected = ingestJobStatus("invalid-job-1",
                     rejectedRun("invalid-job-1", json, validationTime,
                             "One of the files was null"));
             assertThat(ingestJobMessageHandler.deserialiseAndValidate(json)).isEmpty();
-            assertThat(ingestJobStatusStore.getInvalidJobs())
+            assertThat(tracker.getInvalidJobs())
                     .containsExactly(expected);
-            assertThat(ingestJobStatusStore.getAllJobs(tableId))
+            assertThat(tracker.getAllJobs(tableId))
                     .containsExactly(expected);
         }
     }
@@ -389,7 +389,7 @@ public class IngestJobMessageHandlerTest {
     private IngestJobMessageHandler.Builder<IngestJob> messageHandlerWithDirectories(Map<String, List<String>> directoryContents) {
         return IngestJobMessageHandler.forIngestJob()
                 .tableIndex(tableIndex)
-                .ingestJobStatusStore(ingestJobStatusStore)
+                .ingestJobTracker(tracker)
                 .expandDirectories(files -> expandDirFiles(files, directoryContents));
     }
 

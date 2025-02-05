@@ -30,8 +30,8 @@ import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobSerDe;
 import sleeper.ingest.runner.testutils.RecordGenerator;
-import sleeper.ingest.status.store.job.DynamoDBIngestJobStatusStoreCreator;
-import sleeper.ingest.status.store.task.DynamoDBIngestTaskStatusStoreCreator;
+import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
+import sleeper.ingest.tracker.task.DynamoDBIngestTaskTrackerCreator;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.nio.file.Paths;
@@ -52,14 +52,14 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
     private void runTask(String localDir, String taskId) throws Exception {
         ECSIngestTaskRunner.createIngestTask(
                 ObjectFactory.noUserJars(), instanceProperties, localDir, taskId,
-                s3, dynamoDB, sqs, cloudWatch, s3Async, hadoopConfiguration)
+                s3Client, dynamoClient, sqsClient, cloudWatchClient, s3AsyncClient, hadoopConf)
                 .run();
     }
 
     @BeforeEach
     void setUp() {
-        DynamoDBIngestTaskStatusStoreCreator.create(instanceProperties, dynamoDB);
-        DynamoDBIngestJobStatusStoreCreator.create(instanceProperties, dynamoDB);
+        DynamoDBIngestTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @Test
@@ -86,11 +86,11 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(tree,
                 actualFiles.get(0).getLastStateStoreUpdateTime());
         FileReference expectedFile = fileReferenceFactory.rootFile(actualFiles.get(0).getFilename(), 400);
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         assertThat(Paths.get(localDir)).isEmptyDirectory();
         assertThat(actualFiles).containsExactly(expectedFile);
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
@@ -119,7 +119,7 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
 
         // Then
         List<FileReference> actualFiles = stateStore.getFileReferences();
-        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration);
+        List<Record> actualRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf);
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
@@ -132,12 +132,12 @@ public class ECSIngestTaskRunnerIT extends IngestJobQueueConsumerTestBase {
                 .containsExactlyElementsOf(Collections.nCopies(10,
                         fileReferenceFactory.rootFile("anyfilename", 800)));
         assertThat(actualRecords).containsExactlyInAnyOrderElementsOf(expectedRecords);
-        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConfiguration))
+        assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
                 .isEqualTo(SketchesDeciles.from(recordListAndSchema.sleeperSchema, recordListAndSchema.recordList));
     }
 
     private void sendJobs(List<IngestJob> jobs) {
-        jobs.forEach(job -> sqs.sendMessage(
+        jobs.forEach(job -> sqsClient.sendMessage(
                 instanceProperties.get(INGEST_JOB_QUEUE_URL),
                 new IngestJobSerDe().toJson(job)));
     }

@@ -39,6 +39,7 @@ public class ParquetRecordReader extends ParquetReader<Record> {
         public Builder(Path path, Schema schema) {
             super(path);
             this.schema = schema;
+            useColumnIndexFilter(false);
         }
 
         @Override

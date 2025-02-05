@@ -18,10 +18,10 @@ package sleeper.systemtest.drivers.util;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 
-import sleeper.compaction.status.store.job.CompactionJobTrackerFactory;
-import sleeper.compaction.status.store.task.CompactionTaskStatusStoreFactory;
-import sleeper.ingest.status.store.job.IngestJobStatusStoreFactory;
-import sleeper.ingest.status.store.task.IngestTaskStatusStoreFactory;
+import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
+import sleeper.compaction.tracker.task.CompactionTaskTrackerFactory;
+import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.ingest.tracker.task.IngestTaskTrackerFactory;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
@@ -33,21 +33,21 @@ public class AwsWaitForJobs {
 
     public static WaitForJobs forIngest(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forIngest(instance,
-                properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
-                properties -> IngestTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
+                properties -> IngestJobTrackerFactory.getTracker(dynamoDBClient, properties),
+                properties -> IngestTaskTrackerFactory.getTracker(dynamoDBClient, properties),
                 pollDriver);
     }
 
     public static WaitForJobs forBulkImport(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forBulkImport(instance,
-                properties -> IngestJobStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
+                properties -> IngestJobTrackerFactory.getTracker(dynamoDBClient, properties),
                 pollDriver);
     }
 
     public static WaitForJobs forCompaction(SystemTestInstanceContext instance, AmazonDynamoDB dynamoDBClient, PollWithRetriesDriver pollDriver) {
         return WaitForJobs.forCompaction(instance,
                 properties -> CompactionJobTrackerFactory.getTracker(dynamoDBClient, properties),
-                properties -> CompactionTaskStatusStoreFactory.getStatusStore(dynamoDBClient, properties),
+                properties -> CompactionTaskTrackerFactory.getTracker(dynamoDBClient, properties),
                 pollDriver);
     }
 }

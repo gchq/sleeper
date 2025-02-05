@@ -44,6 +44,10 @@ import java.util.Map;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_ARN;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_DLQ_URL;
@@ -58,6 +62,14 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_ARN;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_PENDING_QUEUE_URL;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_MAXIMUM;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHER_LAMBDA_MEMORY_IN_MB;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_BATCH_SIZE;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_COMMIT_MAX_RETRIES;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_DISPATCH_MAX_RETRIES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_BATCH_SIZE;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_CREATION_LAMBDA_CONCURRENCY_RESERVED;
@@ -70,6 +82,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_DISPATCH_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_JOB_MAX_RETRIES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.PENDING_COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
@@ -80,6 +93,7 @@ public class CompactionJobResources {
     private final InstanceProperties instanceProperties;
     private final Stack stack;
     private final Queue compactionJobsQueue;
+    private final Queue commitBatcherQueue;
 
     public CompactionJobResources(Stack stack,
             InstanceProperties instanceProperties,
@@ -92,9 +106,11 @@ public class CompactionJobResources {
         this.stack = stack;
 
         Queue pendingQueue = sqsQueueForCompactionJobBatches(coreStacks, topic, errorMetrics);
+        commitBatcherQueue = sqsQueueForCompactionBatcher(coreStacks, topic, errorMetrics);
         compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);
         IFunction creationFunction = lambdaToCreateCompactionJobBatches(coreStacks, topic, errorMetrics, jarsBucket, lambdaCode, pendingQueue, compactionJobsQueue);
         IFunction sendFunction = lambdaToSendCompactionJobBatches(coreStacks, lambdaCode, pendingQueue, compactionJobsQueue);
+        lambdaToBatchUpCompactionCommits(coreStacks, lambdaCode, commitBatcherQueue);
 
         grantCreateCompactionJobs(coreStacks, jarsBucket, pendingQueue, creationFunction);
         grantCreateCompactionJobs(coreStacks, jarsBucket, pendingQueue, coreStacks.getInvokeCompactionPolicyForGrants());
@@ -274,11 +290,11 @@ public class CompactionJobResources {
                 .create(stack, "PendingCompactionJobBatchQ")
                 .queueName(queueName)
                 .deadLetterQueue(DeadLetterQueue.builder()
-                        .maxReceiveCount(instanceProperties.getInt(COMPACTION_JOB_MAX_RETRIES))
+                        .maxReceiveCount(instanceProperties.getInt(COMPACTION_DISPATCH_MAX_RETRIES))
                         .queue(pendingDLQ)
                         .build())
                 .visibilityTimeout(
-                        Duration.seconds(instanceProperties.getInt(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                        Duration.seconds(instanceProperties.getInt(PENDING_COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
                 .build();
         instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, pendingQ.getQueueUrl());
         instanceProperties.set(COMPACTION_PENDING_QUEUE_ARN, pendingQ.getQueueArn());
@@ -295,7 +311,64 @@ public class CompactionJobResources {
         return pendingQ;
     }
 
+    private void lambdaToBatchUpCompactionCommits(
+            CoreStacks coreStacks, LambdaCode lambdaCode, Queue batcherQueue) {
+
+        String functionName = String.join("-", "sleeper",
+                Utils.cleanInstanceId(instanceProperties), "compaction-commit-batcher");
+
+        IFunction function = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_COMMIT_BATCHER, "CompactionCommitBatcher", builder -> builder
+                .functionName(functionName)
+                .description("Gathers up compaction commits and combines them into a larger update to the state store. " +
+                        "Used when committing compaction jobs asynchronously.")
+                .memorySize(instanceProperties.getInt(COMPACTION_COMMIT_BATCHER_LAMBDA_MEMORY_IN_MB))
+                .timeout(Duration.seconds(instanceProperties.getInt(COMPACTION_COMMIT_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_RESERVED))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.COMPACTION_COMMIT_BATCHER)));
+
+        function.addEventSource(SqsEventSource.Builder.create(batcherQueue)
+                .batchSize(instanceProperties.getInt(COMPACTION_COMMIT_BATCH_SIZE))
+                .maxBatchingWindow(Duration.seconds(instanceProperties.getInt(COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS)))
+                .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_COMMIT_BATCHER_LAMBDA_CONCURRENCY_MAXIMUM))
+                .build());
+        coreStacks.grantSendStateStoreCommits(function);
+    }
+
+    private Queue sqsQueueForCompactionBatcher(CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics) {
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        Queue deadLetterQueue = Queue.Builder
+                .create(stack, "CompactionCommitDLQ")
+                .queueName(String.join("-", "sleeper", instanceId, "CompactionCommitDLQ"))
+                .build();
+        Queue queue = Queue.Builder
+                .create(stack, "CompactionCommitQueue")
+                .queueName(String.join("-", "sleeper", instanceId, "CompactionCommitQ"))
+                .deadLetterQueue(DeadLetterQueue.builder()
+                        .maxReceiveCount(instanceProperties.getInt(COMPACTION_COMMIT_MAX_RETRIES))
+                        .queue(deadLetterQueue)
+                        .build())
+                .visibilityTimeout(
+                        Duration.seconds(instanceProperties.getInt(COMPACTION_COMMIT_BATCHER_LAMBDA_TIMEOUT_IN_SECONDS)))
+                .build();
+        instanceProperties.set(COMPACTION_COMMIT_QUEUE_URL, queue.getQueueUrl());
+        instanceProperties.set(COMPACTION_COMMIT_QUEUE_ARN, queue.getQueueArn());
+        instanceProperties.set(COMPACTION_COMMIT_DLQ_URL, deadLetterQueue.getQueueUrl());
+        instanceProperties.set(COMPACTION_COMMIT_DLQ_ARN, deadLetterQueue.getQueueArn());
+
+        queue.grantPurge(coreStacks.getPurgeQueuesPolicyForGrants());
+        createAlarmForDlq(stack, "CompactionCommitAlarm",
+                "Alarms if there are any messages on the dead letter queue for the compaction commit batcher lambda",
+                deadLetterQueue, topic);
+        errorMetrics.add(Utils.createErrorMetric("Compaction Batcher Errors", deadLetterQueue, instanceProperties));
+        return queue;
+    }
+
     public Queue getCompactionJobsQueue() {
         return compactionJobsQueue;
+    }
+
+    public Queue getCommitBatcherQueue() {
+        return commitBatcherQueue;
     }
 }

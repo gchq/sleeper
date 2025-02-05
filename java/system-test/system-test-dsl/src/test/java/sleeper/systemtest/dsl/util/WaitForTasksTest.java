@@ -20,11 +20,11 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.PollWithRetries.CheckFailedException;
-import sleeper.ingest.core.job.status.InMemoryIngestJobStatusStore;
-import sleeper.ingest.core.job.status.IngestJobStartedEvent;
-import sleeper.ingest.core.job.status.IngestJobStatusStore;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class WaitForTasksTest {
 
-    private final IngestJobStatusStore ingestJobStore = new InMemoryIngestJobStatusStore();
+    private final IngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
     private final CompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
     private final List<Duration> waits = new ArrayList<>();
     private Runnable onWait = () -> {
@@ -48,7 +48,7 @@ public class WaitForTasksTest {
     void shouldFindIngestStartsDuringFirstWait() {
         // Given
         onWait(() -> {
-            ingestJobStore.jobStarted(ingestJobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
+            ingestJobTracker.jobStarted(ingestJobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
         });
 
         // When / Then
@@ -59,7 +59,7 @@ public class WaitForTasksTest {
 
     @Test
     void shouldPassWhenIngestAlreadyStarted() {
-        ingestJobStore.jobStarted(ingestJobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
+        ingestJobTracker.jobStarted(ingestJobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
 
         // When / Then
         assertThatCode(() -> waitUntilNumTasksStartedAnIngest(1, List.of("test-job"), noRetries()))
@@ -69,8 +69,8 @@ public class WaitForTasksTest {
 
     @Test
     void shouldPassWithMoreTasksThanExpected() {
-        ingestJobStore.jobStarted(ingestJobStartedOnTask("job-1", "task-1", Instant.parse("2024-09-02T14:47:01Z")));
-        ingestJobStore.jobStarted(ingestJobStartedOnTask("job-2", "task-2", Instant.parse("2024-09-02T14:47:02Z")));
+        ingestJobTracker.jobStarted(ingestJobStartedOnTask("job-1", "task-1", Instant.parse("2024-09-02T14:47:01Z")));
+        ingestJobTracker.jobStarted(ingestJobStartedOnTask("job-2", "task-2", Instant.parse("2024-09-02T14:47:02Z")));
 
         // When / Then
         assertThatCode(() -> waitUntilNumTasksStartedAnIngest(1, List.of("job-1", "job-2"), noRetries()))
@@ -97,7 +97,7 @@ public class WaitForTasksTest {
         onWait(() -> {
             // Do nothing on first wait
         }, () -> {
-            ingestJobStore.jobStarted(ingestJobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
+            ingestJobTracker.jobStarted(ingestJobStartedOnTask("test-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
         });
 
         // When / Then
@@ -111,8 +111,8 @@ public class WaitForTasksTest {
         onWait(() -> {
             // Do nothing on first wait
         }, () -> {
-            ingestJobStore.jobStarted(ingestJobStartedOnTask("job-1", "task-1", Instant.parse("2024-09-02T14:47:01Z")));
-            ingestJobStore.jobStarted(ingestJobStartedOnTask("job-2", "task-2", Instant.parse("2024-09-02T14:47:02Z")));
+            ingestJobTracker.jobStarted(ingestJobStartedOnTask("job-1", "task-1", Instant.parse("2024-09-02T14:47:01Z")));
+            ingestJobTracker.jobStarted(ingestJobStartedOnTask("job-2", "task-2", Instant.parse("2024-09-02T14:47:02Z")));
         });
 
         // When / Then
@@ -125,8 +125,8 @@ public class WaitForTasksTest {
     void shouldFailToStartEnoughIngestTasks() {
         // Given
         onWait(() -> {
-            ingestJobStore.jobStarted(ingestJobStartedOnTask("job-1", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
-            ingestJobStore.jobStarted(ingestJobStartedOnTask("job-2", "test-task", Instant.parse("2024-09-02T14:47:02Z")));
+            ingestJobTracker.jobStarted(ingestJobStartedOnTask("job-1", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
+            ingestJobTracker.jobStarted(ingestJobStartedOnTask("job-2", "test-task", Instant.parse("2024-09-02T14:47:02Z")));
         });
 
         // When / Then
@@ -139,7 +139,7 @@ public class WaitForTasksTest {
     void shouldFailWhenTaskStartedWithUnexpectedJob() {
         // Given
         onWait(() -> {
-            ingestJobStore.jobStarted(ingestJobStartedOnTask("other-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
+            ingestJobTracker.jobStarted(ingestJobStartedOnTask("other-job", "test-task", Instant.parse("2024-09-02T14:47:01Z")));
         });
 
         // When / Then
@@ -184,7 +184,7 @@ public class WaitForTasksTest {
     }
 
     private void waitUntilNumTasksStartedAnIngest(int expectedTasks, List<String> jobIds, PollWithRetries poll) {
-        new WaitForTasks(ingestJobStore).waitUntilNumTasksStartedAJob(expectedTasks, jobIds, poll);
+        new WaitForTasks(ingestJobTracker).waitUntilNumTasksStartedAJob(expectedTasks, jobIds, poll);
     }
 
     private void waitUntilNumTasksStartedACompaction(int expectedTasks, List<String> jobIds, PollWithRetries poll) {

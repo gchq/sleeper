@@ -15,29 +15,16 @@
  */
 package sleeper.query.lambda;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.CommonTestConstants;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -48,6 +35,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryProcessingConfig;
 import sleeper.query.core.model.QuerySerDe;
@@ -61,11 +49,11 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
@@ -77,24 +65,10 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
-@Testcontainers
-public class WarmQueryExecutorLambdaIT {
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(
-            DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE))
-            .withServices(LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS,
-                    LocalStackContainer.Service.DYNAMODB);
+public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
 
-    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3,
-            AmazonS3ClientBuilder.standard());
-    private final AmazonDynamoDB dynamoClient = buildAwsV1Client(localStackContainer,
-            LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS,
-            AmazonSQSClientBuilder.standard());
-    private final Configuration configuration = getHadoopConfiguration(localStackContainer);
     private QuerySerDe querySerDe;
 
     @TempDir
@@ -107,13 +81,6 @@ public class WarmQueryExecutorLambdaIT {
         String dataDir = createTempDirectory(tempDir, null).toString();
         createInstanceProperties(dataDir);
         lambda = new WarmQueryExecutorLambda(s3Client, sqsClient, dynamoClient, instanceProperties.get(CONFIG_BUCKET));
-    }
-
-    @AfterEach
-    void tearDown() {
-        s3Client.shutdown();
-        dynamoClient.shutdown();
-        sqsClient.shutdown();
     }
 
     @Test
@@ -154,7 +121,7 @@ public class WarmQueryExecutorLambdaIT {
                 .tableName(tableName)
                 .regions(List.of(region))
                 .processingConfig(QueryProcessingConfig.builder()
-                        .resultsPublisherConfig(Collections.singletonMap(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
+                        .resultsPublisherConfig(Map.of(ResultsOutputConstants.DESTINATION, NO_RESULTS_OUTPUT))
                         .statusReportDestinations(Collections.emptyList())
                         .build())
                 .build();
@@ -173,7 +140,7 @@ public class WarmQueryExecutorLambdaIT {
                 sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
         instanceProperties.set(QUERY_RESULTS_BUCKET, dir + "/query-results");
 
-        s3Client.createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
         S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
@@ -183,7 +150,7 @@ public class WarmQueryExecutorLambdaIT {
 
     private void createTable(TableProperties tableProperties) {
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
-        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration)
+        StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .getStateStore(tableProperties);
         stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), new ArrayList<>()).construct());
     }

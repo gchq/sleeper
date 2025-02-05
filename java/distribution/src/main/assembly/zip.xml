@@ -46,9 +46,6 @@
         <!-- Docs -->
         <fileSet>
             <directory>${project.basedir}/../../docs</directory>
-            <excludes>
-                <exclude>dev-guide.md</exclude>
-            </excludes>
         </fileSet>
         <!-- Docker files -->
         <fileSet>

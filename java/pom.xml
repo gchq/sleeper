@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.28.0-SNAPSHOT</version>
+    <version>0.29.0-SNAPSHOT</version>
 
     <modules>
         <module>core</module>
@@ -50,6 +50,7 @@
         <module>trino</module>
         <module>build</module>
         <module>build-uptime-lambda</module>
+        <module>example-iterators</module>
     </modules>
 
     <properties>
@@ -86,7 +87,7 @@
         -->
         <woodstox.version>7.1.0</woodstox.version>
         <!-- Spark 3.3.1 uses an old version of Apache Ivy with vulnerabilities. Managed from 2.5.0. -->
-        <ivy.version>2.5.2</ivy.version>
+        <ivy.version>2.5.3</ivy.version>
         <!--
         Snappy is used by both hadoop-client and parquet-hadoop.
         We were getting multiple versions added to the classpath, and they both have vulnerabilities.
@@ -95,9 +96,9 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.2</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 3.23.4. -->
-        <protobuf.version>4.29.1</protobuf.version>
+        <protobuf.version>4.29.3</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
-        <nimbus-jose-jwt.version>9.47</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.0.1</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. Managed from 1.11.2. -->
         <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
@@ -105,7 +106,7 @@
         <!-- Hadoop declares an old version of XNIO with vulnerabilities. Managed from 3.8.8.Final. -->
         <xnio.version>3.8.16.Final</xnio.version>
         <!-- Hadoop declares an old version of dnsjava with vulnerabilities. Managed from 2.1.7. -->
-        <dnsjava.version>3.6.2</dnsjava.version>
+        <dnsjava.version>3.6.3</dnsjava.version>
         <!-- Spark (via Avro) declares an old version of XZ with vulnerabilities. Managed from 1.9. -->
         <xz.version>1.10</xz.version>
         <!-- Spark Platform declares an old version of OkHttp with vulnerabilities. Managed from 4.10.0. -->
@@ -114,24 +115,24 @@
         OkHttp, as a dependency of Spark, declares an old version of Kotlin with vulnerabilities.
         Managed from a conflict between 1.6.20 and 1.5.31.
         -->
-        <kotlin.version>2.1.0</kotlin.version>
+        <kotlin.version>2.1.10</kotlin.version>
         <!--
         OkHttp, as a dependency of Spark, declares an old version of Okio with vulnerabilities.
         Managed from a conflict between 1.6.0 and 3.0.0 within Spark, and 1.17.2 in Trino.
         -->
-        <okio.version>3.9.1</okio.version>
+        <okio.version>3.10.2</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.12</logback.version>
+        <logback.version>1.5.16</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.29.36</aws-java-sdk-v2.version>
-        <aws-crt.version>0.33.7</aws-crt.version>
+        <aws-java-sdk-v2.version>2.30.13</aws-java-sdk-v2.version>
+        <aws-crt.version>0.33.11</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
         <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-codec.version>1.17.1</commons-codec.version>
+        <commons-codec.version>1.18.0</commons-codec.version>
         <commons-io.version>2.18.0</commons-io.version>
         <commons-configuration.version>2.11.0</commons-configuration.version>
         <commons-compress.version>1.27.1</commons-compress.version>
@@ -145,14 +146,14 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.0-jre</guava.version>
-        <cdk.version>2.173.2</cdk.version>
+        <cdk.version>2.177.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.4.2</constructs.version>
-        <gson.version>2.11.0</gson.version>
+        <gson.version>2.12.1</gson.version>
         <slf4j.version>2.0.16</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
-        <bouncycastle.version>1.79</bouncycastle.version>
+        <bouncycastle.version>1.80</bouncycastle.version>
         <athena.version>2023.3.1</athena.version>
         <trino.version>390</trino.version>
         <!-- Trino requires an old version of JGraphT -->
@@ -163,30 +164,30 @@
         <jersey.version>2.45</jersey.version>
         <jakarta.ws.version>2.1.6</jakarta.ws.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.1.116.Final</netty.version>
+        <netty.version>4.1.117.Final</netty.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
-        <jetty.version>9.4.56.v20240826</jetty.version>
+        <jetty.version>9.4.57.v20241219</jetty.version>
         <jakarta.activation.version>2.1.3</jakarta.activation.version>
         <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.2</jgrapht.version>
         <apfloat.version>1.14.0</apfloat.version>
-        <joda-time.version>2.13.0</joda-time.version>
+        <joda-time.version>2.13.1</joda-time.version>
         <jnr.ffi.version>2.2.17</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
         <junit.version>5.11.4</junit.version>
         <junit.platform.version>1.11.4</junit.platform.version>
-        <mockito.version>5.14.2</mockito.version>
+        <mockito.version>5.15.2</mockito.version>
         <testcontainers.version>1.20.4</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
-        <assertj.version>3.26.3</assertj.version>
-        <approvaltests.version>24.12.0</approvaltests.version>
+        <assertj.version>3.27.3</assertj.version>
+        <approvaltests.version>24.16.0</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.0</xmlunit.version>
         <jsonunit.version>4.1.0</jsonunit.version>
-        <checkstyle.version>10.21.0</checkstyle.version>
+        <checkstyle.version>10.21.2</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -209,11 +210,11 @@
         <compiler.plugin.version>3.13.0</compiler.plugin.version>
         <enforcer.plugin.version>3.5.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
-        <spotbugs.version>4.8.6</spotbugs.version>
+        <spotbugs.version>4.9.0</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
         <dependency.plugin.version>3.8.1</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
-        <dependency-check.plugin.version>11.1.1</dependency-check.plugin.version>
+        <dependency-check.plugin.version>12.0.2</dependency-check.plugin.version>
         <site.plugin.version>3.21.0</site.plugin.version>
         <exec.plugin.version>3.5.0</exec.plugin.version>
         <resources.plugin.version>3.3.1</resources.plugin.version>
@@ -1322,6 +1323,20 @@
                                     <excludes>
                                     </excludes>
                                 </artifactSet>
+                                <transformers>
+                                    <!--
+                                    This is needed to merge META-INFO/services/org.apache.hadoop.fs.FileSystem, which
+                                    is provided by different libraries.
+                                    Otherwise depending on the order Maven processes the jars, sometimes it takes the
+                                    version of this file from hadoop-aws, which only declares
+                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem.
+                                    This prevents Hadoop from loading the local file system, and we see errors like this:
+                                    org.apache.hadoop.fs.UnsupportedFileSystemException: No FileSystem for scheme "file"
+                                    This is only strictly needed for modules that use Hadoop, but in practice this is
+                                    most fat jars.
+                                    -->
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                </transformers>
                             </configuration>
                         </execution>
                     </executions>

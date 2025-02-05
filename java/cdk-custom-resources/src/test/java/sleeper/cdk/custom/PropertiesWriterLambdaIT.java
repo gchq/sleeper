@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -55,7 +56,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         // Given
         String bucketName = UUID.randomUUID().toString();
         createBucket(bucketName);
-        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3Client, bucketName);
+        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3ClientV2, bucketName);
 
         // When
         InstanceProperties instanceProperties = createDefaultProperties("foo", bucketName);
@@ -71,7 +72,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3ClientV1, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
 
     }
@@ -81,7 +82,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         // Given
         String bucketName = UUID.randomUUID().toString();
         createBucket(bucketName);
-        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3Client, bucketName);
+        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3ClientV2, bucketName);
 
         putObject(bucketName, S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE, "foo");
 
@@ -99,7 +100,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3ClientV1, bucketName);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3Client, bucketName);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("bar");
     }
 
@@ -108,7 +109,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         // Given
         String bucketName = UUID.randomUUID().toString();
         createBucket(bucketName);
-        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3Client, bucketName);
+        PropertiesWriterLambda propertiesWriterLambda = new PropertiesWriterLambda(s3ClientV2, bucketName);
         String alternativeBucket = bucketName + "-alternative";
 
         createBucket(alternativeBucket);
@@ -127,7 +128,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
         propertiesWriterLambda.handleEvent(event, null);
 
         // Then
-        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3ClientV1, alternativeBucket);
+        InstanceProperties loadedProperties = S3InstanceProperties.loadFromBucket(s3Client, alternativeBucket);
         assertThat(loadedProperties.get(ACCOUNT)).isEqualTo("foo");
     }
 
@@ -149,7 +150,7 @@ public class PropertiesWriterLambdaIT extends LocalStackTestBase {
                 .withResourceProperties(resourceProperties)
                 .build();
 
-        PropertiesWriterLambda lambda = new PropertiesWriterLambda(s3Client, bucketName);
+        PropertiesWriterLambda lambda = new PropertiesWriterLambda(s3ClientV2, bucketName);
         lambda.handleEvent(event, null);
 
         // Then

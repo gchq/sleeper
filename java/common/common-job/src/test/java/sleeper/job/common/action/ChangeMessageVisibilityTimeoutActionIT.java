@@ -15,39 +15,21 @@
  */
 package sleeper.job.common.action;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
-import sleeper.core.CommonTestConstants;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.configuration.testutils.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class ChangeMessageVisibilityTimeoutActionIT {
-
-    @Container
-    public static LocalStackContainer localStackContainer = new LocalStackContainer(DockerImageName.parse(CommonTestConstants.LOCALSTACK_DOCKER_IMAGE)).withServices(
-            LocalStackContainer.Service.SQS);
-
-    private final AmazonSQS sqs = createSQSClient();
-
-    private AmazonSQS createSQSClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
-    }
+public class ChangeMessageVisibilityTimeoutActionIT extends LocalStackTestBase {
 
     private String createQueueWithVisibilityTimeoutInSeconds(int timeout) {
         Map<String, String> attributes = new HashMap<>();
@@ -55,21 +37,21 @@ public class ChangeMessageVisibilityTimeoutActionIT {
         CreateQueueRequest createQueueRequest = new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString())
                 .withAttributes(attributes);
-        return sqs.createQueue(createQueueRequest).getQueueUrl();
+        return sqsClient.createQueue(createQueueRequest).getQueueUrl();
     }
 
     private void sendMessage(String queueUrl, String message) {
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(queueUrl)
                 .withMessageBody(message);
-        sqs.sendMessage(sendMessageRequest);
+        sqsClient.sendMessage(sendMessageRequest);
     }
 
     private ReceiveMessageResult receiveMessage(String queueUrl) {
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(1);
-        return sqs.receiveMessage(receiveMessageRequest);
+        return sqsClient.receiveMessage(receiveMessageRequest);
     }
 
     @Test
@@ -107,7 +89,7 @@ public class ChangeMessageVisibilityTimeoutActionIT {
 
         // When
         String receiptHandle = receiveMessage(queueUrl).getMessages().get(0).getReceiptHandle();
-        new MessageReference(sqs, queueUrl, "test", receiptHandle)
+        new MessageReference(sqsClient, queueUrl, "test", receiptHandle)
                 .changeVisibilityTimeoutAction(10).call();
         Thread.sleep(2000);
 
@@ -123,7 +105,7 @@ public class ChangeMessageVisibilityTimeoutActionIT {
 
         // When
         String receiptHandle = receiveMessage(queueUrl).getMessages().get(0).getReceiptHandle();
-        new MessageReference(sqs, queueUrl, "test", receiptHandle)
+        new MessageReference(sqsClient, queueUrl, "test", receiptHandle)
                 .changeVisibilityTimeoutAction(2).call();
         Thread.sleep(3000);
 

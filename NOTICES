@@ -53,7 +53,7 @@ Protocol Buffers (com.google.protobuf:protobuf-java:4.*)
 
 - The 3-Clause BSD License
 
-Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:9.*)
+Nimbus JOSE+JWT (com.nimbusds:nimbus-jose-jwt:10.*)
 
 - Apache License, Version 2.0
 
@@ -304,7 +304,7 @@ Go Offline Maven Plugin (de.qaware.maven:go-offline-maven-plugin:1.*)
 
 - Apache License, Version 2.0
 
-Dependency Check Maven Plugin (org.owasp:dependency-check-maven:11.*)
+Dependency Check Maven Plugin (org.owasp:dependency-check-maven:12.*)
 
 - Apache License, Version 2.0
 
@@ -442,6 +442,18 @@ datasketches-cpp (<https://github.com/apache/datasketches-cpp>)
 git2 (<https://github.com/rust-lang/git2-rs>)
 
 - Apache 2 License
+
+datafusion (https://github.com/apache/datafusion)
+
+- Apache 2 License
+
+tempfile (https://github.com/Stebalien/tempfile)
+
+- Apache 2 License
+
+testing_logger (https://github.com/brucechapman/rust_testing_logger)
+
+- The 3-Clause BSD License
 
 Sleeper contains C++ code. The following dependencies are used:
 

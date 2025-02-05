@@ -37,7 +37,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -46,7 +45,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -99,7 +97,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithUnrecognisedType() throws Exception {
         // Given
-        dynamoDBClient.putItem(new PutItemRequest()
+        dynamoClient.putItem(new PutItemRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
@@ -116,7 +114,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     @Test
     void shouldFailLoadingTransactionWithRecognisedTypeButInvalidJson() throws Exception {
         // Given
-        dynamoDBClient.putItem(new PutItemRequest()
+        dynamoClient.putItem(new PutItemRequest()
                 .withTableName(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME))
                 .withItem(new DynamoDBRecordBuilder()
                         .string(TABLE_ID, tableProperties.get(TableProperty.TABLE_ID))
@@ -218,6 +216,29 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     @Test
+    void shouldStoreTransactionInS3() throws Exception {
+        // When we add a transaction too large to fit in a DynamoDB item
+        List<String> leafIds = IntStream.range(0, 1000)
+                .mapToObj(i -> "" + i)
+                .collect(Collectors.toList());
+        List<Object> splitPoints = LongStream.range(1, 1000)
+                .mapToObj(i -> "split" + i)
+                .collect(Collectors.toList());
+        List<Partition> partitions = PartitionsBuilderSplitsFirst
+                .leavesWithSplits(schema, leafIds, splitPoints)
+                .anyTreeJoiningAllLeaves().buildList();
+        Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
+        StateStore stateStore = createStateStore(tableProperties);
+        stateStore.fixPartitionUpdateTime(updateTime);
+        stateStore.initialise(partitions);
+
+        // Then the transaction is held in S3
+        String file = singleFileInDataBucket();
+        assertThat(partitionLogStore.readTransactionsAfter(0)).containsExactly(
+                new TransactionLogEntry(1, updateTime, TransactionType.INITIALISE_PARTITIONS, file));
+    }
+
+    @Test
     void shouldDeleteTransactionStoredInS3() throws Exception {
         // Given a transaction too large to fit in a DynamoDB item
         List<String> leafIds = IntStream.range(0, 1000)
@@ -238,33 +259,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
         // Then
         assertThat(partitionLogStore.readTransactionsAfter(0)).isEmpty();
-        assertThat(streamFilesInDataBucket()).isEmpty();
-    }
-
-    @Test
-    void shouldNotDeleteTransactionStoredInS3() throws Exception {
-        // Given a transaction too large to fit in a DynamoDB item
-        List<String> leafIds = IntStream.range(0, 1000)
-                .mapToObj(i -> "" + i)
-                .collect(Collectors.toList());
-        List<Object> splitPoints = LongStream.range(1, 1000)
-                .mapToObj(i -> "split" + i)
-                .collect(Collectors.toList());
-        List<Partition> partitions = PartitionsBuilderSplitsFirst
-                .leavesWithSplits(schema, leafIds, splitPoints)
-                .anyTreeJoiningAllLeaves().buildList();
-        Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
-        StateStore stateStore = createStateStore(tableProperties);
-        stateStore.fixPartitionUpdateTime(updateTime);
-        stateStore.initialise(partitions);
-
-        // When
-        partitionLogStore.deleteTransactionsAtOrBefore(0);
-
-        // Then
-        assertThat(partitionLogStore.readTransactionsAfter(0)).containsExactly(
-                new TransactionLogEntry(1, updateTime, new InitialisePartitionsTransaction(partitions)));
-        assertThat(streamFilesInDataBucket()).hasSize(1);
+        assertThat(filesInDataBucket()).isEmpty();
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
@@ -272,18 +267,28 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     private TransactionLogStore fileLogStore() {
-        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
     }
 
     private TransactionLogStore partitionLogStore() {
-        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoDBClient, s3Client);
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
     }
 
-    private Stream<String> streamFilesInDataBucket() {
+    private String singleFileInDataBucket() {
+        List<String> files = filesInDataBucket();
+        if (files.size() != 1) {
+            throw new IllegalStateException("Expected one file in data bucket, found: " + files);
+        } else {
+            return files.get(0);
+        }
+    }
+
+    private List<String> filesInDataBucket() {
         return s3Client.listObjects(new ListObjectsRequest()
                 .withBucketName(instanceProperties.get(DATA_BUCKET))
                 .withPrefix(tableProperties.get(TableProperty.TABLE_ID)))
                 .getObjectSummaries().stream()
-                .map(S3ObjectSummary::getKey);
+                .map(S3ObjectSummary::getKey)
+                .toList();
     }
 }

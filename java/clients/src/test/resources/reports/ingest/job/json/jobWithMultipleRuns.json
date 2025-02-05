@@ -29,22 +29,13 @@
             {
               "type": "FINISHED",
               "updateTime": "2022-10-12T10:01:45.123Z",
+              "finishTime": "2022-10-12T10:01:45.001Z",
+              "recordsProcessed": {
+                "recordsRead": 300,
+                "recordsWritten": 200
+              },
               "committedBySeparateFileUpdates": false,
-              "numFilesWrittenByJob": 2,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 300,
-                  "recordsWritten": 200
-                },
-                "runTime": {
-                  "startTime": "2022-10-12T10:01:15.001Z",
-                  "finishTime": "2022-10-12T10:01:45.001Z",
-                  "durationInSeconds": 30.0,
-                  "timeInProcessInSeconds": 30.0
-                },
-                "recordsReadPerSecond": 10.0,
-                "recordsWrittenPerSecond": 6.666666666666667
-              }
+              "numFilesWrittenByJob": 2
             }
           ]
         },
@@ -60,22 +51,13 @@
             {
               "type": "FINISHED",
               "updateTime": "2022-10-12T10:01:20.123Z",
+              "finishTime": "2022-10-12T10:01:20.001Z",
+              "recordsProcessed": {
+                "recordsRead": 300,
+                "recordsWritten": 200
+              },
               "committedBySeparateFileUpdates": false,
-              "numFilesWrittenByJob": 1,
-              "summary": {
-                "recordsProcessed": {
-                  "recordsRead": 300,
-                  "recordsWritten": 200
-                },
-                "runTime": {
-                  "startTime": "2022-10-12T10:01:00.001Z",
-                  "finishTime": "2022-10-12T10:01:20.001Z",
-                  "durationInSeconds": 20.0,
-                  "timeInProcessInSeconds": 20.0
-                },
-                "recordsReadPerSecond": 15.0,
-                "recordsWrittenPerSecond": 10.0
-              }
+              "numFilesWrittenByJob": 1
             }
           ]
         }

@@ -15,15 +15,16 @@
  */
 package sleeper.compaction.core.job;
 
-import sleeper.core.record.process.ProcessRunTime;
-import sleeper.core.record.process.RecordsProcessedSummary;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.CheckFileAssignmentsRequest;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFinishedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobStartedEvent;
+import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.time.Instant;
 import java.util.List;
@@ -92,7 +93,7 @@ public class CompactionJob {
         return CompactionJobStartedEvent.builder().jobId(jobId).tableId(tableId).startTime(startTime);
     }
 
-    public CompactionJobFinishedEvent.Builder finishedEventBuilder(RecordsProcessedSummary summary) {
+    public CompactionJobFinishedEvent.Builder finishedEventBuilder(JobRunSummary summary) {
         return CompactionJobFinishedEvent.builder().jobId(jobId).tableId(tableId).summary(summary);
     }
 
@@ -100,8 +101,24 @@ public class CompactionJob {
         return CompactionJobCommittedEvent.builder().jobId(jobId).tableId(tableId).commitTime(commitTime);
     }
 
-    public CompactionJobFailedEvent.Builder failedEventBuilder(ProcessRunTime runTime) {
-        return CompactionJobFailedEvent.builder().jobId(jobId).tableId(tableId).runTime(runTime);
+    public CompactionJobFailedEvent.Builder failedEventBuilder(Instant failureTime) {
+        return CompactionJobFailedEvent.builder().jobId(jobId).tableId(tableId)
+                .failureTime(failureTime);
+    }
+
+    public FileReference createOutputFileReference(long recordsWritten) {
+        return FileReference.builder()
+                .filename(outputFile)
+                .partitionId(partitionId)
+                .numberOfRecords(recordsWritten)
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true)
+                .build();
+    }
+
+    public ReplaceFileReferencesRequest.Builder replaceFileReferencesRequestBuilder(long recordsWritten) {
+        return ReplaceFileReferencesRequest.builder().jobId(jobId).inputFiles(inputFiles)
+                .newReference(createOutputFileReference(recordsWritten));
     }
 
     /**

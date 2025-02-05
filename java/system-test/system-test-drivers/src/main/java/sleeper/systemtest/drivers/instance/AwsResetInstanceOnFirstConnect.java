@@ -103,10 +103,11 @@ public class AwsResetInstanceOnFirstConnect {
     }
 
     private void drainAllQueues(InstanceProperties instanceProperties) {
-        SqsQueues.ALL_QUEUE_URL_PROPERTIES.stream()
+        List<String> queueUrls = SqsQueues.ALL_QUEUE_URL_PROPERTIES.stream()
                 .map(instanceProperties::get)
                 .filter(queueUrl -> queueUrl != null)
-                .parallel().forEach(queueUrl -> AwsDrainSqsQueue.emptyQueueForWholeInstance(sqs, queueUrl));
+                .toList();
+        queueUrls.stream().parallel().forEach(queueUrl -> AwsDrainSqsQueue.emptyQueueForWholeInstance(sqs, queueUrl));
     }
 
     private void clearBucket(String bucketName) {
