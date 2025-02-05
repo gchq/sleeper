@@ -19,6 +19,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
 
@@ -100,6 +101,18 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         } else if (request.getTransaction() instanceof PartitionTransaction) {
             partitions.addTransaction(request);
         }
+    }
+
+    /**
+     * Applies a transaction log entry to the local state, and updates the compaction job tracker if it's a compaction
+     * commit. Will read from the transaction log if entries are missing between the last read entry and the given
+     * entry. The given entry must already exist in the transaction log.
+     *
+     * @param <T>      the type of the state to update
+     * @param logEntry the log entry
+     * @param tracker  the compaction job tracker
+     */
+    public <T> void followTransactionUpdatingTracker(TransactionLogEntry logEntry, CompactionJobTracker tracker) {
     }
 
     public static Builder builder() {

@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.util.List;
@@ -52,12 +51,12 @@ public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransacti
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "test-run");
-        ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
                 replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId("test-run").build()));
-        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
+        TransactionLogEntry logEntry = filesLogStore.getLastEntry();
 
         // When
-        // followerStore.followTransaction(...);
+        followerStore.followTransactionUpdatingTracker(logEntry, tracker);
 
     }
 }
