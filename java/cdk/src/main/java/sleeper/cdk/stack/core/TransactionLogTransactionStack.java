@@ -25,7 +25,7 @@ import software.amazon.awscdk.services.lambda.IFunction;
 import software.amazon.awscdk.services.lambda.MetricType;
 import software.amazon.awscdk.services.lambda.MetricsConfig;
 import software.amazon.awscdk.services.lambda.StartingPosition;
-import software.amazon.awscdk.services.lambda.eventsources.KinesisEventSource;
+import software.amazon.awscdk.services.lambda.eventsources.DynamoEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -158,7 +158,7 @@ public class TransactionLogTransactionStack extends NestedStack {
                 .timeout(Duration.seconds(instanceProperties.getInt(TRACKER_FROM_LOG_LAMBDA_TIMEOUT_SECS)))
                 .logGroup(coreStacks.getLogGroup(LogGroupRef.STATESTORE_TRACKER)));
 
-        lambda.addEventSource(KinesisEventSource.Builder.create(transactionLogStateStoreStack.getFilesLogStream())
+        lambda.addEventSource(DynamoEventSource.Builder.create(transactionLogStateStoreStack.getFilesLogTable())
                 .startingPosition(StartingPosition.LATEST)
                 .metricsConfig(MetricsConfig.builder()
                         .metrics(List.of(MetricType.EVENT_COUNT))
