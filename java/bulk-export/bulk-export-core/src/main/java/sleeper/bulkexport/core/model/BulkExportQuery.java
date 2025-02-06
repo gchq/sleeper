@@ -15,6 +15,9 @@
  */
 package sleeper.bulkexport.core.model;
 
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
+
 import java.util.Objects;
 import java.util.UUID;
 
@@ -89,6 +92,21 @@ public class BulkExportQuery {
      */
     public String getExportId() {
         return exportId;
+    }
+
+    /**
+     * Gets the table properties.
+     * 
+     * @param tablePropertiesProvider the provider to get the properties from.
+     *
+     * @return TableProperties
+     */
+    public TableProperties getTableProperties(TablePropertiesProvider tablePropertiesProvider) {
+        if (tableId != null) {
+            return tablePropertiesProvider.getById(tableId);
+        } else {
+            return tablePropertiesProvider.getByName(tableName);
+        }
     }
 
     @Override
