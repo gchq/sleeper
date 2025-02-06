@@ -54,14 +54,14 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.instance.CommonProperty.JARS_BUCKET;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
-import static sleeper.core.properties.instance.TableStateProperty.TRACKER_FROM_LOG_LAMBDA_CONCURRENCY_RESERVED;
-import static sleeper.core.properties.instance.TableStateProperty.TRACKER_FROM_LOG_LAMBDA_MEMORY;
-import static sleeper.core.properties.instance.TableStateProperty.TRACKER_FROM_LOG_LAMBDA_TIMEOUT_SECS;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_CONCURRENCY_MAXIMUM;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_MEMORY;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_TIMEOUT_SECS;
 
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
@@ -148,15 +148,15 @@ public class TransactionLogTransactionStack extends NestedStack {
     private void createFunctionToFollowTransactionLog(
             InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
-        String functionName = String.join("-", "sleeper", instanceId, "state-transaction-tracker");
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.STATESTORE_TRACKER, "TransactionLogTracker", builder -> builder
+        String functionName = String.join("-", "sleeper", instanceId, "state-transaction-follower");
+        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder
                 .functionName(functionName)
-                .description("Updates trackers by following the transaction log")
+                .description("Follows the state store transaction log to trigger updates, e.g. to job trackers")
                 .environment(Utils.createDefaultEnvironment(instanceProperties))
-                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(TRACKER_FROM_LOG_LAMBDA_CONCURRENCY_RESERVED))
-                .memorySize(instanceProperties.getInt(TRACKER_FROM_LOG_LAMBDA_MEMORY))
-                .timeout(Duration.seconds(instanceProperties.getInt(TRACKER_FROM_LOG_LAMBDA_TIMEOUT_SECS)))
-                .logGroup(coreStacks.getLogGroup(LogGroupRef.STATESTORE_TRACKER)));
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(TRANSACTION_FOLLOWER_LAMBDA_CONCURRENCY_RESERVED))
+                .memorySize(instanceProperties.getInt(TRANSACTION_FOLLOWER_LAMBDA_MEMORY))
+                .timeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_FOLLOWER_LAMBDA_TIMEOUT_SECS)))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_TRANSACTION_FOLLOWER)));
 
         lambda.addEventSource(DynamoEventSource.Builder.create(transactionLogStateStoreStack.getFilesLogTable())
                 .startingPosition(StartingPosition.LATEST)

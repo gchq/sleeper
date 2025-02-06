@@ -25,8 +25,8 @@ import org.slf4j.LoggerFactory;
 /**
  * A lambda that follows the transaction log of a Sleeper state store.
  */
-public class TransactionLogTrackerLambda implements RequestHandler<DynamodbEvent, Void> {
-    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogTrackerLambda.class);
+public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEvent, Void> {
+    public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogFollowerLambda.class);
 
     @Override
     public Void handleRequest(DynamodbEvent event, Context context) {

@@ -136,10 +136,6 @@ public class LambdaHandler {
             .jar(LambdaJar.STATESTORE)
             .handler("sleeper.statestore.lambda.committer.StateStoreCommitterLambda::handleRequest")
             .core().add();
-    public static final LambdaHandler STATESTORE_TRACKER = builder()
-            .jar(LambdaJar.STATESTORE)
-            .handler("sleeper.statestore.lambda.transaction.TransactionLogTrackerLambda::handleRequest")
-            .core().add();
     public static final LambdaHandler COMPACTION_COMMIT_BATCHER = builder()
             .jar(LambdaJar.STATESTORE)
             .handler("sleeper.statestore.lambda.committer.CompactionCommitBatcherLambda::handleRequest")
@@ -167,6 +163,10 @@ public class LambdaHandler {
     public static final LambdaHandler TRANSACTION_DELETION = builder()
             .jar(LambdaJar.STATESTORE)
             .handler("sleeper.statestore.lambda.transaction.TransactionLogTransactionDeletionLambda::handleRequest")
+            .core().add();
+    public static final LambdaHandler TRANSACTION_FOLLOWER = builder()
+            .jar(LambdaJar.STATESTORE)
+            .handler("sleeper.statestore.lambda.transaction.TransactionLogFollowerLambda::handleRequest")
             .core().add();
 
     private final LambdaJar jar;
