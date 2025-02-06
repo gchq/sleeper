@@ -125,7 +125,7 @@
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
         <logback.version>1.5.16</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.30.11</aws-java-sdk-v2.version>
+        <aws-java-sdk-v2.version>2.30.14</aws-java-sdk-v2.version>
         <aws-crt.version>0.33.11</aws-crt.version>
         <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
@@ -146,7 +146,7 @@
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.0-jre</guava.version>
-        <cdk.version>2.177.0</cdk.version>
+        <cdk.version>2.178.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.4.2</constructs.version>
         <gson.version>2.12.1</gson.version>
@@ -173,7 +173,7 @@
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.2</jgrapht.version>
         <apfloat.version>1.14.0</apfloat.version>
-        <joda-time.version>2.13.0</joda-time.version>
+        <joda-time.version>2.13.1</joda-time.version>
         <jnr.ffi.version>2.2.17</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
@@ -183,7 +183,7 @@
         <testcontainers.version>1.20.4</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.27.3</assertj.version>
-        <approvaltests.version>24.15.0</approvaltests.version>
+        <approvaltests.version>24.16.0</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.0</xmlunit.version>
         <jsonunit.version>4.1.0</jsonunit.version>
@@ -1323,6 +1323,20 @@
                                     <excludes>
                                     </excludes>
                                 </artifactSet>
+                                <transformers>
+                                    <!--
+                                    This is needed to merge META-INFO/services/org.apache.hadoop.fs.FileSystem, which
+                                    is provided by different libraries.
+                                    Otherwise depending on the order Maven processes the jars, sometimes it takes the
+                                    version of this file from hadoop-aws, which only declares
+                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem.
+                                    This prevents Hadoop from loading the local file system, and we see errors like this:
+                                    org.apache.hadoop.fs.UnsupportedFileSystemException: No FileSystem for scheme "file"
+                                    This is only strictly needed for modules that use Hadoop, but in practice this is
+                                    most fat jars.
+                                    -->
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                </transformers>
                             </configuration>
                         </execution>
                     </executions>
