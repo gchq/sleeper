@@ -30,6 +30,7 @@ pushd "$MAVEN_DIR"
 echo "-------------------------------------------------------------------------------"
 echo "Building Project"
 echo "-------------------------------------------------------------------------------"
+echo "Running Maven in quiet mode, this may take several minutes."
 echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
 
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
