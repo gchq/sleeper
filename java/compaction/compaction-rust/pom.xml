@@ -144,10 +144,9 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>cross</executable>
+                                    <executable>${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
-                                    <quietLogs>true</quietLogs>
                                     <arguments>
                                         <argument>build</argument>
                                         <argument>--release</argument>
@@ -163,10 +162,9 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>cross</executable>
+                                    <executable>${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
                                     <useMavenLogger>true</useMavenLogger>
-                                    <quietLogs>true</quietLogs>
                                     <arguments>
                                         <argument>build</argument>
                                         <argument>--release</argument>
