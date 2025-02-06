@@ -353,8 +353,10 @@ public interface CompactionProperty {
             .propertyGroup(InstancePropertyGroup.COMPACTION).build();
     UserDefinedInstanceProperty DEFAULT_COMPACTION_FILES_BATCH_SIZE = Index.propertyBuilder("sleeper.default.compaction.files.batch.size")
             .description("The maximum number of files to read in a compaction job. Note that the state store must " +
-                    "support atomic updates for this many files. The value of 'sleeper.fs.s3a.max-connections' must be " +
-                    "at least the value of this plus one. The extra one is for the output file.\n" +
+                    "support atomic updates for this many files.\n" +
+                    "Also note that this many files may need to be open simultaneously. The value of " +
+                    "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is for " +
+                    "the output file.\n" +
                     "This is a default value and will be used if not specified in the table properties.")
             .defaultValue("12")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
