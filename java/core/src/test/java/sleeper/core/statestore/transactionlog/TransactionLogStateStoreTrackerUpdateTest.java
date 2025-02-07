@@ -79,6 +79,7 @@ public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransacti
 
         // Then
         assertThat(followerStore.getFileReferences()).containsExactly(oldFile);
+        assertThat(filesLogStore.getTransactionEntriesThatWereRead()).isEmpty();
     }
 
     private void loadNextTransaction(TransactionLogEntry entry) {

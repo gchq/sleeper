@@ -122,4 +122,40 @@ public class InMemoryTransactionLogStoreTest {
         assertThatThrownBy(() -> store.readTransactionsAfter(0))
                 .isSameAs(failure);
     }
+
+    @Test
+    void shouldReportOneTransactionWasRead() throws Exception {
+        // Given
+        TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
+        store.addTransaction(entry);
+
+        // When
+        store.readTransactionsAfter(0).toList();
+
+        // Then
+        assertThat(store.getTransactionEntriesThatWereRead()).containsExactly(entry);
+    }
+
+    @Test
+    void shouldReportNoTransactionsWereReadWhenRequestedNoTransactions() throws Exception {
+        // Given
+        TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
+        store.addTransaction(entry);
+
+        // When / Then
+        assertThat(store.getTransactionEntriesThatWereRead()).isEmpty();
+    }
+
+    @Test
+    void shouldReportNoTransactionsWereReadWhenRequestedTransactionsAfterLatest() throws Exception {
+        // Given
+        TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
+        store.addTransaction(entry);
+
+        // When
+        store.readTransactionsAfter(1).toList();
+
+        // Then
+        assertThat(store.getTransactionEntriesThatWereRead()).isEmpty();
+    }
 }

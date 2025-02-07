@@ -29,7 +29,8 @@ import java.util.stream.Stream;
  */
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
-    private List<TransactionLogEntry> transactions = new ArrayList<>();
+    private List<TransactionLogEntry> transactionEntries = new ArrayList<>();
+    private List<TransactionLogEntry> transactionEntriesThatWereRead = new ArrayList<>();
     private Runnable startOfAdd = () -> {
     };
     private Runnable startOfRead = () -> {
@@ -40,27 +41,32 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
         long transactionNumber = entry.getTransactionNumber();
         doStartOfAddTransaction();
-        if (transactionNumber <= transactions.size()) {
+        if (transactionNumber <= transactionEntries.size()) {
             throw new DuplicateTransactionNumberException(transactionNumber);
         }
-        if (transactionNumber > transactions.size() + 1) {
-            throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactions.size());
+        if (transactionNumber > transactionEntries.size() + 1) {
+            throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactionEntries.size());
         }
-        transactions.add(entry);
+        transactionEntries.add(entry);
     }
 
     @Override
     public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
         doStartOfReadTransactions();
-        return transactions.stream()
-                .skip(lastTransactionNumber);
+        return transactionEntries.stream()
+                .skip(lastTransactionNumber)
+                .peek(transactionEntriesThatWereRead::add);
     }
 
     @Override
     public void deleteTransactionsAtOrBefore(long transactionNumber) {
-        transactions = transactions.stream()
+        transactionEntries = transactionEntries.stream()
                 .filter(transaction -> transaction.getTransactionNumber() > transactionNumber)
                 .collect(Collectors.toList());
+    }
+
+    public List<TransactionLogEntry> getTransactionEntriesThatWereRead() {
+        return transactionEntriesThatWereRead;
     }
 
     /**
@@ -123,11 +129,11 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     public long getLastTransactionNumber() {
-        return transactions.size();
+        return transactionEntries.size();
     }
 
     public TransactionLogEntry getLastEntry() {
-        return transactions.get(transactions.size() - 1);
+        return transactionEntries.get(transactionEntries.size() - 1);
     }
 
     private void doStartOfAddTransaction() {
