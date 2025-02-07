@@ -159,6 +159,11 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
+    public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @Override
     public void deleteTransactionsAtOrBefore(long maxTransactionNumber) {
         LOGGER.info("Deleting {} transactions from Sleeper table {}", transactionDescription, sleeperTable);
         TransactionLogDeletionTracker deletionTracker = new TransactionLogDeletionTracker(transactionDescription);

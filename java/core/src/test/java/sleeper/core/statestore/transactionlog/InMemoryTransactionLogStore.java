@@ -59,6 +59,12 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
+    public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
+        return readTransactionsAfter(lastTransactionNumber)
+                .limit(Math.max(0, nextTransactionNumber - lastTransactionNumber - 1));
+    }
+
+    @Override
     public void deleteTransactionsAtOrBefore(long transactionNumber) {
         transactionEntries = transactionEntries.stream()
                 .filter(transaction -> transaction.getTransactionNumber() > transactionNumber)

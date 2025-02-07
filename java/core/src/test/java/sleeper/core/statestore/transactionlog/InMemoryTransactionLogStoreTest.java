@@ -158,4 +158,50 @@ public class InMemoryTransactionLogStoreTest {
         // Then
         assertThat(store.getTransactionEntriesThatWereRead()).isEmpty();
     }
+
+    @Test
+    void shouldReturnTransactionsInBetweenTwoEntries() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        store.addTransaction(entry1);
+        store.addTransaction(entry2);
+        store.addTransaction(entry3);
+
+        // When / Then
+        assertThat(store.readTransactionsBetween(1, 3))
+                .containsExactly(entry2);
+        assertThat(store.getTransactionEntriesThatWereRead()).containsExactly(entry2);
+    }
+
+    @Test
+    void shouldReturnNoTransactionsInBetweenWhenAlreadyUpToDate() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        store.addTransaction(entry1);
+        store.addTransaction(entry2);
+        store.addTransaction(entry3);
+
+        // When / Then
+        assertThat(store.readTransactionsBetween(2, 2)).isEmpty();
+        assertThat(store.getTransactionEntriesThatWereRead()).isEmpty();
+    }
+
+    @Test
+    void shouldReturnNoTransactionsWhenTargetTransactionIsLaterThanCurrent() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        store.addTransaction(entry1);
+        store.addTransaction(entry2);
+        store.addTransaction(entry3);
+
+        // When / Then
+        assertThat(store.readTransactionsBetween(3, 2)).isEmpty();
+        assertThat(store.getTransactionEntriesThatWereRead()).isEmpty();
+    }
 }
