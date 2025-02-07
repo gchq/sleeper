@@ -279,7 +279,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     @Test
-    void shouldThrowExceptionWhenNoTransactionsInBetweenWhenAlreadyUpToDate() throws Exception {
+    void shouldThrowExceptionReadingTransactionsBetweenWhenAlreadyUpToDate() throws Exception {
         // Given
         TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
         TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
@@ -294,7 +294,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     @Test
-    void shouldThrowExceptionWhenNoTransactionsWhenTargetTransactionIsLaterThanCurrent() throws Exception {
+    void shouldThrowExceptionReadingTransactionsBetweenWhenTargetTransactionIsBeforeCurrent() throws Exception {
         // Given
         TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
         TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
