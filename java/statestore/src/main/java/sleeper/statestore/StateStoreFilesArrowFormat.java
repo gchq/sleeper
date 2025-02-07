@@ -139,7 +139,7 @@ public class StateStoreFilesArrowFormat {
                 totalFileReferences += references.size();
             }
         }
-        LOGGER.info("Read {} files with {} references", totalFiles, totalFileReferences);
+        LOGGER.debug("Read {} files with {} references", totalFiles, totalFileReferences);
         return files;
     }
 
