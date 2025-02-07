@@ -62,6 +62,19 @@ public class TablePropertiesAsyncCommitsTest {
     }
 
     @Test
+    void shouldDisableAsyncCommitsByDefaultForS3tateStore() {
+        // Given
+        TableProperties tableProperties = new TableProperties(new InstanceProperties());
+        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
+
+        // When / Then
+        assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
+                .isFalse();
+        assertThat(tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC))
+                .isFalse();
+    }
+
+    @Test
     void shouldDisableAsyncCommitsByTypeInInstanceProperty() {
         // Given
         InstanceProperties instanceProperties = new InstanceProperties();
