@@ -21,6 +21,7 @@ import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -129,22 +130,14 @@ public class InMemoryTransactionLogStoreTest {
         // Given
         TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
         store.addTransaction(entry);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
 
         // When
         store.readTransactionsAfter(0).toList();
 
         // Then
-        assertThat(store.getTransactionEntriesThatWereRead()).containsExactly(entry);
-    }
-
-    @Test
-    void shouldReportNoTransactionsWereReadWhenRequestedNoTransactions() throws Exception {
-        // Given
-        TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
-        store.addTransaction(entry);
-
-        // When / Then
-        assertThat(store.getTransactionEntriesThatWereRead()).isEmpty();
+        assertThat(readEntries).containsExactly(entry);
     }
 
     @Test
@@ -152,12 +145,14 @@ public class InMemoryTransactionLogStoreTest {
         // Given
         TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
         store.addTransaction(entry);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
 
         // When
         store.readTransactionsAfter(1).toList();
 
         // Then
-        assertThat(store.getTransactionEntriesThatWereRead()).isEmpty();
+        assertThat(readEntries).isEmpty();
     }
 
     @Test
@@ -171,11 +166,13 @@ public class InMemoryTransactionLogStoreTest {
         store.addTransaction(entry3);
         AtomicInteger readRequests = new AtomicInteger(0);
         store.atStartOfReadTransactions(readRequests::incrementAndGet);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
 
         // When / Then
         assertThat(store.readTransactionsBetween(1, 3))
                 .containsExactly(entry2);
-        assertThat(store.getTransactionEntriesThatWereRead()).containsExactly(entry2);
+        assertThat(readEntries).containsExactly(entry2);
         assertThat(readRequests.get()).isEqualTo(1);
     }
 
@@ -188,10 +185,12 @@ public class InMemoryTransactionLogStoreTest {
         store.addTransaction(entry1);
         store.addTransaction(entry2);
         store.addTransaction(entry3);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
 
         // When / Then
         assertThat(store.readTransactionsBetween(2, 2)).isEmpty();
-        assertThat(store.getTransactionEntriesThatWereRead()).isEmpty();
+        assertThat(readEntries).isEmpty();
     }
 
     @Test
@@ -203,9 +202,11 @@ public class InMemoryTransactionLogStoreTest {
         store.addTransaction(entry1);
         store.addTransaction(entry2);
         store.addTransaction(entry3);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
 
         // When / Then
         assertThat(store.readTransactionsBetween(3, 2)).isEmpty();
-        assertThat(store.getTransactionEntriesThatWereRead()).isEmpty();
+        assertThat(readEntries).isEmpty();
     }
 }

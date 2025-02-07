@@ -24,6 +24,7 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,13 +35,14 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
+    private final List<TransactionLogEntry> transactionEntriesThatWereRead = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
         initialiseWithPartitions(new PartitionsBuilder(schemaWithKey("key", new LongType())).singlePartition("root"));
         committerStore = (TransactionLogStateStore) super.store;
-
         followerStore = stateStoreBuilder(schemaWithKey("key", new LongType())).build();
+        filesLogStore.onReadTransactionLogEntry(transactionEntriesThatWereRead::add);
     }
 
     @Test
@@ -55,7 +57,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
 
         // Then
         assertThat(followerStore.getFileReferences()).containsExactly(file);
-        assertThat(filesLogStore.getTransactionEntriesThatWereRead()).isEmpty();
+        assertThat(transactionEntriesThatWereRead).isEmpty();
     }
 
     @Test
@@ -73,7 +75,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         loadNextTransaction(entry2);
 
         // Then
-        assertThat(filesLogStore.getTransactionEntriesThatWereRead()).containsExactly(entry1);
+        assertThat(transactionEntriesThatWereRead).containsExactly(entry1);
         assertThat(followerStore.getFileReferences()).containsExactly(file1, file2);
     }
 

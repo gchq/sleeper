@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,7 +31,8 @@ import java.util.stream.Stream;
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
     private List<TransactionLogEntry> transactionEntries = new ArrayList<>();
-    private List<TransactionLogEntry> transactionEntriesThatWereRead = new ArrayList<>();
+    private Consumer<TransactionLogEntry> onReadTransactionLogEntry = entry -> {
+    };
     private Runnable startOfAdd = () -> {
     };
     private Runnable startOfRead = () -> {
@@ -55,7 +57,7 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
         doStartOfReadTransactions();
         return transactionEntries.stream()
                 .skip(lastTransactionNumber)
-                .peek(transactionEntriesThatWereRead::add);
+                .peek(onReadTransactionLogEntry);
     }
 
     @Override
@@ -71,8 +73,13 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
                 .collect(Collectors.toList());
     }
 
-    public List<TransactionLogEntry> getTransactionEntriesThatWereRead() {
-        return transactionEntriesThatWereRead;
+    /**
+     * Sets a listener for when a log entry is read.
+     *
+     * @param onReadTransactionLogEntry the listener
+     */
+    public void onReadTransactionLogEntry(Consumer<TransactionLogEntry> onReadTransactionLogEntry) {
+        this.onReadTransactionLogEntry = onReadTransactionLogEntry;
     }
 
     /**
