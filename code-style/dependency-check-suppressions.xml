@@ -170,48 +170,6 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-        This is a stack overflow caused by trying to build JSON from a data structure with cyclic dependencies.
-        There's no version of Jackson available with a fix yet, and it seems very unlikely that there's a case where
-        this could happen in Sleeper.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
-        <cve>CVE-2023-35116</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        This is a false positive. According to the issue linked on the CVE, the problem is limited to the
-        okhttp-brotli library, which we don't use.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.squareup\.(okhttp3|okhttp)/okhttp@.*$</packageUrl>
-        <cve>CVE-2023-3782</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        The problem here is that Netty does not enable hostname verification by default. This is still a problem in the
-        latest version of Netty. We don't use this directly. It's a dependency for Spark, Athena, and AWS clients,
-        eg. for S3.
-
-        There isn't a fixed version of Netty, and the libraries we're using may configure hostname verification
-        correctly. We may see CVEs against those libraries separately if this doesn't get fixed.
-
-        It's not clear how we would solve this ourselves, and the relevant network calls all happen within a private
-        VPC.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-4586</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        Netty is a dependency for Spark, Athena, and AWS clients, eg. for S3.
-
-        This is about the HTTP/2 rapid reset vulnerability. We don't expose an HTTP server publicly, so this shouldn't
-        be a problem for us.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.netty/netty.*@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-44487</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
         Bouncy Castle is a dependency for Athena. We also use the library in the build module but we use a more recent
         version that is not vulnerable.
 
@@ -231,23 +189,6 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/software\.amazon\.ion/ion\-java@.*$</packageUrl>
         <cve>CVE-2024-21634</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-        XNIO is a dependency for Hadoop, used by Kerby's kerb-admin module, which is a transitive dependency for Hadoop
-        authentication. At time of writing, there's no version of XNIO without this problem.
-
-        Since HDFS is not used, it doesn't seem like this should be needed as a dependency. We can look at removing this
-        from the classpath.
-
-        We're using Hadoop for our integration with Parquet, and for bulk import jobs on Spark. The Parquet integration
-        only talks to S3 in practice, although the Hadoop integration is designed for HDFS, which may be why this is a
-        dependency. Spark also seems to only use Hadoop authentication when talking to HDFS:
-
-        https://spark.apache.org/docs/latest/security.html#kerberos
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.jboss\.xnio/xnio\-api@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-5685</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -309,5 +250,12 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/org\.glassfish\.hk2/osgi-resource-locator@.*$</packageUrl>
         <cve>CVE-2024-9329</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This library is only used during build time tests, with WireMock, JsonUnit and Trino testing.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/net\.minidev/json-smart@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-57699</vulnerabilityName>
     </suppress>
 </suppressions>

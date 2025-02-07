@@ -292,6 +292,10 @@ Joda Time (joda-time:joda-time:2.*)
 
 - Apache License, Version 2.0
 
+Json-smart (net.minidev:json-smart:2.*)
+
+- Apache License, Version 2.0
+
 JNR FFI (com.github.jnr:jnr-ffi:2.*)
 
 - Apache License, Version 2.0
