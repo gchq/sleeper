@@ -62,8 +62,12 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
 
     @Override
     public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
-        return readTransactionsAfter(lastTransactionNumber)
-                .limit(Math.max(0, nextTransactionNumber - lastTransactionNumber - 1));
+        if ((nextTransactionNumber - lastTransactionNumber - 1) > 0) {
+            return readTransactionsAfter(lastTransactionNumber)
+                    .limit(Math.max(0, nextTransactionNumber - lastTransactionNumber - 1));
+        } else {
+            throw new RuntimeException("Limit not valid for readTransactionBetween");
+        }
     }
 
     @Override

@@ -177,7 +177,7 @@ public class InMemoryTransactionLogStoreTest {
     }
 
     @Test
-    void shouldReturnNoTransactionsInBetweenWhenAlreadyUpToDate() throws Exception {
+    void shouldThrowExceptionWhenNoTransactionsInBetweenWhenAlreadyUpToDate() throws Exception {
         // Given
         TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
         TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
@@ -189,12 +189,13 @@ public class InMemoryTransactionLogStoreTest {
         store.onReadTransactionLogEntry(readEntries::add);
 
         // When / Then
-        assertThat(store.readTransactionsBetween(2, 2)).isEmpty();
+        assertThatThrownBy(() -> store.readTransactionsBetween(2, 2))
+                .isInstanceOf(RuntimeException.class);
         assertThat(readEntries).isEmpty();
     }
 
     @Test
-    void shouldReturnNoTransactionsWhenTargetTransactionIsLaterThanCurrent() throws Exception {
+    void shouldThrowExceptionWhenNoTransactionsWhenTargetTransactionIsLaterThanCurrent() throws Exception {
         // Given
         TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
         TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
@@ -206,7 +207,8 @@ public class InMemoryTransactionLogStoreTest {
         store.onReadTransactionLogEntry(readEntries::add);
 
         // When / Then
-        assertThat(store.readTransactionsBetween(3, 2)).isEmpty();
+        assertThatThrownBy(() -> store.readTransactionsBetween(3, 2))
+                .isInstanceOf(RuntimeException.class);
         assertThat(readEntries).isEmpty();
     }
 }
