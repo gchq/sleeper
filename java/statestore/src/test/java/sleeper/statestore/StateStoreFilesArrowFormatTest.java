@@ -23,6 +23,8 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.StateStoreFile;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.statestore.StateStoreFilesArrowFormat.ReadResult;
+import sleeper.statestore.StateStoreFilesArrowFormat.WriteResult;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -80,6 +82,7 @@ public class StateStoreFilesArrowFormatTest {
                 .jobId("test-job")
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
+                .lastStateStoreUpdateTime(Instant.parse("2024-05-28T13:25:02.123Z"))
                 .build();
         Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
         AllReferencesToAFile file = fileWithOneReference(reference, updateTime);
@@ -155,15 +158,112 @@ public class StateStoreFilesArrowFormatTest {
         assertThat(read(bytes)).isEmpty();
     }
 
-    private void write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
+    @Test
+    void shouldWriteMoreFilesThanBatchSize() throws Exception {
+        // Given
+        FileReference reference1 = FileReference.builder()
+                .filename("file1.parquet")
+                .partitionId("A")
+                .numberOfRecords(123L)
+                .jobId("test-job-1")
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        FileReference reference2 = FileReference.builder()
+                .filename("file2.parquet")
+                .partitionId("B")
+                .numberOfRecords(456L)
+                .jobId("test-job-2")
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        FileReference reference3 = FileReference.builder()
+                .filename("file3.parquet")
+                .partitionId("C")
+                .numberOfRecords(789L)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        AllReferencesToAFile file1 = fileWithReferences(reference1)
+                .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));
+        AllReferencesToAFile file2 = fileWithReferences(reference2)
+                .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:02.123Z"));
+        AllReferencesToAFile file3 = fileWithReferences(reference3)
+                .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:03.123Z"));
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, List.of(file1, file2, file3), bytes);
+        ReadResult readResult = readResult(bytes);
+
+        // Then
+        assertThat(streamFiles(readResult)).containsExactly(file1, file2, file3);
+        assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
+        assertThat(writeResult.numReferences()).isEqualTo(3).isEqualTo(readResult.numReferences());
+    }
+
+    @Test
+    void shouldMoveToNextBatchWhenOneFileFillsBatch() throws Exception {
+        // Given
+        FileReference reference1 = FileReference.builder()
+                .filename("file1.parquet")
+                .partitionId("A")
+                .numberOfRecords(123L)
+                .jobId("test-job-1")
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        FileReference reference2 = FileReference.builder()
+                .filename("file1.parquet")
+                .partitionId("B")
+                .numberOfRecords(456L)
+                .jobId("test-job-2")
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        FileReference reference3 = FileReference.builder()
+                .filename("file2.parquet")
+                .partitionId("C")
+                .numberOfRecords(789L)
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false)
+                .build();
+        AllReferencesToAFile file1 = fileWithReferences(reference1, reference2)
+                .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));
+        AllReferencesToAFile file2 = fileWithReferences(reference3)
+                .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:02.123Z"));
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, List.of(file1, file2), bytes);
+        ReadResult readResult = readResult(bytes);
+
+        // Then
+        assertThat(streamFiles(readResult)).containsExactly(file1, file2);
+        assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
+        assertThat(writeResult.numReferences()).isEqualTo(3).isEqualTo(readResult.numReferences());
+    }
+
+    private WriteResult write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
+        return writeWithMaxElementsInBatch(10, files, stream);
+    }
+
+    private WriteResult writeWithMaxElementsInBatch(int maxElementsInBatch, List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
         StateStoreFiles state = new StateStoreFiles();
         files.forEach(file -> state.add(StateStoreFile.from(file)));
-        StateStoreFilesArrowFormat.write(state, allocator, Channels.newChannel(stream));
+        return StateStoreFilesArrowFormat.write(state, allocator, Channels.newChannel(stream), maxElementsInBatch);
     }
 
     private Stream<AllReferencesToAFile> read(ByteArrayOutputStream stream) throws Exception {
+        return streamFiles(readResult(stream));
+    }
+
+    private ReadResult readResult(ByteArrayOutputStream stream) throws Exception {
         return StateStoreFilesArrowFormat.read(allocator,
-                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())))
-                .referencedAndUnreferenced().stream().map(StateStoreFile::toModel);
+                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
+    }
+
+    private Stream<AllReferencesToAFile> streamFiles(ReadResult result) {
+        return result.files().referencedAndUnreferenced().stream().map(StateStoreFile::toModel);
     }
 }

@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.statestore.StateStoreFilesArrowFormat.ReadResult;
+import sleeper.statestore.StateStoreFilesArrowFormat.WriteResult;
 
 import java.io.IOException;
 import java.nio.channels.Channels;
@@ -75,9 +77,10 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
-            StateStoreFilesArrowFormat.write(files, allocator, channel);
+            WriteResult result = StateStoreFilesArrowFormat.write(files, allocator, channel, 1000);
+            LOGGER.info("Wrote {} files with {} references in {} batches, to {}",
+                    files.referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
         }
-        LOGGER.info("Wrote {} files to {}", files.referencedAndUnreferenced().size(), path);
     }
 
     /**
@@ -111,9 +114,10 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            StateStoreFiles files = StateStoreFilesArrowFormat.read(allocator, channel);
-            LOGGER.debug("Loaded {} files from {}", files.referencedAndUnreferenced().size(), path);
-            return files;
+            ReadResult result = StateStoreFilesArrowFormat.read(allocator, channel);
+            LOGGER.debug("Loaded {} files with {} references in {} batches, from {}",
+                    result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
+            return result.files();
         }
     }
 
