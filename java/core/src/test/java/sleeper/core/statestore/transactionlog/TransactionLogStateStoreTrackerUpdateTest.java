@@ -59,10 +59,29 @@ public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransacti
         TransactionLogEntry logEntry = filesLogStore.getLastEntry();
 
         // When
-        followerStore.followTransactionUpdatingTracker(logEntry, tracker);
+        loadNextTransaction(logEntry);
 
         // Then
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId()))
                 .containsExactly(defaultStatus(trackedJob, defaultCommittedRun(100)));
+    }
+
+    @Test
+    void shouldFollowSingleTransaction() {
+
+        // Given
+        FileReference oldFile = factory.rootFile("oldFile", 100L);
+        committerStore.addFiles(List.of(oldFile));
+        TransactionLogEntry logEntry = filesLogStore.getLastEntry();
+
+        // When
+        loadNextTransaction(logEntry);
+
+        // Then
+        assertThat(followerStore.getFileReferences()).containsExactly(oldFile);
+    }
+
+    private void loadNextTransaction(TransactionLogEntry entry) {
+        followerStore.followTransactionUpdatingTracker(entry, tracker);
     }
 }
