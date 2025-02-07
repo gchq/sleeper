@@ -149,12 +149,13 @@ class TransactionLogHead<T> {
 
     private void attemptAddTransaction(Instant updateTime, AddTransactionRequest request) throws StateStoreException, DuplicateTransactionNumberException {
         long transactionNumber = lastTransactionNumber + 1;
+        TransactionLogEntry entry = TransactionLogEntry.fromRequest(transactionNumber, updateTime, request);
         try {
-            logStore.addTransaction(TransactionLogEntry.fromRequest(transactionNumber, updateTime, request));
+            logStore.addTransaction(entry);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed adding transaction", e);
         }
-        request.getBeforeApplyListener().beforeApply(transactionNumber, state);
+        request.getBeforeApplyListener().beforeApply(entry, state);
         Instant startApplyTime = Instant.now();
         StateStoreTransaction<T> transaction = request.getTransaction();
         transaction.apply(state, updateTime);
@@ -251,10 +252,10 @@ class TransactionLogHead<T> {
     }
 
     private void applyTransaction(TransactionLogEntry entry) {
-        applyTransaction(entry, ApplyLoadTransactionListener.none());
+        applyTransaction(entry, StateListenerBeforeApply.none());
     }
 
-    void applyTransaction(TransactionLogEntry entry, ApplyLoadTransactionListener<T> listener) {
+    void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
         if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
             LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
                     sleeperTable, entry.getTransactionNumber(),

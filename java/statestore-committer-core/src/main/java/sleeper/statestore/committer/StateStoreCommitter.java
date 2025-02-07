@@ -153,7 +153,7 @@ public class StateStoreCommitter {
         ReplaceFileReferencesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
-                .beforeApplyListener((number, state) -> transaction.reportJobCommits(
+                .beforeApplyListener((entry, state) -> transaction.reportJobCommits(
                         compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
                 .build();
         try {
@@ -168,7 +168,7 @@ public class StateStoreCommitter {
         AddFilesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
-                .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
+                .beforeApplyListener((entry, state) -> transaction.reportJobCommitted(
                         ingestJobTracker, tableProperties.getStatus()))
                 .build();
         try {

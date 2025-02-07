@@ -16,16 +16,16 @@
 package sleeper.core.statestore.transactionlog;
 
 /**
- * Listens to see the state before a transaction is applied. This is when the transaction is in the log, but before it
- * is applied locally.
+ * Listens to see the state before a transaction is applied to the local state. This is when the transaction is in the
+ * log, but before it is applied locally.
  *
  * @param <S> the type of state to listen on
  */
 @FunctionalInterface
-public interface ApplyLoadTransactionListener<S> {
+public interface StateListenerBeforeApply<S> {
 
     /**
-     * Informs the listener that a transaction is about to be applied to the local state.
+     * Informs the listener that the transaction is about to be applied to the local state.
      *
      * @param entry the transaction log entry
      * @param state the state
@@ -33,14 +33,13 @@ public interface ApplyLoadTransactionListener<S> {
     void beforeApply(TransactionLogEntry entry, S state);
 
     /**
-     * Creates a listener that does nothing.
+     * Creates a transaction listener that does nothing.
      *
      * @param  <S> the type of state the transaction operates on
      * @return     the listener
      */
-    static <S> ApplyLoadTransactionListener<S> none() {
+    static <S> StateListenerBeforeApply<S> none() {
         return (entry, state) -> {
         };
     }
-
 }

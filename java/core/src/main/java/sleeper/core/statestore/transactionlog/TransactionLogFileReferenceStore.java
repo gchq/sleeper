@@ -148,7 +148,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         head.addTransaction(clock.instant(), request);
     }
 
-    void applyEntryFromLog(TransactionLogEntry logEntry, ApplyLoadTransactionListener<StateStoreFiles> listener) {
+    void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply<StateStoreFiles> listener) {
         head.applyTransaction(logEntry, listener);
     }
 

@@ -111,7 +111,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
      * @param logEntry the log entry
      * @param listener a listener to apply some action before the entry is added
      */
-    public <T> void applyEntryFromLog(TransactionLogEntry logEntry, ApplyLoadTransactionListener<StateStoreFiles> listener) {
+    public <T> void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply<StateStoreFiles> listener) {
         files.applyEntryFromLog(logEntry, listener);
     }
 

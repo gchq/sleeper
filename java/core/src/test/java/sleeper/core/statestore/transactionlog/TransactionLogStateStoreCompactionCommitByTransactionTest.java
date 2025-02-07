@@ -236,7 +236,7 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
 
     private void addTransactionWithTracking(ReplaceFileReferencesTransaction transaction) {
         store.addTransaction(AddTransactionRequest.withTransaction(transaction)
-                .beforeApplyListener((number, state) -> {
+                .beforeApplyListener((entry, state) -> {
                     transaction.reportJobCommits(tracker, sleeperTable, state, DEFAULT_COMMIT_TIME);
                 }).build());
     }
