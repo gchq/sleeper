@@ -19,6 +19,8 @@ import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.BillingMode;
+import software.amazon.awscdk.services.dynamodb.ITable;
+import software.amazon.awscdk.services.dynamodb.StreamViewType;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
 import software.amazon.awscdk.services.iam.ManagedPolicy;
@@ -70,6 +72,7 @@ public class TransactionLogStateStoreStack extends NestedStack {
                         .name(DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER)
                         .type(AttributeType.NUMBER)
                         .build())
+                .stream(StreamViewType.NEW_IMAGE)
                 .build();
     }
 
@@ -157,5 +160,9 @@ public class TransactionLogStateStoreStack extends NestedStack {
         latestSnapshotsTable.grantReadData(grantee);
         allSnapshotsTable.grantReadData(grantee);
         dataStack.grantReadDelete(grantee);
+    }
+
+    public ITable getFilesLogTable() {
+        return filesLogTable;
     }
 }

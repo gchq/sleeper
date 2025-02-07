@@ -38,7 +38,7 @@ import static sleeper.core.properties.instance.CommonProperty.MAXIMUM_CONNECTION
 import static sleeper.core.properties.instance.CommonProperty.REGION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -163,33 +163,6 @@ public class SleeperPropertiesValidationTest {
             assertThatThrownBy(tableProperties::validate)
                     .hasMessage("Property sleeper.table.name was invalid. It was unset.");
         }
-
-        @Test
-        void shouldFailValidationIfCompactionFilesBatchSizeTooLargeForDynamoDBStateStore() {
-            // Given
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
-            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 50);
-
-            // When/Then
-            assertThatThrownBy(tableProperties::validate)
-                    .isInstanceOf(SleeperPropertiesInvalidException.class)
-                    .hasMessage("Property sleeper.table.compaction.files.batch.size was invalid. " +
-                            "It was \"50\".");
-        }
-
-        @Test
-        void shouldPassValidationIfCompactionFilesBatchSizeTooLargeForDynamoDBStateStoreButS3StateStoreChosen() {
-            // Given
-            InstanceProperties instanceProperties = createTestInstanceProperties();
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
-            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 50);
-
-            // When/Then
-            assertThatCode(tableProperties::validate).doesNotThrowAnyException();
-        }
     }
 
     @Nested
@@ -217,8 +190,8 @@ public class SleeperPropertiesValidationTest {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
-            tableProperties.setNumber(COMPACTION_FILES_BATCH_SIZE, 50);
+            tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
+            tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, -100);
             tableProperties.set(COMPRESSION_CODEC, "madeUp");
 
             // When/Then
@@ -228,7 +201,7 @@ public class SleeperPropertiesValidationTest {
                     .extracting("invalidValues")
                     .isEqualTo(Map.of(
                             COMPRESSION_CODEC, "madeUp",
-                            COMPACTION_FILES_BATCH_SIZE, "50"));
+                            COMPACTION_JOB_SEND_TIMEOUT_SECS, "-100"));
         }
     }
 }

@@ -22,6 +22,10 @@ import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
 import software.amazon.awscdk.services.events.targets.LambdaFunction;
 import software.amazon.awscdk.services.lambda.IFunction;
+import software.amazon.awscdk.services.lambda.MetricType;
+import software.amazon.awscdk.services.lambda.MetricsConfig;
+import software.amazon.awscdk.services.lambda.StartingPosition;
+import software.amazon.awscdk.services.lambda.eventsources.DynamoEventSource;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
@@ -55,6 +59,9 @@ import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DE
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_CONCURRENCY_RESERVED;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_DELETION_LAMBDA_TIMEOUT_SECS;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_CONCURRENCY_RESERVED;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_MEMORY;
+import static sleeper.core.properties.instance.TableStateProperty.TRANSACTION_FOLLOWER_LAMBDA_TIMEOUT_SECS;
 
 public class TransactionLogTransactionStack extends NestedStack {
     public TransactionLogTransactionStack(
@@ -65,6 +72,7 @@ public class TransactionLogTransactionStack extends NestedStack {
         super(scope, id);
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", instanceProperties.get(JARS_BUCKET));
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
+        createFunctionToFollowTransactionLog(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack);
         createTransactionDeletionLambda(instanceProperties, lambdaCode, coreStacks, transactionLogStateStoreStack, topic, errorMetrics);
         Utils.addStackTagIfSet(this, instanceProperties);
     }
@@ -135,5 +143,26 @@ public class TransactionLogTransactionStack extends NestedStack {
         coreStacks.grantInvokeScheduled(transactionDeletionTrigger, queue);
         coreStacks.grantReadTablesStatus(transactionDeletionLambda);
         transactionLogStateStoreStack.grantDeleteTransactions(transactionDeletionLambda);
+    }
+
+    private void createFunctionToFollowTransactionLog(
+            InstanceProperties instanceProperties, LambdaCode lambdaCode, CoreStacks coreStacks, TransactionLogStateStoreStack transactionLogStateStoreStack) {
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String functionName = String.join("-", "sleeper", instanceId, "state-transaction-follower");
+        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.TRANSACTION_FOLLOWER, "TransactionLogFollower", builder -> builder
+                .functionName(functionName)
+                .description("Follows the state store transaction log to trigger updates, e.g. to job trackers")
+                .environment(Utils.createDefaultEnvironment(instanceProperties))
+                .reservedConcurrentExecutions(instanceProperties.getIntOrNull(TRANSACTION_FOLLOWER_LAMBDA_CONCURRENCY_RESERVED))
+                .memorySize(instanceProperties.getInt(TRANSACTION_FOLLOWER_LAMBDA_MEMORY))
+                .timeout(Duration.seconds(instanceProperties.getInt(TRANSACTION_FOLLOWER_LAMBDA_TIMEOUT_SECS)))
+                .logGroup(coreStacks.getLogGroup(LogGroupRef.STATE_TRANSACTION_FOLLOWER)));
+
+        lambda.addEventSource(DynamoEventSource.Builder.create(transactionLogStateStoreStack.getFilesLogTable())
+                .startingPosition(StartingPosition.LATEST)
+                .metricsConfig(MetricsConfig.builder()
+                        .metrics(List.of(MetricType.EVENT_COUNT))
+                        .build())
+                .build());
     }
 }

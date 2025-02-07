@@ -38,5 +38,4 @@ sleeper.table.gc.delay.minutes=15
 # sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore
 # sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots
 # sleeper.statestore.s3.S3StateStore
-# sleeper.statestore.dynamodb.DynamoDBStateStore
 sleeper.table.statestore.classname=sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore
