@@ -64,21 +64,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
-    // DynamoDBStateStore
-    CdkDefinedInstanceProperty ACTIVE_FILES_TABLENAME = Index.propertyBuilder("sleeper.statestore.dynamo.active.table")
-            .description("The name of the DynamoDB table holding metadata of active files in Sleeper tables.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
-    CdkDefinedInstanceProperty FILE_REFERENCE_COUNT_TABLENAME = Index.propertyBuilder("sleeper.statestore.dynamo.file.reference.count.table")
-            .description("The name of the DynamoDB table holding metadata of the number of references to files " +
-                    "in Sleeper tables.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
-    CdkDefinedInstanceProperty PARTITION_TABLENAME = Index.propertyBuilder("sleeper.statestore.dynamo.partition.table")
-            .description("The name of the DynamoDB table holding metadata of partitions in Sleeper tables.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
-
     // S3StateStore
     CdkDefinedInstanceProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.statestore.s3.dynamo.revision.table")
             .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
