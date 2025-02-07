@@ -22,6 +22,7 @@ import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransactio
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -168,11 +169,14 @@ public class InMemoryTransactionLogStoreTest {
         store.addTransaction(entry1);
         store.addTransaction(entry2);
         store.addTransaction(entry3);
+        AtomicInteger readRequests = new AtomicInteger(0);
+        store.atStartOfReadTransactions(readRequests::incrementAndGet);
 
         // When / Then
         assertThat(store.readTransactionsBetween(1, 3))
                 .containsExactly(entry2);
         assertThat(store.getTransactionEntriesThatWereRead()).containsExactly(entry2);
+        assertThat(readRequests.get()).isEqualTo(1);
     }
 
     @Test
