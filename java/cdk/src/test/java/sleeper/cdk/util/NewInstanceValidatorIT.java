@@ -24,6 +24,7 @@ import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -92,7 +93,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenTransactionLogStateStoreExists() throws IOException {
         // Given
-        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBTransactionLogStateStore.class.getName());
 
         // When
