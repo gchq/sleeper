@@ -15,11 +15,11 @@
  */
 package sleeper.statestore.transactionlog;
 
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.gson.JsonSyntaxException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
@@ -279,8 +279,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
     }
 
     @Test
-    @Disabled
-    void shouldReturnNoTransactionsInBetweenWhenAlreadyUpToDate() throws Exception {
+    void shouldThrowExceptionWhenNoTransactionsInBetweenWhenAlreadyUpToDate() throws Exception {
         // Given
         TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
         TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
@@ -290,12 +289,12 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         fileLogStore.addTransaction(entry3);
 
         // When / Then
-        assertThat(fileLogStore.readTransactionsBetween(2, 2)).isEmpty();
+        assertThatThrownBy(() -> fileLogStore.readTransactionsBetween(2, 2))
+                .isInstanceOf(AmazonDynamoDBException.class);
     }
 
     @Test
-    @Disabled
-    void shouldReturnNoTransactionsWhenTargetTransactionIsLaterThanCurrent() throws Exception {
+    void shouldThrowExceptionWhenNoTransactionsWhenTargetTransactionIsLaterThanCurrent() throws Exception {
         // Given
         TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
         TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
@@ -305,7 +304,8 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         fileLogStore.addTransaction(entry3);
 
         // When / Then
-        assertThat(fileLogStore.readTransactionsBetween(3, 2)).isEmpty();
+        assertThatThrownBy(() -> fileLogStore.readTransactionsBetween(3, 2))
+                .isInstanceOf(AmazonDynamoDBException.class);
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
