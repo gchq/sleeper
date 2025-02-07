@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
-public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
+public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
@@ -41,6 +41,40 @@ public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransacti
         committerStore = (TransactionLogStateStore) super.store;
 
         followerStore = stateStoreBuilder(schemaWithKey("key", new LongType())).build();
+    }
+
+    @Test
+    void shouldFollowSingleTransaction() {
+        // Given
+        FileReference file = factory.rootFile("file.parquet", 100L);
+        committerStore.addFiles(List.of(file));
+        TransactionLogEntry logEntry = filesLogStore.getLastEntry();
+
+        // When
+        loadNextTransaction(logEntry);
+
+        // Then
+        assertThat(followerStore.getFileReferences()).containsExactly(file);
+        assertThat(filesLogStore.getTransactionEntriesThatWereRead()).isEmpty();
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldFollowTransactionReadingPreviousFromLog() {
+        // Given
+        FileReference file1 = factory.rootFile("file1.parquet", 100L);
+        FileReference file2 = factory.rootFile("file2.parquet", 100L);
+        committerStore.addFiles(List.of(file1));
+        TransactionLogEntry entry1 = filesLogStore.getLastEntry();
+        committerStore.addFiles(List.of(file2));
+        TransactionLogEntry entry2 = filesLogStore.getLastEntry();
+
+        // When
+        loadNextTransaction(entry2);
+
+        // Then
+        assertThat(filesLogStore.getTransactionEntriesThatWereRead()).containsExactly(entry1);
+        assertThat(followerStore.getFileReferences()).containsExactly(file1, file2);
     }
 
     @Test
@@ -64,22 +98,6 @@ public class TransactionLogStateStoreTrackerUpdateTest extends InMemoryTransacti
         // Then
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId()))
                 .containsExactly(defaultStatus(trackedJob, defaultCommittedRun(100)));
-    }
-
-    @Test
-    void shouldFollowSingleTransaction() {
-
-        // Given
-        FileReference oldFile = factory.rootFile("oldFile", 100L);
-        committerStore.addFiles(List.of(oldFile));
-        TransactionLogEntry logEntry = filesLogStore.getLastEntry();
-
-        // When
-        loadNextTransaction(logEntry);
-
-        // Then
-        assertThat(followerStore.getFileReferences()).containsExactly(oldFile);
-        assertThat(filesLogStore.getTransactionEntriesThatWereRead()).isEmpty();
     }
 
     private void loadNextTransaction(TransactionLogEntry entry) {
