@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.gson.JsonSyntaxException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
@@ -260,6 +261,51 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         // Then
         assertThat(partitionLogStore.readTransactionsAfter(0)).isEmpty();
         assertThat(filesInDataBucket()).isEmpty();
+    }
+
+    @Test
+    void shouldReturnTransactionsInBetweenTwoEntries() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        fileLogStore.addTransaction(entry1);
+        fileLogStore.addTransaction(entry2);
+        fileLogStore.addTransaction(entry3);
+
+        // When / Then
+        assertThat(fileLogStore.readTransactionsBetween(1, 3))
+                .containsExactly(entry2);
+    }
+
+    @Test
+    @Disabled
+    void shouldReturnNoTransactionsInBetweenWhenAlreadyUpToDate() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        fileLogStore.addTransaction(entry1);
+        fileLogStore.addTransaction(entry2);
+        fileLogStore.addTransaction(entry3);
+
+        // When / Then
+        assertThat(fileLogStore.readTransactionsBetween(2, 2)).isEmpty();
+    }
+
+    @Test
+    @Disabled
+    void shouldReturnNoTransactionsWhenTargetTransactionIsLaterThanCurrent() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        fileLogStore.addTransaction(entry1);
+        fileLogStore.addTransaction(entry2);
+        fileLogStore.addTransaction(entry3);
+
+        // When / Then
+        assertThat(fileLogStore.readTransactionsBetween(3, 2)).isEmpty();
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {

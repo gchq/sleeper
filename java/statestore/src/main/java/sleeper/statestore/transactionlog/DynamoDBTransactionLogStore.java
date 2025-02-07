@@ -160,7 +160,18 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
 
     @Override
     public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        return streamPagedItems(dynamoClient, new QueryRequest()
+                .withTableName(logTableName)
+                .withConsistentRead(true)
+                .withKeyConditionExpression("#TableId = :table_id AND #Number BETWEEN :lastNumber AND :nextNumber")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTable.getTableUniqueId())
+                        .number(":lastNumber", lastTransactionNumber + 1)
+                        .number(":nextNumber", nextTransactionNumber - 1)
+                        .build())
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                .map(this::readTransaction);
     }
 
     @Override
