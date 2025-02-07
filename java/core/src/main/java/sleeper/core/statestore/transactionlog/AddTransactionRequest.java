@@ -26,7 +26,7 @@ public class AddTransactionRequest {
 
     private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
-    private final StateListenerBeforeApply<?> beforeApplyListener;
+    private final ApplyAddTransactionListener<?> beforeApplyListener;
 
     private AddTransactionRequest(Builder<?> builder) {
         bodyKey = builder.bodyKey;
@@ -70,8 +70,8 @@ public class AddTransactionRequest {
      * @param  <T> the type of the transaction being added
      * @return     the listener
      */
-    public <S, T extends StateStoreTransaction<S>> StateListenerBeforeApply<S> getBeforeApplyListener() {
-        return (StateListenerBeforeApply<S>) beforeApplyListener;
+    public <S, T extends StateStoreTransaction<S>> ApplyAddTransactionListener<S> getBeforeApplyListener() {
+        return (ApplyAddTransactionListener<S>) beforeApplyListener;
     }
 
     /**
@@ -83,7 +83,7 @@ public class AddTransactionRequest {
 
         private final StateStoreTransaction<S> transaction;
         private String bodyKey;
-        private StateListenerBeforeApply<S> beforeApplyListener = StateListenerBeforeApply.none();
+        private ApplyAddTransactionListener<S> beforeApplyListener = ApplyAddTransactionListener.none();
 
         private Builder(StateStoreTransaction<S> transaction) {
             this.transaction = transaction;
@@ -112,7 +112,7 @@ public class AddTransactionRequest {
          * @param  beforeApplyListener the listener
          * @return                     this builder
          */
-        public Builder<S> beforeApplyListener(StateListenerBeforeApply<S> beforeApplyListener) {
+        public Builder<S> beforeApplyListener(ApplyAddTransactionListener<S> beforeApplyListener) {
             this.beforeApplyListener = beforeApplyListener;
             return this;
         }

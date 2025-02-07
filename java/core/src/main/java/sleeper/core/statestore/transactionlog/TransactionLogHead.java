@@ -19,9 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
 import sleeper.core.table.TableStatus;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.LoggedDuration;
 
@@ -253,19 +251,10 @@ class TransactionLogHead<T> {
     }
 
     private void applyTransaction(TransactionLogEntry entry) {
-        if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
-            LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
-                    sleeperTable, entry.getTransactionNumber(),
-                    transactionType.getName(),
-                    entry.getTransactionType());
-            return;
-        }
-        transactionType.cast(entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore))
-                .apply(state, entry.getUpdateTime());
-        lastTransactionNumber = entry.getTransactionNumber();
+        applyTransaction(entry, ApplyLoadTransactionListener.none());
     }
 
-    void followTransaction(TransactionLogEntry entry, CompactionJobTracker tracker) {
+    void applyTransaction(TransactionLogEntry entry, ApplyLoadTransactionListener<T> listener) {
         if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
             LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
                     sleeperTable, entry.getTransactionNumber(),
@@ -275,9 +264,7 @@ class TransactionLogHead<T> {
         }
         StateStoreTransaction<T> transaction = transactionType.cast(
                 entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore));
-        if (transaction instanceof ReplaceFileReferencesTransaction) {
-            ((ReplaceFileReferencesTransaction) transaction).reportJobCommits(tracker, sleeperTable, (StateStoreFiles) state, stateUpdateClock.get());
-        }
+        listener.beforeApply(entry, state);
         transaction.apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }

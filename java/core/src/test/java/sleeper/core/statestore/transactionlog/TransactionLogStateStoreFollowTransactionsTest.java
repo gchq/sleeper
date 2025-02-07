@@ -103,6 +103,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     }
 
     private void loadNextTransaction(TransactionLogEntry entry) {
-        followerStore.followTransactionUpdatingTracker(entry, tracker);
+        followerStore.applyEntryFromLog(entry, (e, state) -> {
+        });
     }
 }
