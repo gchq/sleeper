@@ -35,6 +35,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
 
     // Tests to add:
     // - Follow partition transactions
+    // - Read a snapshot when updating from log
     // - Local state has already applied the given transaction (fail or just ignore it?)
 
     private TransactionLogStateStore committerStore;
@@ -80,6 +81,25 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         // Then
         assertThat(transactionEntriesThatWereRead).containsExactly(entry1);
         assertThat(followerStore.getFileReferences()).containsExactly(file1, file2);
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldFollowTransactionReadingPreviousFromSnapshot() {
+        // Given
+        FileReference file1 = factory.rootFile("file1.parquet", 100L);
+        FileReference file2 = factory.rootFile("file2.parquet", 100L);
+        committerStore.addFiles(List.of(file1));
+        createSnapshots();
+        committerStore.addFiles(List.of(file2));
+        TransactionLogEntry entry2 = filesLogStore.getLastEntry();
+
+        // When
+        loadNextTransaction(entry2);
+
+        // Then
+        assertThat(followerStore.getFileReferences()).containsExactly(file1, file2);
+        assertThat(transactionEntriesThatWereRead).isEmpty();
     }
 
     @Test

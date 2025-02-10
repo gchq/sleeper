@@ -75,7 +75,7 @@ public class InMemoryTransactionLogSnapshotSetup {
         void run(StateStore stateStore) throws StateStoreException;
     }
 
-    private InMemoryTransactionLogSnapshotSetup(
+    InMemoryTransactionLogSnapshotSetup(
             TableStatus sleeperTable, TransactionLogStore filesLog, TransactionLogStore partitionsLog,
             TransactionBodyStore transactionBodyStore) {
         this.sleeperTable = sleeperTable;

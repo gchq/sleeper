@@ -101,6 +101,17 @@ public class InMemoryTransactionLogs {
                         constantJitterFraction(0.5), retryWaiter));
     }
 
+    /**
+     * Fakes creating snapshots of the current state of the transaction logs.
+     *
+     * @param tableStatus the Sleeper table status
+     */
+    public void createSnapshots(TableStatus tableStatus) {
+        InMemoryTransactionLogSnapshotSetup setup = new InMemoryTransactionLogSnapshotSetup(tableStatus, filesLogStore, partitionsLogStore, transactionBodyStore);
+        filesSnapshots.setLatestSnapshot(setup.createFilesSnapshot(filesLogStore.getLastTransactionNumber()));
+        partitionsSnapshots.setLatestSnapshot(setup.createPartitionsSnapshot(partitionsLogStore.getLastTransactionNumber()));
+    }
+
     public InMemoryTransactionLogStore getFilesLogStore() {
         return filesLogStore;
     }
