@@ -36,7 +36,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;

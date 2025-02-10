@@ -27,10 +27,10 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 
 import java.time.Instant;
 

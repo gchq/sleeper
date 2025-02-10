@@ -35,10 +35,10 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;

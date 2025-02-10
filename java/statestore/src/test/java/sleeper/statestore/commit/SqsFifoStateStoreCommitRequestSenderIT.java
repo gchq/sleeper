@@ -33,12 +33,12 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
-import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 

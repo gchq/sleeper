@@ -18,7 +18,7 @@ package sleeper.core.statestore.transactionlog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.table.TableStatus;
 
 import java.util.Optional;

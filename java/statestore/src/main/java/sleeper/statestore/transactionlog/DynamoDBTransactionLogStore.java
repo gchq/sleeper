@@ -32,10 +32,10 @@ import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogDeletionTracker;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 

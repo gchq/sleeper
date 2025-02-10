@@ -30,8 +30,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.SplitPartitionTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter;
 

@@ -23,9 +23,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Instant;

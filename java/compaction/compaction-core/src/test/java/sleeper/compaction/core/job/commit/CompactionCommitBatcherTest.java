@@ -24,7 +24,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.ReplaceFileReferencesTransaction;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

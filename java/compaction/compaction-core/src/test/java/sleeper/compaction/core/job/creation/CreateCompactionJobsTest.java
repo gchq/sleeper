@@ -38,7 +38,7 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.AssignJobIdsTransaction;
 import sleeper.core.util.ObjectFactory;
 
 import java.time.Instant;

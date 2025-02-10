@@ -22,7 +22,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.util.List;

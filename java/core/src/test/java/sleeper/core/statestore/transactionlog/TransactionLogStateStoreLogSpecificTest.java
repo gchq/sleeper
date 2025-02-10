@@ -32,11 +32,11 @@ import sleeper.core.statestore.SplitFileReferences;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore.ThrowingRunnable;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
 

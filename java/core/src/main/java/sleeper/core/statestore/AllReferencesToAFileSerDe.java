@@ -24,7 +24,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;

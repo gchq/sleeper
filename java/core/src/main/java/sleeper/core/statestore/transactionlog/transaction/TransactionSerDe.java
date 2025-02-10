@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog.transactions;
+package sleeper.core.statestore.transactionlog.transaction;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

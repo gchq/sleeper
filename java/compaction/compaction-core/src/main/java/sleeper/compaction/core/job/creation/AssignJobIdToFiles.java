@@ -22,7 +22,7 @@ import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.AssignJobIdsTransaction;
 import sleeper.core.table.TableStatus;
 
 import java.util.List;

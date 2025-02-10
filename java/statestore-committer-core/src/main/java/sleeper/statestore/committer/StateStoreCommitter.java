@@ -28,9 +28,9 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 

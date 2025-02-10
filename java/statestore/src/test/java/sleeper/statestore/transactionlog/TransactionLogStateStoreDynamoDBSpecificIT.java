@@ -36,9 +36,9 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetu
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;

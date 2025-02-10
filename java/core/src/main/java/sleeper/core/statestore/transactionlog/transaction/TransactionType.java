@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog.transactions;
+package sleeper.core.statestore.transactionlog.transaction;
 
 /**
  * A marker for the type of a transaction. Used when storing a log entry for a transaction. Stabilises mapping between

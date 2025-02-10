@@ -26,7 +26,7 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.AddFilesTransaction;
 
 import java.util.ArrayList;
 import java.util.List;

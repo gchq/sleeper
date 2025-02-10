@@ -20,8 +20,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.core.statestore.transactionlog.transactions.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.table.TableStatus;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;

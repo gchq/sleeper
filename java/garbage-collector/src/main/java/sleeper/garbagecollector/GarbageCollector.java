@@ -27,7 +27,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.DeleteFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;

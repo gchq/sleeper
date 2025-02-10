@@ -32,12 +32,12 @@ import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.SplitFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.SplitFileReferencesTransaction;
 import sleeper.statestore.StateStoreArrowFileStore;
 
 import java.io.IOException;

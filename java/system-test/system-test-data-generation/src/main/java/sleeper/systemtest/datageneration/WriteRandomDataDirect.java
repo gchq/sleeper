@@ -18,7 +18,7 @@ package sleeper.systemtest.datageneration;
 import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
