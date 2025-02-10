@@ -54,13 +54,13 @@ public class StateStoreArrowFileStore {
      * @throws IOException   if the file could not be written
      */
     public void savePartitions(String path, Collection<Partition> partitions, Schema sleeperSchema) throws IOException {
-        LOGGER.debug("Writing {} partitions to {}", partitions.size(), path);
+        LOGGER.info("Writing {} partitions to {}", partitions.size(), path);
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
             StateStorePartitionsArrowFormat.write(partitions, allocator, channel);
         }
-        LOGGER.debug("Wrote {} partitions to {}", partitions.size(), path);
+        LOGGER.info("Wrote {} partitions to {}", partitions.size(), path);
     }
 
     /**
@@ -71,13 +71,13 @@ public class StateStoreArrowFileStore {
      * @throws IOException if the file could not be written
      */
     public void saveFiles(String path, StateStoreFiles files) throws IOException {
-        LOGGER.debug("Writing {} files to {}", files.referencedAndUnreferenced().size(), path);
+        LOGGER.info("Writing {} files to {}", files.referencedAndUnreferenced().size(), path);
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
             StateStoreFilesArrowFormat.write(files, allocator, channel);
         }
-        LOGGER.debug("Wrote {} files to {}", files.referencedAndUnreferenced().size(), path);
+        LOGGER.info("Wrote {} files to {}", files.referencedAndUnreferenced().size(), path);
     }
 
     /**

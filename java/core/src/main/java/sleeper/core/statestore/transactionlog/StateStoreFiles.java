@@ -57,7 +57,7 @@ public class StateStoreFiles {
     }
 
     /**
-     * Streams through all files in the state store.
+     * Retrieves all files in the state store.
      *
      * @return all files
      */
