@@ -6,8 +6,8 @@ Proposed
 
 ## Context
 
-There are currently three state stores in Sleeper. The DynamoDBStateStore will be deleted soon as DynamoDB does not
-support snapshot isolation and therefore we cannot obtain a consistent view of the file references in a
+There are currently two state stores in Sleeper. There was a DynamoDBStateStore, but this was deleted as DynamoDB does 
+not support snapshot isolation and therefore we could not obtain a consistent view of the file references in a
 table. The S3StateStore does not have this problem but as it requires the entire state to be written to S3 for each
 update, it can take several seconds to apply an update. This is too slow for some use cases which may require
 a million or more updates per day.

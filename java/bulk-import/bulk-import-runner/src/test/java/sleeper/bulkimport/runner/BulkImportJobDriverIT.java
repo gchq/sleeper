@@ -61,7 +61,6 @@ import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -449,7 +448,6 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoClient).create();
         new S3StateStoreCreator(instanceProperties, dynamoClient).create();
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         return instanceProperties;

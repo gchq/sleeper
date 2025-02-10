@@ -62,10 +62,10 @@ public class TablePropertiesAsyncCommitsTest {
     }
 
     @Test
-    void shouldDisableAsyncCommitsByDefaultForDynamoDBStateStore() {
+    void shouldDisableAsyncCommitsByDefaultForS3tateStore() {
         // Given
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
 
         // When / Then
         assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))

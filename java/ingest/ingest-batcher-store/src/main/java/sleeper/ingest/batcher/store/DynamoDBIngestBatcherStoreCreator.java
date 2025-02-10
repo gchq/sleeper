@@ -18,11 +18,9 @@ package sleeper.ingest.batcher.store;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
-import com.amazonaws.waiters.WaiterParameters;
 
 import sleeper.core.properties.instance.InstanceProperties;
 
@@ -50,12 +48,5 @@ public class DynamoDBIngestBatcherStoreCreator {
                         new KeySchemaElement(JOB_ID, KeyType.HASH),
                         new KeySchemaElement(FILE_PATH, KeyType.RANGE)));
         configureTimeToLive(dynamoDB, tableName, EXPIRY_TIME);
-    }
-
-    public static void tearDown(InstanceProperties properties, AmazonDynamoDB dynamoDB) {
-        String tableName = DynamoDBIngestBatcherStore.ingestRequestsTableName(properties.get(ID));
-        dynamoDB.deleteTable(tableName);
-        dynamoDB.waiters().tableNotExists().run(new WaiterParameters<>(
-                new DescribeTableRequest(tableName)));
     }
 }

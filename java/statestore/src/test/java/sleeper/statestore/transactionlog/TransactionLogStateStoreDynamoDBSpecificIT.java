@@ -44,6 +44,7 @@ import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapsho
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -96,7 +97,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             stateStore.initialise(tree.getAllPartitions());
 
             // Then
-            assertThat(stateStore.getAllPartitions()).containsExactlyElementsOf(tree.getAllPartitions());
+            assertThat(new HashSet<>(stateStore.getAllPartitions())).isEqualTo(new HashSet<>(tree.getAllPartitions()));
         }
 
         @Test

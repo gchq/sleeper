@@ -15,7 +15,6 @@
  */
 package sleeper.ingest.batcher.store;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -49,11 +48,6 @@ public class DynamoDBIngestBatcherStoreTestBase extends DynamoDBTestBase {
     @BeforeEach
     void setUp() {
         DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoDBClient);
-    }
-
-    @AfterEach
-    void tearDown() {
-        DynamoDBIngestBatcherStoreCreator.tearDown(instanceProperties, dynamoDBClient);
     }
 
     protected IngestBatcherStore storeWithFilesInAssignJobBatch(int filesInAssignJobBatch) {

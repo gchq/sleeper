@@ -244,11 +244,6 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
             .defaultProperty(DEFAULT_COMPACTION_FILES_BATCH_SIZE)
             .description("The maximum number of files to read in a compaction job. Note that the state store must " +
                     "support atomic updates for this many files.\n" +
-                    "The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove " +
-                    "the file references and update the file reference count, and another 2 updates for an output file " +
-                    "to add a new file reference and update the reference count. There's a limit of 100 atomic updates, " +
-                    "which equates to 49 files in a compaction.\n" +
-                    "See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html.\n" +
                     "Also note that this many files may need to be open simultaneously. The value of " +
                     "'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is " +
                     "for the output file.")
@@ -343,8 +338,7 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "The default is DynamoDBTransactionLogStateStore. Options are:\n" +
                     "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore\n" +
                     "sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots\n" +
-                    "sleeper.statestore.s3.S3StateStore\n" +
-                    "sleeper.statestore.dynamodb.DynamoDBStateStore")
+                    "sleeper.statestore.s3.S3StateStore")
             .propertyGroup(TablePropertyGroup.METADATA)
             .editable(false).build();
     TableProperty STATESTORE_ASYNC_COMMITS_ENABLED = Index.propertyBuilder("sleeper.table.statestore.commit.async.enabled")
