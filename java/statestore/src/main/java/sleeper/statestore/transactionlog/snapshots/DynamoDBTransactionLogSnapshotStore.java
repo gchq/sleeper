@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
 import java.io.IOException;
@@ -72,7 +72,7 @@ public class DynamoDBTransactionLogSnapshotStore {
 
     /**
      * Loads the latest snapshot of files if it meets a minimum transaction number. Used by the state store to implement
-     * {@link sleeper.core.statestore.transactionlog.TransactionLogSnapshotLoader}.
+     * {@link sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader}.
      *
      * @param  transactionNumber the minimum transaction number to load snapshot data from S3
      * @return                   the latest snapshot if there is one that meets the minimum transaction number
@@ -85,7 +85,7 @@ public class DynamoDBTransactionLogSnapshotStore {
 
     /**
      * Loads the latest snapshot of partitions if it meets a minimum transaction number. Used by the state store to
-     * implement {@link sleeper.core.statestore.transactionlog.TransactionLogSnapshotLoader}.
+     * implement {@link sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader}.
      *
      * @param  transactionNumber the minimum transaction number to load snapshot data from S3
      * @return                   the latest snapshot if there is one that meets the minimum transaction number

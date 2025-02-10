@@ -19,6 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -175,7 +177,7 @@ public class TransactionLogHead<T> {
      *
      * @throws StateStoreException thrown if there's any failure reading transactions or applying them to the state
      */
-    void update() throws StateStoreException {
+    public void update() throws StateStoreException {
         try {
             Instant startTime = stateUpdateClock.get();
             if (nextTransactionCheckTime != null && startTime.isBefore(nextTransactionCheckTime)) {
@@ -288,7 +290,7 @@ public class TransactionLogHead<T> {
         return state;
     }
 
-    long lastTransactionNumber() {
+    public long getLastTransactionNumber() {
         return lastTransactionNumber;
     }
 

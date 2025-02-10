@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.snapshot;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.TransactionLogHead;
+import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.table.TableStatus;
 
@@ -82,6 +85,6 @@ public class TransactionLogSnapshotCreator {
                 .sleeperTable(table)
                 .build();
         head.update();
-        return new TransactionLogSnapshot(state, head.lastTransactionNumber());
+        return new TransactionLogSnapshot(state, head.getLastTransactionNumber());
     }
 }
