@@ -101,6 +101,7 @@ public class StateStorePartitionsArrowFormat {
      * @throws IOException        if writing to the channel fails
      */
     public static WriteResult write(Collection<Partition> partitions, BufferAllocator allocator, WritableByteChannel channel, int maxElementsInBatch) throws IOException {
+        int totalBatches = 0;
         try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(SCHEMA, allocator);
                 ArrowStreamWriter writer = new ArrowStreamWriter(vectorSchemaRoot, null, channel)) {
             vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(partitions.size()));
@@ -131,12 +132,21 @@ public class StateStorePartitionsArrowFormat {
 
                 rowNumber++;
                 vectorSchemaRoot.setRowCount(rowNumber);
+                if (rowNumber >= maxElementsInBatch) {
+                    writer.writeBatch();
+                    rowNumber = 0;
+                    vectorSchemaRoot.setRowCount(0);
+                    totalBatches++;
+                }
             }
 
-            writer.writeBatch();
+            if (rowNumber > 0) {
+                writer.writeBatch();
+                totalBatches++;
+            }
             writer.end();
-            return new WriteResult(1);
         }
+        return new WriteResult(totalBatches);
     }
 
     /**
@@ -147,27 +157,30 @@ public class StateStorePartitionsArrowFormat {
      */
     public static ReadResult read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
         List<Partition> partitions = new ArrayList<>();
+        int totalBatches = 0;
         try (ArrowStreamReader reader = new ArrowStreamReader(channel, allocator)) {
-            reader.loadNextBatch();
-            VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
-            VarCharVector idVector = (VarCharVector) vectorSchemaRoot.getVector(ID);
-            VarCharVector parentIdVector = (VarCharVector) vectorSchemaRoot.getVector(PARENT_ID);
-            ListVector childIdsVector = (ListVector) vectorSchemaRoot.getVector(CHILD_IDS);
-            BitVector isLeafVector = (BitVector) vectorSchemaRoot.getVector(IS_LEAF);
-            UInt4Vector dimensionVector = (UInt4Vector) vectorSchemaRoot.getVector(DIMENSION);
-            ListVector regionVector = (ListVector) vectorSchemaRoot.getVector(REGION);
-            for (int rowNumber = 0; rowNumber < vectorSchemaRoot.getRowCount(); rowNumber++) {
-                partitions.add(Partition.builder()
-                        .id(idVector.getObject(rowNumber).toString())
-                        .parentPartitionId(Optional.ofNullable(parentIdVector.getObject(rowNumber)).map(Text::toString).orElse(null))
-                        .leafPartition(isLeafVector.getObject(rowNumber))
-                        .childPartitionIds(readChildIds(childIdsVector, rowNumber))
-                        .dimension(Optional.ofNullable(dimensionVector.getObject(rowNumber)).orElse(-1))
-                        .region(readRegion(regionVector, rowNumber))
-                        .build());
+            while (reader.loadNextBatch()) {
+                VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
+                VarCharVector idVector = (VarCharVector) vectorSchemaRoot.getVector(ID);
+                VarCharVector parentIdVector = (VarCharVector) vectorSchemaRoot.getVector(PARENT_ID);
+                ListVector childIdsVector = (ListVector) vectorSchemaRoot.getVector(CHILD_IDS);
+                BitVector isLeafVector = (BitVector) vectorSchemaRoot.getVector(IS_LEAF);
+                UInt4Vector dimensionVector = (UInt4Vector) vectorSchemaRoot.getVector(DIMENSION);
+                ListVector regionVector = (ListVector) vectorSchemaRoot.getVector(REGION);
+                for (int rowNumber = 0; rowNumber < vectorSchemaRoot.getRowCount(); rowNumber++) {
+                    partitions.add(Partition.builder()
+                            .id(idVector.getObject(rowNumber).toString())
+                            .parentPartitionId(Optional.ofNullable(parentIdVector.getObject(rowNumber)).map(Text::toString).orElse(null))
+                            .leafPartition(isLeafVector.getObject(rowNumber))
+                            .childPartitionIds(readChildIds(childIdsVector, rowNumber))
+                            .dimension(Optional.ofNullable(dimensionVector.getObject(rowNumber)).orElse(-1))
+                            .region(readRegion(regionVector, rowNumber))
+                            .build());
+                }
+                totalBatches++;
             }
         }
-        return new ReadResult(partitions, 1);
+        return new ReadResult(partitions, totalBatches);
     }
 
     private static void writeChildIds(Partition partition, int rowNumber, BufferAllocator allocator, UnionListWriter writer) {
