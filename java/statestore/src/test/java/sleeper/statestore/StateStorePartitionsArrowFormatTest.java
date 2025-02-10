@@ -220,7 +220,7 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     @Test
-    void shouldWriteThreeBatches() throws Exception {
+    void shouldWriteFivePartitionsInThreeBatches() throws Exception {
         // Given
         List<Partition> partitions = new PartitionsBuilder(schemaWithKey("key", new StringType()))
                 .rootFirst("root")
