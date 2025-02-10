@@ -251,11 +251,20 @@ class TransactionLogHead<T> {
         }
     }
 
+    void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
+        long entryNumber = entry.getTransactionNumber();
+        if (lastTransactionNumber < (entryNumber - 1)) { // If we're not up to date with the given transaction
+            logStore.readTransactionsBetween(lastTransactionNumber, entryNumber)
+                    .forEach(this::applyTransaction);
+        }
+        applyTransaction(entry, listener);
+    }
+
     private void applyTransaction(TransactionLogEntry entry) {
         applyTransaction(entry, StateListenerBeforeApply.none());
     }
 
-    void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
+    private void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
         if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
             LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
                     sleeperTable, entry.getTransactionNumber(),

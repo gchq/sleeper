@@ -149,7 +149,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply<StateStoreFiles> listener) {
-        head.applyTransaction(logEntry, listener);
+        head.applyTransactionUpdatingIfNecessary(logEntry, listener);
     }
 
     private StateStoreFiles files() throws StateStoreException {

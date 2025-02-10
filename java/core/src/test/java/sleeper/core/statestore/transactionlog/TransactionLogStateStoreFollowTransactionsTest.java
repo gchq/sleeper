@@ -33,6 +33,10 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 
 public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
+    // Tests to add:
+    // - Follow partition transactions
+    // - Local state has already applied the given transaction (fail or just ignore it?)
+
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
     private final List<TransactionLogEntry> transactionEntriesThatWereRead = new ArrayList<>();
@@ -61,7 +65,6 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     }
 
     @Test
-    @Disabled("TODO")
     void shouldFollowTransactionReadingPreviousFromLog() {
         // Given
         FileReference file1 = factory.rootFile("file1.parquet", 100L);
