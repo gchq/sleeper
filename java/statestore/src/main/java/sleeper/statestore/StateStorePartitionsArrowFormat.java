@@ -42,7 +42,6 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
-import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
@@ -144,9 +143,9 @@ public class StateStorePartitionsArrowFormat {
      * Reads the state of partitions from Arrow format.
      *
      * @param  channel the channel to read from
-     * @return         the partitions in the state store
+     * @return         the result, including the partitions in the state store
      */
-    public static List<Partition> read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
+    public static ReadResult read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
         List<Partition> partitions = new ArrayList<>();
         try (ArrowStreamReader reader = new ArrowStreamReader(channel, allocator)) {
             reader.loadNextBatch();
@@ -168,7 +167,7 @@ public class StateStorePartitionsArrowFormat {
                         .build());
             }
         }
-        return partitions;
+        return new ReadResult(partitions, 1);
     }
 
     private static void writeChildIds(Partition partition, int rowNumber, BufferAllocator allocator, UnionListWriter writer) {
@@ -280,7 +279,7 @@ public class StateStorePartitionsArrowFormat {
      * @param partitions the data held in the file
      * @param numBatches the number of Arrow record batches that were read
      */
-    public record ReadResult(StateStorePartitions partitions, int numBatches) {
+    public record ReadResult(List<Partition> partitions, int numBatches) {
     }
 
     /**

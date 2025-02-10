@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.statestore.StateStoreFilesArrowFormat.ReadResult;
-import sleeper.statestore.StateStoreFilesArrowFormat.WriteResult;
 
 import java.io.IOException;
 import java.nio.channels.Channels;
@@ -60,9 +58,10 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
-            StateStorePartitionsArrowFormat.write(partitions, allocator, channel, 1000);
+            StateStorePartitionsArrowFormat.WriteResult result = StateStorePartitionsArrowFormat.write(partitions, allocator, channel, 1000);
+            LOGGER.info("Wrote {} partitions in {} batches, to {}",
+                    partitions.size(), result.numBatches(), path);
         }
-        LOGGER.info("Wrote {} partitions to {}", partitions.size(), path);
     }
 
     /**
@@ -77,7 +76,7 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
-            WriteResult result = StateStoreFilesArrowFormat.write(files, allocator, channel, 1000);
+            StateStoreFilesArrowFormat.WriteResult result = StateStoreFilesArrowFormat.write(files, allocator, channel, 1000);
             LOGGER.info("Wrote {} files with {} references in {} batches, to {}",
                     files.referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
         }
@@ -96,9 +95,10 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            List<Partition> partitions = StateStorePartitionsArrowFormat.read(allocator, channel);
-            LOGGER.debug("Loaded {} partitions from {}", partitions.size(), path);
-            return partitions;
+            StateStorePartitionsArrowFormat.ReadResult result = StateStorePartitionsArrowFormat.read(allocator, channel);
+            LOGGER.debug("Loaded {} partitions in {} batches, from {}",
+                    result.partitions().size(), result.numBatches(), path);
+            return result.partitions();
         }
     }
 
@@ -114,7 +114,7 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            ReadResult result = StateStoreFilesArrowFormat.read(allocator, channel);
+            StateStoreFilesArrowFormat.ReadResult result = StateStoreFilesArrowFormat.read(allocator, channel);
             LOGGER.debug("Loaded {} files with {} references in {} batches, from {}",
                     result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
             return result.files();

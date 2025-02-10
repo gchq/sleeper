@@ -210,6 +210,6 @@ public class StateStorePartitionsArrowFormatTest {
 
     private List<Partition> read(ByteArrayOutputStream stream) throws Exception {
         return StateStorePartitionsArrowFormat.read(allocator,
-                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
+                Channels.newChannel(new ByteArrayInputStream(stream.toByteArray()))).partitions();
     }
 }
