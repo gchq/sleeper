@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotCreator;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;

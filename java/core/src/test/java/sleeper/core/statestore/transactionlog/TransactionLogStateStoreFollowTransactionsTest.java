@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.util.ArrayList;

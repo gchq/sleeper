@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+
 /**
  * Listens to see the state before a transaction is applied to the local state. This is when the transaction is in the
  * log, but before it is applied locally.

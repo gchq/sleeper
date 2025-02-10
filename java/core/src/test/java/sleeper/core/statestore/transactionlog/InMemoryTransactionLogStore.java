@@ -15,6 +15,10 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;

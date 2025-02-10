@@ -17,6 +17,8 @@ package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;

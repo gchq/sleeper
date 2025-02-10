@@ -18,6 +18,8 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotCreator;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
