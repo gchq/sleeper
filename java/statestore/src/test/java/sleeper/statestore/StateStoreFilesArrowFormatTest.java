@@ -75,13 +75,11 @@ public class StateStoreFilesArrowFormatTest {
     @Test
     void shouldWriteOneFileWithOneReference() throws Exception {
         // Given
-        FileReference reference = FileReference.builder()
+        FileReference reference = wholeFileReferenceBuilder()
                 .filename("test.parquet")
                 .partitionId("root")
                 .numberOfRecords(123L)
                 .jobId("test-job")
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
                 .lastStateStoreUpdateTime(Instant.parse("2024-05-28T13:25:02.123Z"))
                 .build();
         Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
@@ -98,12 +96,10 @@ public class StateStoreFilesArrowFormatTest {
     @Test
     void shouldWriteFileReferenceWithNoJob() throws Exception {
         // Given
-        FileReference reference = FileReference.builder()
+        FileReference reference = wholeFileReferenceBuilder()
                 .filename("test.parquet")
                 .partitionId("root")
                 .numberOfRecords(123L)
-                .countApproximate(false)
-                .onlyContainsDataForThisPartition(true)
                 .build();
         Instant updateTime = Instant.parse("2024-05-28T13:25:01.123Z");
         AllReferencesToAFile file = fileWithOneReference(reference, updateTime);
@@ -119,21 +115,17 @@ public class StateStoreFilesArrowFormatTest {
     @Test
     void shouldWriteOneFileWithTwoReferences() throws Exception {
         // Given
-        FileReference reference1 = FileReference.builder()
+        FileReference reference1 = partitialFileReferenceBuilder()
                 .filename("file.parquet")
                 .partitionId("A")
                 .numberOfRecords(123L)
                 .jobId("test-job-1")
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
                 .build();
-        FileReference reference2 = FileReference.builder()
+        FileReference reference2 = partitialFileReferenceBuilder()
                 .filename("file.parquet")
                 .partitionId("B")
                 .numberOfRecords(456L)
                 .jobId("test-job-2")
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
                 .build();
         AllReferencesToAFile file = fileWithReferences(reference1, reference2)
                 .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));
@@ -161,28 +153,22 @@ public class StateStoreFilesArrowFormatTest {
     @Test
     void shouldWriteMoreFilesThanBatchSize() throws Exception {
         // Given
-        FileReference reference1 = FileReference.builder()
+        FileReference reference1 = wholeFileReferenceBuilder()
                 .filename("file1.parquet")
                 .partitionId("A")
                 .numberOfRecords(123L)
                 .jobId("test-job-1")
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
                 .build();
-        FileReference reference2 = FileReference.builder()
+        FileReference reference2 = wholeFileReferenceBuilder()
                 .filename("file2.parquet")
                 .partitionId("B")
                 .numberOfRecords(456L)
                 .jobId("test-job-2")
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
                 .build();
-        FileReference reference3 = FileReference.builder()
+        FileReference reference3 = wholeFileReferenceBuilder()
                 .filename("file3.parquet")
                 .partitionId("C")
                 .numberOfRecords(789L)
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
                 .build();
         AllReferencesToAFile file1 = fileWithReferences(reference1)
                 .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));
@@ -205,28 +191,20 @@ public class StateStoreFilesArrowFormatTest {
     @Test
     void shouldMoveToNextBatchWhenOneFileFillsBatch() throws Exception {
         // Given
-        FileReference reference1 = FileReference.builder()
+        FileReference reference1 = partitialFileReferenceBuilder()
                 .filename("file1.parquet")
                 .partitionId("A")
                 .numberOfRecords(123L)
-                .jobId("test-job-1")
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
                 .build();
-        FileReference reference2 = FileReference.builder()
+        FileReference reference2 = partitialFileReferenceBuilder()
                 .filename("file1.parquet")
                 .partitionId("B")
                 .numberOfRecords(456L)
-                .jobId("test-job-2")
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
                 .build();
-        FileReference reference3 = FileReference.builder()
+        FileReference reference3 = wholeFileReferenceBuilder()
                 .filename("file2.parquet")
                 .partitionId("C")
                 .numberOfRecords(789L)
-                .countApproximate(true)
-                .onlyContainsDataForThisPartition(false)
                 .build();
         AllReferencesToAFile file1 = fileWithReferences(reference1, reference2)
                 .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));
@@ -242,6 +220,52 @@ public class StateStoreFilesArrowFormatTest {
         assertThat(streamFiles(readResult)).containsExactly(file1, file2);
         assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
         assertThat(writeResult.numReferences()).isEqualTo(3).isEqualTo(readResult.numReferences());
+    }
+
+    @Test
+    void shouldFillNextBatchAfterOneFileOverflowsBatch() throws Exception {
+        // Given
+        FileReference file1Ref1 = partitialFileReferenceBuilder()
+                .filename("file1.parquet")
+                .partitionId("A")
+                .numberOfRecords(123L)
+                .build();
+        FileReference file1Ref2 = partitialFileReferenceBuilder()
+                .filename("file1.parquet")
+                .partitionId("B")
+                .numberOfRecords(456L)
+                .build();
+        FileReference file1Ref3 = partitialFileReferenceBuilder()
+                .filename("file1.parquet")
+                .partitionId("C")
+                .numberOfRecords(789L)
+                .build();
+        FileReference file2Ref = wholeFileReferenceBuilder()
+                .filename("file2.parquet")
+                .partitionId("D")
+                .numberOfRecords(123L)
+                .build();
+        FileReference file3Ref = wholeFileReferenceBuilder()
+                .filename("file3.parquet")
+                .partitionId("E")
+                .numberOfRecords(456L)
+                .build();
+        AllReferencesToAFile file1 = fileWithReferences(file1Ref1, file1Ref2, file1Ref3)
+                .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:01.123Z"));
+        AllReferencesToAFile file2 = fileWithReferences(file2Ref)
+                .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:02.123Z"));
+        AllReferencesToAFile file3 = fileWithReferences(file3Ref)
+                .withCreatedUpdateTime(Instant.parse("2024-05-28T13:25:03.123Z"));
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, List.of(file1, file2, file3), bytes);
+        ReadResult readResult = readResult(bytes);
+
+        // Then
+        assertThat(streamFiles(readResult)).containsExactly(file1, file2, file3);
+        assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
+        assertThat(writeResult.numReferences()).isEqualTo(5).isEqualTo(readResult.numReferences());
     }
 
     private WriteResult write(List<AllReferencesToAFile> files, ByteArrayOutputStream stream) throws Exception {
@@ -265,5 +289,17 @@ public class StateStoreFilesArrowFormatTest {
 
     private Stream<AllReferencesToAFile> streamFiles(ReadResult result) {
         return result.files().referencedAndUnreferenced().stream().map(StateStoreFile::toModel);
+    }
+
+    private FileReference.Builder partitialFileReferenceBuilder() {
+        return FileReference.builder()
+                .countApproximate(true)
+                .onlyContainsDataForThisPartition(false);
+    }
+
+    private FileReference.Builder wholeFileReferenceBuilder() {
+        return FileReference.builder()
+                .countApproximate(false)
+                .onlyContainsDataForThisPartition(true);
     }
 }
