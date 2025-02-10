@@ -15,11 +15,11 @@
  */
 package sleeper.bulkexport.core.model;
 
-import java.util.Objects;
-import java.util.UUID;
-
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * A request for a bulk export on a given table.

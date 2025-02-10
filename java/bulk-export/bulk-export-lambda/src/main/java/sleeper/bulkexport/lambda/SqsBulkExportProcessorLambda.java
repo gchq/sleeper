@@ -40,8 +40,7 @@ import sleeper.core.util.ObjectFactoryException;
 
 /**
  * A lambda that is triggered when a serialised export query arrives on an SQS
- * queue. A
- * processor executes the request and publishes the results to S3 based on.
+ * queue. A processor executes the request and publishes the results to S3 based on.
  */
 @SuppressWarnings("unused")
 public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Void> {
