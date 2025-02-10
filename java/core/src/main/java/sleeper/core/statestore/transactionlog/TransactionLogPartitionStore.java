@@ -21,8 +21,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.core.statestore.transactionlog.transaction.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transaction.SplitPartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 
 import java.time.Clock;
 import java.time.Instant;

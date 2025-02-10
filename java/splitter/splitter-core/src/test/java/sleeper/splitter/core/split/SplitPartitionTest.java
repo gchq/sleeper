@@ -35,7 +35,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.transactionlog.transaction.SplitPartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 import sleeper.sketches.Sketches;
 import sleeper.splitter.core.split.FindPartitionSplitPoint.SketchesLoader;
 
