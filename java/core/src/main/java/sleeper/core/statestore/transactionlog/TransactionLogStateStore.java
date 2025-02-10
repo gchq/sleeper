@@ -18,6 +18,8 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;

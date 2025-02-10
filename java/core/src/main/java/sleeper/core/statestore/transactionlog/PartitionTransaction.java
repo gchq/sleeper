@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+
 /**
  * A transaction that updates the partitions in a state store.
  */

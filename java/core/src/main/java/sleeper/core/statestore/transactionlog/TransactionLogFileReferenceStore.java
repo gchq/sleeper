@@ -28,6 +28,7 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;

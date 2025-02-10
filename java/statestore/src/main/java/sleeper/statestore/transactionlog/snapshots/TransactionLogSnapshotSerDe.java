@@ -18,8 +18,8 @@ package sleeper.statestore.transactionlog.snapshots;
 import org.apache.hadoop.conf.Configuration;
 
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.statestore.StateStoreArrowFileStore;
 
 import java.io.IOException;

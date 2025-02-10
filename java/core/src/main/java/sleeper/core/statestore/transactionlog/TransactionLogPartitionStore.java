@@ -20,6 +20,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
 

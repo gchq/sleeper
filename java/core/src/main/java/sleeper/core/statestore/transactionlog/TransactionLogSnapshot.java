@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+
 /**
  * A snapshot of the state at a given point in a transaction log. Since the state is always derived from all the
  * transactions in the log up to a given point, if we have a snapshot at a given transaction we know we only need to

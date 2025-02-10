@@ -18,6 +18,8 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.table.TableStatus;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;

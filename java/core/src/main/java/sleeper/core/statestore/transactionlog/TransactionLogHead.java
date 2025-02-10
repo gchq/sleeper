@@ -19,6 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.LoggedDuration;

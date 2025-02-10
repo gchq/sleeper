@@ -34,8 +34,8 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStoreFile;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;

@@ -23,8 +23,8 @@ import sleeper.core.statestore.exception.FileReferenceAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStoreFile;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 
 import java.time.Instant;
 import java.util.List;

@@ -19,7 +19,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
+import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 
 import java.time.Instant;
 import java.util.HashMap;
