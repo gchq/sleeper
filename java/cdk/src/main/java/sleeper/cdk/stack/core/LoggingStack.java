@@ -74,6 +74,7 @@ public class LoggingStack extends NestedStack {
         STATE_SNAPSHOT_DELETION("state-snapshot-deletion"),
         STATE_TRANSACTION_DELETION_TRIGGER("state-transaction-deletion-trigger"),
         STATE_TRANSACTION_DELETION("state-transaction-deletion"),
+        STATE_TRANSACTION_FOLLOWER("state-transaction-follower"),
         METRICS_TRIGGER("metrics-trigger"),
         METRICS_PUBLISHER("metrics-publisher"),
         BULK_IMPORT_EMR_SERVERLESS_START("bulk-import-EMRServerless-start"),

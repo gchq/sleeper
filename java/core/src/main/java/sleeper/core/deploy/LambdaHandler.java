@@ -164,6 +164,10 @@ public class LambdaHandler {
             .jar(LambdaJar.STATESTORE)
             .handler("sleeper.statestore.lambda.transaction.TransactionLogTransactionDeletionLambda::handleRequest")
             .core().add();
+    public static final LambdaHandler TRANSACTION_FOLLOWER = builder()
+            .jar(LambdaJar.STATESTORE)
+            .handler("sleeper.statestore.lambda.transaction.TransactionLogFollowerLambda::handleRequest")
+            .core().add();
 
     private final LambdaJar jar;
     private final String handler;

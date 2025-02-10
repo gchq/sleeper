@@ -30,15 +30,12 @@ import static sleeper.cdk.stack.core.StateStoreGrants.readWriteReadyForGCFiles;
 
 public final class StateStoreStacks {
 
-    private final DynamoDBStateStoreStack dynamo;
     private final S3StateStoreStack s3;
     private final TransactionLogStateStoreStack transactionLog;
 
-    public StateStoreStacks(
-            DynamoDBStateStoreStack dynamo, S3StateStoreStack s3,
+    public StateStoreStacks(S3StateStoreStack s3,
             TransactionLogStateStoreStack transactionLog,
             ManagedPoliciesStack policiesStack) {
-        this.dynamo = dynamo;
         this.s3 = s3;
         this.transactionLog = transactionLog;
         grantAccess(readPartitionsReadWriteActiveFiles(), policiesStack.getDirectIngestPolicyForGrants());
@@ -83,7 +80,6 @@ public final class StateStoreStacks {
     }
 
     public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
-        dynamo.grantAccess(grants, grantee);
         s3.grantAccess(grants, grantee);
         transactionLog.grantAccess(grants, grantee);
     }
