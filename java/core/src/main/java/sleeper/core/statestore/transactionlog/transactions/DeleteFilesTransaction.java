@@ -18,7 +18,6 @@ package sleeper.core.statestore.transactionlog.transactions;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 

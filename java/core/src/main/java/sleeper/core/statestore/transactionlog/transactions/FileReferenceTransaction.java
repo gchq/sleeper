@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 
 /**
- * A transaction that updates the partitions in a state store.
+ * A transaction that updates the file references in a state store.
  */
-public interface PartitionTransaction extends StateStoreTransaction<StateStorePartitions> {
-
+public interface FileReferenceTransaction extends StateStoreTransaction<StateStoreFiles> {
 }

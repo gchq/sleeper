@@ -30,9 +30,6 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.PartitionTransaction;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.util.NumberFormatUtils;
 
 import java.time.Instant;

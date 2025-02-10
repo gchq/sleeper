@@ -34,7 +34,9 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore.ThrowingRunnable;
 import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleepTestHelper;
 

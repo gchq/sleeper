@@ -26,10 +26,10 @@ import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
-import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 
 import java.time.Instant;

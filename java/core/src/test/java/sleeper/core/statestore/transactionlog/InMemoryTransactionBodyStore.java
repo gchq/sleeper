@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 
 import java.util.HashMap;

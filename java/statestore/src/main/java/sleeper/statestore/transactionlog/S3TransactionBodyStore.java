@@ -20,8 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.core.util.LoggedDuration;

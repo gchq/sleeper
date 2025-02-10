@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
 
 import java.time.Instant;
 import java.util.ArrayList;

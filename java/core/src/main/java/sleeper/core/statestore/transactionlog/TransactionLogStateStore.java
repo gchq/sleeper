@@ -20,6 +20,8 @@ import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.transactions.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;

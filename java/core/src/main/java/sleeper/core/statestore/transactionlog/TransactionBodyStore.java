@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 
 import java.time.Instant;

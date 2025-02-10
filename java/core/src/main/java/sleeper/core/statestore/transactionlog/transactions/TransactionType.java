@@ -15,8 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog.transactions;
 
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-
 /**
  * A marker for the type of a transaction. Used when storing a log entry for a transaction. Stabilises mapping between
  * a serialised transaction type and the class of the transaction, in case the class is renamed or moved.

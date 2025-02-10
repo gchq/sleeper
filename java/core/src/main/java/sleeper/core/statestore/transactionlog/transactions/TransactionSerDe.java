@@ -25,7 +25,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAFileSerDe;
 import sleeper.core.statestore.FileReferenceSerDe;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.util.GsonConfig;
 import sleeper.core.util.RefuseTypeJsonSerDe;
 

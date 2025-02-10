@@ -23,12 +23,12 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.TransactionLogSnapshotCreator;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.transactions.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transactions.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;

@@ -33,11 +33,11 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 

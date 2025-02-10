@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.table.TableStatus;

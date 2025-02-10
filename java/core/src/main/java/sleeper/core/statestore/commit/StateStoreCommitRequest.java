@@ -15,7 +15,7 @@
  */
 package sleeper.core.statestore.commit;
 
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transactions.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transactions.TransactionType;
 
 import java.util.Objects;
