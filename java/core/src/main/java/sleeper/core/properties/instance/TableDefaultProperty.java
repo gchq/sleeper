@@ -115,6 +115,22 @@ public interface TableDefaultProperty {
             .defaultValue("" + TransactionLogStateStore.DEFAULT_RETRY_WAIT_RANGE.getMaxWaitCeiling().toMillis())
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_FILES_SNAPSHOT_BATCH_SIZE = Index.propertyBuilder("sleeper.default.statestore.transactionlog.files.snapshot.batch.size")
+            .description("The number of elements to include per Arrow record batch in a snapshot derived from the " +
+                    "transaction log, of the state of files in a Sleeper table. Each file includes some number of " +
+                    "references on different partitions. Each reference will count for one element in a record " +
+                    "batch, but a file cannot currently be split between record batches. A record batch may contain " +
+                    "more file references than this if a single file overflows the batch. A file with no references " +
+                    "counts as one element.")
+            .defaultValue("1000")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
+    UserDefinedInstanceProperty DEFAULT_PARTITIONS_SNAPSHOT_BATCH_SIZE = Index.propertyBuilder("sleeper.default.statestore.transactionlog.partitions.snapshot.batch.size")
+            .description("The number of partitions to include per Arrow record batch in a snapshot derived from the " +
+                    "transaction log, of the state of partitions in a Sleeper table.")
+            .defaultValue("1000")
+            .validationPredicate(SleeperPropertyValueUtils::isNonNegativeInteger)
+            .propertyGroup(InstancePropertyGroup.TABLE_PROPERTY_DEFAULT).build();
     UserDefinedInstanceProperty DEFAULT_TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.default.statestore.transactionlog.time.between.snapshot.checks.seconds")
             .description("The number of seconds to wait after we've loaded a snapshot before looking for a new " +
                     "snapshot. This should relate to the rate at which new snapshots are created, configured in the " +

@@ -51,7 +51,7 @@ public class S3StateStore extends DelegatingStateStore {
                 S3PartitionStore.builder()
                         .stateStorePath(stateStorePath(instanceProperties, tableProperties))
                         .s3RevisionIdStore(new S3RevisionIdStore(dynamoDB, instanceProperties, tableProperties))
-                        .tableSchema(tableProperties.getSchema())
+                        .tableProperties(tableProperties)
                         .conf(conf)
                         .build());
     }

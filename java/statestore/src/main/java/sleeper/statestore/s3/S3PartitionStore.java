@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
@@ -48,17 +49,18 @@ import static sleeper.statestore.s3.S3StateStoreDataFile.conditionCheckFor;
 class S3PartitionStore implements PartitionStore {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3PartitionStore.class);
 
-    private final S3RevisionIdStore s3RevisionIdStore;
-    private final Configuration conf;
     private final Schema tableSchema;
     private final String stateStorePath;
+    private final Configuration conf;
+    private final S3RevisionIdStore s3RevisionIdStore;
     private final S3StateStoreDataFile<Map<String, Partition>> s3StateStoreFile;
     private final StateStoreArrowFileStore dataStore;
 
     private S3PartitionStore(Builder builder) {
-        conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
-        tableSchema = Objects.requireNonNull(builder.tableSchema, "tableSchema must not be null");
+        TableProperties tableProperties = Objects.requireNonNull(builder.tableProperties, "tableProperties must not be null");
+        tableSchema = tableProperties.getSchema();
         stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
+        conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
         s3StateStoreFile = S3StateStoreDataFile.builder()
                 .revisionStore(s3RevisionIdStore)
@@ -68,7 +70,7 @@ class S3PartitionStore implements PartitionStore {
                 .loadAndWriteData(this::readPartitionsMap, this::writePartitionsMap)
                 .hadoopConf(conf)
                 .build();
-        dataStore = new StateStoreArrowFileStore(conf);
+        dataStore = new StateStoreArrowFileStore(tableProperties, conf);
     }
 
     public static Builder builder() {
@@ -206,7 +208,7 @@ class S3PartitionStore implements PartitionStore {
 
     private void writePartitions(Collection<Partition> partitions, String path) throws StateStoreException {
         try {
-            dataStore.savePartitions(path, partitions, tableSchema);
+            dataStore.savePartitions(path, partitions);
         } catch (IOException e) {
             throw new StateStoreException("Failed to save partitions", e);
         }
@@ -214,7 +216,7 @@ class S3PartitionStore implements PartitionStore {
 
     private List<Partition> readPartitions(String path) throws StateStoreException {
         try {
-            return dataStore.loadPartitions(path, tableSchema);
+            return dataStore.loadPartitions(path);
         } catch (IOException e) {
             throw new StateStoreException("Failed to load partitions", e);
         }
@@ -224,26 +226,26 @@ class S3PartitionStore implements PartitionStore {
      * Builder to create a partition store backed by S3.
      */
     static final class Builder {
-        private Configuration conf;
-        private Schema tableSchema;
+        private TableProperties tableProperties;
         private String stateStorePath;
+        private Configuration conf;
         private S3RevisionIdStore s3RevisionIdStore;
 
         private Builder() {
         }
 
-        Builder conf(Configuration conf) {
-            this.conf = conf;
-            return this;
-        }
-
-        Builder tableSchema(Schema tableSchema) {
-            this.tableSchema = tableSchema;
+        Builder tableProperties(TableProperties tableProperties) {
+            this.tableProperties = tableProperties;
             return this;
         }
 
         Builder stateStorePath(String stateStorePath) {
             this.stateStorePath = stateStorePath;
+            return this;
+        }
+
+        Builder conf(Configuration conf) {
+            this.conf = conf;
             return this;
         }
 

@@ -17,7 +17,7 @@ package sleeper.statestore.transactionlog.snapshots;
 
 import org.apache.hadoop.conf.Configuration;
 
-import sleeper.core.schema.Schema;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.StateStorePartitions;
 import sleeper.statestore.StateStoreArrowFileStore;
@@ -25,24 +25,22 @@ import sleeper.statestore.StateStoreArrowFileStore;
 import java.io.IOException;
 
 /**
- * Reads and writes snapshots derived from a transaction log to/from Parquet files.
+ * Reads and writes snapshots derived from a transaction log to/from Arrow files.
  */
 class TransactionLogSnapshotSerDe {
-    private final Schema sleeperSchema;
     private final StateStoreArrowFileStore dataStore;
 
-    TransactionLogSnapshotSerDe(Schema sleeperSchema, Configuration configuration) {
-        this.sleeperSchema = sleeperSchema;
-        this.dataStore = new StateStoreArrowFileStore(configuration);
+    TransactionLogSnapshotSerDe(TableProperties tableProperties, Configuration configuration) {
+        dataStore = new StateStoreArrowFileStore(tableProperties, configuration);
     }
 
     void savePartitions(TransactionLogSnapshotMetadata snapshot, StateStorePartitions state) throws IOException {
-        dataStore.savePartitions(snapshot.getPath(), state.all(), sleeperSchema);
+        dataStore.savePartitions(snapshot.getPath(), state.all());
     }
 
     StateStorePartitions loadPartitions(TransactionLogSnapshotMetadata snapshot) throws IOException {
         StateStorePartitions partitions = new StateStorePartitions();
-        dataStore.loadPartitions(snapshot.getPath(), sleeperSchema).forEach(partitions::put);
+        dataStore.loadPartitions(snapshot.getPath()).forEach(partitions::put);
         return partitions;
     }
 
