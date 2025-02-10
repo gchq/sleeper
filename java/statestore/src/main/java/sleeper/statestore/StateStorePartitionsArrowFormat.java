@@ -42,6 +42,7 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
+import sleeper.core.statestore.transactionlog.StateStorePartitions;
 
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
@@ -93,12 +94,14 @@ public class StateStorePartitionsArrowFormat {
     /**
      * Writes the state of partitions in Arrow format.
      *
-     * @param  partitions  the partitions in the state store
-     * @param  allocator   the buffer allocator
-     * @param  channel     the channel to write to
-     * @throws IOException if writing to the channel fails
+     * @param  partitions         the partitions in the state store
+     * @param  allocator          the buffer allocator
+     * @param  channel            the channel to write to
+     * @param  maxElementsInBatch the number of partitions in a record batch before moving to the next
+     * @return                    the result of writing the Arrow file
+     * @throws IOException        if writing to the channel fails
      */
-    public static void write(Collection<Partition> partitions, BufferAllocator allocator, WritableByteChannel channel) throws IOException {
+    public static WriteResult write(Collection<Partition> partitions, BufferAllocator allocator, WritableByteChannel channel, int maxElementsInBatch) throws IOException {
         try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(SCHEMA, allocator);
                 ArrowStreamWriter writer = new ArrowStreamWriter(vectorSchemaRoot, null, channel)) {
             vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(partitions.size()));
@@ -133,6 +136,7 @@ public class StateStorePartitionsArrowFormat {
 
             writer.writeBatch();
             writer.end();
+            return new WriteResult(1);
         }
     }
 
@@ -268,5 +272,22 @@ public class StateStorePartitionsArrowFormat {
                 Field.nullable("long", Types.MinorType.BIGINT.getType()),
                 Field.nullable("int", Types.MinorType.INT.getType()),
                 Field.nullable("bytes", Types.MinorType.VARBINARY.getType()));
+    }
+
+    /**
+     * Represents the result of reading an Arrow file.
+     *
+     * @param partitions the data held in the file
+     * @param numBatches the number of Arrow record batches that were read
+     */
+    public record ReadResult(StateStorePartitions partitions, int numBatches) {
+    }
+
+    /**
+     * Represents the result of writing an Arrow file.
+     *
+     * @param numBatches the number of Arrow record batches that were written
+     */
+    public record WriteResult(int numBatches) {
     }
 }

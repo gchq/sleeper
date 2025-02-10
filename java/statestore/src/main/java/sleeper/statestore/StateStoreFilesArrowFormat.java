@@ -204,8 +204,8 @@ public class StateStoreFilesArrowFormat {
     /**
      * Represents the result of writing an Arrow file.
      *
-     * @param numReferences the number of Sleeper file references that were read
-     * @param numBatches    the number of Arrow record batches that were read
+     * @param numReferences the number of Sleeper file references that were written
+     * @param numBatches    the number of Arrow record batches that were written
      */
     public record WriteResult(int numReferences, int numBatches) {
     }

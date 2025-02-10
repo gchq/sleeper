@@ -60,7 +60,7 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
-            StateStorePartitionsArrowFormat.write(partitions, allocator, channel);
+            StateStorePartitionsArrowFormat.write(partitions, allocator, channel, 1000);
         }
         LOGGER.info("Wrote {} partitions to {}", partitions.size(), path);
     }

@@ -28,6 +28,7 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.statestore.StateStorePartitionsArrowFormat.WriteResult;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -200,7 +201,11 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     private void write(List<Partition> partitions, ByteArrayOutputStream stream) throws Exception {
-        StateStorePartitionsArrowFormat.write(partitions, allocator, Channels.newChannel(stream));
+        writeWithMaxElementsInBatch(10, partitions, stream);
+    }
+
+    private WriteResult writeWithMaxElementsInBatch(int maxElementsInBatch, List<Partition> partitions, ByteArrayOutputStream stream) throws Exception {
+        return StateStorePartitionsArrowFormat.write(partitions, allocator, Channels.newChannel(stream), maxElementsInBatch);
     }
 
     private List<Partition> read(ByteArrayOutputStream stream) throws Exception {
