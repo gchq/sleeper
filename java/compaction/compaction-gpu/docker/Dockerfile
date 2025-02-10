@@ -2,8 +2,11 @@
 FROM rapidsai/base:24.12-cuda12.5-py3.12 AS base
 
 USER root
-# Install tools
-RUN apt-get update && apt-get install -y pcp && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata htop dstat less nano sudo software-properties-common wget unzip && apt-get clean
+# Install tools. Install pcp first to avoid setup script issues
+RUN apt-get update && apt-get install -y pcp && DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y tzdata htop dstat less nano sudo software-properties-common wget unzip\
+    && apt-get remove pkgconf\
+    && apt-get autoremove\
+    && apt-get clean
 
 # Use shell form for redirection and enable sudo
 ARG USERNAME=rapids
@@ -70,6 +73,8 @@ RUN git clone https://github.com/include-what-you-use/include-what-you-use.git -
 # Drop to normal user
 USER $USERNAME 
 WORKDIR /home/rapids
+
+RUN mamba install -y pkgconf
 
 FROM build AS devcontainer
 USER root

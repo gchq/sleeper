@@ -11,7 +11,6 @@
 #include <cudf/table/table.hpp>
 #include <cudf/types.hpp>
 #include <cudf/utilities/default_stream.hpp>
-#include <cudf/utilities/logger.hpp>
 #include <cudf/utilities/type_dispatcher.hpp>
 #include <rmm/cuda_stream_view.hpp>
 #include <rmm/mr/device/device_memory_resource.hpp>
@@ -367,8 +366,6 @@ CompactionResult mergeSortedS3Files(CompactionInput const &details, std::size_t 
         }
         schema_idx++;
     }
-
-    cudf::logger().set_level(spdlog::level::debug);
 
     // chunk-size is in GB
     // TODO read from config/options
