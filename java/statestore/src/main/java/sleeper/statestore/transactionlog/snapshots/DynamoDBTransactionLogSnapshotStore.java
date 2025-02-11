@@ -65,7 +65,7 @@ public class DynamoDBTransactionLogSnapshotStore {
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.latestMetadataLoader = latestMetadataLoader;
         this.metadataSaver = metadataSaver;
-        this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties.getSchema(), configuration);
+        this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties, configuration);
         this.configuration = configuration;
         this.basePath = getBasePath(instanceProperties, tableProperties);
     }

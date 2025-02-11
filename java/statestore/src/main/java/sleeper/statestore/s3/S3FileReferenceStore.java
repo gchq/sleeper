@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
@@ -69,6 +70,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
+        TableProperties tableProperties = Objects.requireNonNull(builder.tableProperties, "tableProperties must not be null");
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
@@ -80,7 +82,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .loadAndWriteData(this::readFiles, this::writeFiles)
                 .hadoopConf(conf)
                 .build();
-        dataStore = new StateStoreArrowFileStore(conf);
+        dataStore = new StateStoreArrowFileStore(tableProperties, conf);
     }
 
     static Builder builder() {
@@ -249,11 +251,17 @@ class S3FileReferenceStore implements FileReferenceStore {
      * Builder to create a file reference store backed by S3.
      */
     static final class Builder {
+        private TableProperties tableProperties;
         private String stateStorePath;
         private Configuration conf;
         private S3RevisionIdStore s3RevisionIdStore;
 
         private Builder() {
+        }
+
+        Builder tableProperties(TableProperties tableProperties) {
+            this.tableProperties = tableProperties;
+            return this;
         }
 
         Builder stateStorePath(String stateStorePath) {
