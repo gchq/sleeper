@@ -39,6 +39,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateToApply;
 
@@ -217,7 +218,7 @@ public class TransactionLogHead<T> {
         }
         long minTransactionNumberToLoadSnapshot = minTransactionNumberToLoadSnapshot();
         Optional<TransactionLogSnapshot> snapshotOpt = snapshotLoader
-                .loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot);
+                .loadLatestSnapshotInRange(fromMinimum(minTransactionNumberToLoadSnapshot));
         Instant finishTime = stateUpdateClock.get();
         nextSnapshotCheckTime = finishTime.plus(timeBetweenSnapshotChecks);
         snapshotOpt.ifPresentOrElse(snapshot -> {
