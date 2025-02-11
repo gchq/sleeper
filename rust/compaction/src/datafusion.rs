@@ -102,10 +102,13 @@ pub async fn compact(
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
 
+    info!("Loaded schema fields: {:?}", frame.schema().fields());
+
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
         frame = frame.filter(expr)?;
     }
+    info!("Schema fields after filter: {:?}", frame.schema().fields());
 
     // Create the sketch function
     let sketch_func = Arc::new(ScalarUDF::from(udf::SketchUDF::new(
@@ -130,14 +133,20 @@ pub async fn compact(
     let col_names_expr = sketch_expr
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
+    info!("Select expression: {:?}", col_names_expr);
 
     // Build compaction query
-    frame = frame.sort(sort_order)?.select(col_names_expr)?;
+    info!("Schema fields before sort: {:?}", frame.schema().fields());
+    frame = frame.sort(sort_order)?;
+    info!("Schema fields after sort: {:?}", frame.schema().fields());
+    frame = frame.select(col_names_expr)?;
+    info!("Schema fields after select: {:?}", frame.schema().fields());
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
     let output = pretty_format_batches(&explained)?;
     info!("DataFusion plan:\n {output}");
+    info!("Planned schema fields: {:?}", frame.schema().fields());
 
     let mut pqo = ctx.copied_table_options().parquet;
     // Figure out which columns should be dictionary encoded

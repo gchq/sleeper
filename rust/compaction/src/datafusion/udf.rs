@@ -33,9 +33,11 @@ use arrow::{
     },
 };
 use datafusion::{
-    common::{internal_err, DFSchema, ExprSchema, Result},
-    logical_expr::{ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature, Volatility},
-    prelude::Expr,
+    common::{internal_err, DFSchema, Result},
+    logical_expr::{
+        ColumnarValue, ReturnInfo, ReturnTypeArgs, ScalarFunctionArgs, ScalarUDFImpl, Signature,
+        Volatility,
+    },
     scalar::ScalarValue,
 };
 
@@ -136,9 +138,14 @@ impl ScalarUDFImpl for SketchUDF {
     fn signature(&self) -> &Signature {
         &self.signature
     }
-    fn return_type(&self, args: &[DataType]) -> Result<DataType> {
-        // Return type will be type of first row key column
-        Ok(args[0].clone())
+    fn return_type(&self, _: &[DataType]) -> Result<DataType> {
+        internal_err!("Expected return_type_from_args, found call to return_type")
+    }
+    fn return_type_from_args(&self, args: ReturnTypeArgs) -> Result<ReturnInfo> {
+        Ok(ReturnInfo::new(
+            args.arg_types[0].clone(),
+            args.nullables[0],
+        ))
     }
 
     fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
@@ -211,10 +218,5 @@ impl ScalarUDFImpl for SketchUDF {
         }
 
         Ok(args.args[0].clone())
-    }
-
-    /// Sleeper tables cannot contains nullable row key columns.
-    fn is_nullable(&self, _args: &[Expr], _schema: &dyn ExprSchema) -> bool {
-        false
     }
 }
