@@ -260,6 +260,22 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the dead letter queue used when leaf partition querying sleeper.")
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
+    // Bulk Export
+    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_URL = Index
+            .propertyBuilder("sleeper.bulk.export.processor.queue.url")
+            .description("The URL of the SQS queue that triggers the bulk export processor lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_ARN = Index
+            .propertyBuilder("sleeper.bulk.export.processor.queue.arn")
+            .description("The ARN of the SQS queue that triggers the bulk export processor lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_LAMBDA_ROLE = Index
+            .propertyBuilder("sleeper.bulk.export.processor.lambda.role")
+            .description("The ARN of the role for the bulk export processor lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
     // Compactions
     CdkDefinedInstanceProperty COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.cluster")
             .description("The name of the cluster used for compactions.")

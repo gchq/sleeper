@@ -77,6 +77,7 @@ public class LoggingStack extends NestedStack {
         STATE_TRANSACTION_FOLLOWER("state-transaction-follower"),
         METRICS_TRIGGER("metrics-trigger"),
         METRICS_PUBLISHER("metrics-publisher"),
+        BULK_EXPORT_PROCESSOR("bulk-export-processor"),
         BULK_IMPORT_EMR_SERVERLESS_START("bulk-import-EMRServerless-start"),
         BULK_IMPORT_EMR_NON_PERSISTENT_START("bulk-import-NonPersistentEMR-start"),
         BULK_IMPORT_EMR_PERSISTENT_START("bulk-import-PersistentEMR-start"),

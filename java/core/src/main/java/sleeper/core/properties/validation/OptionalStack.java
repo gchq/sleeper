@@ -37,6 +37,9 @@ public enum OptionalStack {
     EksBulkImportStack,
     EmrStudioStack,
 
+    // Bulk export
+    BulkExportStack,
+
     // Query
     QueryStack,
     WebSocketQueryStack,
