@@ -151,13 +151,14 @@ fn check_non_null_field(
     let field = metadata.schema().field_with_name(field_name)?;
     if *field.data_type() != field_type {
         Err(eyre!(
-            "field {} is not an Int32, found {}",
+            "Expected field {} to be of type {}, found {}",
             field_name,
+            field_type,
             field.data_type()
         ))
     } else if field.is_nullable() {
         Err(eyre!(
-            "field {} is nullable, expected non-nullable",
+            "Expected field {} to be non-nullable, found nullable",
             field_name
         ))
     } else {
