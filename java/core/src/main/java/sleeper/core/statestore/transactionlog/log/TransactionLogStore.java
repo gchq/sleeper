@@ -55,6 +55,14 @@ public interface TransactionLogStore {
     Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber);
 
     /**
+     * Streams through transactions in the given range.
+     *
+     * @param  range range of transactions to be read
+     * @return       the requested transactions in order
+     */
+    Stream<TransactionLogEntry> readTransactions(TransactionLogRange range);
+
+    /**
      * Deletes transactions from the log that are at or before the provided transaction number.
      *
      * @param transactionNumber the transaction number

@@ -31,6 +31,7 @@ import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberExce
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogDeletionTracker;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
@@ -244,5 +245,11 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
         return Map.of(TABLE_ID, item.get(TABLE_ID),
                 TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER));
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'readTransactions'");
     }
 }

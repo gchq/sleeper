@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 
 import java.util.ArrayList;
@@ -226,5 +227,11 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
                 runningTrigger = false;
             }
         }
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'readTransactions'");
     }
 }
