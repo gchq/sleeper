@@ -13,9 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog.transactions;
+package sleeper.core.statestore.transactionlog.transaction;
 
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 
 /**
  * A marker for the type of a transaction. Used when storing a log entry for a transaction. Stabilises mapping between

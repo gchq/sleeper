@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.snapshot;
+
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 
 /**
  * A snapshot of the state at a given point in a transaction log. Since the state is always derived from all the

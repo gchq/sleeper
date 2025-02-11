@@ -38,7 +38,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;

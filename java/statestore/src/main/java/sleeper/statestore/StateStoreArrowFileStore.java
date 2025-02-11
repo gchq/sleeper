@@ -23,8 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 
 import java.io.IOException;
 import java.nio.channels.Channels;
@@ -33,34 +33,40 @@ import java.nio.channels.WritableByteChannel;
 import java.util.Collection;
 import java.util.List;
 
+import static sleeper.core.properties.table.TableProperty.FILES_SNAPSHOT_BATCH_SIZE;
+import static sleeper.core.properties.table.TableProperty.PARTITIONS_SNAPSHOT_BATCH_SIZE;
+
 /**
  * Saves and loads the state of a Sleeper table in Arrow files.
  */
 public class StateStoreArrowFileStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreArrowFileStore.class);
 
+    private final TableProperties tableProperties;
     private final Configuration configuration;
 
-    public StateStoreArrowFileStore(Configuration configuration) {
+    public StateStoreArrowFileStore(TableProperties tableProperties, Configuration configuration) {
+        this.tableProperties = tableProperties;
         this.configuration = configuration;
     }
 
     /**
      * Saves the state of partitions in a Sleeper table to an Arrow file.
      *
-     * @param  path          path to write the file to
-     * @param  partitions    the state
-     * @param  sleeperSchema the Sleeper table schema
-     * @throws IOException   if the file could not be written
+     * @param  path        path to write the file to
+     * @param  partitions  the state
+     * @throws IOException if the file could not be written
      */
-    public void savePartitions(String path, Collection<Partition> partitions, Schema sleeperSchema) throws IOException {
-        LOGGER.debug("Writing {} partitions to {}", partitions.size(), path);
+    public void savePartitions(String path, Collection<Partition> partitions) throws IOException {
+        LOGGER.info("Writing {} partitions to {}", partitions.size(), path);
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
-            StateStorePartitionsArrowFormat.write(partitions, allocator, channel);
+            StateStorePartitionsArrowFormat.WriteResult result = StateStorePartitionsArrowFormat.write(
+                    partitions, allocator, channel, tableProperties.getInt(PARTITIONS_SNAPSHOT_BATCH_SIZE));
+            LOGGER.info("Wrote {} partitions in {} Arrow record batches, to {}",
+                    partitions.size(), result.numBatches(), path);
         }
-        LOGGER.debug("Wrote {} partitions to {}", partitions.size(), path);
     }
 
     /**
@@ -71,31 +77,33 @@ public class StateStoreArrowFileStore {
      * @throws IOException if the file could not be written
      */
     public void saveFiles(String path, StateStoreFiles files) throws IOException {
-        LOGGER.debug("Writing {} files to {}", files.referencedAndUnreferenced().size(), path);
+        LOGGER.info("Writing {} files to {}", files.referencedAndUnreferenced().size(), path);
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 WritableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).create(hadoopPath))) {
-            StateStoreFilesArrowFormat.write(files, allocator, channel);
+            StateStoreFilesArrowFormat.WriteResult result = StateStoreFilesArrowFormat.write(
+                    files, allocator, channel, tableProperties.getInt(FILES_SNAPSHOT_BATCH_SIZE));
+            LOGGER.info("Wrote {} files with {} references in {} Arrow record batches, to {}",
+                    files.referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
         }
-        LOGGER.debug("Wrote {} files to {}", files.referencedAndUnreferenced().size(), path);
     }
 
     /**
      * Loads the state of partitions in a Sleeper table from an Arrow file.
      *
-     * @param  path          path to the file to read
-     * @param  sleeperSchema the Sleeper table schema
-     * @return               the partitions
-     * @throws IOException   if the file could not be read
+     * @param  path        path to the file to read
+     * @return             the partitions
+     * @throws IOException if the file could not be read
      */
-    public List<Partition> loadPartitions(String path, Schema sleeperSchema) throws IOException {
+    public List<Partition> loadPartitions(String path) throws IOException {
         LOGGER.debug("Loading partitions from {}", path);
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            List<Partition> partitions = StateStorePartitionsArrowFormat.read(allocator, channel);
-            LOGGER.debug("Loaded {} partitions from {}", partitions.size(), path);
-            return partitions;
+            StateStorePartitionsArrowFormat.ReadResult result = StateStorePartitionsArrowFormat.read(allocator, channel);
+            LOGGER.debug("Loaded {} partitions in {} Arrow record batches, from {}",
+                    result.partitions().size(), result.numBatches(), path);
+            return result.partitions();
         }
     }
 
@@ -111,9 +119,10 @@ public class StateStoreArrowFileStore {
         Path hadoopPath = new Path(path);
         try (BufferAllocator allocator = new RootAllocator();
                 ReadableByteChannel channel = Channels.newChannel(hadoopPath.getFileSystem(configuration).open(hadoopPath))) {
-            StateStoreFiles files = StateStoreFilesArrowFormat.read(allocator, channel);
-            LOGGER.debug("Loaded {} files from {}", files.referencedAndUnreferenced().size(), path);
-            return files;
+            StateStoreFilesArrowFormat.ReadResult result = StateStoreFilesArrowFormat.read(allocator, channel);
+            LOGGER.debug("Loaded {} files with {} references in {} Arrow record batches, from {}",
+                    result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
+            return result.files();
         }
     }
 

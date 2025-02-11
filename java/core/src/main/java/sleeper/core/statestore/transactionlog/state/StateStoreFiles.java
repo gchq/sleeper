@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.state;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
@@ -57,7 +57,7 @@ public class StateStoreFiles {
     }
 
     /**
-     * Streams through all files in the state store.
+     * Retrieves all files in the state store.
      *
      * @return all files
      */

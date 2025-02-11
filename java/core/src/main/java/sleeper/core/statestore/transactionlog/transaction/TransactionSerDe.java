@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog.transactions;
+package sleeper.core.statestore.transactionlog.transaction;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,7 +25,6 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAFileSerDe;
 import sleeper.core.statestore.FileReferenceSerDe;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
 import sleeper.core.util.GsonConfig;
 import sleeper.core.util.RefuseTypeJsonSerDe;
 

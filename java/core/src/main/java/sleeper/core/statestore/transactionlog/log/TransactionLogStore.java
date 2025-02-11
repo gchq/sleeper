@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.log;
+
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.stream.Stream;
 
@@ -40,6 +42,17 @@ public interface TransactionLogStore {
      * @return                       all transactions in order, starting at the one after the specified number
      */
     Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber);
+
+    /**
+     * Streams through transactions to before a certain point, starting after a given transaction. This will be used
+     * when we want to apply some transaction locally but we are not yet up to date with the log before that
+     * transaction. In that case we want to avoid re-reading or seeking beyond the transaction we're processing.
+     *
+     * @param  lastTransactionNumber the last transaction number that should not be read
+     * @param  nextTransactionNumber the next transaction number that we are trying to process
+     * @return                       the requested transactions in order
+     */
+    Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber);
 
     /**
      * Deletes transactions from the log that are at or before the provided transaction number.

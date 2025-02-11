@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 
 import java.time.Instant;
 import java.util.UUID;

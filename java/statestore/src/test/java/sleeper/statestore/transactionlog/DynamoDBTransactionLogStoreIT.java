@@ -15,6 +15,7 @@
  */
 package sleeper.statestore.transactionlog;
 
+import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
@@ -31,13 +32,13 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionLogEntry;
-import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
 import java.time.Instant;
@@ -260,6 +261,51 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         // Then
         assertThat(partitionLogStore.readTransactionsAfter(0)).isEmpty();
         assertThat(filesInDataBucket()).isEmpty();
+    }
+
+    @Test
+    void shouldReturnTransactionsInBetweenTwoEntries() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        fileLogStore.addTransaction(entry1);
+        fileLogStore.addTransaction(entry2);
+        fileLogStore.addTransaction(entry3);
+
+        // When / Then
+        assertThat(fileLogStore.readTransactionsBetween(1, 3))
+                .containsExactly(entry2);
+    }
+
+    @Test
+    void shouldThrowExceptionReadingTransactionsBetweenWhenAlreadyUpToDate() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        fileLogStore.addTransaction(entry1);
+        fileLogStore.addTransaction(entry2);
+        fileLogStore.addTransaction(entry3);
+
+        // When / Then
+        assertThatThrownBy(() -> fileLogStore.readTransactionsBetween(2, 2))
+                .isInstanceOf(AmazonDynamoDBException.class);
+    }
+
+    @Test
+    void shouldThrowExceptionReadingTransactionsBetweenWhenTargetTransactionIsBeforeCurrent() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        fileLogStore.addTransaction(entry1);
+        fileLogStore.addTransaction(entry2);
+        fileLogStore.addTransaction(entry3);
+
+        // When / Then
+        assertThatThrownBy(() -> fileLogStore.readTransactionsBetween(3, 2))
+                .isInstanceOf(AmazonDynamoDBException.class);
     }
 
     private TransactionLogEntry logEntry(long number, StateStoreTransaction<?> transaction) {
