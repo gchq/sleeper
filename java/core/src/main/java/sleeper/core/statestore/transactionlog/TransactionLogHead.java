@@ -40,6 +40,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateToApply;
 
 /**
  * Tracks some state derived from a transaction log, at a position in the log. This can perform an update to the state
@@ -267,7 +268,7 @@ public class TransactionLogHead<T> {
     void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
         long entryNumber = entry.getTransactionNumber();
         if (lastTransactionNumber < (entryNumber - 1)) { // If we're not up to date with the given transaction
-            logStore.readTransactionsBetween(lastTransactionNumber, entryNumber)
+            logStore.readTransactions(toUpdateLocalStateToApply(lastTransactionNumber, entryNumber))
                     .forEach(this::applyTransaction);
         }
         applyTransaction(entry, listener);

@@ -19,8 +19,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.stream.Stream;
 
-import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateToApply;
-
 /**
  * A store of a transaction log that can be used to derive the state of a Sleeper table. Used by
  * {@link TransactionLogStateStore}.
@@ -36,19 +34,6 @@ public interface TransactionLogStore {
      *                                             same time
      */
     void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException;
-
-    /**
-     * Streams through transactions to before a certain point, starting after a given transaction. This will be used
-     * when we want to apply some transaction locally but we are not yet up to date with the log before that
-     * transaction. In that case we want to avoid re-reading or seeking beyond the transaction we're processing.
-     *
-     * @param  lastTransactionNumber the last transaction number that should not be read
-     * @param  nextTransactionNumber the next transaction number that we are trying to process
-     * @return                       the requested transactions in order
-     */
-    default Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
-        return readTransactions(toUpdateLocalStateToApply(lastTransactionNumber, nextTransactionNumber));
-    }
 
     /**
      * Streams through transactions in the given range.
