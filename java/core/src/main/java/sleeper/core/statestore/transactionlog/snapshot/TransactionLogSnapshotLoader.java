@@ -35,8 +35,8 @@ public interface TransactionLogSnapshotLoader {
     Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber);
 
     /**
-     * Loads the latest snapshot if it's beyond a certain point in the log. This is used to avoid loading a snapshot
-     * if it would be quicker to just seek through the log.
+     * Loads the latest snapshot if it's within a given range in the log. This range may be restricted to avoid loading
+     * a snapshot if it would be quicker to just seek through the log.
      *
      * @param  range the range to find the latest snapshot within
      * @return       the latest snapshot if there is one within the range
