@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
@@ -177,6 +178,66 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestB
         // Given / When / Then
         assertThat(store.getLatestSnapshots()).isEqualTo(
                 LatestSnapshots.empty());
+    }
+
+    @Test
+    void shouldRetrieveLatestFilesSnapshotByRange() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(2));
+        store.saveSnapshot(filesSnapshot(3));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.FILES, new TransactionLogRange(1, 3)))
+                .contains(filesSnapshot(2));
+    }
+
+    @Test
+    void shouldRetrieveLatestPartitionsSnapshotByRange() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(3));
+        store.saveSnapshot(partitionsSnapshot(1));
+        store.saveSnapshot(partitionsSnapshot(2));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.PARTITIONS, new TransactionLogRange(1, 5)))
+                .contains(partitionsSnapshot(2));
+    }
+
+    @Test
+    void shouldRetrieveNoLatestSnapshotByRange() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(4));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.FILES, new TransactionLogRange(2, 3)))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldRetrieveLatestFilesSnapshotByUnboundedRange() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(2));
+        store.saveSnapshot(filesSnapshot(3));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.FILES, TransactionLogRange.fromMinimum(2)))
+                .contains(filesSnapshot(3));
+    }
+
+    @Test
+    void shouldRetrieveLatestPartitionsSnapshotByUnboundedRange() throws Exception {
+        // Given
+        store.saveSnapshot(partitionsSnapshot(1));
+        store.saveSnapshot(partitionsSnapshot(2));
+        store.saveSnapshot(partitionsSnapshot(3));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.PARTITIONS, TransactionLogRange.fromMinimum(2)))
+                .contains(partitionsSnapshot(3));
     }
 
     @Test
