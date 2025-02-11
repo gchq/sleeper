@@ -15,11 +15,16 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,7 +34,9 @@ import java.util.stream.Stream;
  */
 public class InMemoryTransactionLogStore implements TransactionLogStore {
 
-    private List<TransactionLogEntry> transactions = new ArrayList<>();
+    private List<TransactionLogEntry> transactionEntries = new ArrayList<>();
+    private Consumer<TransactionLogEntry> onReadTransactionLogEntry = entry -> {
+    };
     private Runnable startOfAdd = () -> {
     };
     private Runnable startOfRead = () -> {
@@ -40,27 +47,47 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     public void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException {
         long transactionNumber = entry.getTransactionNumber();
         doStartOfAddTransaction();
-        if (transactionNumber <= transactions.size()) {
+        if (transactionNumber <= transactionEntries.size()) {
             throw new DuplicateTransactionNumberException(transactionNumber);
         }
-        if (transactionNumber > transactions.size() + 1) {
-            throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactions.size());
+        if (transactionNumber > transactionEntries.size() + 1) {
+            throw new IllegalStateException("Attempted to add transaction " + transactionNumber + " when we only have " + transactionEntries.size());
         }
-        transactions.add(entry);
+        transactionEntries.add(entry);
     }
 
     @Override
     public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
         doStartOfReadTransactions();
-        return transactions.stream()
-                .skip(lastTransactionNumber);
+        return transactionEntries.stream()
+                .skip(lastTransactionNumber)
+                .peek(onReadTransactionLogEntry);
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
+        if ((nextTransactionNumber - lastTransactionNumber - 1) > 0) {
+            return readTransactionsAfter(lastTransactionNumber)
+                    .limit(Math.max(0, nextTransactionNumber - lastTransactionNumber - 1));
+        } else {
+            throw new RuntimeException("Limit not valid for readTransactionBetween");
+        }
     }
 
     @Override
     public void deleteTransactionsAtOrBefore(long transactionNumber) {
-        transactions = transactions.stream()
+        transactionEntries = transactionEntries.stream()
                 .filter(transaction -> transaction.getTransactionNumber() > transactionNumber)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Sets a listener for when a log entry is read.
+     *
+     * @param onReadTransactionLogEntry the listener
+     */
+    public void onReadTransactionLogEntry(Consumer<TransactionLogEntry> onReadTransactionLogEntry) {
+        this.onReadTransactionLogEntry = onReadTransactionLogEntry;
     }
 
     /**
@@ -123,7 +150,11 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     public long getLastTransactionNumber() {
-        return transactions.size();
+        return transactionEntries.size();
+    }
+
+    public TransactionLogEntry getLastEntry() {
+        return transactionEntries.get(transactionEntries.size() - 1);
     }
 
     private void doStartOfAddTransaction() {

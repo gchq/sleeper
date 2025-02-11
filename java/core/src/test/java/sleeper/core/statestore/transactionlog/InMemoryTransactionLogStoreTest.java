@@ -17,11 +17,16 @@ package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -121,5 +126,92 @@ public class InMemoryTransactionLogStoreTest {
         // When / Then
         assertThatThrownBy(() -> store.readTransactionsAfter(0))
                 .isSameAs(failure);
+    }
+
+    @Test
+    void shouldReportOneTransactionWasRead() throws Exception {
+        // Given
+        TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
+        store.addTransaction(entry);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
+
+        // When
+        store.readTransactionsAfter(0).toList();
+
+        // Then
+        assertThat(readEntries).containsExactly(entry);
+    }
+
+    @Test
+    void shouldReportNoTransactionsWereReadWhenRequestedTransactionsAfterLatest() throws Exception {
+        // Given
+        TransactionLogEntry entry = logEntry(1, new ClearFilesTransaction());
+        store.addTransaction(entry);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
+
+        // When
+        store.readTransactionsAfter(1).toList();
+
+        // Then
+        assertThat(readEntries).isEmpty();
+    }
+
+    @Test
+    void shouldReturnTransactionsInBetweenTwoEntries() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        store.addTransaction(entry1);
+        store.addTransaction(entry2);
+        store.addTransaction(entry3);
+        AtomicInteger readRequests = new AtomicInteger(0);
+        store.atStartOfReadTransactions(readRequests::incrementAndGet);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
+
+        // When / Then
+        assertThat(store.readTransactionsBetween(1, 3))
+                .containsExactly(entry2);
+        assertThat(readEntries).containsExactly(entry2);
+        assertThat(readRequests.get()).isEqualTo(1);
+    }
+
+    @Test
+    void shouldThrowExceptionReadingTransactionsBetweenWhenAlreadyUpToDate() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        store.addTransaction(entry1);
+        store.addTransaction(entry2);
+        store.addTransaction(entry3);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
+
+        // When / Then
+        assertThatThrownBy(() -> store.readTransactionsBetween(2, 2))
+                .isInstanceOf(RuntimeException.class);
+        assertThat(readEntries).isEmpty();
+    }
+
+    @Test
+    void shouldThrowExceptionReadingTransactionsBetweenWhenTargetTransactionIsBeforeCurrent() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = logEntry(1, new ClearFilesTransaction());
+        TransactionLogEntry entry2 = logEntry(2, new ClearFilesTransaction());
+        TransactionLogEntry entry3 = logEntry(3, new ClearFilesTransaction());
+        store.addTransaction(entry1);
+        store.addTransaction(entry2);
+        store.addTransaction(entry3);
+        List<TransactionLogEntry> readEntries = new ArrayList<>();
+        store.onReadTransactionLogEntry(readEntries::add);
+
+        // When / Then
+        assertThatThrownBy(() -> store.readTransactionsBetween(3, 2))
+                .isInstanceOf(RuntimeException.class);
+        assertThat(readEntries).isEmpty();
     }
 }

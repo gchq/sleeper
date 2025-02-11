@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
+
 import java.util.Optional;
 
 /**

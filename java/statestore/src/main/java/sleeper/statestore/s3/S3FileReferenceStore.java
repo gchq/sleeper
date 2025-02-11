@@ -20,6 +20,7 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.AssignJobIdRequest;
@@ -30,14 +31,14 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.SplitFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.state.StateStoreFile;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 import sleeper.statestore.StateStoreArrowFileStore;
 
 import java.io.IOException;
@@ -69,6 +70,7 @@ class S3FileReferenceStore implements FileReferenceStore {
     private Clock clock = Clock.systemUTC();
 
     private S3FileReferenceStore(Builder builder) {
+        TableProperties tableProperties = Objects.requireNonNull(builder.tableProperties, "tableProperties must not be null");
         this.stateStorePath = Objects.requireNonNull(builder.stateStorePath, "stateStorePath must not be null");
         this.conf = Objects.requireNonNull(builder.conf, "hadoopConfiguration must not be null");
         this.s3RevisionIdStore = Objects.requireNonNull(builder.s3RevisionIdStore, "s3RevisionIdStore must not be null");
@@ -80,7 +82,7 @@ class S3FileReferenceStore implements FileReferenceStore {
                 .loadAndWriteData(this::readFiles, this::writeFiles)
                 .hadoopConf(conf)
                 .build();
-        dataStore = new StateStoreArrowFileStore(conf);
+        dataStore = new StateStoreArrowFileStore(tableProperties, conf);
     }
 
     static Builder builder() {
@@ -249,11 +251,17 @@ class S3FileReferenceStore implements FileReferenceStore {
      * Builder to create a file reference store backed by S3.
      */
     static final class Builder {
+        private TableProperties tableProperties;
         private String stateStorePath;
         private Configuration conf;
         private S3RevisionIdStore s3RevisionIdStore;
 
         private Builder() {
+        }
+
+        Builder tableProperties(TableProperties tableProperties) {
+            this.tableProperties = tableProperties;
+            return this;
         }
 
         Builder stateStorePath(String stateStorePath) {
