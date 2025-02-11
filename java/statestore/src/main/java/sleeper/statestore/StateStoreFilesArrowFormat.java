@@ -32,8 +32,6 @@ import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.StateStoreFile;
@@ -60,7 +58,6 @@ import static sleeper.statestore.ArrowFormatUtils.writeVarCharNullable;
  * Reads and writes the state of files in a state store to an Arrow file.
  */
 public class StateStoreFilesArrowFormat {
-    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreFilesArrowFormat.class);
 
     private static final Field FILENAME = Field.notNullable("filename", Utf8.INSTANCE);
     private static final Field UPDATE_TIME = Field.notNullable("updateTime", Types.MinorType.TIMESTAMPMILLI.getType());
@@ -84,20 +81,24 @@ public class StateStoreFilesArrowFormat {
     /**
      * Writes the state of files in Arrow format.
      *
-     * @param  files       the files in the state store
-     * @param  allocator   the buffer allocator
-     * @param  channel     the channel to write to
-     * @throws IOException if writing to the channel fails
+     * @param  files              the files in the state store
+     * @param  allocator          the buffer allocator
+     * @param  channel            the channel to write to
+     * @param  maxElementsInBatch the number of file references in a record batch before moving to the next, where a
+     *                            file with no references counts as 1
+     * @return                    the result of writing the Arrow file
+     * @throws IOException        if writing to the channel fails
      */
-    public static void write(StateStoreFiles files, BufferAllocator allocator, WritableByteChannel channel) throws IOException {
-        int totalFiles = files.referencedAndUnreferenced().size();
+    public static WriteResult write(StateStoreFiles files, BufferAllocator allocator, WritableByteChannel channel, int maxElementsInBatch) throws IOException {
         int totalFileReferences = 0;
+        int totalBatches = 0;
         try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(SCHEMA, allocator);
                 ArrowStreamWriter writer = new ArrowStreamWriter(vectorSchemaRoot, null, channel)) {
-            vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(totalFiles));
+            vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(files.referencedAndUnreferenced().size()));
             vectorSchemaRoot.allocateNew();
             writer.start();
             int rowNumber = 0;
+            int elementsInBatch = 0;
             VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
             TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
             ListVector referencesVector = (ListVector) vectorSchemaRoot.getVector(REFERENCES);
@@ -106,41 +107,52 @@ public class StateStoreFilesArrowFormat {
                 updateTimeVector.setSafe(rowNumber, file.getLastStateStoreUpdateTime().toEpochMilli());
                 writeReferences(file.getReferences(), rowNumber, allocator, referencesVector.getWriter());
                 rowNumber++;
+                elementsInBatch += Math.max(1, file.getReferences().size());
                 totalFileReferences += file.getReferences().size();
                 vectorSchemaRoot.setRowCount(rowNumber);
+                if (elementsInBatch >= maxElementsInBatch) {
+                    writer.writeBatch();
+                    rowNumber = 0;
+                    elementsInBatch = 0;
+                    vectorSchemaRoot.setRowCount(0);
+                    totalBatches++;
+                }
             }
-            writer.writeBatch();
+            if (elementsInBatch > 0) {
+                writer.writeBatch();
+                totalBatches++;
+            }
             writer.end();
         }
-        LOGGER.info("Wrote {} files with {} references", totalFiles, totalFileReferences);
+        return new WriteResult(totalFileReferences, totalBatches);
     }
 
     /**
      * Reads the state of files from Arrow format.
      *
      * @param  channel the channel to read from
-     * @return         the files in the state store
+     * @return         the result, including the files in the state store
      */
-    public static StateStoreFiles read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
-        int totalFiles = 0;
+    public static ReadResult read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
         int totalFileReferences = 0;
+        int totalBatches = 0;
         StateStoreFiles files = new StateStoreFiles();
         try (ArrowStreamReader reader = new ArrowStreamReader(channel, allocator)) {
-            reader.loadNextBatch();
-            VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
-            VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
-            TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
-            ListVector referencesVector = (ListVector) vectorSchemaRoot.getVector(REFERENCES);
-            for (int rowNumber = 0; rowNumber < vectorSchemaRoot.getRowCount(); rowNumber++) {
-                String filename = filenameVector.getObject(rowNumber).toString();
-                List<FileReference> references = readReferences(filename, referencesVector, rowNumber);
-                files.add(new StateStoreFile(filename, Instant.ofEpochMilli(updateTimeVector.get(rowNumber)), references));
-                totalFiles += 1;
-                totalFileReferences += references.size();
+            while (reader.loadNextBatch()) {
+                VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
+                VarCharVector filenameVector = (VarCharVector) vectorSchemaRoot.getVector(FILENAME);
+                TimeStampMilliVector updateTimeVector = (TimeStampMilliVector) vectorSchemaRoot.getVector(UPDATE_TIME);
+                ListVector referencesVector = (ListVector) vectorSchemaRoot.getVector(REFERENCES);
+                for (int rowNumber = 0; rowNumber < vectorSchemaRoot.getRowCount(); rowNumber++) {
+                    String filename = filenameVector.getObject(rowNumber).toString();
+                    List<FileReference> references = readReferences(filename, referencesVector, rowNumber);
+                    files.add(new StateStoreFile(filename, Instant.ofEpochMilli(updateTimeVector.get(rowNumber)), references));
+                    totalFileReferences += references.size();
+                }
+                totalBatches++;
             }
         }
-        LOGGER.debug("Read {} files with {} references", totalFiles, totalFileReferences);
-        return files;
+        return new ReadResult(files, totalFileReferences, totalBatches);
     }
 
     private static void writeReferences(Collection<FileReference> references, int fileNumber, BufferAllocator allocator, UnionListWriter writer) {
@@ -177,5 +189,24 @@ public class StateStoreFilesArrowFormat {
                     .build());
         }
         return references;
+    }
+
+    /**
+     * Represents the result of reading an Arrow file.
+     *
+     * @param files         the data held in the file
+     * @param numReferences the number of Sleeper file references that were read
+     * @param numBatches    the number of Arrow record batches that were read
+     */
+    public record ReadResult(StateStoreFiles files, int numReferences, int numBatches) {
+    }
+
+    /**
+     * Represents the result of writing an Arrow file.
+     *
+     * @param numReferences the number of Sleeper file references that were written
+     * @param numBatches    the number of Arrow record batches that were written
+     */
+    public record WriteResult(int numReferences, int numBatches) {
     }
 }

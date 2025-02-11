@@ -28,6 +28,8 @@ import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
+import sleeper.statestore.StateStorePartitionsArrowFormat.ReadResult;
+import sleeper.statestore.StateStorePartitionsArrowFormat.WriteResult;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -199,11 +201,56 @@ public class StateStorePartitionsArrowFormatTest {
         assertThat(read(bytes)).isEmpty();
     }
 
+    @Test
+    void shouldWriteMorePartitionsThanBatchSize() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "m")
+                .buildList();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, partitions, bytes);
+        ReadResult readResult = readResult(bytes);
+
+        // Then
+        assertThat(readResult.partitions()).isEqualTo(partitions);
+        assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
+    }
+
+    @Test
+    void shouldWriteFivePartitionsInThreeBatches() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "m")
+                .splitToNewChildren("L", "LL", "LR", "g")
+                .buildList();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, partitions, bytes);
+        ReadResult readResult = readResult(bytes);
+
+        // Then
+        assertThat(readResult.partitions()).isEqualTo(partitions);
+        assertThat(writeResult.numBatches()).isEqualTo(3).isEqualTo(readResult.numBatches());
+    }
+
     private void write(List<Partition> partitions, ByteArrayOutputStream stream) throws Exception {
-        StateStorePartitionsArrowFormat.write(partitions, allocator, Channels.newChannel(stream));
+        writeWithMaxElementsInBatch(10, partitions, stream);
+    }
+
+    private WriteResult writeWithMaxElementsInBatch(int maxElementsInBatch, List<Partition> partitions, ByteArrayOutputStream stream) throws Exception {
+        return StateStorePartitionsArrowFormat.write(partitions, allocator, Channels.newChannel(stream), maxElementsInBatch);
     }
 
     private List<Partition> read(ByteArrayOutputStream stream) throws Exception {
+        return readResult(stream).partitions();
+    }
+
+    private ReadResult readResult(ByteArrayOutputStream stream) throws Exception {
         return StateStorePartitionsArrowFormat.read(allocator,
                 Channels.newChannel(new ByteArrayInputStream(stream.toByteArray())));
     }
