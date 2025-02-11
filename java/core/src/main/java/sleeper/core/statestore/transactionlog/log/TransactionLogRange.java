@@ -31,7 +31,7 @@ public record TransactionLogRange(long startInclusive, long endExclusive) {
      * @param  startExclusive the last transaction number that was applied to the local state
      * @return                range of transaction numbers to load
      */
-    public TransactionLogRange toUpdateLocalStateAt(long startExclusive) {
+    public static TransactionLogRange toUpdateLocalStateAt(long startExclusive) {
         return new TransactionLogRange(startExclusive + 1, -1);
     }
 
@@ -44,7 +44,11 @@ public record TransactionLogRange(long startInclusive, long endExclusive) {
      * @param  endExclusive   the transaction number that is already held, to be applied to the local state
      * @return                range of transaction numbers to load
      */
-    public TransactionLogRange toUpdateLocalStateToApply(long startExclusive, long endExclusive) {
-        return new TransactionLogRange(startExclusive + 1, -1);
+    public static TransactionLogRange toUpdateLocalStateToApply(long startExclusive, long endExclusive) {
+        return new TransactionLogRange(startExclusive + 1, endExclusive);
+    }
+
+    public boolean isMaxTransactionBounded() {
+        return endExclusive >= 0;
     }
 }

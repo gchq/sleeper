@@ -19,6 +19,9 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.stream.Stream;
 
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateToApply;
+
 /**
  * A store of a transaction log that can be used to derive the state of a Sleeper table. Used by
  * {@link TransactionLogStateStore}.
@@ -41,7 +44,9 @@ public interface TransactionLogStore {
      * @param  lastTransactionNumber the last transaction number that should not be read
      * @return                       all transactions in order, starting at the one after the specified number
      */
-    Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber);
+    default Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
+        return readTransactions(toUpdateLocalStateAt(lastTransactionNumber));
+    }
 
     /**
      * Streams through transactions to before a certain point, starting after a given transaction. This will be used
@@ -52,7 +57,9 @@ public interface TransactionLogStore {
      * @param  nextTransactionNumber the next transaction number that we are trying to process
      * @return                       the requested transactions in order
      */
-    Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber);
+    default Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
+        return readTransactions(toUpdateLocalStateToApply(lastTransactionNumber, nextTransactionNumber));
+    }
 
     /**
      * Streams through transactions in the given range.

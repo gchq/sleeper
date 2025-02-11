@@ -58,21 +58,15 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
+    public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
         doStartOfReadTransactions();
-        return transactionEntries.stream()
-                .skip(lastTransactionNumber)
+        Stream<TransactionLogEntry> stream = transactionEntries.stream()
+                .skip(range.startInclusive() - 1)
                 .peek(onReadTransactionLogEntry);
-    }
-
-    @Override
-    public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
-        if ((nextTransactionNumber - lastTransactionNumber - 1) > 0) {
-            return readTransactionsAfter(lastTransactionNumber)
-                    .limit(Math.max(0, nextTransactionNumber - lastTransactionNumber - 1));
-        } else {
-            throw new RuntimeException("Limit not valid for readTransactionBetween");
+        if (range.isMaxTransactionBounded()) {
+            stream = stream.limit(range.endExclusive() - range.startInclusive());
         }
+        return stream;
     }
 
     @Override
@@ -227,11 +221,5 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
                 runningTrigger = false;
             }
         }
-    }
-
-    @Override
-    public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'readTransactions'");
     }
 }
