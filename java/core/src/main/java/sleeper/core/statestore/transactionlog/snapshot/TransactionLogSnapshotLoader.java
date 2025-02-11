@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog.snapshot;
 
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
+
 import java.util.Optional;
 
 /**
@@ -31,6 +33,17 @@ public interface TransactionLogSnapshotLoader {
      * @return                   the latest snapshot if it's after the given point in the log
      */
     Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber);
+
+    /**
+     * Loads the latest snapshot if it's beyond a certain point in the log. This is used to avoid loading a snapshot
+     * if it would be quicker to just seek through the log.
+     *
+     * @param  range the range to find the latest snapshot within
+     * @return       the latest snapshot if there is one within the range
+     */
+    default Optional<TransactionLogSnapshot> loadLatestSnapshotInRange(TransactionLogRange range) {
+        return loadLatestSnapshotIfAtMinimumTransaction(range.startInclusive());
+    }
 
     /**
      * Creates a loader that will always return no snapshot.
