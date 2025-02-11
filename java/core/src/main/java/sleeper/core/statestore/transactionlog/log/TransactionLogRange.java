@@ -26,12 +26,25 @@ package sleeper.core.statestore.transactionlog.log;
 public record TransactionLogRange(long startInclusive, long endExclusive) {
 
     /**
-     * Returns the range of transactions from the given transaction number to the lastest.
+     * Returns the range of transactions needed to update the local state to the latest transaction.
      *
-     * @param  startInclusive the first transaction number
-     * @return                range of transaction numbers to be read
+     * @param  startExclusive the last transaction number that was applied to the local state
+     * @return                range of transaction numbers to load
      */
-    public TransactionLogRange loadToLatestFrom(long startInclusive) {
-        return new TransactionLogRange(startInclusive, -1);
+    public TransactionLogRange toUpdateLocalStateAt(long startExclusive) {
+        return new TransactionLogRange(startExclusive + 1, -1);
+    }
+
+    /**
+     * Returns the range of transactions needed to update the local state to apply a specific transaction. This is used
+     * when we already have a transaction in memory that we want to apply, so we only need to load the transactions in
+     * between the local state and the target transaction.
+     *
+     * @param  startExclusive the last transaction number that was applied to the local state
+     * @param  endExclusive   the transaction number that is already held, to be applied to the local state
+     * @return                range of transaction numbers to load
+     */
+    public TransactionLogRange toUpdateLocalStateFromExcluding(long startExclusive, long endExclusive) {
+        return new TransactionLogRange(startExclusive + 1, -1);
     }
 }
