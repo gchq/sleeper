@@ -15,10 +15,13 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
 
 import java.util.Optional;
+
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
 
 /**
  * An in-memory implementation of snapshots derived from a transaction log.
@@ -33,7 +36,12 @@ public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLo
 
     @Override
     public Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber) {
+        return loadLatestSnapshotInRange(fromMinimum(transactionNumber));
+    }
+
+    @Override
+    public Optional<TransactionLogSnapshot> loadLatestSnapshotInRange(TransactionLogRange range) {
         return Optional.ofNullable(latestSnapshot)
-                .filter(snapshot -> snapshot.getTransactionNumber() >= transactionNumber);
+                .filter(snapshot -> snapshot.getTransactionNumber() >= range.startInclusive());
     }
 }
