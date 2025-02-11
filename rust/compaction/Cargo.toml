@@ -61,4 +61,5 @@ color-eyre = { version = "0.6.3" } # Error handling
 [dev-dependencies]
 tempfile = { version = "3.16.0" }                                 # Create temporary files
 object_store = { version = "0.11.1", features = ["integration"] }
-testing_logger = { version = "0.1.1" }                            # Validate logger output in testing
+testing_logger = { version = "0.1.1" }                            # Assert on logger output in tests
+test-log = { version = "0.2.17" }                                 # Enable logging in tests
