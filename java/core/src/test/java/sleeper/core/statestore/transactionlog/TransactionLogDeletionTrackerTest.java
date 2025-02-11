@@ -17,6 +17,8 @@ package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.statestore.transactionlog.log.TransactionLogDeletionTracker;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class TransactionLogDeletionTrackerTest {

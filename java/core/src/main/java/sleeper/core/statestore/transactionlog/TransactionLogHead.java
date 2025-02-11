@@ -19,6 +19,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.LoggedDuration;
@@ -37,7 +48,7 @@ import java.util.function.Supplier;
  *
  * @param <T> the type of the state derived from the log
  */
-class TransactionLogHead<T> {
+public class TransactionLogHead<T> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogHead.class);
 
     private final TableStatus sleeperTable;
@@ -74,7 +85,7 @@ class TransactionLogHead<T> {
         lastTransactionNumber = builder.lastTransactionNumber;
     }
 
-    static Builder<?> builder() {
+    public static Builder<?> builder() {
         return new Builder<>();
     }
 
@@ -149,12 +160,13 @@ class TransactionLogHead<T> {
 
     private void attemptAddTransaction(Instant updateTime, AddTransactionRequest request) throws StateStoreException, DuplicateTransactionNumberException {
         long transactionNumber = lastTransactionNumber + 1;
+        TransactionLogEntry entry = TransactionLogEntry.fromRequest(transactionNumber, updateTime, request);
         try {
-            logStore.addTransaction(TransactionLogEntry.fromRequest(transactionNumber, updateTime, request));
+            logStore.addTransaction(entry);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed adding transaction", e);
         }
-        request.getBeforeApplyListener().beforeApply(transactionNumber, state);
+        request.getBeforeApplyListener().beforeApply(entry, state);
         Instant startApplyTime = Instant.now();
         StateStoreTransaction<T> transaction = request.getTransaction();
         transaction.apply(state, updateTime);
@@ -169,7 +181,7 @@ class TransactionLogHead<T> {
      *
      * @throws StateStoreException thrown if there's any failure reading transactions or applying them to the state
      */
-    void update() throws StateStoreException {
+    public void update() throws StateStoreException {
         try {
             Instant startTime = stateUpdateClock.get();
             if (nextTransactionCheckTime != null && startTime.isBefore(nextTransactionCheckTime)) {
@@ -250,7 +262,20 @@ class TransactionLogHead<T> {
         }
     }
 
+    void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
+        long entryNumber = entry.getTransactionNumber();
+        if (lastTransactionNumber < (entryNumber - 1)) { // If we're not up to date with the given transaction
+            logStore.readTransactionsBetween(lastTransactionNumber, entryNumber)
+                    .forEach(this::applyTransaction);
+        }
+        applyTransaction(entry, listener);
+    }
+
     private void applyTransaction(TransactionLogEntry entry) {
+        applyTransaction(entry, StateListenerBeforeApply.none());
+    }
+
+    private void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
         if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
             LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
                     sleeperTable, entry.getTransactionNumber(),
@@ -258,8 +283,10 @@ class TransactionLogHead<T> {
                     entry.getTransactionType());
             return;
         }
-        transactionType.cast(entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore))
-                .apply(state, entry.getUpdateTime());
+        StateStoreTransaction<T> transaction = transactionType.cast(
+                entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore));
+        listener.beforeApply(entry, state);
+        transaction.apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }
 
@@ -267,7 +294,7 @@ class TransactionLogHead<T> {
         return state;
     }
 
-    long lastTransactionNumber() {
+    public long getLastTransactionNumber() {
         return lastTransactionNumber;
     }
 
@@ -276,7 +303,7 @@ class TransactionLogHead<T> {
      *
      * @param <T> the type of the state derived from the log
      */
-    static class Builder<T> {
+    public static class Builder<T> {
         private TableStatus sleeperTable;
         private TransactionLogStore logStore;
         private TransactionBodyStore transactionBodyStore;
@@ -295,81 +322,192 @@ class TransactionLogHead<T> {
         private Builder() {
         }
 
+        /**
+         * Sets the Sleeper table whose state this interacts with.
+         *
+         * @param  sleeperTable the Sleeper table status
+         * @return              this builder
+         */
         public Builder<T> sleeperTable(TableStatus sleeperTable) {
             this.sleeperTable = sleeperTable;
             return this;
         }
 
+        /**
+         * Sets the store that holds the underlying transaction log.
+         *
+         * @param  logStore the store
+         * @return          this builder
+         */
         public Builder<T> logStore(TransactionLogStore logStore) {
             this.logStore = logStore;
             return this;
         }
 
+        /**
+         * Sets the store that holds large transactions that do not fit directly in the log.
+         *
+         * @param  transactionBodyStore the store
+         * @return                      this builder
+         */
         public Builder<T> transactionBodyStore(TransactionBodyStore transactionBodyStore) {
             this.transactionBodyStore = transactionBodyStore;
             return this;
         }
 
+        /**
+         * Sets whether to update from the log before the first attempt to add a transaction. Adding a transaction will
+         * fail if the local state is out of date with the transaction log. In that case, further attempts will be made
+         * after bringing the local state up to date from the transaction log. Defaults to always update the local state
+         * first.
+         *
+         * @param  updateLogBeforeAddTransaction true if we should update the local state before the first attempt to
+         *                                       add a new transaction
+         * @return                               this builder
+         */
         public Builder<T> updateLogBeforeAddTransaction(boolean updateLogBeforeAddTransaction) {
             this.updateLogBeforeAddTransaction = updateLogBeforeAddTransaction;
             return this;
         }
 
+        /**
+         * Sets the number of times to attempt to add a new transaction to the log. If another process is adding
+         * transactions to the same log at the same time, only one will be successful for a given transaction number.
+         * This is the number of times a process may fail due to a conflict before it stops retrying.
+         *
+         * @param  maxAddTransactionAttempts the number of attempts to add a new transaction
+         * @return                           this builder
+         */
         public Builder<T> maxAddTransactionAttempts(int maxAddTransactionAttempts) {
             this.maxAddTransactionAttempts = maxAddTransactionAttempts;
             return this;
         }
 
+        /**
+         * Sets the behaviour for how long to wait during retries to add a new transaction to the log.
+         *
+         * @param  retryBackoff the settings for retry backoff with jitter
+         * @return              this builder
+         */
         public Builder<T> retryBackoff(ExponentialBackoffWithJitter retryBackoff) {
             this.retryBackoff = retryBackoff;
             return this;
         }
 
+        /**
+         * Sets the type of transaction that may be used with this log. This should be either a partition transaction or
+         * a file transaction.
+         *
+         * @param  <N>             the type of the state that transactions will operate on
+         * @param  transactionType the class of the generic transaction type
+         * @return                 this builder
+         * @see                    #forFiles()
+         * @see                    #forPartitions()
+         */
         public <N> Builder<N> transactionType(Class<? extends StateStoreTransaction<N>> transactionType) {
             this.transactionType = (Class<? extends StateStoreTransaction<T>>) transactionType;
             return (Builder<N>) this;
         }
 
+        /**
+         * Sets the loader to retrieve the latest snapshot of the state.
+         *
+         * @param  snapshotLoader the loader
+         * @return                this builder
+         */
         public Builder<T> snapshotLoader(TransactionLogSnapshotLoader snapshotLoader) {
             this.snapshotLoader = snapshotLoader;
             return this;
         }
 
+        /**
+         * Sets the amount of time to wait in between checks for a new snapshot. Defaults to zero.
+         *
+         * @param  timeBetweenSnapshotChecks the amount of time to wait
+         * @return                           this builder
+         */
         public Builder<T> timeBetweenSnapshotChecks(Duration timeBetweenSnapshotChecks) {
             this.timeBetweenSnapshotChecks = timeBetweenSnapshotChecks;
             return this;
         }
 
+        /**
+         * Sets the amount of time to wait in between checks for new transactions. Defaults to zero.
+         *
+         * @param  timeBetweenTransactionChecks the amount of time to wait
+         * @return                              this builder
+         */
         public Builder<T> timeBetweenTransactionChecks(Duration timeBetweenTransactionChecks) {
             this.timeBetweenTransactionChecks = timeBetweenTransactionChecks;
             return this;
         }
 
+        /**
+         * Sets the clock to provide the time of a new transaction. Defaults to Instant.now().
+         *
+         * @param  stateUpdateClock the clock
+         * @return                  this builder
+         */
         public Builder<T> stateUpdateClock(Supplier<Instant> stateUpdateClock) {
             this.stateUpdateClock = stateUpdateClock;
             return this;
         }
 
+        /**
+         * Sets the state object to keep up to date with the transaction log. This will be mutated as transactions are
+         * read from or added to the log. This must match the type required by transactions in the log. Note that if a
+         * snapshot is loaded later, this state object will be discarded and replaced by the loaded snapshot.
+         *
+         * @param  state the state object
+         * @return       this builder
+         * @see          #forFiles()
+         * @see          #forPartitions()
+         */
         public Builder<T> state(T state) {
             this.state = state;
             return this;
         }
 
+        /**
+         * Sets the last transaction number that was read from the log. Defaults to zero, meaning no transactions have
+         * been read. Usually the only case this will not be zero is if the state object was loaded from a snapshot.
+         *
+         * @param  lastTransactionNumber the last transaction number read from the log
+         * @return                       this builder
+         */
         public Builder<T> lastTransactionNumber(long lastTransactionNumber) {
             this.lastTransactionNumber = lastTransactionNumber;
             return this;
         }
 
+        /**
+         * The minimum number of transactions that the local state should be behind a snapshot in order to load the
+         * state from the snapshot instead of from the transaction log. This is to avoid loading a large snapshot when
+         * it is more efficient to get up to date from the log.
+         *
+         * @param  minTransactionsAheadToLoadSnapshot the minimum number of transactions ahead to load a snapshot
+         * @return                                    this builder
+         */
         public Builder<T> minTransactionsAheadToLoadSnapshot(long minTransactionsAheadToLoadSnapshot) {
             this.minTransactionsAheadToLoadSnapshot = minTransactionsAheadToLoadSnapshot;
             return this;
         }
 
+        /**
+         * Sets the transaction type and initial state object to work with file transactions.
+         *
+         * @return this builder
+         */
         public Builder<StateStoreFiles> forFiles() {
             return transactionType(FileReferenceTransaction.class)
                     .state(new StateStoreFiles());
         }
 
+        /**
+         * Sets the transaction type and initial state object to work with partition transactions.
+         *
+         * @return this builder
+         */
         public Builder<StateStorePartitions> forPartitions() {
             return transactionType(PartitionTransaction.class)
                     .state(new StateStorePartitions());

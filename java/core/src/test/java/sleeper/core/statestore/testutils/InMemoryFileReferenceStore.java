@@ -36,8 +36,8 @@ import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStoreFile;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 
 import java.time.Clock;
 import java.time.Instant;

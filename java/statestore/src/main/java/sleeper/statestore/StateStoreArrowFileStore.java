@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 
 import java.io.IOException;
 import java.nio.channels.Channels;

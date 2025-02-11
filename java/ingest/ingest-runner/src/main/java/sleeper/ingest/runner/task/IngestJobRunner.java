@@ -36,7 +36,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;

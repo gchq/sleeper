@@ -18,6 +18,14 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
@@ -100,6 +108,19 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         } else if (request.getTransaction() instanceof PartitionTransaction) {
             partitions.addTransaction(request);
         }
+    }
+
+    /**
+     * Applies a transaction log entry to the local state, and applies some action based on the state before it. Will
+     * read from the transaction log if entries are missing between the last read entry and the given entry. The given
+     * entry must already exist in the transaction log.
+     *
+     * @param <T>      the type of the state to update
+     * @param logEntry the log entry
+     * @param listener a listener to apply some action before the entry is added
+     */
+    public <T> void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply<StateStoreFiles> listener) {
+        files.applyEntryFromLog(logEntry, listener);
     }
 
     public static Builder builder() {

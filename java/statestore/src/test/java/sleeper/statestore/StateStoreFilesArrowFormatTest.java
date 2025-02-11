@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStoreFile;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.statestore.StateStoreFilesArrowFormat.ReadResult;
 import sleeper.statestore.StateStoreFilesArrowFormat.WriteResult;
 

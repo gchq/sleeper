@@ -27,8 +27,8 @@ import com.google.gson.JsonSerializer;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.util.GsonConfig;
 
 import java.lang.reflect.Type;

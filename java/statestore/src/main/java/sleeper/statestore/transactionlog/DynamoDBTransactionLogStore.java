@@ -27,15 +27,15 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.transactionlog.DuplicateTransactionNumberException;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.TransactionLogDeletionTracker;
-import sleeper.core.statestore.transactionlog.TransactionLogEntry;
-import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDe;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogDeletionTracker;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 
@@ -153,6 +153,22 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
                 .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                         .string(":table_id", sleeperTable.getTableUniqueId())
                         .number(":number", lastTransactionNumber)
+                        .build())
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                .map(this::readTransaction);
+    }
+
+    @Override
+    public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
+        return streamPagedItems(dynamoClient, new QueryRequest()
+                .withTableName(logTableName)
+                .withConsistentRead(true)
+                .withKeyConditionExpression("#TableId = :table_id AND #Number BETWEEN :lastNumber AND :nextNumber")
+                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_id", sleeperTable.getTableUniqueId())
+                        .number(":lastNumber", lastTransactionNumber + 1)
+                        .number(":nextNumber", nextTransactionNumber - 1)
                         .build())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
                 .map(this::readTransaction);

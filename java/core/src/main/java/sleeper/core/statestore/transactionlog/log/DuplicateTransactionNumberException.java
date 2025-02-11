@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.log;
 
 /**
  * Failure adding a transaction when one already exists with that number. This means there is at least one transaction

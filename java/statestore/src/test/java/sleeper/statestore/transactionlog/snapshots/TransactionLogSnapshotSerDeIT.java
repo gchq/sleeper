@@ -27,9 +27,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.state.StateStoreFile;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 
 import java.nio.file.Path;
 
