@@ -9,7 +9,7 @@ use compaction::{deserialise_sketches, DataSketchVariant};
 use compaction::{ColRange, PartitionBound};
 use datafusion::parquet::{
     arrow::{
-        arrow_reader::{ArrowReaderMetadata, ParquetRecordBatchReaderBuilder},
+        arrow_reader::{ArrowReaderMetadata, ArrowReaderOptions, ParquetRecordBatchReaderBuilder},
         ArrowWriter,
     },
     basic::{Compression, ZstdLevel},
@@ -70,8 +70,8 @@ pub fn batch_of_int_fields<const N: usize>(
 pub fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error> {
     let file = File::open(path.path())?;
     let mut data: Vec<i32> = Vec::new();
-    let metadata = ArrowReaderMetadata::load(&file, Default::default())?;
-    check_non_null_field(field_name, DataType::Int32, &metadata)?;
+    let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
+    check_non_null_field(field_name, &DataType::Int32, &metadata)?;
     for result in ParquetRecordBatchReaderBuilder::new_with_metadata(file, metadata).build()? {
         data.extend(get_int_array(field_name, &result?)?.values());
     }
@@ -104,9 +104,9 @@ pub fn read_file_of_int_fields<const N: usize>(
 ) -> Result<Vec<[i32; N]>, Error> {
     let file = File::open(path.path())?;
     let mut data: Vec<[i32; N]> = Vec::new();
-    let metadata = ArrowReaderMetadata::load(&file, Default::default())?;
+    let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
     for field_name in field_names {
-        check_non_null_field(field_name, DataType::Int32, &metadata)?;
+        check_non_null_field(field_name, &DataType::Int32, &metadata)?;
     }
     for result in ParquetRecordBatchReaderBuilder::new_with_metadata(file, metadata).build()? {
         let batch = result?;
@@ -145,11 +145,11 @@ fn get_int_array<'b>(field_name: &str, batch: &'b RecordBatch) -> Result<&'b Int
 
 fn check_non_null_field(
     field_name: &str,
-    field_type: DataType,
+    field_type: &DataType,
     metadata: &ArrowReaderMetadata,
 ) -> Result<(), Error> {
     let field = metadata.schema().field_with_name(field_name)?;
-    if *field.data_type() != field_type {
+    if field.data_type() != field_type {
         Err(eyre!(
             "Expected field {} to be of type {}, found {}",
             field_name,
