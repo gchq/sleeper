@@ -18,6 +18,14 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotCreator;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.table.TableStatus;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -75,7 +83,7 @@ public class InMemoryTransactionLogSnapshotSetup {
         void run(StateStore stateStore) throws StateStoreException;
     }
 
-    private InMemoryTransactionLogSnapshotSetup(
+    InMemoryTransactionLogSnapshotSetup(
             TableStatus sleeperTable, TransactionLogStore filesLog, TransactionLogStore partitionsLog,
             TransactionBodyStore transactionBodyStore) {
         this.sleeperTable = sleeperTable;

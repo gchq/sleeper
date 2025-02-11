@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog.transactions;
+package sleeper.core.statestore.transactionlog.transaction.impl;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.transactionlog.PartitionTransaction;
-import sleeper.core.statestore.transactionlog.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 
 import java.time.Instant;
 import java.util.HashSet;

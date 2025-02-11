@@ -93,12 +93,15 @@ public class StateStorePartitionsArrowFormat {
     /**
      * Writes the state of partitions in Arrow format.
      *
-     * @param  partitions  the partitions in the state store
-     * @param  allocator   the buffer allocator
-     * @param  channel     the channel to write to
-     * @throws IOException if writing to the channel fails
+     * @param  partitions         the partitions in the state store
+     * @param  allocator          the buffer allocator
+     * @param  channel            the channel to write to
+     * @param  maxElementsInBatch the number of partitions in a record batch before moving to the next
+     * @return                    the result of writing the Arrow file
+     * @throws IOException        if writing to the channel fails
      */
-    public static void write(Collection<Partition> partitions, BufferAllocator allocator, WritableByteChannel channel) throws IOException {
+    public static WriteResult write(Collection<Partition> partitions, BufferAllocator allocator, WritableByteChannel channel, int maxElementsInBatch) throws IOException {
+        int totalBatches = 0;
         try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(SCHEMA, allocator);
                 ArrowStreamWriter writer = new ArrowStreamWriter(vectorSchemaRoot, null, channel)) {
             vectorSchemaRoot.getFieldVectors().forEach(fieldVector -> fieldVector.setInitialCapacity(partitions.size()));
@@ -129,42 +132,55 @@ public class StateStorePartitionsArrowFormat {
 
                 rowNumber++;
                 vectorSchemaRoot.setRowCount(rowNumber);
+                if (rowNumber >= maxElementsInBatch) {
+                    writer.writeBatch();
+                    rowNumber = 0;
+                    vectorSchemaRoot.setRowCount(0);
+                    totalBatches++;
+                }
             }
 
-            writer.writeBatch();
+            if (rowNumber > 0) {
+                writer.writeBatch();
+                totalBatches++;
+            }
             writer.end();
         }
+        return new WriteResult(totalBatches);
     }
 
     /**
      * Reads the state of partitions from Arrow format.
      *
      * @param  channel the channel to read from
-     * @return         the partitions in the state store
+     * @return         the result, including the partitions in the state store
      */
-    public static List<Partition> read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
+    public static ReadResult read(BufferAllocator allocator, ReadableByteChannel channel) throws IOException {
         List<Partition> partitions = new ArrayList<>();
+        int totalBatches = 0;
         try (ArrowStreamReader reader = new ArrowStreamReader(channel, allocator)) {
-            reader.loadNextBatch();
-            VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
-            VarCharVector idVector = (VarCharVector) vectorSchemaRoot.getVector(ID);
-            VarCharVector parentIdVector = (VarCharVector) vectorSchemaRoot.getVector(PARENT_ID);
-            ListVector childIdsVector = (ListVector) vectorSchemaRoot.getVector(CHILD_IDS);
-            BitVector isLeafVector = (BitVector) vectorSchemaRoot.getVector(IS_LEAF);
-            UInt4Vector dimensionVector = (UInt4Vector) vectorSchemaRoot.getVector(DIMENSION);
-            ListVector regionVector = (ListVector) vectorSchemaRoot.getVector(REGION);
-            for (int rowNumber = 0; rowNumber < vectorSchemaRoot.getRowCount(); rowNumber++) {
-                partitions.add(Partition.builder()
-                        .id(idVector.getObject(rowNumber).toString())
-                        .parentPartitionId(Optional.ofNullable(parentIdVector.getObject(rowNumber)).map(Text::toString).orElse(null))
-                        .leafPartition(isLeafVector.getObject(rowNumber))
-                        .childPartitionIds(readChildIds(childIdsVector, rowNumber))
-                        .dimension(Optional.ofNullable(dimensionVector.getObject(rowNumber)).orElse(-1))
-                        .region(readRegion(regionVector, rowNumber))
-                        .build());
+            while (reader.loadNextBatch()) {
+                VectorSchemaRoot vectorSchemaRoot = reader.getVectorSchemaRoot();
+                VarCharVector idVector = (VarCharVector) vectorSchemaRoot.getVector(ID);
+                VarCharVector parentIdVector = (VarCharVector) vectorSchemaRoot.getVector(PARENT_ID);
+                ListVector childIdsVector = (ListVector) vectorSchemaRoot.getVector(CHILD_IDS);
+                BitVector isLeafVector = (BitVector) vectorSchemaRoot.getVector(IS_LEAF);
+                UInt4Vector dimensionVector = (UInt4Vector) vectorSchemaRoot.getVector(DIMENSION);
+                ListVector regionVector = (ListVector) vectorSchemaRoot.getVector(REGION);
+                for (int rowNumber = 0; rowNumber < vectorSchemaRoot.getRowCount(); rowNumber++) {
+                    partitions.add(Partition.builder()
+                            .id(idVector.getObject(rowNumber).toString())
+                            .parentPartitionId(Optional.ofNullable(parentIdVector.getObject(rowNumber)).map(Text::toString).orElse(null))
+                            .leafPartition(isLeafVector.getObject(rowNumber))
+                            .childPartitionIds(readChildIds(childIdsVector, rowNumber))
+                            .dimension(Optional.ofNullable(dimensionVector.getObject(rowNumber)).orElse(-1))
+                            .region(readRegion(regionVector, rowNumber))
+                            .build());
+                }
+                totalBatches++;
             }
         }
-        return partitions;
+        return new ReadResult(partitions, totalBatches);
     }
 
     private static void writeChildIds(Partition partition, int rowNumber, BufferAllocator allocator, UnionListWriter writer) {
@@ -268,5 +284,22 @@ public class StateStorePartitionsArrowFormat {
                 Field.nullable("long", Types.MinorType.BIGINT.getType()),
                 Field.nullable("int", Types.MinorType.INT.getType()),
                 Field.nullable("bytes", Types.MinorType.VARBINARY.getType()));
+    }
+
+    /**
+     * Represents the result of reading an Arrow file.
+     *
+     * @param partitions the data held in the file
+     * @param numBatches the number of Arrow record batches that were read
+     */
+    public record ReadResult(List<Partition> partitions, int numBatches) {
+    }
+
+    /**
+     * Represents the result of writing an Arrow file.
+     *
+     * @param numBatches the number of Arrow record batches that were written
+     */
+    public record WriteResult(int numBatches) {
     }
 }

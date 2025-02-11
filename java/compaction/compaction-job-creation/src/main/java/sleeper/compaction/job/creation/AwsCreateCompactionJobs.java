@@ -24,7 +24,7 @@ import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.ObjectFactory;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 

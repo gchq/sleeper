@@ -28,12 +28,14 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.SplitFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -146,6 +148,10 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     void addTransaction(AddTransactionRequest request) {
         head.addTransaction(clock.instant(), request);
+    }
+
+    void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply<StateStoreFiles> listener) {
+        head.applyTransactionUpdatingIfNecessary(logEntry, listener);
     }
 
     private StateStoreFiles files() throws StateStoreException {

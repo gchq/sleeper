@@ -64,6 +64,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICT
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DICTIONARY_ENCODING_FOR_VALUE_FIELDS;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_DYNAMO_STRONGLY_CONSISTENT_READS;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_FILES_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_INGEST_QUEUE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_BATCHER_MAX_FILE_AGE_SECONDS;
@@ -80,6 +81,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_MIN_
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PAGE_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_QUERY_COLUMN_INDEX_ENABLED;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARQUET_WRITER_VERSION;
+import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITIONS_SNAPSHOT_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_PARTITION_SPLIT_ASYNC_COMMIT;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_ROW_GROUP_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
@@ -387,6 +389,22 @@ public interface TableProperty extends SleeperProperty, TablePropertyComputeValu
                     "period between 0 and this value. This restricts the exponential increase of the wait ceiling " +
                     "while retrying the transaction. See the below article.\n" +
                     "https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty FILES_SNAPSHOT_BATCH_SIZE = Index.propertyBuilder("sleeper.table.statestore.transactionlog.files.snapshot.batch.size")
+            .defaultProperty(DEFAULT_FILES_SNAPSHOT_BATCH_SIZE)
+            .description("The number of elements to include per Arrow record batch in a snapshot derived from the " +
+                    "transaction log, of the state of files in a Sleeper table. Each file includes some number of " +
+                    "references on different partitions. Each reference will count for one element in a record " +
+                    "batch, but a file cannot currently be split between record batches. A record batch may contain " +
+                    "more file references than this if a single file overflows the batch. A file with no references " +
+                    "counts as one element.")
+            .propertyGroup(TablePropertyGroup.METADATA)
+            .build();
+    TableProperty PARTITIONS_SNAPSHOT_BATCH_SIZE = Index.propertyBuilder("sleeper.table.statestore.transactionlog.partitions.snapshot.batch.size")
+            .defaultProperty(DEFAULT_PARTITIONS_SNAPSHOT_BATCH_SIZE)
+            .description("The number of partitions to include per Arrow record batch in a snapshot derived from the " +
+                    "transaction log, of the state of partitions in a Sleeper table.")
             .propertyGroup(TablePropertyGroup.METADATA)
             .build();
     TableProperty TIME_BETWEEN_SNAPSHOT_CHECKS_SECS = Index.propertyBuilder("sleeper.table.statestore.transactionlog.time.between.snapshot.checks.seconds")

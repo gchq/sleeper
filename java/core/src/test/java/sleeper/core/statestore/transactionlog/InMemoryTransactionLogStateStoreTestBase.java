@@ -67,6 +67,10 @@ public class InMemoryTransactionLogStateStoreTestBase {
         return transactionLogs.stateStoreBuilder(sleeperTable, schema);
     }
 
+    protected void createSnapshots() {
+        transactionLogs.createSnapshots(sleeperTable);
+    }
+
     protected void splitPartition(String parentId, String leftId, String rightId, long splitPoint) {
         partitions.splitToNewChildren(parentId, leftId, rightId, splitPoint)
                 .applySplit(store, parentId);

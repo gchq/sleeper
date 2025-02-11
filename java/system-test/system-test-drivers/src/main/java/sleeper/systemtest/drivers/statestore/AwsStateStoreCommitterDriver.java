@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.PollWithRetries;
 import sleeper.core.util.SplitIntoBatches;
 import sleeper.statestore.commit.S3StateStoreCommitRequestUploader;

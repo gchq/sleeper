@@ -1432,6 +1432,17 @@ sleeper.default.statestore.transactionlog.add.transaction.first.retry.wait.ceili
 # This default can be overridden by a table property.
 sleeper.default.statestore.transactionlog.add.transaction.max.retry.wait.ceiling.ms=30000
 
+# The number of elements to include per Arrow record batch in a snapshot derived from the transaction
+# log, of the state of files in a Sleeper table. Each file includes some number of references on
+# different partitions. Each reference will count for one element in a record batch, but a file cannot
+# currently be split between record batches. A record batch may contain more file references than this
+# if a single file overflows the batch. A file with no references counts as one element.
+sleeper.default.statestore.transactionlog.files.snapshot.batch.size=1000
+
+# The number of partitions to include per Arrow record batch in a snapshot derived from the
+# transaction log, of the state of partitions in a Sleeper table.
+sleeper.default.statestore.transactionlog.partitions.snapshot.batch.size=1000
+
 # The number of seconds to wait after we've loaded a snapshot before looking for a new snapshot. This
 # should relate to the rate at which new snapshots are created, configured in the instance property
 # `sleeper.statestore.transactionlog.snapshot.creation.lambda.period.seconds`. This default can be

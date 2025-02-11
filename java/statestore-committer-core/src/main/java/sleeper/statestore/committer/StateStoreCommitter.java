@@ -26,11 +26,11 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
-import sleeper.core.statestore.transactionlog.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
@@ -153,7 +153,7 @@ public class StateStoreCommitter {
         ReplaceFileReferencesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
-                .beforeApplyListener((number, state) -> transaction.reportJobCommits(
+                .beforeApplyListener((entry, state) -> transaction.reportJobCommits(
                         compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
                 .build();
         try {
@@ -168,7 +168,7 @@ public class StateStoreCommitter {
         AddFilesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
-                .beforeApplyListener((number, state) -> transaction.reportJobCommitted(
+                .beforeApplyListener((entry, state) -> transaction.reportJobCommitted(
                         ingestJobTracker, tableProperties.getStatus()))
                 .build();
         try {

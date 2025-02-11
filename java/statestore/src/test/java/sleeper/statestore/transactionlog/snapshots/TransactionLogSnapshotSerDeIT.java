@@ -21,17 +21,21 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.transactionlog.StateStoreFile;
-import sleeper.core.statestore.transactionlog.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.state.StateStoreFile;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 
 import java.nio.file.Path;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithOneReference;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
@@ -39,10 +43,12 @@ import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 public class TransactionLogSnapshotSerDeIT {
     @TempDir
     private Path tempDir;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key", new StringType());
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
     private final Configuration configuration = new Configuration();
-    private final TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(schema, configuration);
+    private final TransactionLogSnapshotSerDe snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties, configuration);
 
     @Test
     void shouldSaveAndLoadPartitionsState() throws Exception {

@@ -16,7 +16,7 @@
 package sleeper.statestore.transactionlog;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.transactionlog.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
