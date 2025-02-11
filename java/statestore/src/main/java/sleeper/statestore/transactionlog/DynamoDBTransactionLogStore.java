@@ -145,34 +145,33 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
-        return streamPagedItems(dynamoClient, new QueryRequest()
-                .withTableName(logTableName)
-                .withConsistentRead(true)
-                .withKeyConditionExpression("#TableId = :table_id AND #Number > :number")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", sleeperTable.getTableUniqueId())
-                        .number(":number", lastTransactionNumber)
-                        .build())
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .map(this::readTransaction);
-    }
-
-    @Override
-    public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
-        return streamPagedItems(dynamoClient, new QueryRequest()
-                .withTableName(logTableName)
-                .withConsistentRead(true)
-                .withKeyConditionExpression("#TableId = :table_id AND #Number BETWEEN :lastNumber AND :nextNumber")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", sleeperTable.getTableUniqueId())
-                        .number(":lastNumber", lastTransactionNumber + 1)
-                        .number(":nextNumber", nextTransactionNumber - 1)
-                        .build())
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .map(this::readTransaction);
+    public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
+        if (range.isMaxTransactionBounded()) {
+            return streamPagedItems(dynamoClient, new QueryRequest()
+                    .withTableName(logTableName)
+                    .withConsistentRead(true)
+                    .withKeyConditionExpression("#TableId = :table_id AND #Number BETWEEN :startInclusive AND :endInclusive")
+                    .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                            .string(":table_id", sleeperTable.getTableUniqueId())
+                            .number(":startInclusive", range.startInclusive())
+                            .number(":endInclusive", range.endExclusive() - 1)
+                            .build())
+                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                    .map(this::readTransaction);
+        } else {
+            return streamPagedItems(dynamoClient, new QueryRequest()
+                    .withTableName(logTableName)
+                    .withConsistentRead(true)
+                    .withKeyConditionExpression("#TableId = :table_id AND #Number >= :startInclusive")
+                    .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                            .string(":table_id", sleeperTable.getTableUniqueId())
+                            .number(":startInclusive", range.startInclusive())
+                            .build())
+                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                    .map(this::readTransaction);
+        }
     }
 
     @Override
@@ -245,11 +244,5 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     private static Map<String, AttributeValue> getKey(Map<String, AttributeValue> item) {
         return Map.of(TABLE_ID, item.get(TABLE_ID),
                 TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER));
-    }
-
-    @Override
-    public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'readTransactions'");
     }
 }
