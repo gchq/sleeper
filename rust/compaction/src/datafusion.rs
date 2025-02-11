@@ -108,7 +108,6 @@ pub async fn compact(
     if let Some(expr) = region_filter(&input_data.region) {
         frame = frame.filter(expr)?;
     }
-    info!("Schema fields after filter: {:?}", frame.schema().fields());
 
     // Create the sketch function
     let sketch_func = Arc::new(ScalarUDF::from(udf::SketchUDF::new(
@@ -133,14 +132,9 @@ pub async fn compact(
     let col_names_expr = sketch_expr
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
-    info!("Select expression: {:?}", col_names_expr);
 
     // Build compaction query
-    info!("Schema fields before sort: {:?}", frame.schema().fields());
-    frame = frame.sort(sort_order)?;
-    info!("Schema fields after sort: {:?}", frame.schema().fields());
-    frame = frame.select(col_names_expr)?;
-    info!("Schema fields after select: {:?}", frame.schema().fields());
+    frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
