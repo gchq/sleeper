@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
@@ -94,6 +95,19 @@ public class DynamoDBTransactionLogSnapshotStore {
         return latestMetadataLoader.load().getPartitionsSnapshot()
                 .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
                 .map(this::loadPartitionsSnapshot);
+    }
+
+    /**
+     * Loads the latest snapshot of a given type that was made against a transaction number in the given range. Used by
+     * the state store to implement
+     * {@link sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader}.
+     *
+     * @param  type  the snapshot type
+     * @param  range the range of transactions
+     * @return       the latest snapshot if there is one in the range
+     */
+    public Optional<TransactionLogSnapshot> loadLatestSnapshotInRange(SnapshotType type, TransactionLogRange range) {
+        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     /**
@@ -206,6 +220,21 @@ public class DynamoDBTransactionLogSnapshotStore {
          * @return the metadata
          */
         LatestSnapshots load();
+    }
+
+    /**
+     * Loads the metadata of the latest snapshots from the index.
+     */
+    public interface LatestSnapshotInRangeMetadataLoader {
+
+        /**
+         * Retrieves the latest snapshot of a given type that was made against a transaction number in the given range.
+         *
+         * @param  type  the snapshot type
+         * @param  range the range of transactions
+         * @return       the snapshot metadata, pointing to the latest snapshot file, if any
+         */
+        Optional<TransactionLogSnapshotMetadata> getLatestSnapshotInRange(SnapshotType type, TransactionLogRange range);
     }
 
     /**
