@@ -39,6 +39,8 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
+
 /**
  * Tracks some state derived from a transaction log, at a position in the log. This can perform an update to the state
  * by adding a transaction to the log, or it can bring the state up to date with transactions in the log.
@@ -243,7 +245,7 @@ public class TransactionLogHead<T> {
         long transactionNumberBeforeLogLoad = lastTransactionNumber;
         LOGGER.debug("Updating {} for table {} from log from transaction {}",
                 state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber);
-        logStore.readTransactionsAfter(lastTransactionNumber)
+        logStore.readTransactions(toUpdateLocalStateAt(lastTransactionNumber))
                 .forEach(this::applyTransaction);
         long readTransactions = lastTransactionNumber - transactionNumberBeforeLogLoad;
         Instant finishTime = stateUpdateClock.get();

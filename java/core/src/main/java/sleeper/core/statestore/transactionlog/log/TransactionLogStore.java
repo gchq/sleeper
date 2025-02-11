@@ -19,7 +19,6 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.stream.Stream;
 
-import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateToApply;
 
 /**
@@ -37,16 +36,6 @@ public interface TransactionLogStore {
      *                                             same time
      */
     void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException;
-
-    /**
-     * Streams through transactions to the end of the log, starting after a given transaction.
-     *
-     * @param  lastTransactionNumber the last transaction number that should not be read
-     * @return                       all transactions in order, starting at the one after the specified number
-     */
-    default Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
-        return readTransactions(toUpdateLocalStateAt(lastTransactionNumber));
-    }
 
     /**
      * Streams through transactions to before a certain point, starting after a given transaction. This will be used
