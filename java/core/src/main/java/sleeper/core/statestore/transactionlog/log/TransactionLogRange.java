@@ -44,7 +44,7 @@ public record TransactionLogRange(long startInclusive, long endExclusive) {
      * @param  endExclusive   the transaction number that is already held, to be applied to the local state
      * @return                range of transaction numbers to load
      */
-    public TransactionLogRange toUpdateLocalStateFromExcluding(long startExclusive, long endExclusive) {
+    public TransactionLogRange toUpdateLocalStateToApply(long startExclusive, long endExclusive) {
         return new TransactionLogRange(startExclusive + 1, -1);
     }
 }
