@@ -146,32 +146,28 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
 
     @Override
     public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
+        QueryRequest request = new QueryRequest()
+                .withTableName(logTableName)
+                .withConsistentRead(true)
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
         if (range.isMaxTransactionBounded()) {
-            return streamPagedItems(dynamoClient, new QueryRequest()
-                    .withTableName(logTableName)
-                    .withConsistentRead(true)
-                    .withKeyConditionExpression("#TableId = :table_id AND #Number BETWEEN :startInclusive AND :endInclusive")
+            request.withKeyConditionExpression("#TableId = :table_id AND #Number BETWEEN :startInclusive AND :endInclusive")
                     .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
                     .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                             .string(":table_id", sleeperTable.getTableUniqueId())
                             .number(":startInclusive", range.startInclusive())
                             .number(":endInclusive", range.endExclusive() - 1)
-                            .build())
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                    .map(this::readTransaction);
+                            .build());
         } else {
-            return streamPagedItems(dynamoClient, new QueryRequest()
-                    .withTableName(logTableName)
-                    .withConsistentRead(true)
-                    .withKeyConditionExpression("#TableId = :table_id AND #Number >= :startInclusive")
+            request.withKeyConditionExpression("#TableId = :table_id AND #Number >= :startInclusive")
                     .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
                     .withExpressionAttributeValues(new DynamoDBRecordBuilder()
                             .string(":table_id", sleeperTable.getTableUniqueId())
                             .number(":startInclusive", range.startInclusive())
-                            .build())
-                    .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                    .map(this::readTransaction);
+                            .build());
         }
+        return streamPagedItems(dynamoClient, request)
+                .map(this::readTransaction);
     }
 
     @Override
