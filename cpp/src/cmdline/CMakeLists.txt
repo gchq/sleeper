@@ -39,6 +39,28 @@ target_include_directories(chunk_reader PRIVATE "${CMAKE_BINARY_DIR}/configured_
 target_include_directories(chunk_reader PRIVATE "${CMAKE_SOURCE_DIR}/include/cmdline")
 
 add_executable(
+  sum_chunk_reader
+  sum_chunk_reader.cpp
+  configure_logging.cpp
+  ../../include/cmdline/configure_logging.hpp
+  data_sink.cpp
+  ../../include/cmdline/data_sink.hpp
+  lub.cpp
+  ../../include/cmdline/lub.hpp
+  slice.cpp
+  ../../include/cmdline/slice.hpp)
+target_link_system_libraries(
+    sum_chunk_reader
+  PRIVATE
+  CLI11::CLI11
+  fmt::fmt
+  spdlog::spdlog
+  cudf::cudf)
+target_link_libraries(sum_chunk_reader PRIVATE gpu_compact::io)
+target_include_directories(sum_chunk_reader PRIVATE "${CMAKE_BINARY_DIR}/configured_files/include")
+target_include_directories(sum_chunk_reader PRIVATE "${CMAKE_SOURCE_DIR}/include/cmdline")
+
+add_executable(
   check_sort
   check_sort.cpp
   configure_logging.cpp
