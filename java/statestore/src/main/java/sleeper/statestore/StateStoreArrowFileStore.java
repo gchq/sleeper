@@ -132,9 +132,9 @@ public class StateStoreArrowFileStore {
     /**
      * Loads the state of a snapshot in a Sleeper table from an Arrow file.
      *
-     * @param  metadata    metadata pointing to the file to read
-     * @return             the snapshot
-     * @throws IOException if the file could not be read
+     * @param  metadata            metadata pointing to the file to read
+     * @return                     the snapshot
+     * @throws StateStoreException if the file could not be read
      */
     public TransactionLogSnapshot loadSnapshot(TransactionLogSnapshotMetadata metadata) {
         return new TransactionLogSnapshot(loadState(metadata), metadata.getTransactionNumber());

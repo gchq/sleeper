@@ -25,14 +25,11 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
-import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Optional;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
@@ -68,59 +65,6 @@ public class DynamoDBTransactionLogSnapshotStore {
         this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties, configuration);
         this.configuration = configuration;
         this.basePath = getBasePath(instanceProperties, tableProperties);
-    }
-
-    /**
-     * Loads the latest snapshot of a given type that was made against a transaction number in the given range. Used by
-     * the state store to implement
-     * {@link sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader}.
-     *
-     * @param  type  the snapshot type
-     * @param  range the range of transactions
-     * @return       the latest snapshot if there is one in the range
-     */
-    public Optional<TransactionLogSnapshot> loadLatestSnapshotInRange(SnapshotType type, TransactionLogRange range) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    /**
-     * Loads the snapshot of files based on metadata for the latest snapshot held in the index.
-     *
-     * @param  snapshots the metadata
-     * @return           the snapshot, or the initial state if there was no snapshot in the index
-     */
-    public TransactionLogSnapshot loadFilesSnapshot(LatestSnapshots snapshots) {
-        return snapshots.getFilesSnapshot()
-                .map(this::loadFilesSnapshot)
-                .orElseGet(TransactionLogSnapshot::filesInitialState);
-    }
-
-    /**
-     * Loads the snapshot of partitions based on metadata for the latest snapshot held in the index.
-     *
-     * @param  snapshots the metadata
-     * @return           the snapshot, or the initial state if there was no snapshot in the index
-     */
-    public TransactionLogSnapshot loadPartitionsSnapshot(LatestSnapshots snapshots) {
-        return snapshots.getPartitionsSnapshot()
-                .map(this::loadPartitionsSnapshot)
-                .orElseGet(TransactionLogSnapshot::partitionsInitialState);
-    }
-
-    private TransactionLogSnapshot loadFilesSnapshot(TransactionLogSnapshotMetadata metadata) {
-        try {
-            return new TransactionLogSnapshot(snapshotSerDe.loadFiles(metadata), metadata.getTransactionNumber());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    private TransactionLogSnapshot loadPartitionsSnapshot(TransactionLogSnapshotMetadata metadata) {
-        try {
-            return new TransactionLogSnapshot(snapshotSerDe.loadPartitions(metadata), metadata.getTransactionNumber());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
     }
 
     /**
