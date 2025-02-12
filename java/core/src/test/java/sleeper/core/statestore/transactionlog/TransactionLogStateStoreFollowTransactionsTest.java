@@ -91,7 +91,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     void shouldFollowTransactionReadingPreviousFromSnapshot() {
         // Given
         FileReference file1 = factory.rootFile("file1.parquet", 100L);
-        FileReference file2 = factory.rootFile("file2.parquet", 100L);
+        FileReference file2 = factory.rootFile("file2.parquet", 200L);
         committerStore.addFiles(List.of(file1));
         createSnapshots();
         committerStore.addFiles(List.of(file2));
@@ -105,6 +105,37 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         assertThat(transactionLogReads.get()).isZero();
         assertThat(followerStore.getFileReferences()).containsExactly(file1, file2);
         assertThat(transactionEntriesThatWereRead).isEmpty();
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldFollowTransactionReadingPreviousSnapshot() {
+        // Given 3 files
+        FileReference file1 = factory.rootFile("file1.parquet", 100L);
+        FileReference file2 = factory.rootFile("file2.parquet", 200L);
+        FileReference file3 = factory.rootFile("file3.parquet", 300L);
+        // And a snapshot with only file 1
+        committerStore.addFiles(List.of(file1));
+        createSnapshots();
+        // And an entry 2 with file 2 as well
+        committerStore.addFiles(List.of(file2));
+        TransactionLogEntry entry2 = filesLogStore.getLastEntry();
+        // And a snapshot with file 2 replaced with file 3 (so that this will fail if reapplied on top of the second snapshot)
+        committerStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file2.parquet"))));
+        TransactionLogEntry entry3 = filesLogStore.getLastEntry();
+        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferencesBuilder("test-job", List.of("file2.parquet"), file3).build()));
+        TransactionLogEntry entry4 = filesLogStore.getLastEntry();
+        createSnapshots();
+        trackTransactionLogReads();
+
+        // When we load entry 2 into the follower
+        loadNextTransaction(entry2);
+
+        // Then file 2 is added against the first snapshot, rather than the log or the second snapshot
+        assertThat(transactionLogReads.get()).isZero();
+        // And the replacement with file 3 is applied at query time
+        assertThat(followerStore.getFileReferences()).containsExactly(file1, file3);
+        assertThat(transactionEntriesThatWereRead).containsExactly(entry3, entry4);
     }
 
     @Test
