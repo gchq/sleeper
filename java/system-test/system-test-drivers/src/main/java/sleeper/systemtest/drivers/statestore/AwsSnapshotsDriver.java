@@ -57,7 +57,7 @@ public class AwsSnapshotsDriver implements SnapshotsDriver {
                 .map(AwsSnapshotsDriver::readPartitions);
     }
 
-    public Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {
+    private Optional<TransactionLogSnapshot> loadLatestSnapshot(InstanceProperties instanceProperties, TableProperties tableProperties, SnapshotType snapshotType) {
         DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, clients.getDynamoDB());
         StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(tableProperties, clients.createHadoopConf(instanceProperties, tableProperties));
         return new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, snapshotType)
