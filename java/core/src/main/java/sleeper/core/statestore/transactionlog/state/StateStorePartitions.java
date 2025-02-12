@@ -19,6 +19,7 @@ import sleeper.core.partition.Partition;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,6 +34,18 @@ import java.util.Optional;
 public class StateStorePartitions {
 
     private final Map<String, Partition> partitionById = new HashMap<>();
+
+    /**
+     * Creates an instance of this class with the given partitions.
+     *
+     * @param  partitions the partitions
+     * @return            the state object
+     */
+    public static StateStorePartitions from(List<Partition> partitions) {
+        StateStorePartitions state = new StateStorePartitions();
+        partitions.forEach(state::put);
+        return state;
+    }
 
     /**
      * Retrieves all partitions in the state store.

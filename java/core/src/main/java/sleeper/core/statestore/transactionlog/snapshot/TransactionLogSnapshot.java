@@ -54,7 +54,7 @@ public class TransactionLogSnapshot {
         return new TransactionLogSnapshot(new StateStorePartitions(), 0);
     }
 
-    public TransactionLogSnapshot(Object state, long transactionNumber) {
+    TransactionLogSnapshot(Object state, long transactionNumber) {
         this.state = state;
         this.transactionNumber = transactionNumber;
     }

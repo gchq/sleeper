@@ -214,7 +214,8 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
                     .withScanIndexForward(false));
             return result.getItems().stream().findFirst().map(item -> getSnapshotFromItem(item));
         } else {
-            return getLatestSnapshots().getSnapshot(type);
+            return getLatestSnapshots().getSnapshot(type)
+                    .filter(metadata -> metadata.getTransactionNumber() >= range.startInclusive());
         }
     }
 

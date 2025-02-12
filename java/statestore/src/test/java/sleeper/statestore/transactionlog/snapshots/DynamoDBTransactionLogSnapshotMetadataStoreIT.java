@@ -241,6 +241,16 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestB
     }
 
     @Test
+    void shouldRetrieveNoSnapshotByUnboundedRangeWhenMinimumIsNotMet() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.FILES, TransactionLogRange.fromMinimum(2)))
+                .isEmpty();
+    }
+
+    @Test
     void shouldSaveAndLoadSnapshotsForMultipleTables() throws Exception {
         TableProperties table1 = createTable();
         TableProperties table2 = createTable();

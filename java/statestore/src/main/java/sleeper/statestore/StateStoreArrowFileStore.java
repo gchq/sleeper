@@ -27,6 +27,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
 import java.io.IOException;
@@ -137,16 +138,16 @@ public class StateStoreArrowFileStore {
      * @throws StateStoreException if the file could not be read
      */
     public TransactionLogSnapshot loadSnapshot(TransactionLogSnapshotMetadata metadata) {
-        return new TransactionLogSnapshot(loadState(metadata), metadata.getTransactionNumber());
-    }
-
-    private Object loadState(TransactionLogSnapshotMetadata metadata) {
         try {
             switch (metadata.getType()) {
                 case FILES:
-                    return loadFiles(metadata.getPath());
+                    return new TransactionLogSnapshot(
+                            loadFiles(metadata.getPath()),
+                            metadata.getTransactionNumber());
                 case PARTITIONS:
-                    return loadPartitions(metadata.getPath());
+                    return new TransactionLogSnapshot(
+                            StateStorePartitions.from(loadPartitions(metadata.getPath())),
+                            metadata.getTransactionNumber());
                 default:
                     throw new IllegalArgumentException("Unrecognised snapshot type: " + metadata.getType());
             }
