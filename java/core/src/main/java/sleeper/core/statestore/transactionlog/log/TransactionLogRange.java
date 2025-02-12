@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore.transactionlog.log;
 
+import java.util.Optional;
+
 /**
  * Range of transaction numbers to be read. The next transaction number field will be used when we want to apply some
  * transaction locally but we are not yet up to date with the log before that transaction.
@@ -60,5 +62,21 @@ public record TransactionLogRange(long startInclusive, long endExclusive) {
 
     public boolean isMaxTransactionBounded() {
         return endExclusive >= 0;
+    }
+
+    /**
+     * Restricts the range to a minimum transaction number.
+     *
+     * @param  startInclusive the minimum transaction number to include
+     * @return                the new range, if any transactions are still included
+     */
+    public Optional<TransactionLogRange> withMinTransactionNumber(long startInclusive) {
+        if (this.startInclusive > startInclusive) {
+            return Optional.of(this);
+        } else if (isMaxTransactionBounded() && startInclusive >= endExclusive) {
+            return Optional.empty();
+        } else {
+            return Optional.of(new TransactionLogRange(startInclusive, endExclusive));
+        }
     }
 }

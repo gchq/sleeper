@@ -27,6 +27,7 @@ import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -41,6 +42,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
+    private final AtomicInteger transactionLogReads = new AtomicInteger(0);
     private final List<TransactionLogEntry> transactionEntriesThatWereRead = new ArrayList<>();
 
     @BeforeEach
@@ -48,7 +50,6 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         initialiseWithPartitions(new PartitionsBuilder(schemaWithKey("key", new LongType())).singlePartition("root"));
         committerStore = (TransactionLogStateStore) super.store;
         followerStore = stateStoreBuilder(schemaWithKey("key", new LongType())).build();
-        filesLogStore.onReadTransactionLogEntry(transactionEntriesThatWereRead::add);
     }
 
     @Test
@@ -57,6 +58,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         FileReference file = factory.rootFile("file.parquet", 100L);
         committerStore.addFiles(List.of(file));
         TransactionLogEntry logEntry = filesLogStore.getLastEntry();
+        trackTransactionLogReads();
 
         // When
         loadNextTransaction(logEntry);
@@ -75,6 +77,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         TransactionLogEntry entry1 = filesLogStore.getLastEntry();
         committerStore.addFiles(List.of(file2));
         TransactionLogEntry entry2 = filesLogStore.getLastEntry();
+        trackTransactionLogReads();
 
         // When
         loadNextTransaction(entry2);
@@ -85,7 +88,6 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     }
 
     @Test
-    @Disabled("TODO")
     void shouldFollowTransactionReadingPreviousFromSnapshot() {
         // Given
         FileReference file1 = factory.rootFile("file1.parquet", 100L);
@@ -94,11 +96,13 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         createSnapshots();
         committerStore.addFiles(List.of(file2));
         TransactionLogEntry entry2 = filesLogStore.getLastEntry();
+        trackTransactionLogReads();
 
         // When
         loadNextTransaction(entry2);
 
         // Then
+        assertThat(transactionLogReads.get()).isZero();
         assertThat(followerStore.getFileReferences()).containsExactly(file1, file2);
         assertThat(transactionEntriesThatWereRead).isEmpty();
     }
@@ -129,5 +133,10 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     private void loadNextTransaction(TransactionLogEntry entry) {
         followerStore.applyEntryFromLog(entry, (e, state) -> {
         });
+    }
+
+    private void trackTransactionLogReads() {
+        filesLogStore.atStartOfReadTransactions(transactionLogReads::incrementAndGet);
+        filesLogStore.onReadTransactionLogEntry(transactionEntriesThatWereRead::add);
     }
 }
