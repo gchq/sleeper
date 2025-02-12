@@ -139,7 +139,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
 
     @Test
     @Disabled("TODO")
-    void shouldUpdateTransactionLogBasedOnStateStoreProvided() {
+    void shouldUpdateCompactionJobTrackerBasedOnTransaction() {
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
