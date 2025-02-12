@@ -16,14 +16,14 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
-import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,11 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
-public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
+public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTransactionLogStateStoreTestBase {
 
     // Tests to add:
     // - Follow partition transactions
-    // - Read a snapshot when updating from log
     // - Local state has already applied the given transaction (fail or just ignore it?)
 
     private TransactionLogStateStore committerStore;
@@ -122,7 +121,11 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         // And a snapshot with file 2 replaced with file 3 (so that this will fail if reapplied on top of the second snapshot)
         committerStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file2.parquet"))));
         TransactionLogEntry entry3 = filesLogStore.getLastEntry();
-        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferencesBuilder("test-job", List.of("file2.parquet"), file3).build()));
+        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
+                .jobId("test-job")
+                .inputFiles(List.of("file2.parquet"))
+                .newReference(file3)
+                .build()));
         TransactionLogEntry entry4 = filesLogStore.getLastEntry();
         createSnapshots();
         trackTransactionLogReads();
@@ -137,32 +140,9 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         assertThat(transactionEntriesThatWereRead).containsExactly(entry3, entry4);
     }
 
-    @Test
-    @Disabled("TODO")
-    void shouldUpdateCompactionJobTrackerBasedOnTransaction() {
-        // Given
-        FileReference oldFile = factory.rootFile("oldFile", 100L);
-        FileReference newFile = factory.rootFile("newFile", 100L);
-        committerStore.addFiles(List.of(oldFile));
-        committerStore.assignJobIds(List.of(
-                assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
-        CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
-        trackJobRun(trackedJob, "test-run");
-        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId("test-run").build()));
-        TransactionLogEntry logEntry = filesLogStore.getLastEntry();
-
-        // When
-        loadNextTransaction(logEntry);
-
-        // Then
-        assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId()))
-                .containsExactly(defaultStatus(trackedJob, defaultCommittedRun(100)));
-    }
-
     private void loadNextTransaction(TransactionLogEntry entry) {
-        followerStore.applyEntryFromLog(entry, (e, state) -> {
-        });
+        followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.withState(state -> {
+        }));
     }
 
     private void trackTransactionLogReads() {

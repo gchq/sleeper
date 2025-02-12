@@ -16,6 +16,9 @@
 package sleeper.core.statestore.transactionlog.state;
 
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+
+import java.util.function.Consumer;
 
 /**
  * Listens to see the state before a transaction is applied to the local state. This is when the transaction is in the
@@ -29,10 +32,10 @@ public interface StateListenerBeforeApply<S> {
     /**
      * Informs the listener that the transaction is about to be applied to the local state.
      *
-     * @param entry the transaction log entry
-     * @param state the state
+     * @param transaction the transaction
+     * @param state       the state
      */
-    void beforeApply(TransactionLogEntry entry, S state);
+    void beforeApply(TransactionLogEntry entry, StateStoreTransaction<?> transaction, S state);
 
     /**
      * Creates a transaction listener that does nothing.
@@ -41,7 +44,17 @@ public interface StateListenerBeforeApply<S> {
      * @return     the listener
      */
     static <S> StateListenerBeforeApply<S> none() {
-        return (entry, state) -> {
+        return (entry, transaction, state) -> {
         };
+    }
+
+    /**
+     * Creates a transaction listener that operates on just the state.
+     *
+     * @param  <S> the type of state the transaction operates on
+     * @return     the listener
+     */
+    static <S> StateListenerBeforeApply<S> withState(Consumer<S> run) {
+        return (entry, transaction, state) -> run.accept(state);
     }
 }

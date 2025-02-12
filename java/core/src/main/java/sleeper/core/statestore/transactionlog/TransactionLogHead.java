@@ -168,9 +168,9 @@ public class TransactionLogHead<T> {
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed adding transaction", e);
         }
-        request.getBeforeApplyListener().beforeApply(entry, state);
-        Instant startApplyTime = Instant.now();
         StateStoreTransaction<T> transaction = request.getTransaction();
+        request.getBeforeApplyListener().beforeApply(entry, transaction, state);
+        Instant startApplyTime = Instant.now();
         transaction.apply(state, updateTime);
         lastTransactionNumber = transactionNumber;
         LOGGER.debug("Applied transaction {} in {}",
@@ -288,7 +288,7 @@ public class TransactionLogHead<T> {
         }
         StateStoreTransaction<T> transaction = transactionType.cast(
                 entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore));
-        listener.beforeApply(entry, state);
+        listener.beforeApply(entry, transaction, state);
         transaction.apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }

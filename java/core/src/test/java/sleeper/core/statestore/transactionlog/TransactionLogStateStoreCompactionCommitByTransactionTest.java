@@ -22,6 +22,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
@@ -236,8 +237,8 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
 
     private void addTransactionWithTracking(ReplaceFileReferencesTransaction transaction) {
         store.addTransaction(AddTransactionRequest.withTransaction(transaction)
-                .beforeApplyListener((entry, state) -> {
+                .beforeApplyListener(StateListenerBeforeApply.withState(state -> {
                     transaction.reportJobCommits(tracker, sleeperTable, state, DEFAULT_COMMIT_TIME);
-                }).build());
+                })).build());
     }
 }
