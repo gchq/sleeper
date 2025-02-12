@@ -60,7 +60,7 @@ public class LatestSnapshots {
             case PARTITIONS:
                 return getPartitionsSnapshot();
             default:
-                throw new IllegalArgumentException("Unrecognisd snapshot type: " + type);
+                throw new IllegalArgumentException("Unrecognised snapshot type: " + type);
         }
     }
 
