@@ -75,19 +75,10 @@ public class DynamoDBTransactionLogSnapshotStore {
      * @throws DuplicateSnapshotException if there is already a snapshot for the given transaction number
      */
     public void saveFilesSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
-        TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forFiles(
+        TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(
                 basePath, snapshot.getTransactionNumber());
-
-        snapshotSerDe.saveFiles(snapshotMetadata, snapshot.getState());
-        try {
-            metadataSaver.save(snapshotMetadata);
-        } catch (DuplicateSnapshotException | RuntimeException e) {
-            LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
-            Path path = new Path(snapshotMetadata.getPath());
-            FileSystem fs = path.getFileSystem(configuration);
-            fs.delete(path, false);
-            throw e;
-        }
+        snapshotSerDe.saveFiles(metadata, snapshot.getState());
+        saveMetadata(metadata);
     }
 
     /**
@@ -99,14 +90,18 @@ public class DynamoDBTransactionLogSnapshotStore {
      * @throws DuplicateSnapshotException if there is already a snapshot for the given transaction number
      */
     public void savePartitionsSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
-        TransactionLogSnapshotMetadata snapshotMetadata = TransactionLogSnapshotMetadata.forPartitions(
+        TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(
                 basePath, snapshot.getTransactionNumber());
-        snapshotSerDe.savePartitions(snapshotMetadata, snapshot.getState());
+        snapshotSerDe.savePartitions(metadata, snapshot.getState());
+        saveMetadata(metadata);
+    }
+
+    private void saveMetadata(TransactionLogSnapshotMetadata metadata) throws IOException, DuplicateSnapshotException {
         try {
-            metadataSaver.save(snapshotMetadata);
+            metadataSaver.save(metadata);
         } catch (DuplicateSnapshotException | RuntimeException e) {
-            LOGGER.info("Failed to save snapshot to Dynamo DB. Deleting snapshot file.");
-            Path path = new Path(snapshotMetadata.getPath());
+            LOGGER.info("Failed to save snapshot metadata to DynamoDB. Deleting snapshot file.");
+            Path path = new Path(metadata.getPath());
             FileSystem fs = path.getFileSystem(configuration);
             fs.delete(path, false);
             throw e;
