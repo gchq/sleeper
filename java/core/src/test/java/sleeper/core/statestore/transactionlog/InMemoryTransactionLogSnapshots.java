@@ -21,8 +21,6 @@ import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoa
 
 import java.util.Optional;
 
-import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.fromMinimum;
-
 /**
  * An in-memory implementation of snapshots derived from a transaction log.
  */
@@ -32,11 +30,6 @@ public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLo
 
     public void setLatestSnapshot(TransactionLogSnapshot latestSnapshot) {
         this.latestSnapshot = latestSnapshot;
-    }
-
-    @Override
-    public Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber) {
-        return loadLatestSnapshotInRange(fromMinimum(transactionNumber));
     }
 
     @Override

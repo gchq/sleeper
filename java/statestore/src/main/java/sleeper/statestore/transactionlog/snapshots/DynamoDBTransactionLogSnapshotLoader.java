@@ -40,11 +40,6 @@ public class DynamoDBTransactionLogSnapshotLoader implements TransactionLogSnaps
     }
 
     @Override
-    public Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber) {
-        return loadLatestSnapshotInRange(TransactionLogRange.fromMinimum(transactionNumber));
-    }
-
-    @Override
     public Optional<TransactionLogSnapshot> loadLatestSnapshotInRange(TransactionLogRange range) {
         return metadataStore.getLatestSnapshotInRange(snapshotType, range)
                 .map(fileStore::loadSnapshot);
