@@ -46,7 +46,7 @@ public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLo
         for (int i = snapshots.size() - 1; i >= 0; i--) { // Reverse order to get the latest first
             TransactionLogSnapshot snapshot = snapshots.get(i);
             long number = snapshot.getTransactionNumber();
-            if (number >= range.startInclusive() && number < range.endExclusive()) {
+            if (number >= range.startInclusive() && (!range.isMaxTransactionBounded() || number < range.endExclusive())) {
                 return Optional.of(snapshot);
             }
         }
