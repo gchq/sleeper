@@ -26,6 +26,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.statestore.StateStoreArrowFileStore;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
 
@@ -42,7 +45,7 @@ public class DynamoDBTransactionLogSnapshotStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotStore.class);
 
     private final SnapshotMetadataSaver metadataSaver;
-    private final TransactionLogSnapshotSerDe snapshotSerDe;
+    private final StateStoreArrowFileStore fileStore;
     private final Configuration configuration;
     private final String basePath;
 
@@ -62,7 +65,7 @@ public class DynamoDBTransactionLogSnapshotStore {
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.metadataSaver = metadataSaver;
-        this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties, configuration);
+        this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
         this.configuration = configuration;
         this.basePath = getBasePath(instanceProperties, tableProperties);
     }
@@ -77,7 +80,8 @@ public class DynamoDBTransactionLogSnapshotStore {
     public void saveFilesSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forFiles(
                 basePath, snapshot.getTransactionNumber());
-        snapshotSerDe.saveFiles(metadata, snapshot.getState());
+        StateStoreFiles state = snapshot.getState();
+        fileStore.saveFiles(metadata.getPath(), state);
         saveMetadata(metadata);
     }
 
@@ -92,7 +96,8 @@ public class DynamoDBTransactionLogSnapshotStore {
     public void savePartitionsSnapshot(TransactionLogSnapshot snapshot) throws IOException, DuplicateSnapshotException {
         TransactionLogSnapshotMetadata metadata = TransactionLogSnapshotMetadata.forPartitions(
                 basePath, snapshot.getTransactionNumber());
-        snapshotSerDe.savePartitions(metadata, snapshot.getState());
+        StateStorePartitions state = snapshot.getState();
+        fileStore.savePartitions(metadata.getPath(), state.all());
         saveMetadata(metadata);
     }
 
