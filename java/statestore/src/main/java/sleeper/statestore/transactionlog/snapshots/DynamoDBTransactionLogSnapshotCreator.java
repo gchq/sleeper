@@ -50,7 +50,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
     private final TransactionLogStore partitionsLogStore;
     private final TransactionBodyStore transactionBodyStore;
     private final LatestSnapshotsMetadataLoader latestMetadataLoader;
-    private final DynamoDBTransactionLogSnapshotSaver snapshotStore;
+    private final DynamoDBTransactionLogSnapshotSaver snapshotSaver;
     private final StateStoreArrowFileStore fileStore;
 
     /**
@@ -87,7 +87,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
         this.partitionsLogStore = partitionsLogStore;
         this.transactionBodyStore = transactionBodyStore;
         this.latestMetadataLoader = latestMetadataLoader;
-        this.snapshotStore = new DynamoDBTransactionLogSnapshotSaver(
+        this.snapshotSaver = new DynamoDBTransactionLogSnapshotSaver(
                 latestMetadataLoader, metadataSaver, instanceProperties, tableProperties, configuration);
         this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
     }
@@ -111,7 +111,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
             Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
                     oldSnapshot, filesLogStore, transactionBodyStore, FileReferenceTransaction.class, tableStatus);
             if (newSnapshot.isPresent()) {
-                snapshotStore.saveFilesSnapshot(newSnapshot.get());
+                snapshotSaver.saveFilesSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new files snapshot");
             }
         } catch (DuplicateSnapshotException | IOException e) {
@@ -128,7 +128,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
             Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
                     oldSnapshot, partitionsLogStore, transactionBodyStore, PartitionTransaction.class, tableStatus);
             if (newSnapshot.isPresent()) {
-                snapshotStore.savePartitionsSnapshot(newSnapshot.get());
+                snapshotSaver.savePartitionsSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new partitions snapshot");
             }
         } catch (DuplicateSnapshotException | IOException e) {

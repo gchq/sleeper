@@ -28,7 +28,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class DynamoDBTransactionLogSnapshotStoreBasePathTest {
+public class DynamoDBTransactionLogSnapshotSaverBasePathTest {
 
     @Test
     void shouldCreateBasePathForTable() {
