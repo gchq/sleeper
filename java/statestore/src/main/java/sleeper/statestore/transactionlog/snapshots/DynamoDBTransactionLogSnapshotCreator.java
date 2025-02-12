@@ -34,7 +34,6 @@ import sleeper.core.table.TableStatus;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
 
 import java.io.IOException;
@@ -129,5 +128,18 @@ public class DynamoDBTransactionLogSnapshotCreator {
             LOGGER.error("Failed to create partitions snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Loads the metadata of the latest snapshots from the index.
+     */
+    public interface LatestSnapshotsMetadataLoader {
+
+        /**
+         * Loads the latest snapshots metadata.
+         *
+         * @return the metadata
+         */
+        LatestSnapshots load();
     }
 }

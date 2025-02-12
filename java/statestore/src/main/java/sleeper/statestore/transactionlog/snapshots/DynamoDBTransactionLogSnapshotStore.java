@@ -28,6 +28,7 @@ import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -43,7 +44,6 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 public class DynamoDBTransactionLogSnapshotStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotStore.class);
 
-    private final LatestSnapshotsMetadataLoader latestMetadataLoader;
     private final SnapshotMetadataSaver metadataSaver;
     private final TransactionLogSnapshotSerDe snapshotSerDe;
     private final Configuration configuration;
@@ -64,37 +64,10 @@ public class DynamoDBTransactionLogSnapshotStore {
     DynamoDBTransactionLogSnapshotStore(
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
-        this.latestMetadataLoader = latestMetadataLoader;
         this.metadataSaver = metadataSaver;
         this.snapshotSerDe = new TransactionLogSnapshotSerDe(tableProperties, configuration);
         this.configuration = configuration;
         this.basePath = getBasePath(instanceProperties, tableProperties);
-    }
-
-    /**
-     * Loads the latest snapshot of files if it meets a minimum transaction number. Used by the state store to implement
-     * {@link sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader}.
-     *
-     * @param  transactionNumber the minimum transaction number to load snapshot data from S3
-     * @return                   the latest snapshot if there is one that meets the minimum transaction number
-     */
-    public Optional<TransactionLogSnapshot> loadLatestFilesSnapshotIfAtMinimumTransaction(long transactionNumber) {
-        return latestMetadataLoader.load().getFilesSnapshot()
-                .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
-                .map(this::loadFilesSnapshot);
-    }
-
-    /**
-     * Loads the latest snapshot of partitions if it meets a minimum transaction number. Used by the state store to
-     * implement {@link sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader}.
-     *
-     * @param  transactionNumber the minimum transaction number to load snapshot data from S3
-     * @return                   the latest snapshot if there is one that meets the minimum transaction number
-     */
-    public Optional<TransactionLogSnapshot> loadLatestPartitionsSnapshotIfAtMinimumTransaction(long transactionNumber) {
-        return latestMetadataLoader.load().getPartitionsSnapshot()
-                .filter(metadata -> metadata.getTransactionNumber() >= transactionNumber)
-                .map(this::loadPartitionsSnapshot);
     }
 
     /**
@@ -207,34 +180,6 @@ public class DynamoDBTransactionLogSnapshotStore {
         return instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TableProperty.TABLE_ID);
-    }
-
-    /**
-     * Loads the metadata of the latest snapshots from the index.
-     */
-    public interface LatestSnapshotsMetadataLoader {
-
-        /**
-         * Loads the latest snapshots metadata.
-         *
-         * @return the metadata
-         */
-        LatestSnapshots load();
-    }
-
-    /**
-     * Loads the metadata of the latest snapshots from the index.
-     */
-    public interface LatestSnapshotInRangeMetadataLoader {
-
-        /**
-         * Retrieves the latest snapshot of a given type that was made against a transaction number in the given range.
-         *
-         * @param  type  the snapshot type
-         * @param  range the range of transactions
-         * @return       the snapshot metadata, pointing to the latest snapshot file, if any
-         */
-        Optional<TransactionLogSnapshotMetadata> getLatestSnapshotInRange(SnapshotType type, TransactionLogRange range);
     }
 
     /**
