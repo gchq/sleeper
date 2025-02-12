@@ -15,13 +15,11 @@
  */
 package sleeper.statestore.transactionlog.snapshots;
 
-import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
 import sleeper.statestore.StateStoreArrowFileStore;
 
-import java.io.IOException;
 import java.util.Optional;
 
 /**
@@ -44,26 +42,7 @@ public class DynamoDBTransactionLogSnapshotLoader implements TransactionLogSnaps
     @Override
     public Optional<TransactionLogSnapshot> loadLatestSnapshotIfAtMinimumTransaction(long transactionNumber) {
         return metadataStore.getLatestSnapshotInRange(snapshotType, TransactionLogRange.fromMinimum(transactionNumber))
-                .map(this::loadSnapshot);
-    }
-
-    private TransactionLogSnapshot loadSnapshot(TransactionLogSnapshotMetadata metadata) {
-        return new TransactionLogSnapshot(loadState(metadata), metadata.getTransactionNumber());
-    }
-
-    private Object loadState(TransactionLogSnapshotMetadata metadata) {
-        try {
-            switch (snapshotType) {
-                case FILES:
-                    return fileStore.loadFiles(metadata.getPath());
-                case PARTITIONS:
-                    return fileStore.loadPartitions(metadata.getPath());
-                default:
-                    throw new IllegalArgumentException("Unrecognised snapshot type: " + snapshotType);
-            }
-        } catch (IOException e) {
-            throw new StateStoreException("Failed loading state for snapshot: " + metadata, e);
-        }
+                .map(fileStore::loadSnapshot);
     }
 
 }

@@ -24,7 +24,10 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
 import java.io.IOException;
 import java.nio.channels.Channels;
@@ -123,6 +126,32 @@ public class StateStoreArrowFileStore {
             LOGGER.debug("Loaded {} files with {} references in {} Arrow record batches, from {}",
                     result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
             return result.files();
+        }
+    }
+
+    /**
+     * Loads the state of a snapshot in a Sleeper table from an Arrow file.
+     *
+     * @param  metadata    metadata pointing to the file to read
+     * @return             the snapshot
+     * @throws IOException if the file could not be read
+     */
+    public TransactionLogSnapshot loadSnapshot(TransactionLogSnapshotMetadata metadata) {
+        return new TransactionLogSnapshot(loadState(metadata), metadata.getTransactionNumber());
+    }
+
+    private Object loadState(TransactionLogSnapshotMetadata metadata) {
+        try {
+            switch (metadata.getType()) {
+                case FILES:
+                    return loadFiles(metadata.getPath());
+                case PARTITIONS:
+                    return loadPartitions(metadata.getPath());
+                default:
+                    throw new IllegalArgumentException("Unrecognised snapshot type: " + metadata.getType());
+            }
+        } catch (IOException e) {
+            throw new StateStoreException("Failed loading state for snapshot: " + metadata, e);
         }
     }
 
