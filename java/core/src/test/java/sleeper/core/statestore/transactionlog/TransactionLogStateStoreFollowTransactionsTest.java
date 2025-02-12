@@ -108,7 +108,6 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     }
 
     @Test
-    @Disabled("TODO")
     void shouldFollowTransactionReadingPreviousSnapshot() {
         // Given 3 files
         FileReference file1 = factory.rootFile("file1.parquet", 100L);

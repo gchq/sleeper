@@ -19,6 +19,8 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -26,15 +28,32 @@ import java.util.Optional;
  */
 public class InMemoryTransactionLogSnapshots implements TransactionLogSnapshotLoader {
 
-    private TransactionLogSnapshot latestSnapshot;
+    private List<TransactionLogSnapshot> snapshots = new ArrayList<>();
 
+    /**
+     * Adds a new snapshot if it is later than all previous ones.
+     *
+     * @param latestSnapshot the snapshot
+     */
     public void setLatestSnapshot(TransactionLogSnapshot latestSnapshot) {
-        this.latestSnapshot = latestSnapshot;
+        if (isLatest(latestSnapshot)) {
+            snapshots.add(latestSnapshot);
+        }
     }
 
     @Override
     public Optional<TransactionLogSnapshot> loadLatestSnapshotInRange(TransactionLogRange range) {
-        return Optional.ofNullable(latestSnapshot)
-                .filter(snapshot -> snapshot.getTransactionNumber() >= range.startInclusive());
+        for (int i = snapshots.size() - 1; i >= 0; i--) { // Reverse order to get the latest first
+            TransactionLogSnapshot snapshot = snapshots.get(i);
+            long number = snapshot.getTransactionNumber();
+            if (number >= range.startInclusive() && number < range.endExclusive()) {
+                return Optional.of(snapshot);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private boolean isLatest(TransactionLogSnapshot snapshot) {
+        return snapshots.isEmpty() || snapshots.get(snapshots.size() - 1).getTransactionNumber() < snapshot.getTransactionNumber();
     }
 }
