@@ -4,11 +4,14 @@ use arrow::{
     array::{Array, ArrayRef, Int32Array, RecordBatch},
     datatypes::{DataType, Field, Schema},
 };
-use color_eyre::eyre::{Error, OptionExt};
+use color_eyre::eyre::{eyre, Error, OptionExt};
 use compaction::{deserialise_sketches, DataSketchVariant};
 use compaction::{ColRange, PartitionBound};
 use datafusion::parquet::{
-    arrow::{arrow_reader::ArrowReaderBuilder, ArrowWriter},
+    arrow::{
+        arrow_reader::{ArrowReaderMetadata, ArrowReaderOptions, ParquetRecordBatchReaderBuilder},
+        ArrowWriter,
+    },
     basic::{Compression, ZstdLevel},
     file::properties::WriterProperties,
 };
@@ -67,7 +70,9 @@ pub fn batch_of_int_fields<const N: usize>(
 pub fn read_file_of_ints(path: &Url, field_name: &str) -> Result<Vec<i32>, Error> {
     let file = File::open(path.path())?;
     let mut data: Vec<i32> = Vec::new();
-    for result in ArrowReaderBuilder::try_new(file)?.build()? {
+    let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
+    check_non_null_field(field_name, &DataType::Int32, &metadata)?;
+    for result in ParquetRecordBatchReaderBuilder::new_with_metadata(file, metadata).build()? {
         data.extend(get_int_array(field_name, &result?)?.values());
     }
     Ok(data)
@@ -99,7 +104,11 @@ pub fn read_file_of_int_fields<const N: usize>(
 ) -> Result<Vec<[i32; N]>, Error> {
     let file = File::open(path.path())?;
     let mut data: Vec<[i32; N]> = Vec::new();
-    for result in ArrowReaderBuilder::try_new(file)?.build()? {
+    let metadata = ArrowReaderMetadata::load(&file, ArrowReaderOptions::default())?;
+    for field_name in field_names {
+        check_non_null_field(field_name, &DataType::Int32, &metadata)?;
+    }
+    for result in ParquetRecordBatchReaderBuilder::new_with_metadata(file, metadata).build()? {
         let batch = result?;
         let arrays: Vec<&Int32Array> = get_int_arrays(&batch, field_names)?;
         data.extend((0..batch.num_rows()).map(|row_number| read_row(row_number, &arrays)));
@@ -132,6 +141,29 @@ fn get_int_array<'b>(field_name: &str, batch: &'b RecordBatch) -> Result<&'b Int
         .as_any()
         .downcast_ref::<Int32Array>()
         .ok_or_else(|| Error::msg("could not read field as an integer"))
+}
+
+fn check_non_null_field(
+    field_name: &str,
+    field_type: &DataType,
+    metadata: &ArrowReaderMetadata,
+) -> Result<(), Error> {
+    let field = metadata.schema().field_with_name(field_name)?;
+    if field.data_type() != field_type {
+        Err(eyre!(
+            "Expected field {} to be of type {}, found {}",
+            field_name,
+            field_type,
+            field.data_type()
+        ))
+    } else if field.is_nullable() {
+        Err(eyre!(
+            "Expected field {} to be non-nullable, found nullable",
+            field_name
+        ))
+    } else {
+        Ok(())
+    }
 }
 
 #[must_use]
