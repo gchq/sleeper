@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.state;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,10 +22,14 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
-import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStoreCompactionTrackerTestBase;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,7 +41,7 @@ import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
-public class TransactionLogStateStoreCompactionCommitByTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
+public class CompactionJobTrackerStateListenerTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
     private TransactionLogStateStore store;
 
@@ -63,9 +67,10 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
                 replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId("test-run").build())));
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(newFile);
-        assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
-        assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+        FileReference committedNewFile = newFile.toBuilder().lastStateStoreUpdateTime(DEFAULT_COMMIT_TIME).build();
+        assertThat(store.getFileReferences()).containsExactly(committedNewFile);
+        assertThat(store.getFileReferencesWithNoJobId()).containsExactly(committedNewFile);
+        assertThat(store.getReadyForGCFilenamesBefore(DEFAULT_COMMIT_TIME.plus(Duration.ofMinutes(1))))
                 .containsExactly("oldFile");
         assertThat(store.getPartitionToReferencedFilesMap())
                 .containsOnlyKeys("root")
@@ -93,9 +98,10 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
                 replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId("run2").build())));
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(newFile);
-        assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
-        assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+        FileReference committedNewFile = newFile.toBuilder().lastStateStoreUpdateTime(DEFAULT_COMMIT_TIME).build();
+        assertThat(store.getFileReferences()).containsExactly(committedNewFile);
+        assertThat(store.getFileReferencesWithNoJobId()).containsExactly(committedNewFile);
+        assertThat(store.getReadyForGCFilenamesBefore(DEFAULT_COMMIT_TIME.plus(Duration.ofMinutes(1))))
                 .containsExactly("oldFile");
         assertThat(store.getPartitionToReferencedFilesMap())
                 .containsOnlyKeys("root")
@@ -236,9 +242,8 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     }
 
     private void addTransactionWithTracking(ReplaceFileReferencesTransaction transaction) {
+        store.fixFileUpdateTime(DEFAULT_COMMIT_TIME);
         store.addTransaction(AddTransactionRequest.withTransaction(transaction)
-                .beforeApplyListener(StateListenerBeforeApply.withState(state -> {
-                    transaction.reportJobCommits(tracker, sleeperTable, state, DEFAULT_COMMIT_TIME);
-                })).build());
+                .beforeApplyListener(StateListenerBeforeApply.updateTrackers(sleeperTable, IngestJobTracker.NONE, tracker)).build());
     }
 }
