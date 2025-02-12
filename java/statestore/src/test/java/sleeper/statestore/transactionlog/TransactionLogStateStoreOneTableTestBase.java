@@ -23,7 +23,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver;
 
 import java.util.function.Consumer;
 
@@ -77,7 +77,7 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
             long transactionNumber, SetupStateStore setupState) throws Exception {
         InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(
                 tableProperties.getStatus(), tableProperties.getSchema(), setupState);
-        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoClient, hadoopConf);
+        DynamoDBTransactionLogSnapshotSaver snapshotStore = new DynamoDBTransactionLogSnapshotSaver(instanceProperties, tableProperties, dynamoClient, hadoopConf);
         snapshotStore.saveFilesSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
         snapshotStore.savePartitionsSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
     }

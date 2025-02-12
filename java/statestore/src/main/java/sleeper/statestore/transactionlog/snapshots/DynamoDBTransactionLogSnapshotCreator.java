@@ -35,7 +35,7 @@ import sleeper.statestore.StateStoreArrowFileStore;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver.SnapshotMetadataSaver;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -50,7 +50,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
     private final TransactionLogStore partitionsLogStore;
     private final TransactionBodyStore transactionBodyStore;
     private final LatestSnapshotsMetadataLoader latestMetadataLoader;
-    private final DynamoDBTransactionLogSnapshotStore snapshotStore;
+    private final DynamoDBTransactionLogSnapshotSaver snapshotStore;
     private final StateStoreArrowFileStore fileStore;
 
     /**
@@ -87,7 +87,7 @@ public class DynamoDBTransactionLogSnapshotCreator {
         this.partitionsLogStore = partitionsLogStore;
         this.transactionBodyStore = transactionBodyStore;
         this.latestMetadataLoader = latestMetadataLoader;
-        this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(
+        this.snapshotStore = new DynamoDBTransactionLogSnapshotSaver(
                 latestMetadataLoader, metadataSaver, instanceProperties, tableProperties, configuration);
         this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
     }

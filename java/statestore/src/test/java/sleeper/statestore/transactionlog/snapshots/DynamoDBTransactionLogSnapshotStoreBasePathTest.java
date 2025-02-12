@@ -40,7 +40,7 @@ public class DynamoDBTransactionLogSnapshotStoreBasePathTest {
         tableProperties.set(TABLE_ID, "test-table-id");
 
         // When / Then
-        assertThat(DynamoDBTransactionLogSnapshotStore.getBasePath(instanceProperties, tableProperties))
+        assertThat(DynamoDBTransactionLogSnapshotSaver.getBasePath(instanceProperties, tableProperties))
                 .isEqualTo("file://test-bucket/test-table-id");
     }
 }

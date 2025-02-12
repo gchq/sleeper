@@ -41,27 +41,27 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
  * Stores snapshots derived from a transaction log. Holds an index of snapshots in DynamoDB, and stores snapshot data in
  * S3.
  */
-public class DynamoDBTransactionLogSnapshotStore {
-    public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotStore.class);
+public class DynamoDBTransactionLogSnapshotSaver {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotSaver.class);
 
     private final SnapshotMetadataSaver metadataSaver;
     private final StateStoreArrowFileStore fileStore;
     private final Configuration configuration;
     private final String basePath;
 
-    public DynamoDBTransactionLogSnapshotStore(
+    public DynamoDBTransactionLogSnapshotSaver(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Configuration configuration) {
         this(new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamo),
                 instanceProperties, tableProperties, configuration);
     }
 
-    private DynamoDBTransactionLogSnapshotStore(
+    private DynamoDBTransactionLogSnapshotSaver(
             DynamoDBTransactionLogSnapshotMetadataStore metadataStore,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this(metadataStore::getLatestSnapshots, metadataStore::saveSnapshot, instanceProperties, tableProperties, configuration);
     }
 
-    DynamoDBTransactionLogSnapshotStore(
+    DynamoDBTransactionLogSnapshotSaver(
             LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver,
             InstanceProperties instanceProperties, TableProperties tableProperties, Configuration configuration) {
         this.metadataSaver = metadataSaver;
