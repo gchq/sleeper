@@ -36,16 +36,6 @@ public record TransactionLogRange(long startInclusive, long endExclusive) {
     }
 
     /**
-     * Returns the range of transactions from the given number to the latest transaction.
-     *
-     * @param  startInclusive the first transaction number
-     * @return                the range
-     */
-    public static TransactionLogRange fromMinimum(long startInclusive) {
-        return new TransactionLogRange(startInclusive, -1);
-    }
-
-    /**
      * Returns the range of transactions needed to update the local state to apply a specific transaction. This is used
      * when we already have a transaction in memory that we want to apply, so we only need to load the transactions in
      * between the local state and the target transaction.
@@ -56,6 +46,16 @@ public record TransactionLogRange(long startInclusive, long endExclusive) {
      */
     public static TransactionLogRange toUpdateLocalStateToApply(long startExclusive, long endExclusive) {
         return new TransactionLogRange(startExclusive + 1, endExclusive);
+    }
+
+    /**
+     * Returns the range of transactions from the given number to the latest transaction.
+     *
+     * @param  startInclusive the first transaction number
+     * @return                the range
+     */
+    public static TransactionLogRange fromMinimum(long startInclusive) {
+        return new TransactionLogRange(startInclusive, -1);
     }
 
     public boolean isMaxTransactionBounded() {
