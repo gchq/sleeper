@@ -17,7 +17,12 @@ package sleeper.core.statestore.transactionlog.state;
 
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -49,6 +54,21 @@ public interface StateListenerBeforeApply<S> {
     }
 
     /**
+     * Creates a transaction listener that updates job trackers.
+     *
+     * @param  sleeperTable      the Sleeper table status
+     * @param  ingestTracker     the ingest job tracker
+     * @param  compactionTracker the compaction job tracker
+     * @return                   the listener
+     */
+    static StateListenerBeforeApply<StateStoreFiles> updateTrackers(
+            TableStatus sleeperTable, IngestJobTracker ingestTracker, CompactionJobTracker compactionTracker) {
+        return and(List.of(
+                byTransactionType(ReplaceFileReferencesTransaction.class,
+                        new CompactionJobTrackerStateListener(sleeperTable, compactionTracker))));
+    }
+
+    /**
      * Creates a transaction listener that operates on just the state.
      *
      * @param  <S> the type of state the transaction operates on
@@ -71,5 +91,15 @@ public interface StateListenerBeforeApply<S> {
                 listener.beforeApply(entry, transactionType.cast(transaction), state);
             }
         };
+    }
+
+    /**
+     * Creates a transaction listener that operates on just the state.
+     *
+     * @param  <S> the type of state the transaction operates on
+     * @return     the listener
+     */
+    static <S> StateListenerBeforeApply<S> and(List<StateListenerBeforeApply<S>> listeners) {
+        return (entry, transaction, state) -> listeners.forEach(listener -> listener.beforeApply(entry, transaction, state));
     }
 }
