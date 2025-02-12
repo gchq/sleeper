@@ -16,7 +16,6 @@
 package sleeper.core.statestore.transactionlog.state;
 
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
-import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -24,7 +23,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 /**
  * A listener to update the compaction job tracker based on compaction commit transactions.
  */
-public class CompactionJobTrackerStateListener implements StateListenerBeforeApply<StateStoreFiles> {
+public class CompactionJobTrackerStateListener implements StateListenerBeforeApplyByType<StateStoreFiles, ReplaceFileReferencesTransaction> {
 
     private final TableStatus sleeperTable;
     private final CompactionJobTracker tracker;
@@ -35,11 +34,7 @@ public class CompactionJobTrackerStateListener implements StateListenerBeforeApp
     }
 
     @Override
-    public void beforeApply(TransactionLogEntry entry, StateStoreTransaction<?> transactionObj, StateStoreFiles state) {
-        if (!(transactionObj instanceof ReplaceFileReferencesTransaction)) {
-            return;
-        }
-        ReplaceFileReferencesTransaction transaction = (ReplaceFileReferencesTransaction) transactionObj;
+    public void beforeApply(TransactionLogEntry entry, ReplaceFileReferencesTransaction transaction, StateStoreFiles state) {
         transaction.reportJobCommits(tracker, sleeperTable, state, entry.getUpdateTime());
     }
 

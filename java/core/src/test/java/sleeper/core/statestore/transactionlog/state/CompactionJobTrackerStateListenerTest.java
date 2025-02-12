@@ -24,6 +24,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStoreCompactionTrackerTestBase;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 
 import java.util.List;
@@ -68,7 +69,8 @@ public class CompactionJobTrackerStateListenerTest extends InMemoryTransactionLo
     }
 
     private void loadNextTransaction(TransactionLogEntry entry) {
-        followerStore.applyEntryFromLog(entry, new CompactionJobTrackerStateListener(sleeperTable, tracker));
+        followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.byTransactionType(
+                ReplaceFileReferencesTransaction.class, new CompactionJobTrackerStateListener(sleeperTable, tracker)));
     }
 
 }

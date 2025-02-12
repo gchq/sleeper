@@ -57,4 +57,19 @@ public interface StateListenerBeforeApply<S> {
     static <S> StateListenerBeforeApply<S> withState(Consumer<S> run) {
         return (entry, transaction, state) -> run.accept(state);
     }
+
+    /**
+     * Creates a transaction listener that runs if the transaction is a certain type.
+     *
+     * @param  <S> the type of state the transaction operates on
+     * @param  <T> the type of the transaction
+     * @return     the listener
+     */
+    static <S, T extends StateStoreTransaction<S>> StateListenerBeforeApply<S> byTransactionType(Class<T> transactionType, StateListenerBeforeApplyByType<S, T> listener) {
+        return (entry, transaction, state) -> {
+            if (transactionType.isInstance(transaction)) {
+                listener.beforeApply(entry, transactionType.cast(transaction), state);
+            }
+        };
+    }
 }
