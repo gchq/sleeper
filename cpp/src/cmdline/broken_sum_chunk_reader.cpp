@@ -1,3 +1,27 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* ======================================================================
+ *
+ * IMPORTANT: This is a proof of concept of aggregating a column
+ * on a compaction. It is BROKEN! Do NOT use this. It is for testing
+ * only. It will NOT aggregate correctly in most circumstances!!
+ *
+ * ======================================================================
+ */
 #include "configure_logging.hpp"
 
 #include <CLI/CLI.hpp>// NOLINT
@@ -70,7 +94,11 @@ std::size_t calcRowsInViews(auto const &views) noexcept {
 int main(int argc, char **argv) {
     configure_logging();
     // NOLINTNEXTLINE
-    CLI::App app{ "Simple program based chunking compaction algorithm with cuDF", "chunk_reader" };
+    CLI::App app{
+        "ATTENTION: This implementation is broken! Simple program based chunking compaction algorithm with cuDF with"
+        " a summing aggregation compaction added in.",
+        "broken_sum_chunk_reader"
+    };
     app.set_version_flag("--version", std::string{ gpu_compact::cmake::project_version });
 
     std::string outputFile;

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2022-2025 Crown Copyright
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #pragma once
 
 #include <cudf/ast/expressions.hpp>
@@ -21,22 +36,19 @@ std::unique_ptr<cudf::table> filter_table_by_range(cudf::table_view const &input
 
 struct literal_converter
 {
-    template<typename T> static constexpr bool is_supported()
-    {
+    template<typename T> static constexpr bool is_supported() {
         return std::is_same_v<T, cudf::string_view> || (cudf::is_fixed_width<T>() && !cudf::is_fixed_point<T>());
     }
 
     template<typename T, std::enable_if_t<is_supported<T>()> * = nullptr>
-    cudf::ast::literal operator()(cudf::scalar &_value)
-    {
+    cudf::ast::literal operator()(cudf::scalar &_value) {
         using scalar_type = cudf::scalar_type_t<T>;
         auto &low_literal_value = static_cast<scalar_type &>(_value);
         return cudf::ast::literal(low_literal_value);
     }
 
     template<typename T, std::enable_if_t<!is_supported<T>()> * = nullptr>
-    cudf::ast::literal operator()([[maybe_unused]] cudf::scalar &_value)
-    {
+    cudf::ast::literal operator()([[maybe_unused]] cudf::scalar &_value) {
         CUDF_FAIL("Unsupported type for literal");
     }
 };
