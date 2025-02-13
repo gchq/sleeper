@@ -72,16 +72,6 @@ public interface StateListenerBeforeApply {
     }
 
     /**
-     * Creates a transaction listener that operates on just the state.
-     *
-     * @param  <S> the type of state the transaction operates on
-     * @return     the listener
-     */
-    static <S> StateListenerBeforeApply withState(Consumer<S> run) {
-        return (entry, transaction, state) -> run.accept((S) state);
-    }
-
-    /**
      * Creates a transaction listener that operates on just the state of partitions.
      *
      * @return the listener

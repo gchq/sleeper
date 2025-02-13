@@ -120,7 +120,7 @@ public class TransactionLogStateStore extends DelegatingStateStore {
      * @param listener a listener to apply some action before the entry is added
      */
     public void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
-        if (FileReferenceTransaction.class.isAssignableFrom(logEntry.getTransactionType().getType())) {
+        if (logEntry.getTransactionType().isFileTransaction()) {
             files.applyEntryFromLog(logEntry, listener);
         } else {
             partitions.applyEntryFromLog(logEntry, listener);
