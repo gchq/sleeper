@@ -73,12 +73,13 @@ public class AddFilesTransaction implements FileReferenceTransaction {
     }
 
     /**
-     * Validates whether this transaction may be applied to the given state.
+     * Validates whether the files should actually be added. This is because the transaction will be added to the log
+     * regardless of whether the files may be added, so that any failure can be reported to the job tracker.
      *
      * @param  stateStoreFiles     the state before the transaction
-     * @throws StateStoreException thrown if the transaction may not be applied
+     * @throws StateStoreException thrown if the files should not be added
      */
-    public void validateDuringApply(StateStoreFiles stateStoreFiles) throws StateStoreException {
+    public void validateFiles(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (AllReferencesToAFile file : files) {
             if (stateStoreFiles.file(file.getFilename()).isPresent()) {
                 throw new FileAlreadyExistsException(file.getFilename());
@@ -89,7 +90,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
     @Override
     public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         try {
-            validateDuringApply(stateStoreFiles);
+            validateFiles(stateStoreFiles);
         } catch (StateStoreException ex) {
             LOGGER.debug("Found invalid ingest commit for job {}", jobId, ex);
             return;

@@ -63,7 +63,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
         AddFilesTransaction transaction = new AddFilesTransaction(files);
-        transaction.validateDuringApply(head.state());
+        transaction.validateFiles(head.state());
         head.addTransaction(clock.instant(), transaction);
     }
 
