@@ -24,6 +24,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -40,7 +41,7 @@ import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
-public class CompactionJobCommitAddTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
+public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
@@ -243,8 +244,12 @@ public class CompactionJobCommitAddTransactionTest extends InMemoryTransactionLo
     }
 
     private void addTransactionWithTracking(ReplaceFileReferencesTransaction transaction) {
+        // Transaction is added in a committer process
         committerStore.fixFileUpdateTime(DEFAULT_COMMIT_TIME);
-        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction)
-                .beforeApplyListener(StateListenerBeforeApply.updateTrackers(sleeperTable, IngestJobTracker.NONE, tracker)).build());
+        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
+
+        // Job tracker updates are done in a separate process that reads from the log and updates its local state
+        TransactionLogEntry entry = filesLogStore.getLastEntry();
+        followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.updateTrackers(sleeperTable, IngestJobTracker.NONE, tracker));
     }
 }
