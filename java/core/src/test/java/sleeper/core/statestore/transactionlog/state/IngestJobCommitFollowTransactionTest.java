@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 
-public class IngestJobTrackerStateListenerTest extends InMemoryTransactionLogStateStoreIngestTrackerTestBase {
+public class IngestJobCommitFollowTransactionTest extends InMemoryTransactionLogStateStoreIngestTrackerTestBase {
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
