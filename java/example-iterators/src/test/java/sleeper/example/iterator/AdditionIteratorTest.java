@@ -42,7 +42,7 @@ public class AdditionIteratorTest {
         additionIterator.init("", getSchema1());
 
         // When
-        Iterator<Record> filtered = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Record> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         Record expectedRecord1 = new Record();
@@ -54,8 +54,11 @@ public class AdditionIteratorTest {
         Record expectedRecord3 = new Record();
         expectedRecord3.put("id", "3");
         expectedRecord3.put("count", 1100L);
-        assertThat(filtered).toIterable().containsExactly(
-                expectedRecord1, expectedRecord2, expectedRecord3);
+        Record expectedRecord4 = new Record();
+        expectedRecord4.put("id", "4");
+        expectedRecord4.put("count", 1000000L);
+        assertThat(aggregated).toIterable().containsExactly(
+                expectedRecord1, expectedRecord2, expectedRecord3, expectedRecord4);
     }
 
     @Test
@@ -67,7 +70,7 @@ public class AdditionIteratorTest {
         additionIterator.init("", getSchema2());
 
         // When
-        Iterator<Record> filtered = additionIterator.apply(new WrappedIterator<>(iterator));
+        Iterator<Record> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
 
         // Then
         Record expectedRecord1 = new Record();
@@ -79,8 +82,25 @@ public class AdditionIteratorTest {
         Record expectedRecord3 = new Record();
         expectedRecord3.put("id", new byte[]{3, 1, 1});
         expectedRecord3.put("count", 1100L);
-        assertThat(filtered).toIterable().containsExactly(
-                expectedRecord1, expectedRecord2, expectedRecord3);
+        Record expectedRecord4 = new Record();
+        expectedRecord4.put("id", new byte[]{4});
+        expectedRecord4.put("count", 1000000L);
+        assertThat(aggregated).toIterable().containsExactly(
+                expectedRecord1, expectedRecord2, expectedRecord3, expectedRecord4);
+    }
+
+    @Test
+    public void shouldOutputNoRecordsIfNoRecordsInInput() {
+        // Given
+        Iterator<Record> iterator = List.<Record>of().iterator();
+        AdditionIterator additionIterator = new AdditionIterator();
+        additionIterator.init("", getSchema2());
+
+        // When
+        Iterator<Record> aggregated = additionIterator.apply(new WrappedIterator<>(iterator));
+
+        // Then
+        assertThat(aggregated).toIterable().isEmpty();
     }
 
     private static Schema getSchema1() {
@@ -116,6 +136,10 @@ public class AdditionIteratorTest {
         record6.put("id", "3");
         record6.put("count", 1000L);
         records.add(record6);
+        Record record7 = new Record();
+        record7.put("id", "4");
+        record7.put("count", 1000000L);
+        records.add(record7);
         return records;
     }
 
@@ -152,6 +176,10 @@ public class AdditionIteratorTest {
         record6.put("id", new byte[]{3, 1, 1});
         record6.put("count", 1000L);
         records.add(record6);
+        Record record7 = new Record();
+        record7.put("id", new byte[]{4});
+        record7.put("count", 1000000L);
+        records.add(record7);
         return records;
     }
 }
