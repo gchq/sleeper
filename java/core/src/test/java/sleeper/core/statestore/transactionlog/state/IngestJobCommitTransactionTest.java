@@ -42,6 +42,9 @@ import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedSt
 
 public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateStoreIngestTrackerTestBase {
 
+    // Tests to write:
+    // - Another process commits the same job synchronously, then we perform a synchronous commit
+
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
 

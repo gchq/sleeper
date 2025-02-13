@@ -65,11 +65,9 @@ public class AddFilesTransaction implements FileReferenceTransaction {
 
     @Override
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
-        for (AllReferencesToAFile file : files) {
-            if (stateStoreFiles.file(file.getFilename()).isPresent()) {
-                throw new FileAlreadyExistsException(file.getFilename());
-            }
-        }
+        // We want to update the job tracker whether the new files are valid or not, and the job tracker is updated
+        // based on the transaction log. This means we still want to add the transaction to the log if it's invalid.
+        // We discard any invalid files at the point when we apply the transaction in the apply method.
     }
 
     /**

@@ -43,6 +43,9 @@ import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFil
 
 public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
+    // Tests to write:
+    // - Another process commits the same job synchronously, then we perform a synchronous commit
+
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
 
