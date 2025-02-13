@@ -48,8 +48,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * A file reference store backed by a log of transactions. Part of
- * {@link TransactionLogStateStore}.
+ * A file reference store backed by a log of transactions. Part of {@link TransactionLogStateStore}.
  */
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
@@ -79,8 +78,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests)
-            throws ReplaceRequestsFailedException {
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
         try {
             for (ReplaceFileReferencesRequest request : requests) {
                 request.validateNewReference();

@@ -100,8 +100,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
     }
 
     /**
-     * Reports the files were added against the job tracker. This should be used
-     * after the transaction is fully
+     * Reports the files were added against the job tracker. This should be used after the transaction is fully
      * committed to the log.
      *
      * @param tracker      the job tracker
@@ -201,8 +200,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         }
 
         /**
-         * Sets the time the files were written and ready to be added to the state
-         * store.
+         * Sets the time the files were written and ready to be added to the state store.
          *
          * @param  writtenTime the time the files were written
          * @return             this builder
