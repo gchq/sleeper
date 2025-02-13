@@ -113,6 +113,7 @@ public class IngestJobEventTestData {
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
+                .jobRunId(job.getJobRunId())
                 .writtenTime(writtenTime);
     }
 
@@ -128,6 +129,7 @@ public class IngestJobEventTestData {
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
+                .jobRunId(job.getJobRunId())
                 .summary(summary);
     }
 
@@ -143,6 +145,7 @@ public class IngestJobEventTestData {
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
+                .jobRunId(job.getJobRunId())
                 .failureTime(failureTime)
                 .failureReasons(reasons);
     }

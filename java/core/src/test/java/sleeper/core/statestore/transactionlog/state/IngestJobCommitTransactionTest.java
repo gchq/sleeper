@@ -54,11 +54,12 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
     void shouldUpdateTrackerBasedOnTransaction() {
         // Given
         FileReference file = factory.rootFile("file.parquet", 100L);
-        trackJobRun("test-job", 1, file);
+        trackJobRun("test-job", "test-run", 1, file);
         AddFilesTransaction transaction = AddFilesTransaction.builder()
                 .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
                 .jobId("test-job")
                 .taskId(DEFAULT_TASK_ID)
+                .jobRunId("test-run")
                 .writtenTime(DEFAULT_COMMIT_TIME)
                 .build();
 
