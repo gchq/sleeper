@@ -40,7 +40,7 @@ import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
-public class CompactionJobTrackerStateListenerTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
+public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
     private TransactionLogStateStore store;
 
