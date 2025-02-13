@@ -74,7 +74,8 @@ public class AddFilesTransaction implements FileReferenceTransaction {
 
     /**
      * Validates whether the files should actually be added. This is because the transaction will be added to the log
-     * regardless of whether the files may be added, so that any failure can be reported to the job tracker.
+     * regardless of whether the files may be added, so that any failure can be reported to the job tracker after the
+     * fact.
      *
      * @param  stateStoreFiles     the state before the transaction
      * @throws StateStoreException thrown if the files should not be added
