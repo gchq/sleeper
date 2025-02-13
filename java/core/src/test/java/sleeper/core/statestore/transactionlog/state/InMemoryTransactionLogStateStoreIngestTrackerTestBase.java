@@ -20,18 +20,13 @@ import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStoreTe
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.time.Instant;
 
 import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobFinishedEventBuilder;
 import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobStartedEventBuilder;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
-import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public abstract class InMemoryTransactionLogStateStoreIngestTrackerTestBase extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -61,13 +56,6 @@ public abstract class InMemoryTransactionLogStateStoreIngestTrackerTestBase exte
 
     protected JobRunSummary defaultSummary(long numberOfRecords) {
         return summary(DEFAULT_START_TIME, DEFAULT_FINISH_TIME, numberOfRecords, numberOfRecords);
-    }
-
-    protected JobRun defaultCommittedRun(int numberOfRecords) {
-        return jobRunOnTask(DEFAULT_TASK_ID,
-                ingestStartedStatus(DEFAULT_START_TIME),
-                ingestFinishedStatusUncommitted(defaultSummary(numberOfRecords)),
-                ingestAddedFilesStatus(DEFAULT_COMMIT_TIME, 1));
     }
 
 }

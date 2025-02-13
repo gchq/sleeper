@@ -32,7 +32,11 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class IngestJobCommitFollowTransactionTest extends InMemoryTransactionLogStateStoreIngestTrackerTestBase {
 
@@ -65,7 +69,25 @@ public class IngestJobCommitFollowTransactionTest extends InMemoryTransactionLog
 
         // Then
         assertThat(tracker.getAllJobs(tableId))
-                .containsExactly(ingestJobStatus("test-job", defaultCommittedRun(100)));
+                .containsExactly(ingestJobStatus("test-job", jobRunOnTask(DEFAULT_TASK_ID,
+                        ingestStartedStatus(DEFAULT_START_TIME),
+                        ingestFinishedStatusUncommitted(defaultSummary(100)),
+                        ingestAddedFilesStatus(DEFAULT_COMMIT_TIME, 1))));
+    }
+
+    @Test
+    void shouldNotUpdateIngestJobTrackerWhenCommitIsNotForAnyIngestJob() {
+        // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
+        FileReference file = factory.rootFile("file.parquet", 100L);
+        AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
+        TransactionLogEntry logEntry = filesLogStore.getLastEntry();
+
+        // When
+        loadNextTransaction(logEntry);
+
+        // Then
+        assertThat(tracker.getAllJobs(tableId)).isEmpty();
     }
 
     private void loadNextTransaction(TransactionLogEntry entry) {
