@@ -94,10 +94,11 @@ public interface StateListenerBeforeApply<S> {
     }
 
     /**
-     * Creates a transaction listener that operates on just the state.
+     * Creates a transaction listener that runs a number of other listeners in sequence.
      *
-     * @param  <S> the type of state the transaction operates on
-     * @return     the listener
+     * @param  <S>       the type of state the transaction operates on
+     * @param  listeners the listeners to run
+     * @return           the listener
      */
     static <S> StateListenerBeforeApply<S> and(List<StateListenerBeforeApply<S>> listeners) {
         return (entry, transaction, state) -> listeners.forEach(listener -> listener.beforeApply(entry, transaction, state));
