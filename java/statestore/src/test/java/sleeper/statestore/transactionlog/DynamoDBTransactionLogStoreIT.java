@@ -47,7 +47,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -55,6 +54,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateToApply;
 import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore.TABLE_ID;
 import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER;
 
@@ -74,7 +75,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         fileLogStore.addTransaction(entry);
 
         // Then
-        assertThat(fileLogStore.readTransactionsAfter(0))
+        assertThat(fileLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(entry);
     }
 
@@ -91,7 +92,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         assertThatThrownBy(() -> fileLogStore.addTransaction(entry2))
                 .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
-        assertThat(fileLogStore.readTransactionsAfter(0))
+        assertThat(fileLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(entry1);
     }
 
@@ -108,7 +109,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
                         .build()));
 
         // When / Then
-        assertThatThrownBy(() -> fileLogStore.readTransactionsAfter(0).findAny())
+        assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateAt(0)).findAny())
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -125,7 +126,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
                         .build()));
 
         // When / Then
-        assertThatThrownBy(() -> fileLogStore.readTransactionsAfter(0).findAny())
+        assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateAt(0)).findAny())
                 .isInstanceOf(JsonSyntaxException.class);
     }
 
@@ -140,7 +141,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.addFile(FileReferenceFactory.from(partitions).rootFile(100));
 
         // When
-        List<TransactionLogEntry> entries = fileLogStore.readTransactionsAfter(0).collect(toUnmodifiableList());
+        List<TransactionLogEntry> entries = fileLogStore.readTransactions(toUpdateLocalStateAt(0)).toList();
 
         // Then
         assertThat(entries)
@@ -157,7 +158,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.initialise();
 
         // When
-        List<TransactionLogEntry> entries = partitionLogStore.readTransactionsAfter(0).collect(toUnmodifiableList());
+        List<TransactionLogEntry> entries = partitionLogStore.readTransactions(toUpdateLocalStateAt(0)).toList();
 
         // Then
         assertThat(entries)
@@ -178,7 +179,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         fileLogStore.deleteTransactionsAtOrBefore(1);
 
         // Then
-        assertThat(fileLogStore.readTransactionsAfter(0)).containsExactly(
+        assertThat(fileLogStore.readTransactions(toUpdateLocalStateAt(0))).containsExactly(
                 new TransactionLogEntry(2, updateTime, new ClearFilesTransaction()));
     }
 
@@ -195,7 +196,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         fileLogStore.deleteTransactionsAtOrBefore(0);
 
         // Then
-        assertThat(fileLogStore.readTransactionsAfter(0)).containsExactly(
+        assertThat(fileLogStore.readTransactions(toUpdateLocalStateAt(0))).containsExactly(
                 new TransactionLogEntry(1, updateTime, new ClearFilesTransaction()),
                 new TransactionLogEntry(2, updateTime, new ClearFilesTransaction()));
     }
@@ -213,7 +214,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         fileLogStore.deleteTransactionsAtOrBefore(2);
 
         // Then
-        assertThat(fileLogStore.readTransactionsAfter(0)).isEmpty();
+        assertThat(fileLogStore.readTransactions(toUpdateLocalStateAt(0))).isEmpty();
     }
 
     @Test
@@ -235,7 +236,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
 
         // Then the transaction is held in S3
         String file = singleFileInDataBucket();
-        assertThat(partitionLogStore.readTransactionsAfter(0)).containsExactly(
+        assertThat(partitionLogStore.readTransactions(toUpdateLocalStateAt(0))).containsExactly(
                 new TransactionLogEntry(1, updateTime, TransactionType.INITIALISE_PARTITIONS, file));
     }
 
@@ -259,7 +260,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         partitionLogStore.deleteTransactionsAtOrBefore(1);
 
         // Then
-        assertThat(partitionLogStore.readTransactionsAfter(0)).isEmpty();
+        assertThat(partitionLogStore.readTransactions(toUpdateLocalStateAt(0))).isEmpty();
         assertThat(filesInDataBucket()).isEmpty();
     }
 
@@ -274,7 +275,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         fileLogStore.addTransaction(entry3);
 
         // When / Then
-        assertThat(fileLogStore.readTransactionsBetween(1, 3))
+        assertThat(fileLogStore.readTransactions(toUpdateLocalStateToApply(1, 3)))
                 .containsExactly(entry2);
     }
 
@@ -289,7 +290,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         fileLogStore.addTransaction(entry3);
 
         // When / Then
-        assertThatThrownBy(() -> fileLogStore.readTransactionsBetween(2, 2))
+        assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateToApply(2, 2)))
                 .isInstanceOf(AmazonDynamoDBException.class);
     }
 
@@ -304,7 +305,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         fileLogStore.addTransaction(entry3);
 
         // When / Then
-        assertThatThrownBy(() -> fileLogStore.readTransactionsBetween(3, 2))
+        assertThatThrownBy(() -> fileLogStore.readTransactions(toUpdateLocalStateToApply(3, 2)))
                 .isInstanceOf(AmazonDynamoDBException.class);
     }
 

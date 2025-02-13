@@ -31,6 +31,7 @@ import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberExce
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogDeletionTracker;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
@@ -144,33 +145,28 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
-        return streamPagedItems(dynamoClient, new QueryRequest()
+    public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
+        QueryRequest request = new QueryRequest()
                 .withTableName(logTableName)
                 .withConsistentRead(true)
-                .withKeyConditionExpression("#TableId = :table_id AND #Number > :number")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", sleeperTable.getTableUniqueId())
-                        .number(":number", lastTransactionNumber)
-                        .build())
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
-                .map(this::readTransaction);
-    }
-
-    @Override
-    public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
-        return streamPagedItems(dynamoClient, new QueryRequest()
-                .withTableName(logTableName)
-                .withConsistentRead(true)
-                .withKeyConditionExpression("#TableId = :table_id AND #Number BETWEEN :lastNumber AND :nextNumber")
-                .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
-                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
-                        .string(":table_id", sleeperTable.getTableUniqueId())
-                        .number(":lastNumber", lastTransactionNumber + 1)
-                        .number(":nextNumber", nextTransactionNumber - 1)
-                        .build())
-                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL))
+                .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
+        if (range.isMaxTransactionBounded()) {
+            request.withKeyConditionExpression("#TableId = :table_id AND #Number BETWEEN :startInclusive AND :endInclusive")
+                    .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                            .string(":table_id", sleeperTable.getTableUniqueId())
+                            .number(":startInclusive", range.startInclusive())
+                            .number(":endInclusive", range.endExclusive() - 1)
+                            .build());
+        } else {
+            request.withKeyConditionExpression("#TableId = :table_id AND #Number >= :startInclusive")
+                    .withExpressionAttributeNames(Map.of("#TableId", TABLE_ID, "#Number", TRANSACTION_NUMBER))
+                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                            .string(":table_id", sleeperTable.getTableUniqueId())
+                            .number(":startInclusive", range.startInclusive())
+                            .build());
+        }
+        return streamPagedItems(dynamoClient, request)
                 .map(this::readTransaction);
     }
 

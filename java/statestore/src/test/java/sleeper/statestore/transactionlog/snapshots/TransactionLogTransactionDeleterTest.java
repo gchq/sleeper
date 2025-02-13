@@ -45,6 +45,7 @@ import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSH
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
 
 public class TransactionLogTransactionDeleterTest {
     private final Schema schema = schemaWithKey("key", new StringType());
@@ -77,7 +78,7 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime.plus(Duration.ofMinutes(2)));
 
         // Then the transaction is deleted
-        assertThat(filesLogStore.readTransactionsAfter(0))
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
                         new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))));
     }
@@ -101,7 +102,7 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime.plus(Duration.ofMinutes(1)));
 
         // Then nothing is deleted
-        assertThat(filesLogStore.readTransactionsAfter(0))
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(
                         new TransactionLogEntry(1, Instant.parse("2024-06-24T15:45:45Z"),
                                 new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))),
@@ -132,7 +133,7 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime2.plus(Duration.ofSeconds(50)));
 
         // Then a transaction is deleted behind the first snapshot
-        assertThat(filesLogStore.readTransactionsAfter(0)).containsExactly(
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0))).containsExactly(
                 new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
                         new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))),
                 new TransactionLogEntry(3, Instant.parse("2024-06-24T15:47:00Z"),
@@ -158,7 +159,7 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime.plus(Duration.ofMinutes(2)));
 
         // Then nothing is deleted
-        assertThat(filesLogStore.readTransactionsAfter(0))
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(
                         new TransactionLogEntry(1, Instant.parse("2024-06-24T15:45:00Z"),
                                 new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))),
@@ -182,7 +183,7 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(Instant.parse("2024-06-25T02:00:00Z"));
 
         // Then nothing is deleted
-        assertThat(filesLogStore.readTransactionsAfter(0))
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(
                         new TransactionLogEntry(1, Instant.parse("2024-06-24T15:45:45Z"),
                                 new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))),
@@ -210,7 +211,7 @@ public class TransactionLogTransactionDeleterTest {
 
         // Then
         PartitionTree partitionTree = partitions.buildTree();
-        assertThat(partitionsLogStore.readTransactionsAfter(0))
+        assertThat(partitionsLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
                         new SplitPartitionTransaction(partitionTree.getRootPartition(), List.of(
                                 partitionTree.getPartition("L"),
@@ -242,7 +243,7 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime3.plus(Duration.ofSeconds(50)));
 
         // Then transactions are deleted behind the second snapshot
-        assertThat(filesLogStore.readTransactionsAfter(0)).containsExactly(
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0))).containsExactly(
                 new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
                         new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))),
                 new TransactionLogEntry(3, Instant.parse("2024-06-24T15:47:00Z"),
