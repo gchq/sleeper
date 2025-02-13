@@ -16,6 +16,7 @@
 package sleeper.core.statestore.transactionlog.state;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
@@ -37,6 +38,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFini
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 
 public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateStoreIngestTrackerTestBase {
 
@@ -51,7 +53,7 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
     }
 
     @Test
-    void shouldUpdateTrackerBasedOnTransaction() {
+    void shouldCommitIngestJob() {
         // Given
         FileReference file = factory.rootFile("file.parquet", 100L);
         trackJobRun("test-job", "test-run", 1, file);
@@ -87,6 +89,45 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
         // Then
         assertThat(followerStore.getFileReferences()).containsExactly(file);
         assertThat(tracker.getAllJobs(tableId)).isEmpty();
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldFailWhenAlreadyCommitted() {
+        // Given
+        FileReference file = factory.rootFile("file.parquet", 100L);
+        trackJobRun("test-job", "run-1", 1, file);
+        addTransactionWithTracking(AddFilesTransaction.builder()
+                .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
+                .jobId("test-job")
+                .jobRunId("run-1")
+                .taskId(DEFAULT_TASK_ID)
+                .writtenTime(DEFAULT_COMMIT_TIME)
+                .build());
+        trackJobRun("test-job", "run-2", 1, file);
+        AddFilesTransaction transaction = AddFilesTransaction.builder()
+                .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
+                .jobId("test-job")
+                .jobRunId("run-2")
+                .taskId(DEFAULT_TASK_ID)
+                .writtenTime(DEFAULT_COMMIT_TIME)
+                .build();
+
+        // When
+        addTransactionWithTracking(transaction);
+
+        // Then
+        assertThat(followerStore.getFileReferences()).containsExactly(file);
+        assertThat(tracker.getAllJobs(tableId))
+                .containsExactly(ingestJobStatus("test-job",
+                        jobRunOnTask(DEFAULT_TASK_ID,
+                                ingestStartedStatus(DEFAULT_START_TIME),
+                                ingestFinishedStatusUncommitted(defaultSummary(100)),
+                                ingestAddedFilesStatus(DEFAULT_COMMIT_TIME, 1)),
+                        jobRunOnTask(DEFAULT_TASK_ID,
+                                ingestStartedStatus(DEFAULT_START_TIME),
+                                ingestFinishedStatusUncommitted(defaultSummary(100)),
+                                failedStatus(DEFAULT_COMMIT_TIME, List.of()))));
     }
 
     private void addTransactionWithTracking(AddFilesTransaction transaction) {
