@@ -50,6 +50,7 @@ public abstract class InMemoryTransactionLogStateStoreIngestTrackerTestBase exte
                 .taskId(DEFAULT_TASK_ID)
                 .tableId(tableId)
                 .fileCount(fileCount)
+                .startTime(DEFAULT_START_TIME)
                 .build();
     }
 
