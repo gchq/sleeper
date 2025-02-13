@@ -116,12 +116,15 @@ public class TransactionLogStateStore extends DelegatingStateStore {
      * read from the transaction log if entries are missing between the last read entry and the given entry. The given
      * entry must already exist in the transaction log.
      *
-     * @param <T>      the type of the state to update
      * @param logEntry the log entry
      * @param listener a listener to apply some action before the entry is added
      */
-    public <T> void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply<StateStoreFiles> listener) {
-        files.applyEntryFromLog(logEntry, listener);
+    public void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
+        if (FileReferenceTransaction.class.isAssignableFrom(logEntry.getTransactionType().getType())) {
+            files.applyEntryFromLog(logEntry, listener);
+        } else {
+            partitions.applyEntryFromLog(logEntry, listener);
+        }
     }
 
     public static Builder builder() {

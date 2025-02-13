@@ -16,7 +16,10 @@
 package sleeper.core.statestore.transactionlog.state;
 
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -28,11 +31,9 @@ import java.util.function.Consumer;
 /**
  * Listens to see the state before a transaction is applied to the local state. This is when the transaction is in the
  * log, but before it is applied locally.
- *
- * @param <S> the type of state to listen on
  */
 @FunctionalInterface
-public interface StateListenerBeforeApply<S> {
+public interface StateListenerBeforeApply {
 
     /**
      * Informs the listener that the transaction is about to be applied to the local state.
@@ -41,15 +42,14 @@ public interface StateListenerBeforeApply<S> {
      * @param transaction the transaction
      * @param state       the state
      */
-    void beforeApply(TransactionLogEntry entry, StateStoreTransaction<?> transaction, S state);
+    void beforeApply(TransactionLogEntry entry, StateStoreTransaction<?> transaction, Object state);
 
     /**
      * Creates a transaction listener that does nothing.
      *
-     * @param  <S> the type of state the transaction operates on
-     * @return     the listener
+     * @return the listener
      */
-    static <S> StateListenerBeforeApply<S> none() {
+    static StateListenerBeforeApply none() {
         return (entry, transaction, state) -> {
         };
     }
@@ -62,11 +62,13 @@ public interface StateListenerBeforeApply<S> {
      * @param  compactionTracker the compaction job tracker
      * @return                   the listener
      */
-    static StateListenerBeforeApply<StateStoreFiles> updateTrackers(
+    static StateListenerBeforeApply updateTrackers(
             TableStatus sleeperTable, IngestJobTracker ingestTracker, CompactionJobTracker compactionTracker) {
         return and(List.of(
                 byTransactionType(ReplaceFileReferencesTransaction.class,
-                        new CompactionJobTrackerStateListener(sleeperTable, compactionTracker))));
+                        new CompactionJobTrackerStateListener(sleeperTable, compactionTracker)),
+                byTransactionType(AddFilesTransaction.class,
+                        new IngestJobTrackerStateListener(sleeperTable, ingestTracker))));
     }
 
     /**
@@ -75,8 +77,28 @@ public interface StateListenerBeforeApply<S> {
      * @param  <S> the type of state the transaction operates on
      * @return     the listener
      */
-    static <S> StateListenerBeforeApply<S> withState(Consumer<S> run) {
-        return (entry, transaction, state) -> run.accept(state);
+    static <S> StateListenerBeforeApply withState(Consumer<S> run) {
+        return (entry, transaction, state) -> run.accept((S) state);
+    }
+
+    /**
+     * Creates a transaction listener that operates on just the state of partitions.
+     *
+     * @return the listener
+     */
+    static StateListenerBeforeApply withPartitionsState(Consumer<StateStorePartitions> run) {
+        return byTransactionType(PartitionTransaction.class,
+                (TransactionLogEntry entry, PartitionTransaction transaction, StateStorePartitions state) -> run.accept(state));
+    }
+
+    /**
+     * Creates a transaction listener that operates on just the state of files.
+     *
+     * @return the listener
+     */
+    static StateListenerBeforeApply withFilesState(Consumer<StateStoreFiles> run) {
+        return byTransactionType(FileReferenceTransaction.class,
+                (TransactionLogEntry entry, FileReferenceTransaction transaction, StateStoreFiles state) -> run.accept(state));
     }
 
     /**
@@ -86,10 +108,10 @@ public interface StateListenerBeforeApply<S> {
      * @param  <T> the type of the transaction
      * @return     the listener
      */
-    static <S, T extends StateStoreTransaction<S>> StateListenerBeforeApply<S> byTransactionType(Class<T> transactionType, StateListenerBeforeApplyByType<S, T> listener) {
+    static <S, T extends StateStoreTransaction<S>> StateListenerBeforeApply byTransactionType(Class<T> transactionType, StateListenerBeforeApplyByType<S, T> listener) {
         return (entry, transaction, state) -> {
             if (transactionType.isInstance(transaction)) {
-                listener.beforeApply(entry, transactionType.cast(transaction), state);
+                listener.beforeApply(entry, transactionType.cast(transaction), (S) state);
             }
         };
     }
@@ -101,7 +123,7 @@ public interface StateListenerBeforeApply<S> {
      * @param  listeners the listeners to run
      * @return           the listener
      */
-    static <S> StateListenerBeforeApply<S> and(List<StateListenerBeforeApply<S>> listeners) {
+    static <S> StateListenerBeforeApply and(List<StateListenerBeforeApply> listeners) {
         return (entry, transaction, state) -> listeners.forEach(listener -> listener.beforeApply(entry, transaction, state));
     }
 }

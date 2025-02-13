@@ -18,7 +18,9 @@ package sleeper.core.statestore.transactionlog;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
@@ -26,6 +28,7 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,19 +39,20 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTransactionLogStateStoreTestBase {
 
     // Tests to add:
-    // - Follow partition transactions
     // - Local state has already applied the given transaction (fail or just ignore it?)
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
     private final AtomicInteger transactionLogReads = new AtomicInteger(0);
     private final List<TransactionLogEntry> transactionEntriesThatWereRead = new ArrayList<>();
+    private final Schema schema = schemaWithKey("key", new LongType());
+    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
 
     @BeforeEach
     void setUp() {
-        initialiseWithPartitions(new PartitionsBuilder(schemaWithKey("key", new LongType())).singlePartition("root"));
+        initialiseWithPartitions(partitions);
         committerStore = (TransactionLogStateStore) super.store;
-        followerStore = stateStoreBuilder(schemaWithKey("key", new LongType())).build();
+        followerStore = stateStoreBuilder(schema).build();
     }
 
     @Test
@@ -140,13 +144,36 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         assertThat(transactionEntriesThatWereRead).containsExactly(entry3, entry4);
     }
 
-    private void loadNextTransaction(TransactionLogEntry entry) {
-        followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.withState(state -> {
+    @Test
+    void shouldFollowPartitionTransaction() {
+        // Given
+        TransactionLogEntry entry1 = partitionsLogStore.getLastEntry(); // Initialised in setup
+        Partition rootPartition = partitions.buildTree().getRootPartition();
+        partitions.splitToNewChildren("root", "L", "R", 123L)
+                .applySplit(committerStore, "root");
+        TransactionLogEntry entry2 = partitionsLogStore.getLastEntry();
+        trackTransactionLogReads();
+
+        // When
+        List<Partition> appliedToPartitions = new ArrayList<>();
+        followerStore.applyEntryFromLog(entry2, StateListenerBeforeApply.withPartitionsState(state -> {
+            appliedToPartitions.addAll(state.all());
         }));
+
+        // Then
+        assertThat(appliedToPartitions).containsExactly(rootPartition);
+        assertThat(transactionEntriesThatWereRead).containsExactly(entry1);
+        assertThat(new HashSet<>(followerStore.getAllPartitions())).isEqualTo(new HashSet<>(partitions.buildList()));
+    }
+
+    private void loadNextTransaction(TransactionLogEntry entry) {
+        followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.none());
     }
 
     private void trackTransactionLogReads() {
         filesLogStore.atStartOfReadTransactions(transactionLogReads::incrementAndGet);
         filesLogStore.onReadTransactionLogEntry(transactionEntriesThatWereRead::add);
+        partitionsLogStore.atStartOfReadTransactions(transactionLogReads::incrementAndGet);
+        partitionsLogStore.onReadTransactionLogEntry(transactionEntriesThatWereRead::add);
     }
 }

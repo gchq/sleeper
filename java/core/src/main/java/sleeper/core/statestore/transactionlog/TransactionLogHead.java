@@ -266,7 +266,7 @@ public class TransactionLogHead<T> {
         }
     }
 
-    void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
+    void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply listener) {
         long entryNumber = entry.getTransactionNumber();
         if (lastTransactionNumber < (entryNumber - 1)) { // If we're not up to date with the given transaction
             forceUpdate(TransactionLogRange.toUpdateLocalStateToApply(lastTransactionNumber, entryNumber));
@@ -278,7 +278,7 @@ public class TransactionLogHead<T> {
         applyTransaction(entry, StateListenerBeforeApply.none());
     }
 
-    private void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
+    private void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply listener) {
         if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
             LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
                     sleeperTable, entry.getTransactionNumber(),
