@@ -31,6 +31,7 @@ public interface StateListenerBeforeApplyByType<S, T extends StateStoreTransacti
     /**
      * Informs the listener that the transaction is about to be applied to the local state.
      *
+     * @param entry       the log entry
      * @param transaction the transaction
      * @param state       the state
      */
