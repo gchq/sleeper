@@ -79,7 +79,7 @@ public class CompactionJobTrackerStateListenerTest extends InMemoryTransactionLo
     }
 
     @Test
-    void shouldIgnoreCompactionCommitWhenAlreadyCommitted() {
+    void shouldFailOnCompactionCommitWhenAlreadyCommitted() {
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
