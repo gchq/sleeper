@@ -93,22 +93,15 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
 
     @Test
     @Disabled("TODO")
-    void shouldFailWhenAlreadyCommitted() {
+    void shouldFailWhenFileAlreadyExists() {
         // Given
         FileReference file = factory.rootFile("file.parquet", 100L);
-        trackJobRun("test-job", "run-1", 1, file);
-        addTransactionWithTracking(AddFilesTransaction.builder()
-                .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
-                .jobId("test-job")
-                .jobRunId("run-1")
-                .taskId(DEFAULT_TASK_ID)
-                .writtenTime(DEFAULT_COMMIT_TIME)
-                .build());
-        trackJobRun("test-job", "run-2", 1, file);
+        addTransactionWithTracking(new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))));
+        trackJobRun("test-job", "test-run", 1, file);
         AddFilesTransaction transaction = AddFilesTransaction.builder()
                 .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
                 .jobId("test-job")
-                .jobRunId("run-2")
+                .jobRunId("test-run")
                 .taskId(DEFAULT_TASK_ID)
                 .writtenTime(DEFAULT_COMMIT_TIME)
                 .build();
@@ -120,10 +113,6 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
         assertThat(followerStore.getFileReferences()).containsExactly(file);
         assertThat(tracker.getAllJobs(tableId))
                 .containsExactly(ingestJobStatus("test-job",
-                        jobRunOnTask(DEFAULT_TASK_ID,
-                                ingestStartedStatus(DEFAULT_START_TIME),
-                                ingestFinishedStatusUncommitted(defaultSummary(100)),
-                                ingestAddedFilesStatus(DEFAULT_COMMIT_TIME, 1)),
                         jobRunOnTask(DEFAULT_TASK_ID,
                                 ingestStartedStatus(DEFAULT_START_TIME),
                                 ingestFinishedStatusUncommitted(defaultSummary(100)),
