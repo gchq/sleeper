@@ -38,7 +38,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobS
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
-public class IngestJobCommitFollowTransactionTest extends InMemoryTransactionLogStateStoreIngestTrackerTestBase {
+public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateStoreIngestTrackerTestBase {
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
@@ -51,7 +51,7 @@ public class IngestJobCommitFollowTransactionTest extends InMemoryTransactionLog
     }
 
     @Test
-    void shouldUpdateIngestJobTrackerBasedOnTransaction() {
+    void shouldUpdateTrackerBasedOnTransaction() {
         // Given
         FileReference file = factory.rootFile("file.parquet", 100L);
         trackJobRun("test-job", 1, file);
@@ -61,11 +61,9 @@ public class IngestJobCommitFollowTransactionTest extends InMemoryTransactionLog
                 .taskId(DEFAULT_TASK_ID)
                 .writtenTime(DEFAULT_COMMIT_TIME)
                 .build();
-        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
-        TransactionLogEntry logEntry = filesLogStore.getLastEntry();
 
         // When
-        loadNextTransaction(logEntry);
+        addTransactionWithTracking(transaction);
 
         // Then
         assertThat(tracker.getAllJobs(tableId))
@@ -76,21 +74,25 @@ public class IngestJobCommitFollowTransactionTest extends InMemoryTransactionLog
     }
 
     @Test
-    void shouldNotUpdateIngestJobTrackerWhenCommitIsNotForAnyIngestJob() {
+    void shouldNotUpdateTrackerWhenCommitIsNotForAnyIngestJob() {
         // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
         FileReference file = factory.rootFile("file.parquet", 100L);
         AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
-        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
-        TransactionLogEntry logEntry = filesLogStore.getLastEntry();
 
         // When
-        loadNextTransaction(logEntry);
+        addTransactionWithTracking(transaction);
 
         // Then
         assertThat(tracker.getAllJobs(tableId)).isEmpty();
     }
 
-    private void loadNextTransaction(TransactionLogEntry entry) {
+    private void addTransactionWithTracking(AddFilesTransaction transaction) {
+        // Transaction is added in a committer process
+        committerStore.fixFileUpdateTime(DEFAULT_COMMIT_TIME);
+        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
+
+        // Job tracker updates are done in a separate process that reads from the log and updates its local state
+        TransactionLogEntry entry = filesLogStore.getLastEntry();
         followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.updateTrackers(sleeperTable, tracker, CompactionJobTracker.NONE));
     }
 
