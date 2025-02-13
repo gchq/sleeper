@@ -82,7 +82,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
     }
 
     @Test
-    void shouldFailOnCompactionCommitWhenAlreadyCommitted() {
+    void shouldFailWhenAlreadyCommitted() {
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
@@ -115,7 +115,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
     }
 
     @Test
-    void shouldIgnoreCompactionCommitWhenInputFilesAreNotAssignedToJob() {
+    void shouldFailWhenInputFilesAreNotAssignedToJob() {
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
@@ -136,7 +136,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
     }
 
     @Test
-    public void shouldIgnoreCompactionCommitWhenInputFileIsNotInStateStore() {
+    public void shouldFailWhenInputFileIsNotInStateStore() {
         // Given
         FileReference newFile = factory.rootFile("newFile", 100L);
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
@@ -156,7 +156,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
     }
 
     @Test
-    public void shouldIgnoreCompactionCommitWhenOneInputFileIsNotInStateStore() {
+    public void shouldFailWhenOneInputFileIsNotInStateStore() {
         // Given
         FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
@@ -180,7 +180,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
     }
 
     @Test
-    public void shouldIgnoreCompactionCommitWhenFileReferenceDoesNotExistInPartition() {
+    public void shouldFailWhenFileReferenceDoesNotExistInPartition() {
         // Given
         splitPartition("root", "L", "R", 5);
         FileReference file = factory.rootFile("file", 100L);
@@ -217,7 +217,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
     }
 
     @Test
-    public void shouldIgnoreCompactionCommitWhenOutputFileAlreadyExists() {
+    public void shouldFailWhenOutputFileAlreadyExists() {
         // Given
         splitPartition("root", "L", "R", 5);
         FileReference file = factory.rootFile("oldFile", 100L);
