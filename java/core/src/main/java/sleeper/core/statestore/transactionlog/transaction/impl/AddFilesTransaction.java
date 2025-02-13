@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
@@ -34,6 +37,8 @@ import java.util.Objects;
  * A transaction to add files to the state store.
  */
 public class AddFilesTransaction implements FileReferenceTransaction {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(AddFilesTransaction.class);
 
     private final String jobId;
     private final String taskId;
@@ -67,15 +72,36 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         }
     }
 
+    /**
+     * Validates whether this transaction may be applied to the given state.
+     *
+     * @param  stateStoreFiles     the state before the transaction
+     * @throws StateStoreException thrown if the transaction may not be applied
+     */
+    public void validateDuringApply(StateStoreFiles stateStoreFiles) throws StateStoreException {
+        for (AllReferencesToAFile file : files) {
+            if (stateStoreFiles.file(file.getFilename()).isPresent()) {
+                throw new FileAlreadyExistsException(file.getFilename());
+            }
+        }
+    }
+
     @Override
     public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
+        try {
+            validateDuringApply(stateStoreFiles);
+        } catch (StateStoreException ex) {
+            LOGGER.debug("Found invalid ingest commit for job {}", jobId, ex);
+            return;
+        }
         for (AllReferencesToAFile file : files) {
             stateStoreFiles.add(StateStoreFile.newFile(updateTime, file));
         }
     }
 
     /**
-     * Reports the files were added against the job tracker. This should be used after the transaction is fully
+     * Reports the files were added against the job tracker. This should be used
+     * after the transaction is fully
      * committed to the log.
      *
      * @param tracker      the job tracker
@@ -128,13 +154,15 @@ public class AddFilesTransaction implements FileReferenceTransaction {
             return false;
         }
         AddFilesTransaction other = (AddFilesTransaction) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(writtenTime, other.writtenTime)
+        return Objects.equals(jobId, other.jobId) && Objects.equals(taskId, other.taskId)
+                && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(writtenTime, other.writtenTime)
                 && Objects.equals(files, other.files);
     }
 
     @Override
     public String toString() {
-        return "AddFilesTransaction{jobId=" + jobId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", writtenTime=" + writtenTime + ", files=" + files + "}";
+        return "AddFilesTransaction{jobId=" + jobId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", writtenTime="
+                + writtenTime + ", files=" + files + "}";
     }
 
     /**
@@ -173,7 +201,8 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         }
 
         /**
-         * Sets the time the files were written and ready to be added to the state store.
+         * Sets the time the files were written and ready to be added to the state
+         * store.
          *
          * @param  writtenTime the time the files were written
          * @return             this builder

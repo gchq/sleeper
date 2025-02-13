@@ -48,7 +48,8 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * A file reference store backed by a log of transactions. Part of {@link TransactionLogStateStore}.
+ * A file reference store backed by a log of transactions. Part of
+ * {@link TransactionLogStateStore}.
  */
 class TransactionLogFileReferenceStore implements FileReferenceStore {
 
@@ -56,13 +57,15 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     private final TransactionLogHead<StateStoreFiles> head;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> state) {
-        this.head = state;
+    TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> head) {
+        this.head = head;
     }
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        head.addTransaction(clock.instant(), new AddFilesTransaction(files));
+        AddFilesTransaction transaction = new AddFilesTransaction(files);
+        transaction.validateDuringApply(head.state());
+        head.addTransaction(clock.instant(), transaction);
     }
 
     @Override
@@ -76,7 +79,8 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests)
+            throws ReplaceRequestsFailedException {
         try {
             for (ReplaceFileReferencesRequest request : requests) {
                 request.validateNewReference();
