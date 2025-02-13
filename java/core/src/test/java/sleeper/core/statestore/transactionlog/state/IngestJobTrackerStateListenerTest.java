@@ -20,15 +20,19 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
-import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 
 public class IngestJobTrackerStateListenerTest extends InMemoryTransactionLogStateStoreIngestTrackerTestBase {
 
@@ -46,15 +50,22 @@ public class IngestJobTrackerStateListenerTest extends InMemoryTransactionLogSta
     void shouldUpdateIngestJobTrackerBasedOnTransaction() {
         // Given
         FileReference file = factory.rootFile("file.parquet", 100L);
-        IngestJobEvent job = trackJobRun("test-job", 1, file);
-        committerStore.addFiles(List.of(file));
+        trackJobRun("test-job", 1, file);
+        AddFilesTransaction transaction = AddFilesTransaction.builder()
+                .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
+                .jobId("test-job")
+                .taskId(DEFAULT_TASK_ID)
+                .writtenTime(DEFAULT_COMMIT_TIME)
+                .build();
+        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
         TransactionLogEntry logEntry = filesLogStore.getLastEntry();
 
         // When
         loadNextTransaction(logEntry);
 
         // Then
-        // TODO
+        assertThat(tracker.getAllJobs(tableId))
+                .containsExactly(ingestJobStatus("test-job", defaultCommittedRun(100)));
     }
 
     private void loadNextTransaction(TransactionLogEntry entry) {
