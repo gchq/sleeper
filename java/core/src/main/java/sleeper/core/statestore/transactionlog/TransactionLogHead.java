@@ -268,6 +268,10 @@ public class TransactionLogHead<T> {
 
     void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply listener) {
         long entryNumber = entry.getTransactionNumber();
+        if (entryNumber <= lastTransactionNumber) {
+            throw new StateStoreException("Attempted to apply transaction out of order. " +
+                    "Last transaction applied was " + lastTransactionNumber + ", found transaction " + entryNumber + ".");
+        }
         if (lastTransactionNumber < (entryNumber - 1)) { // If we're not up to date with the given transaction
             forceUpdate(TransactionLogRange.toUpdateLocalStateToApply(lastTransactionNumber, entryNumber));
         }

@@ -22,8 +22,10 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 
@@ -33,6 +35,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
@@ -142,6 +145,55 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         // And the replacement with file 3 is applied at query time
         assertThat(followerStore.getFileReferences()).containsExactly(file1, file3);
         assertThat(transactionEntriesThatWereRead).containsExactly(entry3, entry4);
+    }
+
+    @Test
+    void shouldFailWhenTransactionIsAppliedTwice() {
+        // Given
+        FileReference file = factory.rootFile("file.parquet", 100L);
+        committerStore.addFiles(List.of(file));
+        TransactionLogEntry logEntry = filesLogStore.getLastEntry();
+        trackTransactionLogReads();
+        loadNextTransaction(logEntry);
+
+        // When / Then
+        assertThatThrownBy(() -> loadNextTransaction(logEntry))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessage("Attempted to apply transaction out of order. " +
+                        "Last transaction applied was 1, found transaction 1.");
+        assertThat(followerStore.getFileReferences()).containsExactly(file);
+        assertThat(transactionEntriesThatWereRead).isEmpty();
+    }
+
+    @Test
+    void shouldFailWhenTransactionsAreAppliedOutOfOrder() {
+        // Given
+        FileReference file1 = factory.rootFile("file1.parquet", 100L);
+        FileReference file2 = factory.rootFile("file2.parquet", 200L);
+        committerStore.addFiles(List.of(file1));
+        TransactionLogEntry entry1 = filesLogStore.getLastEntry();
+        committerStore.assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles("test-job", "root", List.of("file1.parquet"))));
+        TransactionLogEntry entry2 = filesLogStore.getLastEntry();
+        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
+                .jobId("test-job")
+                .inputFiles(List.of("file1.parquet"))
+                .newReference(file2)
+                .build()));
+        TransactionLogEntry entry3 = filesLogStore.getLastEntry();
+        loadNextTransaction(entry3);
+        trackTransactionLogReads();
+
+        // When / Then
+        assertThatThrownBy(() -> loadNextTransaction(entry2))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessage("Attempted to apply transaction out of order. " +
+                        "Last transaction applied was 3, found transaction 2.");
+        assertThatThrownBy(() -> loadNextTransaction(entry1))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessage("Attempted to apply transaction out of order. " +
+                        "Last transaction applied was 3, found transaction 1.");
+        assertThat(transactionEntriesThatWereRead).isEmpty();
+        assertThat(followerStore.getFileReferences()).containsExactly(file2);
     }
 
     @Test
