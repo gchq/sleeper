@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
-public class CompactionJobTrackerStateListenerFollowTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
+public class CompactionJobCommitFollowTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
