@@ -67,6 +67,7 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
         addTransactionWithTracking(transaction);
 
         // Then
+        assertThat(followerStore.getFileReferences()).containsExactly(file);
         assertThat(tracker.getAllJobs(tableId))
                 .containsExactly(ingestJobStatus("test-job", jobRunOnTask(DEFAULT_TASK_ID,
                         ingestStartedStatus(DEFAULT_START_TIME),
@@ -84,12 +85,12 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
         addTransactionWithTracking(transaction);
 
         // Then
+        assertThat(followerStore.getFileReferences()).containsExactly(file);
         assertThat(tracker.getAllJobs(tableId)).isEmpty();
     }
 
     private void addTransactionWithTracking(AddFilesTransaction transaction) {
         // Transaction is added in a committer process
-        committerStore.fixFileUpdateTime(DEFAULT_COMMIT_TIME);
         committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
 
         // Job tracker updates are done in a separate process that reads from the log and updates its local state
