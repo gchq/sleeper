@@ -39,7 +39,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -58,7 +57,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
-import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -72,8 +70,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     private static final String FILE_SHOULD_NOT_BE_DELETED_3 = "partition.parquet";
     private static final String SPLIT_PARTITION_STRING_1 = "alpha";
     private static final String SPLIT_PARTITION_STRING_2 = "beta";
-    private static final String S3_STATE_STORE_PARTITIONS_FILENAME = "partitions/file4.parquet";
-    private static final String S3_STATE_STORE_FILES_FILENAME = "files/file5.parquet";
+
     private static final Schema KEY_VALUE_SCHEMA = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
             .valueFields(new Field("value1", new StringType()), new Field("value2", new StringType()))
@@ -82,7 +79,6 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, KEY_VALUE_SCHEMA);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
-    private final String s3StateStorePath = tableProperties.get(TABLE_ID) + "/statestore";
 
     @TempDir
     public Path tempDir;
@@ -212,25 +208,13 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         String tableId = tableProperties.get(TABLE_ID);
         ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(instanceProperties.get(DATA_BUCKET));
         ListObjectsV2Result result = s3Client.listObjectsV2(req);
-        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3StateStore.class.getName())) {
-            assertThat(result.getObjectSummaries())
-                    .extracting(S3ObjectSummary::getKey)
-                    .contains(s3StateStorePath + "/" + S3_STATE_STORE_PARTITIONS_FILENAME)
-                    .doesNotContain(s3StateStorePath + "/" + S3_STATE_STORE_FILES_FILENAME);
-            assertThat(result.getObjectSummaries().stream()
-                    .map(S3ObjectSummary::getKey)
-                    .filter(key -> key.startsWith(s3StateStorePath)))
-                    .hasSize(4);
-            assertThat(result.getKeyCount()).isEqualTo(7);
-        } else {
-            assertThat(result.getObjectSummaries())
-                    .extracting(S3ObjectSummary::getKey)
-                    .contains(
-                            tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
-                            tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                            tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
-            assertThat(result.getKeyCount()).isEqualTo(3);
-        }
+        assertThat(result.getObjectSummaries())
+                .extracting(S3ObjectSummary::getKey)
+                .contains(
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
+                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
+        assertThat(result.getKeyCount()).isEqualTo(3);
     }
 
     private void reinitialiseTableAndDeletePartitions(TableProperties tableProperties) throws IOException {
@@ -272,11 +256,6 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         s3Client.putObject(dataBucket, tableId + "/partition-root/file1.parquet", "some-content");
         s3Client.putObject(dataBucket, tableId + "/partition-1/file2.parquet", "some-content");
         s3Client.putObject(dataBucket, tableId + "/partition-2/file3.parquet", "some-content");
-
-        if (tableProperties.get(STATESTORE_CLASSNAME).equals(S3StateStore.class.getName())) {
-            s3Client.putObject(dataBucket, s3StateStorePath + "/" + S3_STATE_STORE_FILES_FILENAME, "some-content");
-            s3Client.putObject(dataBucket, s3StateStorePath + "/" + S3_STATE_STORE_PARTITIONS_FILENAME, "some-content");
-        }
     }
 
     private TransactionLogStateStore setupTransactionLogStateStore(TableProperties tableProperties) throws IOException {
