@@ -65,7 +65,7 @@ public class TablePropertiesAsyncCommitsTest {
     void shouldDisableAsyncCommitsByDefaultForNonTransactionLogStateStore() {
         // Given
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
-        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
+        tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.SomeOtherStateStore");
 
         // When / Then
         assertThat(tableProperties.getBoolean(STATESTORE_ASYNC_COMMITS_ENABLED))
