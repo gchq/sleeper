@@ -61,8 +61,6 @@ import sleeper.parquet.record.ParquetRecordReader;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
-import sleeper.statestore.s3.S3StateStore;
-import sleeper.statestore.s3.S3StateStoreCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
@@ -85,7 +83,6 @@ import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
@@ -374,54 +371,6 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
                         ingestFinishedStatus(summary(startTime, endTime, 200, 200), 1))));
     }
 
-    @ParameterizedTest
-    @MethodSource("getParameters")
-    void shouldImportDataWithS3StateStore(BulkImportJobRunner runner) throws IOException {
-        // Given
-        // - Set state store type
-        tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
-        // - Write some data to be imported
-        List<Record> records = getRecords();
-        writeRecordsToFile(records, dataDir + "/import/a.parquet");
-        List<String> inputFiles = new ArrayList<>();
-        inputFiles.add(dataDir + "/import/a.parquet");
-        // - State store
-        StateStore stateStore = createTable(instanceProperties, tableProperties);
-
-        // When
-        BulkImportJob job = jobForTable(tableProperties).id("my-job").files(inputFiles).build();
-        runJob(runner, instanceProperties, job);
-
-        // Then
-        List<FileReference> fileReferences = stateStore.getFileReferences();
-        List<Record> readRecords = new ArrayList<>();
-        for (FileReference fileReference : fileReferences) {
-            try (ParquetRecordReader reader = new ParquetRecordReader(new Path(fileReference.getFilename()), schema)) {
-                List<Record> recordsInThisFile = new ArrayList<>();
-                Record record = reader.read();
-                while (null != record) {
-                    Record clonedRecord = new Record(record);
-                    readRecords.add(clonedRecord);
-                    recordsInThisFile.add(clonedRecord);
-                    record = reader.read();
-                }
-                assertThat(recordsInThisFile).isSortedAccordingTo(new RecordComparator(getSchema()));
-            }
-        }
-        assertThat(readRecords).hasSameSizeAs(records);
-
-        List<Record> expectedRecords = new ArrayList<>(records);
-        sortRecords(expectedRecords);
-        sortRecords(readRecords);
-        assertThat(readRecords).isEqualTo(expectedRecords);
-        IngestJob ingestJob = job.toIngestJob();
-        assertThat(tracker.getAllJobs(tableProperties.get(TABLE_ID)))
-                .containsExactly(ingestJobStatus(ingestJob, jobRunOnTask(taskId,
-                        ingestAcceptedStatus(ingestJob, validationTime),
-                        validatedIngestStartedStatus(ingestJob, startTime),
-                        ingestFinishedStatus(summary(startTime, endTime, 200, 200), 1))));
-    }
-
     private static List<Record> readRecords(String filename, Schema schema) {
         try (ParquetRecordReader reader = new ParquetRecordReader(new Path(filename), schema)) {
             List<Record> readRecords = new ArrayList<>();
@@ -448,7 +397,6 @@ class BulkImportJobDriverIT extends LocalStackTestBase {
 
         createBucket(instanceProperties.get(CONFIG_BUCKET));
         DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         return instanceProperties;
     }
