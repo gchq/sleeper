@@ -20,6 +20,8 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
@@ -93,6 +95,10 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     void addTransaction(AddTransactionRequest request) {
         head.addTransaction(clock.instant(), request);
+    }
+
+    void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
+        head.applyTransactionUpdatingIfNecessary(logEntry, listener);
     }
 
     private Stream<Partition> partitions() throws StateStoreException {

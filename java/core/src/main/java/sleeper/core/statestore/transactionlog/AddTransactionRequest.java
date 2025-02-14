@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
@@ -29,9 +30,9 @@ public class AddTransactionRequest {
 
     private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
-    private final StateListenerBeforeApply<?> beforeApplyListener;
+    private final StateListenerBeforeApply beforeApplyListener;
 
-    private AddTransactionRequest(Builder<?> builder) {
+    private AddTransactionRequest(Builder builder) {
         bodyKey = builder.bodyKey;
         transaction = builder.transaction;
         beforeApplyListener = builder.beforeApplyListener;
@@ -43,8 +44,8 @@ public class AddTransactionRequest {
      * @param  transaction the transaction object
      * @return             the request
      */
-    public static <S> Builder<S> withTransaction(StateStoreTransaction<S> transaction) {
-        return new Builder<>(transaction);
+    public static Builder withTransaction(StateStoreTransaction<?> transaction) {
+        return new Builder(transaction);
     }
 
     /**
@@ -69,26 +70,22 @@ public class AddTransactionRequest {
     /**
      * Retrieves the listener for after the transaction is added.
      *
-     * @param  <S> the type of the local state
-     * @param  <T> the type of the transaction being added
-     * @return     the listener
+     * @return the listener
      */
-    public <S, T extends StateStoreTransaction<S>> StateListenerBeforeApply<S> getBeforeApplyListener() {
-        return (StateListenerBeforeApply<S>) beforeApplyListener;
+    public StateListenerBeforeApply getBeforeApplyListener() {
+        return beforeApplyListener;
     }
 
     /**
      * A builder for this class.
-     *
-     * @param <S> the type of state the transaction operates on
      */
-    public static class Builder<S> {
+    public static class Builder {
 
-        private final StateStoreTransaction<S> transaction;
+        private final StateStoreTransaction<?> transaction;
         private String bodyKey;
-        private StateListenerBeforeApply<S> beforeApplyListener = StateListenerBeforeApply.none();
+        private StateListenerBeforeApply beforeApplyListener = StateListenerBeforeApply.none();
 
-        private Builder(StateStoreTransaction<S> transaction) {
+        private Builder(StateStoreTransaction<?> transaction) {
             this.transaction = transaction;
         }
 
@@ -103,7 +100,7 @@ public class AddTransactionRequest {
          * @param  bodyKey the object key in the data bucket
          * @return         this builder
          */
-        public Builder<S> bodyKey(String bodyKey) {
+        public Builder bodyKey(String bodyKey) {
             this.bodyKey = bodyKey;
             return this;
         }
@@ -115,7 +112,7 @@ public class AddTransactionRequest {
          * @param  beforeApplyListener the listener
          * @return                     this builder
          */
-        public Builder<S> beforeApplyListener(StateListenerBeforeApply<S> beforeApplyListener) {
+        public Builder beforeApplyListener(StateListenerBeforeApply beforeApplyListener) {
             this.beforeApplyListener = beforeApplyListener;
             return this;
         }

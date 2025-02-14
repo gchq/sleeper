@@ -26,6 +26,7 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -167,9 +168,9 @@ public class TransactionLogHead<T> {
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed adding transaction", e);
         }
-        request.getBeforeApplyListener().beforeApply(entry, state);
-        Instant startApplyTime = Instant.now();
         StateStoreTransaction<T> transaction = request.getTransaction();
+        request.getBeforeApplyListener().beforeApply(entry, transaction, state);
+        Instant startApplyTime = Instant.now();
         transaction.apply(state, updateTime);
         lastTransactionNumber = transactionNumber;
         LOGGER.debug("Applied transaction {} in {}",
@@ -265,8 +266,12 @@ public class TransactionLogHead<T> {
         }
     }
 
-    void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
+    void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply listener) {
         long entryNumber = entry.getTransactionNumber();
+        if (entryNumber <= lastTransactionNumber) {
+            throw new StateStoreException("Attempted to apply transaction out of order. " +
+                    "Last transaction applied was " + lastTransactionNumber + ", found transaction " + entryNumber + ".");
+        }
         if (lastTransactionNumber < (entryNumber - 1)) { // If we're not up to date with the given transaction
             forceUpdate(TransactionLogRange.toUpdateLocalStateToApply(lastTransactionNumber, entryNumber));
         }
@@ -277,7 +282,7 @@ public class TransactionLogHead<T> {
         applyTransaction(entry, StateListenerBeforeApply.none());
     }
 
-    private void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
+    private void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply listener) {
         if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
             LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
                     sleeperTable, entry.getTransactionNumber(),
@@ -287,7 +292,7 @@ public class TransactionLogHead<T> {
         }
         StateStoreTransaction<T> transaction = transactionType.cast(
                 entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore));
-        listener.beforeApply(entry, state);
+        listener.beforeApply(entry, transaction, state);
         transaction.apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }

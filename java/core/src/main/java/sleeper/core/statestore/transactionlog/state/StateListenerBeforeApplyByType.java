@@ -13,35 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.state;
 
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 
 /**
  * Listens to see the state before a transaction is applied to the local state. This is when the transaction is in the
  * log, but before it is applied locally.
  *
  * @param <S> the type of state to listen on
+ * @param <T> the type of transaction to listen for
  */
 @FunctionalInterface
-public interface StateListenerBeforeApply<S> {
+public interface StateListenerBeforeApplyByType<S, T extends StateStoreTransaction<S>> {
 
     /**
      * Informs the listener that the transaction is about to be applied to the local state.
      *
-     * @param entry the transaction log entry
-     * @param state the state
+     * @param entry       the log entry
+     * @param transaction the transaction
+     * @param state       the state
      */
-    void beforeApply(TransactionLogEntry entry, S state);
+    void beforeApply(TransactionLogEntry entry, T transaction, S state);
 
-    /**
-     * Creates a transaction listener that does nothing.
-     *
-     * @param  <S> the type of state the transaction operates on
-     * @return     the listener
-     */
-    static <S> StateListenerBeforeApply<S> none() {
-        return (entry, state) -> {
-        };
-    }
 }

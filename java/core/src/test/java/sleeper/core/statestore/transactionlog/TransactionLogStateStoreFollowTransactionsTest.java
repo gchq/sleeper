@@ -16,40 +16,46 @@
 package sleeper.core.statestore.transactionlog;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
-import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 
-public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
+public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTransactionLogStateStoreTestBase {
 
     // Tests to add:
-    // - Follow partition transactions
-    // - Read a snapshot when updating from log
     // - Local state has already applied the given transaction (fail or just ignore it?)
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
     private final AtomicInteger transactionLogReads = new AtomicInteger(0);
     private final List<TransactionLogEntry> transactionEntriesThatWereRead = new ArrayList<>();
+    private final Schema schema = schemaWithKey("key", new LongType());
+    private final PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
 
     @BeforeEach
     void setUp() {
-        initialiseWithPartitions(new PartitionsBuilder(schemaWithKey("key", new LongType())).singlePartition("root"));
+        initialiseWithPartitions(partitions);
         committerStore = (TransactionLogStateStore) super.store;
-        followerStore = stateStoreBuilder(schemaWithKey("key", new LongType())).build();
+        followerStore = stateStoreBuilder(schema).build();
     }
 
     @Test
@@ -122,7 +128,11 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         // And a snapshot with file 2 replaced with file 3 (so that this will fail if reapplied on top of the second snapshot)
         committerStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file2.parquet"))));
         TransactionLogEntry entry3 = filesLogStore.getLastEntry();
-        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferencesBuilder("test-job", List.of("file2.parquet"), file3).build()));
+        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
+                .jobId("test-job")
+                .inputFiles(List.of("file2.parquet"))
+                .newReference(file3)
+                .build()));
         TransactionLogEntry entry4 = filesLogStore.getLastEntry();
         createSnapshots();
         trackTransactionLogReads();
@@ -138,35 +148,84 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldUpdateTransactionLogBasedOnStateStoreProvided() {
+    void shouldFailWhenTransactionIsAppliedTwice() {
         // Given
-        FileReference oldFile = factory.rootFile("oldFile", 100L);
-        FileReference newFile = factory.rootFile("newFile", 100L);
-        committerStore.addFiles(List.of(oldFile));
-        committerStore.assignJobIds(List.of(
-                assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
-        CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
-        trackJobRun(trackedJob, "test-run");
-        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
-                replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId("test-run").build()));
+        FileReference file = factory.rootFile("file.parquet", 100L);
+        committerStore.addFiles(List.of(file));
         TransactionLogEntry logEntry = filesLogStore.getLastEntry();
-
-        // When
+        trackTransactionLogReads();
         loadNextTransaction(logEntry);
 
+        // When / Then
+        assertThatThrownBy(() -> loadNextTransaction(logEntry))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessage("Attempted to apply transaction out of order. " +
+                        "Last transaction applied was 1, found transaction 1.");
+        assertThat(followerStore.getFileReferences()).containsExactly(file);
+        assertThat(transactionEntriesThatWereRead).isEmpty();
+    }
+
+    @Test
+    void shouldFailWhenTransactionsAreAppliedOutOfOrder() {
+        // Given
+        FileReference file1 = factory.rootFile("file1.parquet", 100L);
+        FileReference file2 = factory.rootFile("file2.parquet", 200L);
+        committerStore.addFiles(List.of(file1));
+        TransactionLogEntry entry1 = filesLogStore.getLastEntry();
+        committerStore.assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles("test-job", "root", List.of("file1.parquet"))));
+        TransactionLogEntry entry2 = filesLogStore.getLastEntry();
+        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
+                .jobId("test-job")
+                .inputFiles(List.of("file1.parquet"))
+                .newReference(file2)
+                .build()));
+        TransactionLogEntry entry3 = filesLogStore.getLastEntry();
+        loadNextTransaction(entry3);
+        trackTransactionLogReads();
+
+        // When / Then
+        assertThatThrownBy(() -> loadNextTransaction(entry2))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessage("Attempted to apply transaction out of order. " +
+                        "Last transaction applied was 3, found transaction 2.");
+        assertThatThrownBy(() -> loadNextTransaction(entry1))
+                .isInstanceOf(StateStoreException.class)
+                .hasMessage("Attempted to apply transaction out of order. " +
+                        "Last transaction applied was 3, found transaction 1.");
+        assertThat(transactionEntriesThatWereRead).isEmpty();
+        assertThat(followerStore.getFileReferences()).containsExactly(file2);
+    }
+
+    @Test
+    void shouldFollowPartitionTransaction() {
+        // Given
+        TransactionLogEntry entry1 = partitionsLogStore.getLastEntry(); // Initialised in setup
+        Partition rootPartition = partitions.buildTree().getRootPartition();
+        partitions.splitToNewChildren("root", "L", "R", 123L)
+                .applySplit(committerStore, "root");
+        TransactionLogEntry entry2 = partitionsLogStore.getLastEntry();
+        trackTransactionLogReads();
+
+        // When
+        List<Partition> appliedToPartitions = new ArrayList<>();
+        followerStore.applyEntryFromLog(entry2, StateListenerBeforeApply.withPartitionsState(state -> {
+            appliedToPartitions.addAll(state.all());
+        }));
+
         // Then
-        assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId()))
-                .containsExactly(defaultStatus(trackedJob, defaultCommittedRun(100)));
+        assertThat(appliedToPartitions).containsExactly(rootPartition);
+        assertThat(transactionEntriesThatWereRead).containsExactly(entry1);
+        assertThat(new HashSet<>(followerStore.getAllPartitions())).isEqualTo(new HashSet<>(partitions.buildList()));
     }
 
     private void loadNextTransaction(TransactionLogEntry entry) {
-        followerStore.applyEntryFromLog(entry, (e, state) -> {
-        });
+        followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.none());
     }
 
     private void trackTransactionLogReads() {
         filesLogStore.atStartOfReadTransactions(transactionLogReads::incrementAndGet);
         filesLogStore.onReadTransactionLogEntry(transactionEntriesThatWereRead::add);
+        partitionsLogStore.atStartOfReadTransactions(transactionLogReads::incrementAndGet);
+        partitionsLogStore.onReadTransactionLogEntry(transactionEntriesThatWereRead::add);
     }
 }
