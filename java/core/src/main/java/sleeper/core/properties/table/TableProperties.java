@@ -17,8 +17,6 @@ package sleeper.core.properties.table;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
@@ -45,7 +43,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
  * Contains values of the properties to configure a Sleeper table.
  */
 public class TableProperties extends SleeperProperties<TableProperty> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
 
     // Schema is cached for faster access
     private Schema schema;
