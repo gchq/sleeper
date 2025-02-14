@@ -62,7 +62,7 @@ public class TablePropertiesAsyncCommitsTest {
     }
 
     @Test
-    void shouldDisableAsyncCommitsByDefaultForS3tateStore() {
+    void shouldDisableAsyncCommitsByDefaultForNonTransactionLogStateStore() {
         // Given
         TableProperties tableProperties = new TableProperties(new InstanceProperties());
         tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
