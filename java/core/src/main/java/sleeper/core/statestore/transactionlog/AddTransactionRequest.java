@@ -30,11 +30,13 @@ public class AddTransactionRequest {
 
     private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
+    private final boolean commitIfInvalid;
     private final StateListenerBeforeApply beforeApplyListener;
 
     private AddTransactionRequest(Builder builder) {
         bodyKey = builder.bodyKey;
         transaction = builder.transaction;
+        commitIfInvalid = builder.commitIfInvalid;
         beforeApplyListener = builder.beforeApplyListener;
     }
 
@@ -67,6 +69,10 @@ public class AddTransactionRequest {
         return Optional.ofNullable(bodyKey);
     }
 
+    public boolean isCommitIfInvalid() {
+        return commitIfInvalid;
+    }
+
     /**
      * Retrieves the listener for after the transaction is added.
      *
@@ -84,6 +90,7 @@ public class AddTransactionRequest {
         private final StateStoreTransaction<?> transaction;
         private String bodyKey;
         private StateListenerBeforeApply beforeApplyListener = StateListenerBeforeApply.none();
+        private boolean commitIfInvalid = false;
 
         private Builder(StateStoreTransaction<?> transaction) {
             this.transaction = transaction;
@@ -114,6 +121,18 @@ public class AddTransactionRequest {
          */
         public Builder beforeApplyListener(StateListenerBeforeApply beforeApplyListener) {
             this.beforeApplyListener = beforeApplyListener;
+            return this;
+        }
+
+        /**
+         * Sets whether the transaction should be committed to the log even if it was invalid. If false, an attempt to
+         * commit the transaction will throw an exception if it does not validate.
+         *
+         * @param  commitIfInvalid true if an invalid transaction should be committed, false otherwise
+         * @return                 this builder
+         */
+        public Builder commitIfInvalid(boolean commitIfInvalid) {
+            this.commitIfInvalid = commitIfInvalid;
             return this;
         }
     }
