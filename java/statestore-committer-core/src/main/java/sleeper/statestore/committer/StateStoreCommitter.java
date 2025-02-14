@@ -169,8 +169,8 @@ public class StateStoreCommitter {
         AddFilesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
-                .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> transaction.reportJobCommitted(
-                        ingestJobTracker, tableProperties.getStatus())))
+                .beforeApplyListener(StateListenerBeforeApply.withFilesState(
+                        state -> transaction.reportJobCommitOrThrow(ingestJobTracker, tableProperties.getStatus(), state)))
                 .build();
         try {
             stateStore.addTransaction(addTransaction);

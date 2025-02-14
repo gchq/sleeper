@@ -35,7 +35,7 @@ public class IngestJobTrackerStateListener implements StateListenerBeforeApplyBy
 
     @Override
     public void beforeApply(TransactionLogEntry entry, AddFilesTransaction transaction, StateStoreFiles state) {
-        transaction.reportJobCommitted(tracker, sleeperTable);
+        transaction.reportJobCommit(tracker, sleeperTable, state);
     }
 
 }

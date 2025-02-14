@@ -100,24 +100,41 @@ public class AddFilesTransaction implements FileReferenceTransaction {
     }
 
     /**
-     * Reports the files were added against the job tracker. This should be used after the transaction is fully
+     * Reports the result of the transaction to the job tracker. This should be used after the transaction is fully
      * committed to the log.
      *
      * @param tracker      the job tracker
      * @param sleeperTable the table being updated
      */
-    public void reportJobCommitted(IngestJobTracker tracker, TableStatus sleeperTable) {
+    public void reportJobCommit(IngestJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore) {
         if (jobId == null) {
             return;
         }
-        tracker.jobAddedFiles(IngestJobAddedFilesEvent.builder()
-                .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
-                .tableId(sleeperTable.getTableUniqueId()).writtenTime(writtenTime)
-                .files(files).build());
+        try {
+            validateFiles(stateBefore);
+            tracker.jobAddedFiles(createAddedEvent(sleeperTable));
+        } catch (StateStoreException e) {
+            tracker.jobFailed(createFailedEvent(sleeperTable, e));
+        }
     }
 
     /**
-     * Reports failure adding files against the job tracker.
+     * Reports the result of the transaction to the job tracker. This should be used after the transaction is fully
+     * committed to the log.
+     *
+     * @param tracker      the job tracker
+     * @param sleeperTable the table being updated
+     */
+    public void reportJobCommitOrThrow(IngestJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore) {
+        validateFiles(stateBefore);
+        if (jobId == null) {
+            return;
+        }
+        tracker.jobAddedFiles(createAddedEvent(sleeperTable));
+    }
+
+    /**
+     * Reports failure of this transaction to the job tracker.
      *
      * @param tracker      the job tracker
      * @param sleeperTable the table being updated
@@ -127,12 +144,23 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         if (jobId == null) {
             return;
         }
-        tracker.jobFailed(IngestJobFailedEvent.builder()
+        tracker.jobFailed(createFailedEvent(sleeperTable, e));
+    }
+
+    private IngestJobAddedFilesEvent createAddedEvent(TableStatus sleeperTable) {
+        return IngestJobAddedFilesEvent.builder()
+                .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
+                .tableId(sleeperTable.getTableUniqueId()).writtenTime(writtenTime)
+                .files(files).build();
+    }
+
+    private IngestJobFailedEvent createFailedEvent(TableStatus sleeperTable, Exception e) {
+        return IngestJobFailedEvent.builder()
                 .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
                 .tableId(sleeperTable.getTableUniqueId())
                 .failureTime(writtenTime)
                 .failure(e)
-                .build());
+                .build();
     }
 
     public List<AllReferencesToAFile> getFiles() {
