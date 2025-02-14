@@ -19,13 +19,9 @@ import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -43,10 +39,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.s3.S3RevisionId;
-import sleeper.statestore.s3.S3RevisionIdStore;
 import sleeper.statestore.s3.S3StateStore;
-import sleeper.statestore.s3.S3StateStoreCreator;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -135,99 +128,73 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
     }
 
-    @Nested
-    @DisplayName("Using Transaction log state store")
-    class UsingTransactionLogStateStore {
-        @BeforeEach
-        public void setup() {
-            tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
-        }
+    @Test
+    public void shouldDeletePartitionsWhenOptionSelected() throws Exception {
+        // Given
+        saveProperties();
+        saveTableDataFiles();
+        TransactionLogStateStore stateStore = setupTransactionLogStateStore(tableProperties);
 
-        @Test
-        public void shouldDeletePartitionsWhenOptionSelected() throws Exception {
-            // Given
-            saveProperties();
-            saveTableDataFiles();
-            S3StateStore s3StateStore = setupS3StateStore(tableProperties);
+        // When
+        reinitialiseTableAndDeletePartitions(tableProperties);
 
-            // When
-            reinitialiseTableAndDeletePartitions(tableProperties);
+        // Then
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
+        assertThat(stateStore.getAllPartitions()).hasSize(1);
+        assertThat(stateStore.getLeafPartitions()).hasSize(1);
 
-            // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
-
-            assertThat(s3StateStore.getFileReferences()).isEmpty();
-            assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
-            assertThat(s3StateStore.getAllPartitions()).hasSize(1);
-            assertThat(s3StateStore.getLeafPartitions()).hasSize(1);
-
-            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
-        }
-
-        @Test
-        public void shouldSetUpSplitPointsFromFileWhenOptionSelected() throws Exception {
-            // Given
-            saveProperties();
-            saveTableDataFiles();
-            S3StateStore s3StateStore = setupS3StateStore(tableProperties);
-            String splitPointsFileName = createSplitPointsFile(false);
-
-            // When
-            reinitialiseTableFromSplitPoints(tableProperties, splitPointsFileName);
-
-            // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
-
-            assertThat(s3StateStore.getFileReferences()).isEmpty();
-            assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
-
-            List<Partition> partitionsList = s3StateStore.getAllPartitions();
-            assertThat(partitionsList).hasSize(5);
-            assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
-            assertThat(partitionsList)
-                    .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
-                    .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
-
-            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
-        }
-
-        @Test
-        public void shouldHandleEncodedSplitPointsFileWhenOptionSelected() throws Exception {
-            // Given
-            saveProperties();
-            saveTableDataFiles();
-            S3StateStore s3StateStore = setupS3StateStore(tableProperties);
-            String splitPointsFileName = createSplitPointsFile(true);
-
-            // When
-            reinitialiseTableFromSplitPointsEncoded(tableProperties, splitPointsFileName);
-
-            // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "1");
-
-            assertThat(s3StateStore.getFileReferences()).isEmpty();
-            assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
-
-            List<Partition> partitionsList = s3StateStore.getAllPartitions();
-            assertThat(partitionsList).hasSize(5);
-            assertThat(s3StateStore.getLeafPartitions()).hasSize(3);
-            assertThat(partitionsList)
-                    .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
-                    .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
-
-            assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore();
-        }
+        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
     }
 
-    private void assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions(
-            String expectedFilesVersion, String expectedPartitionsVersion) {
-        S3RevisionIdStore revisionIdStore = new S3RevisionIdStore(dynamoClient, instanceProperties, tableProperties);
-        S3RevisionId filesRevisionId = revisionIdStore.getCurrentFilesRevisionId();
-        S3RevisionId partitionsRevisionId = revisionIdStore.getCurrentPartitionsRevisionId();
+    @Test
+    public void shouldSetUpSplitPointsFromFileWhenOptionSelected() throws Exception {
+        // Given
+        saveProperties();
+        saveTableDataFiles();
+        TransactionLogStateStore stateStore = setupTransactionLogStateStore(tableProperties);
+        String splitPointsFileName = createSplitPointsFile(false);
 
-        String versionPrefix = "00000000000";
-        assertThat(filesRevisionId.getRevision()).isEqualTo(versionPrefix + expectedFilesVersion);
-        assertThat(partitionsRevisionId.getRevision()).isEqualTo(versionPrefix + expectedPartitionsVersion);
+        // When
+        reinitialiseTableFromSplitPoints(tableProperties, splitPointsFileName);
+
+        // Then
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
+
+        List<Partition> partitionsList = stateStore.getAllPartitions();
+        assertThat(partitionsList).hasSize(5);
+        assertThat(stateStore.getLeafPartitions()).hasSize(3);
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+
+        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
+    }
+
+    @Test
+    public void shouldHandleEncodedSplitPointsFileWhenOptionSelected() throws Exception {
+        // Given
+        saveProperties();
+        saveTableDataFiles();
+        TransactionLogStateStore stateStore = setupTransactionLogStateStore(tableProperties);
+        String splitPointsFileName = createSplitPointsFile(true);
+
+        // When
+        reinitialiseTableFromSplitPointsEncoded(tableProperties, splitPointsFileName);
+
+        // Then
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
+
+        List<Partition> partitionsList = stateStore.getAllPartitions();
+        assertThat(partitionsList).hasSize(5);
+        assertThat(stateStore.getLeafPartitions()).hasSize(3);
+        assertThat(partitionsList)
+                .extracting(partition -> partition.getRegion().getRange("key").getMin().toString())
+                .contains(SPLIT_PARTITION_STRING_1, SPLIT_PARTITION_STRING_2);
+
+        assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted();
     }
 
     private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeleted() {
@@ -239,26 +206,6 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
                         tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
                         tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
                         tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3);
-    }
-
-    private void assertObjectsWithinPartitionsAndStateStoreAreaInTheTableBucketHaveBeenDeletedWithS3StateStore() {
-        String tableId = tableProperties.get(TABLE_ID);
-        assertThat(s3Client.listObjectsV2(instanceProperties.get(DATA_BUCKET))
-                .getObjectSummaries())
-                .extracting(S3ObjectSummary::getKey)
-                .hasSize(5)
-                .contains(
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_1,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_2,
-                        tableId + "/" + FILE_SHOULD_NOT_BE_DELETED_3)
-                .satisfies(keys -> {
-                    assertThat(keys)
-                            .filteredOn(key -> key.startsWith(s3StateStorePath + "/files"))
-                            .hasSize(1);
-                    assertThat(keys)
-                            .filteredOn(key -> key.startsWith(s3StateStorePath + "/partitions"))
-                            .hasSize(1);
-                });
     }
 
     private void assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted() {
@@ -341,43 +288,6 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         setupPartitionsAndAddFiles(transctionLogStateStore);
 
         return transctionLogStateStore;
-    }
-
-    private S3StateStore setupS3StateStore(TableProperties tableProperties) throws IOException {
-        //  - CreateS3StateStore
-        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
-        Configuration configuration = new Configuration();
-        configuration.set("fs.s3a.endpoint", localStackContainer.getEndpointOverride(LocalStackContainer.Service.S3).toString());
-        configuration.set("fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider");
-        configuration.set("fs.s3a.access.key", localStackContainer.getAccessKey());
-        configuration.set("fs.s3a.secret.key", localStackContainer.getSecretKey());
-        configuration.setBoolean("fs.s3a.connection.ssl.enabled", false);
-
-        S3StateStore s3StateStore = new S3StateStore(instanceProperties, tableProperties, dynamoClient, configuration);
-        s3StateStore.initialise();
-
-        setupPartitionsAndAddFiles(s3StateStore);
-
-        // - Check S3StateStore is set up correctly
-        // - The revisions file should have two entries one for partitions and one for files
-        // - Files revision should be 2:
-        //     - Initialise state store
-        //     - Add files
-        // - Partitions revision should be 2
-        //     - Initialise state store
-        //     - Atomically update partitions
-        assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("2", "2");
-
-        // - Check S3StateStore has 1 ready for GC file in
-        assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).hasSize(1);
-
-        // - Check S3StateStore has correct active files
-        assertThat(s3StateStore.getFileReferences()).hasSize(2);
-
-        // - Check S3StateStore has correct partitions
-        assertThat(s3StateStore.getAllPartitions()).hasSize(3);
-
-        return s3StateStore;
     }
 
     private void setupPartitionsAndAddFiles(StateStore stateStore) throws IOException {
