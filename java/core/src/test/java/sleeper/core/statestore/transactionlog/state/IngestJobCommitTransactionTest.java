@@ -16,7 +16,6 @@
 package sleeper.core.statestore.transactionlog.state;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
@@ -95,7 +94,6 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
     }
 
     @Test
-    @Disabled("TODO")
     void shouldFailWhenFileAlreadyExists() {
         // Given
         FileReference file = factory.rootFile("file.parquet", 100L);
@@ -119,7 +117,7 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
                         jobRunOnTask(DEFAULT_TASK_ID,
                                 ingestStartedStatus(DEFAULT_START_TIME),
                                 ingestFinishedStatusUncommitted(defaultSummary(100)),
-                                failedStatus(DEFAULT_COMMIT_TIME, List.of()))));
+                                failedStatus(DEFAULT_COMMIT_TIME, List.of("File already exists: file.parquet")))));
     }
 
     private void addTransactionWithTracking(AddFilesTransaction transaction) {
