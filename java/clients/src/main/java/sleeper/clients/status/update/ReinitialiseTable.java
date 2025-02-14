@@ -31,7 +31,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStore;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -94,10 +93,6 @@ public class ReinitialiseTable {
         if (deletePartitions) {
             LOGGER.info("Fully reinitialising table");
             initialiseStateStore(tableProperties, stateStore);
-        } else if (stateStore instanceof S3StateStore) {
-            LOGGER.info("Recreating files information file and adding it into the revisions table");
-            S3StateStore s3StateStore = (S3StateStore) stateStore;
-            s3StateStore.setInitialFileReferences();
         }
     }
 

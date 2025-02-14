@@ -34,7 +34,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_RESULTS_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.QUERY_TRACKER_TABLE_NAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
@@ -91,7 +90,6 @@ public class InstancePropertiesTestHelper {
         instanceProperties.set(VERSION, "1.2.3");
         instanceProperties.set(VPC_ID, "test-vpc");
         instanceProperties.set(SUBNETS, "test-subnet");
-        instanceProperties.set(REVISION_TABLENAME, "sleeper-" + id + "-table-revisions");
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, "sleeper-" + id + "-file-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, "sleeper-" + id + "-partition-transaction-log");
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, "sleeper-" + id + "-transaction-log-all-snapshots");

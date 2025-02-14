@@ -32,7 +32,6 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.deploy.SqsQueues;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.util.PollWithRetries;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
@@ -47,7 +46,6 @@ import java.util.stream.Collectors;
 import static java.util.function.Predicate.not;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
@@ -77,7 +75,6 @@ public class AwsResetInstanceOnFirstConnect {
     private void deleteAllTables(InstanceProperties instanceProperties) {
         clearBucket(instanceProperties.get(DATA_BUCKET));
         clearBucket(instanceProperties.get(CONFIG_BUCKET), key -> !S3InstanceProperties.S3_INSTANCE_PROPERTIES_FILE.equals(key));
-        clearTable(instanceProperties.get(REVISION_TABLENAME), S3StateStore.TABLE_ID, S3StateStore.REVISION_ID_KEY);
         clearTable(instanceProperties.get(TABLE_NAME_INDEX_DYNAMO_TABLENAME), DynamoDBTableIndex.TABLE_NAME_FIELD);
         clearTable(instanceProperties.get(TABLE_ID_INDEX_DYNAMO_TABLENAME), DynamoDBTableIndex.TABLE_ID_FIELD);
         clearTable(instanceProperties.get(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME),

@@ -6,14 +6,14 @@ Proposed
 
 ## Context
 
-There are currently two state stores in Sleeper. There was a DynamoDBStateStore, but this was deleted as DynamoDB does 
-not support snapshot isolation and therefore we could not obtain a consistent view of the file references in a
-table. The S3StateStore does not have this problem but as it requires the entire state to be written to S3 for each
-update, it can take several seconds to apply an update. This is too slow for some use cases which may require
-a million or more updates per day.
+There were originally two state stores in Sleeper. There was a DynamoDBStateStore, but DynamoDB does not support
+snapshot isolation and therefore we could not obtain a consistent view of the file references in a table. There was an
+S3StateStore, which did not have this problem because it wrote the entire state to S3 for each update. It could take
+several seconds to apply an update. This is too slow for some use cases which may require a million or more updates per
+day. Both of these implementations have now been deleted.
 
-The transaction log state store stores each change to the state store as a new
-item in DynamoDB, with optimistic concurrency control used to add new transactions. To avoid reading the entire
+The transaction log state store stores each change to the state store as a transaction, with just the changes held in a
+DynamoDB item. Optimistic concurrency control is used to add new transactions. To avoid reading the entire
 history of transactions when querying or updating the state store, we periodically create snapshots of the state.
 To get an up-to-date view of the state store, the latest snapshot is queried and then updated by reading all subsequent
 transactions from the DynamoDB transaction log. This state store enforces a sequential ordering to all the updates to
