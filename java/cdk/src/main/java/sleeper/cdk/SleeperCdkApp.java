@@ -47,7 +47,6 @@ import sleeper.cdk.stack.core.CoreStacks;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
-import sleeper.cdk.stack.core.S3StateStoreStack;
 import sleeper.cdk.stack.core.StateStoreCommitterStack;
 import sleeper.cdk.stack.core.StateStoreStacks;
 import sleeper.cdk.stack.core.TableDataStack;
@@ -137,9 +136,7 @@ public class SleeperCdkApp extends Stack {
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
-        StateStoreStacks stateStoreStacks = new StateStoreStacks(
-                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
-                transactionLogStateStoreStack, policiesStack);
+        StateStoreStacks stateStoreStacks = new StateStoreStacks(transactionLogStateStoreStack, policiesStack);
         IngestTrackerResources ingestTracker = IngestTrackerResources.from(
                 this, "IngestTracker", instanceProperties, policiesStack);
         CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
