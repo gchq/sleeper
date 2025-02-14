@@ -40,7 +40,6 @@ import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TIMEOUT_SECS;
 import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
-import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -186,11 +185,10 @@ public class SleeperPropertiesValidationTest {
         }
 
         @Test
-        void shouldFailValidationForCustomValidationAndPropertyWithValidationPredicate() {
+        void shouldFailValidationWithTwoInvalidTableProperties() {
             // Given
             InstanceProperties instanceProperties = createTestInstanceProperties();
             TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-            tableProperties.set(STATESTORE_CLASSNAME, "sleeper.statestore.s3.S3StateStore");
             tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, -100);
             tableProperties.set(COMPRESSION_CODEC, "madeUp");
 
