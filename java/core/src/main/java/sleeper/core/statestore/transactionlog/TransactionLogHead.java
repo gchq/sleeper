@@ -107,7 +107,7 @@ public class TransactionLogHead<T> {
                 request.getTransactionType(), sleeperTable);
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
-            prepareAddTransactionAttempt(attempt, request);
+            prepareAddTransactionAttempt(attempt, request.getTransaction());
             try {
                 attemptAddTransaction(updateTime, request);
                 LOGGER.info("Added transaction of type {} to table {} with {} attempts, took {}",
@@ -125,32 +125,28 @@ public class TransactionLogHead<T> {
         throw new StateStoreException("Failed adding transaction", failure);
     }
 
-    private void prepareAddTransactionAttempt(int attempt, AddTransactionRequest request) throws StateStoreException {
+    private void prepareAddTransactionAttempt(int attempt, StateStoreTransaction<T> transaction) throws StateStoreException {
         if (updateLogBeforeAddTransaction) {
             waitBeforeAttempt(attempt);
             forceUpdate();
-            validate(request);
+            validate(transaction);
         } else if (attempt > 1) {
             waitBeforeAttempt(attempt - 1);
             forceUpdate();
-            validate(request);
+            validate(transaction);
         } else {
             try {
-                validate(request);
+                validate(transaction);
             } catch (StateStoreException e) {
                 LOGGER.warn("Failed validating transaction on first attempt for table {}, will update from log and revalidate: {}", sleeperTable, e.getMessage());
                 forceUpdate();
-                validate(request);
+                validate(transaction);
             }
         }
     }
 
-    private void validate(AddTransactionRequest request) throws StateStoreException {
-        if (request.isCommitIfInvalid()) {
-            return;
-        }
+    private void validate(StateStoreTransaction<T> transaction) throws StateStoreException {
         Instant startTime = Instant.now();
-        StateStoreTransaction<T> transaction = request.getTransaction();
         transaction.validate(state);
         LOGGER.debug("Validated transaction in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
     }
