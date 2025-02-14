@@ -91,7 +91,8 @@ class S3FileReferenceStore implements FileReferenceStore {
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        updateS3Files(clock.instant(), new AddFilesTransaction(files));
+        AddFilesTransaction transaction = new AddFilesTransaction(files);
+        updateS3Files(clock.instant(), transaction, state -> transaction.validateFiles(state));
     }
 
     @Override

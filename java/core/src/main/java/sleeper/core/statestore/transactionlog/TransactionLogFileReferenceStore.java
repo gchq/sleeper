@@ -56,13 +56,15 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     private final TransactionLogHead<StateStoreFiles> head;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> state) {
-        this.head = state;
+    TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> head) {
+        this.head = head;
     }
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        head.addTransaction(clock.instant(), new AddFilesTransaction(files));
+        AddFilesTransaction transaction = new AddFilesTransaction(files);
+        transaction.validateFiles(head.state());
+        head.addTransaction(clock.instant(), transaction);
     }
 
     @Override
