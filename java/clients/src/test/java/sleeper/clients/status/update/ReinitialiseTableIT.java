@@ -41,11 +41,14 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.s3.S3RevisionId;
 import sleeper.statestore.s3.S3RevisionIdStore;
 import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -114,31 +117,30 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @Test
+    public void shouldDeleteFilesInfoAndObjectsInPartitionsByDefault() throws Exception {
+        // Given
+        saveProperties();
+        saveTableDataFiles();
+        TransactionLogStateStore stateStore = setupTransactionLogStateStore(tableProperties);
+
+        // When
+        reinitialiseTable(tableProperties);
+
+        // Then
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(stateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
+        assertThat(stateStore.getAllPartitions()).hasSize(3);
+        assertThat(stateStore.getLeafPartitions()).hasSize(2);
+        assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
+    }
+
     @Nested
-    @DisplayName("Using S3 state store")
-    class UsingS3StateStore {
+    @DisplayName("Using Transaction log state store")
+    class UsingTransactionLogStateStore {
         @BeforeEach
         public void setup() {
             tableProperties.set(STATESTORE_CLASSNAME, S3StateStore.class.getName());
-        }
-
-        @Test
-        public void shouldDeleteFilesInfoAndObjectsInPartitionsByDefault() throws Exception {
-            // Given
-            saveProperties();
-            saveTableDataFiles();
-            S3StateStore s3StateStore = setupS3StateStore(tableProperties);
-
-            // When
-            reinitialiseTable(tableProperties);
-
-            // Then
-            assertS3StateStoreRevisionsDynamoTableNowHasCorrectVersions("1", "2");
-            assertThat(s3StateStore.getFileReferences()).isEmpty();
-            assertThat(s3StateStore.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE))).isEmpty();
-            assertThat(s3StateStore.getAllPartitions()).hasSize(3);
-            assertThat(s3StateStore.getLeafPartitions()).hasSize(2);
-            assertOnlyObjectsWithinPartitionsAndStateStoreFilesAreasInTheTableBucketHaveBeenDeleted();
         }
 
         @Test
@@ -328,6 +330,17 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
             s3Client.putObject(dataBucket, s3StateStorePath + "/" + S3_STATE_STORE_FILES_FILENAME, "some-content");
             s3Client.putObject(dataBucket, s3StateStorePath + "/" + S3_STATE_STORE_PARTITIONS_FILENAME, "some-content");
         }
+    }
+
+    private TransactionLogStateStore setupTransactionLogStateStore(TableProperties tableProperties) throws IOException {
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        TransactionLogStateStore transctionLogStateStore = DynamoDBTransactionLogStateStore.builderFrom(
+                instanceProperties, tableProperties, dynamoClient, s3Client, hadoopConf).build();
+
+        transctionLogStateStore.initialise();
+        setupPartitionsAndAddFiles(transctionLogStateStore);
+
+        return transctionLogStateStore;
     }
 
     private S3StateStore setupS3StateStore(TableProperties tableProperties) throws IOException {
