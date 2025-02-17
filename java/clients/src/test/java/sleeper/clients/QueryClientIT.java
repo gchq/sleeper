@@ -32,9 +32,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.testutils.StateStoreTestHelper;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableIndex;
@@ -45,6 +44,7 @@ import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +81,8 @@ public class QueryClientIT {
     private final TableIndex tableIndex = new InMemoryTableIndex();
     private final ToStringConsoleOutput out = new ToStringConsoleOutput();
     private final TestConsoleInput in = new TestConsoleInput(out.consoleOut());
+    private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
+    private final List<TableProperties> tablePropertiesList = new ArrayList<>();
 
     @BeforeEach
     void setUp() throws Exception {
@@ -94,12 +96,11 @@ public class QueryClientIT {
         void shouldReturnNoRecordsWhenExactRecordNotFound() throws Exception {
             // Given
             Schema schema = schemaWithKey("key");
-            TableProperties tableProperties = createTable("test-table", schema);
-            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+            createTable("test-table", schema);
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient(tableProperties, stateStore);
+            runQueryClient();
 
             // Then
             assertThat(out.toString())
@@ -118,15 +119,14 @@ public class QueryClientIT {
                     .valueFields(new Field("value", new StringType()))
                     .build();
             TableProperties tableProperties = createTable("test-table", schema);
-            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
             Record record = new Record();
             record.put("key", 123L);
             record.put("value", "abc");
-            ingestData(tableProperties, stateStore, List.of(record).iterator());
+            ingestData(tableProperties, List.of(record).iterator());
 
             // When
             in.enterNextPrompts(EXACT_QUERY_OPTION, "123", EXIT_OPTION);
-            runQueryClient(tableProperties, stateStore);
+            runQueryClient();
 
             // Then
             assertThat(out.toString())
@@ -147,18 +147,17 @@ public class QueryClientIT {
             // Given
             Schema schema = schemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
-            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
             List<Record> records = LongStream.rangeClosed(0, 10)
                     .mapToObj(num -> new Record(Map.of("key", num)))
                     .collect(Collectors.toList());
-            ingestData(tableProperties, stateStore, records.iterator());
+            ingestData(tableProperties, records.iterator());
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
                     "3", "6",
                     EXIT_OPTION);
-            runQueryClient(tableProperties, stateStore);
+            runQueryClient();
 
             // Then
             assertThat(out.toString())
@@ -180,18 +179,17 @@ public class QueryClientIT {
             // Given
             Schema schema = schemaWithKey("key");
             TableProperties tableProperties = createTable("test-table", schema);
-            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
             List<Record> records = LongStream.rangeClosed(0, 3)
                     .mapToObj(num -> new Record(Map.of("key", num)))
                     .collect(Collectors.toList());
-            ingestData(tableProperties, stateStore, records.iterator());
+            ingestData(tableProperties, records.iterator());
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
                     NO_OPTION, YES_OPTION,
                     "", "",
                     EXIT_OPTION);
-            runQueryClient(tableProperties, stateStore);
+            runQueryClient();
 
             // Then
             assertThat(out.toString())
@@ -217,14 +215,13 @@ public class QueryClientIT {
                     .valueFields(new Field("value", new StringType()))
                     .build();
             TableProperties tableProperties = createTable("test-table", schema);
-            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
             List<Record> records = LongStream.rangeClosed(0, 10)
                     .mapToObj(num -> new Record(Map.of(
                             "key1", num,
                             "key2", num + 100L,
                             "value", "test-" + num)))
                     .collect(Collectors.toList());
-            ingestData(tableProperties, stateStore, records.iterator());
+            ingestData(tableProperties, records.iterator());
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
@@ -233,7 +230,7 @@ public class QueryClientIT {
                     YES_OPTION,
                     "102", "104",
                     EXIT_OPTION);
-            runQueryClient(tableProperties, stateStore);
+            runQueryClient();
 
             // Then
             assertThat(out.toString())
@@ -256,8 +253,7 @@ public class QueryClientIT {
         void shouldRetryPromptWhenKeyTypeDoesNotMatchSchema() throws Exception {
             // Given
             Schema schema = schemaWithKey("key");
-            TableProperties tableProperties = createTable("test-table", schema);
-            StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+            createTable("test-table", schema);
 
             // When
             in.enterNextPrompts(RANGE_QUERY_OPTION,
@@ -265,7 +261,7 @@ public class QueryClientIT {
                     "abc",
                     "123", "456",
                     EXIT_OPTION);
-            runQueryClient(tableProperties, stateStore);
+            runQueryClient();
 
             // Then
             assertThat(out.toString())
@@ -285,10 +281,8 @@ public class QueryClientIT {
         void shouldRunQueryForTableWhereMultipleTablesArePresent() throws Exception {
             // Given
             Schema schema = schemaWithKey("key");
-            TableProperties table1 = createTable("test-table-1", schema);
-            TableProperties table2 = createTable("test-table-2", schema);
-            StateStore stateStore1 = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
-            StateStore stateStore2 = StateStoreTestHelper.inMemoryStateStoreWithSinglePartition(schema);
+            createTable("test-table-1", schema);
+            createTable("test-table-2", schema);
 
             // When
             in.enterNextPrompts("test-table-2",
@@ -296,9 +290,7 @@ public class QueryClientIT {
                     NO_OPTION, YES_OPTION,
                     "123", "456",
                     EXIT_OPTION);
-            runQueryClient(List.of(table1, table2), Map.of(
-                    table1.getStatus().getTableName(), stateStore1,
-                    table2.getStatus().getTableName(), stateStore2));
+            runQueryClient();
 
             // Then
             assertThat(out.toString())
@@ -332,27 +324,23 @@ public class QueryClientIT {
         tableProperties.set(TABLE_ID, tableStatus.getTableUniqueId());
         tableProperties.set(TABLE_NAME, tableStatus.getTableName());
         tableIndex.create(tableStatus);
+        transactionLogs.initialiseTable(tableProperties);
+        tablePropertiesList.add(tableProperties);
         return tableProperties;
     }
 
-    private void runQueryClient(List<TableProperties> tablePropertiesList, Map<String, StateStore> stateStoreByTableName) throws Exception {
+    private void runQueryClient() throws Exception {
         new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tablePropertiesList),
                 in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
-                FixedStateStoreProvider.byTableName(stateStoreByTableName))
+                InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs))
                 .run();
     }
 
-    private void runQueryClient(TableProperties tableProperties, StateStore stateStore) throws Exception {
-        new QueryClient(instanceProperties, tableIndex, new FixedTablePropertiesProvider(tableProperties),
-                in.consoleIn(), out.consoleOut(), ObjectFactory.noUserJars(),
-                new FixedStateStoreProvider(tableProperties, stateStore))
-                .run();
-    }
-
-    private void ingestData(TableProperties tableProperties, StateStore stateStore, Iterator<Record> recordIterator) throws Exception {
+    private void ingestData(TableProperties tableProperties, Iterator<Record> recordIterator) throws Exception {
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         IngestFactory factory = IngestRecordsTestDataHelper.createIngestFactory(tempDir.toString(),
-                new FixedStateStoreProvider(tableProperties, stateStore), instanceProperties);
+                InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs),
+                instanceProperties);
         factory.ingestFromRecordIterator(tableProperties, recordIterator);
     }
 }
