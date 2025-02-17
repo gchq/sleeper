@@ -50,7 +50,7 @@ chunks:
       - garbage-collector
       - bulk-export/bulk-export-core
       - bulk-export/bulk-export-runner
-      - bulk-export/bulk-export-starter
+      - bulk-export/bulk-export-lambda
   rust:
     name: Rust
     workflow: chunk-rust.yaml
