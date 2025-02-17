@@ -18,7 +18,7 @@ package sleeper.core.statestore.transactionlog;
 import sleeper.core.properties.table.TableProperties;
 
 /**
- * Provides state store for in memory transaction logs.
+ * An implementation of the state store backed by a transaction log held in memory.
  */
 public class InMemoryTransactionLogStateStore {
 
@@ -26,9 +26,9 @@ public class InMemoryTransactionLogStateStore {
     }
 
     /**
-     * Creates a state store backed by transaction logs held in memory.
+     * Creates a state store for the given Sleeper table.
      *
-     * @param  tableProperties the table properties
+     * @param  tableProperties the Sleeper table properties
      * @param  transactionLogs the transaction logs
      * @return                 the state store
      */
