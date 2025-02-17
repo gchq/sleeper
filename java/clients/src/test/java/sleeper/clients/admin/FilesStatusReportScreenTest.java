@@ -16,17 +16,22 @@
 
 package sleeper.clients.admin;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import sleeper.clients.admin.testutils.AdminClientMockStoreBase;
 import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.testutils.StateStoreTestBuilder;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,16 +45,23 @@ import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.RETURN_
 import static sleeper.clients.admin.testutils.ExpectedAdminConsoleValues.TABLE_SELECT_SCREEN;
 import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
-    private final StateStore stateStore = StateStoreTestBuilder.from(
-            PartitionsBuilderSplitsFirst.leavesWithSplits(
-                    schemaWithKey("key", new StringType()),
-                    Arrays.asList("A", "B"), List.of("aaa"))
-                    .parentJoining("parent", "A", "B"))
-            .singleFileInEachLeafPartitionWithRecords(5)
-            .buildStateStore();
+    private final Schema schema = schemaWithKey("key", new StringType());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+
+    @BeforeEach
+    void setUp() {
+        stateStore.initialise(PartitionsBuilderSplitsFirst.leavesWithSplits(
+                schema, List.of("A", "B"), List.of("aaa"))
+                .parentJoining("parent", "A", "B").buildList());
+        stateStore.addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRecords(5).toList());
+    }
 
     @Test
     void shouldRunFilesStatusReportWithDefaultArgs() throws Exception {
