@@ -34,13 +34,13 @@ public interface BulkExportProperty {
     UserDefinedInstanceProperty BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT = Index
             .propertyBuilder("sleeper.bulk.export.processor.timeout")
             .description("The default timeout for the bulk export processor lambda.")
-            .defaultValue("800s")
+            .defaultValue("800")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index
             .propertyBuilder("sleeper.bulk.export.processor.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the bulk export processor queue.")
-            .defaultValue("300")
+            .defaultValue("800")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
 

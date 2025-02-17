@@ -33,6 +33,7 @@ import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.TableMetricsStack;
+import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
@@ -220,6 +221,15 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     coreStacks,
                     errorMetrics);
+        }
+
+        // Stack to run bulk export jobs
+        if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
+            new BulkExportStack(this,
+                "BulkExport",
+                instanceProperties,
+                jars,
+                coreStacks);
         }
 
         // Stack to garbage collect old files

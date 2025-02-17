@@ -73,10 +73,10 @@ public class BulkExportStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.KEEP_QUERY_WARM, "WarmQueryExecutorLambda",
+        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT, "BulkExportProcessorLambda",
                 builder -> builder
                         .functionName(functionName)
-                        .description("Sends a message to query-executor lambda in order for it to stay warm")
+                        .description("Sends a message to export from a leaf partition")
                         .memorySize(instanceProperties.getInt(BULK_EXPORT_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                         .timeout(Duration.seconds(instanceProperties.getInt(
                                 BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT)))
@@ -86,7 +86,7 @@ public class BulkExportStack extends NestedStack {
 
         attachPolicy(lambda, "BulkExport");
 
-        String dlBulkExportProcessorQueueName = String.join("-", "sleeper", instanceId, "LeafPartitionQueryDLQ");
+        String dlBulkExportProcessorQueueName = String.join("-", "sleeper", instanceId, "BulkExportProcessorDLQ");
         Queue bulkExportProcessorQueueQueryDlq = Queue.Builder
                 .create(this, "BulkExportProcessorQueueDeadLetterQueue")
                 .queueName(dlBulkExportProcessorQueueName)

@@ -104,7 +104,7 @@ public class LambdaHandler {
             .optionalStack(OptionalStack.KeepLambdaWarmStack).add();
     public static final LambdaHandler BULK_EXPORT = builder()
             .jar(LambdaJar.BULK_EXPORT)
-            .handler("sleeper.bulkexport.BulkExportLambda::handleRequest")
+            .handler("sleeper.bulkexport.lambda.SqsBulkExportProcessorLambda::handleRequest")
             .optionalStack(BulkExportStack).add();
     public static final LambdaHandler QUERY_EXECUTOR = builder()
             .jar(LambdaJar.QUERY)

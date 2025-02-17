@@ -21,14 +21,13 @@
         <groupId>sleeper</groupId>
         <version>0.29.0-SNAPSHOT</version>
     </parent>
-
-    <packaging>pom</packaging>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>bulk-export</artifactId>
+    <packaging>pom</packaging>
 
     <modules>
         <module>bulk-export-core</module>
         <module>bulk-export-runner</module>
-        <module>bulk-export-starter</module>
+        <module>bulk-export-lambda</module>
     </modules>
 </project>
