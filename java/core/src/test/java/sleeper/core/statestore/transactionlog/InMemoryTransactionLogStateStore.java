@@ -41,6 +41,19 @@ public class InMemoryTransactionLogStateStore {
     }
 
     /**
+     * Creates and initialises a state store for the given Sleeper table. Sets a single root partition.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @param  transactionLogs the transaction logs
+     * @return                 the state store
+     */
+    public static TransactionLogStateStore createAndInitialise(TableProperties tableProperties, InMemoryTransactionLogs transactionLogs) {
+        TransactionLogStateStore stateStore = create(tableProperties, transactionLogs);
+        stateStore.initialise();
+        return stateStore;
+    }
+
+    /**
      * Creates a state store provider.
      *
      * @param  transactionLogs the transaction logs

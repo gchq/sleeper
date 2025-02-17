@@ -19,12 +19,12 @@ import sleeper.core.key.Key;
 import sleeper.core.schema.Schema;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,7 +40,7 @@ public class PartitionTree {
     private final Partition rootPartition;
 
     public PartitionTree(List<Partition> partitions) {
-        this.idToPartition = new HashMap<>();
+        this.idToPartition = new TreeMap<>();
         partitions.forEach(p -> this.idToPartition.put(p.getId(), p));
         List<Partition> rootPartitions = partitions.stream().filter(p -> null == p.getParentPartitionId()).collect(Collectors.toList());
         // There should be exactly one root partition.
