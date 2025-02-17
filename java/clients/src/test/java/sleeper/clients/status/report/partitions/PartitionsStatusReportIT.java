@@ -21,12 +21,15 @@ import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.S3InstancePropertiesTestHelper;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
@@ -41,7 +44,6 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
 
 public class PartitionsStatusReportIT extends LocalStackTestBase {
 
@@ -54,9 +56,12 @@ public class PartitionsStatusReportIT extends LocalStackTestBase {
     @Test
     void shouldGetReportWhenTwoLeafPartitionsBothNeedSplitting() throws Exception {
         // Given
-        createRootPartitionWithTwoChildren()
-                .singleFileInEachLeafPartitionWithRecords(100)
-                .setupStateStore(stateStore());
+        PartitionTree tree = new PartitionsBuilder(tableProperties).rootFirst("parent")
+                .splitToNewChildren("parent", "A", "B", "aaa")
+                .buildTree();
+        StateStore stateStore = stateStore();
+        stateStore.initialise(tree.getAllPartitions());
+        stateStore.addFiles(FileReferenceFactory.from(tree).singleFileInEachLeafPartitionWithRecords(100).toList());
 
         // When / Then
         assertThat(runReport()).isEqualTo(
