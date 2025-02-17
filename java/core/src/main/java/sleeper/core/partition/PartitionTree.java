@@ -245,14 +245,19 @@ public class PartitionTree {
      * @return all partitions in the tree in leaves first order
      */
     public Stream<Partition> traverseLeavesFirst() {
-        return traverseLeavesFirst(getLeavesInTreeOrder(), new HashSet<>(), Stream.empty());
+        return traverseLeavesFirst(streamLeavesInTreeOrder().toList(), new HashSet<>(), Stream.empty());
     }
 
-    private List<Partition> getLeavesInTreeOrder() {
+    /**
+     * Traverses all leaf partitions by visiting every node in the partition tree. Starts at the root and goes left
+     * first then right.
+     *
+     * @return all leaf partitions in order of their position in the tree
+     */
+    public Stream<Partition> streamLeavesInTreeOrder() {
         // Establish ordering by combining depth-first tree traversal with the ordering of child IDs on each partition.
         // This should ensure that partitions on the left/min side of a split will always come first in the order.
-        return leavesInTreeOrderUnder(getRootPartition())
-                .collect(Collectors.toList());
+        return leavesInTreeOrderUnder(getRootPartition());
     }
 
     private Stream<Partition> leavesInTreeOrderUnder(Partition partition) {
