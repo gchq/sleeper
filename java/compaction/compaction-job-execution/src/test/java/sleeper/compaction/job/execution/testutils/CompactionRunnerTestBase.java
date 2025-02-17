@@ -31,6 +31,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
@@ -51,7 +53,6 @@ import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPAC
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public class CompactionRunnerTestBase {
     public static final String DEFAULT_TASK_ID = "task-id";
@@ -60,7 +61,7 @@ public class CompactionRunnerTestBase {
     protected String dataFolderName;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-    protected StateStore stateStore = inMemoryStateStoreWithNoPartitions();
+    protected StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
 
     @BeforeEach
     public void setUpBase() throws Exception {
