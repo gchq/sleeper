@@ -18,6 +18,8 @@ package sleeper.clients.status.partitions;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -26,17 +28,22 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.testutils.StateStoreTestHelper;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
 public class ExportSplitPointsTest {
+    InstanceProperties instanceProperties = createTestInstanceProperties();
 
-    private StateStore getStateStore() {
-        return StateStoreTestHelper.inMemoryStateStoreWithNoPartitions();
+    private StateStore getStateStore(Schema schema) {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        return InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
     }
 
     private Schema schemaWithKeyType(PrimitiveType type) {
@@ -51,7 +58,7 @@ public class ExportSplitPointsTest {
     public void shouldExportCorrectSplitPointsIntType() {
         // Given
         Schema schema = schemaWithKeyType(new IntType());
-        StateStore stateStore = getStateStore();
+        StateStore stateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10);
         splitPoints.add(1000);
@@ -69,7 +76,7 @@ public class ExportSplitPointsTest {
     public void shouldExportCorrectSplitPointsLongType() {
         // Given
         Schema schema = schemaWithKeyType(new LongType());
-        StateStore stateStore = getStateStore();
+        StateStore stateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(-10L);
         splitPoints.add(1000L);
@@ -87,7 +94,7 @@ public class ExportSplitPointsTest {
     public void shouldExportCorrectSplitPointsStringType() {
         // Given
         Schema schema = schemaWithKeyType(new StringType());
-        StateStore stateStore = getStateStore();
+        StateStore stateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add("A");
         splitPoints.add("T");
@@ -105,7 +112,7 @@ public class ExportSplitPointsTest {
     public void shouldExportCorrectSplitPointsByteArrayType() {
         // Given
         Schema schema = schemaWithKeyType(new ByteArrayType());
-        StateStore stateStore = getStateStore();
+        StateStore stateStore = getStateStore(schema);
         List<Object> splitPoints = new ArrayList<>();
         splitPoints.add(new byte[]{10});
         splitPoints.add(new byte[]{100});
