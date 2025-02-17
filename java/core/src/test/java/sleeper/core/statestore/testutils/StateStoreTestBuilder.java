@@ -129,19 +129,6 @@ public class StateStoreTestBuilder {
     }
 
     /**
-     * Assigns previously declared file references to a job.
-     *
-     * @param  jobId       the ID of the job
-     * @param  partitionId the ID of the job's partition
-     * @param  filenames   the filenames
-     * @return             the builder
-     */
-    public StateStoreTestBuilder assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
-        assignJobIds.add(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames));
-        return this;
-    }
-
-    /**
      * Creates an in-memory state store and sets the declared state.
      *
      * @return the state store

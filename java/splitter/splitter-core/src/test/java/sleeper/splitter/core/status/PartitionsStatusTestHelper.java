@@ -39,10 +39,6 @@ public class PartitionsStatusTestHelper {
     private PartitionsStatusTestHelper() {
     }
 
-    public static StateStoreTestBuilder createRootPartitionWithNoChildren() {
-        return StateStoreTestBuilder.from(createPartitionsBuilder().singlePartition("root"));
-    }
-
     public static StateStoreTestBuilder createRootPartitionWithTwoChildren() {
         return StateStoreTestBuilder.from(PartitionsBuilderSplitsFirst.leavesWithSplits(DEFAULT_SCHEMA,
                 List.of("A", "B"), List.of("aaa"))
