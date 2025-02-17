@@ -22,25 +22,29 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.StateStoreTestBuilder;
-import sleeper.core.table.TableStatus;
-import sleeper.core.table.TableStatusTestHelper;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 
 public class TableMetricsTest {
     private final Schema schema = schemaWithKey("key", new LongType());
-    private String instanceId;
-    private TableStatus table;
     private StateStore stateStore;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     @Nested
     @DisplayName("One partition")
@@ -271,15 +275,15 @@ public class TableMetricsTest {
     }
 
     private void createInstance(String instanceId) {
-        this.instanceId = instanceId;
+        instanceProperties.set(ID, instanceId);
     }
 
     private void createTable(String tableName, StateStore stateStore) {
-        this.table = TableStatusTestHelper.uniqueIdAndName(tableName, tableName);
+        tableProperties.set(TABLE_NAME, tableName);
         this.stateStore = stateStore;
     }
 
     private TableMetrics tableMetrics() {
-        return TableMetrics.from(instanceId, table, stateStore);
+        return TableMetrics.from(instanceProperties.get(ID), tableProperties.getStatus(), stateStore);
     }
 }
