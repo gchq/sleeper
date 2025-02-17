@@ -17,6 +17,7 @@ package sleeper.core.statestore.testutils;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
@@ -75,5 +76,17 @@ public class InMemoryTransactionLogsPerTable {
 
     public List<Duration> getRetryWaits() {
         return retryWaits;
+    }
+
+    /**
+     * Initialises the state store for the given table.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @return                 this object for chaining
+     */
+    public InMemoryTransactionLogsPerTable initialiseTable(TableProperties tableProperties) {
+        InMemoryTransactionLogs tableLogs = forTable(tableProperties);
+        InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, tableLogs);
+        return this;
     }
 }

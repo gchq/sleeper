@@ -29,7 +29,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
@@ -54,7 +55,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
 
@@ -63,8 +63,7 @@ class StateMachinePlatformExecutorTest {
     private final AtomicReference<StartExecutionRequest> requested = new AtomicReference<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
-    private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
-            inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema()));
+    private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable().initialiseTable(tableProperties);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
 
     @BeforeEach
@@ -312,6 +311,7 @@ class StateMachinePlatformExecutorTest {
     }
 
     private BulkImportExecutor createExecutorWithValidationTime(Instant validationTime) {
+        StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs);
         return new BulkImportExecutor(instanceProperties, new FixedTablePropertiesProvider(tableProperties),
                 stateStoreProvider, tracker, (job, jobRunId) -> {
                 },

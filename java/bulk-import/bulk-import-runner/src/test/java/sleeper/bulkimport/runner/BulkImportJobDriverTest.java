@@ -29,7 +29,8 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.testutils.StateStoreTestHelper;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
@@ -67,7 +68,7 @@ class BulkImportJobDriverTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<StateStoreCommitRequest> commitRequestQueue = new ArrayList<>();
 
