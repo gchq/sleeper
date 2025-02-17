@@ -64,12 +64,6 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.COMMON)
             .build();
 
-    // S3StateStore
-    CdkDefinedInstanceProperty REVISION_TABLENAME = Index.propertyBuilder("sleeper.statestore.s3.dynamo.revision.table")
-            .description("The name of the DynamoDB table used for atomically updating the S3StateStore.")
-            .propertyGroup(InstancePropertyGroup.COMMON)
-            .build();
-
     // TransactionLogStateStore
     CdkDefinedInstanceProperty TRANSACTION_LOG_FILES_TABLENAME = Index.propertyBuilder("sleeper.statestore.transactionlog.dynamo.file.log.table")
             .description("The name of the DynamoDB table holding the state store file transaction log.")

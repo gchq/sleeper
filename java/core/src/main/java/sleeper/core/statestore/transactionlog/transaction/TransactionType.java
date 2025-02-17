@@ -40,13 +40,19 @@ public enum TransactionType {
     SPLIT_PARTITION(SplitPartitionTransaction.class);
 
     private final Class<? extends StateStoreTransaction<?>> type;
+    private final boolean fileTransaction;
 
     TransactionType(Class<? extends StateStoreTransaction<?>> type) {
         this.type = type;
+        this.fileTransaction = FileReferenceTransaction.class.isAssignableFrom(type);
     }
 
     public Class<? extends StateStoreTransaction<?>> getType() {
         return type;
+    }
+
+    public boolean isFileTransaction() {
+        return fileTransaction;
     }
 
     /**

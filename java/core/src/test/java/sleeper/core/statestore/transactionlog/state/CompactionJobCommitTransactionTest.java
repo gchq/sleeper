@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.transactionlog.state;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,9 +22,14 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,14 +41,19 @@ import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 
-public class TransactionLogStateStoreCompactionCommitByTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
+public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
-    private TransactionLogStateStore store;
+    // Tests to write:
+    // - Another process commits the same job synchronously, then we perform a synchronous commit
+
+    private TransactionLogStateStore committerStore;
+    private TransactionLogStateStore followerStore;
 
     @BeforeEach
     void setUp() {
         initialiseWithPartitions(new PartitionsBuilder(schemaWithKey("key", new LongType())).singlePartition("root"));
-        store = (TransactionLogStateStore) super.store;
+        committerStore = (TransactionLogStateStore) super.store;
+        followerStore = stateStoreBuilder(schemaWithKey("key", new LongType())).build();
     }
 
     @Test
@@ -51,8 +61,8 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
-        store.addFiles(List.of(oldFile));
-        store.assignJobIds(List.of(
+        committerStore.addFiles(List.of(oldFile));
+        committerStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "test-run");
@@ -62,11 +72,12 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
                 replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId("test-run").build())));
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(newFile);
-        assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
-        assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+        FileReference committedNewFile = newFile.toBuilder().lastStateStoreUpdateTime(DEFAULT_COMMIT_TIME).build();
+        assertThat(followerStore.getFileReferences()).containsExactly(committedNewFile);
+        assertThat(followerStore.getFileReferencesWithNoJobId()).containsExactly(committedNewFile);
+        assertThat(followerStore.getReadyForGCFilenamesBefore(DEFAULT_COMMIT_TIME.plus(Duration.ofMinutes(1))))
                 .containsExactly("oldFile");
-        assertThat(store.getPartitionToReferencedFilesMap())
+        assertThat(followerStore.getPartitionToReferencedFilesMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile"));
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId()))
@@ -74,12 +85,12 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     }
 
     @Test
-    void shouldIgnoreCompactionCommitWhenAlreadyCommitted() {
+    void shouldFailWhenAlreadyCommitted() {
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
-        store.addFiles(List.of(oldFile));
-        store.assignJobIds(List.of(
+        committerStore.addFiles(List.of(oldFile));
+        committerStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "run1");
@@ -92,11 +103,12 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
                 replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile).jobRunId("run2").build())));
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(newFile);
-        assertThat(store.getFileReferencesWithNoJobId()).containsExactly(newFile);
-        assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
+        FileReference committedNewFile = newFile.toBuilder().lastStateStoreUpdateTime(DEFAULT_COMMIT_TIME).build();
+        assertThat(followerStore.getFileReferences()).containsExactly(committedNewFile);
+        assertThat(followerStore.getFileReferencesWithNoJobId()).containsExactly(committedNewFile);
+        assertThat(followerStore.getReadyForGCFilenamesBefore(DEFAULT_COMMIT_TIME.plus(Duration.ofMinutes(1))))
                 .containsExactly("oldFile");
-        assertThat(store.getPartitionToReferencedFilesMap())
+        assertThat(followerStore.getPartitionToReferencedFilesMap())
                 .containsOnlyKeys("root")
                 .hasEntrySatisfying("root", files -> assertThat(files).containsExactly("newFile"));
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId())).containsExactly(
@@ -106,11 +118,11 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     }
 
     @Test
-    void shouldIgnoreCompactionCommitWhenInputFilesAreNotAssignedToJob() {
+    void shouldFailWhenInputFilesAreNotAssignedToJob() {
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
-        store.addFile(oldFile);
+        committerStore.addFile(oldFile);
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "run1");
         ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
@@ -120,14 +132,14 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
         addTransactionWithTracking(transaction);
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(oldFile);
+        assertThat(followerStore.getFileReferences()).containsExactly(oldFile);
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId())).containsExactly(
                 defaultStatus(trackedJob, defaultFailedCommitRun(100,
                         List.of("Reference to file is not assigned to job job1, in partition root, filename oldFile"))));
     }
 
     @Test
-    public void shouldIgnoreCompactionCommitWhenInputFileIsNotInStateStore() {
+    public void shouldFailWhenInputFileIsNotInStateStore() {
         // Given
         FileReference newFile = factory.rootFile("newFile", 100L);
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
@@ -140,19 +152,19 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
         addTransactionWithTracking(transaction);
 
         // Then
-        assertThat(store.getFileReferences()).isEmpty();
-        assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        assertThat(followerStore.getFileReferences()).isEmpty();
+        assertThat(followerStore.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId())).containsExactly(
                 defaultStatus(trackedJob, defaultFailedCommitRun(100, List.of("File not found: oldFile"))));
     }
 
     @Test
-    public void shouldIgnoreCompactionCommitWhenOneInputFileIsNotInStateStore() {
+    public void shouldFailWhenOneInputFileIsNotInStateStore() {
         // Given
         FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
-        store.addFile(oldFile1);
-        store.assignJobIds(List.of(
+        committerStore.addFile(oldFile1);
+        committerStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 2);
         trackJobRun(trackedJob, "run1");
@@ -163,20 +175,20 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
         addTransactionWithTracking(transaction);
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
-        assertThat(store.getFileReferencesWithNoJobId()).isEmpty();
-        assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        assertThat(followerStore.getFileReferences()).containsExactly(withJobId("job1", oldFile1));
+        assertThat(followerStore.getFileReferencesWithNoJobId()).isEmpty();
+        assertThat(followerStore.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId())).containsExactly(
                 defaultStatus(trackedJob, defaultFailedCommitRun(100, List.of("File not found: oldFile2"))));
     }
 
     @Test
-    public void shouldIgnoreCompactionCommitWhenFileReferenceDoesNotExistInPartition() {
+    public void shouldFailWhenFileReferenceDoesNotExistInPartition() {
         // Given
         splitPartition("root", "L", "R", 5);
         FileReference file = factory.rootFile("file", 100L);
         FileReference existingReference = splitFile(file, "L");
-        store.addFile(existingReference);
+        committerStore.addFile(existingReference);
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "run1");
         ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
@@ -186,8 +198,8 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
         addTransactionWithTracking(transaction);
 
         // Then
-        assertThat(store.getFileReferences()).containsExactly(existingReference);
-        assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        assertThat(followerStore.getFileReferences()).containsExactly(existingReference);
+        assertThat(followerStore.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId())).containsExactly(
                 defaultStatus(trackedJob, defaultFailedCommitRun(100,
                         List.of("File reference not found in partition root, filename file"))));
@@ -197,8 +209,8 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     void shouldFailWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() {
         // Given
         FileReference file = factory.rootFile("file1", 100L);
-        store.addFile(file);
-        store.assignJobIds(List.of(
+        committerStore.addFile(file);
+        committerStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
         // When / Then
@@ -208,14 +220,14 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
     }
 
     @Test
-    public void shouldIgnoreCompactionCommitWhenOutputFileAlreadyExists() {
+    public void shouldFailWhenOutputFileAlreadyExists() {
         // Given
         splitPartition("root", "L", "R", 5);
         FileReference file = factory.rootFile("oldFile", 100L);
         FileReference existingReference = splitFile(file, "L");
         FileReference newReference = factory.partitionFile("L", "newFile", 100L);
-        store.addFiles(List.of(existingReference, newReference));
-        store.assignJobIds(List.of(
+        committerStore.addFiles(List.of(existingReference, newReference));
+        committerStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "run1");
@@ -226,18 +238,21 @@ public class TransactionLogStateStoreCompactionCommitByTransactionTest extends I
         addTransactionWithTracking(transaction);
 
         // Then
-        assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
+        assertThat(followerStore.getFileReferences()).containsExactlyInAnyOrder(
                 withJobId("job1", existingReference), newReference);
-        assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
+        assertThat(followerStore.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId())).containsExactly(
                 defaultStatus(trackedJob, defaultFailedCommitRun(100,
                         List.of("File already exists: newFile"))));
     }
 
     private void addTransactionWithTracking(ReplaceFileReferencesTransaction transaction) {
-        store.addTransaction(AddTransactionRequest.withTransaction(transaction)
-                .beforeApplyListener((entry, state) -> {
-                    transaction.reportJobCommits(tracker, sleeperTable, state, DEFAULT_COMMIT_TIME);
-                }).build());
+        // Transaction is added in a committer process
+        committerStore.fixFileUpdateTime(DEFAULT_COMMIT_TIME);
+        committerStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
+
+        // Job tracker updates are done in a separate process that reads from the log and updates its local state
+        TransactionLogEntry entry = filesLogStore.getLastEntry();
+        followerStore.applyEntryFromLog(entry, StateListenerBeforeApply.updateTrackers(sleeperTable, IngestJobTracker.NONE, tracker));
     }
 }

@@ -102,6 +102,8 @@ pub async fn compact(
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
 
+    info!("Loaded schema fields: {:?}", frame.schema().fields());
+
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
         frame = frame.filter(expr)?;
@@ -138,6 +140,7 @@ pub async fn compact(
     let explained = frame.clone().explain(false, false)?.collect().await?;
     let output = pretty_format_batches(&explained)?;
     info!("DataFusion plan:\n {output}");
+    info!("Planned schema fields: {:?}", frame.schema().fields());
 
     let mut pqo = ctx.copied_table_options().parquet;
     // Figure out which columns should be dictionary encoded
@@ -362,7 +365,6 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
         .execution
         .parquet
         .column_index_truncate_length = Some(input_data.column_truncate_length);
-    sf.options_mut().execution.parquet.max_statistics_size = Some(input_data.stats_truncate_length);
     sf
 }
 

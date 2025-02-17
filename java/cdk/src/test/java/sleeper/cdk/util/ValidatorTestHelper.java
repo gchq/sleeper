@@ -18,6 +18,8 @@ package sleeper.cdk.util;
 
 import org.apache.commons.io.FileUtils;
 
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -27,7 +29,7 @@ public class ValidatorTestHelper {
     private ValidatorTestHelper() {
     }
 
-    static void setupTablesPropertiesFile(Path temporaryFolder, String tableName, String stateStore) throws IOException {
+    static void setupTablesPropertiesFile(Path temporaryFolder, String tableName) throws IOException {
         String tableSchema = "{\n" +
                 "  \"rowKeyFields\": [ \n" +
                 "    {\n" +
@@ -54,7 +56,7 @@ public class ValidatorTestHelper {
 
         String tableConfiguration = "" +
                 String.format("sleeper.table.name=%s\n", tableName) +
-                String.format("sleeper.table.statestore.classname=%s\n", stateStore);
+                String.format("sleeper.table.statestore.classname=%s\n", DynamoDBTransactionLogStateStore.class.getName());
 
         File tablePropertiesFile = new File(temporaryFolder.toString(), "table.properties");
         FileUtils.write(tablePropertiesFile, tableConfiguration, Charset.defaultCharset());

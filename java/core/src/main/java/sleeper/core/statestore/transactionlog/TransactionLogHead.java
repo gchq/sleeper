@@ -22,9 +22,11 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -166,9 +168,9 @@ public class TransactionLogHead<T> {
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed adding transaction", e);
         }
-        request.getBeforeApplyListener().beforeApply(entry, state);
-        Instant startApplyTime = Instant.now();
         StateStoreTransaction<T> transaction = request.getTransaction();
+        request.getBeforeApplyListener().beforeApply(entry, transaction, state);
+        Instant startApplyTime = Instant.now();
         transaction.apply(state, updateTime);
         lastTransactionNumber = transactionNumber;
         LOGGER.debug("Applied transaction {} in {}",
@@ -182,39 +184,41 @@ public class TransactionLogHead<T> {
      * @throws StateStoreException thrown if there's any failure reading transactions or applying them to the state
      */
     public void update() throws StateStoreException {
+        Instant startTime = stateUpdateClock.get();
+        if (nextTransactionCheckTime != null && startTime.isBefore(nextTransactionCheckTime)) {
+            LOGGER.debug("Not checking for {} transactions for table {}, next check at {}",
+                    state.getClass().getSimpleName(), sleeperTable, nextTransactionCheckTime);
+            return;
+        }
+        update(startTime, TransactionLogRange.toUpdateLocalStateAt(lastTransactionNumber));
+    }
+
+    private void forceUpdate() throws StateStoreException {
+        forceUpdate(TransactionLogRange.toUpdateLocalStateAt(lastTransactionNumber));
+    }
+
+    private void forceUpdate(TransactionLogRange range) throws StateStoreException {
+        update(stateUpdateClock.get(), range);
+    }
+
+    private void update(Instant startTime, TransactionLogRange range) {
         try {
-            Instant startTime = stateUpdateClock.get();
-            if (nextTransactionCheckTime != null && startTime.isBefore(nextTransactionCheckTime)) {
-                LOGGER.debug("Not checking for {} transactions for table {}, next check at {}",
-                        state.getClass().getSimpleName(), sleeperTable, nextTransactionCheckTime);
-                return;
-            }
-            Instant afterSnapshotTime = loadSnapshotIfNeeded(startTime);
-            updateFromLog(afterSnapshotTime);
+            Instant afterSnapshotTime = loadSnapshotIfNeeded(startTime, range);
+            updateFromLog(afterSnapshotTime, range);
         } catch (RuntimeException e) {
             throw new StateStoreException("Failed updating state from transactions", e);
         }
     }
 
-    private void forceUpdate() throws StateStoreException {
-        try {
-            Instant startTime = stateUpdateClock.get();
-            Instant afterSnapshotTime = loadSnapshotIfNeeded(startTime);
-            updateFromLog(afterSnapshotTime);
-        } catch (RuntimeException e) {
-            throw new StateStoreException("Failed force updating state from transactions", e);
-        }
-    }
-
-    private Instant loadSnapshotIfNeeded(Instant startTime) {
+    private Instant loadSnapshotIfNeeded(Instant startTime, TransactionLogRange range) {
         if (nextSnapshotCheckTime != null && startTime.isBefore(nextSnapshotCheckTime)) {
             LOGGER.debug("Not checking for snapshot of {} for table {}, next check at {}",
                     state.getClass().getSimpleName(), sleeperTable, nextSnapshotCheckTime);
             return startTime;
         }
         long minTransactionNumberToLoadSnapshot = minTransactionNumberToLoadSnapshot();
-        Optional<TransactionLogSnapshot> snapshotOpt = snapshotLoader
-                .loadLatestSnapshotIfAtMinimumTransaction(minTransactionNumberToLoadSnapshot);
+        Optional<TransactionLogSnapshot> snapshotOpt = range.withMinTransactionNumber(minTransactionNumberToLoadSnapshot)
+                .flatMap(snapshotRange -> snapshotLoader.loadLatestSnapshotInRange(snapshotRange));
         Instant finishTime = stateUpdateClock.get();
         nextSnapshotCheckTime = finishTime.plus(timeBetweenSnapshotChecks);
         snapshotOpt.ifPresentOrElse(snapshot -> {
@@ -239,12 +243,12 @@ public class TransactionLogHead<T> {
         }
     }
 
-    private void updateFromLog(Instant startTime) {
+    private void updateFromLog(Instant startTime, TransactionLogRange range) {
         long transactionNumberBeforeLogLoad = lastTransactionNumber;
         LOGGER.debug("Updating {} for table {} from log from transaction {}",
                 state.getClass().getSimpleName(), sleeperTable, lastTransactionNumber);
-        logStore.readTransactionsAfter(lastTransactionNumber)
-                .forEach(this::applyTransaction);
+        range.withMinTransactionNumber(transactionNumberBeforeLogLoad + 1)
+                .ifPresent(readRange -> logStore.readTransactions(readRange).forEach(this::applyTransaction));
         long readTransactions = lastTransactionNumber - transactionNumberBeforeLogLoad;
         Instant finishTime = stateUpdateClock.get();
         nextTransactionCheckTime = finishTime.plus(timeBetweenTransactionChecks);
@@ -262,11 +266,14 @@ public class TransactionLogHead<T> {
         }
     }
 
-    void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
+    void applyTransactionUpdatingIfNecessary(TransactionLogEntry entry, StateListenerBeforeApply listener) {
         long entryNumber = entry.getTransactionNumber();
+        if (entryNumber <= lastTransactionNumber) {
+            throw new StateStoreException("Attempted to apply transaction out of order. " +
+                    "Last transaction applied was " + lastTransactionNumber + ", found transaction " + entryNumber + ".");
+        }
         if (lastTransactionNumber < (entryNumber - 1)) { // If we're not up to date with the given transaction
-            logStore.readTransactionsBetween(lastTransactionNumber, entryNumber)
-                    .forEach(this::applyTransaction);
+            forceUpdate(TransactionLogRange.toUpdateLocalStateToApply(lastTransactionNumber, entryNumber));
         }
         applyTransaction(entry, listener);
     }
@@ -275,7 +282,7 @@ public class TransactionLogHead<T> {
         applyTransaction(entry, StateListenerBeforeApply.none());
     }
 
-    private void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply<T> listener) {
+    private void applyTransaction(TransactionLogEntry entry, StateListenerBeforeApply listener) {
         if (!transactionType.isAssignableFrom(entry.getTransactionType().getType())) {
             LOGGER.warn("Found unexpected transaction type for table {} with number {}. Expected {}, found {}",
                     sleeperTable, entry.getTransactionNumber(),
@@ -285,7 +292,7 @@ public class TransactionLogHead<T> {
         }
         StateStoreTransaction<T> transaction = transactionType.cast(
                 entry.getTransactionOrLoadFromPointer(sleeperTable.getTableUniqueId(), transactionBodyStore));
-        listener.beforeApply(entry, state);
+        listener.beforeApply(entry, transaction, state);
         transaction.apply(state, entry.getUpdateTime());
         lastTransactionNumber = entry.getTransactionNumber();
     }

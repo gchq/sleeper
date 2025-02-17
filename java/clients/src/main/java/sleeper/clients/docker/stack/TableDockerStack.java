@@ -21,14 +21,12 @@ import com.amazonaws.services.s3.AmazonS3;
 
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestore.s3.S3StateStoreCreator;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.util.Locale;
 
 import static sleeper.clients.docker.Utils.tearDownBucket;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.REVISION_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ID_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_NAME_INDEX_DYNAMO_TABLENAME;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TABLE_ONLINE_INDEX_DYNAMO_TABLENAME;
@@ -70,8 +68,6 @@ public class TableDockerStack implements DockerStack {
         instanceProperties.set(TABLE_ONLINE_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-online-by-name"));
         instanceProperties.set(TABLE_ID_INDEX_DYNAMO_TABLENAME, String.join("-", "sleeper", instanceId, "table-index-by-id"));
         DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        instanceProperties.set(REVISION_TABLENAME, String.join("-", "sleeper", instanceId, "rv"));
-        new S3StateStoreCreator(instanceProperties, dynamoDB).create();
         instanceProperties.set(TRANSACTION_LOG_FILES_TABLENAME, String.join("-", "sleeper", instanceId, "-ftl"));
         instanceProperties.set(TRANSACTION_LOG_PARTITIONS_TABLENAME, String.join("-", "sleeper", instanceId, "-ptl"));
         instanceProperties.set(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME, String.join("-", "sleeper", instanceId, "-tlas"));
@@ -80,7 +76,6 @@ public class TableDockerStack implements DockerStack {
     }
 
     public void tearDown() {
-        dynamoDB.deleteTable(instanceProperties.get(REVISION_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_FILES_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_PARTITIONS_TABLENAME));
         dynamoDB.deleteTable(instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME));

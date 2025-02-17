@@ -24,9 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotMetadata;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -123,6 +127,32 @@ public class StateStoreArrowFileStore {
             LOGGER.debug("Loaded {} files with {} references in {} Arrow record batches, from {}",
                     result.files().referencedAndUnreferenced().size(), result.numReferences(), result.numBatches(), path);
             return result.files();
+        }
+    }
+
+    /**
+     * Loads the state of a snapshot in a Sleeper table from an Arrow file.
+     *
+     * @param  metadata             metadata pointing to the file to read
+     * @return                      the snapshot
+     * @throws UncheckedIOException if the file could not be read
+     */
+    public TransactionLogSnapshot loadSnapshot(TransactionLogSnapshotMetadata metadata) {
+        try {
+            switch (metadata.getType()) {
+                case FILES:
+                    return new TransactionLogSnapshot(
+                            loadFiles(metadata.getPath()),
+                            metadata.getTransactionNumber());
+                case PARTITIONS:
+                    return new TransactionLogSnapshot(
+                            StateStorePartitions.from(loadPartitions(metadata.getPath())),
+                            metadata.getTransactionNumber());
+                default:
+                    throw new IllegalArgumentException("Unrecognised snapshot type: " + metadata.getType());
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed loading state for snapshot: " + metadata, e);
         }
     }
 

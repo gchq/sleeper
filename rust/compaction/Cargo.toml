@@ -35,10 +35,10 @@ crate-type = ["cdylib", "rlib"]
 cxx = { version = "1.0.140" } # Exception handling for Rust
 libc = { version = "0.2.169" } # FFI type support
 log = { version = "0.4.25" } # Logging support
-arrow = { version = "53.4.0" } # Batch of reading from Parquet files
+arrow = { version = "54.2.0", features = ["prettyprint"] } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
 async-trait = { version = "0.1.86" }
-datafusion = { version = "44.0.0", features = ["backtrace"] }
+datafusion = { version = "45.0.0", features = ["backtrace"] }
 object_store = { version = "0.11.0", features = [
     "aws",
 ] } # Remote cloud storage access
@@ -59,6 +59,7 @@ chrono = { version = "0.4.39" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
 
 [dev-dependencies]
-tempfile = { version = "3.16.0" }                                 # Create temporary files
+tempfile = { version = "3.17.0" }                                 # Create temporary files
 object_store = { version = "0.11.1", features = ["integration"] }
-testing_logger = { version = "0.1.1" }                            # Validate logger output in testing
+testing_logger = { version = "0.1.1" }                            # Assert on logger output in tests
+test-log = { version = "0.2.17" }                                 # Enable logging in tests

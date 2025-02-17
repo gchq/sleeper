@@ -22,6 +22,7 @@ import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -115,12 +116,15 @@ public class TransactionLogStateStore extends DelegatingStateStore {
      * read from the transaction log if entries are missing between the last read entry and the given entry. The given
      * entry must already exist in the transaction log.
      *
-     * @param <T>      the type of the state to update
      * @param logEntry the log entry
      * @param listener a listener to apply some action before the entry is added
      */
-    public <T> void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply<StateStoreFiles> listener) {
-        files.applyEntryFromLog(logEntry, listener);
+    public void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
+        if (logEntry.getTransactionType().isFileTransaction()) {
+            files.applyEntryFromLog(logEntry, listener);
+        } else {
+            partitions.applyEntryFromLog(logEntry, listener);
+        }
     }
 
     public static Builder builder() {

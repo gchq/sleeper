@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
@@ -34,6 +37,8 @@ import java.util.Objects;
  * A transaction to add files to the state store.
  */
 public class AddFilesTransaction implements FileReferenceTransaction {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(AddFilesTransaction.class);
 
     private final String jobId;
     private final String taskId;
@@ -60,6 +65,20 @@ public class AddFilesTransaction implements FileReferenceTransaction {
 
     @Override
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+        // We want to update the job tracker whether the new files are valid or not, and the job tracker is updated
+        // based on the transaction log. This means we still want to add the transaction to the log if it's invalid.
+        // We discard any invalid files at the point when we apply the transaction in the apply method.
+    }
+
+    /**
+     * Validates whether the files should actually be added. This is because the transaction will be added to the log
+     * regardless of whether the files may be added, so that any failure can be reported to the job tracker after the
+     * fact.
+     *
+     * @param  stateStoreFiles     the state before the transaction
+     * @throws StateStoreException thrown if the files should not be added
+     */
+    public void validateFiles(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (AllReferencesToAFile file : files) {
             if (stateStoreFiles.file(file.getFilename()).isPresent()) {
                 throw new FileAlreadyExistsException(file.getFilename());
@@ -69,30 +88,53 @@ public class AddFilesTransaction implements FileReferenceTransaction {
 
     @Override
     public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
+        try {
+            validateFiles(stateStoreFiles);
+        } catch (StateStoreException ex) {
+            LOGGER.debug("Found invalid ingest commit for job {}", jobId, ex);
+            return;
+        }
         for (AllReferencesToAFile file : files) {
             stateStoreFiles.add(StateStoreFile.newFile(updateTime, file));
         }
     }
 
     /**
-     * Reports the files were added against the job tracker. This should be used after the transaction is fully
+     * Reports the result of the transaction to the job tracker. This should be used after the transaction is fully
      * committed to the log.
      *
      * @param tracker      the job tracker
      * @param sleeperTable the table being updated
      */
-    public void reportJobCommitted(IngestJobTracker tracker, TableStatus sleeperTable) {
+    public void reportJobCommit(IngestJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore) {
         if (jobId == null) {
             return;
         }
-        tracker.jobAddedFiles(IngestJobAddedFilesEvent.builder()
-                .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
-                .tableId(sleeperTable.getTableUniqueId()).writtenTime(writtenTime)
-                .files(files).build());
+        try {
+            validateFiles(stateBefore);
+            tracker.jobAddedFiles(createAddedEvent(sleeperTable));
+        } catch (StateStoreException e) {
+            tracker.jobFailed(createFailedEvent(sleeperTable, e));
+        }
     }
 
     /**
-     * Reports failure adding files against the job tracker.
+     * Reports the result of the transaction to the job tracker. This should be used after the transaction is fully
+     * committed to the log.
+     *
+     * @param tracker      the job tracker
+     * @param sleeperTable the table being updated
+     */
+    public void reportJobCommitOrThrow(IngestJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore) {
+        validateFiles(stateBefore);
+        if (jobId == null) {
+            return;
+        }
+        tracker.jobAddedFiles(createAddedEvent(sleeperTable));
+    }
+
+    /**
+     * Reports failure of this transaction to the job tracker.
      *
      * @param tracker      the job tracker
      * @param sleeperTable the table being updated
@@ -102,12 +144,23 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         if (jobId == null) {
             return;
         }
-        tracker.jobFailed(IngestJobFailedEvent.builder()
+        tracker.jobFailed(createFailedEvent(sleeperTable, e));
+    }
+
+    private IngestJobAddedFilesEvent createAddedEvent(TableStatus sleeperTable) {
+        return IngestJobAddedFilesEvent.builder()
+                .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
+                .tableId(sleeperTable.getTableUniqueId()).writtenTime(writtenTime)
+                .files(files).build();
+    }
+
+    private IngestJobFailedEvent createFailedEvent(TableStatus sleeperTable, Exception e) {
+        return IngestJobFailedEvent.builder()
                 .jobId(jobId).taskId(taskId).jobRunId(jobRunId)
                 .tableId(sleeperTable.getTableUniqueId())
                 .failureTime(writtenTime)
                 .failure(e)
-                .build());
+                .build();
     }
 
     public List<AllReferencesToAFile> getFiles() {
@@ -128,13 +181,15 @@ public class AddFilesTransaction implements FileReferenceTransaction {
             return false;
         }
         AddFilesTransaction other = (AddFilesTransaction) obj;
-        return Objects.equals(jobId, other.jobId) && Objects.equals(taskId, other.taskId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(writtenTime, other.writtenTime)
+        return Objects.equals(jobId, other.jobId) && Objects.equals(taskId, other.taskId)
+                && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(writtenTime, other.writtenTime)
                 && Objects.equals(files, other.files);
     }
 
     @Override
     public String toString() {
-        return "AddFilesTransaction{jobId=" + jobId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", writtenTime=" + writtenTime + ", files=" + files + "}";
+        return "AddFilesTransaction{jobId=" + jobId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", writtenTime="
+                + writtenTime + ", files=" + files + "}";
     }
 
     /**

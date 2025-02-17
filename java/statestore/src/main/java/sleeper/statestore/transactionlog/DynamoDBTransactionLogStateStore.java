@@ -24,7 +24,10 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore;
+import sleeper.statestore.StateStoreArrowFileStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotLoader;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.SnapshotType;
 
 /**
  * An implementation of the state store backed by a transaction log held in DynamoDB and S3.
@@ -49,9 +52,10 @@ public class DynamoDBTransactionLogStateStore {
      */
     public static TransactionLogStateStore.Builder builderFrom(
             InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamoDB, AmazonS3 s3, Configuration configuration) {
-        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDB, configuration);
+        DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDB);
+        StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
         return DynamoDBTransactionLogStateStoreNoSnapshots.builderFrom(instanceProperties, tableProperties, dynamoDB, s3)
-                .filesSnapshotLoader(snapshotStore::loadLatestFilesSnapshotIfAtMinimumTransaction)
-                .partitionsSnapshotLoader(snapshotStore::loadLatestPartitionsSnapshotIfAtMinimumTransaction);
+                .filesSnapshotLoader(new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, SnapshotType.FILES))
+                .partitionsSnapshotLoader(new DynamoDBTransactionLogSnapshotLoader(metadataStore, fileStore, SnapshotType.PARTITIONS));
     }
 }

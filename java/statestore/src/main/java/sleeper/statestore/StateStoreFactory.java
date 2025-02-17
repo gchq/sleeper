@@ -24,7 +24,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.statestore.s3.S3StateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStoreNoSnapshots;
 
@@ -97,9 +96,6 @@ public class StateStoreFactory implements StateStoreProvider.Factory {
     @Override
     public StateStore getStateStore(TableProperties tableProperties) {
         String stateStoreClassName = tableProperties.get(STATESTORE_CLASSNAME);
-        if (stateStoreClassName.equals(S3StateStore.class.getName())) {
-            return new S3StateStore(instanceProperties, tableProperties, dynamoDB, configuration);
-        }
         if (stateStoreClassName.equals(DynamoDBTransactionLogStateStore.class.getName())) {
             return forCommitterProcess(committerProcess, tableProperties,
                     DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties, dynamoDB, s3, configuration)).build();

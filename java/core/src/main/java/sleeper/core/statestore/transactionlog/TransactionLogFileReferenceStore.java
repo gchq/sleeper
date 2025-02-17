@@ -29,6 +29,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
@@ -55,13 +56,15 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     private final TransactionLogHead<StateStoreFiles> head;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> state) {
-        this.head = state;
+    TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> head) {
+        this.head = head;
     }
 
     @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        head.addTransaction(clock.instant(), new AddFilesTransaction(files));
+        AddFilesTransaction transaction = new AddFilesTransaction(files);
+        transaction.validateFiles(head.state());
+        head.addTransaction(clock.instant(), transaction);
     }
 
     @Override
@@ -150,7 +153,7 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         head.addTransaction(clock.instant(), request);
     }
 
-    void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply<StateStoreFiles> listener) {
+    void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
         head.applyTransactionUpdatingIfNecessary(logEntry, listener);
     }
 

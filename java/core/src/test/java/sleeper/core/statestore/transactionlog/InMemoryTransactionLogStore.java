@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 
 import java.util.ArrayList;
@@ -57,21 +58,15 @@ public class InMemoryTransactionLogStore implements TransactionLogStore {
     }
 
     @Override
-    public Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber) {
+    public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
         doStartOfReadTransactions();
-        return transactionEntries.stream()
-                .skip(lastTransactionNumber)
+        Stream<TransactionLogEntry> stream = transactionEntries.stream()
+                .skip(range.startInclusive() - 1)
                 .peek(onReadTransactionLogEntry);
-    }
-
-    @Override
-    public Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber) {
-        if ((nextTransactionNumber - lastTransactionNumber - 1) > 0) {
-            return readTransactionsAfter(lastTransactionNumber)
-                    .limit(Math.max(0, nextTransactionNumber - lastTransactionNumber - 1));
-        } else {
-            throw new RuntimeException("Limit not valid for readTransactionBetween");
+        if (range.isMaxTransactionBounded()) {
+            stream = stream.limit(range.endExclusive() - range.startInclusive());
         }
+        return stream;
     }
 
     @Override

@@ -62,11 +62,12 @@ public class TransactionLogSnapshotCreator {
                     transactionType.getSimpleName(),
                     lastSnapshot.getTransactionNumber());
             return Optional.empty();
+        } else {
+            LOGGER.info("Transaction found with number {} is newer than latest {} number {}.",
+                    newSnapshot.getTransactionNumber(), transactionType.getSimpleName(), lastSnapshot.getTransactionNumber());
+            LOGGER.info("Creating a new snapshot from latest {}.", transactionType.getSimpleName());
+            return Optional.of(newSnapshot);
         }
-        LOGGER.info("Transaction found with number {} is newer than latest {} number {}.",
-                newSnapshot.getTransactionNumber(), transactionType.getSimpleName(), lastSnapshot.getTransactionNumber());
-        LOGGER.info("Creating a new snapshot from latest {}.", transactionType.getSimpleName());
-        return Optional.of(newSnapshot);
     }
 
     private static <T> TransactionLogSnapshot updateState(

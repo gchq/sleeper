@@ -10,23 +10,11 @@ storing data in a table, ECS clusters and lambda functions are shared across
 all the tables.
 
 ## The metadata store
-Each table has metadata associated to it. This metadata is stored in a
-StateStore and consists of information about files that are in the 
-system, and the partitions.SThe storage of is in `S3StateStore`. 
 
-The `S3StateStore` stores the metadata in Parquet files within the S3 bucket
-used to store the table's data. When an update happens, a new file is
-written containing the updated version of the metadata. To ensure that
-two processes cannot both update the metadata at the same time leading
-to a conflict, DynamoDB is used as a lightweight consistency layer.
-Specifically an item in Dynamo is used to record the current version of
-the metadata. When a client attempts to write a new version of the
-metadata, it performs a conditional update to that item (the condition
-is that the value is still the value the client based its update on).
-If the update fails it means that another client updated it first, and
-in this case the update is retried. As all the metadata is rewritten
-on each update, there is no limit to the number of items that can be
-read in a compaction job.
+Each table has metadata associated to it. This metadata is stored in a
+state store and consists of information about files that are in the 
+system, and the partitions. See the [original design document](design/transaction-log-state-store.md)
+for the current state store backed by a transaction log.
 
 ## Add/edit a table
 

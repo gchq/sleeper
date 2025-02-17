@@ -28,6 +28,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
@@ -153,8 +154,8 @@ public class StateStoreCommitter {
         ReplaceFileReferencesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
-                .beforeApplyListener((entry, state) -> transaction.reportJobCommits(
-                        compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get()))
+                .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> transaction.reportJobCommits(
+                        compactionJobTracker, tableProperties.getStatus(), state, timeSupplier.get())))
                 .build();
         try {
             stateStore.addTransaction(addTransaction);
@@ -168,8 +169,8 @@ public class StateStoreCommitter {
         AddFilesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
-                .beforeApplyListener((entry, state) -> transaction.reportJobCommitted(
-                        ingestJobTracker, tableProperties.getStatus()))
+                .beforeApplyListener(StateListenerBeforeApply.withFilesState(
+                        state -> transaction.reportJobCommitOrThrow(ingestJobTracker, tableProperties.getStatus(), state)))
                 .build();
         try {
             stateStore.addTransaction(addTransaction);

@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateToApply;
 
 public class InMemoryTransactionLogStoreTest {
 
@@ -49,7 +51,7 @@ public class InMemoryTransactionLogStoreTest {
         store.addTransaction(entry);
 
         // Then
-        assertThat(store.readTransactionsAfter(0))
+        assertThat(store.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(entry);
     }
 
@@ -62,7 +64,7 @@ public class InMemoryTransactionLogStoreTest {
         assertThatThrownBy(() -> store.addTransaction(entry))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Attempted to add transaction 2 when we only have 0");
-        assertThat(store.readTransactionsAfter(0)).isEmpty();
+        assertThat(store.readTransactions(toUpdateLocalStateAt(0))).isEmpty();
     }
 
     @Test
@@ -78,7 +80,7 @@ public class InMemoryTransactionLogStoreTest {
         assertThatThrownBy(() -> store.addTransaction(entry2))
                 .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
-        assertThat(store.readTransactionsAfter(0))
+        assertThat(store.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(entry1);
     }
 
@@ -96,7 +98,7 @@ public class InMemoryTransactionLogStoreTest {
         assertThatThrownBy(() -> store.addTransaction(entry2))
                 .isInstanceOf(DuplicateTransactionNumberException.class)
                 .hasMessage("Unread transaction found. Adding transaction number 1, but it already exists.");
-        assertThat(store.readTransactionsAfter(0))
+        assertThat(store.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(entry1);
     }
 
@@ -111,7 +113,7 @@ public class InMemoryTransactionLogStoreTest {
         // When / Then
         assertThatThrownBy(() -> store.addTransaction(logEntry(1, new ClearFilesTransaction())))
                 .isSameAs(failure);
-        assertThat(store.readTransactionsAfter(0))
+        assertThat(store.readTransactions(toUpdateLocalStateAt(0)))
                 .isEmpty();
     }
 
@@ -124,7 +126,7 @@ public class InMemoryTransactionLogStoreTest {
         });
 
         // When / Then
-        assertThatThrownBy(() -> store.readTransactionsAfter(0))
+        assertThatThrownBy(() -> store.readTransactions(toUpdateLocalStateAt(0)))
                 .isSameAs(failure);
     }
 
@@ -137,7 +139,7 @@ public class InMemoryTransactionLogStoreTest {
         store.onReadTransactionLogEntry(readEntries::add);
 
         // When
-        store.readTransactionsAfter(0).toList();
+        store.readTransactions(toUpdateLocalStateAt(0)).toList();
 
         // Then
         assertThat(readEntries).containsExactly(entry);
@@ -152,7 +154,7 @@ public class InMemoryTransactionLogStoreTest {
         store.onReadTransactionLogEntry(readEntries::add);
 
         // When
-        store.readTransactionsAfter(1).toList();
+        store.readTransactions(toUpdateLocalStateAt(1)).toList();
 
         // Then
         assertThat(readEntries).isEmpty();
@@ -173,7 +175,7 @@ public class InMemoryTransactionLogStoreTest {
         store.onReadTransactionLogEntry(readEntries::add);
 
         // When / Then
-        assertThat(store.readTransactionsBetween(1, 3))
+        assertThat(store.readTransactions(toUpdateLocalStateToApply(1, 3)))
                 .containsExactly(entry2);
         assertThat(readEntries).containsExactly(entry2);
         assertThat(readRequests.get()).isEqualTo(1);
@@ -192,8 +194,8 @@ public class InMemoryTransactionLogStoreTest {
         store.onReadTransactionLogEntry(readEntries::add);
 
         // When / Then
-        assertThatThrownBy(() -> store.readTransactionsBetween(2, 2))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> store.readTransactions(toUpdateLocalStateToApply(2, 2)))
+                .isInstanceOf(IllegalArgumentException.class);
         assertThat(readEntries).isEmpty();
     }
 
@@ -210,8 +212,8 @@ public class InMemoryTransactionLogStoreTest {
         store.onReadTransactionLogEntry(readEntries::add);
 
         // When / Then
-        assertThatThrownBy(() -> store.readTransactionsBetween(3, 2))
-                .isInstanceOf(RuntimeException.class);
+        assertThatThrownBy(() -> store.readTransactions(toUpdateLocalStateToApply(3, 2)))
+                .isInstanceOf(IllegalArgumentException.class);
         assertThat(readEntries).isEmpty();
     }
 }

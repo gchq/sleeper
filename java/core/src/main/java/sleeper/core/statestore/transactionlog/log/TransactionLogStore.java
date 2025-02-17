@@ -36,23 +36,12 @@ public interface TransactionLogStore {
     void addTransaction(TransactionLogEntry entry) throws DuplicateTransactionNumberException;
 
     /**
-     * Streams through transactions to the end of the log, starting after a given transaction.
+     * Streams through transactions in the given range.
      *
-     * @param  lastTransactionNumber the last transaction number that should not be read
-     * @return                       all transactions in order, starting at the one after the specified number
+     * @param  range range of transactions to be read
+     * @return       the requested transactions in order
      */
-    Stream<TransactionLogEntry> readTransactionsAfter(long lastTransactionNumber);
-
-    /**
-     * Streams through transactions to before a certain point, starting after a given transaction. This will be used
-     * when we want to apply some transaction locally but we are not yet up to date with the log before that
-     * transaction. In that case we want to avoid re-reading or seeking beyond the transaction we're processing.
-     *
-     * @param  lastTransactionNumber the last transaction number that should not be read
-     * @param  nextTransactionNumber the next transaction number that we are trying to process
-     * @return                       the requested transactions in order
-     */
-    Stream<TransactionLogEntry> readTransactionsBetween(long lastTransactionNumber, long nextTransactionNumber);
+    Stream<TransactionLogEntry> readTransactions(TransactionLogRange range);
 
     /**
      * Deletes transactions from the log that are at or before the provided transaction number.

@@ -21,9 +21,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.s3.S3StateStore;
-import sleeper.statestore.s3.S3StateStoreCreator;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
@@ -47,7 +44,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldNotThrowAnErrorWhenNoBucketsOrTablesExist() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.s3.S3StateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table");
 
         // When / Then
         assertThatCode(this::validate)
@@ -57,7 +54,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenDataBucketExists() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.s3.S3StateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table");
         createBucket(instanceProperties.get(DATA_BUCKET));
 
         // When / Then
@@ -69,7 +66,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenTheQueryResultsBucketExists() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table", S3StateStore.class.getName());
+        setupTablesPropertiesFile(temporaryFolder, "example-table");
         createBucket(instanceProperties.get(QUERY_RESULTS_BUCKET));
 
         // When / Then
@@ -79,22 +76,10 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldThrowAnErrorWhenS3StateStoreExists() throws IOException {
-        // Given
-        new S3StateStoreCreator(instanceProperties, dynamoClient).create();
-        setupTablesPropertiesFile(temporaryFolder, "example-table", S3StateStore.class.getName());
-
-        // When
-        assertThatThrownBy(this::validate)
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageStartingWith("Sleeper state store table exists: ");
-    }
-
-    @Test
     void shouldThrowAnErrorWhenTransactionLogStateStoreExists() throws IOException {
         // Given
         new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-        setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBTransactionLogStateStore.class.getName());
+        setupTablesPropertiesFile(temporaryFolder, "example-table");
 
         // When
         assertThatThrownBy(this::validate)

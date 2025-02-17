@@ -473,14 +473,11 @@ cdk -a "java -cp scripts/jars/system-test-${VERSION}-utility.jar sleeper.systemt
 
 #### Customising the Stacks
 
-By default all the stacks are deployed. However, if you don't
-need them, you can customise which stacks are deployed.
+By default all the stacks are deployed. However, if you don't need them, you can customise which stacks are deployed.
 
-The mandatory ones are the `TableStack` which deploys the state store and
-data bucket for each table you specify, the `TopicStack` which creates an
-SNS topic used by other stacks to send errors and finally the
-`ConfigurationStack` and `PropertiesStack` which writes the instance properties
-to the configuration bucket.
+Mandatory components are the configuration bucket and data bucket, the index of Sleeper tables, the state store,
+policies and roles to interact with the instance, and the `TopicStack` which creates an SNS topic used by other stacks
+to report errors.
 
 That leaves the following stacks as optional:
 
@@ -488,13 +485,19 @@ That leaves the following stacks as optional:
 * `GarbageCollectorStack` - for running garbage collection (in practice this is essential)
 * `IngestStack` - for ingesting files using the "standard" ingest method
 * `PartitionSplittingStack` - for splitting partitions when they get too large
-* `QueryStack` - for handling queries
-* `EmrBulkImportStack` - for running BulkImport jobs using Spark running on an EMR cluster that is created on demand
-* `PersistentEmrBulkImportStack` - for running BulkImport jobs using Spark running on a persistent EMR cluster, i.e. one
+* `QueryStack` - for handling queries via SQS
+* `WebSocketQueryStack` - for handling queries via a web socket
+* `KeepLambdaWarmStack` - for sending dummy queries to avoid waiting for lambdas to start up during queries
+* `EmrServerlessBulkImportStack` - for running bulk import jobs using Spark running on EMR Serverless
+* `EmrStudioStack` - to create an EMR Studio containing the EMR Serverless application
+* `EmrBulkImportStack` - for running bulk import jobs using Spark running on an EMR cluster that is created on demand
+* `PersistentEmrBulkImportStack` - for running bulk import jobs using Spark running on a persistent EMR cluster, i.e. one
   that is always running (and therefore always costing money). By default, this uses EMR's managed scaling to scale up
   and down on demand.
-* `DashboardStack` - for creating Cloudwatch metrics showing statistics such as the number of records in a table over
+* `IngestBatcherStack` - for gathering files to be ingested or bulk imported in larger jobs
+* `TableMetricsStack` - for creating CloudWatch metrics showing statistics such as the number of records in a table over
   time
+* `DashboardStack` - to create a CloudWatch dashboard showing recorded metrics
 
 The following stacks are optional and experimental:
 

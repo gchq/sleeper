@@ -20,19 +20,19 @@ import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.SleeperLocalStackClients;
-import sleeper.statestore.s3.S3StateStore;
-import sleeper.statestore.s3.S3StateStoreCreator;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 public class IngestRecordsLocalStackITBase extends IngestRecordsTestBase {
 
     @BeforeEach
     void setUp() {
-        new S3StateStoreCreator(instanceProperties, SleeperLocalStackClients.DYNAMO_CLIENT).create();
+        new TransactionLogStateStoreCreator(instanceProperties, SleeperLocalStackClients.DYNAMO_CLIENT).create();
     }
 
     protected StateStore initialiseStateStore() {
-        StateStore stateStore = new S3StateStore(instanceProperties, tableProperties,
-                SleeperLocalStackClients.DYNAMO_CLIENT, SleeperLocalStackClients.HADOOP_CONF);
+        StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties,
+                SleeperLocalStackClients.DYNAMO_CLIENT, SleeperLocalStackClients.S3_CLIENT, SleeperLocalStackClients.HADOOP_CONF).build();
         stateStore.initialise();
         return stateStore;
     }
