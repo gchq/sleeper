@@ -27,8 +27,8 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStoreFactory;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
@@ -53,7 +53,7 @@ public class TransactionLogTransactionDeleterTest {
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final TableStatus tableStatus = tableProperties.getStatus();
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("root");
-    private final InMemoryTransactionLogStateStoreFactory transactionLogs = new InMemoryTransactionLogStateStoreFactory();
+    private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     private final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
     private final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
     private final StateStore stateStore = transactionLogs.stateStoreBuilder(tableStatus, schema).build();

@@ -31,7 +31,7 @@ import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJ
  * Gathers state for a state store backed by in-memory transaction logs. Helps with independent management of the
  * local state of the state store, by creating separate state store objects.
  */
-public class InMemoryTransactionLogStateStoreFactory {
+public class InMemoryTransactionLogs {
 
     private final InMemoryTransactionLogStore filesLogStore = new InMemoryTransactionLogStore();
     private final InMemoryTransactionLogSnapshots filesSnapshots = new InMemoryTransactionLogSnapshots();
@@ -41,19 +41,19 @@ public class InMemoryTransactionLogStateStoreFactory {
     private final List<Duration> retryWaits;
     private final ThreadSleep retryWaiter;
 
-    public InMemoryTransactionLogStateStoreFactory() {
+    public InMemoryTransactionLogs() {
         this(new InMemoryTransactionBodyStore());
     }
 
-    public InMemoryTransactionLogStateStoreFactory(InMemoryTransactionBodyStore transactionBodyStore) {
+    public InMemoryTransactionLogs(InMemoryTransactionBodyStore transactionBodyStore) {
         this(transactionBodyStore, new ArrayList<>());
     }
 
-    private InMemoryTransactionLogStateStoreFactory(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits) {
+    private InMemoryTransactionLogs(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits) {
         this(transactionBodyStore, retryWaits, ThreadSleepTestHelper.recordWaits(retryWaits));
     }
 
-    private InMemoryTransactionLogStateStoreFactory(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits, ThreadSleep retryWaiter) {
+    private InMemoryTransactionLogs(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits, ThreadSleep retryWaiter) {
         this.transactionBodyStore = transactionBodyStore;
         this.retryWaits = retryWaits;
         this.retryWaiter = retryWaiter;
@@ -65,8 +65,8 @@ public class InMemoryTransactionLogStateStoreFactory {
      * @param  retryWaits the list to record retry waits in
      * @return            an instance of this class
      */
-    public static InMemoryTransactionLogStateStoreFactory recordRetryWaits(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits) {
-        return new InMemoryTransactionLogStateStoreFactory(transactionBodyStore, retryWaits);
+    public static InMemoryTransactionLogs recordRetryWaits(InMemoryTransactionBodyStore transactionBodyStore, List<Duration> retryWaits) {
+        return new InMemoryTransactionLogs(transactionBodyStore, retryWaits);
     }
 
     /**
@@ -75,8 +75,8 @@ public class InMemoryTransactionLogStateStoreFactory {
      * @param  retryWaits the list to record retry waits in
      * @return            an instance of this class
      */
-    public static InMemoryTransactionLogStateStoreFactory recordRetryWaits(List<Duration> retryWaits) {
-        return new InMemoryTransactionLogStateStoreFactory(new InMemoryTransactionBodyStore(), retryWaits);
+    public static InMemoryTransactionLogs recordRetryWaits(List<Duration> retryWaits) {
+        return new InMemoryTransactionLogs(new InMemoryTransactionBodyStore(), retryWaits);
     }
 
     /**
