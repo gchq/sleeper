@@ -15,7 +15,10 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 
 /**
  * An implementation of the state store backed by a transaction log held in memory.
@@ -35,5 +38,17 @@ public class InMemoryTransactionLogStateStore {
     public static TransactionLogStateStore create(TableProperties tableProperties, InMemoryTransactionLogs transactionLogs) {
         return transactionLogs.stateStoreBuilder(tableProperties.getStatus(), tableProperties.getSchema())
                 .build();
+    }
+
+    /**
+     * Creates a state store provider.
+     *
+     * @param  transactionLogs the transaction logs
+     * @return                 the provider
+     */
+    public static StateStoreProvider createProvider(InstanceProperties instanceProperties, InMemoryTransactionLogsPerTable transactionLogs) {
+        return new StateStoreProvider(
+                instanceProperties,
+                tableProperties -> create(tableProperties, transactionLogs.forTable(tableProperties)));
     }
 }
