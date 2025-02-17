@@ -56,8 +56,9 @@ public class InMemoryTransactionLogStateStore {
     /**
      * Creates a state store provider.
      *
-     * @param  transactionLogs the transaction logs
-     * @return                 the provider
+     * @param  instanceProperties the instance properties
+     * @param  transactionLogs    the transaction logs
+     * @return                    the provider
      */
     public static StateStoreProvider createProvider(InstanceProperties instanceProperties, InMemoryTransactionLogsPerTable transactionLogs) {
         return new StateStoreProvider(
