@@ -17,7 +17,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionBodyStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.systemtest.dsl.SleeperSystemTest;

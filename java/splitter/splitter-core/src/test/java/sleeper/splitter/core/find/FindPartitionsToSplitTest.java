@@ -32,8 +32,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 
 import java.util.ArrayList;
 import java.util.List;

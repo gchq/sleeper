@@ -24,8 +24,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 
 import java.nio.file.Files;

@@ -30,8 +30,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.splitter.core.status.PartitionsStatus;
 
 import java.util.List;

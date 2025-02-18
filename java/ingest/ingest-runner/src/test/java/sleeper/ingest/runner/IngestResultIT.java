@@ -19,8 +19,8 @@ package sleeper.ingest.runner;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.ingest.core.IngestResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
