@@ -101,7 +101,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, getSingleRecord().iterator()).getRecordsWritten();
+        long numWritten = ingestFromRecordIterator(stateStore, getSingleRecord().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -137,7 +137,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
                 .buildList());
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, Collections.emptyIterator()).getRecordsWritten();
+        long numWritten = ingestFromRecordIterator(stateStore, Collections.emptyIterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written

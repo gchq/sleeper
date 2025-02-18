@@ -80,12 +80,6 @@ public class IngestRecordsTestBase {
         return ingestRecords.close();
     }
 
-    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator) throws IteratorCreationException, IOException {
-        tableProperties.setSchema(schema);
-        IngestFactory factory = createIngestFactory(stateStore);
-        return factory.ingestFromRecordIterator(tableProperties, iterator);
-    }
-
     protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws IteratorCreationException, IOException {
         IngestFactory factory = createIngestFactory(stateStore);
         return factory.ingestFromRecordIterator(tableProperties, iterator);
