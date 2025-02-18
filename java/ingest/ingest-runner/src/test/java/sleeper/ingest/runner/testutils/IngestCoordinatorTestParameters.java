@@ -32,15 +32,11 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordWriter;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static java.nio.file.Files.createTempDirectory;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -185,14 +181,6 @@ public class IngestCoordinatorTestParameters {
         public Builder localDataPath(String localDataPath) {
             this.localDataPath = localDataPath;
             return this;
-        }
-
-        public Builder temporaryFolder(Path temporaryFolder) {
-            try {
-                return localDataPath(createTempDirectory(temporaryFolder, null).toString());
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
 
         public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
