@@ -17,20 +17,30 @@
 package sleeper.core.statestore.testutils;
 
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
+import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreUninitialised;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
 
 public abstract class InMemoryStateStoreTestBase {
 
     private PartitionsBuilder partitions;
+    private final Schema schema = schemaWithKey("key", new LongType());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     protected FileReferenceFactory factory;
-    protected StateStore store = inMemoryStateStoreWithNoPartitions();
+    protected StateStore store = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
 
     protected void initialiseWithSchema(Schema schema) {
         createStore(new PartitionsBuilder(schema).singlePartition("root"));
