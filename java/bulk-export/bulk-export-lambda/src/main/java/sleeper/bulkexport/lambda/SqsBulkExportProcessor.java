@@ -15,15 +15,12 @@
  */
 package sleeper.bulkexport.lambda;
 
-import java.util.List;
-
-import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.sqs.AmazonSQS;
+import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
 import sleeper.bulkexport.core.model.BulkExportQuery;
@@ -36,6 +33,8 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
+
+import java.util.List;
 
 /**
  * Lambda to start the bulk export job.
@@ -88,9 +87,9 @@ public class SqsBulkExportProcessor {
     }
 
     /**
-     * Builder class for constructing instances of {@link SqsBulkExportProcessor}.
+     * Builder class for constructing instances of SqsBulkExportProcessor.
      * This builder allows for the configuration of various clients and properties
-     * required by the {@link SqsBulkExportProcessor}.
+     * required by the SqsBulkExportProcessor.
      *
      * <p>Example usage:</p>
      * <pre>{@code
@@ -123,7 +122,7 @@ public class SqsBulkExportProcessor {
             this.s3Client = s3Client;
             return this;
         }
-        
+
         /**
          * Sets the AmazonSQS client to be used by the SqsBulkExportProcessor.
          *
@@ -169,7 +168,7 @@ public class SqsBulkExportProcessor {
         }
 
         /**
-         * Builds and returns a new instance of {@link SqsBulkExportProcessor}.
+         * Builds and returns a new instance of SqsBulkExportProcessor.
          *
          * @return A new instance of {@link SqsBulkExportProcessor}.
          * @throws ObjectFactoryException If there is an error during the creation of the {@link SqsBulkExportProcessor} instance.
