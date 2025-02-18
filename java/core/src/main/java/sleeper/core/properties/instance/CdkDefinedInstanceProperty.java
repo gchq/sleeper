@@ -265,6 +265,16 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the SQS queue that triggers the bulk export processor lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL = Index
+            .propertyBuilder("sleeper.bulk.export.processor.queue.dlq.url")
+            .description("The URL of the SQS dead letter queue that is used by the bulk export processor lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_DLQ_ARN = Index
+            .propertyBuilder("sleeper.bulk.export.processor.queue.dlq.arn")
+            .description("The ARN of the SQS  dead letter queue that is used by that triggers the bulk export processor lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
     CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_LAMBDA_ROLE = Index
             .propertyBuilder("sleeper.bulk.export.processor.lambda.role")
             .description("The ARN of the role for the bulk export processor lambda.")

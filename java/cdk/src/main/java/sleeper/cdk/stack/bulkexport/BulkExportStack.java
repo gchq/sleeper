@@ -59,6 +59,8 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 public class BulkExportStack extends NestedStack {
     public static final String BULK_EXPORT_PROCESSOR_QUEUE_URL = "BulkExportProcessorQueueUrl";
     public static final String BULK_EXPORT_PROCESSOR_QUEUE_NAME = "BulkExportProcessorQueueName";
+    public static final String BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL = "BulkExportProcessorQueueDlqUrl";
+    public static final String BULK_EXPORT_PROCESSOR_QUEUE_DLQ_NAME = "BulkExportProcessorQueueDlqName";
     public static final String BULK_EXPORT_PROCESSOR_LAMBDA_ROLE_ARN = "BulkExportProcessorLambdaRoleArn";
 
     public BulkExportStack(Construct scope,
@@ -114,6 +116,8 @@ public class BulkExportStack extends NestedStack {
                 .build();
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_URL,
                 bulkExportProcessorQ.getQueueUrl());
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL,
+                bulkExportProcessorQueueQueryDlq.getQueueUrl());
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_ARN,
                 bulkExportProcessorQ.getQueueArn());
 
@@ -123,11 +127,23 @@ public class BulkExportStack extends NestedStack {
                 .build();
         new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_NAME, sourceQueueOutputNameProps);
 
+        CfnOutputProps sourceQueueDLQOutputNameProps = new CfnOutputProps.Builder()
+                .value(bulkExportProcessorQueueQueryDlq.getQueueName())
+                .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_DLQ_NAME)
+                .build();
+        new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_DLQ_NAME, sourceQueueDLQOutputNameProps);
+
         CfnOutputProps sourceQueueOutputProps = new CfnOutputProps.Builder()
                 .value(bulkExportProcessorQ.getQueueUrl())
                 .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_URL)
                 .build();
         new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_URL, sourceQueueOutputProps);
+
+        CfnOutputProps sourceQueueDLQOutputProps = new CfnOutputProps.Builder()
+                .value(bulkExportProcessorQueueQueryDlq.getQueueUrl())
+                .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL)
+                .build();
+        new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL, sourceQueueDLQOutputProps);
 
         lambda.addEventSource(new SqsEventSource(bulkExportProcessorQ, eventSourceProps));
 
@@ -157,7 +173,7 @@ public class BulkExportStack extends NestedStack {
                 .resources(Collections.singletonList("*"))
                 .build();
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
-        String policyName = "SendToAnySQSPolicy" + id;
+        String policyName = "BulkExportPolicy" + id;
         Policy policy = new Policy(this, policyName);
         policy.addStatements(policyStatement);
         Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
