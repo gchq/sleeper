@@ -35,6 +35,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 import sleeper.sketches.Sketches;
 import sleeper.splitter.core.split.FindPartitionSplitPoint.SketchesLoader;
@@ -57,12 +59,11 @@ import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_ASYNC_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class SplitPartitionTest {
-    private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key", new IntType()));
 
     private final Map<String, Sketches> fileToSketchMap = new HashMap<>();
     private final List<StateStoreCommitRequest> sentAsyncCommits = new ArrayList<>();
@@ -78,7 +79,7 @@ public class SplitPartitionTest {
                     .splitToNewChildren("root", "id12", "id3", 1)
                     .splitToNewChildren("id12", "id1", "id2", 0)
                     .buildTree();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+            StateStore stateStore = initialiseStateStore(tree.getAllPartitions());
 
             for (Partition partition : tree.getAllPartitions()) {
                 int minRange = (int) partition.getRegion().getRange("key").getMin();
@@ -111,7 +112,7 @@ public class SplitPartitionTest {
                     .splitToNewChildren("root", "id12", "id3", 10)
                     .splitToNewChildren("id12", "id1", "id2", 0)
                     .buildTree();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+            StateStore stateStore = initialiseStateStore(tree.getAllPartitions());
 
             for (Partition partition : stateStore.getAllPartitions()) {
                 for (int i = 0; i < 10; i++) {
@@ -155,7 +156,7 @@ public class SplitPartitionTest {
                     .splitToNewChildren("id12", "id1", "id2", new byte[]{(byte) 50})
                     .buildTree();
 
-            StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+            StateStore stateStore = initialiseStateStore(tree.getAllPartitions());
 
             for (Partition partition : tree.getAllPartitions()) {
                 for (int i = 0; i < 10; i++) {
@@ -203,7 +204,7 @@ public class SplitPartitionTest {
                     .splitToNewChildren("root", "id12", "id3", new byte[]{(byte) 100})
                     .splitToNewChildren("id12", "id1", "id2", new byte[]{(byte) 50})
                     .buildTree();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+            StateStore stateStore = initialiseStateStore(tree.getAllPartitions());
 
             for (Partition partition : stateStore.getAllPartitions()) {
                 for (int i = 0; i < 10; i++) {
@@ -250,7 +251,7 @@ public class SplitPartitionTest {
         @Test
         void shouldSplitPartitionForIntKey() throws Exception {
             // Given
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
@@ -273,7 +274,7 @@ public class SplitPartitionTest {
         void shouldSplitPartitionForLongKey() throws Exception {
             // Given
             tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new LongType())).build());
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
@@ -296,7 +297,7 @@ public class SplitPartitionTest {
         void shouldSplitPartitionForStringKey() throws Exception {
             // Given
             tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new StringType())).build());
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
@@ -319,7 +320,7 @@ public class SplitPartitionTest {
         void shouldSplitPartitionForByteArrayKey() throws Exception {
             // Given
             tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build());
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
@@ -348,7 +349,7 @@ public class SplitPartitionTest {
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                     .build());
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
@@ -375,7 +376,7 @@ public class SplitPartitionTest {
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                     .build());
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
@@ -402,7 +403,7 @@ public class SplitPartitionTest {
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                     .build());
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
@@ -429,7 +430,7 @@ public class SplitPartitionTest {
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
                     .build());
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
@@ -457,7 +458,7 @@ public class SplitPartitionTest {
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
                     .build());
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
 
@@ -485,7 +486,7 @@ public class SplitPartitionTest {
             tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
                     .build());
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
+            StateStore stateStore = initialiseStateStore(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
@@ -517,7 +518,7 @@ public class SplitPartitionTest {
             PartitionTree tree = new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildTree();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
+            StateStore stateStore = initialiseStateStore(tree.getAllPartitions());
             String filename = ingestRecordsToSketchOnPartition(stateStore, "A",
                     IntStream.rangeClosed(1, 100)
                             .mapToObj(i -> new Record(Map.of("key", i))));
@@ -541,6 +542,10 @@ public class SplitPartitionTest {
                     new SplitPartitionTransaction(resultant.getPartition("A"),
                             List.of(resultant.getPartition("B"), resultant.getPartition("C")))));
         }
+    }
+
+    private StateStore initialiseStateStore(List<Partition> partitions) {
+        return InMemoryTransactionLogStateStore.createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
     }
 
     private String ingestRecordsToSketchOnPartition(StateStore stateStore, String partitionId, Stream<Record> recordsStream) {
