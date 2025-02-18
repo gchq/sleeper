@@ -18,11 +18,11 @@ package sleeper.core.statestore.transactionlog.state;
 import sleeper.core.partition.Partition;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 
 /**
  * Holds the state of partitions, for a state store backed by a transaction log. This object is mutable, is cached
@@ -33,7 +33,7 @@ import java.util.Optional;
  */
 public class StateStorePartitions {
 
-    private final Map<String, Partition> partitionById = new HashMap<>();
+    private final Map<String, Partition> partitionById = new TreeMap<>();
 
     /**
      * Creates an instance of this class with the given partitions.

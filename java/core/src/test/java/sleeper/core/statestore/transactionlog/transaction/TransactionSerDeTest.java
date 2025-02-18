@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog.transactions;
+package sleeper.core.statestore.transactionlog.transaction;
 
 import org.apache.commons.lang.StringUtils;
 import org.approvaltests.Approvals;
@@ -30,11 +30,6 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
-import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
-import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
-import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;

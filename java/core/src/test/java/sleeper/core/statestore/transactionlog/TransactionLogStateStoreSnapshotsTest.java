@@ -26,7 +26,10 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshots;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -36,7 +39,7 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
+import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
 
 public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLogStateStoreTestBase {
 

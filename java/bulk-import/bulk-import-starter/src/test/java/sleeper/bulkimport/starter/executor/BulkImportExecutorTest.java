@@ -32,7 +32,8 @@ import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
@@ -49,7 +50,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedAndFailedToStartIngestRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
@@ -63,6 +63,7 @@ class BulkImportExecutorTest {
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
+    private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable().initialiseTable(tableProperties);
     private final String bucketName = UUID.randomUUID().toString();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
@@ -274,8 +275,7 @@ class BulkImportExecutorTest {
     private BulkImportExecutor executor(
             WriteJobToBucket writeJobToBucket, PlatformExecutor platformExecutor, Supplier<Instant> timeSupplier) {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
-                inMemoryStateStoreWithFixedSinglePartition(SCHEMA));
+        StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs);
         return new BulkImportExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 tracker, writeJobToBucket, platformExecutor, timeSupplier);
     }

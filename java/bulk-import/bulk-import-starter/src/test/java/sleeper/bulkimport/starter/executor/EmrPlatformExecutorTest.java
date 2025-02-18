@@ -43,7 +43,9 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.properties.validation.EmrInstanceArchitecture;
-import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
@@ -76,7 +78,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
@@ -86,6 +87,7 @@ class EmrPlatformExecutorTest {
     private final AtomicReference<RunJobFlowRequest> requested = new AtomicReference<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable().initialiseTable(tableProperties);
     private final String tableId = tableProperties.get(TABLE_ID);
     private final InMemoryIngestJobTracker tracker = new InMemoryIngestJobTracker();
 
@@ -467,9 +469,8 @@ class EmrPlatformExecutorTest {
     private BulkImportExecutor executor(
             EmrInstanceConfiguration configuration, Supplier<Instant> validationTimeSupplier) {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
-        return new BulkImportExecutor(instanceProperties, tablePropertiesProvider,
-                new FixedStateStoreProvider(tableProperties,
-                        inMemoryStateStoreWithFixedSinglePartition(tableProperties.getSchema())),
+        StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs);
+        return new BulkImportExecutor(instanceProperties, tablePropertiesProvider, stateStoreProvider,
                 tracker, (job, jobRunId) -> {
                 },
                 new EmrPlatformExecutor(emr, instanceProperties, tablePropertiesProvider, configuration),

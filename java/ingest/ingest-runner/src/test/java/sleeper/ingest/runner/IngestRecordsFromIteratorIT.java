@@ -18,10 +18,13 @@ package sleeper.ingest.runner;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.sketches.testutils.SketchesDeciles;
 
 import java.util.Collections;
@@ -32,8 +35,6 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getSingleRecord;
 
@@ -43,11 +44,10 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     void shouldWriteMultipleRecords() throws Exception {
         // Given
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
-                new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", 2L)
-                        .buildList());
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 2L)
+                .buildList());
 
         // When
         long numWritten = ingestFromRecordIterator(stateStore, getRecords().iterator()).getRecordsWritten();
@@ -95,14 +95,13 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteSingleRecord() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
-                new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "L", "R", 2L)
-                        .buildList());
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", 2L)
+                .buildList());
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, getSingleRecord().iterator()).getRecordsWritten();
+        long numWritten = ingestFromRecordIterator(stateStore, getSingleRecord().iterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -133,15 +132,22 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteNoRecordsWhenIteratorIsEmpty() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
+                .singlePartition("root")
+                .buildList());
 
         // When
-        long numWritten = ingestFromRecordIterator(schema, stateStore, Collections.emptyIterator()).getRecordsWritten();
+        long numWritten = ingestFromRecordIterator(stateStore, Collections.emptyIterator()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
         assertThat(numWritten).isZero();
         //  - Check StateStore has correct information
         assertThat(stateStore.getFileReferences()).isEmpty();
+    }
+
+    private StateStore initialiseStateStore(List<Partition> partitions) {
+        return InMemoryTransactionLogStateStore
+                .createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
     }
 }

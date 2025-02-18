@@ -82,10 +82,11 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
     private final String dataBucketName = instanceProperties.get(DATA_BUCKET);
     private final TestIngestType ingestType = directWriteBackedByArrowWriteToLocalFile();
     private final Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
+    private StateStore stateStore;
 
-    private StateStore createStateStore(Schema schema) {
+    private void setSchema(Schema schema) {
         tableProperties.setSchema(schema);
-        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
+        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf).getStateStore(tableProperties);
     }
 
     @BeforeEach
@@ -106,17 +107,13 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         public void shouldWriteOneFileToRootPartition() throws Exception {
             // Given
             RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
-            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
             stateStore.initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
-                    .stateStore(stateStore)
-                    .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -130,7 +127,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(rootFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
@@ -141,19 +138,15 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         public void shouldWriteOneFileToOneLeafPartition() throws Exception {
             // Given
             RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
-            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000050")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("lFile"))
-                    .stateStore(stateStore)
-                    .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -167,7 +160,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     lFile, hadoopConf);
 
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(lFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
@@ -178,7 +171,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         public void shouldWriteOneFileInEachLeafPartition() throws Exception {
             // Given
             RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
-            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000050")
@@ -187,12 +180,8 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("llFile", "lrFile", "rlFile", "rrFile"))
-                    .stateStore(stateStore)
-                    .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -213,7 +202,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(llFile, lrFile, rlFile, rrFile), hadoopConf);
 
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(llFile, lrFile, rlFile, rrFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
@@ -224,19 +213,15 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
             // Given
             RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
-            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000010")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
-                    .stateStore(stateStore)
-                    .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -265,7 +250,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(leftFile1, rightFile1, leftFile2, rightFile2), hadoopConf);
 
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(leftFile1, rightFile1, leftFile2, rightFile2);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
@@ -285,17 +270,13 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         public void shouldWriteOneFileToRootPartition() throws Exception {
             // Given
             RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
-            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
             stateStore.initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
-                    .stateStore(stateStore)
-                    .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -310,7 +291,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(rootFile);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
@@ -321,19 +302,15 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         public void shouldWriteOneFileWithReferenceInOneLeafPartition() throws Exception {
             // Given
             RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 25));
-            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000050")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
-                    .stateStore(stateStore)
-                    .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -348,7 +325,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     lReference, hadoopConf);
 
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(lReference);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
@@ -359,7 +336,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         public void shouldWriteOneFileWithReferencesInLeafPartitions() throws Exception {
             // Given
             RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 100));
-            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000050")
@@ -368,12 +345,8 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
-                    .stateStore(stateStore)
-                    .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -392,7 +365,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             List<Record> allRecords = readRecordsFromPartitionDataFile(recordListAndSchema.sleeperSchema,
                     rootFile, hadoopConf);
 
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactlyInAnyOrder(llReference, lrReference, rlReference, rrReference);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
@@ -403,19 +376,15 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         public void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalStore() throws Exception {
             // Given
             RecordGenerator.RecordListAndSchema recordListAndSchema = generateStringRecords("%09d-%s", range(0, 20));
-            StateStore stateStore = createStateStore(recordListAndSchema.sleeperSchema);
+            setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000010")
                     .buildTree();
             stateStore.initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
-            String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString() + "/path/to/new/sub/directory";
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile1", "rootFile2"))
-                    .stateStore(stateStore)
-                    .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -440,7 +409,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             List<Record> allRecords = readMergedRecordsFromPartitionDataFiles(recordListAndSchema.sleeperSchema,
                     List.of(rootFile1, rootFile2), hadoopConf);
 
-            assertThat(Paths.get(ingestLocalWorkingDirectory)).isEmptyDirectory();
+            assertThat(Paths.get(parameters.getLocalWorkingDir())).isEmptyDirectory();
             assertThat(actualFiles).containsExactly(leftFile1, rightFile1, leftFile2, rightFile2);
             assertThat(allRecords).containsExactlyInAnyOrderElementsOf(recordListAndSchema.recordList);
             assertThat(SketchesDeciles.fromFileReferences(recordListAndSchema.sleeperSchema, actualFiles, hadoopConf))
@@ -483,14 +452,17 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
         }
     }
 
-    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
+    private IngestCoordinatorTestParameters.Builder createTestParameterBuilder() throws Exception {
         return IngestCoordinatorTestParameters
                 .builder()
-                .temporaryFolder(temporaryFolder)
+                .localDataPath(createTempDirectory(temporaryFolder, null).toString())
+                .localWorkingDir(createTempDirectory(temporaryFolder, null).toString())
                 .hadoopConfiguration(hadoopConf)
                 .dataBucketName(dataBucketName)
                 .tableId(tableProperties.get(TABLE_ID))
-                .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class));
+                .ingestFileWritingStrategy(tableProperties.getEnumValue(INGEST_FILE_WRITING_STRATEGY, IngestFileWritingStrategy.class))
+                .schema(tableProperties.getSchema())
+                .stateStore(stateStore);
     }
 
     private static RecordGenerator.RecordListAndSchema generateStringRecords(String formatString, LongStream range) {
