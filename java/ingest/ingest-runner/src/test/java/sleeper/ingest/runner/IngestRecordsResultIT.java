@@ -15,6 +15,7 @@
  */
 package sleeper.ingest.runner;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.SortedRecordIterator;
@@ -24,6 +25,8 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.example.iterator.AdditionIterator;
 import sleeper.example.iterator.AgeOffIterator;
 import sleeper.ingest.core.IngestResult;
@@ -34,16 +37,17 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.readIngestedRecords;
 
 class IngestRecordsResultIT extends IngestRecordsTestBase {
 
-    private final Schema schema = Schema.builder()
-            .rowKeyFields(new Field("key", new StringType()))
-            .valueFields(new Field("value", new LongType()))
-            .build();
-    private final StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
+    @BeforeEach
+    void setUp() {
+        setSchema(Schema.builder()
+                .rowKeyFields(new Field("key", new StringType()))
+                .valueFields(new Field("value", new LongType()))
+                .build());
+    }
 
     @Test
     void shouldReturnDifferentReadAndWrittenCountsWhenTableIteratorReducesCount() throws Exception {
@@ -87,11 +91,10 @@ class IngestRecordsResultIT extends IngestRecordsTestBase {
 
     private IngestResult ingestWithTableIterator(
             Class<? extends SortedRecordIterator> iteratorClass, String iteratorConfig, List<Record> records) throws Exception {
-        return ingestRecordsWithTableProperties(schema, stateStore, records,
-                tableProperties -> {
-                    tableProperties.set(ITERATOR_CLASS_NAME, iteratorClass.getName());
-                    tableProperties.set(ITERATOR_CONFIG, iteratorConfig);
-                });
+        tableProperties.set(ITERATOR_CLASS_NAME, iteratorClass.getName());
+        tableProperties.set(ITERATOR_CONFIG, iteratorConfig);
+        StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
+        return ingestRecords(stateStore, records);
     }
 
     private List<Record> readRecords(IngestResult result) {

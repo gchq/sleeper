@@ -44,7 +44,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     void shouldWriteMultipleRecords() throws Exception {
         // Given
         tableProperties.setEnum(INGEST_FILE_WRITING_STRATEGY, ONE_FILE_PER_LEAF);
-        StateStore stateStore = createStateStore(new PartitionsBuilder(schema)
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L)
                 .buildList());
@@ -95,7 +95,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteSingleRecord() throws Exception {
         // Given
-        StateStore stateStore = createStateStore(new PartitionsBuilder(schema)
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L)
                 .buildList());
@@ -132,7 +132,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteNoRecordsWhenIteratorIsEmpty() throws Exception {
         // Given
-        StateStore stateStore = createStateStore(new PartitionsBuilder(schema)
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .singlePartition("root")
                 .buildList());
 
@@ -146,7 +146,7 @@ class IngestRecordsFromIteratorIT extends IngestRecordsTestBase {
         assertThat(stateStore.getFileReferences()).isEmpty();
     }
 
-    private StateStore createStateStore(List<Partition> partitions) {
+    private StateStore initialiseStateStore(List<Partition> partitions) {
         return InMemoryTransactionLogStateStore
                 .createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
     }

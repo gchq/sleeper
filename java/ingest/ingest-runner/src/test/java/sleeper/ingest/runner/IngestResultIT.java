@@ -19,20 +19,21 @@ package sleeper.ingest.runner;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.ingest.core.IngestResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
 
 class IngestResultIT extends IngestRecordsTestBase {
     @Test
     void shouldReturnNumberOfRecordsFromIngestResult() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
+        StateStore stateStore = initialiseStateStore();
 
         // When
-        IngestResult result = ingestRecords(schema, stateStore, getRecords());
+        IngestResult result = ingestRecords(stateStore, getRecords());
 
         // Then
         assertThat(result.getRecordsWritten())
@@ -42,14 +43,18 @@ class IngestResultIT extends IngestRecordsTestBase {
     @Test
     void shouldReturnFileReferenceListFromIngestResult() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
+        StateStore stateStore = initialiseStateStore();
 
         // When
-        IngestResult result = ingestRecords(schema, stateStore, getRecords());
+        IngestResult result = ingestRecords(stateStore, getRecords());
 
         // Then
         assertThat(result.getFileReferenceList())
                 .usingRecursiveFieldByFieldElementComparatorIgnoringFields("lastStateStoreUpdateTime")
                 .containsExactlyInAnyOrderElementsOf(stateStore.getFileReferences());
+    }
+
+    private StateStore initialiseStateStore() {
+        return InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
     }
 }
