@@ -32,6 +32,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
@@ -51,7 +53,6 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
 
 public class GarbageCollectorS3IT extends LocalStackTestBase {
@@ -61,6 +62,8 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     private final FileReferenceFactory factory = FileReferenceFactory.from(partitions);
     private final String testBucket = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
 
     @BeforeEach
     void setUp() {
@@ -68,7 +71,6 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     StateStore setupStateStoreAndFixTime(Instant fixedTime) {
-        StateStore stateStore = inMemoryStateStoreWithSinglePartition(TEST_SCHEMA);
         stateStore.fixFileUpdateTime(fixedTime);
         return stateStore;
     }
@@ -76,10 +78,10 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     @Test
     void shouldContinueCollectingFilesIfTryingToDeleteFileThrowsIOException() throws Exception {
         // Given
-        TableProperties tableProperties = createTableWithGCDelay(instanceProperties, 10);
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
         Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-        StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
+        stateStore.fixFileUpdateTime(oldEnoughTime);
         // Create a FileReference referencing a file in a bucket that does not exist
         FileReference oldFile1 = factory.rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
         stateStore.addFile(oldFile1);
@@ -114,12 +116,6 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         instanceProperties.set(FILE_SYSTEM, "s3a://");
         instanceProperties.set(DATA_BUCKET, testBucket);
         return instanceProperties;
-    }
-
-    private TableProperties createTableWithGCDelay(InstanceProperties instanceProperties, int gcDelay) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
-        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, gcDelay);
-        return tableProperties;
     }
 
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
