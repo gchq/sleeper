@@ -49,7 +49,7 @@ public abstract class DirectWriteBackedByArrowTestBase {
     protected IngestCoordinatorTestParameters.Builder createTestParameterBuilder() throws Exception {
         return IngestCoordinatorTestParameters.builder()
                 .localDataPath(Files.createTempDirectory(temporaryFolder, null).toString())
-                .workingDir(Files.createTempDirectory(temporaryFolder, null).toString())
+                .localWorkingDir(Files.createTempDirectory(temporaryFolder, null).toString())
                 .hadoopConfiguration(configuration)
                 .ingestFileWritingStrategy(IngestFileWritingStrategy.ONE_FILE_PER_LEAF)
                 .schema(tableProperties.getSchema())

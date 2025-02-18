@@ -116,7 +116,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .fileNames(List.of("rootFile"))
                     .stateStore(stateStore)
                     .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
+                    .localWorkingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -153,7 +153,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .fileNames(List.of("lFile"))
                     .stateStore(stateStore)
                     .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
+                    .localWorkingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -192,7 +192,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .fileNames(List.of("llFile", "lrFile", "rlFile", "rrFile"))
                     .stateStore(stateStore)
                     .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
+                    .localWorkingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -236,7 +236,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
                     .stateStore(stateStore)
                     .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
+                    .localWorkingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -295,7 +295,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .fileNames(List.of("rootFile"))
                     .stateStore(stateStore)
                     .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
+                    .localWorkingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -333,7 +333,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .fileNames(List.of("rootFile"))
                     .stateStore(stateStore)
                     .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
+                    .localWorkingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -373,7 +373,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .fileNames(List.of("rootFile"))
                     .stateStore(stateStore)
                     .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
+                    .localWorkingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
@@ -415,7 +415,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .fileNames(List.of("rootFile1", "rootFile2"))
                     .stateStore(stateStore)
                     .schema(recordListAndSchema.sleeperSchema)
-                    .workingDir(ingestLocalWorkingDirectory)
+                    .localWorkingDir(ingestLocalWorkingDirectory)
                     .build();
 
             // When
