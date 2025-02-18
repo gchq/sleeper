@@ -24,9 +24,8 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 
 import java.util.List;
 
@@ -39,8 +38,7 @@ public class InitialiseStateStoreFromSplitPointsTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final StateStoreProvider stateStoreProvider = new FixedStateStoreProvider(tableProperties,
-            InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs()));
+    private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
 
     @Test
     void shouldInitialiseStateStoreFromSplitPoints() throws Exception {
