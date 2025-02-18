@@ -34,13 +34,17 @@ import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
 import sleeper.bulkexport.core.model.BulkExportQueryValidationException;
 import sleeper.configuration.properties.S3InstanceProperties;
+import sleeper.configuration.properties.S3TableProperties;
+
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
 
 /**
  * A lambda that is triggered when a serialised export query arrives on an SQS
- * queue. A processor executes the request and publishes the results to S3 based on.
+ * queue. A processor executes the request and publishes the results to S3 based
+ * on.
  */
 @SuppressWarnings("unused")
 public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Void> {
@@ -54,39 +58,47 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
     private BulkExportQuerySerDe bulkExportQuerySerDe;
 
     /**
-     * Constructs an instance of SqsBulkExportProcessorLambda using default clients for Amazon SQS, Amazon S3, and Amazon DynamoDB.
+     * Constructs an instance of SqsBulkExportProcessorLambda using default clients
+     * for Amazon SQS, Amazon S3, and Amazon DynamoDB.
      *
      * @throws ObjectFactoryException if there is an error creating the object.
      */
     public SqsBulkExportProcessorLambda() throws ObjectFactoryException {
-        this(AmazonSQSClientBuilder.defaultClient(), AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient());
+        this(AmazonSQSClientBuilder.defaultClient(), AmazonS3ClientBuilder.defaultClient(),
+                AmazonDynamoDBClientBuilder.defaultClient());
     }
 
     /**
      * Constructs an instance of SqsBulkExportProcessorLambda.
      *
-     * @param sqsClient The Amazon SQS client used for interacting with SQS.
-     * @param s3Client The Amazon S3 client used for interacting with S3.
-     * @param dynamoClient The Amazon DynamoDB client used for interacting with DynamoDB.
+     * @param sqsClient    The Amazon SQS client used for interacting with SQS.
+     * @param s3Client     The Amazon S3 client used for interacting with S3.
+     * @param dynamoClient The Amazon DynamoDB client used for interacting with
+     *                     DynamoDB.
      * @throws ObjectFactoryException If there is an error creating the object.
      */
-    public SqsBulkExportProcessorLambda(AmazonSQS sqsClient, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) throws ObjectFactoryException {
+    public SqsBulkExportProcessorLambda(AmazonSQS sqsClient, AmazonS3 s3Client, AmazonDynamoDB dynamoClient)
+            throws ObjectFactoryException {
         this.sqsClient = sqsClient;
         this.s3Client = s3Client;
         this.dynamoClient = dynamoClient;
         String bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucket);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        
         bulkExportQuerySerDe = new BulkExportQuerySerDe();
         processor = SqsBulkExportProcessor.builder()
-        .sqsClient(sqsClient)
-        .s3Client(s3Client)
-        .dynamoClient(dynamoClient)
+                .sqsClient(sqsClient)
+                .s3Client(s3Client)
+                .dynamoClient(dynamoClient)
                 .instanceProperties(instanceProperties)
+                .tablePropertiesProvider(tablePropertiesProvider)
                 .build();
     }
 
     /**
-     * Handles the incoming SQS event, processes each message, and performs the bulk export operation.
+     * Handles the incoming SQS event, processes each message, and performs the bulk
+     * export operation.
      *
      * @param event   The SQS event containing the messages to be processed.
      * @param context The AWS Lambda context object providing runtime information.
@@ -111,10 +123,12 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
 
     /**
      * Deserialises a JSON string into a BulkExportQuery object and validates it.
-     * If the deserialization or validation fails, logs the error and returns an empty Optional.
+     * If the deserialization or validation fails, logs the error and returns an
+     * empty Optional.
      *
      * @param message the JSON string representing the BulkExportQuery
-     * @return an Optional containing the deserialized BulkExportQuery if successful, otherwise an empty Optional
+     * @return an Optional containing the deserialized BulkExportQuery if
+     *         successful, otherwise an empty Optional
      */
     public Optional<BulkExportQuery> deserialiseAndValidate(String message) {
         try {

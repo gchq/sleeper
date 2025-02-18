@@ -15,7 +15,9 @@
  */
 package sleeper.cdk.stack.bulkexport;
 
+import com.amazonaws.auth.policy.actions.S3Actions;
 import com.amazonaws.auth.policy.actions.SQSActions;
+import com.amazonaws.auth.policy.actions.DynamoDBv2Actions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
@@ -148,7 +150,10 @@ public class BulkExportStack extends NestedStack {
                 .effect(Effect.ALLOW)
                 .actions(
                         Arrays.asList(SQSActions.SendMessage.getActionName(),
-                                SQSActions.ReceiveMessage.getActionName()))
+                                SQSActions.ReceiveMessage.getActionName(),
+                                S3Actions.PutObject.getActionName(),
+                                S3Actions.GetObject.getActionName(),
+                                DynamoDBv2Actions.Query.getActionName()))
                 .resources(Collections.singletonList("*"))
                 .build();
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
