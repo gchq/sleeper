@@ -21,6 +21,9 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 
 import java.time.Instant;
 import java.util.List;
@@ -38,6 +41,20 @@ public class DelegatingStateStore implements StateStore {
     public DelegatingStateStore(FileReferenceStore fileReferenceStore, PartitionStore partitionStore) {
         this.fileReferenceStore = fileReferenceStore;
         this.partitionStore = partitionStore;
+    }
+
+    /**
+     * Adds a transaction to the transaction log. The transaction may or may not already be held in S3. If it is already
+     * held in S3, we don't need to write it to S3 again.
+     *
+     * @param request the request
+     */
+    public void addTransaction(AddTransactionRequest request) {
+        if (request.getTransaction() instanceof FileReferenceTransaction) {
+            fileReferenceStore.addFilesTransaction(request);
+        } else if (request.getTransaction() instanceof PartitionTransaction) {
+            partitionStore.addPartitionsTransaction(request);
+        }
     }
 
     @Override
@@ -185,5 +202,17 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public void fixPartitionUpdateTime(Instant now) {
         partitionStore.fixPartitionUpdateTime(now);
+    }
+
+    @Override
+    public void addFilesTransaction(AddTransactionRequest request) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'addFilesTransaction'");
+    }
+
+    @Override
+    public void addPartitionsTransaction(AddTransactionRequest request) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'addPartitionsTransaction'");
     }
 }

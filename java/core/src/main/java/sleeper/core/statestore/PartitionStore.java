@@ -17,6 +17,7 @@ package sleeper.core.statestore;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -99,4 +100,11 @@ public interface PartitionStore {
      */
     default void fixPartitionUpdateTime(Instant time) {
     }
+
+    /**
+     * Adds a partions transaction to the transaction log.
+     *
+     * @param request the request
+     */
+    void addPartitionsTransaction(AddTransactionRequest request);
 }

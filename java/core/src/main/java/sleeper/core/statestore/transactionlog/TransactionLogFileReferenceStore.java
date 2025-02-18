@@ -149,7 +149,8 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         head.update();
     }
 
-    void addTransaction(AddTransactionRequest request) {
+    @Override
+    public void addFilesTransaction(AddTransactionRequest request) {
         head.addTransaction(clock.instant(), request);
     }
 
@@ -161,5 +162,4 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         head.update();
         return head.state();
     }
-
 }

@@ -93,7 +93,8 @@ class TransactionLogPartitionStore implements PartitionStore {
         head.update();
     }
 
-    void addTransaction(AddTransactionRequest request) {
+    @Override
+    public void addPartitionsTransaction(AddTransactionRequest request) {
         head.addTransaction(clock.instant(), request);
     }
 
