@@ -15,6 +15,7 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -29,6 +30,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 
 import java.time.Duration;
@@ -49,7 +52,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class CompactionJobDispatcherTest {
 
@@ -58,7 +60,7 @@ public class CompactionJobDispatcherTest {
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-    StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
+    StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
     InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
@@ -68,6 +70,11 @@ public class CompactionJobDispatcherTest {
     Queue<BatchRequestMessage> delayedPendingQueue = new LinkedList<>();
     Queue<CompactionJobDispatchRequest> pendingDeadLetterQueue = new LinkedList<>();
     Map<String, RuntimeException> sendFailureByJobId = new HashMap<>();
+
+    @BeforeEach
+    void setUp() {
+        stateStore.initialise(partitions.getAllPartitions());
+    }
 
     @Test
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() {
