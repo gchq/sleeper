@@ -38,6 +38,8 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.util.ObjectFactory;
 
@@ -64,7 +66,6 @@ import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreUninitialised;
 import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.timePassesAMinuteAtATimeFrom;
 
@@ -234,12 +235,17 @@ public class CreateCompactionJobsTest {
             stateStore.addFiles(List.of(fileReference1, fileReference2, fileReference3));
 
             // When we force create jobs
-            createJobWithForceAllFiles(fixJobIds("partition-R-job", "partition-LL-job", "partition-LR-job"), rand);
+            createJobWithForceAllFiles(GenerateJobId.random(), rand);
 
             // Then
-            assertThat(jobs).containsExactly(
-                    compactionFactory().createCompactionJob("partition-R-job", List.of(fileReference1), "R"),
-                    compactionFactory().createCompactionJob("partition-LR-job", List.of(fileReference3), "LR"));
+            CompactionJob job1 = compactionFactory().createCompactionJob("partition-R-job", List.of(fileReference1), "R");
+            CompactionJob job2 = compactionFactory().createCompactionJob("partition-LL-job", List.of(fileReference2), "LL");
+            CompactionJob job3 = compactionFactory().createCompactionJob("partition-LR-job", List.of(fileReference3), "LR");
+            assertThat(jobs).hasSize(2)
+                    // Output file is derived from job ID, and we don't want to be sensitive to order in which jobs are created.
+                    // We still assert on the input files and partition ID.
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("jobId", "outputFile")
+                    .isSubsetOf(job1, job2, job3);
         }
     }
 
@@ -506,7 +512,7 @@ public class CreateCompactionJobsTest {
     }
 
     private StateStore createStateStore(TableProperties table) {
-        StateStore stateStore = inMemoryStateStoreUninitialised(schema);
+        StateStore stateStore = InMemoryTransactionLogStateStore.create(table, new InMemoryTransactionLogs());
         stateStore.fixFileUpdateTime(DEFAULT_UPDATE_TIME);
         return stateStore;
     }
