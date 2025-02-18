@@ -16,8 +16,6 @@
 package sleeper.core.statestore.testutils;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStateStoreFactory;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.time.Duration;
@@ -34,7 +32,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
  */
 public class InMemoryTransactionLogsPerTable {
 
-    private final Map<String, InMemoryTransactionLogStateStoreFactory> transactionLogsByTableId = new LinkedHashMap<>();
+    private final Map<String, InMemoryTransactionLogs> transactionLogsByTableId = new LinkedHashMap<>();
     private final InMemoryTransactionBodyStore transactionBodyStore = new InMemoryTransactionBodyStore();
     private final List<Duration> retryWaits = new ArrayList<>();
 
@@ -55,7 +53,7 @@ public class InMemoryTransactionLogsPerTable {
      * @param  tableProperties the Sleeper table properties
      * @return                 the helper
      */
-    public InMemoryTransactionLogStateStoreFactory forTable(TableProperties tableProperties) {
+    public InMemoryTransactionLogs forTable(TableProperties tableProperties) {
         return forTableId(tableProperties.get(TABLE_ID));
     }
 
@@ -65,8 +63,8 @@ public class InMemoryTransactionLogsPerTable {
      * @param  tableId the Sleeper table unique ID
      * @return         the helper
      */
-    public InMemoryTransactionLogStateStoreFactory forTableId(String tableId) {
-        return transactionLogsByTableId.computeIfAbsent(tableId, id -> InMemoryTransactionLogStateStoreFactory.recordRetryWaits(transactionBodyStore, retryWaits));
+    public InMemoryTransactionLogs forTableId(String tableId) {
+        return transactionLogsByTableId.computeIfAbsent(tableId, id -> InMemoryTransactionLogs.recordRetryWaits(transactionBodyStore, retryWaits));
     }
 
     public InMemoryTransactionBodyStore getTransactionBodyStore() {
@@ -75,5 +73,17 @@ public class InMemoryTransactionLogsPerTable {
 
     public List<Duration> getRetryWaits() {
         return retryWaits;
+    }
+
+    /**
+     * Initialises the state store for the given table.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @return                 this object for chaining
+     */
+    public InMemoryTransactionLogsPerTable initialiseTable(TableProperties tableProperties) {
+        InMemoryTransactionLogs tableLogs = forTable(tableProperties);
+        InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, tableLogs);
+        return this;
     }
 }

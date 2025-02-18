@@ -15,6 +15,7 @@
  */
 package sleeper.core.partition;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 
@@ -33,6 +34,10 @@ public class PartitionsBuilder {
     private final Schema schema;
     protected final PartitionFactory factory;
     protected final Map<String, Partition> partitionById;
+
+    public PartitionsBuilder(TableProperties tableProperties) {
+        this(tableProperties.getSchema());
+    }
 
     public PartitionsBuilder(Schema schema) {
         this(schema, new PartitionFactory(schema), new LinkedHashMap<>());

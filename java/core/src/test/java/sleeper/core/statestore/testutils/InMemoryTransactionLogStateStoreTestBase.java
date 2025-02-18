@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.statestore.transactionlog;
+package sleeper.core.statestore.testutils;
 
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.table.TableStatus;
 
 import java.time.Duration;
@@ -31,7 +32,7 @@ public class InMemoryTransactionLogStateStoreTestBase {
 
     protected final TableStatus sleeperTable = uniqueIdAndName("test-table-id", "test-table");
     protected final String tableId = sleeperTable.getTableUniqueId();
-    protected final InMemoryTransactionLogStateStoreFactory transactionLogs = new InMemoryTransactionLogStateStoreFactory();
+    protected final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
     protected final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
     protected final InMemoryTransactionLogStore partitionsLogStore = transactionLogs.getPartitionsLogStore();
     protected final InMemoryTransactionBodyStore transactionBodyStore = transactionLogs.getTransactionBodyStore();

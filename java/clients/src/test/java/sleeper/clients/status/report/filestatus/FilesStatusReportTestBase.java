@@ -20,10 +20,14 @@ import com.google.common.io.CharStreams;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.clients.status.report.FilesStatusReport;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,12 +38,16 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.function.Function;
 
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 
 public class FilesStatusReportTestBase {
     protected final Schema schema = Schema.builder().rowKeyFields(new Field("key1", new StringType())).build();
     protected final Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
-    protected final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
+
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    protected final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
 
     @BeforeEach
     void setUp() {

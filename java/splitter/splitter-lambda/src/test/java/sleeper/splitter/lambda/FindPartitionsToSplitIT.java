@@ -33,6 +33,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.ParquetConfiguration;
@@ -59,7 +61,6 @@ import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESH
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.parquetConfiguration;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.standardIngestCoordinator;
 
@@ -71,7 +72,7 @@ public class FindPartitionsToSplitIT extends LocalStackTestBase {
     private static final Schema SCHEMA = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, SCHEMA);
-    private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(SCHEMA);
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
     private final String tableId = tableProperties.get(TABLE_ID);
     private final TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
 

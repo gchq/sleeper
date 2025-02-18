@@ -35,6 +35,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.example.iterator.AdditionIterator;
 import sleeper.example.iterator.SecurityFilteringIterator;
@@ -62,14 +64,13 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
 
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final InMemoryDataStore recordStore = new InMemoryDataStore();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
 
     @Nested
     @DisplayName("Query records")

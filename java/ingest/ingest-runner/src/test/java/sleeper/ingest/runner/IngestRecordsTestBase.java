@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,7 +50,7 @@ public class IngestRecordsTestBase {
     public Path tempDir;
 
     protected final Field field = new Field("key", new LongType());
-    protected final Schema schema = schemaWithRowKeys(field);
+    protected Schema schema = schemaWithRowKeys(field);
     protected String inputFolderName;
     protected String dataFolderName;
     protected InstanceProperties instanceProperties;
@@ -65,35 +64,9 @@ public class IngestRecordsTestBase {
         tableProperties = defaultTableProperties(schema, instanceProperties);
     }
 
-    protected IngestResult ingestRecords(Schema schema, StateStore stateStore, List<Record> records) throws Exception {
-        return ingestRecords(schema, stateStore, records, instanceProperties -> {
-        }, tableProperties -> {
-        });
-    }
-
-    protected IngestResult ingestRecordsWithTableProperties(
-            Schema schema, StateStore stateStore, List<Record> records,
-            Consumer<TableProperties> tablePropertiesConfig) throws Exception {
-        return ingestRecords(schema, stateStore, records, instanceProperties -> {
-        }, tablePropertiesConfig);
-    }
-
-    protected IngestResult ingestRecordsWithInstanceProperties(
-            Schema schema, StateStore stateStore, List<Record> records,
-            Consumer<InstanceProperties> instancePropertiesConfig) throws Exception {
-        return ingestRecords(schema, stateStore, records, instancePropertiesConfig, tableProperties -> {
-        });
-    }
-
-    protected IngestResult ingestRecords(
-            Schema schema, StateStore stateStore, List<Record> records,
-            Consumer<InstanceProperties> instancePropertiesConfig,
-            Consumer<TableProperties> tablePropertiesConfig) throws Exception {
-
-        instancePropertiesConfig.accept(instanceProperties);
+    protected void setSchema(Schema schema) {
         tableProperties.setSchema(schema);
-        tablePropertiesConfig.accept(tableProperties);
-        return ingestRecords(stateStore, records);
+        this.schema = schema;
     }
 
     protected IngestResult ingestRecords(StateStore stateStore, List<Record> records) throws Exception {
@@ -105,12 +78,6 @@ public class IngestRecordsTestBase {
             ingestRecords.write(record);
         }
         return ingestRecords.close();
-    }
-
-    protected IngestResult ingestFromRecordIterator(Schema schema, StateStore stateStore, Iterator<Record> iterator) throws IteratorCreationException, IOException {
-        tableProperties.setSchema(schema);
-        IngestFactory factory = createIngestFactory(stateStore);
-        return factory.ingestFromRecordIterator(tableProperties, iterator);
     }
 
     protected IngestResult ingestFromRecordIterator(StateStore stateStore, Iterator<Record> iterator) throws IteratorCreationException, IOException {

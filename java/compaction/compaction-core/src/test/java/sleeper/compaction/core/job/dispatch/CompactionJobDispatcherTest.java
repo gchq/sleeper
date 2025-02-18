@@ -29,6 +29,8 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 
 import java.time.Duration;
@@ -49,7 +51,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
 
 public class CompactionJobDispatcherTest {
 
@@ -58,7 +59,8 @@ public class CompactionJobDispatcherTest {
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-    StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
+    StateStore stateStore = InMemoryTransactionLogStateStore
+            .createAndInitialiseWithPartitions(partitions.getAllPartitions(), tableProperties, new InMemoryTransactionLogs());
     InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);

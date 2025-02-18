@@ -31,9 +31,9 @@ import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -57,7 +57,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
+import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
 
 public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogStateStoreTestBase {
     @TempDir
