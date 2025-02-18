@@ -15,10 +15,13 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+
+import java.util.List;
 
 /**
  * An implementation of the state store backed by a transaction log held in memory.
@@ -50,6 +53,20 @@ public class InMemoryTransactionLogStateStore {
     public static TransactionLogStateStore createAndInitialise(TableProperties tableProperties, InMemoryTransactionLogs transactionLogs) {
         TransactionLogStateStore stateStore = create(tableProperties, transactionLogs);
         stateStore.initialise();
+        return stateStore;
+    }
+
+    /**
+     * Creates and initialises a state store for the given Sleeper table using the provided list of partitions.
+     *
+     * @param  partitions      the list of partitions
+     * @param  tableProperties the Sleeper table properties
+     * @param  transactionLogs the transaction logs
+     * @return                 the state store
+     */
+    public static TransactionLogStateStore createAndInitialiseWithPartitions(List<Partition> partitions, TableProperties tableProperties, InMemoryTransactionLogs transactionLogs) {
+        TransactionLogStateStore stateStore = create(tableProperties, transactionLogs);
+        stateStore.initialise(partitions);
         return stateStore;
     }
 

@@ -15,7 +15,6 @@
  */
 package sleeper.compaction.core.job.dispatch;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -60,7 +59,8 @@ public class CompactionJobDispatcherTest {
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-    StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
+    StateStore stateStore = InMemoryTransactionLogStateStore
+            .createAndInitialiseWithPartitions(partitions.getAllPartitions(), tableProperties, new InMemoryTransactionLogs());
     InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
     CompactionJobFactory compactionFactory = new CompactionJobFactory(instanceProperties, tableProperties);
@@ -70,11 +70,6 @@ public class CompactionJobDispatcherTest {
     Queue<BatchRequestMessage> delayedPendingQueue = new LinkedList<>();
     Queue<CompactionJobDispatchRequest> pendingDeadLetterQueue = new LinkedList<>();
     Map<String, RuntimeException> sendFailureByJobId = new HashMap<>();
-
-    @BeforeEach
-    void setUp() {
-        stateStore.initialise(partitions.getAllPartitions());
-    }
 
     @Test
     void shouldSendCompactionJobsInABatchWhenAllFilesAreAssigned() {
