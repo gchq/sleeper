@@ -60,9 +60,9 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
 
 public class SplitPartitionTest {
-    private final Field field = new Field("key", new IntType());
-    private final Schema schema = Schema.builder().rowKeyFields(field).build();
+    private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new IntType())).build();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
     private final Map<String, Sketches> fileToSketchMap = new HashMap<>();
     private final List<StateStoreCommitRequest> sentAsyncCommits = new ArrayList<>();
@@ -73,7 +73,7 @@ public class SplitPartitionTest {
         @Test
         public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecausePartitionIsOnePoint() throws Exception {
             // Given
-            PartitionTree tree = new PartitionsBuilder(schema)
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "id12", "id3", 1)
                     .splitToNewChildren("id12", "id1", "id2", 0)
@@ -91,12 +91,12 @@ public class SplitPartitionTest {
                         record.put("key", r);
                         records.add(record);
                     }
-                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
+                    ingestRecordsToSketchOnPartition(stateStore, partition.getId(), records.stream());
                 }
             }
 
             // When
-            splitPartition(schema, stateStore, "id2", generateNoIds());
+            splitPartition(stateStore, "id2", generateNoIds());
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -106,7 +106,7 @@ public class SplitPartitionTest {
         @Test
         public void shouldNotSplitPartitionForIntKeyIfItCannotBeSplitBecauseDataIsConstant() throws Exception {
             // Given
-            PartitionTree tree = new PartitionsBuilder(schema)
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "id12", "id3", 10)
                     .splitToNewChildren("id12", "id1", "id2", 0)
@@ -133,12 +133,12 @@ public class SplitPartitionTest {
                             records.add(record);
                         }
                     }
-                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
+                    ingestRecordsToSketchOnPartition(stateStore, partition.getId(), records.stream());
                 }
             }
 
             // When
-            splitPartition(schema, stateStore, "id2", generateNoIds());
+            splitPartition(stateStore, "id2", generateNoIds());
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -148,8 +148,8 @@ public class SplitPartitionTest {
         @Test
         public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecausePartitionIsOnePoint() throws Exception {
             // Given
-            Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-            PartitionTree tree = new PartitionsBuilder(schema)
+            tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build());
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "id12", "id3", new byte[]{(byte) 51})
                     .splitToNewChildren("id12", "id1", "id2", new byte[]{(byte) 50})
@@ -182,12 +182,12 @@ public class SplitPartitionTest {
                             records.add(record);
                         }
                     }
-                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
+                    ingestRecordsToSketchOnPartition(stateStore, partition.getId(), records.stream());
                 }
             }
 
             // When
-            splitPartition(schema, stateStore, "id2", generateNoIds());
+            splitPartition(stateStore, "id2", generateNoIds());
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -197,8 +197,8 @@ public class SplitPartitionTest {
         @Test
         public void shouldNotSplitPartitionForByteArrayKeyIfItCannotBeSplitBecauseDataIsConstant() throws Exception {
             // Given
-            Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-            PartitionTree tree = new PartitionsBuilder(schema)
+            tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build());
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "id12", "id3", new byte[]{(byte) 100})
                     .splitToNewChildren("id12", "id1", "id2", new byte[]{(byte) 50})
@@ -231,12 +231,12 @@ public class SplitPartitionTest {
                             records.add(record);
                         }
                     }
-                    ingestRecordsToSketchOnPartition(schema, stateStore, partition.getId(), records.stream());
+                    ingestRecordsToSketchOnPartition(stateStore, partition.getId(), records.stream());
                 }
             }
 
             // When
-            splitPartition(schema, stateStore, "id2", generateNoIds());
+            splitPartition(stateStore, "id2", generateNoIds());
 
             // Then
             assertThat(stateStore.getAllPartitions())
@@ -250,20 +250,20 @@ public class SplitPartitionTest {
         @Test
         void shouldSplitPartitionForIntKey() throws Exception {
             // Given
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             IntStream.range(100 * i, 100 * (i + 1))
                                     .mapToObj(r -> new Record(Map.of("key", r)))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildren("A", "B", "C", 500)
                             .buildList());
@@ -272,21 +272,21 @@ public class SplitPartitionTest {
         @Test
         void shouldSplitPartitionForLongKey() throws Exception {
             // Given
-            Schema schema = Schema.builder().rowKeyFields(new Field("key", new LongType())).build();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+            tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new LongType())).build());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             LongStream.range(100L * i, 100L * (i + 1))
                                     .mapToObj(r -> new Record(Map.of("key", r)))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildren("A", "B", "C", 500L)
                             .buildList());
@@ -295,21 +295,21 @@ public class SplitPartitionTest {
         @Test
         void shouldSplitPartitionForStringKey() throws Exception {
             // Given
-            Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+            tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new StringType())).build());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of("key", String.format("A%1d%02d", i, r))))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildren("A", "B", "C", "A500")
                             .buildList());
@@ -318,21 +318,21 @@ public class SplitPartitionTest {
         @Test
         void shouldSplitPartitionForByteArrayKey() throws Exception {
             // Given
-            Schema schema = Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+            tableProperties.setSchema(Schema.builder().rowKeyFields(new Field("key", new ByteArrayType())).build());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of("key", new byte[]{(byte) r})))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildren("A", "B", "C", new byte[]{(byte) 50})
                             .buildList());
@@ -345,25 +345,25 @@ public class SplitPartitionTest {
         @Test
         public void shouldSplitIntKeyOnFirstDimension() throws Exception {
             // Given
-            Schema schema = Schema.builder()
+            tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
-                    .build();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .build());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", r,
                                             "key2", 10)))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildrenOnDimension("A", "B", "C", 0, 50)
                             .buildList());
@@ -372,25 +372,25 @@ public class SplitPartitionTest {
         @Test
         public void shouldSplitIntKeyOnSecondDimensionWhenAllValuesForFirstKeyAreTheSame() throws Exception {
             // Given
-            Schema schema = Schema.builder()
+            tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
-                    .build();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .build());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", 10,
                                             "key2", r)))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildrenOnDimension("A", "B", "C", 1, 50)
                             .buildList());
@@ -399,25 +399,25 @@ public class SplitPartitionTest {
         @Test
         public void shouldSplitIntKeyOnFirstDimensionWhenSecondDimensionCanBeSplit() throws Exception {
             // Given
-            Schema schema = Schema.builder()
+            tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
-                    .build();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .build());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", r,
                                             "key2", i)))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIdsStartingFrom('B'));
+            splitSinglePartition(stateStore, generateIdsStartingFrom('B'));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildrenOnDimension("A", "B", "C", 0, 50)
                             .buildList());
@@ -426,14 +426,14 @@ public class SplitPartitionTest {
         @Test
         public void shouldSplitIntKeyOnSecondDimensionWhenMinAndMedianForFirstKeyAreTheSame() throws Exception {
             // Given
-            Schema schema = Schema.builder()
+            tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new IntType()), new Field("key2", new IntType()))
-                    .build();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .build());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     // The majority of the values are 10; so min should equal median
                                     .mapToObj(r -> new Record(Map.of(
@@ -441,11 +441,11 @@ public class SplitPartitionTest {
                                             "key2", r)))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildrenOnDimension("A", "B", "C", 1, 50)
                             .buildList());
@@ -454,26 +454,26 @@ public class SplitPartitionTest {
         @Test
         public void shouldSplitByteKeyOnFirstDimension() throws Exception {
             // Given
-            Schema schema = Schema.builder()
+            tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
-                    .build();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .build());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
 
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", new byte[]{(byte) r},
                                             "key2", new byte[]{(byte) -100})))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildrenOnDimension("A", "B", "C", 0, new byte[]{50})
                             .buildList());
@@ -482,25 +482,25 @@ public class SplitPartitionTest {
         @Test
         public void shouldSplitByteKeyOnSecondDimensionWhenAllValuesForFirstKeyAreTheSame() throws Exception {
             // Given
-            Schema schema = Schema.builder()
+            tableProperties.setSchema(Schema.builder()
                     .rowKeyFields(new Field("key1", new ByteArrayType()), new Field("key2", new ByteArrayType()))
-                    .build();
-            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema)
+                    .build());
+            StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildList());
             IntStream.range(0, 10)
-                    .forEach(i -> ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+                    .forEach(i -> ingestRecordsToSketchOnPartition(stateStore, "A",
                             IntStream.range(0, 100)
                                     .mapToObj(r -> new Record(Map.of(
                                             "key1", new byte[]{(byte) -100},
                                             "key2", new byte[]{(byte) r})))));
 
             // When
-            splitSinglePartition(schema, stateStore, generateIds("B", "C"));
+            splitSinglePartition(stateStore, generateIds("B", "C"));
 
             // Then
             assertThat(stateStore.getAllPartitions())
-                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(schema)
+                    .containsExactlyInAnyOrderElementsOf(new PartitionsBuilder(tableProperties)
                             .rootFirst("A")
                             .splitToNewChildrenOnDimension("A", "B", "C", 1, new byte[]{50})
                             .buildList());
@@ -514,26 +514,25 @@ public class SplitPartitionTest {
         @Test
         void shouldCommitPartitionSplitAsynchronously() throws Exception {
             // Given
-            PartitionTree tree = new PartitionsBuilder(schema)
+            PartitionTree tree = new PartitionsBuilder(tableProperties)
                     .singlePartition("A")
                     .buildTree();
             StateStore stateStore = inMemoryStateStoreWithPartitions(tree.getAllPartitions());
-            String filename = ingestRecordsToSketchOnPartition(schema, stateStore, "A",
+            String filename = ingestRecordsToSketchOnPartition(stateStore, "A",
                     IntStream.rangeClosed(1, 100)
                             .mapToObj(i -> new Record(Map.of("key", i))));
-            TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
             tableProperties.set(PARTITION_SPLIT_ASYNC_COMMIT, "true");
             tableProperties.set(TABLE_ID, "tableId");
 
             // When
-            partitionSplitter(stateStore, tableProperties, generateIds("B", "C"))
+            partitionSplitter(stateStore, generateIds("B", "C"))
                     .splitPartition(tree.getRootPartition(), List.of(filename));
 
             // Then
             assertThat(stateStore.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(tree.getAllPartitions());
 
-            PartitionTree resultant = new PartitionsBuilder(schema)
+            PartitionTree resultant = new PartitionsBuilder(tableProperties)
                     .rootFirst("A")
                     .splitToNewChildren("A", "B", "C", 51)
                     .buildTree();
@@ -544,8 +543,8 @@ public class SplitPartitionTest {
         }
     }
 
-    private String ingestRecordsToSketchOnPartition(Schema schema, StateStore stateStore, String partitionId, Stream<Record> recordsStream) {
-        Sketches sketches = Sketches.from(schema);
+    private String ingestRecordsToSketchOnPartition(StateStore stateStore, String partitionId, Stream<Record> recordsStream) {
+        Sketches sketches = Sketches.from(tableProperties.getSchema());
         AtomicLong recordCount = new AtomicLong();
 
         recordsStream.forEach(rec -> {
@@ -564,29 +563,27 @@ public class SplitPartitionTest {
         return recordFileReference.getFilename();
     }
 
-    private void splitSinglePartition(Schema schema, StateStore stateStore, Supplier<String> generateIds) throws Exception {
+    private void splitSinglePartition(StateStore stateStore, Supplier<String> generateIds) throws Exception {
         Partition partition = stateStore.getAllPartitions().get(0);
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        SplitPartition partitionSplitter = partitionSplitter(stateStore, tableProperties, generateIds);
+        SplitPartition partitionSplitter = partitionSplitter(stateStore, generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
-    private void splitPartition(Schema schema, StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
+    private void splitPartition(StateStore stateStore, String partitionId, Supplier<String> generateIds) throws Exception {
         PartitionTree tree = new PartitionTree(stateStore.getAllPartitions());
         Partition partition = tree.getPartition(partitionId);
         List<String> fileNames = stateStore.getFileReferences().stream()
                 .filter(file -> partitionId.equals(file.getPartitionId()))
                 .map(FileReference::getFilename)
                 .collect(Collectors.toList());
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        SplitPartition partitionSplitter = partitionSplitter(stateStore, tableProperties, generateIds);
+        SplitPartition partitionSplitter = partitionSplitter(stateStore, generateIds);
         partitionSplitter.splitPartition(partition, fileNames);
     }
 
-    private SplitPartition partitionSplitter(StateStore stateStore, TableProperties tableProperties, Supplier<String> generateIds) {
+    private SplitPartition partitionSplitter(StateStore stateStore, Supplier<String> generateIds) {
         return new SplitPartition(stateStore, tableProperties, loadSketchesFromMap(), generateIds, sentAsyncCommits::add);
     }
 
