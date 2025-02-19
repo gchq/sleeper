@@ -202,10 +202,10 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
+            assertThatThrownBy(() -> update(store).addFile(file))
                     .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
-            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(file))))
+            assertThatThrownBy(() -> update(store).addFilesWithReferences(List.of(fileWithReferences(file))))
                     .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
         }
@@ -220,10 +220,10 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(leftFile);
 
             // When / Then
-            assertThatThrownBy(() -> store.addFile(rightFile))
+            assertThatThrownBy(() -> update(store).addFile(rightFile))
                     .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactly(leftFile);
-            assertThatThrownBy(() -> store.addFilesWithReferences(List.of(fileWithReferences(rightFile))))
+            assertThatThrownBy(() -> update(store).addFilesWithReferences(List.of(fileWithReferences(rightFile))))
                     .isInstanceOf(FileAlreadyExistsException.class);
             assertThat(store.getFileReferences()).containsExactly(leftFile);
         }
