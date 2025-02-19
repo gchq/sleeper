@@ -34,7 +34,6 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
@@ -123,7 +122,6 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         @Test
         void shouldAddATransactionAlreadyHeldInS3() {
             // Given
-            TransactionLogStateStore stateStore = (TransactionLogStateStore) this.stateStore;
             PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
             stateStore.initialise(tree.getAllPartitions());
             FileReference file = fileFactory(tree).rootFile("test.parquet", 100);
