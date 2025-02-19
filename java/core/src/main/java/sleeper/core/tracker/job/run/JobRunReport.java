@@ -30,14 +30,16 @@ public interface JobRunReport {
     String getTaskId();
 
     /**
-     * Checks if the run has finished.
+     * Checks if the run has finished. If the results of the run are committed as a separate operation, it will count
+     * as finished here even if it is uncommitted.
      *
      * @return true if the run has either failed, or successfully finished
      */
     boolean isFinished();
 
     /**
-     * Checks if the run has finished successfully.
+     * Checks if the run has finished successfully. If the results of the run are committed as a separate operation, it
+     * will count as finished here even if it is uncommitted.
      *
      * @return true if the run has finished successfully
      */
@@ -59,7 +61,8 @@ public interface JobRunReport {
 
     /**
      * Retrieves the time of the last update in the workflow of this job run, if it is finished or failed. If the run
-     * has not yet finished, this will return null.
+     * has not yet finished, this will return null. If the results of the run are committed as a separate operation, the
+     * commit time is never returned from this method.
      * <p>
      * This should be based on the type of update, so it's possible that another update in the run may be after this
      * update according to the times recorded in each update. This is because the processing of a run can be
