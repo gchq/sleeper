@@ -15,6 +15,9 @@
  */
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
@@ -35,6 +38,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * A transaction to assign files to jobs.
  */
 public class AssignJobIdsTransaction implements FileReferenceTransaction {
+    public static final Logger LOGGER = LoggerFactory.getLogger(AssignJobIdsTransaction.class);
 
     private final List<AssignJobIdRequest> requests;
 
@@ -54,6 +58,7 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
                 .filter(request -> !request.getFilenames().isEmpty())
                 .collect(toUnmodifiableList());
         if (filtered.isEmpty()) {
+            LOGGER.warn("Attempted to create transaction with no file assignments, received requests: {}", requests);
             return Optional.empty();
         } else {
             return Optional.of(new AssignJobIdsTransaction(filtered));

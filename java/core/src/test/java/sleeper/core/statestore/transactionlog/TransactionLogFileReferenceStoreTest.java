@@ -441,7 +441,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             update(store).addFile(file);
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
@@ -466,7 +466,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(file);
 
             // When
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job", "root", List.of("file"))));
 
             // Then
@@ -484,7 +484,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFiles(List.of(left, right));
 
             // When
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job", "L", List.of("file"))));
 
             // Then
@@ -500,7 +500,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFiles(List.of(file1, file2));
 
             // When
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file1")),
                     assignJobOnPartitionToFiles("job2", "root", List.of("file2"))));
 
@@ -516,11 +516,11 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference file = factory.rootFile("file", 100L);
             update(store).addFile(file);
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.assignJobIds(List.of(
+            assertThatThrownBy(() -> update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job2", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactly(withJobId("job1", file));
@@ -534,11 +534,11 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file2 = factory.rootFile("file2", 100L);
             FileReference file3 = factory.rootFile("file3", 100L);
             update(store).addFiles(List.of(file1, file2, file3));
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file2"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.assignJobIds(List.of(
+            assertThatThrownBy(() -> update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job2", "root", List.of("file1", "file2", "file3")))))
                     .isInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
@@ -553,7 +553,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.assignJobIds(List.of(
+            assertThatThrownBy(() -> update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("requestedFile")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(file);
@@ -563,7 +563,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         @Test
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExistAndStoreIsEmpty() {
             // When / Then
-            assertThatThrownBy(() -> store.assignJobIds(List.of(
+            assertThatThrownBy(() -> update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).isEmpty();
@@ -579,7 +579,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.assignJobIds(List.of(
+            assertThatThrownBy(() -> update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file")))))
                     .isInstanceOf(FileReferenceNotFoundException.class);
             assertThat(store.getFileReferences()).containsExactly(existingReference);

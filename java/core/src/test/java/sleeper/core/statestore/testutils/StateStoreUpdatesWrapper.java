@@ -15,16 +15,24 @@
  */
 package sleeper.core.statestore.testutils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 
 import java.util.List;
@@ -33,6 +41,7 @@ import java.util.List;
  * Wraps a state store and exposes methods for shortcuts during tests.
  */
 public class StateStoreUpdatesWrapper {
+    public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreUpdatesWrapper.class);
 
     private final StateStore stateStore;
 
@@ -124,10 +133,28 @@ public class StateStoreUpdatesWrapper {
      */
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
         try {
-            stateStore.addTransaction(AddTransactionRequest.withTransaction(new SplitFileReferencesTransaction(splitRequests)).build());
+            addTransaction(new SplitFileReferencesTransaction(splitRequests));
         } catch (StateStoreException e) {
             throw new SplitRequestsFailedException(List.of(), splitRequests, e);
         }
+    }
+
+    /**
+     * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
+     * used for compaction job input files.
+     *
+     * @param  requests                            A list of {@link AssignJobIdRequest}s which should each be applied
+     *                                             atomically
+     * @throws FileReferenceNotFoundException      if a reference does not exist
+     * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
+     * @throws StateStoreException                 if the update fails for another reason
+     */
+    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
+        AssignJobIdsTransaction.ignoringEmptyRequests(requests).ifPresent(this::addTransaction);
+    }
+
+    private void addTransaction(StateStoreTransaction<?> transaction) {
+        stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
     }
 
 }
