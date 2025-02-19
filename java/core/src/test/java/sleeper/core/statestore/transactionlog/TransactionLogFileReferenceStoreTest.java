@@ -63,6 +63,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.partialReadyForGCFil
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -85,8 +86,8 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
 
             // When
             store.fixFileUpdateTime(fixedUpdateTime);
-            store.addFile(file1);
-            store.addFiles(List.of(file2, file3));
+            update(store).addFile(file1);
+            update(store).addFiles(List.of(file2, file3));
 
             // Then
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(file1, file2, file3);
@@ -105,7 +106,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
 
             // When
             store.fixFileUpdateTime(updateTime);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // Then
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(withLastUpdate(updateTime, file));
@@ -120,7 +121,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
             store.fixFileUpdateTime(updateTime);
-            store.addFiles(List.of(leftFile, rightFile));
+            update(store).addFiles(List.of(leftFile, rightFile));
 
             // When / Then
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
@@ -137,7 +138,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
             store.fixFileUpdateTime(updateTime);
-            store.addFilesWithReferences(List.of(fileWithReferences(List.of(leftFile, rightFile))));
+            update(store).addFilesWithReferences(List.of(fileWithReferences(List.of(leftFile, rightFile))));
 
             // When / Then
             assertThat(store.getFileReferences()).containsExactlyInAnyOrder(
@@ -160,7 +161,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference rightFile1 = splitFile(file1, "R");
             FileReference file2 = factory.rootFile("file2", 100L);
             store.fixFileUpdateTime(updateTime);
-            store.addFilesWithReferences(List.of(
+            update(store).addFilesWithReferences(List.of(
                     fileWithReferences(List.of(leftFile1, rightFile1)),
                     fileWithReferences(List.of(file2))));
 
@@ -181,7 +182,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             store.fixFileUpdateTime(updateTime);
-            store.addFilesWithReferences(List.of(fileWithNoReferences("test-file")));
+            update(store).addFilesWithReferences(List.of(fileWithNoReferences("test-file")));
 
             // When / Then
             assertThat(store.getFileReferences()).isEmpty();
@@ -198,7 +199,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             Instant updateTime = Instant.parse("2023-12-01T10:45:00Z");
             FileReference file = factory.rootFile("file1", 100L);
             store.fixFileUpdateTime(updateTime);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When / Then
             assertThatThrownBy(() -> store.addFile(file))
@@ -216,7 +217,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file = factory.rootFile("file1", 100L);
             FileReference leftFile = splitFile(file, "L");
             FileReference rightFile = splitFile(file, "R");
-            store.addFile(leftFile);
+            update(store).addFile(leftFile);
 
             // When / Then
             assertThatThrownBy(() -> store.addFile(rightFile))
@@ -236,7 +237,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When
             SplitFileReferences.from(store).split();
@@ -255,7 +256,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             splitPartition("root", "L", "R", 5);
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
+            update(store).addFiles(List.of(file1, file2));
 
             // When
             SplitFileReferences.from(store).split();
@@ -281,7 +282,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file = factory.rootFile("file", 100L);
             FileReference leftFile = splitFile(file, "L");
             FileReference rightFile = splitFile(file, "R");
-            store.addFiles(List.of(leftFile, rightFile));
+            update(store).addFiles(List.of(leftFile, rightFile));
 
             // When
             SplitFileReferences.from(store).split();
@@ -306,7 +307,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             splitPartition("R", "RL", "RR", 7);
             FileReference file1 = factory.partitionFile("L", "file1", 100L);
             FileReference file2 = factory.partitionFile("R", "file2", 200L);
-            store.addFiles(List.of(file1, file2));
+            update(store).addFiles(List.of(file1, file2));
 
             // When
             SplitFileReferences.from(store).split();
@@ -330,7 +331,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             splitPartition("L", "LL", "LR", 2L);
             splitPartition("R", "RL", "RR", 7L);
             FileReference file = factory.rootFile("file.parquet", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When
             SplitFileReferences.from(store).split();
@@ -350,7 +351,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             splitPartition("root", "L", "R", 5L);
             FileReference file = factory.partitionFile("L", "already-split.parquet", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When
             SplitFileReferences.from(store).split();
