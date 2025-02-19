@@ -16,6 +16,7 @@
 
 package sleeper.core.tracker.job.run;
 
+import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.time.Instant;
@@ -32,7 +33,7 @@ import java.util.Optional;
 public class JobRuns {
     private final List<JobRun> latestFirst;
 
-    JobRuns(List<JobRun> latestFirst) {
+    private JobRuns(List<JobRun> latestFirst) {
         this.latestFirst = Collections.unmodifiableList(Objects.requireNonNull(latestFirst, "latestFirst must not be null"));
     }
 
@@ -91,7 +92,7 @@ public class JobRuns {
      * @return the update time, or an empty optional if there are no runs
      */
     public Optional<Instant> firstTime() {
-        return getFirstRun().map(JobRun::getStartUpdateTime);
+        return getFirstRun().map(JobRun::getFirstUpdate).map(JobStatusUpdate::getUpdateTime);
     }
 
     public Optional<JobRun> getLatestRun() {

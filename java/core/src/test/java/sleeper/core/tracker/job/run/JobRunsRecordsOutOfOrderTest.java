@@ -22,6 +22,7 @@ import sleeper.core.tracker.job.status.TestJobStartedStatus;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -45,9 +46,8 @@ public class JobRunsRecordsOutOfOrderTest {
 
         // Then
         assertThat(runs.getRunsLatestFirst())
-                .extracting(JobRun::getStartedStatus, JobRun::getFinishedStatus)
-                .containsExactly(
-                        tuple(started, finished));
+                .extracting(JobRun::getStatusUpdates)
+                .containsExactly(List.of(started, finished));
     }
 
     @Test
@@ -62,11 +62,11 @@ public class JobRunsRecordsOutOfOrderTest {
 
         // Then
         assertThat(runs.getRunsLatestFirst())
-                .extracting(JobRun::getStartedStatus, JobRun::getFinishedStatus)
+                .extracting(JobRun::getStatusUpdates)
                 .containsExactly(
-                        tuple(started3, null),
-                        tuple(started2, null),
-                        tuple(started1, null));
+                        List.of(started3),
+                        List.of(started2),
+                        List.of(started1));
     }
 
     @Test
@@ -82,11 +82,11 @@ public class JobRunsRecordsOutOfOrderTest {
 
         // Then
         assertThat(runs.getRunsLatestFirst())
-                .extracting(JobRun::getStartedStatus, JobRun::getFinishedStatus)
+                .extracting(JobRun::getStatusUpdates)
                 .containsExactly(
-                        tuple(started3, finished),
-                        tuple(started2, null),
-                        tuple(started1, null));
+                        List.of(started3, finished),
+                        List.of(started2),
+                        List.of(started1));
     }
 
     @Test
@@ -104,9 +104,9 @@ public class JobRunsRecordsOutOfOrderTest {
 
         // Then
         assertThat(runs.getRunsLatestFirst())
-                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
+                .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
                 .containsExactly(
-                        tuple(TASK_ID_2, started2, finished2),
-                        tuple(TASK_ID_1, started1, finished1));
+                        tuple(TASK_ID_2, List.of(started2, finished2)),
+                        tuple(TASK_ID_1, List.of(started1, finished1)));
     }
 }

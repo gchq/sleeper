@@ -53,14 +53,6 @@ public class JobRun {
         return taskId;
     }
 
-    public JobRunStartedUpdate getStartedStatus() {
-        return startedStatus;
-    }
-
-    public JobRunEndUpdate getFinishedStatus() {
-        return finishedStatus;
-    }
-
     public boolean isFinished() {
         return finishedStatus != null;
     }
@@ -84,7 +76,7 @@ public class JobRun {
      */
     public Instant getFinishTime() {
         if (isFinished()) {
-            return getFinishedStatus().getFinishTime();
+            return finishedStatus.getFinishTime();
         } else {
             return null;
         }
@@ -97,7 +89,7 @@ public class JobRun {
      */
     public Instant getFinishUpdateTime() {
         if (isFinished()) {
-            return getFinishedStatus().getUpdateTime();
+            return finishedStatus.getUpdateTime();
         } else {
             return null;
         }
@@ -110,6 +102,10 @@ public class JobRun {
      */
     public Instant getLatestUpdateTime() {
         return getLatestUpdate().getUpdateTime();
+    }
+
+    public JobStatusUpdate getFirstUpdate() {
+        return statusUpdates.get(0);
     }
 
     public JobStatusUpdate getLatestUpdate() {

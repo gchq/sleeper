@@ -27,6 +27,7 @@ import sleeper.core.tracker.job.run.JobRun;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -65,9 +66,9 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
+                .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
                 .containsExactly(
-                        tuple(DEFAULT_TASK_ID, started, null));
+                        tuple(DEFAULT_TASK_ID, List.of(started)));
         assertThat(status.isUnstartedOrInProgress()).isTrue();
     }
 
@@ -82,9 +83,9 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
+                .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
                 .containsExactly(
-                        tuple(DEFAULT_TASK_ID, started, finished));
+                        tuple(DEFAULT_TASK_ID, List.of(started, finished)));
         assertThat(status.isUnstartedOrInProgress()).isTrue();
     }
 
@@ -100,9 +101,9 @@ public class CompactionJobRunTest {
 
         // Then
         assertThat(status.getJobRuns())
-                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
+                .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
                 .containsExactly(
-                        tuple(DEFAULT_TASK_ID, started, finished));
+                        tuple(DEFAULT_TASK_ID, List.of(started, finished, committed)));
         assertThat(status.isUnstartedOrInProgress()).isFalse();
     }
 }
