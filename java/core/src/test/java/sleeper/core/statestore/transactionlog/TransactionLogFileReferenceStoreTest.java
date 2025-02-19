@@ -1282,7 +1282,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(file);
 
             // When
-            store.clearSleeperTable();
+            update(store).clearSleeperTable();
             store.initialise();
 
             // Then
@@ -1302,7 +1302,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
                     .build()));
 
             // When
-            store.clearSleeperTable();
+            update(store).clearSleeperTable();
             store.initialise();
 
             // Then

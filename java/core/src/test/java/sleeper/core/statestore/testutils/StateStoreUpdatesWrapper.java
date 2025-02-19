@@ -37,7 +37,9 @@ import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 
@@ -200,6 +202,33 @@ public class StateStoreUpdatesWrapper {
      */
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
         addTransaction(new DeleteFilesTransaction(filenames));
+    }
+
+    /**
+     * Clears all file data and partition data from the state store. Note that this does not delete any of the actual
+     * files, and after calling this method the store must be initialised before the Sleeper table can be used again.
+     *
+     * @throws StateStoreException if the update fails
+     */
+    public void clearSleeperTable() throws StateStoreException {
+        clearFileData();
+        clearPartitionData();
+    }
+
+    /**
+     * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
+     */
+    public void clearFileData() throws StateStoreException {
+        addTransaction(new ClearFilesTransaction());
+    }
+
+    /**
+     * Clears all partition data from the store. Note that this will invalidate any file references held in the store,
+     * so this should only be used when no files are present. The store must be initialised before the Sleeper table can
+     * be used again. Any file references will need to be added again.
+     */
+    public void clearPartitionData() throws StateStoreException {
+        addTransaction(new InitialisePartitionsTransaction(List.of()));
     }
 
     private void addTransaction(StateStoreTransaction<?> transaction) {

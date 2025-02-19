@@ -33,6 +33,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreTestBas
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -351,6 +352,40 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     tree.getPartition("L"), // Not a leaf
                     tree.getPartition("R")))
                     .isInstanceOf(StateStoreException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Clear partitions")
+    class ClearPartitions {
+        @Test
+        void shouldDeleteSinglePartitionOnClear() {
+            // Given
+            Schema schema = schemaWithKey("key", new IntType());
+            initialiseWithSchema(schema);
+
+            // When
+            update(store).clearSleeperTable();
+
+            // Then
+            assertThat(store.getAllPartitions()).isEmpty();
+            assertThat(store.getLeafPartitions()).isEmpty();
+        }
+
+        @Test
+        void shouldDeletePartitionTreeOnClear() {
+            // Given
+            Schema schema = schemaWithKey("key", new IntType());
+            initialiseWithPartitions(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 123));
+
+            // When
+            update(store).clearSleeperTable();
+
+            // Then
+            assertThat(store.getAllPartitions()).isEmpty();
+            assertThat(store.getLeafPartitions()).isEmpty();
         }
     }
 }
