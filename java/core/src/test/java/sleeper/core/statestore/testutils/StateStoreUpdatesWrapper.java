@@ -18,6 +18,8 @@ package sleeper.core.statestore.testutils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.partition.Partition;
+import sleeper.core.schema.Schema;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
@@ -65,6 +67,28 @@ public class StateStoreUpdatesWrapper {
      */
     public static StateStoreUpdatesWrapper update(StateStore stateStore) {
         return new StateStoreUpdatesWrapper(stateStore);
+    }
+
+    /**
+     * Initialises the store with a single partition covering all keys. This is the root partition which may be split
+     * in the future.
+     *
+     * @param  schema              the Sleeper table schema
+     * @throws StateStoreException if the update fails
+     */
+    public void initialise(Schema schema) throws StateStoreException {
+        addTransaction(InitialisePartitionsTransaction.singlePartition(schema));
+    }
+
+    /**
+     * Initialises the store with the given partitions. These should build into a complete partition tree, where all
+     * partitions are linked to a single root.
+     *
+     * @param  partitions          the partitions
+     * @throws StateStoreException if the update fails
+     */
+    public void initialise(List<Partition> partitions) throws StateStoreException {
+        addTransaction(new InitialisePartitionsTransaction(partitions));
     }
 
     /**

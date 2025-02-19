@@ -16,7 +16,6 @@
 package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
@@ -29,7 +28,6 @@ import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTra
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -71,7 +69,7 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public void initialise() throws StateStoreException {
-        initialise(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
+        head.addTransaction(clock.instant(), InitialisePartitionsTransaction.singlePartition(schema));
     }
 
     @Override
