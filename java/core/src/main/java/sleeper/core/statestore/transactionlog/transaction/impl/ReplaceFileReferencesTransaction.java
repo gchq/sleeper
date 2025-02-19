@@ -20,6 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -134,5 +139,22 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
     @Override
     public String toString() {
         return "ReplaceFileReferencesTransaction{jobs=" + jobs + "}";
+    }
+
+    /**
+     * Validates the transaction against the current state.
+     *
+     * @param  stateStoreFiles                         the state
+     * @throws FileNotFoundException                   if an input file does not exist
+     * @throws FileReferenceNotFoundException          if an input file is not referenced on the same partition
+     * @throws FileReferenceNotAssignedToJobException  if an input file is not assigned to the job on this partition
+     * @throws FileAlreadyExistsException              if the new file already exists in the state store
+     * @throws NewReferenceSameAsOldReferenceException if any of the input files are the same as the output file
+     */
+    public void validateStateChange(StateStoreFiles stateStoreFiles) {
+        for (ReplaceFileReferencesRequest job : jobs) {
+            job.validateNewReference();
+            job.validateStateChange(stateStoreFiles);
+        }
     }
 }

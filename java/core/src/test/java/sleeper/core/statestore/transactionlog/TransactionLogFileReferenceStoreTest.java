@@ -610,7 +610,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
             update(store).addFiles(List.of(file1, file2));
-            store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1", "file2"))));
+            update(store).assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1", "file2"))));
 
             // When / Then
             assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
@@ -624,7 +624,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
             update(store).addFiles(List.of(file1, file2));
-            store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1"))));
+            update(store).assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1"))));
 
             // When / Then
             assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
@@ -643,7 +643,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file2L = splitFile(file2, "L");
             FileReference file2R = splitFile(file2, "R");
             update(store).addFiles(List.of(file1L, file1R, file2L, file2R));
-            store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "L", List.of("file1", "file2"))));
+            update(store).assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "L", List.of("file1", "file2"))));
 
             // When / Then
             assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
@@ -678,7 +678,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         void shouldFailIfFileAssignedToOtherJob() {
             // Given
             update(store).addFile(factory.rootFile("file", 100L));
-            store.assignJobIds(List.of(assignJobOnPartitionToFiles("A", "root", List.of("file"))));
+            update(store).assignJobIds(List.of(assignJobOnPartitionToFiles("A", "root", List.of("file"))));
 
             // When / Then
             assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
@@ -710,9 +710,9 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(oldFile);
 
             // When
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("oldFile"), newFile)));
 
             // Then
@@ -735,10 +735,10 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFiles(List.of(oldFile1, oldFile2));
 
             // When
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1")),
                     assignJobOnPartitionToFiles("job2", "root", List.of("oldFile2"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("oldFile1"), newFile1),
                     replaceJobFileReferences("job2", List.of("oldFile2"), newFile2)));
 
@@ -760,13 +760,13 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(oldFile);
 
             // When
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("oldFile"), newFile)));
 
             // Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            assertThatThrownBy(() -> update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
@@ -787,7 +787,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(oldFile);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            assertThatThrownBy(() -> update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotAssignedToJobException.class);
@@ -799,7 +799,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference newFile = factory.rootFile("newFile", 100L);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            assertThatThrownBy(() -> update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("oldFile"), newFile))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileNotFoundException.class);
@@ -813,11 +813,11 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             update(store).addFile(oldFile1);
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            assertThatThrownBy(() -> update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("oldFile1", "oldFile2"), newFile))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileNotFoundException.class);
@@ -835,7 +835,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            assertThatThrownBy(() -> update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("file"), factory.rootFile("file2", 100L)))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
@@ -848,11 +848,11 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference file = factory.rootFile("file1", 100L);
             update(store).addFile(file);
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            assertThatThrownBy(() -> update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("file1"), file))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(NewReferenceSameAsOldReferenceException.class);
@@ -869,11 +869,11 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference existingReference = splitFile(file, "L");
             FileReference newReference = factory.partitionFile("L", "newFile", 100L);
             update(store).addFiles(List.of(existingReference, newReference));
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            assertThatThrownBy(() -> update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("oldFile"), newReference))))
                     .isInstanceOf(ReplaceRequestsFailedException.class)
                     .hasCauseInstanceOf(FileAlreadyExistsException.class);

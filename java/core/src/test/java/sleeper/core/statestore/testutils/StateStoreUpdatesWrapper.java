@@ -21,18 +21,21 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 
 import java.util.List;
@@ -151,6 +154,29 @@ public class StateStoreUpdatesWrapper {
      */
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
         AssignJobIdsTransaction.ignoringEmptyRequests(requests).ifPresent(this::addTransaction);
+    }
+
+    /**
+     * Atomically applies the results of jobs. Removes file references for a job's input files, and adds a reference to
+     * an output file. This will be used for compaction.
+     * <p>
+     * This will validate that the input files were assigned to the job.
+     * <p>
+     * This will decrement the number of references for each of the input files. If no other references exist for those
+     * files, they will become available for garbage collection.
+     *
+     * @param  requests                       requests for jobs to each have their results atomically applied
+     * @throws ReplaceRequestsFailedException if any of the updates fail
+     */
+    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
+        try {
+            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(requests);
+            stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction)
+                    .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> transaction.validateStateChange(state)))
+                    .build());
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(requests, e);
+        }
     }
 
     private void addTransaction(StateStoreTransaction<?> transaction) {
