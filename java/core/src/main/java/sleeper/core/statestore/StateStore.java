@@ -36,10 +36,10 @@ public interface StateStore extends FileReferenceStore, PartitionStore {
     }
 
     /**
-     * Adds a transaction to the transaction log. The transaction may or may not already be held in S3. If it is already
-     * held in S3, we don't need to write it to S3 again.
+     * Applies a transaction to the state store.
      *
      * @param request the request
+     * @see           AddTransactionRequest
      */
     default void addTransaction(AddTransactionRequest request) {
         if (request.getTransaction() instanceof FileReferenceTransaction) {
