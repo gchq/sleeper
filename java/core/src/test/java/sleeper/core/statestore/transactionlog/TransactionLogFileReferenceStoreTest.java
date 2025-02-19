@@ -925,9 +925,9 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference compactionOutputFile = factory.partitionFile("L", "compactedFile", 100L);
             store.fixFileUpdateTime(updateTime);
             update(store).addFiles(List.of(leftFile, rightFile));
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("splitFile"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("splitFile"), compactionOutputFile)));
 
             // When / Then
@@ -948,10 +948,10 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
             store.fixFileUpdateTime(updateTime);
             update(store).addFiles(List.of(leftFile, rightFile));
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("readyForGc"), leftOutputFile),
                     replaceJobFileReferences("job2", List.of("readyForGc"), rightOutputFile)));
 
@@ -979,14 +979,14 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // And ingest and compactions happened at the expected times
             store.fixFileUpdateTime(ingestTime);
             update(store).addFiles(List.of(leftFile, rightFile));
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
             store.fixFileUpdateTime(firstCompactionTime);
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("readyForGc"), leftOutputFile)));
             store.fixFileUpdateTime(secondCompactionTime);
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job2", List.of("readyForGc"), rightOutputFile)));
 
             // When / Then
@@ -1005,13 +1005,13 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             update(store).addFile(oldFile);
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("oldFile"), newFile)));
 
             // When
-            store.deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
+            update(store).deleteGarbageCollectedFileReferenceCounts(List.of("oldFile"));
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -1029,15 +1029,15 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
 
             // And the file was ingested as two references, then compacted into each partition
             update(store).addFiles(List.of(leftFile, rightFile));
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("file"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("job1", List.of("file"), leftOutputFile),
                     replaceJobFileReferences("job2", List.of("file"), rightOutputFile)));
 
             // When
-            store.deleteGarbageCollectedFileReferenceCounts(List.of("file"));
+            update(store).deleteGarbageCollectedFileReferenceCounts(List.of("file"));
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME)).isEmpty();
@@ -1052,14 +1052,14 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             update(store).addFile(file);
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
+            assertThatThrownBy(() -> update(store).deleteGarbageCollectedFileReferenceCounts(List.of("test")))
                     .isInstanceOf(FileHasReferencesException.class);
         }
 
         @Test
         public void shouldFailToDeleteFileWhichWasNotAdded() {
             // When / Then
-            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
+            assertThatThrownBy(() -> update(store).deleteGarbageCollectedFileReferenceCounts(List.of("test")))
                     .isInstanceOf(FileNotFoundException.class);
         }
 
@@ -1072,13 +1072,13 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
             update(store).addFiles(List.of(leftFile, rightFile));
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("file"), leftOutputFile)));
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("file")))
+            assertThatThrownBy(() -> update(store).deleteGarbageCollectedFileReferenceCounts(List.of("file")))
                     .isInstanceOf(FileHasReferencesException.class);
         }
 
@@ -1089,14 +1089,14 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
             update(store).addFiles(List.of(oldFile1, oldFile2));
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1", "oldFile2"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("oldFile1", "oldFile2"), newFile)));
 
             // When
             Iterator<String> iterator = store.getReadyForGCFilenamesBefore(Instant.ofEpochMilli(Long.MAX_VALUE)).iterator();
-            store.deleteGarbageCollectedFileReferenceCounts(List.of(iterator.next()));
+            update(store).deleteGarbageCollectedFileReferenceCounts(List.of(iterator.next()));
 
             // Then
             assertThat(store.getReadyForGCFilenamesBefore(AFTER_DEFAULT_UPDATE_TIME))
@@ -1113,7 +1113,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
                     fileWithReferences(List.of(activeFile))));
 
             // When / Then
-            assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("gcFile", "activeFile")))
+            assertThatThrownBy(() -> update(store).deleteGarbageCollectedFileReferenceCounts(List.of("gcFile", "activeFile")))
                     .isInstanceOf(FileHasReferencesException.class);
             assertThat(store.getFileReferences())
                     .containsExactly(activeFile);
@@ -1190,9 +1190,9 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference outputFile = factory.partitionFile("L", 50L);
             update(store).addFiles(List.of(leftFile, rightFile));
-            store.assignJobIds(List.of(
+            update(store).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
-            store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                     "job1", List.of("file"), outputFile)));
 
             // When

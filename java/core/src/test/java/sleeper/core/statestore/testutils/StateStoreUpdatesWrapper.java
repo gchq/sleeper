@@ -26,6 +26,8 @@ import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.FileHasReferencesException;
+import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
@@ -35,6 +37,7 @@ import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 
@@ -177,6 +180,26 @@ public class StateStoreUpdatesWrapper {
         } catch (StateStoreException e) {
             throw new ReplaceRequestsFailedException(requests, e);
         }
+    }
+
+    /**
+     * Records that files were garbage collected and have been deleted. The reference counts for those files should be
+     * deleted.
+     * <p>
+     * If there are any remaining internal references for the files on partitions, this should fail, as it should not be
+     * possible to reach that state.
+     * <p>
+     * If the reference count is non-zero for any other reason, it may be that the count was incremented after the file
+     * was ready for garbage collection. This should fail in that case as well, as we would like this to not be
+     * possible.
+     *
+     * @param  filenames                  The names of files that were deleted.
+     * @throws FileNotFoundException      if a file does not exist
+     * @throws FileHasReferencesException if a file still has references
+     * @throws StateStoreException        if the update fails for another reason
+     */
+    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
+        addTransaction(new DeleteFilesTransaction(filenames));
     }
 
     private void addTransaction(StateStoreTransaction<?> transaction) {
