@@ -29,6 +29,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.tracker.job.run.AverageRecordRate;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.util.DurationStatistics;
 
 import java.io.PrintStream;
@@ -136,7 +137,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         }
     }
 
-    private void printCommitStatus(JobRun run, CompactionJobCommittedStatus committedStatus) {
+    private void printCommitStatus(JobRunReport run, CompactionJobCommittedStatus committedStatus) {
         out.printf("State store commit time: %s%n", committedStatus.getCommitTime());
         if (run.isFinished()) {
             Duration delay = Duration.between(run.getFinishTime(), committedStatus.getCommitTime());

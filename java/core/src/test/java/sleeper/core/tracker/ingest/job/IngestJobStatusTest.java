@@ -24,7 +24,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
-import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
@@ -212,7 +212,7 @@ public class IngestJobStatusTest {
             // When / Then
             assertThat(status.getJobRuns())
                     .singleElement()
-                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .extracting(JobRunReport::isFinished, JobRunReport::getFinishedSummary)
                     .containsExactly(false, null);
         }
 
@@ -229,7 +229,7 @@ public class IngestJobStatusTest {
             // When / Then
             assertThat(status.getJobRuns())
                     .singleElement()
-                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .extracting(JobRunReport::isFinished, JobRunReport::getFinishedSummary)
                     .containsExactly(true, summary(startTime, finishTime));
         }
 
@@ -248,7 +248,7 @@ public class IngestJobStatusTest {
             // When / Then
             assertThat(status.getJobRuns())
                     .singleElement()
-                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .extracting(JobRunReport::isFinished, JobRunReport::getFinishedSummary)
                     .containsExactly(true, summary(startTime, finishTime));
         }
 
@@ -267,7 +267,7 @@ public class IngestJobStatusTest {
             // When / Then
             assertThat(status.getJobRuns())
                     .singleElement()
-                    .extracting(JobRun::isFinished, JobRun::getFinishedSummary)
+                    .extracting(JobRunReport::isFinished, JobRunReport::getFinishedSummary)
                     .containsExactly(true, summary(startTime, finishTime));
         }
     }

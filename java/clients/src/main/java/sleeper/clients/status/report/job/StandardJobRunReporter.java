@@ -20,6 +20,7 @@ import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
 import sleeper.core.tracker.job.status.JobRunStartedUpdate;
@@ -65,7 +66,7 @@ public class StandardJobRunReporter {
         this.out = out;
     }
 
-    public void writeRunFields(JobRun run, TableRow.Builder builder) {
+    public void writeRunFields(JobRunReport run, TableRow.Builder builder) {
         builder.value(TASK_ID, run.getTaskId())
                 .value(START_TIME, run.getStartTime())
                 .value(FINISH_TIME, run.getFinishTime());

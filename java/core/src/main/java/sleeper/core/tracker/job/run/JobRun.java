@@ -30,7 +30,7 @@ import java.util.Optional;
 /**
  * Information about a single run of a job that was tracked.
  */
-public class JobRun {
+public class JobRun implements JobRunReport {
     private final String taskId;
     private final List<JobStatusUpdate> statusUpdates;
     private final JobRunStartedUpdate startedStatus;
@@ -49,47 +49,30 @@ public class JobRun {
         return new Builder();
     }
 
+    @Override
     public String getTaskId() {
         return taskId;
     }
 
+    @Override
     public boolean isFinished() {
         return finishedStatus != null;
     }
 
+    @Override
     public boolean isFinishedSuccessfully() {
         return finishedStatus != null && finishedStatus.isSuccessful();
     }
 
+    @Override
     public Instant getStartTime() {
         return Optional.ofNullable(startedStatus).map(JobRunStartedUpdate::getStartTime).orElse(null);
     }
 
-    public Instant getStartUpdateTime() {
-        return Optional.ofNullable(startedStatus).map(JobRunStartedUpdate::getUpdateTime).orElse(null);
-    }
-
-    /**
-     * Gets the finish time for this run. This is the time recorded when the job finished.
-     *
-     * @return the finish time, or null if the run has not finished
-     */
+    @Override
     public Instant getFinishTime() {
         if (isFinished()) {
             return finishedStatus.getFinishTime();
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Gets the finish update time for this run. This is the time that the tracker was updated.
-     *
-     * @return the finish update time, or null if the run has not finished
-     */
-    public Instant getFinishUpdateTime() {
-        if (isFinished()) {
-            return finishedStatus.getUpdateTime();
         } else {
             return null;
         }
@@ -112,11 +95,7 @@ public class JobRun {
         return statusUpdates.get(statusUpdates.size() - 1);
     }
 
-    /**
-     * Gets the finished summary for this run.
-     *
-     * @return the finished summary, or null if the run has not finished
-     */
+    @Override
     public JobRunSummary getFinishedSummary() {
         if (isFinished()) {
             Instant startTime = Optional.ofNullable(summaryStartTime)
