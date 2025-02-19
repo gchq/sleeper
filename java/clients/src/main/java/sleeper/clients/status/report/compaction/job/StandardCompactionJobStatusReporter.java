@@ -25,10 +25,10 @@ import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.tracker.job.run.AverageRecordRate;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.util.DurationStatistics;
 
@@ -122,17 +122,16 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("State: %s%n", jobStatus.getFurthestStatusType());
         out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
-        jobStatus.getJobRuns().forEach(this::printJobRun);
+        jobStatus.getJobRunsNew().forEach(this::printJobRun);
         out.println("--------------------------");
     }
 
-    private void printJobRun(JobRun run) {
+    private void printJobRun(CompactionJobRun run) {
         runReporter.printProcessJobRunWithUpdatePrinter(run,
                 printUpdateType(CompactionJobCommittedStatus.class, committedStatus -> printCommitStatus(run, committedStatus)));
-        CompactionJobStatusType runStatusType = CompactionJobStatusType.statusTypeOfJobRun(run);
-        if (runStatusType == CompactionJobStatusType.IN_PROGRESS) {
+        if (run.getStatusType() == CompactionJobStatusType.IN_PROGRESS) {
             out.println("Not finished");
-        } else if (runStatusType == CompactionJobStatusType.UNCOMMITTED) {
+        } else if (run.getStatusType() == CompactionJobStatusType.UNCOMMITTED) {
             out.println("Not committed");
         }
     }

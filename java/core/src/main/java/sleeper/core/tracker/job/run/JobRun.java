@@ -100,11 +100,7 @@ public class JobRun implements JobRunReport {
         if (isFinished()) {
             Instant startTime = Optional.ofNullable(summaryStartTime)
                     .orElseGet(finishedStatus::getFinishTime);
-            Instant finishTime = finishedStatus.getFinishTime();
-            JobRunTime runTime = finishedStatus.getTimeInProcess()
-                    .map(timeInProcess -> new JobRunTime(startTime, finishTime, timeInProcess))
-                    .orElseGet(() -> new JobRunTime(startTime, finishTime));
-            return new JobRunSummary(finishedStatus.getRecordsProcessed(), runTime);
+            return JobRunSummary.from(startTime, finishedStatus);
         } else {
             return null;
         }

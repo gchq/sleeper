@@ -47,6 +47,7 @@ public class CompactionJobStatus {
     private final Integer inputFilesCount;
     private final Instant createUpdateTime;
     private final JobRuns jobRuns;
+    private final transient List<CompactionJobRun> jobRunsNew;
     private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
     private final transient CompactionJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
@@ -63,8 +64,11 @@ public class CompactionJobStatus {
             createUpdateTime = null;
         }
         jobRuns = builder.jobRuns;
-        runsByStatusType = jobRuns.getRunsLatestFirst().stream()
-                .collect(groupingBy(CompactionJobStatusType::statusTypeOfJobRun, summingInt(run -> 1)));
+        jobRunsNew = jobRuns.getRunsLatestFirst().stream()
+                .map(CompactionJobRun::new)
+                .toList();
+        runsByStatusType = jobRunsNew.stream()
+                .collect(groupingBy(CompactionJobRun::getStatusType, summingInt(run -> 1)));
         furthestRunStatusType = CompactionJobStatusType.furthestStatusTypeOfJob(runsByStatusType.keySet());
         expiryDate = builder.expiryDate;
     }
@@ -109,7 +113,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isStarted() {
-        return jobRuns.isStarted();
+        return !jobRunsNew.isEmpty();
     }
 
     public boolean isUnstartedOrInProgress() {
@@ -149,13 +153,13 @@ public class CompactionJobStatus {
     }
 
     public Stream<Duration> runDelaysBetweenFinishAndCommit() {
-        return jobRuns.getRunsLatestFirst().stream()
+        return jobRunsNew.stream()
                 .flatMap(run -> delayBetweenFinishAndCommit(run).stream());
     }
 
-    private Optional<Duration> delayBetweenFinishAndCommit(JobRun run) {
-        return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
-                .flatMap(committedStatus -> run.getLastStatusOfType(CompactionJobFinishedStatus.class)
+    private Optional<Duration> delayBetweenFinishAndCommit(CompactionJobRun run) {
+        return run.getCommittedStatus()
+                .flatMap(committedStatus -> run.getSuccessfulFinishedStatus()
                         .map(finishedStatus -> Duration.between(
                                 finishedStatus.getFinishTime(),
                                 committedStatus.getCommitTime())));
@@ -197,6 +201,10 @@ public class CompactionJobStatus {
 
     public List<JobRun> getJobRuns() {
         return jobRuns.getRunsLatestFirst();
+    }
+
+    public List<CompactionJobRun> getJobRunsNew() {
+        return jobRunsNew;
     }
 
     public CompactionJobStatusType getFurthestStatusType() {

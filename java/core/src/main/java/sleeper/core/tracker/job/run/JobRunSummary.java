@@ -15,6 +15,9 @@
  */
 package sleeper.core.tracker.job.run;
 
+import sleeper.core.tracker.job.status.JobRunEndUpdate;
+import sleeper.core.tracker.job.status.JobRunStartedUpdate;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -47,6 +50,18 @@ public class JobRunSummary {
         double secondsInProcess = runTime.getTimeInProcessInSeconds();
         this.recordsReadPerSecond = recordsProcessed.getRecordsRead() / secondsInProcess;
         this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / secondsInProcess;
+    }
+
+    public static JobRunSummary from(JobRunStartedUpdate startedUpdate, JobRunEndUpdate finishedUpdate) {
+        return from(startedUpdate.getStartTime(), finishedUpdate);
+    }
+
+    public static JobRunSummary from(Instant startTime, JobRunEndUpdate finishedUpdate) {
+        Instant finishTime = finishedUpdate.getFinishTime();
+        JobRunTime runTime = finishedUpdate.getTimeInProcess()
+                .map(timeInProcess -> new JobRunTime(startTime, finishTime, timeInProcess))
+                .orElseGet(() -> new JobRunTime(startTime, finishTime));
+        return new JobRunSummary(finishedUpdate.getRecordsProcessed(), runTime);
     }
 
     /**

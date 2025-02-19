@@ -15,7 +15,10 @@
  */
 package sleeper.core.tracker.job.run;
 
+import sleeper.core.tracker.job.status.JobStatusUpdate;
+
 import java.time.Instant;
+import java.util.List;
 
 /**
  * A summary of the status of a job run. Implemented separately for compaction and ingest.
@@ -28,6 +31,14 @@ public interface JobRunReport {
      * @return the task ID
      */
     String getTaskId();
+
+    /**
+     * Returns a list of status updates that occurred during this job run. These are ordered by update time as recorded
+     * in the process that made them, earliest time first.
+     *
+     * @return the updates
+     */
+    List<JobStatusUpdate> getStatusUpdates();
 
     /**
      * Checks if the run has finished. If the results of the run are committed as a separate operation, it will count

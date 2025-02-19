@@ -19,7 +19,6 @@ package sleeper.clients.status.report.job;
 import sleeper.clients.util.table.TableFieldDefinition;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
@@ -80,7 +79,7 @@ public class StandardJobRunReporter {
         }
     }
 
-    public void printProcessJobRunWithUpdatePrinter(JobRun run, UpdatePrinter updatePrinter) {
+    public void printProcessJobRunWithUpdatePrinter(JobRunReport run, UpdatePrinter updatePrinter) {
         printProcessJobRun(run, updatePrinters(updatePrinter, defaultUpdatePrinter()));
     }
 
@@ -90,7 +89,7 @@ public class StandardJobRunReporter {
                 printUpdateTypeInRun(JobRunEndUpdate.class, this::printProcessFinished));
     }
 
-    private void printProcessJobRun(JobRun run, UpdatePrinter updatePrinter) {
+    private void printProcessJobRun(JobRunReport run, UpdatePrinter updatePrinter) {
         out.println();
         if (run.getTaskId() != null) {
             out.printf("Run on task %s%n", run.getTaskId());
@@ -102,7 +101,7 @@ public class StandardJobRunReporter {
         }
     }
 
-    public static <T extends JobStatusUpdate> UpdatePrinter printUpdateTypeInRun(Class<T> type, BiConsumer<JobRun, T> printer) {
+    public static <T extends JobStatusUpdate> UpdatePrinter printUpdateTypeInRun(Class<T> type, BiConsumer<JobRunReport, T> printer) {
         return (run, update) -> {
             if (type.isInstance(update)) {
                 printer.accept(run, type.cast(update));
@@ -129,7 +128,7 @@ public class StandardJobRunReporter {
     }
 
     public interface UpdatePrinter {
-        boolean print(JobRun run, JobStatusUpdate update);
+        boolean print(JobRunReport run, JobStatusUpdate update);
     }
 
     public void printProcessStarted(JobRunStartedUpdate update) {
@@ -137,7 +136,7 @@ public class StandardJobRunReporter {
         out.printf("Start update time: %s%n", update.getUpdateTime());
     }
 
-    public void printProcessFinished(JobRun run, JobRunEndUpdate update) {
+    public void printProcessFinished(JobRunReport run, JobRunEndUpdate update) {
         JobRunSummary summary = run.getFinishedSummary();
         out.printf("Finish time: %s%n", summary.getFinishTime());
         out.printf("Finish update time: %s%n", update.getUpdateTime());
