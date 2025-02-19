@@ -419,7 +419,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file = factory.rootFile("file", 100L);
             FileReference leftFile = splitFile(file, "L");
             FileReference nestedFile = splitFile(leftFile, "LL");
-            store.addFile(file);
+            update(store).addFile(file);
 
             // Ideally this would fail as this produces duplicate references to the same records,
             // but not all state stores may be able to implement that
@@ -440,7 +440,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
@@ -463,7 +463,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         public void shouldMarkFileWithJobId() {
             // Given
             FileReference file = factory.rootFile("file", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When
             store.assignJobIds(List.of(
@@ -481,7 +481,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file = factory.rootFile("file", 100L);
             FileReference left = splitFile(file, "L");
             FileReference right = splitFile(file, "R");
-            store.addFiles(List.of(left, right));
+            update(store).addFiles(List.of(left, right));
 
             // When
             store.assignJobIds(List.of(
@@ -497,7 +497,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
+            update(store).addFiles(List.of(file1, file2));
 
             // When
             store.assignJobIds(List.of(
@@ -515,7 +515,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         public void shouldNotMarkFileWithJobIdWhenOneIsAlreadySet() {
             // Given
             FileReference file = factory.rootFile("file", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
@@ -533,7 +533,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
             FileReference file3 = factory.rootFile("file3", 100L);
-            store.addFiles(List.of(file1, file2, file3));
+            update(store).addFiles(List.of(file1, file2, file3));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file2"))));
 
@@ -550,7 +550,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         public void shouldNotMarkFileWithJobIdWhenFileDoesNotExist() {
             // Given
             FileReference file = factory.rootFile("existingFile", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When / Then
             assertThatThrownBy(() -> store.assignJobIds(List.of(
@@ -576,7 +576,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             FileReference existingReference = splitFile(file, "L");
-            store.addFile(existingReference);
+            update(store).addFile(existingReference);
 
             // When / Then
             assertThatThrownBy(() -> store.assignJobIds(List.of(
@@ -596,7 +596,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
+            update(store).addFiles(List.of(file1, file2));
 
             // When / Then
             assertThat(store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
@@ -609,7 +609,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
+            update(store).addFiles(List.of(file1, file2));
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1", "file2"))));
 
             // When / Then
@@ -623,7 +623,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
+            update(store).addFiles(List.of(file1, file2));
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file1"))));
 
             // When / Then
@@ -642,7 +642,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file1R = splitFile(file1, "R");
             FileReference file2L = splitFile(file2, "L");
             FileReference file2R = splitFile(file2, "R");
-            store.addFiles(List.of(file1L, file1R, file2L, file2R));
+            update(store).addFiles(List.of(file1L, file1R, file2L, file2R));
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "L", List.of("file1", "file2"))));
 
             // When / Then
@@ -666,7 +666,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         void shouldFailIfFileDoesNotExistOnPartition() {
             // Given
             splitPartition("root", "L", "R", 5);
-            store.addFile(factory.partitionFile("L", "file", 100L));
+            update(store).addFile(factory.partitionFile("L", "file", 100L));
 
             // When / Then
             assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
@@ -677,7 +677,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         @Test
         void shouldFailIfFileAssignedToOtherJob() {
             // Given
-            store.addFile(factory.rootFile("file", 100L));
+            update(store).addFile(factory.rootFile("file", 100L));
             store.assignJobIds(List.of(assignJobOnPartitionToFiles("A", "root", List.of("file"))));
 
             // When / Then
@@ -689,7 +689,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         @Test
         void shouldFailIfOneFileDoesNotExist() {
             // Given
-            store.addFile(factory.rootFile("file1", 100L));
+            update(store).addFile(factory.rootFile("file1", 100L));
 
             // When / Then
             assertThatThrownBy(() -> store.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
@@ -707,7 +707,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
-            store.addFile(oldFile);
+            update(store).addFile(oldFile);
 
             // When
             store.assignJobIds(List.of(
@@ -732,7 +732,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference newFile1 = factory.rootFile("newFile1", 100L);
             FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
             FileReference newFile2 = factory.rootFile("newFile2", 100L);
-            store.addFiles(List.of(oldFile1, oldFile2));
+            update(store).addFiles(List.of(oldFile1, oldFile2));
 
             // When
             store.assignJobIds(List.of(
@@ -757,7 +757,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
-            store.addFile(oldFile);
+            update(store).addFile(oldFile);
 
             // When
             store.assignJobIds(List.of(
@@ -784,7 +784,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
-            store.addFile(oldFile);
+            update(store).addFile(oldFile);
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
@@ -812,7 +812,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
-            store.addFile(oldFile1);
+            update(store).addFile(oldFile1);
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
 
@@ -832,7 +832,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             FileReference existingReference = splitFile(file, "L");
-            store.addFile(existingReference);
+            update(store).addFile(existingReference);
 
             // When / Then
             assertThatThrownBy(() -> store.atomicallyReplaceFileReferencesWithNewOnes(List.of(
@@ -847,7 +847,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         void shouldFailWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() {
             // Given
             FileReference file = factory.rootFile("file1", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
@@ -868,7 +868,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file = factory.rootFile("oldFile", 100L);
             FileReference existingReference = splitFile(file, "L");
             FileReference newReference = factory.partitionFile("L", "newFile", 100L);
-            store.addFiles(List.of(existingReference, newReference));
+            update(store).addFiles(List.of(existingReference, newReference));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
 
@@ -893,7 +893,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:09:00Z");
             store.fixFileUpdateTime(updateTime);
-            store.addFilesWithReferences(List.of(fileWithNoReferences("readyForGc")));
+            update(store).addFilesWithReferences(List.of(fileWithNoReferences("readyForGc")));
 
             // When / Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -906,7 +906,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             Instant updateTime = Instant.parse("2023-10-04T14:08:00Z");
             Instant latestTimeForGc = Instant.parse("2023-10-04T14:07:00Z");
             store.fixFileUpdateTime(updateTime);
-            store.addFilesWithReferences(List.of(fileWithNoReferences("readyForGc")));
+            update(store).addFilesWithReferences(List.of(fileWithNoReferences("readyForGc")));
 
             // When / Then
             assertThat(store.getReadyForGCFilenamesBefore(latestTimeForGc))
@@ -924,7 +924,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference compactionOutputFile = factory.partitionFile("L", "compactedFile", 100L);
             store.fixFileUpdateTime(updateTime);
-            store.addFiles(List.of(leftFile, rightFile));
+            update(store).addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("splitFile"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
@@ -947,7 +947,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
             store.fixFileUpdateTime(updateTime);
-            store.addFiles(List.of(leftFile, rightFile));
+            update(store).addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
@@ -978,7 +978,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
 
             // And ingest and compactions happened at the expected times
             store.fixFileUpdateTime(ingestTime);
-            store.addFiles(List.of(leftFile, rightFile));
+            update(store).addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("readyForGc")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("readyForGc"))));
@@ -1004,7 +1004,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference oldFile = factory.rootFile("oldFile", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
-            store.addFile(oldFile);
+            update(store).addFile(oldFile);
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
@@ -1028,7 +1028,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference rightOutputFile = factory.partitionFile("R", "rightOutput", 100L);
 
             // And the file was ingested as two references, then compacted into each partition
-            store.addFiles(List.of(leftFile, rightFile));
+            update(store).addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file")),
                     assignJobOnPartitionToFiles("job2", "R", List.of("file"))));
@@ -1049,7 +1049,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         public void shouldFailToDeleteActiveFile() {
             // Given
             FileReference file = factory.rootFile("test", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When / Then
             assertThatThrownBy(() -> store.deleteGarbageCollectedFileReferenceCounts(List.of("test")))
@@ -1071,7 +1071,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference leftOutputFile = factory.partitionFile("L", "leftOutput", 100L);
-            store.addFiles(List.of(leftFile, rightFile));
+            update(store).addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
@@ -1088,7 +1088,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
             FileReference oldFile2 = factory.rootFile("oldFile2", 100L);
             FileReference newFile = factory.rootFile("newFile", 100L);
-            store.addFiles(List.of(oldFile1, oldFile2));
+            update(store).addFiles(List.of(oldFile1, oldFile2));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1", "oldFile2"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
@@ -1108,7 +1108,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         public void shouldFailToDeleteActiveFileWhenAlsoDeletingReadyForGCFile() {
             // Given
             FileReference activeFile = factory.rootFile("activeFile", 100L);
-            store.addFilesWithReferences(List.of(
+            update(store).addFilesWithReferences(List.of(
                     fileWithNoReferences("gcFile"),
                     fileWithReferences(List.of(activeFile))));
 
@@ -1130,7 +1130,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         void shouldReportOneActiveFile() {
             // Given
             FileReference file = factory.rootFile("test", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
@@ -1142,7 +1142,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         @Test
         void shouldReportOneReadyForGCFile() {
             // Given
-            store.addFilesWithReferences(List.of(fileWithNoReferences("test")));
+            update(store).addFilesWithReferences(List.of(fileWithNoReferences("test")));
 
             // When
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
@@ -1156,7 +1156,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             FileReference file1 = factory.rootFile("file1", 100L);
             FileReference file2 = factory.rootFile("file2", 100L);
-            store.addFiles(List.of(file1, file2));
+            update(store).addFiles(List.of(file1, file2));
 
             // When
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
@@ -1172,7 +1172,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference rootFile = factory.rootFile("file", 100L);
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
-            store.addFiles(List.of(leftFile, rightFile));
+            update(store).addFiles(List.of(leftFile, rightFile));
 
             // When
             AllReferencesToAllFiles report = store.getAllFilesWithMaxUnreferenced(5);
@@ -1189,7 +1189,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference leftFile = splitFile(rootFile, "L");
             FileReference rightFile = splitFile(rootFile, "R");
             FileReference outputFile = factory.partitionFile("L", 50L);
-            store.addFiles(List.of(leftFile, rightFile));
+            update(store).addFiles(List.of(leftFile, rightFile));
             store.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("job1", "L", List.of("file"))));
             store.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
@@ -1205,7 +1205,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         @Test
         void shouldReportReadyForGCFilesWithLimit() {
             // Given
-            store.addFilesWithReferences(List.of(
+            update(store).addFilesWithReferences(List.of(
                     fileWithNoReferences("test1"),
                     fileWithNoReferences("test2"),
                     fileWithNoReferences("test3")));
@@ -1220,7 +1220,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         @Test
         void shouldReportReadyForGCFilesMeetingLimit() {
             // Given
-            store.addFilesWithReferences(List.of(
+            update(store).addFilesWithReferences(List.of(
                     fileWithNoReferences("test1"),
                     fileWithNoReferences("test2")));
 
@@ -1246,7 +1246,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference leftFile2 = factory.partitionFile("L", "leftFile2", 10);
             FileReference rightFile1 = factory.partitionFile("R", "rightFile1", 10);
             FileReference rightFile2 = factory.partitionFile("R", "rightFile2", 10);
-            store.addFiles(List.of(rootFile1, rootFile2, leftFile1, leftFile2, rightFile1, rightFile2));
+            update(store).addFiles(List.of(rootFile1, rootFile2, leftFile1, leftFile2, rightFile1, rightFile2));
 
             // When / Then
             assertThat(store.getPartitionToReferencedFilesMap())
@@ -1264,7 +1264,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             // Given
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.partitionFile("L", "file", 100);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When / Then
             assertThat(store.getPartitionToReferencedFilesMap())
@@ -1279,7 +1279,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         void shouldDeleteReferencedFileOnClear() {
             // Given
             FileReference file = factory.rootFile("file", 100L);
-            store.addFile(file);
+            update(store).addFile(file);
 
             // When
             store.clearSleeperTable();
@@ -1296,7 +1296,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
         @Test
         void shouldDeleteUnreferencedFileOnClear() {
             // Given
-            store.addFilesWithReferences(List.of(AllReferencesToAFile.builder()
+            update(store).addFilesWithReferences(List.of(AllReferencesToAFile.builder()
                     .filename("file")
                     .references(List.of())
                     .build()));
