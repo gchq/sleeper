@@ -384,7 +384,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             FileReference file = factory.rootFile("file", 100L);
 
             // When / Then
-            assertThatThrownBy(() -> store.splitFileReferences(List.of(
+            assertThatThrownBy(() -> update(store).splitFileReferences(List.of(
                     splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileNotFoundException.class);
@@ -399,10 +399,10 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
             splitPartition("root", "L", "R", 5);
             FileReference file = factory.rootFile("file", 100L);
             FileReference existingReference = splitFile(file, "L");
-            store.addFile(existingReference);
+            update(store).addFile(existingReference);
 
             // When / Then
-            assertThatThrownBy(() -> store.splitFileReferences(List.of(
+            assertThatThrownBy(() -> update(store).splitFileReferences(List.of(
                     splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceNotFoundException.class);
@@ -423,7 +423,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
 
             // Ideally this would fail as this produces duplicate references to the same records,
             // but not all state stores may be able to implement that
-            store.splitFileReferences(List.of(new SplitFileReferenceRequest(file, List.of(leftFile, nestedFile))));
+            update(store).splitFileReferences(List.of(new SplitFileReferenceRequest(file, List.of(leftFile, nestedFile))));
 
             // When / Then
             assertThatThrownBy(() -> SplitFileReferences.from(store).split())
@@ -445,7 +445,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
                     assignJobOnPartitionToFiles("job1", "root", List.of("file"))));
 
             // When / Then
-            assertThatThrownBy(() -> store.splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
+            assertThatThrownBy(() -> update(store).splitFileReferences(List.of(splitFileToChildPartitions(file, "L", "R"))))
                     .isInstanceOf(SplitRequestsFailedException.class)
                     .hasCauseInstanceOf(FileReferenceAssignedToJobException.class);
             assertThat(store.getFileReferences())

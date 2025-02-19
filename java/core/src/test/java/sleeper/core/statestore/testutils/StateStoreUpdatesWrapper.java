@@ -17,12 +17,15 @@ package sleeper.core.statestore.testutils;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 
 import java.util.List;
 
@@ -91,6 +94,40 @@ public class StateStoreUpdatesWrapper {
         stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction)
                 .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> transaction.validateFiles(state)))
                 .build());
+    }
+
+    /**
+     * Performs atomic updates to split file references. This is used to push file references down the partition tree,
+     * eg. where records are ingested to a non-leaf partition, or when a partition is split. A file referenced in a
+     * larger, non-leaf partition may be split between smaller partitions which cover non-overlapping sub-ranges of the
+     * original partition. This includes these records in compactions of the descendent partitions.
+     * <p>
+     * The aim is to combine all records into a small number of files for each leaf partition, where the leaves of the
+     * partition tree should represent a separation of the data into manageable chunks. Compaction operates on file
+     * references to pull records from multiple files into one, when they are referenced in the same partition. This
+     * reduces the number of files in the system, and improves statistics and indexing within each partition. This
+     * should result in faster queries, and more accurate partitioning when a partition is split.
+     * <p>
+     * Each {@link SplitFileReferenceRequest} will remove one file reference, and create new references to the same file
+     * in descendent partitions. The reference counts will be tracked accordingly.
+     * <p>
+     * The ranges covered by the partitions of the new references must not overlap, so there
+     * must never be two references to the same file where one partition is a descendent of the other.
+     * <p>
+     * Note that it is possible that the necessary updates may not fit in a single transaction. Each
+     * {@link SplitFileReferenceRequest} is guaranteed to be done atomically in one transaction, but it is possible that
+     * some may succeed and some may fail. If a single {@link SplitFileReferenceRequest} adds too many references to
+     * apply in one transaction, this will also fail.
+     *
+     * @param  splitRequests                A list of {@link SplitFileReferenceRequest}s to apply
+     * @throws SplitRequestsFailedException if any of the requests fail, even if some succeeded
+     */
+    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
+        try {
+            stateStore.addTransaction(AddTransactionRequest.withTransaction(new SplitFileReferencesTransaction(splitRequests)).build());
+        } catch (StateStoreException e) {
+            throw new SplitRequestsFailedException(List.of(), splitRequests, e);
+        }
     }
 
 }
