@@ -19,8 +19,8 @@ import sleeper.clients.util.console.ConsoleInput;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

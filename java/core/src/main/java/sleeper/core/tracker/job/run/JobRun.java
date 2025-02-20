@@ -16,8 +16,6 @@
 
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.status.JobRunEndUpdate;
-import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
@@ -33,16 +31,10 @@ import java.util.Optional;
 public class JobRun {
     private final String taskId;
     private final List<JobStatusUpdate> statusUpdates;
-    private final JobRunStartedUpdate startedStatus;
-    private final JobRunEndUpdate finishedStatus;
-    private final Instant summaryStartTime;
 
     private JobRun(Builder builder) {
         taskId = builder.taskId;
         statusUpdates = Collections.unmodifiableList(builder.statusUpdates);
-        startedStatus = builder.startedStatus;
-        finishedStatus = builder.finishedStatus;
-        summaryStartTime = builder.summaryStartTime;
     }
 
     public static Builder builder() {
@@ -51,56 +43,6 @@ public class JobRun {
 
     public String getTaskId() {
         return taskId;
-    }
-
-    public JobRunStartedUpdate getStartedStatus() {
-        return startedStatus;
-    }
-
-    public JobRunEndUpdate getFinishedStatus() {
-        return finishedStatus;
-    }
-
-    public boolean isFinished() {
-        return finishedStatus != null;
-    }
-
-    public boolean isFinishedSuccessfully() {
-        return finishedStatus != null && finishedStatus.isSuccessful();
-    }
-
-    public Instant getStartTime() {
-        return Optional.ofNullable(startedStatus).map(JobRunStartedUpdate::getStartTime).orElse(null);
-    }
-
-    public Instant getStartUpdateTime() {
-        return Optional.ofNullable(startedStatus).map(JobRunStartedUpdate::getUpdateTime).orElse(null);
-    }
-
-    /**
-     * Gets the finish time for this run. This is the time recorded when the job finished.
-     *
-     * @return the finish time, or null if the run has not finished
-     */
-    public Instant getFinishTime() {
-        if (isFinished()) {
-            return getFinishedStatus().getFinishTime();
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Gets the finish update time for this run. This is the time that the tracker was updated.
-     *
-     * @return the finish update time, or null if the run has not finished
-     */
-    public Instant getFinishUpdateTime() {
-        if (isFinished()) {
-            return getFinishedStatus().getUpdateTime();
-        } else {
-            return null;
-        }
     }
 
     /**
@@ -112,27 +54,12 @@ public class JobRun {
         return getLatestUpdate().getUpdateTime();
     }
 
-    public JobStatusUpdate getLatestUpdate() {
-        return statusUpdates.get(statusUpdates.size() - 1);
+    public JobStatusUpdate getFirstUpdate() {
+        return statusUpdates.get(0);
     }
 
-    /**
-     * Gets the finished summary for this run.
-     *
-     * @return the finished summary, or null if the run has not finished
-     */
-    public JobRunSummary getFinishedSummary() {
-        if (isFinished()) {
-            Instant startTime = Optional.ofNullable(summaryStartTime)
-                    .orElseGet(finishedStatus::getFinishTime);
-            Instant finishTime = finishedStatus.getFinishTime();
-            JobRunTime runTime = finishedStatus.getTimeInProcess()
-                    .map(timeInProcess -> new JobRunTime(startTime, finishTime, timeInProcess))
-                    .orElseGet(() -> new JobRunTime(startTime, finishTime));
-            return new JobRunSummary(finishedStatus.getRecordsProcessed(), runTime);
-        } else {
-            return null;
-        }
+    public JobStatusUpdate getLatestUpdate() {
+        return statusUpdates.get(statusUpdates.size() - 1);
     }
 
     public List<JobStatusUpdate> getStatusUpdates() {
@@ -186,9 +113,6 @@ public class JobRun {
     public static final class Builder {
         private String taskId;
         private final List<JobStatusUpdate> statusUpdates = new ArrayList<>();
-        private JobRunStartedUpdate startedStatus;
-        private JobRunEndUpdate finishedStatus;
-        private Instant summaryStartTime;
 
         private Builder() {
         }
@@ -211,18 +135,6 @@ public class JobRun {
          * @return              the builder
          */
         public Builder statusUpdate(JobStatusUpdate statusUpdate) {
-            if (statusUpdate instanceof JobRunStartedUpdate) {
-                JobRunStartedUpdate startedStatus = (JobRunStartedUpdate) statusUpdate;
-                if (startedStatus.isStartOfRun()) {
-                    this.startedStatus = startedStatus;
-                }
-                if (startedStatus.isTimeForRunSummary()) {
-                    this.summaryStartTime = startedStatus.getStartTime();
-                }
-            }
-            if (statusUpdate instanceof JobRunEndUpdate) {
-                this.finishedStatus = (JobRunEndUpdate) statusUpdate;
-            }
             this.statusUpdates.add(statusUpdate);
             return this;
         }

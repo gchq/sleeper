@@ -87,7 +87,7 @@ class JobRunsBuilder {
                 .map(JobRun.Builder::build)
                 .collect(Collectors.toList());
         Collections.reverse(jobRuns);
-        return new JobRuns(jobRuns);
+        return JobRuns.latestFirst(jobRuns);
     }
 
     private static boolean isStartedUpdateAndStartOfRun(JobStatusUpdate statusUpdate) {

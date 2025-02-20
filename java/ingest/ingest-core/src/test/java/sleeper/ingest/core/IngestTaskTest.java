@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
-import sleeper.core.tracker.ingest.job.IngestJobUpdateType;
+import sleeper.core.tracker.ingest.job.query.IngestJobUpdateType;
 import sleeper.core.tracker.ingest.task.InMemoryIngestTaskTracker;
 import sleeper.core.tracker.ingest.task.IngestTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
@@ -44,9 +44,9 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static sleeper.core.tracker.ingest.job.IngestJobUpdateType.FAILED;
-import static sleeper.core.tracker.ingest.job.IngestJobUpdateType.FINISHED_WHEN_FILES_COMMITTED;
-import static sleeper.core.tracker.ingest.job.IngestJobUpdateType.STARTED;
+import static sleeper.core.tracker.ingest.job.query.IngestJobUpdateType.FAILED;
+import static sleeper.core.tracker.ingest.job.query.IngestJobUpdateType.FINISHED_WHEN_FILES_COMMITTED;
+import static sleeper.core.tracker.ingest.job.query.IngestJobUpdateType.STARTED;
 import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.finishedMultipleJobs;
 import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.finishedNoJobs;
 import static sleeper.core.tracker.ingest.task.IngestTaskStatusTestData.finishedOneJob;

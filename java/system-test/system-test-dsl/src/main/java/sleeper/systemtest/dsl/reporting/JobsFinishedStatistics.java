@@ -17,9 +17,9 @@
 package sleeper.systemtest.dsl.reporting;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.AverageRecordRate;
-import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunReport;
 
 import java.util.List;
 import java.util.function.Function;
@@ -41,11 +41,11 @@ public class JobsFinishedStatistics {
     }
 
     public static JobsFinishedStatistics fromIngestJobs(List<IngestJobStatus> jobs) {
-        return builder().jobs(jobs, IngestJobStatus::isAnyRunSuccessful, IngestJobStatus::getJobRuns).build();
+        return builder().jobs(jobs, IngestJobStatus::isAnyRunSuccessful, IngestJobStatus::getRunsLatestFirst).build();
     }
 
     public static JobsFinishedStatistics fromCompactionJobs(List<CompactionJobStatus> jobs) {
-        return builder().jobs(jobs, CompactionJobStatus::isAnyRunSuccessful, CompactionJobStatus::getJobRuns).build();
+        return builder().jobs(jobs, CompactionJobStatus::isAnyRunSuccessful, CompactionJobStatus::getRunsLatestFirst).build();
     }
 
     private static Builder builder() {
@@ -87,14 +87,14 @@ public class JobsFinishedStatistics {
         private Builder() {
         }
 
-        public <T> Builder jobs(List<T> jobs, Predicate<T> isJobFinished, Function<T, List<JobRun>> getJobRuns) {
+        public <T> Builder jobs(List<T> jobs, Predicate<T> isJobFinished, Function<T, List<? extends JobRunReport>> getJobRuns) {
             this.numJobs = jobs.size();
             this.numFinishedJobs = (int) jobs.stream().filter(isJobFinished).count();
             this.numJobRuns = jobs.stream()
                     .mapToInt(job -> getJobRuns.apply(job).size())
                     .sum();
             this.numFinishedJobRuns = jobs.stream()
-                    .mapToInt(job -> (int) getJobRuns.apply(job).stream().filter(JobRun::isFinished).count())
+                    .mapToInt(job -> (int) getJobRuns.apply(job).stream().filter(JobRunReport::isFinished).count())
                     .sum();
             this.averageRecordRate = AverageRecordRate.of(jobs.stream()
                     .filter(isJobFinished)

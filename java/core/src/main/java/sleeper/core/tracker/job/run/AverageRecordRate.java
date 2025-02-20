@@ -55,10 +55,10 @@ public class AverageRecordRate {
      * @param  runs the stream of {@link JobRun}s
      * @return      an instance of this class
      */
-    public static AverageRecordRate of(Stream<JobRun> runs) {
+    public static AverageRecordRate of(Stream<JobRunReport> runs) {
         return builder().summaries(runs
-                .filter(JobRun::isFinishedSuccessfully)
-                .map(JobRun::getFinishedSummary)).build();
+                .filter(JobRunReport::isFinishedSuccessfully)
+                .map(JobRunReport::getFinishedSummary)).build();
     }
 
     public static Builder builder() {
