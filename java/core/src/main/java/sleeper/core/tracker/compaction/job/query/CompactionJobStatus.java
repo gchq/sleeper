@@ -40,6 +40,9 @@ import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.UNCOMMITTED;
 
+/**
+ * A report of a compaction job held in the job tracker.
+ */
 public class CompactionJobStatus {
 
     private final String jobId;

@@ -25,6 +25,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * A report of a run of a compaction job held in the job tracker.
+ */
 public class CompactionJobRun implements JobRunReport {
 
     private final JobRun run;
