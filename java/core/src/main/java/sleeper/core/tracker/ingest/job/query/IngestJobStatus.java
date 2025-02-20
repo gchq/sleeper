@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package sleeper.core.tracker.ingest.job;
+package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.ingest.job.query.IngestJobInfoStatus;
-import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRuns;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.core.tracker.job.status.JobStatusUpdates;
@@ -31,7 +30,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
+import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FINISHED;
 
 /**
  * Stores the status of an ingest job. This is used for reporting on the state of ingest jobs.
@@ -39,6 +38,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusType.FINISHED;
 public class IngestJobStatus {
     private final String jobId;
     private final JobRuns jobRuns;
+    private final transient List<IngestJobRun> runsLatestFirst;
     private final transient Set<IngestJobStatusType> runStatusTypes;
     private final transient IngestJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
@@ -46,8 +46,11 @@ public class IngestJobStatus {
     private IngestJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         jobRuns = Objects.requireNonNull(builder.jobRuns, "jobRuns must not be null");
-        runStatusTypes = jobRuns.getRunsLatestFirst().stream()
-                .map(IngestJobStatusType::statusTypeOfJobRun)
+        runsLatestFirst = jobRuns.getRunsLatestFirst().stream()
+                .map(IngestJobRun::new)
+                .toList();
+        runStatusTypes = runsLatestFirst.stream()
+                .map(IngestJobRun::getStatusType)
                 .collect(toUnmodifiableSet());
         furthestRunStatusType = IngestJobStatusType.statusTypeOfFurthestRunOfJob(runStatusTypes);
         expiryDate = builder.expiryDate;
@@ -88,12 +91,9 @@ public class IngestJobStatus {
         return jobId;
     }
 
-    public int getInputFilesCount() {
-        return jobRuns.getLatestRun()
-                .map(JobRun::getStartedStatus)
-                .filter(startedUpdate -> startedUpdate instanceof IngestJobInfoStatus)
-                .map(startedUpdate -> (IngestJobInfoStatus) startedUpdate)
-                .map(IngestJobInfoStatus::getInputFileCount)
+    public int getInputFileCount() {
+        return runsLatestFirst.stream().findFirst()
+                .map(IngestJobRun::getInputFileCount)
                 .orElse(0);
     }
 
@@ -111,8 +111,8 @@ public class IngestJobStatus {
         return jobRuns.isTaskIdAssigned(taskId);
     }
 
-    public List<JobRun> getJobRuns() {
-        return jobRuns.getRunsLatestFirst();
+    public List<IngestJobRun> getRunsLatestFirst() {
+        return runsLatestFirst;
     }
 
     /**

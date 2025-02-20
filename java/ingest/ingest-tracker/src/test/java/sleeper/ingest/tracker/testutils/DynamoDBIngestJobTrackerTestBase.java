@@ -26,10 +26,10 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
@@ -85,16 +85,16 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final TableStatus table = tableProperties.getStatus();
     protected final String tableId = tableProperties.get(TABLE_ID);
-    protected final IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+    protected final IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @AfterEach
     public void tearDown() {
-        dynamoDBClient.deleteTable(jobStatusTableName);
+        dynamoClient.deleteTable(jobStatusTableName);
     }
 
     protected IngestJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
@@ -103,7 +103,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJobTracker trackerWithUpdateTimes(Instant... updateTimes) {
-        return IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties,
+        return IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 

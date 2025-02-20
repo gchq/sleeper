@@ -39,13 +39,13 @@ public class DynamoDBCompactionJobTrackerCreatorIT extends DynamoDBTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDBClient);
-        CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
+        CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThat(dynamoDBClient.describeTable(updatesTableName))
+        assertThat(dynamoClient.describeTable(updatesTableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
-        assertThat(dynamoDBClient.describeTable(jobsTableName))
+        assertThat(dynamoClient.describeTable(jobsTableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
         assertThat(store).isInstanceOf(DynamoDBCompactionJobTracker.class);
     }
@@ -56,13 +56,13 @@ public class DynamoDBCompactionJobTrackerCreatorIT extends DynamoDBTestBase {
         instanceProperties.set(COMPACTION_TRACKER_ENABLED, "false");
 
         // When
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDBClient);
-        CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
+        CompactionJobTracker store = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThatThrownBy(() -> dynamoDBClient.describeTable(updatesTableName))
+        assertThatThrownBy(() -> dynamoClient.describeTable(updatesTableName))
                 .isInstanceOf(ResourceNotFoundException.class);
-        assertThatThrownBy(() -> dynamoDBClient.describeTable(jobsTableName))
+        assertThatThrownBy(() -> dynamoClient.describeTable(jobsTableName))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(store).isSameAs(CompactionJobTracker.NONE);
         assertThatThrownBy(() -> store.getAllJobs("some-table"))
@@ -75,6 +75,6 @@ public class DynamoDBCompactionJobTrackerCreatorIT extends DynamoDBTestBase {
 
     @AfterEach
     public void tearDown() {
-        DynamoDBCompactionJobTrackerCreator.tearDown(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionJobTrackerCreator.tearDown(instanceProperties, dynamoClient);
     }
 }

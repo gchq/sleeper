@@ -55,13 +55,13 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
 
     @BeforeEach
     public void createDynamoTable() {
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoDBClient).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
     }
 
     @Test
     public void shouldReturnNullWhenGettingItemThatDoesNotExist() throws QueryTrackerException {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When / Then
         assertThat(queryTracker.getStatus("non-existent")).isNull();
@@ -70,7 +70,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     public void shouldReturnQueriesFromDynamoIfTheyExist() throws QueryTrackerException {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryCompleted(createQueryWithId("my-id"), new ResultsOutputInfo(10, Collections.emptyList()));
@@ -84,7 +84,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     public void shouldCreateEntryInTableIfIdDoesNotExist() throws QueryTrackerException {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryInProgress(createQueryWithId("my-id"));
@@ -97,7 +97,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     public void shouldSetAgeOffTimeAccordingToInstanceProperty() throws QueryTrackerException {
         // Given
         instanceProperties.setNumber(QUERY_TRACKER_ITEM_TTL_IN_DAYS, 3);
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryInProgress(createQueryWithId("my-id"));
@@ -110,7 +110,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     public void shouldUpdateStateInTableIfIdDoesExist() throws QueryTrackerException {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryQueued(createQueryWithId("my-id"));
@@ -123,7 +123,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     public void shouldUpdateParentStateInTableWhenTheChildIsTheLastOneToComplete() throws QueryTrackerException {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryInProgress(createQueryWithId("parent"));
@@ -141,7 +141,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     public void shouldNotUpdateParentStateInTableWhenMoreChildrenAreYetToComplete() throws QueryTrackerException {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryInProgress(createQueryWithId("parent"));
@@ -157,7 +157,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     public void shouldUpdateParentStateToFailedInTableWhenAllChildrenFail() throws QueryTrackerException {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryInProgress(createQueryWithId("parent"));
@@ -173,7 +173,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     public void shouldUpdateParentStateToPartiallyFailedInTableWhenSomeChildrenFail() throws QueryTrackerException {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryInProgress(createQueryWithId("parent"));
@@ -189,7 +189,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     public void shouldUpdateParentStateWithTotalRecordsReturnedByAllChildren() throws QueryTrackerException {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryInProgress(createQueryWithId("parent"));
@@ -208,7 +208,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     void shouldStoreErrorMessageWhenQueryFailed() {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryFailed(createQueryWithId("failed-query"), new Exception("Query has failed"));
@@ -225,7 +225,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
     @Test
     void shouldStoreErrorMessageWhenQueryCompletedWithError() {
         // Given
-        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+        DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
         // When
         queryTracker.queryCompleted(createQueryWithId("completed-query-that-errored"),
@@ -253,7 +253,7 @@ public class DynamoDBQueryTrackerIT extends DynamoDBTestBase {
 
         @BeforeEach
         void setUp() {
-            queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+            queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
             queryTracker.queryQueued(query1);
             queryTracker.queryInProgress(query2);
             queryTracker.queryCompleted(query3, new ResultsOutputInfo(456L, List.of()));
