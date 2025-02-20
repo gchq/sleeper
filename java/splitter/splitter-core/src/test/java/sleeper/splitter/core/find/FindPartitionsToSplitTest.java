@@ -27,7 +27,9 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
@@ -44,6 +46,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class FindPartitionsToSplitTest {
     private static final Schema SCHEMA = schemaWithKey("key", new LongType());
@@ -147,7 +150,7 @@ public class FindPartitionsToSplitTest {
     class HandleSplitFiles {
 
         @BeforeEach
-        void setUp() throws Exception {-
+        void setUp() throws Exception {
             // Given we have two leaf partitions
             setPartitions(builder -> builder.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 50L));
