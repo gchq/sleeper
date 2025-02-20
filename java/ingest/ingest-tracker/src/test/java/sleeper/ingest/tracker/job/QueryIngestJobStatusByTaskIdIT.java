@@ -60,9 +60,9 @@ public class QueryIngestJobStatusByTaskIdIT extends DynamoDBIngestJobTrackerTest
         Instant startedTime3 = Instant.parse("2022-12-14T13:53:12.001Z");
 
         // When
-        tracker.jobStarted(job.startedEventBuilder(startedTime1).taskId(taskId1).build());
-        tracker.jobStarted(job.startedEventBuilder(startedTime2).taskId(searchingTaskId).build());
-        tracker.jobStarted(job.startedEventBuilder(startedTime3).taskId(taskId3).build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime1).taskId(taskId1).jobRunId("run-1").build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime2).taskId(searchingTaskId).jobRunId("run-2").build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime3).taskId(taskId3).jobRunId("run-3").build());
 
         // Then
         assertThat(tracker.getJobsByTaskId(tableId, searchingTaskId))

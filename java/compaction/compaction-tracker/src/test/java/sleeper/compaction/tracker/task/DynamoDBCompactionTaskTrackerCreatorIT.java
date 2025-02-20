@@ -38,11 +38,11 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThat(dynamoDBClient.describeTable(tableName))
+        assertThat(dynamoClient.describeTable(tableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
         assertThat(tracker).isInstanceOf(DynamoDBCompactionTaskTracker.class);
     }
@@ -53,11 +53,11 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
         instanceProperties.set(COMPACTION_TRACKER_ENABLED, "false");
 
         // When
-        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
+        assertThatThrownBy(() -> dynamoClient.describeTable(tableName))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(tracker).isSameAs(CompactionTaskTracker.NONE);
         assertThatThrownBy(tracker::getAllTasks).isInstanceOf(UnsupportedOperationException.class);
@@ -67,6 +67,6 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
 
     @AfterEach
     public void tearDown() {
-        DynamoDBCompactionTaskTrackerCreator.tearDown(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionTaskTrackerCreator.tearDown(instanceProperties, dynamoClient);
     }
 }

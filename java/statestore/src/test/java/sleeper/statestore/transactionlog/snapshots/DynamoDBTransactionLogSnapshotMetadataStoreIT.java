@@ -47,7 +47,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestB
 
     @BeforeEach
     void setup() {
-        new DynamoDBTransactionLogSnapshotMetadataStoreCreator(instanceProperties, dynamoDBClient).create();
+        new DynamoDBTransactionLogSnapshotMetadataStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     @Nested
@@ -385,7 +385,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestB
     }
 
     private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties tableProperties, Supplier<Instant> timeSupplier) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDBClient, timeSupplier);
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient, timeSupplier);
     }
 
     private TransactionLogSnapshotMetadata filesSnapshot(long transactionNumber) {

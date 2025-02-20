@@ -34,15 +34,15 @@ public class DynamoDBIngestJobTrackerCreatorIT extends DynamoDBTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
 
         // Then
-        assertThat(dynamoDBClient.describeTable(tableName))
+        assertThat(dynamoClient.describeTable(tableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
     }
 
     @AfterEach
     public void tearDown() {
-        DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoDBClient);
+        DynamoDBIngestJobTrackerCreator.tearDown(instanceProperties, dynamoClient);
     }
 }
