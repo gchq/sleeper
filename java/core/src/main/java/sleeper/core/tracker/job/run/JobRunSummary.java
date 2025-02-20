@@ -52,10 +52,24 @@ public class JobRunSummary {
         this.recordsWrittenPerSecond = recordsProcessed.getRecordsWritten() / secondsInProcess;
     }
 
+    /**
+     * Creates a job run summary from status updates held in a tracker.
+     *
+     * @param  startedUpdate  the started update
+     * @param  finishedUpdate the finished update
+     * @return                the summary
+     */
     public static JobRunSummary from(JobRunStartedUpdate startedUpdate, JobRunEndUpdate finishedUpdate) {
         return from(startedUpdate.getStartTime(), finishedUpdate);
     }
 
+    /**
+     * Creates a job run summary from status updates held in a tracker.
+     *
+     * @param  startTime      the start time
+     * @param  finishedUpdate the finished update
+     * @return                the summary
+     */
     public static JobRunSummary from(Instant startTime, JobRunEndUpdate finishedUpdate) {
         Instant finishTime = finishedUpdate.getFinishTime();
         JobRunTime runTime = finishedUpdate.getTimeInProcess()
