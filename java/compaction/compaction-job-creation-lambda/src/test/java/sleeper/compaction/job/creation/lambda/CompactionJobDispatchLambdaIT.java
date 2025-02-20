@@ -58,6 +58,7 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TI
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionJobDispatchLambdaIT extends LocalStackTestBase {
 
@@ -78,7 +79,7 @@ public class CompactionJobDispatchLambdaIT extends LocalStackTestBase {
         FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
 
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
@@ -100,7 +101,7 @@ public class CompactionJobDispatchLambdaIT extends LocalStackTestBase {
         FileReference file2 = fileFactory.rootFile("test4.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
         tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 0);
@@ -126,7 +127,7 @@ public class CompactionJobDispatchLambdaIT extends LocalStackTestBase {
         FileReference file2 = fileFactory.rootFile("test4.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
         tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 0);

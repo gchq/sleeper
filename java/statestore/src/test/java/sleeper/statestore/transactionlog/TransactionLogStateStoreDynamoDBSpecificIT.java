@@ -57,6 +57,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogStateStoreTestBase {
     @TempDir
@@ -157,7 +158,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     factory.partitionFile("R", "file3.parquet", 50L));
             createSnapshotWithFreshState(stateStore -> {
                 stateStore.initialise(tree.getAllPartitions());
-                stateStore.addFiles(files);
+                update(stateStore).addFiles(files);
             });
 
             // When
@@ -185,7 +186,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     factory.partitionFile("R", "file3.parquet", 50L));
             createSnapshotWithFreshState(stateStore -> {
                 stateStore.initialise(tree.getAllPartitions());
-                stateStore.addFiles(files);
+                update(stateStore).addFiles(files);
             });
 
             // When
@@ -263,7 +264,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     factory.partitionFile("L", "file2.parquet", 25L),
                     factory.partitionFile("R", "file3.parquet", 50L));
             createSnapshotWithFreshState(stateStore -> {
-                stateStore.addFiles(files);
+                update(stateStore).addFiles(files);
             });
 
             // When

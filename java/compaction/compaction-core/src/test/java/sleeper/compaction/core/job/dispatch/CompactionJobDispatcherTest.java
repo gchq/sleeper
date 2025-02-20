@@ -51,6 +51,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionJobDispatcherTest {
 
@@ -79,7 +80,7 @@ public class CompactionJobDispatcherTest {
         FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
 
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
@@ -109,7 +110,7 @@ public class CompactionJobDispatcherTest {
         FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
         tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 12);
@@ -137,7 +138,7 @@ public class CompactionJobDispatcherTest {
         FileReference file2 = fileFactory.rootFile("file2.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
@@ -167,7 +168,7 @@ public class CompactionJobDispatcherTest {
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(unassignedFile), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(assignedFile), "root");
         CompactionJob tookFileJob = compactionFactory.createCompactionJob("took-file-job", List.of(assignedFile), "root");
-        stateStore.addFiles(List.of(unassignedFile, assignedFile));
+        update(stateStore).addFiles(List.of(unassignedFile, assignedFile));
         assignJobIds(List.of(tookFileJob));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
@@ -195,7 +196,7 @@ public class CompactionJobDispatcherTest {
         FileReference deletedFile = fileFactory.rootFile("deleted.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(unassignedFile), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(deletedFile), "root");
-        stateStore.addFiles(List.of(unassignedFile));
+        update(stateStore).addFiles(List.of(unassignedFile));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
         tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 12);
@@ -222,7 +223,7 @@ public class CompactionJobDispatcherTest {
         FileReference file2 = fileFactory.rootFile("test6.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-5", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-6", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
@@ -250,7 +251,7 @@ public class CompactionJobDispatcherTest {
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
         CompactionJob job3 = compactionFactory.createCompactionJob("test-job-3", List.of(file3), "root");
-        stateStore.addFiles(List.of(file1, file2, file3));
+        update(stateStore).addFiles(List.of(file1, file2, file3));
         assignJobIds(List.of(job1, job2, job3));
         RuntimeException sendFailure = new RuntimeException("Failed sending job");
         sendFailureByJobId.put("test-job-2", sendFailure);

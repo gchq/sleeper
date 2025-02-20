@@ -27,9 +27,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.SplitFileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
@@ -149,13 +147,13 @@ public class FindPartitionsToSplitTest {
     class HandleSplitFiles {
 
         @BeforeEach
-        void setUp() throws Exception {
+        void setUp() throws Exception {-
             // Given we have two leaf partitions
             setPartitions(builder -> builder.rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 50L));
             // And we have a file split over the two leaves, so that each leaf has approximately 300 records
             FileReference file = fileReferenceFactory.rootFile("split.parquet", 600L);
-            stateStore.addFiles(List.of(
+            update(stateStore).addFiles(List.of(
                     SplitFileReference.referenceForChildPartition(file, "L"),
                     SplitFileReference.referenceForChildPartition(file, "R")));
         }

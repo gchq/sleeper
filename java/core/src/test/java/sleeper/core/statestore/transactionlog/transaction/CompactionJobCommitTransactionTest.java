@@ -42,6 +42,7 @@ import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
 
@@ -63,7 +64,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
-        committerStore.addFiles(List.of(oldFile));
+        update(committerStore).addFiles(List.of(oldFile));
         committerStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
@@ -91,7 +92,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
-        committerStore.addFiles(List.of(oldFile));
+        update(committerStore).addFiles(List.of(oldFile));
         committerStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
@@ -228,7 +229,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         FileReference file = factory.rootFile("oldFile", 100L);
         FileReference existingReference = splitFile(file, "L");
         FileReference newReference = factory.partitionFile("L", "newFile", 100L);
-        committerStore.addFiles(List.of(existingReference, newReference));
+        update(committerStore).addFiles(List.of(existingReference, newReference));
         committerStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);

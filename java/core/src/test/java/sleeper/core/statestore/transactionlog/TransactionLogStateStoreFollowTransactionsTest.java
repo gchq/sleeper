@@ -64,7 +64,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     void shouldFollowSingleTransaction() {
         // Given
         FileReference file = factory.rootFile("file.parquet", 100L);
-        committerStore.addFiles(List.of(file));
+        update(committerStore).addFiles(List.of(file));
         TransactionLogEntry logEntry = filesLogStore.getLastEntry();
         trackTransactionLogReads();
 
@@ -81,9 +81,9 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         // Given
         FileReference file1 = factory.rootFile("file1.parquet", 100L);
         FileReference file2 = factory.rootFile("file2.parquet", 100L);
-        committerStore.addFiles(List.of(file1));
+        update(committerStore).addFiles(List.of(file1));
         TransactionLogEntry entry1 = filesLogStore.getLastEntry();
-        committerStore.addFiles(List.of(file2));
+        update(committerStore).addFiles(List.of(file2));
         TransactionLogEntry entry2 = filesLogStore.getLastEntry();
         trackTransactionLogReads();
 
@@ -100,9 +100,9 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         // Given
         FileReference file1 = factory.rootFile("file1.parquet", 100L);
         FileReference file2 = factory.rootFile("file2.parquet", 200L);
-        committerStore.addFiles(List.of(file1));
+        update(committerStore).addFiles(List.of(file1));
         createSnapshots();
-        committerStore.addFiles(List.of(file2));
+        update(committerStore).addFiles(List.of(file2));
         TransactionLogEntry entry2 = filesLogStore.getLastEntry();
         trackTransactionLogReads();
 
@@ -122,10 +122,10 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         FileReference file2 = factory.rootFile("file2.parquet", 200L);
         FileReference file3 = factory.rootFile("file3.parquet", 300L);
         // And a snapshot with only file 1
-        committerStore.addFiles(List.of(file1));
+        update(committerStore).addFiles(List.of(file1));
         createSnapshots();
         // And an entry 2 with file 2 as well
-        committerStore.addFiles(List.of(file2));
+        update(committerStore).addFiles(List.of(file2));
         TransactionLogEntry entry2 = filesLogStore.getLastEntry();
         // And a snapshot with file 2 replaced with file 3 (so that this will fail if reapplied on top of the second snapshot)
         committerStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file2.parquet"))));
@@ -153,7 +153,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
     void shouldFailWhenTransactionIsAppliedTwice() {
         // Given
         FileReference file = factory.rootFile("file.parquet", 100L);
-        committerStore.addFiles(List.of(file));
+        update(committerStore).addFiles(List.of(file));
         TransactionLogEntry logEntry = filesLogStore.getLastEntry();
         trackTransactionLogReads();
         loadNextTransaction(logEntry);
@@ -172,7 +172,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         // Given
         FileReference file1 = factory.rootFile("file1.parquet", 100L);
         FileReference file2 = factory.rootFile("file2.parquet", 200L);
-        committerStore.addFiles(List.of(file1));
+        update(committerStore).addFiles(List.of(file1));
         TransactionLogEntry entry1 = filesLogStore.getLastEntry();
         committerStore.assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles("test-job", "root", List.of("file1.parquet"))));
         TransactionLogEntry entry2 = filesLogStore.getLastEntry();

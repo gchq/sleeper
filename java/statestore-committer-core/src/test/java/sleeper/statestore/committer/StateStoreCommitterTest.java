@@ -479,7 +479,7 @@ public class StateStoreCommitterTest {
         void shouldApplyDeletedFilesRequest() throws Exception {
             // Given two files have been replaced by a compaction job
             StateStore stateStore = createTableGetStateStore("test-table");
-            stateStore.addFiles(List.of(
+            update(stateStore).addFiles(List.of(
                     fileFactory.rootFile("file1.parquet", 100),
                     fileFactory.rootFile("file2.parquet", 200)));
             List<String> filenames = List.of("file1.parquet", "file2.parquet");
@@ -503,7 +503,7 @@ public class StateStoreCommitterTest {
         void shouldFailWhenFileStillHasAReference() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
-            stateStore.addFiles(List.of(fileFactory.rootFile("file.parquet", 100)));
+            update(stateStore).addFiles(List.of(fileFactory.rootFile("file.parquet", 100)));
             FileReferenceTransaction transaction = new DeleteFilesTransaction(List.of("file.parquet"));
 
             // When

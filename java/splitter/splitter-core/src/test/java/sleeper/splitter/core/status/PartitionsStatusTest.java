@@ -40,6 +40,7 @@ import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESH
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class PartitionsStatusTest {
 
@@ -63,7 +64,7 @@ class PartitionsStatusTest {
                     .buildList());
             stateStore.addFile(fileFactory().partitionFile("A", "file-a.parquet", 5));
             FileReference splitFile = fileFactory().rootFile("file-ab.parquet", 10);
-            stateStore.addFiles(List.of(
+            update(stateStore).addFiles(List.of(
                     splitFile(splitFile, "A"),
                     splitFile(splitFile, "B")));
 
@@ -155,7 +156,7 @@ class PartitionsStatusTest {
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
-            stateStore.addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
+            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
 
             // When
             PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
@@ -172,7 +173,7 @@ class PartitionsStatusTest {
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
-            stateStore.addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(100).toList());
+            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(100).toList());
 
             // When
             PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);

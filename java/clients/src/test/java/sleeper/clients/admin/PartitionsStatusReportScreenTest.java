@@ -46,6 +46,7 @@ import static sleeper.clients.testutil.TestConsoleInput.CONFIRM_PROMPT;
 import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
 
@@ -66,7 +67,7 @@ class PartitionsStatusReportScreenTest extends AdminClientMockStoreBase {
         stateStore.initialise(PartitionsBuilderSplitsFirst.leavesWithSplits(
                 schema, List.of("A", "B"), List.of("aaa"))
                 .parentJoining("parent", "A", "B").buildList());
-        stateStore.addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRecords(5).toList());
+        update(stateStore).addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRecords(5).toList());
 
         // When
         String output = runClient()
