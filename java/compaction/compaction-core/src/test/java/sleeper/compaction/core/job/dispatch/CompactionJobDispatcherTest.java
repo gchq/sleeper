@@ -315,7 +315,7 @@ public class CompactionJobDispatcherTest {
 
     private void assignJobIds(List<CompactionJob> jobs) {
         for (CompactionJob job : jobs) {
-            stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+            update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
         }
     }
 

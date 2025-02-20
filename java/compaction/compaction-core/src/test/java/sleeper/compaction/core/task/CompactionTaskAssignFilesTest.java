@@ -137,7 +137,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         Queue<Instant> times = new LinkedList<>(List.of(waitForFilesTime, failTime));
         CompactionJob job = createJobOnQueueNotAssignedToFiles("job1");
 
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job2", job.getPartitionId(), job.getInputFiles())));
+        update(stateStore).assignJobIds(List.of(assignJobOnPartitionToFiles("job2", job.getPartitionId(), job.getInputFiles())));
 
         // When
         runTaskCheckingFiles(

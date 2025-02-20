@@ -376,7 +376,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     startTime, finishTime, failTime,
                     Instant.parse("2024-02-22T13:50:04Z"))); // Finish
             CompactionJob job = createJobOnQueueNotAssignedToFiles("test-job");
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("other-job", job.getPartitionId(), job.getInputFiles())));
+            update(stateStore).assignJobIds(List.of(assignJobOnPartitionToFiles("other-job", job.getPartitionId(), job.getInputFiles())));
 
             // When
             runTask("test-task", processJobs(jobSucceeds()), timesInTask::poll);

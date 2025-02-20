@@ -260,7 +260,7 @@ public class StateStoreCommitterTest {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
             stateStore.addFile(fileFactory.rootFile("input.parquet", 123L));
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
+            update(stateStore).assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
 
             // When
             apply(StateStoreCommitRequest.create("test-table", new AssignJobIdsTransaction(
@@ -483,7 +483,7 @@ public class StateStoreCommitterTest {
                     fileFactory.rootFile("file1.parquet", 100),
                     fileFactory.rootFile("file2.parquet", 200)));
             List<String> filenames = List.of("file1.parquet", "file2.parquet");
-            stateStore.assignJobIds(List.of(
+            update(stateStore).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("test-job", "root", filenames)));
             FileReference fileAfterCompaction = fileFactory.rootFile("after.parquet", 300);
             update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
@@ -782,7 +782,7 @@ public class StateStoreCommitterTest {
             CompactionJob job, Instant createTime, Instant startTime, JobRunSummary summary) throws Exception {
         List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
                 job.getId(), job.getPartitionId(), job.getInputFiles()));
-        stateStore(job.getTableId()).assignJobIds(assignIdRequests);
+        update(stateStore(job.getTableId())).assignJobIds(assignIdRequests);
         compactionJobTracker.jobCreated(job.createCreatedEvent(), createTime);
         compactionJobTracker.jobStarted(job.startedEventBuilder(startTime)
                 .taskId("test-task").jobRunId("test-job-run").build());

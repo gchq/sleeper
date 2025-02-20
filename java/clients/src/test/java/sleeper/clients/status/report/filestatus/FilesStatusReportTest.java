@@ -98,7 +98,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
         update(stateStore).addFiles(List.of(
                 fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file2.parquet", 100)));
-        stateStore.assignJobIds(List.of(
+        update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "B", List.of("file1.parquet", "file2.parquet"))));
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of("file1.parquet", "file2.parquet"), fileReferenceFactory.partitionFile("B", "file3.parquet", 200))));
@@ -124,7 +124,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 fileReferenceFactory.partitionFile("B", "file2.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file3.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file4.parquet", 100)));
-        stateStore.assignJobIds(List.of(
+        update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "B",
                         List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"))));
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(

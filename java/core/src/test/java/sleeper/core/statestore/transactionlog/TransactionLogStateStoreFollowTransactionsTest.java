@@ -128,7 +128,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         update(committerStore).addFiles(List.of(file2));
         TransactionLogEntry entry2 = filesLogStore.getLastEntry();
         // And a snapshot with file 2 replaced with file 3 (so that this will fail if reapplied on top of the second snapshot)
-        committerStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file2.parquet"))));
+        update(committerStore).assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file2.parquet"))));
         TransactionLogEntry entry3 = filesLogStore.getLastEntry();
         update(committerStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
                 .jobId("test-job")
@@ -174,7 +174,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         FileReference file2 = factory.rootFile("file2.parquet", 200L);
         update(committerStore).addFiles(List.of(file1));
         TransactionLogEntry entry1 = filesLogStore.getLastEntry();
-        committerStore.assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles("test-job", "root", List.of("file1.parquet"))));
+        update(committerStore).assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles("test-job", "root", List.of("file1.parquet"))));
         TransactionLogEntry entry2 = filesLogStore.getLastEntry();
         update(committerStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
                 .jobId("test-job")

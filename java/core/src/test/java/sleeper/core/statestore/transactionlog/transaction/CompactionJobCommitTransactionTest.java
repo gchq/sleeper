@@ -65,7 +65,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
         update(committerStore).addFiles(List.of(oldFile));
-        committerStore.assignJobIds(List.of(
+        update(committerStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "test-run");
@@ -93,7 +93,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
         update(committerStore).addFiles(List.of(oldFile));
-        committerStore.assignJobIds(List.of(
+        update(committerStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "run1");
@@ -167,7 +167,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
         committerStore.addFile(oldFile1);
-        committerStore.assignJobIds(List.of(
+        update(committerStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 2);
         trackJobRun(trackedJob, "run1");
@@ -213,7 +213,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         // Given
         FileReference file = factory.rootFile("file1", 100L);
         committerStore.addFile(file);
-        committerStore.assignJobIds(List.of(
+        update(committerStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
         // When / Then
@@ -230,7 +230,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         FileReference existingReference = splitFile(file, "L");
         FileReference newReference = factory.partitionFile("L", "newFile", 100L);
         update(committerStore).addFiles(List.of(existingReference, newReference));
-        committerStore.assignJobIds(List.of(
+        update(committerStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "run1");

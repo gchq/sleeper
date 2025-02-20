@@ -424,7 +424,7 @@ public class GarbageCollectorIT {
             Path oldFilePath, Path newFilePath) throws Exception {
         FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
-        stateStore.assignJobIds(List.of(
+        update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of(oldFile.getFilename()), FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100))));

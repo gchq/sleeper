@@ -92,7 +92,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         FileReference oldFile2 = factory.rootFile("s3a://" + testBucket + "/old-file-2.parquet", 100L);
         FileReference newFile2 = factory.rootFile("s3a://" + testBucket + "/new-file-2.parquet", 100L);
         stateStore.addFile(oldFile2);
-        stateStore.assignJobIds(List.of(
+        update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root",
                         List.of(oldFile1.getFilename(), oldFile2.getFilename()))));
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
