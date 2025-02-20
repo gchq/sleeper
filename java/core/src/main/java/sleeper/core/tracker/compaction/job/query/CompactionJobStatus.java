@@ -199,10 +199,6 @@ public class CompactionJobStatus {
         }
     }
 
-    public List<JobRun> getJobRuns() {
-        return jobRuns.getRunsLatestFirst();
-    }
-
     public List<CompactionJobRun> getRunsLatestFirst() {
         return runsLatestFirst;
     }

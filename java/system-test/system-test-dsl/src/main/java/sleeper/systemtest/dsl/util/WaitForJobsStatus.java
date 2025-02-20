@@ -22,12 +22,14 @@ import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
+import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatusType;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.util.GsonConfig;
 
 import java.time.Duration;
@@ -63,11 +65,11 @@ public class WaitForJobsStatus {
     }
 
     public static WaitForJobsStatus forIngest(IngestJobTracker tracker, Collection<String> jobIds, Instant now) {
-        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
+        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::ingest), jobIds, now);
     }
 
     public static WaitForJobsStatus forCompaction(CompactionJobTracker tracker, Collection<String> jobIds, Instant now) {
-        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::new), jobIds, now);
+        return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::compaction), jobIds, now);
     }
 
     public boolean areAllJobsFinished() {
@@ -99,40 +101,36 @@ public class WaitForJobsStatus {
     }
 
     private interface JobTracker {
-        Optional<JobStatus> getJob(String jobId);
+        Optional<JobStatus<?>> getJob(String jobId);
     }
 
-    private static class JobStatus {
-        private final List<JobRun> runsLatestFirst;
+    private static class JobStatus<T extends JobRunReport> {
+        private final List<T> runsLatestFirst;
         private final String furthestStatusType;
         private final boolean finished;
-        private final Predicate<JobRun> isRunFinished;
+        private final Predicate<T> isRunFinished;
 
-        JobStatus(IngestJobStatus status) {
+        JobStatus(List<T> runsLatestFirst, String furthestStatusType, boolean finished, Predicate<T> isRunFinished) {
+            this.runsLatestFirst = runsLatestFirst;
+            this.furthestStatusType = furthestStatusType;
+            this.finished = finished;
+            this.isRunFinished = isRunFinished;
+        }
+
+        static JobStatus<JobRun> ingest(IngestJobStatus status) {
             IngestJobStatusType statusType = status.getFurthestRunStatusType();
-            this.runsLatestFirst = status.getJobRuns();
-            this.furthestStatusType = statusType.toString();
-            this.finished = statusType == IngestJobStatusType.FINISHED;
-            this.isRunFinished = run -> IngestJobStatusType.statusTypeOfJobRun(run) == IngestJobStatusType.FINISHED;
+            return new JobStatus<>(status.getJobRuns(), statusType.toString(), statusType == IngestJobStatusType.FINISHED,
+                    run -> IngestJobStatusType.statusTypeOfJobRun(run) == IngestJobStatusType.FINISHED);
         }
 
-        JobStatus(CompactionJobStatus status) {
+        static JobStatus<CompactionJobRun> compaction(CompactionJobStatus status) {
             CompactionJobStatusType statusType = status.getFurthestStatusType();
-            this.runsLatestFirst = status.getJobRuns();
-            this.furthestStatusType = statusType.toString();
-            this.finished = statusType == CompactionJobStatusType.FINISHED;
-            this.isRunFinished = run -> CompactionJobStatusType.statusTypeOfJobRun(run) == CompactionJobStatusType.FINISHED;
+            return new JobStatus<>(status.getRunsLatestFirst(), statusType.toString(), statusType == CompactionJobStatusType.FINISHED,
+                    run -> run.getStatusType() == CompactionJobStatusType.FINISHED);
         }
 
-        JobStatus() {
-            runsLatestFirst = List.of();
-            furthestStatusType = "NONE";
-            finished = false;
-            isRunFinished = run -> false;
-        }
-
-        static JobStatus none() {
-            return new JobStatus();
+        static <T extends JobRunReport> JobStatus<T> none() {
+            return new JobStatus<>(List.of(), "NONE", false, run -> false);
         }
     }
 
@@ -148,13 +146,13 @@ public class WaitForJobsStatus {
             this.now = now;
         }
 
-        public void addJob(JobStatus status) {
-            List<JobRun> runsLatestFirst = status.runsLatestFirst;
+        public <T extends JobRunReport> void addJob(JobStatus<T> status) {
+            List<T> runsLatestFirst = status.runsLatestFirst;
             if (runsLatestFirst.isEmpty()) {
                 numUnstarted = numUnstarted == null ? 1 : numUnstarted + 1;
                 numUnfinished++;
             } else if (!status.finished) {
-                for (JobRun run : runsLatestFirst) {
+                for (T run : runsLatestFirst) {
                     if (status.isRunFinished.test(run)) {
                         continue;
                     }
