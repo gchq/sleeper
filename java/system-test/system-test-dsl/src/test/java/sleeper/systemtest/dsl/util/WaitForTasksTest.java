@@ -219,7 +219,6 @@ public class WaitForTasksTest {
                 .jobRunId(UUID.randomUUID().toString())
                 .tableId("test-table")
                 .startTime(startTime)
-                .startOfRun(true)
                 .build();
     }
 

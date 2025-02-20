@@ -29,7 +29,6 @@ public class IngestJobStartedEvent implements IngestJobEvent {
     private final String taskId;
     private final int fileCount;
     private final Instant startTime;
-    private final boolean startOfRun;
 
     private IngestJobStartedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
@@ -38,7 +37,6 @@ public class IngestJobStartedEvent implements IngestJobEvent {
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         fileCount = builder.fileCount;
         startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
-        startOfRun = builder.startOfRun;
     }
 
     public static Builder builder() {
@@ -69,10 +67,6 @@ public class IngestJobStartedEvent implements IngestJobEvent {
         return startTime;
     }
 
-    public boolean isStartOfRun() {
-        return startOfRun;
-    }
-
     @Override
     public boolean equals(Object object) {
         if (this == object) {
@@ -82,7 +76,7 @@ public class IngestJobStartedEvent implements IngestJobEvent {
             return false;
         }
         IngestJobStartedEvent that = (IngestJobStartedEvent) object;
-        return fileCount == that.fileCount && startOfRun == that.startOfRun && Objects.equals(jobId, that.jobId)
+        return fileCount == that.fileCount && Objects.equals(jobId, that.jobId)
                 && Objects.equals(tableId, that.tableId)
                 && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId)
                 && Objects.equals(startTime, that.startTime);
@@ -90,7 +84,7 @@ public class IngestJobStartedEvent implements IngestJobEvent {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, fileCount, jobRunId, taskId, startTime, startOfRun);
+        return Objects.hash(jobId, tableId, fileCount, jobRunId, taskId, startTime);
     }
 
     @Override
@@ -102,7 +96,6 @@ public class IngestJobStartedEvent implements IngestJobEvent {
                 ", jobRunId='" + jobRunId + '\'' +
                 ", taskId='" + taskId + '\'' +
                 ", startTime=" + startTime +
-                ", startOfRun=" + startOfRun +
                 '}';
     }
 
@@ -116,7 +109,6 @@ public class IngestJobStartedEvent implements IngestJobEvent {
         private String jobRunId;
         private String taskId;
         private Instant startTime;
-        private boolean startOfRun;
 
         private Builder() {
         }
@@ -184,17 +176,6 @@ public class IngestJobStartedEvent implements IngestJobEvent {
          */
         public Builder startTime(Instant startTime) {
             this.startTime = startTime;
-            return this;
-        }
-
-        /**
-         * Sets whether this event marks the start of a job run.
-         *
-         * @param  startOfRun whether this event marks the start of a job run
-         * @return            the builder
-         */
-        public Builder startOfRun(boolean startOfRun) {
-            this.startOfRun = startOfRun;
             return this;
         }
 

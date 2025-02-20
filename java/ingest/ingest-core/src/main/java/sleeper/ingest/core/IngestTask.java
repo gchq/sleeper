@@ -109,7 +109,7 @@ public class IngestTask {
             Instant jobStartTime = timeSupplier.get();
             try {
                 jobTracker.jobStarted(job.startedEventBuilder(jobStartTime)
-                        .taskId(taskId).jobRunId(jobRunId).startOfRun(true).build());
+                        .taskId(taskId).jobRunId(jobRunId).build());
                 IngestResult result = ingester.ingest(job, jobRunId);
                 Instant jobFinishTime = timeSupplier.get();
                 LOGGER.info("{} records were written", result.getRecordsWritten());

@@ -49,8 +49,7 @@ public class IngestJobEventTestData {
                 .jobRunId(UUID.randomUUID().toString())
                 .tableId(DEFAULT_TABLE_ID)
                 .fileCount(1)
-                .startTime(startTime)
-                .startOfRun(true);
+                .startTime(startTime);
     }
 
     /**
@@ -65,8 +64,7 @@ public class IngestJobEventTestData {
                 .jobRunId(validatedEvent.getJobRunId())
                 .tableId(validatedEvent.getTableId())
                 .fileCount(validatedEvent.getFileCount())
-                .startTime(startTime)
-                .startOfRun(false);
+                .startTime(startTime);
     }
 
     /**
