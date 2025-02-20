@@ -24,6 +24,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 
+/**
+ * A report of a compaction task held in the task tracker.
+ */
 public class CompactionTaskStatus {
     private final String taskId;
     private final Instant startTime;
@@ -108,11 +111,11 @@ public class CompactionTaskStatus {
      *
      * @return a {@link JobRun} object
      */
-    public JobRun asAggregatedJobRun() {
-        return JobRun.builder().taskId(taskId)
+    public CompactionTaskJobRuns asAggregatedJobRun() {
+        return new CompactionTaskJobRuns(JobRun.builder().taskId(taskId)
                 .statusUpdate(CompactionTaskStartedStatus.startTime(getStartTime()))
                 .statusUpdate(asFinishedStatus())
-                .build();
+                .build());
     }
 
     private JobRunFinishedStatus asFinishedStatus() {
