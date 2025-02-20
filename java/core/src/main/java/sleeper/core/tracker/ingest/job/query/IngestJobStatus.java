@@ -17,7 +17,6 @@
 package sleeper.core.tracker.ingest.job.query;
 
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRuns;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 import sleeper.core.tracker.job.status.JobStatusUpdates;
@@ -39,6 +38,7 @@ import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.FINISHED
 public class IngestJobStatus {
     private final String jobId;
     private final JobRuns jobRuns;
+    private final transient List<IngestJobRun> runsLatestFirst;
     private final transient Set<IngestJobStatusType> runStatusTypes;
     private final transient IngestJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
@@ -46,8 +46,11 @@ public class IngestJobStatus {
     private IngestJobStatus(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         jobRuns = Objects.requireNonNull(builder.jobRuns, "jobRuns must not be null");
-        runStatusTypes = jobRuns.getRunsLatestFirst().stream()
-                .map(IngestJobStatusType::statusTypeOfJobRun)
+        runsLatestFirst = jobRuns.getRunsLatestFirst().stream()
+                .map(IngestJobRun::new)
+                .toList();
+        runStatusTypes = runsLatestFirst.stream()
+                .map(IngestJobRun::getStatusType)
                 .collect(toUnmodifiableSet());
         furthestRunStatusType = IngestJobStatusType.statusTypeOfFurthestRunOfJob(runStatusTypes);
         expiryDate = builder.expiryDate;
@@ -88,10 +91,9 @@ public class IngestJobStatus {
         return jobId;
     }
 
-    public int getInputFilesCount() {
-        return jobRuns.getLatestRun()
-                .flatMap(run -> run.getLastStatusOfType(IngestJobInfoStatus.class))
-                .map(IngestJobInfoStatus::getInputFileCount)
+    public int getInputFileCount() {
+        return runsLatestFirst.stream().findFirst()
+                .map(IngestJobRun::getInputFileCount)
                 .orElse(0);
     }
 
@@ -109,8 +111,8 @@ public class IngestJobStatus {
         return jobRuns.isTaskIdAssigned(taskId);
     }
 
-    public List<JobRun> getJobRuns() {
-        return jobRuns.getRunsLatestFirst();
+    public List<IngestJobRun> getRunsLatestFirst() {
+        return runsLatestFirst;
     }
 
     /**

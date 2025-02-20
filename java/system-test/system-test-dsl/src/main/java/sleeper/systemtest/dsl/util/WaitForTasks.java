@@ -81,7 +81,7 @@ public class WaitForTasks {
         static JobTracker forIngest(IngestJobTracker tracker) {
             return jobIds -> jobIds.stream().parallel()
                     .flatMap(jobId -> tracker.getJob(jobId).stream())
-                    .flatMap(job -> job.getJobRuns().stream());
+                    .flatMap(job -> job.getRunsLatestFirst().stream());
         }
 
         static JobTracker forCompaction(CompactionJobTracker tracker) {

@@ -26,9 +26,9 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.query.IngestJobRun;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatusType;
-import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.util.GsonConfig;
 
@@ -117,10 +117,10 @@ public class WaitForJobsStatus {
             this.isRunFinished = isRunFinished;
         }
 
-        static JobStatus<JobRun> ingest(IngestJobStatus status) {
+        static JobStatus<IngestJobRun> ingest(IngestJobStatus status) {
             IngestJobStatusType statusType = status.getFurthestRunStatusType();
-            return new JobStatus<>(status.getJobRuns(), statusType.toString(), statusType == IngestJobStatusType.FINISHED,
-                    run -> IngestJobStatusType.statusTypeOfJobRun(run) == IngestJobStatusType.FINISHED);
+            return new JobStatus<>(status.getRunsLatestFirst(), statusType.toString(), statusType == IngestJobStatusType.FINISHED,
+                    run -> run.getStatusType() == IngestJobStatusType.FINISHED);
         }
 
         static JobStatus<CompactionJobRun> compaction(CompactionJobStatus status) {

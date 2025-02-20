@@ -19,10 +19,12 @@ import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.status.JobRunEndUpdate;
+import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A report of a run of an ingest or bulk import job held in the job tracker.
@@ -30,13 +32,45 @@ import java.util.List;
 public class IngestJobRun implements JobRunReport {
 
     private final JobRun run;
-    private final JobRunEndUpdate endedStatus;
+    private final IngestJobStatusType statusType;
+    private final IngestJobFilesWrittenAndAdded filesWrittenAndAdded;
+    private final IngestJobValidatedStatus validatedStatus;
+    private final IngestJobStartedStatus startedStatus;
     private final IngestJobFinishedStatus finishedStatus;
+    private final JobRunStartedUpdate validatedOrStartedStatus;
+    private final JobRunEndUpdate endedStatus;
+    private final IngestJobInfoStatus jobInfoStatus;
 
     public IngestJobRun(JobRun run) {
         this.run = run;
-        this.endedStatus = run.getLastStatusOfType(JobRunEndUpdate.class).orElse(null);
+        this.statusType = IngestJobStatusType.statusTypeOfJobRun(run);
+        this.filesWrittenAndAdded = IngestJobFilesWrittenAndAdded.from(run);
+        this.validatedStatus = run.getLastStatusOfType(IngestJobValidatedStatus.class).orElse(null);
+        this.startedStatus = run.getLastStatusOfType(IngestJobStartedStatus.class).orElse(null);
         this.finishedStatus = run.getLastStatusOfType(IngestJobFinishedStatus.class).orElse(null);
+        this.endedStatus = run.getLastStatusOfType(JobRunEndUpdate.class).orElse(null);
+        this.jobInfoStatus = run.getLastStatusOfType(IngestJobInfoStatus.class).orElse(null);
+        if (validatedStatus != null) {
+            this.validatedOrStartedStatus = validatedStatus;
+        } else {
+            this.validatedOrStartedStatus = startedStatus;
+        }
+    }
+
+    public IngestJobStatusType getStatusType() {
+        return statusType;
+    }
+
+    public IngestJobFilesWrittenAndAdded getFilesWrittenAndAdded() {
+        return filesWrittenAndAdded;
+    }
+
+    public int getInputFileCount() {
+        if (jobInfoStatus != null) {
+            return jobInfoStatus.getInputFileCount();
+        } else {
+            return 0;
+        }
     }
 
     @Override
@@ -61,20 +95,32 @@ public class IngestJobRun implements JobRunReport {
 
     @Override
     public Instant getStartTime() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getStartTime'");
+        if (validatedOrStartedStatus != null) {
+            return validatedOrStartedStatus.getStartTime();
+        } else {
+            return null;
+        }
     }
 
     @Override
     public Instant getFinishTime() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getFinishTime'");
+        if (endedStatus != null) {
+            return endedStatus.getFinishTime();
+        } else {
+            return null;
+        }
     }
 
     @Override
     public JobRunSummary getFinishedSummary() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getFinishedSummary'");
+        if (finishedStatus != null) {
+            Instant startTime = Optional.ofNullable(startedStatus)
+                    .map(IngestJobStartedStatus::getStartTime)
+                    .orElseGet(finishedStatus::getFinishTime);
+            return JobRunSummary.from(startTime, finishedStatus);
+        } else {
+            return null;
+        }
     }
 
 }

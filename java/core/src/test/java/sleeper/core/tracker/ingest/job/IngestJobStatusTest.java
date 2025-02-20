@@ -211,7 +211,7 @@ public class IngestJobStatusTest {
                             startedStatusUpdate(startTime))));
 
             // When / Then
-            assertThat(status.getJobRuns())
+            assertThat(status.getRunsLatestFirst())
                     .singleElement()
                     .extracting(JobRunReport::isFinished, JobRunReport::getFinishedSummary)
                     .containsExactly(false, null);
@@ -228,7 +228,7 @@ public class IngestJobStatusTest {
                             finishedStatusUpdate(finishTime))));
 
             // When / Then
-            assertThat(status.getJobRuns())
+            assertThat(status.getRunsLatestFirst())
                     .singleElement()
                     .extracting(JobRunReport::isFinished, JobRunReport::getFinishedSummary)
                     .containsExactly(true, summary(startTime, finishTime));
@@ -247,7 +247,7 @@ public class IngestJobStatusTest {
                             finishedStatusUpdate(finishTime))));
 
             // When / Then
-            assertThat(status.getJobRuns())
+            assertThat(status.getRunsLatestFirst())
                     .singleElement()
                     .extracting(JobRunReport::isFinished, JobRunReport::getFinishedSummary)
                     .containsExactly(true, summary(startTime, finishTime));
@@ -266,7 +266,7 @@ public class IngestJobStatusTest {
                             finishedStatusUpdate(finishTime))));
 
             // When / Then
-            assertThat(status.getJobRuns())
+            assertThat(status.getRunsLatestFirst())
                     .singleElement()
                     .extracting(JobRunReport::isFinished, JobRunReport::getFinishedSummary)
                     .containsExactly(true, summary(startTime, finishTime));

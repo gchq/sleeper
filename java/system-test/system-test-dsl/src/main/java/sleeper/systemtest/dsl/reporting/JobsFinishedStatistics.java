@@ -41,7 +41,7 @@ public class JobsFinishedStatistics {
     }
 
     public static JobsFinishedStatistics fromIngestJobs(List<IngestJobStatus> jobs) {
-        return builder().jobs(jobs, IngestJobStatus::isAnyRunSuccessful, IngestJobStatus::getJobRuns).build();
+        return builder().jobs(jobs, IngestJobStatus::isAnyRunSuccessful, IngestJobStatus::getRunsLatestFirst).build();
     }
 
     public static JobsFinishedStatistics fromCompactionJobs(List<CompactionJobStatus> jobs) {
