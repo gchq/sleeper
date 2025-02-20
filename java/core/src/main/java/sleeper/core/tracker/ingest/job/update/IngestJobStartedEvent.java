@@ -25,18 +25,18 @@ import java.util.Objects;
 public class IngestJobStartedEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
-    private final int fileCount;
     private final String jobRunId;
     private final String taskId;
+    private final int fileCount;
     private final Instant startTime;
     private final boolean startOfRun;
 
     private IngestJobStartedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
-        fileCount = builder.fileCount;
-        jobRunId = builder.jobRunId;
+        jobRunId = Objects.requireNonNull(builder.jobRunId, "jobRunId must not be null");
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
+        fileCount = builder.fileCount;
         startTime = Objects.requireNonNull(builder.startTime, "startTime must not be null");
         startOfRun = builder.startOfRun;
     }
@@ -53,16 +53,16 @@ public class IngestJobStartedEvent implements IngestJobEvent {
         return tableId;
     }
 
-    public int getFileCount() {
-        return fileCount;
-    }
-
     public String getJobRunId() {
         return jobRunId;
     }
 
     public String getTaskId() {
         return taskId;
+    }
+
+    public int getFileCount() {
+        return fileCount;
     }
 
     public Instant getStartTime() {

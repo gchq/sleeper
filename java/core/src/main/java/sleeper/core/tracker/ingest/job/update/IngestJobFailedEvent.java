@@ -32,12 +32,12 @@ public class IngestJobFailedEvent implements IngestJobEvent {
     private final List<String> failureReasons;
 
     private IngestJobFailedEvent(Builder builder) {
-        this.jobId = builder.jobId;
-        this.tableId = builder.tableId;
-        this.jobRunId = builder.jobRunId;
-        this.taskId = builder.taskId;
-        this.failureTime = builder.failureTime;
-        this.failureReasons = builder.failureReasons;
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        jobRunId = Objects.requireNonNull(builder.jobRunId, "jobRunId must not be null");
+        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
+        failureTime = builder.failureTime;
+        failureReasons = builder.failureReasons;
     }
 
     public static Builder builder() {

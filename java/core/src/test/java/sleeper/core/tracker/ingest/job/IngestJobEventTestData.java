@@ -46,6 +46,7 @@ public class IngestJobEventTestData {
     public static IngestJobStartedEvent.Builder ingestJobStartedEventBuilder(Instant startTime) {
         return IngestJobStartedEvent.builder()
                 .jobId(UUID.randomUUID().toString())
+                .jobRunId(UUID.randomUUID().toString())
                 .tableId(DEFAULT_TABLE_ID)
                 .fileCount(1)
                 .startTime(startTime)
@@ -61,6 +62,7 @@ public class IngestJobEventTestData {
     public static IngestJobStartedEvent.Builder ingestJobStartedAfterValidationEventBuilder(IngestJobValidatedEvent validatedEvent, Instant startTime) {
         return IngestJobStartedEvent.builder()
                 .jobId(validatedEvent.getJobId())
+                .jobRunId(validatedEvent.getJobRunId())
                 .tableId(validatedEvent.getTableId())
                 .fileCount(validatedEvent.getFileCount())
                 .startTime(startTime)
@@ -97,6 +99,7 @@ public class IngestJobEventTestData {
     public static IngestJobValidatedEvent.Builder ingestJobValidatedEventBuilder(Instant validationTime) {
         return IngestJobValidatedEvent.builder()
                 .jobId(UUID.randomUUID().toString())
+                .jobRunId(UUID.randomUUID().toString())
                 .tableId(DEFAULT_TABLE_ID)
                 .validationTime(validationTime);
     }
