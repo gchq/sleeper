@@ -28,10 +28,6 @@ public interface JobRunStartedUpdate extends JobStatusUpdate {
      */
     Instant getStartTime();
 
-    default boolean isTimeForRunSummary() {
-        return true;
-    }
-
     default boolean isPartOfRun() {
         return true;
     }
