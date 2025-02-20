@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.List;
 
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 public class InMemoryTransactionLogStateStoreTestBase {
@@ -43,12 +44,12 @@ public class InMemoryTransactionLogStateStoreTestBase {
 
     protected void initialiseWithSchema(Schema schema) {
         createStore(new PartitionsBuilder(schema).singlePartition("root"));
-        store.initialise();
+        update(store).initialise(schema);
     }
 
     protected void initialiseWithPartitions(PartitionsBuilder partitions) {
         createStore(partitions);
-        store.initialise(partitions.buildList());
+        update(store).initialise(partitions.buildList());
     }
 
     private void createStore(PartitionsBuilder partitions) {

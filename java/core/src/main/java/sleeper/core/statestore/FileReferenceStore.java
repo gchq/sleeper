@@ -15,6 +15,8 @@
  */
 package sleeper.core.statestore;
 
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+
 import java.time.Instant;
 
 /**
@@ -36,4 +38,11 @@ public interface FileReferenceStore extends FileReferenceStoreQueries, FileRefer
      * @param time the time that any future file updates will be considered to occur
      */
     void fixFileUpdateTime(Instant time);
+
+    /**
+     * Adds a file transaction to the transaction log.
+     *
+     * @param request the request
+     */
+    void addFilesTransaction(AddTransactionRequest request);
 }

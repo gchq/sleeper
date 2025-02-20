@@ -25,8 +25,6 @@ import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoa
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
@@ -95,20 +93,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     public void updateFromLogs() throws StateStoreException {
         files.updateFromLog();
         partitions.updateFromLog();
-    }
-
-    /**
-     * Adds a transaction to the transaction log. The transaction may or may not already be held in S3. If it is already
-     * held in S3, we don't need to write it to S3 again.
-     *
-     * @param request the request
-     */
-    public void addTransaction(AddTransactionRequest request) {
-        if (request.getTransaction() instanceof FileReferenceTransaction) {
-            files.addTransaction(request);
-        } else if (request.getTransaction() instanceof PartitionTransaction) {
-            partitions.addTransaction(request);
-        }
     }
 
     /**

@@ -49,11 +49,11 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 public class QueryMessageHandlerIT extends DynamoDBTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+    private final DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
     @BeforeEach
     void setUp() {
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoDBClient).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
     }
 
     private final TableProperties tableProperties = createTable("table-1");

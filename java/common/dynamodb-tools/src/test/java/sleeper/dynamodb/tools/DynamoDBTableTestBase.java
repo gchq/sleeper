@@ -41,11 +41,11 @@ public class DynamoDBTableTestBase extends DynamoDBTestBase {
 
     @AfterEach
     public void tearDown() {
-        dynamoDBClient.deleteTable(TEST_TABLE_NAME);
+        dynamoClient.deleteTable(TEST_TABLE_NAME);
     }
 
     public void createTable() {
-        initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
+        initialiseTable(dynamoClient, TEST_TABLE_NAME,
                 List.of(
                         new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
                 List.of(
