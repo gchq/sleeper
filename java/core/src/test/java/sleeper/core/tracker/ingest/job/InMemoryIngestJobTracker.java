@@ -56,7 +56,6 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
                         .jobId(event.getJobId())
                         .statusUpdate(toStatusUpdate(event, defaultUpdateTime(event.getValidationTime())))
                         .jobRunId(event.getJobRunId())
-                        .taskId(event.getTaskId())
                         .build());
     }
 

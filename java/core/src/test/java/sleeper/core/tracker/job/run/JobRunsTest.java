@@ -345,13 +345,30 @@ class JobRunsTest {
             TestJobStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(forNoRunNoTask("a-job", startedStatus));
+            JobRuns runs = runsFromUpdates(forNoRunNoTask(startedStatus));
 
             // Then
             assertThat(runs.getRunsLatestFirst())
                     .singleElement()
                     .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
                     .containsExactly(null, List.of(startedStatus));
+        }
+
+        @Test
+        void shouldCreateTwoRunsWhenStatusUpdatePartOfRunButHasNoRunId() {
+            // Given
+            TestJobStartedStatus startedStatus1 = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
+            TestJobStartedStatus startedStatus2 = startedStatus(Instant.parse("2022-09-24T09:24:30Z"));
+
+            // When
+            JobRuns runs = runsFromUpdates(forNoRunNoTask(startedStatus1), forNoRunNoTask(startedStatus2));
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
+                    .containsExactly(
+                            tuple(null, List.of(startedStatus2)),
+                            tuple(null, List.of(startedStatus1)));
         }
     }
 

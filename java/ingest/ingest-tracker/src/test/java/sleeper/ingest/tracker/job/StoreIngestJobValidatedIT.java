@@ -35,17 +35,16 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobTrackerTestBase 
     @Test
     void shouldReportUnstartedJobWithNoValidationFailures() {
         // Given
-        String taskId = "some-task";
         IngestJob job = createJobWithTableAndFiles("test-job-1", table, "test-file-1.parquet");
         Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
 
         // When
-        tracker.jobValidated(job.acceptedEventBuilder(validationTime).taskId(taskId).build());
+        tracker.jobValidated(job.acceptedEventBuilder(validationTime).build());
 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(ingestJobStatus(job, acceptedRunOnTask(job, taskId, validationTime)));
+                .containsExactly(ingestJobStatus(job, acceptedRunOnTask(job, null, validationTime)));
     }
 
     @Test
@@ -57,8 +56,8 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobTrackerTestBase 
         Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
 
         // When
-        tracker.jobValidated(job.acceptedEventBuilder(validationTime).taskId(taskId).build());
-        tracker.jobStarted(job.startedAfterValidationEventBuilder(startTime).taskId(taskId).build());
+        tracker.jobValidated(job.acceptedEventBuilder(validationTime).jobRunId("some-run").build());
+        tracker.jobStarted(job.startedAfterValidationEventBuilder(startTime).taskId(taskId).jobRunId("some-run").build());
 
         // Then
         assertThat(getAllJobStatuses())

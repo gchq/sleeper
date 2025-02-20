@@ -59,10 +59,14 @@ class JobRunsBuilder {
     }
 
     private Optional<JobRun.Builder> getBuilderIfCorrelatable(JobStatusUpdateRecord record) {
-        if (record.getStatusUpdate().isPartOfRun()) {
-            return Optional.of(builderByJobRunId.computeIfAbsent(record.getJobRunId(), id -> createOrderedBuilder()));
-        } else {
+        if (!record.getStatusUpdate().isPartOfRun()) {
             return Optional.empty();
+        }
+        String jobRunId = record.getJobRunId();
+        if (jobRunId != null) {
+            return Optional.of(builderByJobRunId.computeIfAbsent(jobRunId, id -> createOrderedBuilder()));
+        } else {
+            return Optional.of(createOrderedBuilder());
         }
     }
 

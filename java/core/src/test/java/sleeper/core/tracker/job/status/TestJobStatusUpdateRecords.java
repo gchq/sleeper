@@ -207,6 +207,16 @@ public class TestJobStatusUpdateRecords {
     }
 
     /**
+     * Creates an instance of task updates with no run ID and no task ID.
+     *
+     * @param  updates the job status updates
+     * @return         a {@link TaskUpdates} instance
+     */
+    public static TaskUpdates forNoRunNoTask(JobStatusUpdate... updates) {
+        return forJobRunOnTask(DEFAULT_JOB_ID, null, null, updates);
+    }
+
+    /**
      * Creates an update with expiry instance.
      *
      * @param  expiryTime the expiry time
