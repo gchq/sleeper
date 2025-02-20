@@ -31,6 +31,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -215,6 +216,7 @@ public class WaitForTasksTest {
         return IngestJobStartedEvent.builder()
                 .jobId(jobId)
                 .taskId(taskId)
+                .jobRunId(UUID.randomUUID().toString())
                 .tableId("test-table")
                 .startTime(startTime)
                 .startOfRun(true)
@@ -225,6 +227,7 @@ public class WaitForTasksTest {
         return CompactionJobStartedEvent.builder()
                 .jobId(jobId)
                 .taskId(taskId)
+                .jobRunId(UUID.randomUUID().toString())
                 .tableId("test-table")
                 .startTime(startTime)
                 .build();
