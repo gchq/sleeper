@@ -44,15 +44,27 @@ public class CompactionJobEventTestData {
     }
 
     public static CompactionJobStartedEvent.Builder compactionStartedEventBuilder(CompactionJobCreatedEvent created, Instant startTime) {
-        return CompactionJobStartedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).startTime(startTime);
+        return CompactionJobStartedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).startTime(startTime).jobRunId(UUID.randomUUID().toString());
+    }
+
+    public static CompactionJobFinishedEvent.Builder compactionFinishedEventBuilder(CompactionJobStartedEvent started, JobRunSummary summary) {
+        return CompactionJobFinishedEvent.builder().jobId(started.getJobId()).tableId(started.getTableId()).taskId(started.getTaskId()).jobRunId(started.getJobRunId()).summary(summary);
     }
 
     public static CompactionJobFinishedEvent.Builder compactionFinishedEventBuilder(CompactionJobCreatedEvent created, JobRunSummary summary) {
         return CompactionJobFinishedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).summary(summary);
     }
 
+    public static CompactionJobCommittedEvent.Builder compactionCommittedEventBuilder(CompactionJobStartedEvent started, Instant commitTime) {
+        return CompactionJobCommittedEvent.builder().jobId(started.getJobId()).tableId(started.getTableId()).taskId(started.getTaskId()).jobRunId(started.getJobRunId()).commitTime(commitTime);
+    }
+
     public static CompactionJobCommittedEvent.Builder compactionCommittedEventBuilder(CompactionJobCreatedEvent created, Instant commitTime) {
         return CompactionJobCommittedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).commitTime(commitTime);
+    }
+
+    public static CompactionJobFailedEvent.Builder compactionFailedEventBuilder(CompactionJobStartedEvent started, Instant failureTime) {
+        return CompactionJobFailedEvent.builder().jobId(started.getJobId()).tableId(started.getTableId()).taskId(started.getTaskId()).jobRunId(started.getJobRunId()).failureTime(failureTime);
     }
 
     public static CompactionJobFailedEvent.Builder compactionFailedEventBuilder(CompactionJobCreatedEvent created, Instant failureTime) {
