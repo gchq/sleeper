@@ -41,6 +41,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TableMetricsTest {
     private final Schema schema = schemaWithKey("key", new LongType());
@@ -75,7 +76,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithOneFileInOnePartition() {
             // Given
-            stateStore.addFile(fileFactory().rootFile(100L));
+            update(stateStore).addFile(fileFactory().rootFile(100L));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -93,8 +94,8 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
             // Given
-            stateStore.addFile(fileFactory().rootFile("file1.parquet", 100L));
-            stateStore.addFile(fileFactory().rootFile("file2.parquet", 200L));
+            update(stateStore).addFile(fileFactory().rootFile("file1.parquet", 100L));
+            update(stateStore).addFile(fileFactory().rootFile("file2.parquet", 200L));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -117,7 +118,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithMultiplePartitions() {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L)
                     .buildList());
@@ -138,13 +139,13 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithTwoFilesInOnePartitionAndOneFileInOther() {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L)
                     .buildList());
-            stateStore.addFile(fileFactory().partitionFile("L", "left.parquet", 50));
-            stateStore.addFile(fileFactory().partitionFile("R", "right1.parquet", 50));
-            stateStore.addFile(fileFactory().partitionFile("R", "right2.parquet", 23));
+            update(stateStore).addFile(fileFactory().partitionFile("L", "left.parquet", 50));
+            update(stateStore).addFile(fileFactory().partitionFile("R", "right1.parquet", 50));
+            update(stateStore).addFile(fileFactory().partitionFile("R", "right2.parquet", 23));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -162,13 +163,13 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsForMultiplePartitionsWithDifferentFileCounts() {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L)
                     .buildList());
-            stateStore.addFile(fileFactory().partitionFile("left", "file1.parquet", 10));
-            stateStore.addFile(fileFactory().partitionFile("left", "file2.parquet", 10));
-            stateStore.addFile(fileFactory().partitionFile("right", "file3.parquet", 10));
+            update(stateStore).addFile(fileFactory().partitionFile("left", "file1.parquet", 10));
+            update(stateStore).addFile(fileFactory().partitionFile("left", "file2.parquet", 10));
+            update(stateStore).addFile(fileFactory().partitionFile("right", "file3.parquet", 10));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -186,11 +187,11 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsForMultiplePartitionsWhenOneLeafPartitionHasNoFiles() {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L)
                     .buildList());
-            stateStore.addFile(fileFactory().partitionFile("left", "file1.parquet", 10));
+            update(stateStore).addFile(fileFactory().partitionFile("left", "file1.parquet", 10));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -213,12 +214,12 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithOneFileInMultiplePartitions() {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L)
                     .buildList());
             FileReference splitFile = fileFactory().rootFile("test.parquet", 100);
-            stateStore.addFiles(List.of(
+            update(stateStore).addFiles(List.of(
                     splitFile(splitFile, "L"),
                     splitFile(splitFile, "R")));
 
@@ -238,12 +239,12 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithOneFileInMultiplePartitionsAndOneFileInOnePartition() {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 100L)
                     .buildList());
             FileReference splitFile = fileFactory().rootFile("test.parquet", 100);
-            stateStore.addFiles(List.of(
+            update(stateStore).addFiles(List.of(
                     fileFactory().partitionFile("L", "left.parquet", 23),
                     splitFile(splitFile, "L"),
                     splitFile(splitFile, "R")));

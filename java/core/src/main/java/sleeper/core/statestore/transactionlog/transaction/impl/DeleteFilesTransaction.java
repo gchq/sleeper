@@ -54,6 +54,11 @@ public class DeleteFilesTransaction implements FileReferenceTransaction {
     }
 
     @Override
+    public boolean isEmpty() {
+        return filenames.isEmpty();
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(filenames);
     }

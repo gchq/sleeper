@@ -99,6 +99,11 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         }
     }
 
+    @Override
+    public boolean isEmpty() {
+        return files.isEmpty();
+    }
+
     /**
      * Reports the result of the transaction to the job tracker. This should be used after the transaction is fully
      * committed to the log.

@@ -80,6 +80,11 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
         }
     }
 
+    @Override
+    public boolean isEmpty() {
+        return jobs.isEmpty();
+    }
+
     /**
      * Reports commits and failures based on validity of each job in the state before the transaction. This should be
      * used after the transaction is fully committed to the log.

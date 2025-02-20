@@ -190,13 +190,15 @@ public class DelegatingStateStore implements StateStore {
 
     @Override
     public void addFilesTransaction(AddTransactionRequest request) {
-        request.getTransaction().checkBefore(this);
-        fileReferenceStore.addFilesTransaction(request);
+        if (request.checkBeforeAdd(this)) {
+            fileReferenceStore.addFilesTransaction(request);
+        }
     }
 
     @Override
     public void addPartitionsTransaction(AddTransactionRequest request) {
-        request.getTransaction().checkBefore(this);
-        partitionStore.addPartitionsTransaction(request);
+        if (request.checkBeforeAdd(this)) {
+            partitionStore.addPartitionsTransaction(request);
+        }
     }
 }
