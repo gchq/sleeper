@@ -120,7 +120,8 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
     }
 
     /**
-     * Validates the transaction against the current state.
+     * Validates the transaction against the current state. Used during a synchronous commit to report on any
+     * failures.
      *
      * @param  stateStoreFiles                         the state
      * @throws FileNotFoundException                   if an input file does not exist
