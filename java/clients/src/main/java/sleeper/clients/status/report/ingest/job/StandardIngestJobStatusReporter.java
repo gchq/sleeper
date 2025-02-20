@@ -27,11 +27,11 @@ import sleeper.clients.util.table.TableField;
 import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
-import sleeper.core.tracker.ingest.job.IngestJobFilesWrittenAndAdded;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatusType;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobFilesWrittenAndAdded;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatusType;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
 import sleeper.core.tracker.job.run.AverageRecordRate;
 import sleeper.core.tracker.job.run.JobRun;
@@ -42,7 +42,7 @@ import java.util.Map;
 
 import static sleeper.clients.status.report.job.StandardJobRunReporter.printUpdateType;
 import static sleeper.clients.status.report.job.StandardJobRunReporter.updatePrinters;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusType.IN_PROGRESS;
+import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.IN_PROGRESS;
 
 public class StandardIngestJobStatusReporter implements IngestJobStatusReporter {
 

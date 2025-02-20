@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.core.tracker.ingest.job;
+package sleeper.core.tracker.ingest.job.query;
 
 import sleeper.core.tracker.job.run.JobRun;
 

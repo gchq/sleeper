@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.tracker.compaction.job.query;
+package sleeper.core.tracker.ingest.job.query;
 
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunReport;
@@ -23,39 +23,20 @@ import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 /**
- * A report of a run of a compaction job held in the job tracker.
+ * A report of a run of an ingest or bulk import job held in the job tracker.
  */
-public class CompactionJobRun implements JobRunReport {
+public class IngestJobRun implements JobRunReport {
 
     private final JobRun run;
-    private final CompactionJobStatusType statusType;
-    private final CompactionJobStartedStatus startedStatus;
     private final JobRunEndUpdate endedStatus;
-    private final CompactionJobFinishedStatus finishedStatus;
-    private final CompactionJobCommittedStatus committedStatus;
+    private final IngestJobFinishedStatus finishedStatus;
 
-    public CompactionJobRun(JobRun run) {
+    public IngestJobRun(JobRun run) {
         this.run = run;
-        this.statusType = CompactionJobStatusType.statusTypeOfJobRun(run);
-        this.startedStatus = run.getLastStatusOfType(CompactionJobStartedStatus.class).orElse(null);
         this.endedStatus = run.getLastStatusOfType(JobRunEndUpdate.class).orElse(null);
-        this.finishedStatus = run.getLastStatusOfType(CompactionJobFinishedStatus.class).orElse(null);
-        this.committedStatus = run.getLastStatusOfType(CompactionJobCommittedStatus.class).orElse(null);
-    }
-
-    public CompactionJobStatusType getStatusType() {
-        return statusType;
-    }
-
-    public Optional<CompactionJobFinishedStatus> getSuccessfulFinishedStatus() {
-        return Optional.ofNullable(finishedStatus);
-    }
-
-    public Optional<CompactionJobCommittedStatus> getCommittedStatus() {
-        return Optional.ofNullable(committedStatus);
+        this.finishedStatus = run.getLastStatusOfType(IngestJobFinishedStatus.class).orElse(null);
     }
 
     @Override
@@ -80,25 +61,20 @@ public class CompactionJobRun implements JobRunReport {
 
     @Override
     public Instant getStartTime() {
-        return startedStatus.getStartTime();
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getStartTime'");
     }
 
     @Override
     public Instant getFinishTime() {
-        if (isFinished()) {
-            return endedStatus.getFinishTime();
-        } else {
-            return null;
-        }
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getFinishTime'");
     }
 
     @Override
     public JobRunSummary getFinishedSummary() {
-        if (isFinished()) {
-            return JobRunSummary.from(startedStatus, endedStatus);
-        } else {
-            return null;
-        }
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getFinishedSummary'");
     }
 
 }

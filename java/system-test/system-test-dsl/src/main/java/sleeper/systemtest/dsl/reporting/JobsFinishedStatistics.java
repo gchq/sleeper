@@ -17,7 +17,7 @@
 package sleeper.systemtest.dsl.reporting;
 
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.AverageRecordRate;
 import sleeper.core.tracker.job.run.JobRunReport;
 

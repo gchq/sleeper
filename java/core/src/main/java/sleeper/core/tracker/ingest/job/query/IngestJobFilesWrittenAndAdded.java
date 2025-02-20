@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.tracker.ingest.job;
+package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
-import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 
