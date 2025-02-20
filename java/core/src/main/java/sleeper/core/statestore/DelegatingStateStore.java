@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -185,5 +186,17 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public void fixPartitionUpdateTime(Instant now) {
         partitionStore.fixPartitionUpdateTime(now);
+    }
+
+    @Override
+    public void addFilesTransaction(AddTransactionRequest request) {
+        request.getTransaction().checkBefore(this);
+        fileReferenceStore.addFilesTransaction(request);
+    }
+
+    @Override
+    public void addPartitionsTransaction(AddTransactionRequest request) {
+        request.getTransaction().checkBefore(this);
+        partitionStore.addPartitionsTransaction(request);
     }
 }

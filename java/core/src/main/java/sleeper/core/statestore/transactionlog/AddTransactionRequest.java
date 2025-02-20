@@ -24,7 +24,9 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import java.util.Optional;
 
 /**
- * Holds a transaction that should be added to the log. The transaction may or may not already be held in S3.
+ * Holds a transaction that should be added to the log. The transaction may or may not be held in S3. When writing to a
+ * log we could point to the existing file in S3 rather than writing the transaction directly, particularly if it's too
+ * big.
  */
 public class AddTransactionRequest {
 

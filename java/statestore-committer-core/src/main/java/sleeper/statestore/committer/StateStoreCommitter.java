@@ -131,17 +131,13 @@ public class StateStoreCommitter {
     public void apply(StateStoreCommitRequest request) throws StateStoreException {
         TableProperties tableProperties = tablePropertiesProvider.getById(request.getTableId());
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        if (!(stateStore instanceof TransactionLogStateStore)) {
-            throw new UnsupportedOperationException("Cannot add a transaction for a non-transaction log state store");
-        }
-        TransactionLogStateStore transactionStateStore = (TransactionLogStateStore) stateStore;
         if (request.getTransactionType() == TransactionType.REPLACE_FILE_REFERENCES &&
                 instanceProperties.getBoolean(COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED)) {
-            commitCompaction(request, tableProperties, transactionStateStore);
+            commitCompaction(request, tableProperties, stateStore);
         } else if (request.getTransactionType() == TransactionType.ADD_FILES) {
-            commitIngest(request, tableProperties, transactionStateStore);
+            commitIngest(request, tableProperties, stateStore);
         } else {
-            transactionStateStore.addTransaction(
+            stateStore.addTransaction(
                     AddTransactionRequest.withTransaction(transactionBodyStore.getTransaction(request))
                             .bodyKey(request.getBodyKey())
                             .build());
@@ -150,7 +146,7 @@ public class StateStoreCommitter {
                 request.getTableId(), request.getTransactionType(), Instant.now());
     }
 
-    private void commitCompaction(StateStoreCommitRequest request, TableProperties tableProperties, TransactionLogStateStore stateStore) {
+    private void commitCompaction(StateStoreCommitRequest request, TableProperties tableProperties, StateStore stateStore) {
         ReplaceFileReferencesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())
@@ -165,7 +161,7 @@ public class StateStoreCommitter {
         }
     }
 
-    private void commitIngest(StateStoreCommitRequest request, TableProperties tableProperties, TransactionLogStateStore stateStore) {
+    private void commitIngest(StateStoreCommitRequest request, TableProperties tableProperties, StateStore stateStore) {
         AddFilesTransaction transaction = transactionBodyStore.getTransaction(request);
         AddTransactionRequest addTransaction = AddTransactionRequest.withTransaction(transaction)
                 .bodyKey(request.getBodyKey())

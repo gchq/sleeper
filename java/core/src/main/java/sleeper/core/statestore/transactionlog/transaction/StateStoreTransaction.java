@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog.transaction;
 
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
@@ -41,4 +42,16 @@ public interface StateStoreTransaction<T> {
      * @param updateTime the time that the update was added to the state store
      */
     void apply(T state, Instant updateTime);
+
+    /**
+     * Validates against the state store before attempting to add this transaction. Should not be relied upon
+     * but can be used as an extra check against state that this transaction does not operate on. Note that
+     * any checks from this are before the state is updated as part of the transaction. This cannot validate
+     * against the state the transaction is applied to as it may be updated by another process in the meantime.
+     *
+     * @param stateStore the state store
+     * @see              #validate
+     */
+    default void checkBefore(StateStore stateStore) throws StateStoreException {
+    }
 }
