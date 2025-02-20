@@ -26,34 +26,15 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
     private final int inputFileCount;
     private final Instant startTime;
     private final Instant updateTime;
-    private final boolean isStartOfRun;
 
     private IngestJobStartedStatus(Builder builder) {
         inputFileCount = builder.inputFileCount;
         startTime = Objects.requireNonNull(builder.startTime, "startTime may not be null");
         updateTime = Objects.requireNonNull(builder.updateTime, "updateTime may not be null");
-        isStartOfRun = builder.isStartOfRun;
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    /**
-     * Creates a builder for this class, setting the start of run flag. This flag is used to separate multiple runs of a
-     * job on the same task. When a status update with this flag enabled is found, it indicates that a new run has
-     * been started. This also means that there is only 1 status update with this flag enabled for every run.
-     * <p>
-     * For ingest jobs, the job is started when an ingest task retrieves it from an SQS queue.
-     * For bulk import jobs, the job starts when the bulk import starter validates it and assigns it to a Spark cluster.
-     * When a bulk import job starts in the Spark cluster, that needs to not count as the start of the run, else the
-     * {@link JobRunsBuilder} would detect that as multiple runs.
-     *
-     * @param  startOfRun whether this status marks the start of a job run
-     * @return            the builder
-     */
-    public static Builder withStartOfRun(boolean startOfRun) {
-        return builder().isStartOfRun(startOfRun);
     }
 
     public int getInputFileCount() {
@@ -71,11 +52,6 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
     }
 
     @Override
-    public boolean isStartOfRun() {
-        return isStartOfRun;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -85,14 +61,13 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         }
         IngestJobStartedStatus that = (IngestJobStartedStatus) o;
         return inputFileCount == that.inputFileCount
-                && isStartOfRun == that.isStartOfRun
                 && Objects.equals(startTime, that.startTime)
                 && Objects.equals(updateTime, that.updateTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(inputFileCount, startTime, updateTime, isStartOfRun);
+        return Objects.hash(inputFileCount, startTime, updateTime);
     }
 
     @Override
@@ -101,7 +76,6 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
                 "inputFileCount=" + inputFileCount +
                 ", startTime=" + startTime +
                 ", updateTime=" + updateTime +
-                ", isStartOfRun=" + isStartOfRun +
                 '}';
     }
 
@@ -112,7 +86,6 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
         private int inputFileCount;
         private Instant startTime;
         private Instant updateTime;
-        private boolean isStartOfRun = true;
 
         public Builder() {
         }
@@ -165,7 +138,6 @@ public class IngestJobStartedStatus implements IngestJobInfoStatus {
          * @return              the builder
          */
         public Builder isStartOfRun(boolean isStartOfRun) {
-            this.isStartOfRun = isStartOfRun;
             return this;
         }
 

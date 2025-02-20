@@ -69,7 +69,6 @@ class DynamoDBIngestJobStatusFormat {
     static final String VALIDATION_REASONS = "ValidationReasons";
     static final String JSON_MESSAGE = "JsonMessage";
     static final String INPUT_FILES_COUNT = "InputFilesCount";
-    static final String START_OF_RUN = "StartOfRun";
     static final String START_TIME = "StartTime";
     static final String FILES_WRITTEN_TIME = "FilesWrittenTime";
     static final String FILES_WRITTEN_COUNT = "FilesWrittenCount";
@@ -123,7 +122,6 @@ class DynamoDBIngestJobStatusFormat {
                 .string(JOB_RUN_ID, event.getJobRunId())
                 .string(TASK_ID, event.getTaskId())
                 .number(INPUT_FILES_COUNT, event.getFileCount())
-                .bool(START_OF_RUN, event.isStartOfRun())
                 .build();
     }
 
@@ -218,7 +216,7 @@ class DynamoDBIngestJobStatusFormat {
                             .build();
                 }
             case UPDATE_TYPE_STARTED:
-                return IngestJobStartedStatus.withStartOfRun(getBooleanAttribute(item, START_OF_RUN))
+                return IngestJobStartedStatus.builder()
                         .inputFileCount(getIntAttribute(item, INPUT_FILES_COUNT, 0))
                         .startTime(getInstantAttribute(item, START_TIME))
                         .updateTime(getInstantAttribute(item, UPDATE_TIME)).build();

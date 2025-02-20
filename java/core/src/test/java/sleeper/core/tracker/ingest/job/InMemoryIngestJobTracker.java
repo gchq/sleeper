@@ -64,7 +64,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
         tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(IngestJobStartedStatus.withStartOfRun(event.isStartOfRun())
+                        .statusUpdate(IngestJobStartedStatus.builder()
                                 .inputFileCount(event.getFileCount())
                                 .startTime(event.getStartTime())
                                 .updateTime(defaultUpdateTime(event.getStartTime()))

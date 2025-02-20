@@ -104,7 +104,7 @@ public class StoreIngestJobRunIdIT extends DynamoDBIngestJobTrackerTestBase {
                         IngestJobAddedFilesStatus.builder()
                                 .fileCount(2)
                                 .writtenTime(writtenTime).updateTime(defaultUpdateTime(writtenTime)).build(),
-                        IngestJobStartedStatus.withStartOfRun(true)
+                        IngestJobStartedStatus.builder()
                                 .inputFileCount(1)
                                 .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build())));
     }

@@ -130,7 +130,7 @@ public class IngestJobStatusFromJobTestData {
         return jobRunOnTask(taskId,
                 IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)),
-                IngestJobStartedStatus.withStartOfRun(false)
+                IngestJobStartedStatus.builder()
                         .inputFileCount(job.getFileCount())
                         .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build());
     }
@@ -149,7 +149,7 @@ public class IngestJobStatusFromJobTestData {
         return jobRunOnTask(taskId,
                 IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)),
-                IngestJobStartedStatus.withStartOfRun(false)
+                IngestJobStartedStatus.builder()
                         .inputFileCount(job.getFileCount())
                         .startTime(summary.getStartTime())
                         .updateTime(defaultUpdateTime(summary.getStartTime())).build(),
@@ -175,7 +175,7 @@ public class IngestJobStatusFromJobTestData {
         return jobRunOnTask(taskId,
                 IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)),
-                IngestJobStartedStatus.withStartOfRun(false)
+                IngestJobStartedStatus.builder()
                         .inputFileCount(job.getFileCount())
                         .startTime(runTime.getStartTime())
                         .updateTime(defaultUpdateTime(runTime.getStartTime())).build(),
