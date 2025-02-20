@@ -194,7 +194,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
             initialiseWithPartitions(partitionsBefore);
 
             // When
-            store.initialise(partitionsAfter.buildList());
+            update(store).initialise(partitionsAfter.buildList());
 
             // Then
             assertThat(store.getAllPartitions())
@@ -213,10 +213,10 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     .splitToNewChildren("root", "after1", "after2", 10L);
             initialiseWithPartitions(partitionsBefore);
 
-            store.addFile(factory.partitionFile("before2", 100L));
+            update(store).addFile(factory.partitionFile("before2", 100L));
 
             // When / Then
-            assertThatThrownBy(() -> store.initialise(partitionsAfter.buildList()))
+            assertThatThrownBy(() -> update(store).initialise(partitionsAfter.buildList()))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(partitionsBefore.buildList());
