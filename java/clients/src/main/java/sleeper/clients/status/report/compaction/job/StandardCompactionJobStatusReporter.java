@@ -122,7 +122,7 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("State: %s%n", jobStatus.getFurthestStatusType());
         out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
-        jobStatus.getJobRunsNew().forEach(this::printJobRun);
+        jobStatus.getRunsLatestFirst().forEach(this::printJobRun);
         out.println("--------------------------");
     }
 
@@ -180,20 +180,20 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
         return AverageRecordRate.of(jobs.stream()
-                .flatMap(job -> job.getJobRuns().stream()));
+                .flatMap(job -> job.getRunsLatestFirst().stream()));
     }
 
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {
-        if (job.getJobRuns().isEmpty()) {
+        if (job.getRunsLatestFirst().isEmpty()) {
             table.row(row -> {
                 row.value(stateField, job.getFurthestStatusType());
                 writeJobFields(job, row);
             });
         } else {
-            job.getJobRuns().forEach(run -> table.row(row -> {
+            job.getRunsLatestFirst().forEach(run -> table.row(row -> {
                 writeJobFields(job, row);
-                row.value(stateField, CompactionJobStatusType.statusTypeOfJobRun(run));
-                row.value(commitTimeField, run.getLastStatusOfType(CompactionJobCommittedStatus.class)
+                row.value(stateField, run.getStatusType());
+                row.value(commitTimeField, run.getCommittedStatus()
                         .map(CompactionJobCommittedStatus::getCommitTime)
                         .orElse(null));
                 runReporter.writeRunFields(run, row);

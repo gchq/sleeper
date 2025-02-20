@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.util.PollWithRetries;
 
 import java.time.Duration;
@@ -68,7 +68,7 @@ public class WaitForTasks {
 
     private int numTasksStartedAJob(List<String> jobIds) {
         Set<String> taskIds = jobTracker.findRunsOfJobs(jobIds)
-                .map(JobRun::getTaskId)
+                .map(JobRunReport::getTaskId)
                 .collect(toUnmodifiableSet());
         LOGGER.info("Found {} tasks with runs for given jobs", taskIds.size());
         return taskIds.size();
@@ -76,7 +76,7 @@ public class WaitForTasks {
 
     @FunctionalInterface
     private interface JobTracker {
-        Stream<JobRun> findRunsOfJobs(Collection<String> jobIds);
+        Stream<JobRunReport> findRunsOfJobs(Collection<String> jobIds);
 
         static JobTracker forIngest(IngestJobTracker tracker) {
             return jobIds -> jobIds.stream().parallel()
@@ -87,7 +87,7 @@ public class WaitForTasks {
         static JobTracker forCompaction(CompactionJobTracker tracker) {
             return jobIds -> jobIds.stream().parallel()
                     .flatMap(jobId -> tracker.getJob(jobId).stream())
-                    .flatMap(job -> job.getJobRuns().stream());
+                    .flatMap(job -> job.getRunsLatestFirst().stream());
         }
     }
 }

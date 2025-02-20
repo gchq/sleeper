@@ -47,7 +47,7 @@ public class CompactionJobStatus {
     private final Integer inputFilesCount;
     private final Instant createUpdateTime;
     private final JobRuns jobRuns;
-    private final transient List<CompactionJobRun> jobRunsNew;
+    private final transient List<CompactionJobRun> runsLatestFirst;
     private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
     private final transient CompactionJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
@@ -64,10 +64,10 @@ public class CompactionJobStatus {
             createUpdateTime = null;
         }
         jobRuns = builder.jobRuns;
-        jobRunsNew = jobRuns.getRunsLatestFirst().stream()
+        runsLatestFirst = jobRuns.getRunsLatestFirst().stream()
                 .map(CompactionJobRun::new)
                 .toList();
-        runsByStatusType = jobRunsNew.stream()
+        runsByStatusType = runsLatestFirst.stream()
                 .collect(groupingBy(CompactionJobRun::getStatusType, summingInt(run -> 1)));
         furthestRunStatusType = CompactionJobStatusType.furthestStatusTypeOfJob(runsByStatusType.keySet());
         expiryDate = builder.expiryDate;
@@ -113,7 +113,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isStarted() {
-        return !jobRunsNew.isEmpty();
+        return !runsLatestFirst.isEmpty();
     }
 
     public boolean isUnstartedOrInProgress() {
@@ -153,7 +153,7 @@ public class CompactionJobStatus {
     }
 
     public Stream<Duration> runDelaysBetweenFinishAndCommit() {
-        return jobRunsNew.stream()
+        return runsLatestFirst.stream()
                 .flatMap(run -> delayBetweenFinishAndCommit(run).stream());
     }
 
@@ -174,7 +174,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isMultipleRuns() {
-        return jobRuns.getRunsLatestFirst().size() > 1;
+        return runsLatestFirst.size() > 1;
     }
 
     public Instant getExpiryDate() {
@@ -186,7 +186,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isTaskIdAssigned(String taskId) {
-        return jobRuns.isTaskIdAssigned(taskId);
+        return runsLatestFirst.stream().anyMatch(run -> taskId.equals(run.getTaskId()));
     }
 
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
@@ -203,8 +203,8 @@ public class CompactionJobStatus {
         return jobRuns.getRunsLatestFirst();
     }
 
-    public List<CompactionJobRun> getJobRunsNew() {
-        return jobRunsNew;
+    public List<CompactionJobRun> getRunsLatestFirst() {
+        return runsLatestFirst;
     }
 
     public CompactionJobStatusType getFurthestStatusType() {

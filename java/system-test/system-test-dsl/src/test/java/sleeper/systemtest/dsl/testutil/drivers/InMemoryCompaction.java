@@ -158,7 +158,7 @@ public class InMemoryCompaction {
         for (CompactionJob job : queuedJobs) {
             TableProperties tableProperties = tablesProvider.getById(job.getTableId());
             CompactionJobStatus status = jobTracker.getJob(job.getId()).orElseThrow();
-            JobRunReport run = status.getJobRuns().stream().findFirst().orElseThrow();
+            JobRunReport run = status.getRunsLatestFirst().stream().findFirst().orElseThrow();
             JobRunSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), run);
             jobTracker.jobFinished(job.finishedEventBuilder(summary).taskId(run.getTaskId()).build());
             jobTracker.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).build());

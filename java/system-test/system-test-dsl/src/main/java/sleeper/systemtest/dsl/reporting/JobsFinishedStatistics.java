@@ -45,7 +45,7 @@ public class JobsFinishedStatistics {
     }
 
     public static JobsFinishedStatistics fromCompactionJobs(List<CompactionJobStatus> jobs) {
-        return builder().jobs(jobs, CompactionJobStatus::isAnyRunSuccessful, CompactionJobStatus::getJobRuns).build();
+        return builder().jobs(jobs, CompactionJobStatus::isAnyRunSuccessful, CompactionJobStatus::getRunsLatestFirst).build();
     }
 
     private static Builder builder() {
