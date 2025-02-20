@@ -61,6 +61,10 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     }
 
     @Override
+    public void checkBefore(StateStore stateStore) throws StateStoreException {
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(partitions);
     }
@@ -80,10 +84,6 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     @Override
     public String toString() {
         return "InitialisePartitionsTransaction{partitions=" + partitions + "}";
-    }
-
-    @Override
-    public void checkBefore(StateStore stateStore) throws StateStoreException {
     }
 
 }
