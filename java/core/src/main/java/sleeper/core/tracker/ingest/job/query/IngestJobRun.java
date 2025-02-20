@@ -113,11 +113,11 @@ public class IngestJobRun implements JobRunReport {
 
     @Override
     public JobRunSummary getFinishedSummary() {
-        if (finishedStatus != null) {
+        if (endedStatus != null) {
             Instant startTime = Optional.ofNullable(startedStatus)
                     .map(IngestJobStartedStatus::getStartTime)
-                    .orElseGet(finishedStatus::getFinishTime);
-            return JobRunSummary.from(startTime, finishedStatus);
+                    .orElseGet(endedStatus::getFinishTime);
+            return JobRunSummary.from(startTime, endedStatus);
         } else {
             return null;
         }
