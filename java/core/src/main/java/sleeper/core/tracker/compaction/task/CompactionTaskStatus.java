@@ -18,7 +18,8 @@ package sleeper.core.tracker.compaction.task;
 
 import sleeper.core.tracker.job.run.AggregatedTaskJobRuns;
 import sleeper.core.tracker.job.run.JobRun;
-import sleeper.core.tracker.job.status.JobRunFinishedStatus;
+import sleeper.core.tracker.job.run.JobRunReport;
+import sleeper.core.tracker.job.status.AggregatedTaskJobsFinishedStatus;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
 
 import java.time.Duration;
@@ -107,23 +108,20 @@ public class CompactionTaskStatus {
     }
 
     /**
-     * Creates an object to represent this task as a run of a job. Treats the task as though it is a job to run
+     * Creates a report of job runs that occurred in the task. Treats the task as though it is a job to run
      * compaction jobs. Includes aggregated statistics from the compaction job runs that occur in this task.
      *
      * @return a {@link JobRun} object
      */
-    public AggregatedTaskJobRuns asAggregatedJobRun() {
-        return new AggregatedTaskJobRuns(JobRun.builder().taskId(taskId)
-                .statusUpdate(CompactionTaskStartedStatus.startTime(getStartTime()))
-                .statusUpdate(asFinishedStatus())
-                .build());
+    public JobRunReport asJobRunReport() {
+        return AggregatedTaskJobRuns.from(taskId, CompactionTaskStartedStatus.startTime(getStartTime()), asFinishedStatus());
     }
 
-    private JobRunFinishedStatus asFinishedStatus() {
+    private AggregatedTaskJobsFinishedStatus asFinishedStatus() {
         if (finishedStatus == null) {
             return null;
         }
-        return JobRunFinishedStatus.updateTimeAndSummary(
+        return AggregatedTaskJobsFinishedStatus.updateTimeAndSummary(
                 finishedStatus.getFinishTime(),
                 finishedStatus.asSummary(getStartTime()));
     }

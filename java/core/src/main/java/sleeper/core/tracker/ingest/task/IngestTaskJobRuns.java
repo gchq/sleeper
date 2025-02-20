@@ -18,7 +18,7 @@ package sleeper.core.tracker.ingest.task;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
-import sleeper.core.tracker.job.status.JobRunFinishedStatus;
+import sleeper.core.tracker.job.status.AggregatedTaskJobsFinishedStatus;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
@@ -31,12 +31,12 @@ public class IngestTaskJobRuns implements JobRunReport {
 
     private final JobRun aggregatedRun;
     private final IngestTaskStartedStatus startedStatus;
-    private final JobRunFinishedStatus finishedStatus;
+    private final AggregatedTaskJobsFinishedStatus finishedStatus;
 
     public IngestTaskJobRuns(JobRun aggregatedRun) {
         this.aggregatedRun = aggregatedRun;
         this.startedStatus = aggregatedRun.getLastStatusOfType(IngestTaskStartedStatus.class).orElseThrow();
-        this.finishedStatus = aggregatedRun.getLastStatusOfType(JobRunFinishedStatus.class).orElse(null);
+        this.finishedStatus = aggregatedRun.getLastStatusOfType(AggregatedTaskJobsFinishedStatus.class).orElse(null);
     }
 
     @Override

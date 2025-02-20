@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
-import sleeper.core.tracker.job.status.JobRunFinishedStatus;
+import sleeper.core.tracker.job.status.AggregatedTaskJobsFinishedStatus;
 import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.TestJobStartedAndFinishedStatus;
@@ -77,7 +77,7 @@ class JobRunsTest {
         void shouldReportRunWhenJobFinished() {
             // Given
             TestJobStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            JobRunFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
+            AggregatedTaskJobsFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             JobRuns runs = runsFromUpdates(started, finished);
@@ -93,8 +93,8 @@ class JobRunsTest {
         void shouldIncludeExtraFinishedStatus() {
             // Given
             TestJobStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            JobRunFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
-            JobRunFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
+            AggregatedTaskJobsFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
+            AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
 
             // When
             JobRuns runs = runsFromUpdates(started, finished1, finished2);
@@ -147,9 +147,9 @@ class JobRunsTest {
         void shouldReportTwoRunsWhenJobFinishedMultipleTimesSameTask() {
             // Given
             TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+            AggregatedTaskJobsFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
             TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+            AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             JobRuns runs = runsFromUpdates(started1, finished1, started2, finished2);
@@ -189,9 +189,9 @@ class JobRunsTest {
         void shouldReportTwoTasksWithOneFinishedRunEach() {
             // Given
             TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
+            AggregatedTaskJobsFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
             TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+            AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             JobRuns runs = runsFromUpdates(
@@ -211,8 +211,8 @@ class JobRunsTest {
             // Given
             TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:00.001Z"));
             TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofMinutes(2), 450L, 300L);
-            JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+            AggregatedTaskJobsFinishedStatus finished1 = finishedStatus(started1, Duration.ofMinutes(2), 450L, 300L);
+            AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             JobRuns runs = runsFromUpdates(
@@ -296,8 +296,8 @@ class JobRunsTest {
         void shouldIncludeExtraFinishedStatus() {
             // Given
             TestJobStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            JobRunFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
-            JobRunFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
+            AggregatedTaskJobsFinishedStatus finished1 = finishedStatus(started, Duration.ofSeconds(30), 100, 100);
+            AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
 
             // When
             JobRuns runs = runsFromUpdates(
@@ -338,7 +338,7 @@ class JobRunsTest {
             // Given
             TestJobStartedStatus started = startedStatus(
                     Instant.parse("2024-06-19T13:26:00Z"));
-            JobRunFinishedStatus finished = finishedStatus(
+            AggregatedTaskJobsFinishedStatus finished = finishedStatus(
                     started, Duration.ofMinutes(1), 123, 123);
             TestJobStatus update = partOfRunWithUpdateTime(
                     Instant.parse("2024-06-19T13:28:00Z"));
@@ -532,7 +532,7 @@ class JobRunsTest {
                     Instant.parse("2022-09-24T09:23:30.123Z"),
                     summary(Instant.parse("2022-09-24T09:23:30Z"), Duration.ZERO, 0L, 0L));
             TestJobStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:24:00.001Z"));
-            JobRunFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
+            AggregatedTaskJobsFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
             // When
             JobRuns runs = runsFromUpdates(startedAndFinished, started, finished);

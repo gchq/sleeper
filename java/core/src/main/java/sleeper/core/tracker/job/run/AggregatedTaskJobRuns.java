@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.status.JobRunFinishedStatus;
+import sleeper.core.tracker.job.status.AggregatedTaskJobsFinishedStatus;
 import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 
@@ -27,24 +27,40 @@ import java.util.List;
  */
 public class AggregatedTaskJobRuns implements JobRunReport {
 
-    private final JobRun aggregatedRun;
+    private final String taskId;
     private final JobRunStartedUpdate startedStatus;
-    private final JobRunFinishedStatus finishedStatus;
+    private final AggregatedTaskJobsFinishedStatus finishedStatus;
 
-    public AggregatedTaskJobRuns(JobRun aggregatedRun) {
-        this.aggregatedRun = aggregatedRun;
-        this.startedStatus = aggregatedRun.getLastStatusOfType(JobRunStartedUpdate.class).orElseThrow();
-        this.finishedStatus = aggregatedRun.getLastStatusOfType(JobRunFinishedStatus.class).orElse(null);
+    private AggregatedTaskJobRuns(String taskId, JobRunStartedUpdate startedStatus, AggregatedTaskJobsFinishedStatus finishedStatus) {
+        this.taskId = taskId;
+        this.startedStatus = startedStatus;
+        this.finishedStatus = finishedStatus;
+    }
+
+    /**
+     * Creates an aggregated report of job runs in a task.
+     *
+     * @param  taskId         the task ID
+     * @param  startedStatus  the status update when the task started
+     * @param  finishedStatus the aggregated result of finished jobs in the task, or null if the task is not finished
+     * @return                the report
+     */
+    public static AggregatedTaskJobRuns from(String taskId, JobRunStartedUpdate startedStatus, AggregatedTaskJobsFinishedStatus finishedStatus) {
+        return new AggregatedTaskJobRuns(taskId, startedStatus, finishedStatus);
     }
 
     @Override
     public String getTaskId() {
-        return aggregatedRun.getTaskId();
+        return taskId;
     }
 
     @Override
     public List<JobStatusUpdate> getStatusUpdates() {
-        return aggregatedRun.getStatusUpdates();
+        if (finishedStatus != null) {
+            return List.of(startedStatus, finishedStatus);
+        } else {
+            return List.of(startedStatus);
+        }
     }
 
     @Override
