@@ -32,6 +32,7 @@ import sleeper.statestore.StateStoreFactory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStateStoreTestBase {
     private final Schema schema = schemaWithKey("key", new LongType());
@@ -87,7 +88,7 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         stateStore2.addFile(file2);
 
         // When
-        stateStore1.clearFileData();
+        update(stateStore1).clearFileData();
 
         // Then
         assertThat(stateStore1.getFileReferences()).isEmpty();

@@ -35,6 +35,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.STATESTORE_ASYNC_COMMITS_ENABLED;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.failedCompactionRun;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
@@ -111,7 +112,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         Queue<Instant> times = new LinkedList<>(List.of(waitForFilesTime, failTime));
         CompactionJob job = createJob("test-job");
         send(job);
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
 
         // When
         runTaskCheckingFiles(
@@ -159,7 +160,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         tableProperties.set(STATESTORE_ASYNC_COMMITS_ENABLED, "false");
         CompactionJob job = createJob("test-job");
         send(job);
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
 
         // When
         runTaskCheckingFiles(
@@ -190,7 +191,7 @@ public class CompactionTaskAssignFilesTest extends CompactionTaskTestBase {
         tableProperties.set(COMPACTION_JOB_ASYNC_BATCHING, "true");
         CompactionJob job = createJob("test-job");
         send(job);
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
 
         // When
         runTaskCheckingFiles(

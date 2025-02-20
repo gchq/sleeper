@@ -30,6 +30,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestBase {
 
@@ -45,7 +46,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
 
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
         stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test3.parquet", 789L));
@@ -83,7 +84,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-27T11:23:00Z"));
 
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
         stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test3.parquet", 789L));
@@ -158,7 +159,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-24T11:24:00Z"));
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
         stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test3.parquet", 789L));
@@ -201,7 +202,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-24T11:24:00Z"));
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
         stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
         stateStore.addFile(factory.rootFile("test3.parquet", 789L));

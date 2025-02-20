@@ -86,6 +86,7 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
@@ -180,10 +181,10 @@ public class StateStoreCommitterTest {
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-            stateStore.addFile(inputFile);
+            update(stateStore).addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             StateStoreCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
-            stateStore.clearFileData();
+            update(stateStore).clearFileData();
 
             // When
             apply(committerWithTimes(List.of(failedTime)), request);
