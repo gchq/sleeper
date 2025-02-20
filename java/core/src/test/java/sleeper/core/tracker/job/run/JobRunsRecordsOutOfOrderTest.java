@@ -31,6 +31,7 @@ import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.finished
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.startedStatus;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.TASK_ID_1;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.TASK_ID_2;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.onTask;
 
 public class JobRunsRecordsOutOfOrderTest {
@@ -58,7 +59,7 @@ public class JobRunsRecordsOutOfOrderTest {
         TestJobStartedStatus started3 = startedStatus(Instant.parse("2022-09-26T09:23:30.001Z"));
 
         // When
-        JobRuns runs = runsFromUpdates(started3, started1, started2);
+        JobRuns runs = runsFromUpdates(forRunOnTask(started3), forRunOnTask(started1), forRunOnTask(started2));
 
         // Then
         assertThat(runs.getRunsLatestFirst())
@@ -78,7 +79,7 @@ public class JobRunsRecordsOutOfOrderTest {
         AggregatedTaskJobsFinishedStatus finished = finishedStatus(started3, Duration.ofSeconds(30), 450L, 300L);
 
         // When
-        JobRuns runs = runsFromUpdates(started3, finished, started1, started2);
+        JobRuns runs = runsFromUpdates(forRunOnTask(started3, finished), forRunOnTask(started1), forRunOnTask(started2));
 
         // Then
         assertThat(runs.getRunsLatestFirst())

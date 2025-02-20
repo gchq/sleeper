@@ -44,9 +44,8 @@ import static sleeper.core.tracker.job.status.TestJobStartedStatusWithStartOfRun
 import static sleeper.core.tracker.job.status.TestJobStatus.notPartOfRunWithUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatus.partOfRunWithUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.TASK_ID_1;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.TASK_ID_2;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forNoRunNoTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnNoTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.onNoTask;
@@ -119,148 +118,6 @@ class JobRunsTest {
                     .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
                     .containsExactly(
                             tuple("some-task", List.of(failed)));
-        }
-    }
-
-    @DisplayName("Correlate job runs by task ID and time")
-    @Nested
-    class CorrelateRunsByTaskAndTime {
-
-        @Test
-        void shouldReportTwoRunsLatestFirstByStartTimeOnSameTask() {
-            // Given
-            TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
-
-            // When
-            JobRuns runs = runsFromUpdates(started1, started2);
-
-            // Then
-            assertThat(runs.getRunsLatestFirst())
-                    .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
-                    .containsExactly(
-                            tuple(DEFAULT_TASK_ID, List.of(started2)),
-                            tuple(DEFAULT_TASK_ID, List.of(started1)));
-        }
-
-        @Test
-        void shouldReportTwoRunsWhenJobFinishedMultipleTimesSameTask() {
-            // Given
-            TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            AggregatedTaskJobsFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
-            TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
-
-            // When
-            JobRuns runs = runsFromUpdates(started1, finished1, started2, finished2);
-
-            // Then
-            assertThat(runs.getRunsLatestFirst())
-                    .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
-                    .containsExactly(
-                            tuple(DEFAULT_TASK_ID, List.of(started2, finished2)),
-                            tuple(DEFAULT_TASK_ID, List.of(started1, finished1)));
-        }
-
-        @Test
-        void shouldReportTwoTasksWithTwoRunsEachForSameJobWithInterleavingStartTimes() {
-            // Given
-            TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            TestJobStartedStatus started3 = startedStatus(Instant.parse("2022-09-25T09:23:30.001Z"));
-            TestJobStartedStatus started4 = startedStatus(Instant.parse("2022-09-26T09:23:30.001Z"));
-
-            // When
-            JobRuns runs = runsFromUpdates(
-                    onTask(TASK_ID_1, started1, started3),
-                    onTask(TASK_ID_2, started2, started4));
-
-            // Then
-            assertThat(runs.getRunsLatestFirst())
-                    .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
-                    .containsExactly(
-                            tuple(TASK_ID_2, List.of(started4)),
-                            tuple(TASK_ID_1, List.of(started3)),
-                            tuple(TASK_ID_2, List.of(started2)),
-                            tuple(TASK_ID_1, List.of(started1)));
-        }
-
-        @Test
-        void shouldReportTwoTasksWithOneFinishedRunEach() {
-            // Given
-            TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            AggregatedTaskJobsFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 450L, 300L);
-            TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-            AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
-
-            // When
-            JobRuns runs = runsFromUpdates(
-                    onTask(TASK_ID_1, started1, finished1),
-                    onTask(TASK_ID_2, started2, finished2));
-
-            // Then
-            assertThat(runs.getRunsLatestFirst())
-                    .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
-                    .containsExactly(
-                            tuple(TASK_ID_2, List.of(started2, finished2)),
-                            tuple(TASK_ID_1, List.of(started1, finished1)));
-        }
-
-        @Test
-        void shouldReportRunsOnDifferentTasksWhenJobRunStartedAndFinishedDuringAnotherRun() {
-            // Given
-            TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:00.001Z"));
-            TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-            AggregatedTaskJobsFinishedStatus finished1 = finishedStatus(started1, Duration.ofMinutes(2), 450L, 300L);
-            AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
-
-            // When
-            JobRuns runs = runsFromUpdates(
-                    onTask(TASK_ID_1, started1, finished1),
-                    onTask(TASK_ID_2, started2, finished2));
-
-            // Then
-            assertThat(runs.getRunsLatestFirst())
-                    .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
-                    .containsExactly(
-                            tuple(TASK_ID_2, List.of(started2, finished2)),
-                            tuple(TASK_ID_1, List.of(started1, finished1)));
-        }
-
-        @Test
-        void shouldExcludeUpdateNotPartOfARunBeforeTask() {
-            // Given
-            TestJobStatus notPartOfRun = notPartOfRunWithUpdateTime(Instant.parse("2024-06-19T14:06:00Z"));
-            TestJobStartedStatus started = startedStatus(Instant.parse("2024-06-19T14:06:01Z"));
-
-            // When
-            JobRuns runs = runsFromUpdates(
-                    onNoTask(notPartOfRun),
-                    onTask(TASK_ID_1, started));
-
-            // Then
-            assertThat(runs.getRunsLatestFirst())
-                    .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
-                    .containsExactly(
-                            tuple(TASK_ID_1, List.of(started)));
-        }
-
-        @Test
-        void shouldExcludeUpdateNotPartOfARunAfterTaskStarted() {
-            // Given
-            TestJobStartedStatus started = startedStatus(Instant.parse("2024-06-19T14:06:00Z"));
-            TestJobStatus notPartOfRun = notPartOfRunWithUpdateTime(Instant.parse("2024-06-19T14:06:01Z"));
-
-            // When
-            JobRuns runs = runsFromUpdates(
-                    onTask(TASK_ID_1, started),
-                    onNoTask(notPartOfRun));
-
-            // Then
-            assertThat(runs.getRunsLatestFirst())
-                    .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
-                    .containsExactly(
-                            tuple(TASK_ID_1, List.of(started)));
         }
     }
 
@@ -481,6 +338,21 @@ class JobRunsTest {
                     .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
                     .containsExactly("a-task", List.of(startedStatus));
         }
+
+        @Test
+        void shouldCreateRunWhenStatusUpdatePartOfRunButHasNoRunId() {
+            // Given
+            TestJobStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
+
+            // When
+            JobRuns runs = runsFromUpdates(forNoRunNoTask("a-job", startedStatus));
+
+            // Then
+            assertThat(runs.getRunsLatestFirst())
+                    .singleElement()
+                    .extracting(JobRun::getTaskId, JobRun::getStatusUpdates)
+                    .containsExactly(null, List.of(startedStatus));
+        }
     }
 
     @DisplayName("An update can be the start and end of a run")
@@ -514,7 +386,7 @@ class JobRunsTest {
             TestJobStartedStatus started = startedStatus(Instant.parse("2022-09-24T09:24:00.001Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(startedAndFinished, started);
+            JobRuns runs = runsFromUpdates(forRunOnTask(startedAndFinished), forRunOnTask(started));
 
             // Then
             assertThat(runs.getRunsLatestFirst())
@@ -535,7 +407,7 @@ class JobRunsTest {
             AggregatedTaskJobsFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
             // When
-            JobRuns runs = runsFromUpdates(startedAndFinished, started, finished);
+            JobRuns runs = runsFromUpdates(forRunOnTask(startedAndFinished), forRunOnTask(started, finished));
 
             // Then
             assertThat(runs.getRunsLatestFirst())

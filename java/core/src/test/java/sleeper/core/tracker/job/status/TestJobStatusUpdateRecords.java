@@ -19,6 +19,7 @@ package sleeper.core.tracker.job.status;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -78,7 +79,7 @@ public class TestJobStatusUpdateRecords {
      */
     public static TaskUpdates forJobOnTask(
             String jobId, String taskId, JobStatusUpdate... updates) {
-        return forJobRunOnTask(jobId, null, taskId, updates);
+        return forJobRunOnTask(jobId, UUID.randomUUID().toString(), taskId, updates);
     }
 
     /**
@@ -136,7 +137,7 @@ public class TestJobStatusUpdateRecords {
      */
     public static TaskUpdates onTask(
             String taskId, JobStatusUpdate... updates) {
-        return forJobOnTask(DEFAULT_JOB_ID, taskId, updates);
+        return forRunOnTask(UUID.randomUUID().toString(), taskId, updates);
     }
 
     /**
@@ -147,6 +148,16 @@ public class TestJobStatusUpdateRecords {
      */
     public static TaskUpdates onNoTask(JobStatusUpdate... updates) {
         return forJobOnTask(DEFAULT_JOB_ID, null, updates);
+    }
+
+    /**
+     * Creates an instance of task updates with the default job ID.
+     *
+     * @param  updates the job status updates
+     * @return         a {@link TaskUpdates} instance
+     */
+    public static TaskUpdates forRunOnTask(JobStatusUpdate... updates) {
+        return forJobRunOnTask(DEFAULT_JOB_ID, UUID.randomUUID().toString(), DEFAULT_TASK_ID, updates);
     }
 
     /**

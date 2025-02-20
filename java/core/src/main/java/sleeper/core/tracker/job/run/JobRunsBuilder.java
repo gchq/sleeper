@@ -15,8 +15,6 @@
  */
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.status.JobRunStartedUpdate;
-import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.util.ArrayList;
@@ -45,7 +43,6 @@ import java.util.stream.Collectors;
  */
 class JobRunsBuilder {
     private final Map<String, JobRun.Builder> builderByJobRunId = new HashMap<>();
-    private final Map<String, JobRun.Builder> builderByTaskId = new HashMap<>();
     private final List<JobRun.Builder> orderedBuilders = new ArrayList<>();
 
     void add(JobStatusUpdateRecord record) {
@@ -62,17 +59,10 @@ class JobRunsBuilder {
     }
 
     private Optional<JobRun.Builder> getBuilderIfCorrelatable(JobStatusUpdateRecord record) {
-        String jobRunId = record.getJobRunId();
-        String taskId = record.getTaskId();
-        JobStatusUpdate statusUpdate = record.getStatusUpdate();
-        if (jobRunId != null) {
-            return Optional.of(builderByJobRunId.computeIfAbsent(jobRunId, id -> createOrderedBuilder()));
-        } else if (isStartedUpdateAndStartOfRun(statusUpdate)) {
-            JobRun.Builder builder = createOrderedBuilder();
-            builderByTaskId.put(taskId, builder);
-            return Optional.of(builder);
+        if (record.getStatusUpdate().isPartOfRun()) {
+            return Optional.of(builderByJobRunId.computeIfAbsent(record.getJobRunId(), id -> createOrderedBuilder()));
         } else {
-            return Optional.ofNullable(builderByTaskId.get(taskId));
+            return Optional.empty();
         }
     }
 
@@ -88,10 +78,5 @@ class JobRunsBuilder {
                 .collect(Collectors.toList());
         Collections.reverse(jobRuns);
         return JobRuns.latestFirst(jobRuns);
-    }
-
-    private static boolean isStartedUpdateAndStartOfRun(JobStatusUpdate statusUpdate) {
-        return statusUpdate instanceof JobRunStartedUpdate
-                && ((JobRunStartedUpdate) statusUpdate).isStartOfRun();
     }
 }
