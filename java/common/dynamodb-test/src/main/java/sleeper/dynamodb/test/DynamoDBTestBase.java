@@ -18,31 +18,26 @@ package sleeper.dynamodb.test;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static sleeper.dynamodb.test.GenericContainerAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
 public abstract class DynamoDBTestBase {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTestBase.class);
 
-    private static AmazonDynamoDB dynamoDBClientShared;
-
-    @Container
-    public static final DynamoDBContainer CONTAINER = new DynamoDBContainer();
+    public static final DynamoDBContainer CONTAINER = start();
+    private static final AmazonDynamoDB DYNAMO_CLIENT = buildAwsV1Client(CONTAINER, CONTAINER.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
 
     @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    protected final AmazonDynamoDB dynamoDBClient = dynamoDBClientShared;
+    protected final AmazonDynamoDB dynamoClient = DYNAMO_CLIENT;
 
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClientShared = buildAwsV1Client(CONTAINER, CONTAINER.getDynamoPort(), AmazonDynamoDBClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClientShared.shutdown();
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
+    private static DynamoDBContainer start() {
+        DynamoDBContainer container = new DynamoDBContainer()
+                .withLogConsumer(outputFrame -> LOGGER.info(outputFrame.getUtf8StringWithoutLineEnding()))
+                .withEnv("DEBUG", "1");
+        container.start();
+        return container;
     }
 }

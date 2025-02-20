@@ -43,14 +43,14 @@ public class DynamoDBIngestBatcherStoreTestBase extends DynamoDBTestBase {
             List.of(table1, table2));
     protected final String requestsTableName = DynamoDBIngestBatcherStore.ingestRequestsTableName(instanceProperties.get(ID));
     protected final IngestBatcherStore store = new DynamoDBIngestBatcherStore(
-            dynamoDBClient, instanceProperties, tablePropertiesProvider);
+            dynamoClient, instanceProperties, tablePropertiesProvider);
 
     @BeforeEach
     void setUp() {
-        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
     }
 
     protected IngestBatcherStore storeWithFilesInAssignJobBatch(int filesInAssignJobBatch) {
-        return new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider, filesInAssignJobBatch);
+        return new DynamoDBIngestBatcherStore(dynamoClient, instanceProperties, tablePropertiesProvider, filesInAssignJobBatch);
     }
 }
