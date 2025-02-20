@@ -96,7 +96,7 @@ public class BulkExportStack extends NestedStack {
 
         attachPolicy(lambda, "BulkExport");
 
-        List<Queue> splitterQueues = createQueueAndDeadLetterQueue("BulkExportSplitter", instanceProperties);
+        List<Queue> splitterQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
         Queue bulkExportSplitterQ = splitterQueues.get(0);
         Queue bulkExportSplitterQueueQueryDlq = splitterQueues.get(1);
         setQueueOutputProps(instanceProperties, bulkExportSplitterQ, bulkExportSplitterQueueQueryDlq, QueueType.SPLITTER);
@@ -137,7 +137,8 @@ public class BulkExportStack extends NestedStack {
      * @return the queue and the dead letter queue
      */
     private List<Queue> createQueueAndDeadLetterQueue(String id, InstanceProperties instanceProperties) {
-        String queueNameDLQ = id + "DLQ";
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
+        String queueNameDLQ = String.join("-", "sleeper", instanceId, id, "DLQ");
         Queue queueDLQ = Queue.Builder
                 .create(this, id + "DeadLetterQueue")
                 .queueName(queueNameDLQ)
@@ -147,7 +148,7 @@ public class BulkExportStack extends NestedStack {
                 .queue(queueDLQ)
                 .build();
 
-        String queueName = id + "Q";
+        String queueName = String.join("-", "sleeper", instanceId, id, "Q");
         Queue queue = Queue.Builder
                 .create(this, id + "Queue")
                 .queueName(queueName)
