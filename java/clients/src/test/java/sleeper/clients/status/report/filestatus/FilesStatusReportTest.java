@@ -152,7 +152,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
         FileReference pendingSplit = fileReferenceFactory.partitionFile("B", "pending-split.parquet", 2000);
         FileReference oldFile = fileReferenceFactory.partitionFile("A", "split.parquet", 2000L);
         stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
-        stateStore.splitFileReferences(List.of(splitFileToChildPartitions(oldFile, "B", "C")));
+        update(stateStore).splitFileReferences(List.of(splitFileToChildPartitions(oldFile, "B", "C")));
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
