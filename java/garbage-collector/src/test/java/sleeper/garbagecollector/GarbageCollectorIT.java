@@ -229,7 +229,7 @@ public class GarbageCollectorIT {
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
-            stateStore.addFilesWithReferences(List.of(
+            update(stateStore).addFilesWithReferences(List.of(
                     fileWithNoReferences("/tmp/not-a-file.parquet")));
             Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             Path newFile2 = tempDir.resolve("new-file-2.parquet");
@@ -292,8 +292,8 @@ public class GarbageCollectorIT {
             StateStore stateStore2 = stateStoreWithFixedTime(table2, oldEnoughTime);
             String file1 = "file-1.parquet";
             String file2 = "file-2.parquet";
-            stateStore1.addFilesWithReferences(List.of(fileWithNoReferences(file1)));
-            stateStore2.addFilesWithReferences(List.of(fileWithNoReferences(file2)));
+            update(stateStore1).addFilesWithReferences(List.of(fileWithNoReferences(file1)));
+            update(stateStore2).addFilesWithReferences(List.of(fileWithNoReferences(file2)));
 
             // When
             List<String> deletedFiles = new ArrayList<>();
