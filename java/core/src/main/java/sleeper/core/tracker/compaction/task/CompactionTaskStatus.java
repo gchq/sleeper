@@ -16,6 +16,7 @@
 
 package sleeper.core.tracker.compaction.task;
 
+import sleeper.core.tracker.job.run.AggregatedTaskJobRuns;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobRunFinishedStatus;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
@@ -111,8 +112,8 @@ public class CompactionTaskStatus {
      *
      * @return a {@link JobRun} object
      */
-    public CompactionTaskJobRuns asAggregatedJobRun() {
-        return new CompactionTaskJobRuns(JobRun.builder().taskId(taskId)
+    public AggregatedTaskJobRuns asAggregatedJobRun() {
+        return new AggregatedTaskJobRuns(JobRun.builder().taskId(taskId)
                 .statusUpdate(CompactionTaskStartedStatus.startTime(getStartTime()))
                 .statusUpdate(asFinishedStatus())
                 .build());

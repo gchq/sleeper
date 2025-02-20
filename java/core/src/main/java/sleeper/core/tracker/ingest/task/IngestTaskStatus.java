@@ -16,6 +16,7 @@
 
 package sleeper.core.tracker.ingest.task;
 
+import sleeper.core.tracker.job.run.AggregatedTaskJobRuns;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.status.JobRunFinishedStatus;
 import sleeper.core.tracker.job.status.TimeWindowQuery;
@@ -138,11 +139,11 @@ public class IngestTaskStatus {
      *
      * @return a {@link JobRun} object
      */
-    public JobRun asAggregatedJobRun() {
-        return JobRun.builder().taskId(taskId)
+    public AggregatedTaskJobRuns asAggregatedJobRun() {
+        return new AggregatedTaskJobRuns(JobRun.builder().taskId(taskId)
                 .statusUpdate(IngestTaskStartedStatus.startTime(getStartTime()))
                 .statusUpdate(asFinishedStatus())
-                .build();
+                .build());
     }
 
     private JobRunFinishedStatus asFinishedStatus() {

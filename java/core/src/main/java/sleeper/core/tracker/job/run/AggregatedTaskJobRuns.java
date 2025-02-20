@@ -13,29 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.tracker.compaction.task;
+package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.run.JobRun;
-import sleeper.core.tracker.job.run.JobRunReport;
-import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.status.JobRunFinishedStatus;
+import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 
 import java.time.Instant;
 import java.util.List;
 
 /**
- * A summary report of job runs that occurred in a compaction task.
+ * A summary report of job runs that occurred in a task.
  */
-public class CompactionTaskJobRuns implements JobRunReport {
+public class AggregatedTaskJobRuns implements JobRunReport {
 
     private final JobRun aggregatedRun;
-    private final CompactionTaskStartedStatus startedStatus;
+    private final JobRunStartedUpdate startedStatus;
     private final JobRunFinishedStatus finishedStatus;
 
-    public CompactionTaskJobRuns(JobRun aggregatedRun) {
+    public AggregatedTaskJobRuns(JobRun aggregatedRun) {
         this.aggregatedRun = aggregatedRun;
-        this.startedStatus = aggregatedRun.getLastStatusOfType(CompactionTaskStartedStatus.class).orElseThrow();
+        this.startedStatus = aggregatedRun.getLastStatusOfType(JobRunStartedUpdate.class).orElseThrow();
         this.finishedStatus = aggregatedRun.getLastStatusOfType(JobRunFinishedStatus.class).orElse(null);
     }
 
