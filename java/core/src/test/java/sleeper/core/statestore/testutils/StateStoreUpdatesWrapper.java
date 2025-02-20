@@ -44,6 +44,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransa
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 
 import java.util.List;
 
@@ -89,6 +90,19 @@ public class StateStoreUpdatesWrapper {
      */
     public void initialise(List<Partition> partitions) throws StateStoreException {
         addTransaction(new InitialisePartitionsTransaction(partitions));
+    }
+
+    /**
+     * Atomically splits a partition to create child partitions. Updates the existing partition to record it as split,
+     * and creates new leaf partitions.
+     *
+     * @param  splitPartition      The {@link Partition} to be updated (must refer to the new leaves as children).
+     * @param  newPartition1       The first new {@link Partition} (must be a leaf partition).
+     * @param  newPartition2       The second new {@link Partition} (must be a leaf partition).
+     * @throws StateStoreException if split is not valid or update fails
+     */
+    public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
+        addTransaction(new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
     }
 
     /**

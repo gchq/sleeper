@@ -238,7 +238,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     .buildTree();
 
             // When
-            store.atomicallyUpdatePartitionAndCreateNewOnes(
+            update(store).atomicallyUpdatePartitionAndCreateNewOnes(
                     tree.getPartition("root"),
                     tree.getPartition("leftChild"),
                     tree.getPartition("rightChild"));
@@ -280,13 +280,13 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     .rootFirst("root")
                     .splitToNewChildren("root", "leftChild", "rightChild", 0L)
                     .buildTree();
-            store.atomicallyUpdatePartitionAndCreateNewOnes(
+            update(store).atomicallyUpdatePartitionAndCreateNewOnes(
                     tree.getPartition("root"),
                     tree.getPartition("leftChild"),
                     tree.getPartition("rightChild"));
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdatePartitionAndCreateNewOnes(
+            assertThatThrownBy(() -> update(store).atomicallyUpdatePartitionAndCreateNewOnes(
                     tree.getPartition("root"),
                     tree.getPartition("leftChild"),
                     tree.getPartition("rightChild")))
@@ -305,7 +305,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     .buildTree();
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdatePartitionAndCreateNewOnes(
+            assertThatThrownBy(() -> update(store).atomicallyUpdatePartitionAndCreateNewOnes(
                     tree.getPartition("root"),
                     tree.getPartition("LL"),
                     tree.getPartition("LR")))
@@ -328,7 +328,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     .buildTree();
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdatePartitionAndCreateNewOnes(
+            assertThatThrownBy(() -> update(store).atomicallyUpdatePartitionAndCreateNewOnes(
                     parentTree.getPartition("root"),
                     childrenTree.getPartition("child1"),
                     childrenTree.getPartition("child2")))
@@ -347,7 +347,7 @@ public class TransactionLogPartitionStoreTest extends InMemoryTransactionLogStat
                     .buildTree();
 
             // When / Then
-            assertThatThrownBy(() -> store.atomicallyUpdatePartitionAndCreateNewOnes(
+            assertThatThrownBy(() -> update(store).atomicallyUpdatePartitionAndCreateNewOnes(
                     tree.getPartition("root"),
                     tree.getPartition("L"), // Not a leaf
                     tree.getPartition("R")))
