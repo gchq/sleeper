@@ -189,7 +189,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isTaskIdAssigned(String taskId) {
-        return runsLatestFirst.stream().anyMatch(run -> taskId.equals(run.getTaskId()));
+        return jobRuns.isTaskIdAssigned(taskId);
     }
 
     public boolean isInPeriod(Instant windowStartTime, Instant windowEndTime) {
