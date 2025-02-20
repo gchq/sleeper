@@ -435,13 +435,6 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
     @DisplayName("Store the body of a transaction before adding to the log")
     class StoreTransactionBodySeparately {
 
-        private TransactionLogStateStore store;
-
-        @BeforeEach
-        void setUp() {
-            store = (TransactionLogStateStore) TransactionLogStateStoreLogSpecificTest.this.store;
-        }
-
         @Test
         void shouldAddFileTransactionWhoseBodyIsHeldInS3() {
             // Given

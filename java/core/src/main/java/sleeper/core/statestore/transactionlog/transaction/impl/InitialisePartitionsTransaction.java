@@ -16,10 +16,15 @@
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.partition.PartitionsFromSplitPoints;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,6 +40,16 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
         this.partitions = partitions;
     }
 
+    /**
+     * Creates a transaction to initialise the table with a single root partition.
+     *
+     * @param  schema the table schema
+     * @return        the transaction
+     */
+    public static InitialisePartitionsTransaction singlePartition(Schema schema) {
+        return new InitialisePartitionsTransaction(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
+    }
+
     @Override
     public void validate(StateStorePartitions stateStorePartitions) {
     }
@@ -43,6 +58,13 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     public void apply(StateStorePartitions stateStorePartitions, Instant updateTime) {
         stateStorePartitions.clear();
         partitions.forEach(stateStorePartitions::put);
+    }
+
+    @Override
+    public void checkBefore(StateStore stateStore) throws StateStoreException {
+        if (!stateStore.hasNoFiles()) {
+            throw new StateStoreException("Cannot initialise state store when files are present");
+        }
     }
 
     @Override
@@ -66,4 +88,5 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     public String toString() {
         return "InitialisePartitionsTransaction{partitions=" + partitions + "}";
     }
+
 }

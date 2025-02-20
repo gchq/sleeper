@@ -24,7 +24,6 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
-import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
@@ -315,7 +314,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
     void shouldCreateSnapshotFromTransactionInBodyStore() throws Exception {
         // Given we create a transaction with its body held in a store
         TableProperties table = createTable("test-table-id-1", "test-table-1");
-        TransactionLogStateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
+        StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         PartitionTransaction transaction = new InitialisePartitionsTransaction(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)

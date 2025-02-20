@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+
 /**
  * A convenience class for specifying a partition tree. This includes methods to define a tree to be readable in a test,
  * including shorthand which would not be possible with {@link PartitionFactory}.
@@ -122,7 +124,7 @@ public class PartitionsBuilder {
         Partition toSplit = partitionById(partitionId);
         Partition left = partitionById(toSplit.getChildPartitionIds().get(0));
         Partition right = partitionById(toSplit.getChildPartitionIds().get(1));
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(toSplit, left, right);
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(toSplit, left, right);
     }
 
     /**
