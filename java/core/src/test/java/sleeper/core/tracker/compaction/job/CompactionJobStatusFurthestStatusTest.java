@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.CREATED;
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.FAILED;
@@ -40,6 +41,9 @@ import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.UNCOMMITTED;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.onNoTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class CompactionJobStatusFurthestStatusTest {
 
@@ -157,7 +161,8 @@ public class CompactionJobStatusFurthestStatusTest {
         JobRunFailedStatus failed = failedStatus(started2, Duration.ofSeconds(30), List.of("Some failure"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(filesAssigned, started1, finished, committed, started2, failed);
+        CompactionJobStatus status = jobStatusFrom(records().fromUpdates(
+                onNoTask(filesAssigned), forRunOnTask(started1, finished, committed), forRunOnTask(started2, failed)));
 
         // Then
         assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
@@ -178,7 +183,8 @@ public class CompactionJobStatusFurthestStatusTest {
                 Instant.parse("2023-03-22T15:37:01Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(filesAssigned, started1, failed, started2);
+        CompactionJobStatus status = jobStatusFrom(records().fromUpdates(
+                onNoTask(filesAssigned), forRunOnTask(started1, failed), forRunOnTask(started2)));
 
         // Then
         assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
