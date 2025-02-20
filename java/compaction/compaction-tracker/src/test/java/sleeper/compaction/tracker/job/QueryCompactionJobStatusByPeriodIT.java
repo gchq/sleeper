@@ -109,12 +109,12 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobTra
         // When
         Instant periodStart = Instant.now().minus(Period.ofDays(1));
         storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
         Thread.sleep(1);
         Instant periodEnd = Instant.now();
         Thread.sleep(1);
-        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
 
         // Then
         assertThat(tracker.getJobsInTimePeriod(tableId, periodStart, periodEnd))
@@ -136,9 +136,9 @@ public class QueryCompactionJobStatusByPeriodIT extends DynamoDBCompactionJobTra
         Thread.sleep(1);
         Instant periodStart = Instant.now();
         Thread.sleep(1);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
         Instant periodEnd = periodStart.plus(Period.ofDays(1));
 
         // Then
