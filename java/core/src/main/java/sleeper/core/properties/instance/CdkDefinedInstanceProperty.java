@@ -280,6 +280,27 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the role for the bulk export processor lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_QUEUE_URL = Index
+            .propertyBuilder("sleeper.bulk.export.splitter.queue.url")
+            .description("The URL of the SQS queue that triggers the bulk export splitter lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_QUEUE_ARN = Index
+            .propertyBuilder("sleeper.bulk.export.splitter.queue.arn")
+            .description("The ARN of the SQS queue that triggers the bulk export splitter lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_QUEUE_DLQ_URL = Index
+            .propertyBuilder("sleeper.bulk.export.splitter.queue.dlq.url")
+            .description("The URL of the SQS dead letter queue that is used by the bulk export splitter lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_QUEUE_DLQ_ARN = Index
+            .propertyBuilder("sleeper.bulk.export.splitter.queue.dlq.arn")
+            .description(
+                    "The ARN of the SQS  dead letter queue that is used by that triggers the bulk export splitter lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
     // Compactions
     CdkDefinedInstanceProperty COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.cluster")
             .description("The name of the cluster used for compactions.")

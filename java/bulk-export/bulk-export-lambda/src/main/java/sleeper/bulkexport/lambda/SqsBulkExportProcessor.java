@@ -36,6 +36,9 @@ import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_URL;
+
+
 /**
  * Lambda to start the bulk export job.
  */
@@ -67,6 +70,7 @@ public class SqsBulkExportProcessor {
      * @throws ObjectFactoryException If there is an error creating the necessary objects.
      */
     public void processExport(BulkExportQuery bulkExportQuery) throws ObjectFactoryException {
+        String sqsUrl = instanceProperties.get(BULK_EXPORT_PROCESSOR_QUEUE_URL);
         TableProperties tableProperties = bulkExportQuery.getTableProperties(tablePropertiesProvider);
         StateStore statestore = stateStoreProvider.getStateStore(tableProperties);
         BulkExportQuerySplitter splitter = new BulkExportQuerySplitter(tableProperties, statestore);
@@ -74,7 +78,10 @@ public class SqsBulkExportProcessor {
         List<BulkExportLeafPartitionQuery> leafPartitionQueries = splitter.splitIntoLeafPartitionQueries(bulkExportQuery);
         LOGGER.debug("Got {} leaf partition queries for bulk export query {}.",
             leafPartitionQueries.size(), bulkExportQuery.getExportId());
-        leafPartitionQueries.forEach(query -> sqsClient.sendMessage(bulkExportQuery.getExportId(), query.toString()));
+        leafPartitionQueries.forEach(query ->  {
+            LOGGER.debug("Sending leaf partition query {} to queue {}.", query.getSubExportId(), sqsUrl);
+            sqsClient.sendMessage(sqsUrl, query.toString());
+        });
     }
 
     /**

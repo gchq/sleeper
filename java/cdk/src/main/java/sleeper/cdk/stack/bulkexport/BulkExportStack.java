@@ -48,6 +48,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_PROCESSOR_LAMBDA_MEMORY_IN_MB;
@@ -62,6 +63,11 @@ public class BulkExportStack extends NestedStack {
     public static final String BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL = "BulkExportProcessorQueueDlqUrl";
     public static final String BULK_EXPORT_PROCESSOR_QUEUE_DLQ_NAME = "BulkExportProcessorQueueDlqName";
     public static final String BULK_EXPORT_PROCESSOR_LAMBDA_ROLE_ARN = "BulkExportProcessorLambdaRoleArn";
+    public static final String BULK_EXPORT_SPLITTER_QUEUE_URL = "BulkExportSplitterQueueUrl";
+    public static final String BULK_EXPORT_SPLITTER_QUEUE_NAME = "BulkExportSplitterQueueName";
+    public static final String BULK_EXPORT_SPLITTER_QUEUE_DLQ_URL = "BulkExportSplitterQueueDlqUrl";
+    public static final String BULK_EXPORT_SPLITTER_QUEUE_DLQ_NAME = "BulkExportSplitterQueueDlqName";
+    public static final String BULK_EXPORT_SPLITTER_LAMBDA_ROLE_ARN = "BulkExportSplitterLambdaRoleArn";
 
     public BulkExportStack(Construct scope,
             String id,
@@ -90,62 +96,23 @@ public class BulkExportStack extends NestedStack {
 
         attachPolicy(lambda, "BulkExport");
 
-        String dlBulkExportProcessorQueueName = String.join("-", "sleeper", instanceId, "BulkExportProcessorDLQ");
-        Queue bulkExportProcessorQueueQueryDlq = Queue.Builder
-                .create(this, "BulkExportProcessorQueueDeadLetterQueue")
-                .queueName(dlBulkExportProcessorQueueName)
-                .build();
-        DeadLetterQueue bulkExportProcessorDeadLetterQueue = DeadLetterQueue.builder()
-                .maxReceiveCount(1)
-                .queue(bulkExportProcessorQueueQueryDlq)
-                .build();
+        List<Queue> splitterQueues = createQueueAndDeadLetterQueue("BulkExportSplitter", instanceProperties);
+        Queue bulkExportSplitterQ = splitterQueues.get(0);
+        Queue bulkExportSplitterQueueQueryDlq = splitterQueues.get(1);
+        setQueueOutputProps(instanceProperties, bulkExportSplitterQ, bulkExportSplitterQueueQueryDlq, QueueType.SPLITTER);
 
         // Add the queue as a source of events for the lambdas
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
                 .batchSize(1)
                 .build();
 
-        String queueName = String.join("-", "sleeper", instanceId, "BulkExportProcessorQ");
-        Queue bulkExportProcessorQ = Queue.Builder
-                .create(this, "BulkExportProcessorQueue")
-                .queueName(queueName)
-                .deadLetterQueue(bulkExportProcessorDeadLetterQueue)
-                .visibilityTimeout(
-                        Duration.seconds(instanceProperties.getInt(
-                                BULK_EXPORT_PROCESSOR_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
-                .build();
-        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_URL,
-                bulkExportProcessorQ.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL,
-                bulkExportProcessorQueueQueryDlq.getQueueUrl());
-        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_ARN,
-                bulkExportProcessorQ.getQueueArn());
+        lambda.addEventSource(new SqsEventSource(bulkExportSplitterQ, eventSourceProps));
 
-        CfnOutputProps sourceQueueOutputNameProps = new CfnOutputProps.Builder()
-                .value(bulkExportProcessorQ.getQueueName())
-                .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_NAME)
-                .build();
-        new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_NAME, sourceQueueOutputNameProps);
 
-        CfnOutputProps sourceQueueDLQOutputNameProps = new CfnOutputProps.Builder()
-                .value(bulkExportProcessorQueueQueryDlq.getQueueName())
-                .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_DLQ_NAME)
-                .build();
-        new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_DLQ_NAME, sourceQueueDLQOutputNameProps);
-
-        CfnOutputProps sourceQueueOutputProps = new CfnOutputProps.Builder()
-                .value(bulkExportProcessorQ.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_URL)
-                .build();
-        new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_URL, sourceQueueOutputProps);
-
-        CfnOutputProps sourceQueueDLQOutputProps = new CfnOutputProps.Builder()
-                .value(bulkExportProcessorQueueQueryDlq.getQueueUrl())
-                .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL)
-                .build();
-        new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL, sourceQueueDLQOutputProps);
-
-        lambda.addEventSource(new SqsEventSource(bulkExportProcessorQ, eventSourceProps));
+        List<Queue> processorQueues = createQueueAndDeadLetterQueue("BulkExportProcessor", instanceProperties);
+        Queue bulkExportProcessorQ = processorQueues.get(0);
+        Queue bulkExportProcessorDlq = processorQueues.get(1);
+        setQueueOutputProps(instanceProperties, bulkExportProcessorQ, bulkExportProcessorDlq, QueueType.PROCESSOR);
 
         /*
          * Output the role of the lambda as a property so that clients that want the
@@ -153,12 +120,43 @@ public class BulkExportStack extends NestedStack {
          * to their own SQS queue can give the role permission to write to their queue
          */
         IRole role = Objects.requireNonNull(lambda.getRole());
-        CfnOutputProps bulkExportProcessorLambdaRoleOutputProps = new CfnOutputProps.Builder()
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_LAMBDA_ROLE, role.getRoleName());
+
+        CfnOutputProps bulkExportSplitterLambdaRoleOutputProps = new CfnOutputProps.Builder()
                 .value(lambda.getRole().getRoleArn())
                 .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_LAMBDA_ROLE_ARN)
                 .build();
-        new CfnOutput(this, BULK_EXPORT_PROCESSOR_LAMBDA_ROLE_ARN, bulkExportProcessorLambdaRoleOutputProps);
-        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_LAMBDA_ROLE, role.getRoleName());
+        new CfnOutput(this, BULK_EXPORT_PROCESSOR_LAMBDA_ROLE_ARN, bulkExportSplitterLambdaRoleOutputProps);
+    }
+
+    /**
+     * Create a queue and a dead letter queue for the queue.
+     *
+     * @param id                 the id of the queue
+     * @param instanceProperties the instance properties
+     * @return the queue and the dead letter queue
+     */
+    private List<Queue> createQueueAndDeadLetterQueue(String id, InstanceProperties instanceProperties) {
+        String queueNameDLQ = id + "DLQ";
+        Queue queueDLQ = Queue.Builder
+                .create(this, id + "DeadLetterQueue")
+                .queueName(queueNameDLQ)
+                .build();
+        DeadLetterQueue deadLetterQueue = DeadLetterQueue.builder()
+                .maxReceiveCount(1)
+                .queue(queueDLQ)
+                .build();
+
+        String queueName = id + "Q";
+        Queue queue = Queue.Builder
+                .create(this, id + "Queue")
+                .queueName(queueName)
+                .deadLetterQueue(deadLetterQueue)
+                .visibilityTimeout(
+                        Duration.seconds(instanceProperties.getInt(
+                                BULK_EXPORT_PROCESSOR_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS)))
+                .build();
+        return Arrays.asList(queue, queueDLQ);
     }
 
     private void attachPolicy(IFunction lambda, String id) {
@@ -177,5 +175,66 @@ public class BulkExportStack extends NestedStack {
         Policy policy = new Policy(this, policyName);
         policy.addStatements(policyStatement);
         Objects.requireNonNull(lambda.getRole()).attachInlinePolicy(policy);
+    }
+
+    public enum QueueType {
+        SPLITTER,
+        PROCESSOR
+    }
+
+    private void setQueueOutputProps(InstanceProperties instanceProperties, Queue queue, Queue dlQueue, QueueType queueType) {
+        switch (queueType) {
+            case SPLITTER:
+                instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_SPLITTER_QUEUE_URL, queue.getQueueUrl());
+                instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_SPLITTER_QUEUE_DLQ_URL, dlQueue.getQueueUrl());
+                instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_SPLITTER_QUEUE_ARN, queue.getQueueArn());
+
+                new CfnOutput(this, BULK_EXPORT_SPLITTER_QUEUE_NAME, new CfnOutputProps.Builder()
+                        .value(queue.getQueueName())
+                        .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_SPLITTER_QUEUE_NAME)
+                        .build());
+
+                new CfnOutput(this, BULK_EXPORT_SPLITTER_QUEUE_DLQ_NAME, new CfnOutputProps.Builder()
+                        .value(dlQueue.getQueueName())
+                        .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_SPLITTER_QUEUE_DLQ_NAME)
+                        .build());
+
+                new CfnOutput(this, BULK_EXPORT_SPLITTER_QUEUE_URL, new CfnOutputProps.Builder()
+                        .value(queue.getQueueUrl())
+                        .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_SPLITTER_QUEUE_URL)
+                        .build());
+
+                new CfnOutput(this, BULK_EXPORT_SPLITTER_QUEUE_DLQ_URL, new CfnOutputProps.Builder()
+                        .value(dlQueue.getQueueUrl())
+                        .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_SPLITTER_QUEUE_DLQ_URL)
+                        .build());
+                break;
+
+            case PROCESSOR:
+                instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_URL, queue.getQueueUrl());
+                instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL, dlQueue.getQueueUrl());
+                instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_ARN, queue.getQueueArn());
+
+                new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_NAME, new CfnOutputProps.Builder()
+                        .value(queue.getQueueName())
+                        .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_NAME)
+                        .build());
+
+                new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_DLQ_NAME, new CfnOutputProps.Builder()
+                        .value(dlQueue.getQueueName())
+                        .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_DLQ_NAME)
+                        .build());
+
+                new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_URL, new CfnOutputProps.Builder()
+                        .value(queue.getQueueUrl())
+                        .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_URL)
+                        .build());
+
+                new CfnOutput(this, BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL, new CfnOutputProps.Builder()
+                        .value(dlQueue.getQueueUrl())
+                        .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL)
+                        .build());
+                break;
+        }
     }
 }
