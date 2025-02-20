@@ -35,7 +35,7 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         jobRunId = Objects.requireNonNull(builder.jobRunId, "jobRunId must not be null");
-        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
+        taskId = builder.taskId;
         failureTime = builder.failureTime;
         failureReasons = builder.failureReasons;
     }
