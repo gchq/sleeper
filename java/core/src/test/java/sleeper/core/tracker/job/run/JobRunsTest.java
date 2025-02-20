@@ -26,7 +26,6 @@ import sleeper.core.tracker.job.status.JobRunStartedUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
 import sleeper.core.tracker.job.status.TestJobStartedAndFinishedStatus;
 import sleeper.core.tracker.job.status.TestJobStartedStatus;
-import sleeper.core.tracker.job.status.TestJobStartedStatusWithStartOfRunFlag;
 import sleeper.core.tracker.job.status.TestJobStatus;
 
 import java.time.Duration;
@@ -41,7 +40,6 @@ import static sleeper.core.tracker.job.run.JobRunsTestHelper.runsFromUpdates;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.finishedStatus;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.startedStatus;
-import static sleeper.core.tracker.job.status.TestJobStartedStatusWithStartOfRunFlag.startedStatusNotStartOfRun;
 import static sleeper.core.tracker.job.status.TestJobStatus.notPartOfRunWithUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatus.partOfRunWithUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
@@ -131,8 +129,8 @@ class JobRunsTest {
             TestJobStartedStatus validated1 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
             TestJobStartedStatus validated2 = startedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
 
-            TestJobStartedStatusWithStartOfRunFlag started1 = startedStatusNotStartOfRun(Instant.parse("2022-09-24T10:23:30Z"));
-            TestJobStartedStatusWithStartOfRunFlag started2 = startedStatusNotStartOfRun(Instant.parse("2022-09-24T10:24:30Z"));
+            TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-24T10:23:30Z"));
+            TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T10:24:30Z"));
 
             // When
             JobRuns runs = runsFromUpdates(
@@ -474,7 +472,7 @@ class JobRunsTest {
         void shouldReturnLastStatusUpdateByInterface() {
             TestJobStartedStatus startedUpdate = startedStatus(
                     Instant.parse("2022-09-24T09:23:30Z"));
-            TestJobStartedStatusWithStartOfRunFlag startedStatusNotStartOfRun = startedStatusNotStartOfRun(
+            TestJobStartedStatus startedStatusNotStartOfRun = startedStatus(
                     Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
