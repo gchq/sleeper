@@ -62,6 +62,9 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
 
     @Override
     public void checkBefore(StateStore stateStore) throws StateStoreException {
+        if (!stateStore.hasNoFiles()) {
+            throw new StateStoreException("Cannot initialise state store when files are present");
+        }
     }
 
     @Override
