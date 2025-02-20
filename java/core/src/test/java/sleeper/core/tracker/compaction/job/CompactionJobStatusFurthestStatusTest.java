@@ -33,7 +33,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.co
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFrom;
-import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromSingleRunUpdates;
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.CREATED;
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.FAILED;
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.FINISHED;
@@ -57,7 +57,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 .build();
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(filesAssigned);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(filesAssigned);
 
         // Then
         assertThat(status.getFurthestStatusType()).isEqualTo(CREATED);
@@ -75,7 +75,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 Instant.parse("2023-03-22T15:36:03Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(filesAssigned, started);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(filesAssigned, started);
 
         // Then
         assertThat(status.getFurthestStatusType()).isEqualTo(IN_PROGRESS);
@@ -95,7 +95,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 summary(started, Duration.ofSeconds(30), 200L, 100L));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(filesAssigned, started, finished);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(filesAssigned, started, finished);
 
         // Then
         assertThat(status.getFurthestStatusType()).isEqualTo(UNCOMMITTED);
@@ -117,7 +117,7 @@ public class CompactionJobStatusFurthestStatusTest {
                 Instant.parse("2023-03-22T15:40:00Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(filesAssigned, started, finished, committed);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(filesAssigned, started, finished, committed);
 
         // Then
         assertThat(status.getFurthestStatusType()).isEqualTo(FINISHED);
@@ -136,7 +136,7 @@ public class CompactionJobStatusFurthestStatusTest {
         JobRunFailedStatus failed = failedStatus(started, Duration.ofSeconds(30), List.of("Some failure"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(filesAssigned, started, failed);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(filesAssigned, started, failed);
 
         // Then
         assertThat(status.getFurthestStatusType()).isEqualTo(FAILED);

@@ -26,13 +26,13 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
+import static sleeper.core.tracker.job.run.JobRunsTestHelper.runsFromSingleRunUpdates;
 import static sleeper.core.tracker.job.run.JobRunsTestHelper.runsFromUpdates;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.finishedStatus;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.startedStatus;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.TASK_ID_1;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.TASK_ID_2;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.onTask;
 
 public class JobRunsRecordsOutOfOrderTest {
 
@@ -43,7 +43,7 @@ public class JobRunsRecordsOutOfOrderTest {
         AggregatedTaskJobsFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
         // When
-        JobRuns runs = runsFromUpdates(finished, started);
+        JobRuns runs = runsFromSingleRunUpdates(finished, started);
 
         // Then
         assertThat(runs.getRunsLatestFirst())
@@ -100,8 +100,8 @@ public class JobRunsRecordsOutOfOrderTest {
 
         // When
         JobRuns runs = runsFromUpdates(
-                onTask(TASK_ID_1, finished1, started1),
-                onTask(TASK_ID_2, finished2, started2));
+                forRunOnTask(TASK_ID_1, finished1, started1),
+                forRunOnTask(TASK_ID_2, finished2, started2));
 
         // Then
         assertThat(runs.getRunsLatestFirst())

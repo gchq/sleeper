@@ -36,6 +36,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
+import static sleeper.core.tracker.job.run.JobRunsTestHelper.runsFromSingleRunUpdates;
 import static sleeper.core.tracker.job.run.JobRunsTestHelper.runsFromUpdates;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.finishedStatus;
@@ -49,7 +50,6 @@ import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forNoRu
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnNoTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.onNoTask;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.onTask;
 
 class JobRunsTest {
 
@@ -63,7 +63,7 @@ class JobRunsTest {
             TestJobStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(started);
+            JobRuns runs = runsFromSingleRunUpdates(started);
 
             // Then
             assertThat(runs.getRunsLatestFirst())
@@ -79,7 +79,7 @@ class JobRunsTest {
             AggregatedTaskJobsFinishedStatus finished = finishedStatus(started, Duration.ofSeconds(30), 450L, 300L);
 
             // When
-            JobRuns runs = runsFromUpdates(started, finished);
+            JobRuns runs = runsFromSingleRunUpdates(started, finished);
 
             // Then
             assertThat(runs.getRunsLatestFirst())
@@ -96,7 +96,7 @@ class JobRunsTest {
             AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started, Duration.ofSeconds(40), 200, 200);
 
             // When
-            JobRuns runs = runsFromUpdates(started, finished1, finished2);
+            JobRuns runs = runsFromSingleRunUpdates(started, finished1, finished2);
 
             // Then
             assertThat(runs.getRunsLatestFirst())
@@ -241,7 +241,7 @@ class JobRunsTest {
             TestJobStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(onTask("some-task", started));
+            JobRuns runs = runsFromUpdates(forRunOnTask("some-task", started));
 
             // Then
             assertThat(runs.isTaskIdAssigned("some-task"))
@@ -254,7 +254,7 @@ class JobRunsTest {
             TestJobStartedStatus started = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(onTask("other-task", started));
+            JobRuns runs = runsFromUpdates(forRunOnTask("other-task", started));
 
             // Then
             assertThat(runs.isTaskIdAssigned("some-task"))
@@ -285,7 +285,7 @@ class JobRunsTest {
             JobStatusUpdate notStartedUpdate = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T09:23:30.001Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(notStartedUpdate);
+            JobRuns runs = runsFromSingleRunUpdates(notStartedUpdate);
 
             // Then
             assertThat(runs.getRunsLatestFirst()).isEmpty();
@@ -298,7 +298,7 @@ class JobRunsTest {
             TestJobStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(startedStatus, customStatus);
+            JobRuns runs = runsFromSingleRunUpdates(startedStatus, customStatus);
 
             // Then
             assertThat(runs.getRunsLatestFirst())
@@ -314,7 +314,7 @@ class JobRunsTest {
             TestJobStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(onTask("a-task", startedStatus), onNoTask(customStatus));
+            JobRuns runs = runsFromUpdates(forRunOnTask("a-task", startedStatus), onNoTask(customStatus));
 
             // Then
             assertThat(runs.getRunsLatestFirst())
@@ -330,7 +330,7 @@ class JobRunsTest {
             TestJobStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(onTask("a-task", startedStatus, customStatus));
+            JobRuns runs = runsFromUpdates(forRunOnTask("a-task", startedStatus, customStatus));
 
             // Then
             assertThat(runs.getRunsLatestFirst())
@@ -384,7 +384,7 @@ class JobRunsTest {
                     summary(Instant.parse("2022-09-24T09:23:30Z"), Duration.ZERO, 0L, 0L));
 
             // When
-            JobRuns runs = runsFromUpdates(status);
+            JobRuns runs = runsFromSingleRunUpdates(status);
 
             // Then
             assertThat(runs.getRunsLatestFirst())
@@ -446,7 +446,7 @@ class JobRunsTest {
             TestJobStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(startedStatus, customStatus);
+            JobRuns runs = runsFromSingleRunUpdates(startedStatus, customStatus);
 
             // Then
             assertThat(runs.getLatestRun()
@@ -462,7 +462,7 @@ class JobRunsTest {
             TestJobStatus customStatus2 = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:25:30Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(startedStatus, customStatus1, customStatus2);
+            JobRuns runs = runsFromSingleRunUpdates(startedStatus, customStatus1, customStatus2);
 
             // Then
             assertThat(runs.getLatestRun()
@@ -478,7 +478,7 @@ class JobRunsTest {
                     Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
-            JobRuns runs = runsFromUpdates(startedUpdate, startedStatusNotStartOfRun);
+            JobRuns runs = runsFromSingleRunUpdates(startedUpdate, startedStatusNotStartOfRun);
 
             // Then
             assertThat(runs.getLatestRun()

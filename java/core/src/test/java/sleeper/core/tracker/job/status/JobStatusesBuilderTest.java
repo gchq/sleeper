@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.finishedStatus;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.startedStatus;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class JobStatusesBuilderTest {
@@ -41,8 +41,8 @@ public class JobStatusesBuilderTest {
 
         // When
         List<JobStatusUpdates> statuses = jobStatusListFrom(records().fromUpdates(
-                forJob("job1", started1, finished1),
-                forJob("job2", started2, finished2)));
+                forJobRunOnTask("job1", started1, finished1),
+                forJobRunOnTask("job2", started2, finished2)));
 
         // Then
         assertThat(statuses)

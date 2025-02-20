@@ -122,8 +122,8 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
-    public static CompactionJobStatus jobStatusFromUpdates(JobStatusUpdate... updates) {
-        return jobStatusFrom(records().fromUpdates(updates));
+    public static CompactionJobStatus jobStatusFromSingleRunUpdates(JobStatusUpdate... updates) {
+        return jobStatusFrom(records().singleRunUpdates(updates));
     }
 
     public static List<CompactionJobStatus> jobStatusListFromUpdates(

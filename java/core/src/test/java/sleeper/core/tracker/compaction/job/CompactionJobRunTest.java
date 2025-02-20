@@ -35,7 +35,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.def
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromSingleRunUpdates;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
 
@@ -48,7 +48,7 @@ public class CompactionJobRunTest {
                 defaultCompactionJobCreatedEvent(), Instant.parse("2022-09-23T09:23:00.012Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(createdStatus);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(createdStatus);
 
         // Then
         assertThat(status.getRunsLatestFirst())
@@ -62,7 +62,7 @@ public class CompactionJobRunTest {
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(started);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(started);
 
         // Then
         assertThat(status.getRunsLatestFirst())
@@ -79,7 +79,7 @@ public class CompactionJobRunTest {
         CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 450L, 300L));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(started, finished);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(started, finished);
 
         // Then
         assertThat(status.getRunsLatestFirst())
@@ -97,7 +97,7 @@ public class CompactionJobRunTest {
         CompactionJobCommittedStatus committed = compactionCommittedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(started, finished, committed);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(started, finished, committed);
 
         // Then
         assertThat(status.getRunsLatestFirst())

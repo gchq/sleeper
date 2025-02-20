@@ -45,8 +45,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jo
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobOnTask;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 class InMemoryCompactionJobTrackerTest {
@@ -80,8 +79,8 @@ class InMemoryCompactionJobTrackerTest {
             // When / Then
             assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getJobId(), defaultCreatedStatus(createdTime)),
-                            forJobOnTask(job.getJobId(), taskId, compactionStartedStatus(startedTime)))));
+                            forJobRunOnTask(job.getJobId(), defaultCreatedStatus(createdTime)),
+                            forJobRunOnTask(job.getJobId(), taskId, compactionStartedStatus(startedTime)))));
         }
 
         @Test
@@ -97,8 +96,8 @@ class InMemoryCompactionJobTrackerTest {
             // When / Then
             assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getJobId(), defaultCreatedStatus(createdTime)),
-                            forJobOnTask(job.getJobId(), taskId,
+                            forJobRunOnTask(job.getJobId(), defaultCreatedStatus(createdTime)),
+                            forJobRunOnTask(job.getJobId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary(startedTime, finishedTime, 100, 100))))));
         }
@@ -117,8 +116,8 @@ class InMemoryCompactionJobTrackerTest {
             // When / Then
             assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getJobId(), defaultCreatedStatus(createdTime)),
-                            forJobOnTask(job.getJobId(), taskId,
+                            forJobRunOnTask(job.getJobId(), defaultCreatedStatus(createdTime)),
+                            forJobRunOnTask(job.getJobId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary(startedTime, finishedTime, 100, 100)),
                                     compactionCommittedStatus(committedTime)))));
@@ -138,8 +137,8 @@ class InMemoryCompactionJobTrackerTest {
             // When / Then
             assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getJobId(), defaultCreatedStatus(createdTime)),
-                            forJobOnTask(job.getJobId(), taskId,
+                            forJobRunOnTask(job.getJobId(), defaultCreatedStatus(createdTime)),
+                            forJobRunOnTask(job.getJobId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFailedStatus(failureTime, failureReasons)))));
         }
@@ -162,8 +161,8 @@ class InMemoryCompactionJobTrackerTest {
             // When / Then
             assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getJobId(), defaultCreatedStatus(createdTime)),
-                            forJobOnTask(job.getJobId(), taskId,
+                            forJobRunOnTask(job.getJobId(), defaultCreatedStatus(createdTime)),
+                            forJobRunOnTask(job.getJobId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary)))));
         }
@@ -250,8 +249,8 @@ class InMemoryCompactionJobTrackerTest {
             assertThat(tracker.getUnfinishedJobs(tableId))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
-                                    forJob(job1.getJobId(), defaultCreatedStatus(createdTime1)),
-                                    forJobOnTask(job1.getJobId(), taskId1, compactionStartedStatus(startedTime1)))));
+                                    forJobRunOnTask(job1.getJobId(), defaultCreatedStatus(createdTime1)),
+                                    forJobRunOnTask(job1.getJobId(), taskId1, compactionStartedStatus(startedTime1)))));
         }
 
         @Test
@@ -294,8 +293,8 @@ class InMemoryCompactionJobTrackerTest {
             assertThat(tracker.getJobsByTaskId(tableId, taskId1))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
-                                    forJob(job1.getJobId(), defaultCreatedStatus(createdTime1)),
-                                    forJobOnTask(job1.getJobId(), taskId1, compactionStartedStatus(startedTime1)))));
+                                    forJobRunOnTask(job1.getJobId(), defaultCreatedStatus(createdTime1)),
+                                    forJobRunOnTask(job1.getJobId(), taskId1, compactionStartedStatus(startedTime1)))));
         }
 
         @Test
@@ -339,8 +338,8 @@ class InMemoryCompactionJobTrackerTest {
                     Instant.parse("2023-03-29T13:00:00Z")))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
-                                    forJob(job1.getJobId(), defaultCreatedStatus(createdTime1)),
-                                    forJobOnTask(job1.getJobId(), taskId1, compactionStartedStatus(startedTime1)))));
+                                    forJobRunOnTask(job1.getJobId(), defaultCreatedStatus(createdTime1)),
+                                    forJobRunOnTask(job1.getJobId(), taskId1, compactionStartedStatus(startedTime1)))));
         }
 
         @Test
@@ -374,12 +373,12 @@ class InMemoryCompactionJobTrackerTest {
                     Instant.parse("2024-07-01T11:00:00Z")))
                     .containsExactly(
                             jobStatusFrom(records().fromUpdates(
-                                    forJob(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
-                                    forJobOnTask(job.getJobId(), taskId1,
+                                    forJobRunOnTask(job.getJobId(), CompactionJobCreatedStatus.from(job, createdTime)),
+                                    forJobRunOnTask(job.getJobId(), taskId1,
                                             compactionStartedStatus(startedTime1),
                                             compactionFinishedStatus(summary1),
                                             compactionCommittedStatus(committedTime1)),
-                                    forJobOnTask(job.getJobId(), taskId2,
+                                    forJobRunOnTask(job.getJobId(), taskId2,
                                             compactionStartedStatus(startedTime2),
                                             compactionFinishedStatus(summary2),
                                             compactionCommittedStatus(committedTime2)))));
@@ -425,8 +424,8 @@ class InMemoryCompactionJobTrackerTest {
             // When / Then
             assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getJobId(), defaultCreatedStatus(createdTime)),
-                            forJobOnTask(job.getJobId(), taskId,
+                            forJobRunOnTask(job.getJobId(), defaultCreatedStatus(createdTime)),
+                            forJobRunOnTask(job.getJobId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary)))));
         }
@@ -445,8 +444,8 @@ class InMemoryCompactionJobTrackerTest {
             // When / Then
             assertThat(tracker.streamAllJobs(tableId))
                     .containsExactly(jobStatusFrom(records().fromUpdates(
-                            forJob(job.getJobId(), defaultCreatedStatus(createdTime)),
-                            forJobOnTask(job.getJobId(), taskId,
+                            forJobRunOnTask(job.getJobId(), defaultCreatedStatus(createdTime)),
+                            forJobRunOnTask(job.getJobId(), taskId,
                                     compactionStartedStatus(startedTime),
                                     compactionFinishedStatus(summary),
                                     compactionCommittedStatus(committedTime)))));
