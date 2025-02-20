@@ -39,6 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -129,7 +130,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         // And a snapshot with file 2 replaced with file 3 (so that this will fail if reapplied on top of the second snapshot)
         committerStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("file2.parquet"))));
         TransactionLogEntry entry3 = filesLogStore.getLastEntry();
-        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
+        update(committerStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
                 .jobId("test-job")
                 .inputFiles(List.of("file2.parquet"))
                 .newReference(file3)
@@ -175,7 +176,7 @@ public class TransactionLogStateStoreFollowTransactionsTest extends InMemoryTran
         TransactionLogEntry entry1 = filesLogStore.getLastEntry();
         committerStore.assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles("test-job", "root", List.of("file1.parquet"))));
         TransactionLogEntry entry2 = filesLogStore.getLastEntry();
-        committerStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
+        update(committerStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.builder()
                 .jobId("test-job")
                 .inputFiles(List.of("file1.parquet"))
                 .newReference(file2)

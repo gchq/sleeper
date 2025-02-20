@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class FilesStatusReportTest extends FilesStatusReportTestBase {
 
@@ -99,7 +100,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 fileReferenceFactory.partitionFile("B", "file2.parquet", 100)));
         stateStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "B", List.of("file1.parquet", "file2.parquet"))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of("file1.parquet", "file2.parquet"), fileReferenceFactory.partitionFile("B", "file3.parquet", 200))));
 
         // When / Then
@@ -126,7 +127,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
         stateStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "B",
                         List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
                 fileReferenceFactory.partitionFile("B", "file5.parquet", 400))));
         int maxFilesWithNoReferences = 3;

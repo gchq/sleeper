@@ -486,7 +486,7 @@ public class StateStoreCommitterTest {
             stateStore.assignJobIds(List.of(
                     assignJobOnPartitionToFiles("test-job", "root", filenames)));
             FileReference fileAfterCompaction = fileFactory.rootFile("after.parquet", 300);
-            stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("test-job", filenames, fileAfterCompaction)));
             // And we have a request to commit that they have been deleted
             FileReferenceTransaction transaction = new DeleteFilesTransaction(filenames);

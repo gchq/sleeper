@@ -53,6 +53,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
 
 public class GarbageCollectorS3IT extends LocalStackTestBase {
@@ -94,7 +95,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         stateStore.assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root",
                         List.of(oldFile1.getFilename(), oldFile2.getFilename()))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2)));
 
         // When
