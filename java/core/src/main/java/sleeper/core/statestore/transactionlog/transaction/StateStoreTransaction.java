@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.transactionlog.transaction;
 
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 
 import java.time.Instant;
@@ -41,4 +42,12 @@ public interface StateStoreTransaction<T> {
      * @param updateTime the time that the update was added to the state store
      */
     void apply(T state, Instant updateTime);
+
+    /**
+     * Checks the present state of the state store.
+     *
+     * @param stateStore the state store
+     */
+    default void checkBefore(StateStore stateStore) throws StateStoreException {
+    }
 }

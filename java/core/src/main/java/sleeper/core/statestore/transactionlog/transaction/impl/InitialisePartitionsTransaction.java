@@ -18,6 +18,8 @@ package sleeper.core.statestore.transactionlog.transaction.impl;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 
@@ -79,4 +81,9 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     public String toString() {
         return "InitialisePartitionsTransaction{partitions=" + partitions + "}";
     }
+
+    @Override
+    public void checkBefore(StateStore stateStore) throws StateStoreException {
+    }
+
 }
