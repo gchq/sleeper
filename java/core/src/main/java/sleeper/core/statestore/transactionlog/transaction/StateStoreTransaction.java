@@ -44,9 +44,13 @@ public interface StateStoreTransaction<T> {
     void apply(T state, Instant updateTime);
 
     /**
-     * Checks the present state of the state store.
+     * Validates against the state store before attempting to add this transaction. Should not be relied upon
+     * but can be used as an extra check against state that this transaction does not operate on. Note that
+     * any checks from this are before the state is updated as part of the transaction. This cannot validate
+     * against the state the transaction is applied to as it may be updated by another process in the meantime.
      *
      * @param stateStore the state store
+     * @see              #validate
      */
     default void checkBefore(StateStore stateStore) throws StateStoreException {
     }
