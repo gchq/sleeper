@@ -105,7 +105,7 @@ public class CompactionTaskTestBase {
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(TABLE_NAME, tableName);
         tables.add(tableProperties);
-        stateStore(tableProperties).initialise();
+        update(stateStore(tableProperties)).initialise(schema);
         return tableProperties;
     }
 

@@ -180,7 +180,7 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
 
     private StateStore createAndInitialiseStateStore(TableProperties tableProperties) {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
+        update(stateStore).initialise(tableProperties.getSchema());
         return stateStore;
     }
 

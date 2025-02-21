@@ -56,6 +56,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 @Disabled("For manual testing")
 public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
@@ -134,7 +135,7 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
     private TableProperties createTable(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).createTable(tableProperties);
-        stateStoreProvider().getStateStore(tableProperties).initialise();
+        update(stateStoreProvider().getStateStore(tableProperties)).initialise(schema);
         return tableProperties;
     }
 
