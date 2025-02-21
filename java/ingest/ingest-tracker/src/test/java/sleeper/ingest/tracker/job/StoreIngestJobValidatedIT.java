@@ -25,7 +25,7 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunOnTask;
+import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRun;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.acceptedRunWhichStarted;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.ingestJobStatus;
 import static sleeper.ingest.core.job.IngestJobStatusFromJobTestData.rejectedRun;
@@ -44,7 +44,7 @@ public class StoreIngestJobValidatedIT extends DynamoDBIngestJobTrackerTestBase 
         // Then
         assertThat(getAllJobStatuses())
                 .usingRecursiveFieldByFieldElementComparator(IGNORE_UPDATE_TIMES)
-                .containsExactly(ingestJobStatus(job, acceptedRunOnTask(job, null, validationTime)));
+                .containsExactly(ingestJobStatus(job, acceptedRun(job, validationTime)));
     }
 
     @Test

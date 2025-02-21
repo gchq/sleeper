@@ -199,20 +199,6 @@ public class IngestJobStatusFromJobTestData {
     }
 
     /**
-     * Creates a process run for an ingest job that was validated and picked up by an ingest task, but has not started
-     * yet.
-     *
-     * @param  job            the ingest job
-     * @param  taskId         the ingest task ID
-     * @param  validationTime the validation time
-     * @return                a {@link JobRun}
-     */
-    public static JobRun acceptedRunOnTask(IngestJob job, String taskId, Instant validationTime) {
-        return jobRunOnTask(taskId,
-                IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime)));
-    }
-
-    /**
      * Creates a process run for an ingest job that failed to validate.
      *
      * @param  job            the ingest job
