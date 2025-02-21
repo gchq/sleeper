@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.SplitFileReferenceRequest.splitFileToChildPartitions;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class FilesStatusReportTest extends FilesStatusReportTestBase {
 
@@ -45,9 +46,9 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .splitToNewChildren("5", "6", "C", "bbb")
                 .splitToNewChildren("6", "A", "B", "aaa")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        stateStore.addFiles(List.of(
+        update(stateStore).addFiles(List.of(
                 fileReferenceFactory.partitionFile("A", 50000001),
                 fileReferenceFactory.partitionFile("B", 50000002),
                 fileReferenceFactory.partitionFile("C", 50000003),
@@ -72,9 +73,9 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .splitToNewChildren("B", "D", "E", "ggg")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        stateStore.addFiles(List.of(
+        update(stateStore).addFiles(List.of(
                 fileReferenceFactory.partitionFile("D", 50000001),
                 fileReferenceFactory.partitionFile("B", 50000002)));
 
@@ -92,14 +93,14 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        stateStore.addFiles(List.of(
+        update(stateStore).addFiles(List.of(
                 fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file2.parquet", 100)));
-        stateStore.assignJobIds(List.of(
+        update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "B", List.of("file1.parquet", "file2.parquet"))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of("file1.parquet", "file2.parquet"), fileReferenceFactory.partitionFile("B", "file3.parquet", 200))));
 
         // When / Then
@@ -116,17 +117,17 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
-        stateStore.addFiles(List.of(
+        update(stateStore).addFiles(List.of(
                 fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file2.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file3.parquet", 100),
                 fileReferenceFactory.partitionFile("B", "file4.parquet", 100)));
-        stateStore.assignJobIds(List.of(
+        update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "B",
                         List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of("file1.parquet", "file2.parquet", "file3.parquet", "file4.parquet"),
                 fileReferenceFactory.partitionFile("B", "file5.parquet", 400))));
         int maxFilesWithNoReferences = 3;
@@ -145,13 +146,13 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate);
         FileReference rootFile = fileReferenceFactory.partitionFile("A", "not-split.parquet", 1000);
         FileReference pendingSplit = fileReferenceFactory.partitionFile("B", "pending-split.parquet", 2000);
         FileReference oldFile = fileReferenceFactory.partitionFile("A", "split.parquet", 2000L);
-        stateStore.addFiles(List.of(rootFile, pendingSplit, oldFile));
-        stateStore.splitFileReferences(List.of(splitFileToChildPartitions(oldFile, "B", "C")));
+        update(stateStore).addFiles(List.of(rootFile, pendingSplit, oldFile));
+        update(stateStore).splitFileReferences(List.of(splitFileToChildPartitions(oldFile, "B", "C")));
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
@@ -164,12 +165,12 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
     public void shouldReportFilesStatusWhenPartitionsNoLongerExist() throws Exception {
         // Given
         PartitionTree partitions = new PartitionsBuilder(schema).rootFirst("A").buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate);
         FileReference file1 = fileReferenceFactory.rootFile("file1.parquet", 1000L);
         FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 2000L);
-        stateStore.initialise(new PartitionsBuilder(schema).rootFirst("B").buildList());
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).initialise(new PartitionsBuilder(schema).rootFirst("B").buildList());
+        update(stateStore).addFiles(List.of(file1, file2));
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))

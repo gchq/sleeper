@@ -41,6 +41,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBackedByArrowTestBase {
     @Test
@@ -49,7 +50,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        stateStore.initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildList());
@@ -95,7 +96,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        stateStore.initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildList());
@@ -146,7 +147,7 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
         tableProperties.setSchema(recordListAndSchema.sleeperSchema);
-        stateStore.initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
                 .buildList());

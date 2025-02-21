@@ -32,6 +32,7 @@ import sleeper.statestore.StateStoreFactory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStateStoreTestBase {
     private final Schema schema = schemaWithKey("key", new LongType());
@@ -47,8 +48,8 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 34);
 
         // When
-        stateStore1.addFile(file1);
-        stateStore2.addFile(file2);
+        update(stateStore1).addFile(file1);
+        update(stateStore2).addFile(file2);
 
         // Then
         assertThat(stateStore1.getFileReferences())
@@ -68,8 +69,8 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
 
         // When
-        stateStore1.initialise(tree1.getAllPartitions());
-        stateStore2.initialise(tree2.getAllPartitions());
+        update(stateStore1).initialise(tree1.getAllPartitions());
+        update(stateStore2).initialise(tree2.getAllPartitions());
 
         // Then
         assertThat(stateStore1.getAllPartitions()).containsExactly(tree1.getRootPartition());
@@ -83,11 +84,11 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         StateStore stateStore2 = initialiseTableStateStore();
         FileReference file1 = fileReferenceFactory.rootFile("file1.parquet", 12);
         FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 34);
-        stateStore1.addFile(file1);
-        stateStore2.addFile(file2);
+        update(stateStore1).addFile(file1);
+        update(stateStore2).addFile(file2);
 
         // When
-        stateStore1.clearFileData();
+        update(stateStore1).clearFileData();
 
         // Then
         assertThat(stateStore1.getFileReferences()).isEmpty();
@@ -103,15 +104,15 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         StateStore stateStore2 = getTableStateStore();
         PartitionTree tree1 = new PartitionsBuilder(schema).singlePartition("partition1").buildTree();
         PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
-        stateStore1.initialise(tree1.getAllPartitions());
-        stateStore2.initialise(tree2.getAllPartitions());
+        update(stateStore1).initialise(tree1.getAllPartitions());
+        update(stateStore2).initialise(tree2.getAllPartitions());
         FileReference file1 = FileReferenceFactory.from(tree1).rootFile("file1.parquet", 12);
         FileReference file2 = FileReferenceFactory.from(tree2).rootFile("file2.parquet", 34);
-        stateStore1.addFile(file1);
-        stateStore2.addFile(file2);
+        update(stateStore1).addFile(file1);
+        update(stateStore2).addFile(file2);
 
         // When
-        stateStore1.clearSleeperTable();
+        update(stateStore1).clearSleeperTable();
 
         // Then
         assertThat(stateStore1.getAllPartitions()).isEmpty();
@@ -124,7 +125,7 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
 
     private StateStore initialiseTableStateStore() throws Exception {
         StateStore stateStore = getTableStateStore();
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
         return stateStore;
     }
 

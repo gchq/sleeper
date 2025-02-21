@@ -15,6 +15,11 @@
  */
 package sleeper.core.statestore.transactionlog;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
@@ -29,6 +34,7 @@ import java.util.Optional;
  * big.
  */
 public class AddTransactionRequest {
+    public static final Logger LOGGER = LoggerFactory.getLogger(AddTransactionRequest.class);
 
     private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
@@ -59,6 +65,23 @@ public class AddTransactionRequest {
      */
     public <T extends StateStoreTransaction<?>> T getTransaction() {
         return (T) transaction;
+    }
+
+    /**
+     * Checks whether the transaction should be added. This is not the main validation check, as that waits until we
+     * have an up to date view of the state that will be updated.
+     *
+     * @param  stateStore          the state store
+     * @return                     true if it should be added
+     * @throws StateStoreException if the transaction is invalid without comparing against the state
+     */
+    public boolean checkBeforeAdd(StateStore stateStore) throws StateStoreException {
+        if (transaction.isEmpty()) {
+            LOGGER.warn("Ignoring empty transaction of type {}", transaction.getClass());
+            return false;
+        }
+        transaction.checkBefore(stateStore);
+        return true;
     }
 
     public TransactionType getTransactionType() {

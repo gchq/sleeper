@@ -29,9 +29,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * A partition store backed by a log of transactions. Part of {@link TransactionLogStateStore}.
@@ -59,12 +56,18 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
-        return partitions().collect(toUnmodifiableList());
+        return partitions().all().stream().toList();
     }
 
     @Override
     public List<Partition> getLeafPartitions() throws StateStoreException {
-        return partitions().filter(Partition::isLeafPartition).collect(toUnmodifiableList());
+        return partitions().all().stream().filter(Partition::isLeafPartition).toList();
+    }
+
+    @Override
+    public Partition getPartition(String partitionId) throws StateStoreException {
+        return partitions().byId(partitionId)
+                .orElseThrow(() -> new StateStoreException("Partition not found: " + partitionId));
     }
 
     @Override
@@ -100,9 +103,9 @@ class TransactionLogPartitionStore implements PartitionStore {
         head.applyTransactionUpdatingIfNecessary(logEntry, listener);
     }
 
-    private Stream<Partition> partitions() throws StateStoreException {
+    private StateStorePartitions partitions() throws StateStoreException {
         head.update();
-        return head.state().all().stream();
+        return head.state();
     }
 
 }

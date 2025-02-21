@@ -23,6 +23,8 @@ import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+
 public class IngestRecordsLocalStackITBase extends IngestRecordsTestBase {
 
     @BeforeEach
@@ -33,7 +35,7 @@ public class IngestRecordsLocalStackITBase extends IngestRecordsTestBase {
     protected StateStore initialiseStateStore() {
         StateStore stateStore = DynamoDBTransactionLogStateStore.builderFrom(instanceProperties, tableProperties,
                 SleeperLocalStackClients.DYNAMO_CLIENT, SleeperLocalStackClients.S3_CLIENT, SleeperLocalStackClients.HADOOP_CONF).build();
-        stateStore.initialise();
+        update(stateStore).initialise(tableProperties.getSchema());
         return stateStore;
     }
 }

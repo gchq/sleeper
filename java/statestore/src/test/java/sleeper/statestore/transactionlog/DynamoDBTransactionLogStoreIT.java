@@ -54,6 +54,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.TRANSA
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateToApply;
 import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore.TABLE_ID;
@@ -137,8 +138,8 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixFileUpdateTime(updateTime);
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
-        stateStore.addFile(FileReferenceFactory.from(partitions).rootFile(100));
+        update(stateStore).initialise(partitions.getAllPartitions());
+        update(stateStore).addFile(FileReferenceFactory.from(partitions).rootFile(100));
 
         // When
         List<TransactionLogEntry> entries = fileLogStore.readTransactions(toUpdateLocalStateAt(0)).toList();
@@ -155,7 +156,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixPartitionUpdateTime(updateTime);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
 
         // When
         List<TransactionLogEntry> entries = partitionLogStore.readTransactions(toUpdateLocalStateAt(0)).toList();
@@ -172,8 +173,8 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixFileUpdateTime(updateTime);
-        stateStore.clearFileData();
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
+        update(stateStore).clearFileData();
 
         // When
         fileLogStore.deleteTransactionsAtOrBefore(1);
@@ -189,8 +190,8 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixFileUpdateTime(updateTime);
-        stateStore.clearFileData();
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
+        update(stateStore).clearFileData();
 
         // When
         fileLogStore.deleteTransactionsAtOrBefore(0);
@@ -207,8 +208,8 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixFileUpdateTime(updateTime);
-        stateStore.clearFileData();
-        stateStore.clearFileData();
+        update(stateStore).clearFileData();
+        update(stateStore).clearFileData();
 
         // When
         fileLogStore.deleteTransactionsAtOrBefore(2);
@@ -232,7 +233,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixPartitionUpdateTime(updateTime);
-        stateStore.initialise(partitions);
+        update(stateStore).initialise(partitions);
 
         // Then the transaction is held in S3
         String file = singleFileInDataBucket();
@@ -252,7 +253,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixPartitionUpdateTime(updateTime);
-        stateStore.initialise(PartitionsBuilderSplitsFirst
+        update(stateStore).initialise(PartitionsBuilderSplitsFirst
                 .leavesWithSplits(schema, leafIds, splitPoints)
                 .anyTreeJoiningAllLeaves().buildList());
 

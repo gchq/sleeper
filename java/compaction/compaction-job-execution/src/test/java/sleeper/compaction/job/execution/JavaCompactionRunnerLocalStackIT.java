@@ -48,6 +48,7 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
@@ -74,7 +75,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         tableProperties.setSchema(schema);
         createStateStore();
         PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
 
         List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();

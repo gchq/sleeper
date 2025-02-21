@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.sketches.s3.SketchesSerDeToS3.sketchesPathForDataFile;
 
 public class CompactionRunnerTestData {
@@ -164,7 +165,7 @@ public class CompactionRunnerTestData {
         Path sketchesPath = sketchesPathForDataFile(filename);
         new SketchesSerDeToS3(schema).saveToHadoopFS(sketchesPath, sketches, new Configuration());
         FileReference fileReference = FileReferenceFactory.from(stateStore).rootFile(filename, records.size());
-        stateStore.addFile(fileReference);
+        update(stateStore).addFile(fileReference);
         return fileReference;
     }
 

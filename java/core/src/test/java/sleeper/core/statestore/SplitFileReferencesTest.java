@@ -36,6 +36,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class SplitFileReferencesTest {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
@@ -57,7 +58,7 @@ public class SplitFileReferencesTest {
     void shouldFindFileInNonLeafPartitionToSplit() throws Exception {
         // Given
         FileReference file = factory.rootFile("file1", 100L);
-        store.addFile(file);
+        update(store).addFile(file);
 
         // When
         SplitFileReferences.from(store).split();
@@ -72,7 +73,7 @@ public class SplitFileReferencesTest {
     void shouldIgnoreFileInLeafPartition() throws Exception {
         // Given
         FileReference file = factory.partitionFile("L", "file1", 100L);
-        store.addFile(file);
+        update(store).addFile(file);
 
         // When
         SplitFileReferences.from(store).split();
@@ -85,8 +86,8 @@ public class SplitFileReferencesTest {
     void shouldIgnoreFileWithJobIdAssigned() throws Exception {
         // Given
         FileReference file = factory.rootFile("file1", 100L);
-        store.addFile(file);
-        store.assignJobIds(List.of(
+        update(store).addFile(file);
+        update(store).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
         // When

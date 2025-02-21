@@ -62,6 +62,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ID_ASSIGNMENT_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
 
@@ -79,7 +80,7 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
         FileReference fileReference2 = fileReferenceFactory.rootFile("file2", 200L);
         FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 200L);
         FileReference fileReference4 = fileReferenceFactory.rootFile("file4", 200L);
-        stateStore.addFiles(Arrays.asList(fileReference1, fileReference2, fileReference3, fileReference4));
+        update(stateStore).addFiles(Arrays.asList(fileReference1, fileReference2, fileReference3, fileReference4));
 
         // When
         createJobs();
@@ -106,7 +107,7 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
         FileReference fileReference3 = fileReferenceFactory.rootFile("file3", 200L);
         FileReference fileReference4 = fileReferenceFactory.rootFile("file4", 200L);
         List<FileReference> files = List.of(fileReference1, fileReference2, fileReference3, fileReference4);
-        stateStore.addFiles(files);
+        update(stateStore).addFiles(files);
 
         // When
         createJobs();
@@ -179,7 +180,7 @@ public class AwsCreateCompactionJobsIT extends LocalStackTestBase {
 
     private StateStore createAndInitialiseStateStore(TableProperties tableProperties) {
         StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise();
+        update(stateStore).initialise(tableProperties.getSchema());
         return stateStore;
     }
 

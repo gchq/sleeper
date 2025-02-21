@@ -23,6 +23,8 @@ import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 
 import java.util.List;
 
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+
 /**
  * An implementation of the state store backed by a transaction log held in memory.
  */
@@ -52,7 +54,7 @@ public class InMemoryTransactionLogStateStore {
      */
     public static TransactionLogStateStore createAndInitialise(TableProperties tableProperties, InMemoryTransactionLogs transactionLogs) {
         TransactionLogStateStore stateStore = create(tableProperties, transactionLogs);
-        stateStore.initialise();
+        update(stateStore).initialise(tableProperties.getSchema());
         return stateStore;
     }
 
@@ -66,7 +68,7 @@ public class InMemoryTransactionLogStateStore {
      */
     public static TransactionLogStateStore createAndInitialiseWithPartitions(List<Partition> partitions, TableProperties tableProperties, InMemoryTransactionLogs transactionLogs) {
         TransactionLogStateStore stateStore = create(tableProperties, transactionLogs);
-        stateStore.initialise(partitions);
+        update(stateStore).initialise(partitions);
         return stateStore;
     }
 

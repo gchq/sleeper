@@ -53,6 +53,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
 
 public class GarbageCollectorS3IT extends LocalStackTestBase {
@@ -84,17 +85,17 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         stateStore.fixFileUpdateTime(oldEnoughTime);
         // Create a FileReference referencing a file in a bucket that does not exist
         FileReference oldFile1 = factory.rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
-        stateStore.addFile(oldFile1);
+        update(stateStore).addFile(oldFile1);
         // Perform a compaction on an existing file to create a readyForGC file
         s3Client.putObject(testBucket, "old-file-2.parquet", "abc");
         s3Client.putObject(testBucket, "new-file-2.parquet", "def");
         FileReference oldFile2 = factory.rootFile("s3a://" + testBucket + "/old-file-2.parquet", 100L);
         FileReference newFile2 = factory.rootFile("s3a://" + testBucket + "/new-file-2.parquet", 100L);
-        stateStore.addFile(oldFile2);
-        stateStore.assignJobIds(List.of(
+        update(stateStore).addFile(oldFile2);
+        update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root",
                         List.of(oldFile1.getFilename(), oldFile2.getFilename()))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2)));
 
         // When
