@@ -30,8 +30,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
-
 /**
  * A partition store backed by a log of transactions. Part of {@link TransactionLogStateStore}.
  */
@@ -63,7 +61,7 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     @Override
     public List<Partition> getLeafPartitions() throws StateStoreException {
-        return partitions().all().stream().filter(Partition::isLeafPartition).collect(toUnmodifiableList());
+        return partitions().all().stream().filter(Partition::isLeafPartition).toList();
     }
 
     @Override
