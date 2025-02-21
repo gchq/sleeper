@@ -30,6 +30,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
@@ -44,10 +45,6 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static sleeper.core.properties.table.TableProperty.BULK_IMPORT_FILES_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
@@ -68,7 +65,9 @@ class BulkImportJobDriverTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
+    private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+    private final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final IngestJobTracker tracker = new InMemoryIngestJobTracker();
     private final List<StateStoreCommitRequest> commitRequestQueue = new ArrayList<>();
 
@@ -132,56 +131,27 @@ class BulkImportJobDriverTest {
         Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
         Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
         Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
-        StateStoreException jobFailure = new StateStoreException("Failed updating files");
-        List<FileReference> outputFiles = List.of(
-                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
-        StateStore stateStore = mock(StateStore.class);
-        doThrow(jobFailure).when(stateStore).addFiles(outputFiles);
-
-        // When
-        BulkImportJobDriver driver = driver(
-                successfulWithOutput(outputFiles), stateStore, startAndFinishTime(startTime, finishTime));
-        assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
-                .isInstanceOf(RuntimeException.class).cause().isSameAs(jobFailure);
-
-        // Then
-        assertThat(allJobsReported())
-                .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
-                        ingestAcceptedStatus(validationTime, 1),
-                        validatedIngestStartedStatus(startTime, 1),
-                        failedStatus(finishTime, List.of("Failed updating files")))));
-        verify(stateStore).addFiles(outputFiles);
-        verifyNoMoreInteractions(stateStore);
-        assertThat(commitRequestQueue).isEmpty();
-    }
-
-    @Test
-    void shouldReportJobFinishedWithNoRecordsWhenStateStoreUpdateHadUnexpectedFailure() throws Exception {
-        // Given
-        BulkImportJob job = singleFileImportJob();
-        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
-        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
-        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
         RuntimeException jobFailure = new RuntimeException("Failed updating files");
         List<FileReference> outputFiles = List.of(
                 defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
-        StateStore stateStore = mock(StateStore.class);
-        doThrow(jobFailure).when(stateStore).addFiles(outputFiles);
+        filesLogStore.atStartOfNextAddTransaction(() -> {
+            throw jobFailure;
+        });
 
         // When
         BulkImportJobDriver driver = driver(
                 successfulWithOutput(outputFiles), stateStore, startAndFinishTime(startTime, finishTime));
         assertThatThrownBy(() -> runJob(job, "test-run", "test-task", validationTime, driver))
-                .isInstanceOf(RuntimeException.class).cause().isSameAs(jobFailure);
+                .isInstanceOf(RuntimeException.class)
+                .cause().isInstanceOf(StateStoreException.class)
+                .cause().isSameAs(jobFailure);
 
         // Then
         assertThat(allJobsReported())
                 .containsExactly(ingestJobStatus(job.getId(), jobRunOnTask("test-task",
                         ingestAcceptedStatus(validationTime, 1),
                         validatedIngestStartedStatus(startTime, 1),
-                        failedStatus(finishTime, List.of("Failed updating files")))));
-        verify(stateStore).addFiles(outputFiles);
-        verifyNoMoreInteractions(stateStore);
+                        failedStatus(finishTime, List.of("Failed adding transaction", "Failed updating files")))));
         assertThat(commitRequestQueue).isEmpty();
     }
 
