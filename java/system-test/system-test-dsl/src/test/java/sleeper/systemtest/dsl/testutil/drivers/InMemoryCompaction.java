@@ -31,8 +31,6 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.AddTransactionRequest;
-import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
@@ -63,6 +61,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class InMemoryCompaction {
     private final List<CompactionJob> queuedJobs = new ArrayList<>();
@@ -184,10 +183,9 @@ public class InMemoryCompaction {
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
-        stateStore.addTransaction(AddTransactionRequest.withTransaction(new ReplaceFileReferencesTransaction(List.of(
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                 job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
-                        .taskId(run.getTaskId()).build())))
-                .build());
+                        .taskId(run.getTaskId()).build()));
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new JobRunSummary(recordsProcessed, startTime, finishTime);
     }
