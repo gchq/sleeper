@@ -21,7 +21,6 @@ import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Stores information about the partitions holding records in a Sleeper table.
@@ -64,11 +63,7 @@ public interface PartitionStore {
      * @return                     the {@link Partition}
      * @throws StateStoreException if query fails
      */
-    default Partition getPartition(String partitionId) throws StateStoreException {
-        return getAllPartitions().stream()
-                .filter(p -> Objects.equals(partitionId, p.getId()))
-                .findFirst().orElseThrow(() -> new StateStoreException("Partition not found: " + partitionId));
-    }
+    Partition getPartition(String partitionId) throws StateStoreException;
 
     /**
      * Initialises the store with a single partition covering all keys. This is the root partition which may be split
@@ -98,8 +93,7 @@ public interface PartitionStore {
      *
      * @param time the time that any future partition updates will be considered to occur
      */
-    default void fixPartitionUpdateTime(Instant time) {
-    }
+    void fixPartitionUpdateTime(Instant time);
 
     /**
      * Adds a partions transaction to the transaction log.

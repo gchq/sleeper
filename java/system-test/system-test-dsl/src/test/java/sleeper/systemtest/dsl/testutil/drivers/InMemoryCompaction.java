@@ -61,6 +61,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class InMemoryCompaction {
     private final List<CompactionJob> queuedJobs = new ArrayList<>();
@@ -182,8 +183,8 @@ public class InMemoryCompaction {
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(
-                List.of(job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
                         .taskId(run.getTaskId()).build()));
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new JobRunSummary(recordsProcessed, startTime, finishTime);

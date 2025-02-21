@@ -73,6 +73,11 @@ public class SplitFileReferencesTransaction implements FileReferenceTransaction 
     }
 
     @Override
+    public boolean isEmpty() {
+        return requests.isEmpty();
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(requests);
     }

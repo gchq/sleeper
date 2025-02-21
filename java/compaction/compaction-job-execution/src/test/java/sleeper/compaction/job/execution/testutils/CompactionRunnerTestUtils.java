@@ -26,6 +26,7 @@ import sleeper.core.statestore.StateStore;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionRunnerTestUtils {
 
@@ -59,7 +60,7 @@ public class CompactionRunnerTestUtils {
     }
 
     public static void assignJobIdsToInputFiles(StateStore stateStore, CompactionJob... jobs) throws Exception {
-        stateStore.assignJobIds(Stream.of(jobs)
+        update(stateStore).assignJobIds(Stream.of(jobs)
                 .map(CompactionJob::createAssignJobIdRequest)
                 .collect(toUnmodifiableList()));
     }

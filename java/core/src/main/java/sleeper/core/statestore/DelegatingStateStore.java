@@ -42,11 +42,6 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void addFile(FileReference fileReference) throws StateStoreException {
-        fileReferenceStore.addFile(fileReference);
-    }
-
-    @Override
     public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
         if (fileReferences.isEmpty()) {
             LOGGER.info("Ignoring addFiles call with no files");
@@ -139,15 +134,6 @@ public class DelegatingStateStore implements StateStore {
         fileReferenceStore.initialise();
     }
 
-    /**
-     * Initialises just the file reference store.
-     *
-     * @throws StateStoreException thrown if the initialisation fails
-     */
-    public void setInitialFileReferences() throws StateStoreException {
-        fileReferenceStore.initialise();
-    }
-
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
         partitionStore.atomicallyUpdatePartitionAndCreateNewOnes(splitPartition, newPartition1, newPartition2);
@@ -161,6 +147,11 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public List<Partition> getLeafPartitions() throws StateStoreException {
         return partitionStore.getLeafPartitions();
+    }
+
+    @Override
+    public Partition getPartition(String partitionId) throws StateStoreException {
+        return partitionStore.getPartition(partitionId);
     }
 
     @Override
@@ -190,13 +181,15 @@ public class DelegatingStateStore implements StateStore {
 
     @Override
     public void addFilesTransaction(AddTransactionRequest request) {
-        request.getTransaction().checkBefore(this);
-        fileReferenceStore.addFilesTransaction(request);
+        if (request.checkBeforeAdd(this)) {
+            fileReferenceStore.addFilesTransaction(request);
+        }
     }
 
     @Override
     public void addPartitionsTransaction(AddTransactionRequest request) {
-        request.getTransaction().checkBefore(this);
-        partitionStore.addPartitionsTransaction(request);
+        if (request.checkBeforeAdd(this)) {
+            partitionStore.addPartitionsTransaction(request);
+        }
     }
 }

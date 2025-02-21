@@ -37,6 +37,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
 
@@ -45,7 +46,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
-        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
@@ -71,7 +72,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
-        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
@@ -120,7 +121,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
             // Given
             Schema schema = createSchemaWithTypesForKeyAndTwoValues(new StringType(), new StringType(), new LongType());
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
             List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenStrings();
             List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddStrings();
@@ -173,7 +174,7 @@ class JavaCompactionRunnerIT extends CompactionRunnerTestBase {
             // Given
             Schema schema = createSchemaWithTypesForKeyAndTwoValues(new ByteArrayType(), new ByteArrayType(), new LongType());
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
             List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenByteArrays();
             List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddByteArrays();

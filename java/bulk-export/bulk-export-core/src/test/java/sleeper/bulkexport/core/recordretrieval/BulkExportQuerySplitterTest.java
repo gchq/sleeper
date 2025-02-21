@@ -42,6 +42,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.fixTime;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
@@ -77,7 +78,7 @@ public class BulkExportQuerySplitterTest {
                 .splitToNewChildren("root", "L", "R", 5L)
                 .splitToNewChildren("L", "LL", "LR", 15L)
                 .buildTree();
-        stateStore.initialise(tree.traverseLeavesFirst().toList());
+        update(stateStore).initialise(tree.traverseLeavesFirst().toList());
         addRootFile("root.parquet", List.of(new Record(Map.of("key", 123L))));
         addPartitionFile("R", "right.parquet", right);
         addPartitionFile("L", "left.parquet", left);
@@ -106,7 +107,7 @@ public class BulkExportQuerySplitterTest {
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 5L)
                 .buildTree();
-        stateStore.initialise(tree.traverseLeavesFirst().toList());
+        update(stateStore).initialise(tree.traverseLeavesFirst().toList());
         addPartitionFile("R", "right.parquet", right);
         addPartitionFile("L", "left.parquet", left);
         setIdSupplier(fixIds("export-1", "export-2"));
@@ -182,7 +183,7 @@ public class BulkExportQuerySplitterTest {
     }
 
     private void addFileMetadata(FileReference fileReference) {
-        stateStore.addFile(fileReference);
+        update(stateStore).addFile(fileReference);
     }
 
     private BulkExportQuery bulkExportQuery() {

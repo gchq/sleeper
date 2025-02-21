@@ -63,6 +63,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithReferences;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class ReinitialiseTableIT extends LocalStackTestBase {
     private static final String FILE_SHOULD_NOT_BE_DELETED_1 = "file0.parquet";
@@ -263,7 +264,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         TransactionLogStateStore transctionLogStateStore = DynamoDBTransactionLogStateStore.builderFrom(
                 instanceProperties, tableProperties, dynamoClient, s3Client, hadoopConf).build();
 
-        transctionLogStateStore.initialise();
+        update(transctionLogStateStore).initialise(tableProperties.getSchema());
         setupPartitionsAndAddFiles(transctionLogStateStore);
 
         return transctionLogStateStore;
@@ -287,11 +288,11 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
                 .splitToNewChildren("root", "0" + "---eee", "eee---zzz", "eee")
                 .buildTree();
 
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(
                 tree.getPartition("root"), tree.getPartition("0" + "---eee"), tree.getPartition("eee---zzz"));
 
         //  - Update Dynamo state store with details of files
-        stateStore.addFilesWithReferences(List.of(
+        update(stateStore).addFilesWithReferences(List.of(
                 fileWithReferences(List.of(fileReference1)),
                 fileWithReferences(List.of(fileReference2)),
                 fileWithNoReferences(file3)));

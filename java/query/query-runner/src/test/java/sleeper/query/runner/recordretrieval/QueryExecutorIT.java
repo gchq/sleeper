@@ -76,6 +76,7 @@ import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorIT {
     protected static ExecutorService executorService;
@@ -726,7 +727,7 @@ public class QueryExecutorIT {
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
                 .buildTree();
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(partialTree.getPartition("root"),
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(partialTree.getPartition("root"),
                 partialTree.getPartition("left"), partialTree.getPartition("right"));
 
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
@@ -737,9 +738,9 @@ public class QueryExecutorIT {
                 .splitToNewChildrenOnDimension("left", "P1", "P3", 1, "T")
                 .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T")
                 .buildTree();
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("left"),
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("left"),
                 tree.getPartition("P1"), tree.getPartition("P3"));
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("right"),
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("right"),
                 tree.getPartition("P2"), tree.getPartition("P4"));
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 

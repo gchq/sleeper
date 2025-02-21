@@ -44,6 +44,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class PartitionsStatusReportIT extends LocalStackTestBase {
 
@@ -60,8 +61,8 @@ public class PartitionsStatusReportIT extends LocalStackTestBase {
                 .splitToNewChildren("parent", "A", "B", "aaa")
                 .buildTree();
         StateStore stateStore = stateStore();
-        stateStore.initialise(tree.getAllPartitions());
-        stateStore.addFiles(FileReferenceFactory.from(tree).singleFileInEachLeafPartitionWithRecords(100).toList());
+        update(stateStore).initialise(tree.getAllPartitions());
+        update(stateStore).addFiles(FileReferenceFactory.from(tree).singleFileInEachLeafPartitionWithRecords(100).toList());
 
         // When / Then
         assertThat(runReport()).isEqualTo(

@@ -54,6 +54,7 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 
 public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransactionLogStateStoreTestBase {
@@ -73,13 +74,13 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         void shouldAddTransactionWhenAnotherProcessAddedATransaction() {
             // Given
             PartitionTree afterRootSplit = partitions.splitToNewChildren("root", "L", "R", "l").buildTree();
-            otherProcess().atomicallyUpdatePartitionAndCreateNewOnes(
+            update(otherProcess()).atomicallyUpdatePartitionAndCreateNewOnes(
                     afterRootSplit.getPartition("root"),
                     afterRootSplit.getPartition("L"), afterRootSplit.getPartition("R"));
 
             // When
             PartitionTree afterLeftSplit = partitions.splitToNewChildren("L", "LL", "LR", "f").buildTree();
-            store.atomicallyUpdatePartitionAndCreateNewOnes(
+            update(store).atomicallyUpdatePartitionAndCreateNewOnes(
                     afterLeftSplit.getPartition("L"),
                     afterLeftSplit.getPartition("LL"), afterLeftSplit.getPartition("LR"));
 
@@ -95,13 +96,13 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
             FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
             FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
-            store.addFile(file1);
+            update(store).addFile(file1);
             filesLogStore.atStartOfNextAddTransaction(() -> {
-                otherProcess().addFile(file2);
+                update(otherProcess()).addFile(file2);
             });
 
             // When
-            store.addFile(file3);
+            update(store).addFile(file3);
 
             // Then
             assertThat(store.getFileReferences())
@@ -115,11 +116,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
             filesLogStore.atStartOfNextAddTransaction(() -> {
-                store.addFile(otherProcessFile);
+                update(store).addFile(otherProcessFile);
             });
 
             // When
-            store.addFile(file);
+            update(store).addFile(file);
 
             // Then
             assertThat(store.getFileReferences())
@@ -135,11 +136,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             FileReference otherProcessFile = fileFactory().rootFile("other-file.parquet", 100);
             filesLogStore.atStartOfNextAddTransaction(() -> {
-                store.addFile(otherProcessFile);
+                update(store).addFile(otherProcessFile);
             });
 
             // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
+            assertThatThrownBy(() -> update(store).addFile(file))
                     .isInstanceOf(StateStoreException.class)
                     .hasCauseInstanceOf(DuplicateTransactionNumberException.class);
             assertThat(store.getFileReferences())
@@ -154,7 +155,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file = fileFactory().rootFile("file.parquet", 100);
 
             // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
+            assertThatThrownBy(() -> update(store).addFile(file))
                     .isInstanceOf(StateStoreException.class)
                     .cause().isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("No attempts made");
@@ -173,7 +174,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             });
 
             // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
+            assertThatThrownBy(() -> update(store).addFile(file))
                     .isInstanceOf(StateStoreException.class)
                     .cause().isSameAs(failure);
             assertThat(store.getFileReferences())
@@ -191,7 +192,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             });
 
             // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
+            assertThatThrownBy(() -> update(store).addFile(file))
                     .isInstanceOf(StateStoreException.class)
                     .cause().isSameAs(failure);
             assertThat(store.getFileReferences())
@@ -211,11 +212,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
             FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
             store = stateStore(builder -> builder.updateLogBeforeAddTransaction(false));
-            store.addFile(file1);
-            otherProcess().addFile(file2);
+            update(store).addFile(file1);
+            update(otherProcess()).addFile(file2);
 
             // When
-            store.addFile(file3);
+            update(store).addFile(file3);
 
             // Then
             assertThat(store.getFileReferences())
@@ -231,17 +232,17 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
             FileReference file4 = fileFactory().rootFile("file4.parquet", 400);
             store = stateStore(builder -> builder.updateLogBeforeAddTransaction(false));
-            store.addFile(file1);
+            update(store).addFile(file1);
             // File 2 will conflict with the first add transaction call
-            otherProcess().addFile(file2);
+            update(otherProcess()).addFile(file2);
             // File 3 will conflict with the second add transaction call
             filesLogStore.atStartOfNextAddTransactions(List.of(
                     ThrowingRunnable.DO_NOTHING, () -> {
-                        otherProcess().addFile(file3);
+                        update(otherProcess()).addFile(file3);
                     }));
 
             // When
-            store.addFile(file4);
+            update(store).addFile(file4);
 
             // Then
             assertThat(store.getFileReferences())
@@ -254,10 +255,10 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             // Given
             FileReference file = fileFactory().rootFile("test.parquet", 100);
             store = stateStore(builder -> builder.updateLogBeforeAddTransaction(false));
-            otherProcess().addFile(file);
+            update(otherProcess()).addFile(file);
 
             // When
-            store.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("test.parquet"))));
+            update(store).assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("test.parquet"))));
 
             // Then
             assertThat(store.getFileReferences())
@@ -284,11 +285,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     .mapToObj(i -> fileFactory().rootFile("file-" + i + ".parquet", i * 100))
                     .collect(toUnmodifiableList());
             filesLogStore.atStartOfNextAddTransactions(otherProcessFiles.stream()
-                    .<ThrowingRunnable>map(otherProcessFile -> () -> otherProcess().addFile(otherProcessFile))
+                    .<ThrowingRunnable>map(otherProcessFile -> () -> update(otherProcess()).addFile(otherProcessFile))
                     .collect(toUnmodifiableList()));
 
             // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
+            assertThatThrownBy(() -> update(store).addFile(file))
                     .isInstanceOf(StateStoreException.class)
                     .hasCauseInstanceOf(DuplicateTransactionNumberException.class);
             assertThat(store.getFileReferences())
@@ -320,11 +321,11 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
                     .mapToObj(i -> fileFactory().rootFile("file-" + i + ".parquet", i * 100))
                     .collect(toUnmodifiableList());
             filesLogStore.atStartOfNextAddTransactions(otherProcessFiles.stream()
-                    .<ThrowingRunnable>map(otherProcessFile -> () -> otherProcess().addFile(otherProcessFile))
+                    .<ThrowingRunnable>map(otherProcessFile -> () -> update(otherProcess()).addFile(otherProcessFile))
                     .collect(toUnmodifiableList()));
 
             // When / Then
-            assertThatThrownBy(() -> store.addFile(file))
+            assertThatThrownBy(() -> update(store).addFile(file))
                     .isInstanceOf(StateStoreException.class)
                     .hasCauseInstanceOf(DuplicateTransactionNumberException.class);
             assertThat(store.getFileReferences())
@@ -363,7 +364,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
             // When
-            store.splitFileReferences(List.of());
+            update(store).splitFileReferences(List.of());
 
             // Then
             assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
@@ -375,7 +376,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
             // When
-            store.addFiles(List.of());
+            update(store).addFiles(List.of());
 
             // Then
             assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
@@ -387,7 +388,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
             // When
-            store.addFilesWithReferences(List.of());
+            update(store).addFilesWithReferences(List.of());
 
             // Then
             assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
@@ -399,7 +400,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
             // When
-            store.assignJobIds(List.of());
+            update(store).assignJobIds(List.of());
 
             // Then
             assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
@@ -411,8 +412,20 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
             // When
-            store.assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(
+            update(store).assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(
                     "test-job", "test-partition", List.of())));
+
+            // Then
+            assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
+        }
+
+        @Test
+        void shouldNotReplaceNoFileReferences() {
+            // Given
+            long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
+
+            // When
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(List.of());
 
             // Then
             assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);
@@ -424,7 +437,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             long transactionNumberBefore = filesLogStore.getLastTransactionNumber();
 
             // When
-            store.deleteGarbageCollectedFileReferenceCounts(List.of());
+            update(store).deleteGarbageCollectedFileReferenceCounts(List.of());
 
             // Then
             assertThat(filesLogStore.getLastTransactionNumber()).isEqualTo(transactionNumberBefore);

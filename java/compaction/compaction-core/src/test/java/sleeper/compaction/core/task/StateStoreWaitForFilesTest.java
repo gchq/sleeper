@@ -50,6 +50,7 @@ import static sleeper.compaction.core.task.StateStoreWaitForFiles.JOB_ASSIGNMENT
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 
@@ -68,9 +69,9 @@ public class StateStoreWaitForFilesTest {
     void shouldSkipWaitIfFilesAreAlreadyAssignedToJob() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
-        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+        update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
 
         // When
         waitForFilesWithAttempts(2, job);
@@ -83,10 +84,10 @@ public class StateStoreWaitForFilesTest {
     void shouldRetryThenCheckFilesAreAssignedToJob() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
         actionAfterWait(() -> {
-            stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+            update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
         });
 
         // When
@@ -100,7 +101,7 @@ public class StateStoreWaitForFilesTest {
     void shouldTimeOutIfFilesAreNeverAssignedToJob() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
@@ -113,7 +114,7 @@ public class StateStoreWaitForFilesTest {
     void shouldWaitWithExponentialBackoffAndJitter() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
@@ -138,7 +139,7 @@ public class StateStoreWaitForFilesTest {
     void shouldWaitWithAverageExponentialBackoff() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
@@ -164,9 +165,9 @@ public class StateStoreWaitForFilesTest {
     void shouldRetryTwiceWhenThrottledQueryingStateStore() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
-        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+        update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
 
         AmazonDynamoDBException throttlingException = new AmazonDynamoDBException("Throttling exception");
         throttlingException.setErrorCode("ThrottlingException");

@@ -35,6 +35,7 @@ import java.util.TreeMap;
 
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
 
@@ -62,7 +63,7 @@ public class InMemorySleeperTablesDriver implements SleeperTablesDriver {
         addInstanceIfNotPresent(instanceId);
         deployedInstancePropertiesStore(instanceId).createTable(properties);
         StateStore stateStore = transactionLogs.stateStoreBuilder(properties).build();
-        stateStore.initialise();
+        update(stateStore).initialise(properties.getSchema());
         stateStoresByInstanceId.get(instanceId)
                 .put(properties.get(TABLE_NAME), stateStore);
     }

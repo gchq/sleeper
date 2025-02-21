@@ -60,6 +60,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class SplitPartitionTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -559,7 +560,7 @@ public class SplitPartitionTest {
 
         FileReference recordFileReference = FileReferenceFactory.from(stateStore).partitionFile(partitionId, UUID.randomUUID().toString(), recordCount.get());
         try {
-            stateStore.addFile(recordFileReference);
+            update(stateStore).addFile(recordFileReference);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }

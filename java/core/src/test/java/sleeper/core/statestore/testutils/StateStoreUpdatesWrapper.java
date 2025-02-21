@@ -196,7 +196,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException                 if the update fails for another reason
      */
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        AssignJobIdsTransaction.ignoringEmptyRequests(requests).ifPresent(this::addTransaction);
+        addTransaction(new AssignJobIdsTransaction(requests));
     }
 
     /**

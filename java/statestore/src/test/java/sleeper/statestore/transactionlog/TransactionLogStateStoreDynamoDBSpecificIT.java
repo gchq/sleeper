@@ -57,6 +57,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogStateStoreTestBase {
     @TempDir
@@ -93,7 +94,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .anyTreeJoiningAllLeaves().buildTree();
 
             // When
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
 
             // Then
             assertThat(new HashSet<>(stateStore.getAllPartitions())).isEqualTo(new HashSet<>(tree.getAllPartitions()));
@@ -113,7 +114,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .anyTreeJoiningAllLeaves().buildTree();
 
             // When
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
 
             // Then
             assertThat(createStateStore().getAllPartitions()).containsExactlyElementsOf(tree.getAllPartitions());
@@ -123,7 +124,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
         void shouldAddATransactionAlreadyHeldInS3() {
             // Given
             PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
             FileReference file = fileFactory(tree).rootFile("test.parquet", 100);
             FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
             String key = TransactionBodyStore.createObjectKey(tableProperties);
@@ -156,8 +157,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     factory.partitionFile("L", "file2.parquet", 25L),
                     factory.partitionFile("R", "file3.parquet", 50L));
             createSnapshotWithFreshState(stateStore -> {
-                stateStore.initialise(tree.getAllPartitions());
-                stateStore.addFiles(files);
+                update(stateStore).initialise(tree.getAllPartitions());
+                update(stateStore).addFiles(files);
             });
 
             // When
@@ -184,8 +185,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     factory.partitionFile("L", "file2.parquet", 25L),
                     factory.partitionFile("R", "file3.parquet", 50L));
             createSnapshotWithFreshState(stateStore -> {
-                stateStore.initialise(tree.getAllPartitions());
-                stateStore.addFiles(files);
+                update(stateStore).initialise(tree.getAllPartitions());
+                update(stateStore).addFiles(files);
             });
 
             // When
@@ -206,8 +207,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .buildTree();
             FileReferenceFactory factory1 = fileFactory(tree1);
             FileReference file1 = factory1.rootFile("file1.parquet", 123L);
-            stateStore.initialise(tree1.getAllPartitions());
-            stateStore.addFile(file1);
+            update(stateStore).initialise(tree1.getAllPartitions());
+            update(stateStore).addFile(file1);
 
             PartitionTree tree2 = new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -216,8 +217,8 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             FileReferenceFactory factory2 = fileFactory(tree2);
             FileReference file2 = factory2.rootFile("file2.parquet", 456L);
             createSnapshotWithFreshState(stateStore2 -> {
-                stateStore2.initialise(tree2.getAllPartitions());
-                stateStore2.addFile(file2);
+                update(stateStore2).initialise(tree2.getAllPartitions());
+                update(stateStore2).addFile(file2);
             });
 
             // When
@@ -238,7 +239,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     .splitToNewChildren("root", "L", "R", 123L)
                     .buildTree();
             createSnapshotWithFreshState(stateStore -> {
-                stateStore.initialise(tree.getAllPartitions());
+                update(stateStore).initialise(tree.getAllPartitions());
             });
 
             // When
@@ -263,7 +264,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
                     factory.partitionFile("L", "file2.parquet", 25L),
                     factory.partitionFile("R", "file3.parquet", 50L));
             createSnapshotWithFreshState(stateStore -> {
-                stateStore.addFiles(files);
+                update(stateStore).addFiles(files);
             });
 
             // When

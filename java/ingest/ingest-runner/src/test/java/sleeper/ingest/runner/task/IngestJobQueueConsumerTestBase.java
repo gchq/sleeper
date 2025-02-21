@@ -52,6 +52,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase {
 
@@ -89,7 +90,7 @@ public abstract class IngestJobQueueConsumerTestBase extends LocalStackTestBase 
         tablePropertiesStore.save(tableProperties);
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .getStateStore(tableProperties);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
         return stateStore;
     }
 

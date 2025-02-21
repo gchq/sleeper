@@ -48,6 +48,7 @@ import static sleeper.clients.util.console.ConsoleOutput.CLEAR_CONSOLE;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     private final Schema schema = schemaWithKey("key", new StringType());
@@ -58,10 +59,10 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     @BeforeEach
     void setUp() {
         setInstanceProperties(instanceProperties, tableProperties);
-        stateStore.initialise(PartitionsBuilderSplitsFirst.leavesWithSplits(
+        update(stateStore).initialise(PartitionsBuilderSplitsFirst.leavesWithSplits(
                 schema, List.of("A", "B"), List.of("aaa"))
                 .parentJoining("parent", "A", "B").buildList());
-        stateStore.addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRecords(5).toList());
+        update(stateStore).addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRecords(5).toList());
     }
 
     @Test

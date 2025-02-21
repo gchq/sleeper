@@ -42,6 +42,7 @@ import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.printers.FileReferencePrinter.printFiles;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
@@ -151,7 +152,7 @@ public class StateStoreCommitterThroughputST {
         sleeper.partitioning().setPartitions(partitions);
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits().setupStateStore(store -> {
-            store.addFiles(
+            update(store).addFiles(
                     IntStream.rangeClosed(1, 1000)
                             .mapToObj(i -> fileFactory.rootFile(filename(i), i))
                             .collect(toUnmodifiableList()));
@@ -181,12 +182,12 @@ public class StateStoreCommitterThroughputST {
         sleeper.partitioning().setPartitions(partitions);
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits().setupStateStore(store -> {
-            store.addFiles(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+            update(store).addFiles(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
                     .flatMap(i -> Stream.of(
                             fileFactory.rootFile(filename(i), i),
                             fileFactory.rootFile(filename(i + 1000), i)))
                     .collect(toUnmodifiableList()));
-            store.assignJobIds(IntStream.rangeClosed(1, 1000)
+            update(store).assignJobIds(IntStream.rangeClosed(1, 1000)
                     .mapToObj(i -> assignJobOnPartitionToFiles(
                             jobId(i), "root", List.of(filename(i), filename(i + 1000))))
                     .collect(toUnmodifiableList()));
@@ -221,16 +222,16 @@ public class StateStoreCommitterThroughputST {
         sleeper.partitioning().setPartitions(partitions);
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
         sleeper.stateStore().fakeCommits().setupStateStore(store -> {
-            store.addFiles(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
+            update(store).addFiles(IntStream.rangeClosed(1, 1000).mapToObj(i -> i)
                     .flatMap(i -> Stream.of(
                             fileFactory.rootFile(filename(i), i),
                             fileFactory.rootFile(filename(i + 1000), i)))
                     .collect(toUnmodifiableList()));
-            store.assignJobIds(IntStream.rangeClosed(1, 1000)
+            update(store).assignJobIds(IntStream.rangeClosed(1, 1000)
                     .mapToObj(i -> assignJobOnPartitionToFiles(
                             jobId(i), "root", List.of(filename(i), filename(i + 1000))))
                     .collect(toUnmodifiableList()));
-            store.atomicallyReplaceFileReferencesWithNewOnes(IntStream.rangeClosed(1, 1000)
+            update(store).atomicallyReplaceFileReferencesWithNewOnes(IntStream.rangeClosed(1, 1000)
                     .mapToObj(i -> replaceJobFileReferences(
                             jobId(i), List.of(filename(i), filename(i + 1000)), fileFactory.rootFile(filename(i + 2000), i * 2)))
                     .collect(toUnmodifiableList()));
