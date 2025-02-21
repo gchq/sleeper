@@ -80,10 +80,6 @@ public class IngestJobValidatedEvent implements IngestJobEvent {
         return jobRunId;
     }
 
-    public String getTaskId() {
-        return null;
-    }
-
     public Instant getValidationTime() {
         return validationTime;
     }

@@ -106,7 +106,6 @@ class DynamoDBIngestJobStatusFormat {
                 .string(JSON_MESSAGE, event.getJsonMessage())
                 .number(INPUT_FILES_COUNT, event.getFileCount())
                 .string(JOB_RUN_ID, event.getJobRunId())
-                .string(TASK_ID, event.getTaskId())
                 .build();
     }
 
