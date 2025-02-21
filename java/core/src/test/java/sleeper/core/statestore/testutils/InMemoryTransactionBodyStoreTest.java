@@ -62,7 +62,7 @@ public class InMemoryTransactionBodyStoreTest {
 
     @Test
     void shouldFixObjectKeys() {
-        store.setCreateObjectKey(List.of("key-1", "key-2").iterator()::next);
+        store.setStoreTransactionsWithObjectKeys(List.of("key-1", "key-2"));
         ClearFilesTransaction transaction = new ClearFilesTransaction();
         AddTransactionRequest request = AddTransactionRequest.withTransaction(transaction).build();
 
@@ -94,4 +94,20 @@ public class InMemoryTransactionBodyStoreTest {
         assertThat(found.getBeforeApplyListener()).isSameAs(listener);
     }
 
+    @Test
+    void shouldTurnOffStoringTransactions() {
+        // Given
+        ClearFilesTransaction transaction = new ClearFilesTransaction();
+        AddTransactionRequest request = AddTransactionRequest.withTransaction(transaction).build();
+        store.setStoreTransactions(true);
+        AddTransactionRequest found1 = store.storeIfTooBig("test-table", request);
+
+        // When
+        store.setStoreTransactions(false);
+        AddTransactionRequest found2 = store.storeIfTooBig("test-table", request);
+
+        // Then
+        assertThat(found1).isNotSameAs(request);
+        assertThat(found2).isSameAs(request);
+    }
 }

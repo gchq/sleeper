@@ -21,6 +21,7 @@ import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -64,8 +65,12 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
         this.storeTransactions = storeTransactions;
     }
 
-    public void setCreateObjectKey(Supplier<String> keySupplier) {
+    public void setStoreTransactionsWithObjectKeys(List<String> keys) {
+        setStoreTransactions(true);
+        setCreateObjectKey(keys.iterator()::next);
+    }
+
+    private void setCreateObjectKey(Supplier<String> keySupplier) {
         this.createObjectKey = tableId -> keySupplier.get();
-        this.storeTransactions = true;
     }
 }
