@@ -513,24 +513,24 @@ class InMemoryCompactionJobTrackerTest {
         return started;
     }
 
-    private CompactionJobStartedEvent addFinishedJobUncommitted(Instant createdTime, JobRunSummary summary,
-            String taskId) {
+    private CompactionJobStartedEvent addFinishedJobUncommitted(
+            Instant createdTime, JobRunSummary summary, String taskId) {
         CompactionJobStartedEvent job = addStartedJob(createdTime, summary.getStartTime(), taskId);
         tracker.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
         tracker.jobFinished(compactionFinishedEventBuilder(job, summary).taskId(taskId).build());
         return job;
     }
 
-    private CompactionJobStartedEvent addFinishedJobCommitted(Instant createdTime, JobRunSummary summary,
-            Instant committedTime, String taskId) {
+    private CompactionJobStartedEvent addFinishedJobCommitted(
+            Instant createdTime, JobRunSummary summary, Instant committedTime, String taskId) {
         CompactionJobStartedEvent job = addFinishedJobUncommitted(createdTime, summary, taskId);
         tracker.fixUpdateTime(defaultUpdateTime(committedTime));
         tracker.jobCommitted(compactionCommittedEventBuilder(job, committedTime).taskId(taskId).build());
         return job;
     }
 
-    private CompactionJobStartedEvent addFailedJob(Instant createdTime, JobRunTime runTime, String taskId,
-            List<String> failureReasons) {
+    private CompactionJobStartedEvent addFailedJob(
+            Instant createdTime, JobRunTime runTime, String taskId, List<String> failureReasons) {
         CompactionJobStartedEvent job = addStartedJob(createdTime, runTime.getStartTime(), taskId);
         tracker.fixUpdateTime(defaultUpdateTime(runTime.getFinishTime()));
         tracker.jobFailed(compactionFailedEventBuilder(job, runTime.getFinishTime()).failureReasons(failureReasons)
