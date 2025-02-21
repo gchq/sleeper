@@ -193,7 +193,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
             initialiseWithPartitions(partitionsBefore);
 
             // When
-            store.initialise(partitionsAfter.buildList());
+            update(store).initialise(partitionsAfter.buildList());
 
             // Then
             assertThat(store.getAllPartitions())
@@ -215,7 +215,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
             update(store).addFile(factory.partitionFile("before2", 100L));
 
             // When / Then
-            assertThatThrownBy(() -> store.initialise(partitionsAfter.buildList()))
+            assertThatThrownBy(() -> update(store).initialise(partitionsAfter.buildList()))
                     .isInstanceOf(StateStoreException.class);
             assertThat(store.getAllPartitions())
                     .containsExactlyInAnyOrderElementsOf(partitionsBefore.buildList());
@@ -351,6 +351,40 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
                     tree.getPartition("L"), // Not a leaf
                     tree.getPartition("R")))
                     .isInstanceOf(StateStoreException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("Clear partitions")
+    class ClearPartitions {
+        @Test
+        void shouldDeleteSinglePartitionOnClear() {
+            // Given
+            Schema schema = schemaWithKey("key", new IntType());
+            initialiseWithSchema(schema);
+
+            // When
+            update(store).clearSleeperTable();
+
+            // Then
+            assertThat(store.getAllPartitions()).isEmpty();
+            assertThat(store.getLeafPartitions()).isEmpty();
+        }
+
+        @Test
+        void shouldDeletePartitionTreeOnClear() {
+            // Given
+            Schema schema = schemaWithKey("key", new IntType());
+            initialiseWithPartitions(new PartitionsBuilder(schema)
+                    .rootFirst("root")
+                    .splitToNewChildren("root", "L", "R", 123));
+
+            // When
+            update(store).clearSleeperTable();
+
+            // Then
+            assertThat(store.getAllPartitions()).isEmpty();
+            assertThat(store.getLeafPartitions()).isEmpty();
         }
     }
 }
