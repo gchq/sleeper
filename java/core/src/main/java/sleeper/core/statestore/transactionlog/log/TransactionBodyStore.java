@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.log;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
@@ -41,6 +42,18 @@ public interface TransactionBodyStore {
      * @param transaction the transaction
      */
     void store(String key, String tableId, StateStoreTransaction<?> transaction);
+
+    /**
+     * Stores a transaction if it is too large to fit in the associated log store.
+     *
+     * @param  tableId the ID of the Sleeper table the transaction is for
+     * @param  request the request to add the transaction
+     * @return         the new request, identical to the original but with a pointer to the new transaction entry if it
+     *                 was uploaded
+     */
+    default AddTransactionRequest storeIfTooBig(String tableId, AddTransactionRequest request) {
+        return request;
+    }
 
     /**
      * Retrives a transaction from a given location.

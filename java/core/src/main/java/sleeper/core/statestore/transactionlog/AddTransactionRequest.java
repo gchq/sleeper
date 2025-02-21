@@ -101,6 +101,10 @@ public class AddTransactionRequest {
         return beforeApplyListener;
     }
 
+    public Builder toBuilder() {
+        return withTransaction(transaction).bodyKey(bodyKey).beforeApplyListener(beforeApplyListener);
+    }
+
     /**
      * A builder for this class.
      */

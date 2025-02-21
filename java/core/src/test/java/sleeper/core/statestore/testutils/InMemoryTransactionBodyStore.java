@@ -15,6 +15,7 @@
  */
 package sleeper.core.statestore.testutils;
 
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
@@ -22,6 +23,8 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * An in memory store of the bodies of transactions that are not held directly in the log.
@@ -29,10 +32,22 @@ import java.util.Objects;
 public class InMemoryTransactionBodyStore implements TransactionBodyStore {
 
     private final Map<String, StateStoreTransaction<?>> transactionByKey = new HashMap<>();
+    private boolean storeTransactions = false;
+    private Function<String, String> createObjectKey = TransactionBodyStore::createObjectKey;
 
     @Override
     public void store(String key, String tableId, StateStoreTransaction<?> transaction) {
         transactionByKey.put(key, transaction);
+    }
+
+    @Override
+    public AddTransactionRequest storeIfTooBig(String tableId, AddTransactionRequest request) {
+        if (!storeTransactions) {
+            return request;
+        }
+        String key = createObjectKey.apply(tableId);
+        transactionByKey.put(key, request.getTransaction());
+        return request.toBuilder().bodyKey(key).build();
     }
 
     @Override
@@ -45,7 +60,12 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
         return transaction;
     }
 
-    public Map<String, StateStoreTransaction<?>> getTransactionByKey() {
-        return transactionByKey;
+    public void setStoreTransactions(boolean storeTransactions) {
+        this.storeTransactions = storeTransactions;
+    }
+
+    public void setCreateObjectKey(Supplier<String> keySupplier) {
+        this.createObjectKey = tableId -> keySupplier.get();
+        this.storeTransactions = true;
     }
 }
