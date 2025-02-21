@@ -31,6 +31,8 @@ import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
@@ -182,9 +184,10 @@ public class InMemoryCompaction {
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(
-                List.of(job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
-                        .taskId(run.getTaskId()).build()));
+        stateStore.addTransaction(AddTransactionRequest.withTransaction(new ReplaceFileReferencesTransaction(List.of(
+                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
+                        .taskId(run.getTaskId()).build())))
+                .build());
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new JobRunSummary(recordsProcessed, startTime, finishTime);
     }
