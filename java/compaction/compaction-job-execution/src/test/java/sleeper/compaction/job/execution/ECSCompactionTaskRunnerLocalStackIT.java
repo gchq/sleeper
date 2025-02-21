@@ -24,7 +24,6 @@ import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -65,6 +64,7 @@ import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
@@ -118,13 +118,14 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 
 public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstance();
-    private final StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+    private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
     private final Schema schema = createSchema();
@@ -236,18 +237,25 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         }
 
         @Test
-        @Disabled("TODO")
         void shouldPutMessageBackOnSQSQueueIfStateStoreUpdateFailed() throws Exception {
             // Given
-            InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
-            StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
+            InMemoryTransactionLogsPerTable inMemoryTransactionLogsPerTable = new InMemoryTransactionLogsPerTable();
+            InMemoryTransactionLogs transactionLogs = inMemoryTransactionLogsPerTable.forTable(tableProperties);
+            stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, inMemoryTransactionLogsPerTable);
+            update(getStateStore()).initialise(schema);
+
             configureJobQueuesWithMaxReceiveCount(2);
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
+            CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
+            assignJobIdsToInputFiles(getStateStore(), job);
+            String jobJson = sendJob(job);
+            transactionLogs.getFilesLogStore().atStartOfAddTransaction(() -> {
+                throw new RuntimeException("Test error message thrown");
+            });
 
             // When
-            createTask("task-id", new FixedStateStoreProvider(tableProperties, stateStore)).run();
+            createTask("task-id").run();
 
             // Then
             // - The compaction job should be put back on the queue
