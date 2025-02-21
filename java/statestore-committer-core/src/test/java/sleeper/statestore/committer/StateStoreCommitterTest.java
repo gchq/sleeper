@@ -455,7 +455,7 @@ public class StateStoreCommitterTest {
                     .splitToNewChildren("root", "left", "right", "aaa")
                     .buildTree();
             StateStore stateStore = createTableGetStateStore("test-table");
-            stateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+            update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(
                     afterTree.getPartition("root"),
                     afterTree.getPartition("left"),
                     afterTree.getPartition("right"));

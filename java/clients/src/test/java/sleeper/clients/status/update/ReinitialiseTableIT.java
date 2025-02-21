@@ -288,7 +288,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
                 .splitToNewChildren("root", "0" + "---eee", "eee---zzz", "eee")
                 .buildTree();
 
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(
                 tree.getPartition("root"), tree.getPartition("0" + "---eee"), tree.getPartition("eee---zzz"));
 
         //  - Update Dynamo state store with details of files
