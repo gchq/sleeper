@@ -108,7 +108,6 @@ public class BulkExportStack extends NestedStack {
 
         lambda.addEventSource(new SqsEventSource(bulkExportSplitterQ, eventSourceProps));
 
-
         List<Queue> processorQueues = createQueueAndDeadLetterQueue("BulkExportProcessor", instanceProperties);
         Queue bulkExportProcessorQ = processorQueues.get(0);
         Queue bulkExportProcessorDlq = processorQueues.get(1);
@@ -236,6 +235,9 @@ public class BulkExportStack extends NestedStack {
                         .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL)
                         .build());
                 break;
+
+            default:
+                throw new IllegalArgumentException("Unknown queue type: " + queueType);
         }
     }
 }
