@@ -63,7 +63,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
-import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
@@ -125,14 +125,15 @@ import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstance();
-    private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+    private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
     private final Schema schema = createSchema();
     private final TableProperties tableProperties = createTable();
     private final String tableId = tableProperties.get(TABLE_ID);
     private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
     private final CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
+    private InMemoryTransactionLogsPerTable inMemoryTransactionLogsPerTable;
 
     @BeforeEach
     void setUp() {
@@ -239,18 +240,14 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         @Test
         void shouldPutMessageBackOnSQSQueueIfStateStoreUpdateFailed() throws Exception {
             // Given
-            InMemoryTransactionLogsPerTable inMemoryTransactionLogsPerTable = new InMemoryTransactionLogsPerTable();
-            InMemoryTransactionLogs transactionLogs = inMemoryTransactionLogsPerTable.forTable(tableProperties);
-            stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, inMemoryTransactionLogsPerTable);
-            update(getStateStore()).initialise(schema);
-
+            useInMemoryStateStore();
             configureJobQueuesWithMaxReceiveCount(2);
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
             CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
             assignJobIdsToInputFiles(getStateStore(), job);
             String jobJson = sendJob(job);
-            transactionLogs.getFilesLogStore().atStartOfAddTransaction(() -> {
+            inMemoryFilesLogStore().atStartOfAddTransaction(() -> {
                 throw new RuntimeException("Test error message thrown");
             });
 
@@ -418,13 +415,23 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
         tablePropertiesStore.save(tableProperties);
-        stateStoreProvider.getStateStore(tableProperties).initialise();
+        update(getStateStore()).initialise(schema);
 
         return tableProperties;
     }
 
     private StateStore getStateStore() {
         return stateStoreProvider.getStateStore(tableProperties);
+    }
+
+    private void useInMemoryStateStore() {
+        inMemoryTransactionLogsPerTable = new InMemoryTransactionLogsPerTable();
+        stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, inMemoryTransactionLogsPerTable);
+        update(getStateStore()).initialise(schema);
+    }
+
+    private InMemoryTransactionLogStore inMemoryFilesLogStore() {
+        return inMemoryTransactionLogsPerTable.forTable(tableProperties).getFilesLogStore();
     }
 
     private String getMessageGroupId(Message message) {
