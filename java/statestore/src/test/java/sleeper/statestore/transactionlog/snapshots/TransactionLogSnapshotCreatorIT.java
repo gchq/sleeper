@@ -142,7 +142,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        update(stateStore).initialise(schema);
+        update(stateStore).initialise(partitions.buildList());
         FileReference file1 = FileReferenceFactory.from(partitions.buildTree())
                 .rootFile(123L);
         update(stateStore).addFile(file1);
