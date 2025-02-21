@@ -98,8 +98,7 @@ public interface PartitionStore {
      *
      * @param time the time that any future partition updates will be considered to occur
      */
-    default void fixPartitionUpdateTime(Instant time) {
-    }
+    void fixPartitionUpdateTime(Instant time);
 
     /**
      * Adds a partions transaction to the transaction log.
