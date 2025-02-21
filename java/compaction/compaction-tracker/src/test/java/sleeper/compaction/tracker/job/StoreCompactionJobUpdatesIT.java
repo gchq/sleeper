@@ -44,7 +44,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
 
         // Then
         assertThat(getAllJobStatuses())
