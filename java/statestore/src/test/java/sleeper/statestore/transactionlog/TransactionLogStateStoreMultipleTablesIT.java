@@ -112,7 +112,7 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         update(stateStore2).addFile(file2);
 
         // When
-        stateStore1.clearSleeperTable();
+        update(stateStore1).clearSleeperTable();
 
         // Then
         assertThat(stateStore1.getAllPartitions()).isEmpty();
