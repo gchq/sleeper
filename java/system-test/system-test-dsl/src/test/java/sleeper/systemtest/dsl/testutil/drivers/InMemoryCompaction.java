@@ -160,8 +160,8 @@ public class InMemoryCompaction {
             CompactionJobStatus status = jobTracker.getJob(job.getId()).orElseThrow();
             JobRunReport run = status.getRunsLatestFirst().stream().findFirst().orElseThrow();
             JobRunSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), run);
-            jobTracker.jobFinished(job.finishedEventBuilder(summary).taskId(run.getTaskId()).build());
-            jobTracker.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).build());
+            jobTracker.jobFinished(job.finishedEventBuilder(summary).taskId(run.getTaskId()).jobRunId(job.getId()).build());
+            jobTracker.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).jobRunId(job.getId()).build());
         }
         queuedJobs.clear();
     }
@@ -229,7 +229,7 @@ public class InMemoryCompaction {
                     .build();
             taskTracker.taskStarted(task);
             runningTasks.add(task);
-            jobTracker.jobStarted(job.startedEventBuilder(Instant.now()).taskId(task.getTaskId()).build());
+            jobTracker.jobStarted(job.startedEventBuilder(Instant.now()).taskId(task.getTaskId()).jobRunId(job.getId()).build());
         });
     }
 
