@@ -65,8 +65,8 @@ public class FindPartitionsToSplitTest {
             // Given
             instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-            stateStore.addFile(fileReferenceFactory.rootFile("file-1.parquet", 300L));
-            stateStore.addFile(fileReferenceFactory.rootFile("file-2.parquet", 200L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-1.parquet", 300L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-2.parquet", 200L));
 
             // When
             List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
@@ -83,8 +83,8 @@ public class FindPartitionsToSplitTest {
             // Given
             instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 501);
-            stateStore.addFile(fileReferenceFactory.rootFile("file-1.parquet", 300L));
-            stateStore.addFile(fileReferenceFactory.rootFile("file-2.parquet", 200L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-1.parquet", 300L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-2.parquet", 200L));
 
             // When
             List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
@@ -98,9 +98,9 @@ public class FindPartitionsToSplitTest {
             // Given
             instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 2);
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-            stateStore.addFile(fileReferenceFactory.rootFile("file-1.parquet", 200L));
-            stateStore.addFile(fileReferenceFactory.rootFile("file-2.parquet", 200L));
-            stateStore.addFile(fileReferenceFactory.rootFile("file-3.parquet", 200L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-1.parquet", 200L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-2.parquet", 200L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-3.parquet", 200L));
 
             // When
             List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
@@ -117,9 +117,9 @@ public class FindPartitionsToSplitTest {
             // Given
             instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 2);
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
-            stateStore.addFile(fileReferenceFactory.rootFile("file-1.parquet", 100L));
-            stateStore.addFile(fileReferenceFactory.rootFile("file-2.parquet", 200L));
-            stateStore.addFile(fileReferenceFactory.rootFile("file-3.parquet", 300L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-1.parquet", 100L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-2.parquet", 200L));
+            update(stateStore).addFile(fileReferenceFactory.rootFile("file-3.parquet", 300L));
 
             // When
             List<SplitPartitionJobDefinition> jobs = findPartitionsToSplit();
@@ -164,7 +164,7 @@ public class FindPartitionsToSplitTest {
         @Test
         void shouldNotIncludeSplitFileWhenCreatingPartitionSplittingJob() throws Exception {
             // Given the left partition is over the splitting threshold without the split file
-            stateStore.addFile(fileReferenceFactory.partitionFile("L", "left.parquet", 600L));
+            update(stateStore).addFile(fileReferenceFactory.partitionFile("L", "left.parquet", 600L));
             instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
 
@@ -182,7 +182,7 @@ public class FindPartitionsToSplitTest {
         @Test
         void shouldNotSplitPartitionWhenAFileWithRecordsInAnotherPartitionWouldPutItOverTheLimit() throws Exception {
             // Given the left partition would be over the splitting threshold if we included the split file
-            stateStore.addFile(fileReferenceFactory.partitionFile("L", "left.parquet", 300L));
+            update(stateStore).addFile(fileReferenceFactory.partitionFile("L", "left.parquet", 300L));
             instanceProperties.setNumber(MAX_NUMBER_FILES_IN_PARTITION_SPLITTING_JOB, 10);
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 500);
 

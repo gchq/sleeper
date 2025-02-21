@@ -125,7 +125,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         // Given
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
-        committerStore.addFile(oldFile);
+        update(committerStore).addFile(oldFile);
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "run1");
         ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
@@ -166,7 +166,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         // Given
         FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
-        committerStore.addFile(oldFile1);
+        update(committerStore).addFile(oldFile1);
         update(committerStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 2);
@@ -191,7 +191,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         splitPartition("root", "L", "R", 5);
         FileReference file = factory.rootFile("file", 100L);
         FileReference existingReference = splitFile(file, "L");
-        committerStore.addFile(existingReference);
+        update(committerStore).addFile(existingReference);
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "run1");
         ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
@@ -212,7 +212,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
     void shouldFailWhenFileToBeMarkedReadyForGCHasSameFileNameAsNewFile() {
         // Given
         FileReference file = factory.rootFile("file1", 100L);
-        committerStore.addFile(file);
+        update(committerStore).addFile(file);
         update(committerStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 

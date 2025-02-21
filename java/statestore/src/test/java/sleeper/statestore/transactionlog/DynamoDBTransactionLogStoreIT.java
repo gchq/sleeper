@@ -139,7 +139,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         stateStore.fixFileUpdateTime(updateTime);
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
         stateStore.initialise(partitions.getAllPartitions());
-        stateStore.addFile(FileReferenceFactory.from(partitions).rootFile(100));
+        update(stateStore).addFile(FileReferenceFactory.from(partitions).rootFile(100));
 
         // When
         List<TransactionLogEntry> entries = fileLogStore.readTransactions(toUpdateLocalStateAt(0)).toList();

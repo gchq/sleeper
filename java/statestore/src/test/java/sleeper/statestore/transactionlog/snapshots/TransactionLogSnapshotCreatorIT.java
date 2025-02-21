@@ -35,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestBase {
 
@@ -49,7 +50,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore inMemoryStateStore = createStateStoreWithInMemoryTransactionLog(table);
         inMemoryStateStore.initialise(partitions.getAllPartitions());
-        inMemoryStateStore.addFile(file);
+        update(inMemoryStateStore).addFile(file);
 
         // When we create a snapshot from the in-memory transactions
         createSnapshots(table);
@@ -84,7 +85,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .rootFile("file1.parquet", 123L);
         StateStore inMemoryStateStore1 = createStateStoreWithInMemoryTransactionLog(table1);
         inMemoryStateStore1.initialise(partitions1.getAllPartitions());
-        inMemoryStateStore1.addFile(file1);
+        update(inMemoryStateStore1).addFile(file1);
 
         TableProperties table2 = createTable("test-table-id-2", "test-table-2");
         PartitionTree partitions2 = new PartitionsBuilder(schema)
@@ -95,7 +96,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .rootFile("file2.parquet", 123L);
         StateStore inMemoryStateStore2 = createStateStoreWithInMemoryTransactionLog(table2);
         inMemoryStateStore2.initialise(partitions2.getAllPartitions());
-        inMemoryStateStore2.addFile(file2);
+        update(inMemoryStateStore2).addFile(file2);
 
         // When
         createSnapshots(table1);
@@ -144,7 +145,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         stateStore.initialise();
         FileReference file1 = FileReferenceFactory.from(partitions.buildTree())
                 .rootFile(123L);
-        stateStore.addFile(file1);
+        update(stateStore).addFile(file1);
         createSnapshots(table);
 
         // When
@@ -152,7 +153,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
                 .applySplit(stateStore, "root");
         FileReference file2 = FileReferenceFactory.from(partitions.buildTree())
                 .partitionFile("L", 456L);
-        stateStore.addFile(file2);
+        update(stateStore).addFile(file2);
         createSnapshots(table);
 
         // Then
@@ -183,7 +184,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise();
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile(123L));
+        update(stateStore).addFile(factory.rootFile(123L));
         createSnapshots(table);
 
         // When
@@ -242,7 +243,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         stateStore.initialise();
         createSnapshots(table);
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile(123L));
+        update(stateStore).addFile(factory.rootFile(123L));
 
         // When / Then
         IllegalStateException exception = new IllegalStateException();
@@ -294,10 +295,10 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         stateStore.initialise();
-        stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file1.parquet", 123));
+        update(stateStore).addFile(FileReferenceFactory.from(stateStore).rootFile("file1.parquet", 123));
         createSnapshots(table);
         // And we add a transaction that would trigger a new snapshot creation
-        stateStore.addFile(FileReferenceFactory.from(stateStore).rootFile("file2.parquet", 456));
+        update(stateStore).addFile(FileReferenceFactory.from(stateStore).rootFile("file2.parquet", 456));
 
         // When / Then
         IllegalStateException exception = new IllegalStateException();

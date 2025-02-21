@@ -48,8 +48,8 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 34);
 
         // When
-        stateStore1.addFile(file1);
-        stateStore2.addFile(file2);
+        update(stateStore1).addFile(file1);
+        update(stateStore2).addFile(file2);
 
         // Then
         assertThat(stateStore1.getFileReferences())
@@ -84,8 +84,8 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         StateStore stateStore2 = initialiseTableStateStore();
         FileReference file1 = fileReferenceFactory.rootFile("file1.parquet", 12);
         FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 34);
-        stateStore1.addFile(file1);
-        stateStore2.addFile(file2);
+        update(stateStore1).addFile(file1);
+        update(stateStore2).addFile(file2);
 
         // When
         update(stateStore1).clearFileData();
@@ -108,8 +108,8 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         stateStore2.initialise(tree2.getAllPartitions());
         FileReference file1 = FileReferenceFactory.from(tree1).rootFile("file1.parquet", 12);
         FileReference file2 = FileReferenceFactory.from(tree2).rootFile("file2.parquet", 34);
-        stateStore1.addFile(file1);
-        stateStore2.addFile(file2);
+        update(stateStore1).addFile(file1);
+        update(stateStore2).addFile(file2);
 
         // When
         stateStore1.clearSleeperTable();

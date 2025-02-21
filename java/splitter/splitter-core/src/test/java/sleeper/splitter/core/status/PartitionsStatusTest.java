@@ -62,7 +62,7 @@ class PartitionsStatusTest {
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
-            stateStore.addFile(fileFactory().partitionFile("A", "file-a.parquet", 5));
+            update(stateStore).addFile(fileFactory().partitionFile("A", "file-a.parquet", 5));
             FileReference splitFile = fileFactory().rootFile("file-ab.parquet", 10);
             update(stateStore).addFiles(List.of(
                     splitFile(splitFile, "A"),
@@ -87,8 +87,8 @@ class PartitionsStatusTest {
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
-            stateStore.addFile(fileFactory().partitionFile("A", "file-a.parquet", 5));
-            stateStore.addFile(fileFactory().rootFile("file-parent.parquet", 10));
+            update(stateStore).addFile(fileFactory().partitionFile("A", "file-a.parquet", 5));
+            update(stateStore).addFile(fileFactory().rootFile("file-parent.parquet", 10));
 
             // When
             PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
@@ -110,9 +110,9 @@ class PartitionsStatusTest {
                     .splitToNewChildren("root", "L", "R", "aaa")
                     .splitToNewChildren("R", "RL", "RR", "bbb")
                     .buildList());
-            stateStore.addFile(fileFactory().rootFile("file-root.parquet", 20));
-            stateStore.addFile(fileFactory().partitionFile("R", "file-R.parquet", 10));
-            stateStore.addFile(fileFactory().partitionFile("RR", "file-RR.parquet", 5));
+            update(stateStore).addFile(fileFactory().rootFile("file-root.parquet", 20));
+            update(stateStore).addFile(fileFactory().partitionFile("R", "file-R.parquet", 10));
+            update(stateStore).addFile(fileFactory().partitionFile("RR", "file-RR.parquet", 5));
 
             // When
             PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
@@ -190,7 +190,7 @@ class PartitionsStatusTest {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "abc")
                     .buildList());
-            stateStore.addFile(fileFactory().rootFile("not-split-yet.parquet", 100));
+            update(stateStore).addFile(fileFactory().rootFile("not-split-yet.parquet", 100));
 
             // When
             PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);

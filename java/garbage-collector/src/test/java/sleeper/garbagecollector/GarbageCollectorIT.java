@@ -416,7 +416,7 @@ public class GarbageCollectorIT {
         String filename = filePath.toString();
         FileReference fileReference = FileReferenceFactory.from(partitions).rootFile(filename, 100L);
         writeFile(filename);
-        stateStore.addFile(fileReference);
+        update(stateStore).addFile(fileReference);
         return fileReference;
     }
 

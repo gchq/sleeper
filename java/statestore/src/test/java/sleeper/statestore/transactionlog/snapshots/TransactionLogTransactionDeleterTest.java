@@ -45,6 +45,7 @@ import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSH
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
 
 public class TransactionLogTransactionDeleterTest {
@@ -65,8 +66,8 @@ public class TransactionLogTransactionDeleterTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
         // And we have a snapshot at the head of the file log
         Instant snapshotTime = Instant.parse("2024-06-24T15:46:30Z");
         snapshots.addFilesSnapshotAt(2, snapshotTime);
@@ -89,8 +90,8 @@ public class TransactionLogTransactionDeleterTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
         // And we have a snapshot at the head of the file log
         Instant snapshotTime = Instant.parse("2024-06-24T15:46:30Z");
         snapshots.addFilesSnapshotAt(2, snapshotTime);
@@ -117,9 +118,9 @@ public class TransactionLogTransactionDeleterTest {
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
         FileReference file3 = fileFactory.rootFile("file3.parquet", 789L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
-        setupAtTime(Instant.parse("2024-06-24T15:47:00Z"), () -> stateStore.addFile(file3));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:47:00Z"), () -> update(stateStore).addFile(file3));
         // And we have two snapshots
         Instant snapshotTime1 = Instant.parse("2024-06-24T15:46:30Z");
         Instant snapshotTime2 = Instant.parse("2024-06-24T15:47:30Z");
@@ -146,8 +147,8 @@ public class TransactionLogTransactionDeleterTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
         // And we have a snapshot at the head of the file log
         Instant snapshotTime = Instant.parse("2024-06-24T15:46:30Z");
         snapshots.addFilesSnapshotAt(2, snapshotTime);
@@ -173,8 +174,8 @@ public class TransactionLogTransactionDeleterTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
         // And we configure to delete any transactions more than one before the latest snapshot
         tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
         tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS, 1);
@@ -225,9 +226,9 @@ public class TransactionLogTransactionDeleterTest {
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
         FileReference file3 = fileFactory.rootFile("file3.parquet", 789L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
-        setupAtTime(Instant.parse("2024-06-24T15:47:00Z"), () -> stateStore.addFile(file3));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:47:00Z"), () -> update(stateStore).addFile(file3));
         // And we have two snapshots
         Instant snapshotTime1 = Instant.parse("2024-06-24T15:46:10Z");
         Instant snapshotTime2 = Instant.parse("2024-06-24T15:46:30Z");

@@ -34,6 +34,7 @@ import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_SNAPSHOT_
 import static sleeper.core.properties.table.TableProperty.TIME_BETWEEN_TRANSACTION_CHECKS_MS;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStoreOneTableTestBase {
 
@@ -55,7 +56,7 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
 
         // When
         createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
-            stateStore.addFile(file);
+            update(stateStore).addFile(file);
         });
 
         // Then
@@ -84,11 +85,11 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
                 .minTransactionsAheadToLoadSnapshot(2));
         FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
         FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-        stateStore.addFile(logFile);
+        update(stateStore).addFile(logFile);
 
         // When
         createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
-            snapshotStateStore.addFile(snapshotFile);
+            update(snapshotStateStore).addFile(snapshotFile);
         });
 
         // Then
@@ -102,11 +103,11 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
                 .minTransactionsAheadToLoadSnapshot(2));
         FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
         FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-        stateStore.addFile(logFile);
+        update(stateStore).addFile(logFile);
 
         // When
         createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-            snapshotStateStore.addFile(snapshotFile);
+            update(snapshotStateStore).addFile(snapshotFile);
         });
 
         // Then

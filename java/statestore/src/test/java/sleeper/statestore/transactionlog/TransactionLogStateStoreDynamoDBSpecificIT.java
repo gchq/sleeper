@@ -208,7 +208,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             FileReferenceFactory factory1 = fileFactory(tree1);
             FileReference file1 = factory1.rootFile("file1.parquet", 123L);
             stateStore.initialise(tree1.getAllPartitions());
-            stateStore.addFile(file1);
+            update(stateStore).addFile(file1);
 
             PartitionTree tree2 = new PartitionsBuilder(schema)
                     .rootFirst("root")
@@ -218,7 +218,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             FileReference file2 = factory2.rootFile("file2.parquet", 456L);
             createSnapshotWithFreshState(stateStore2 -> {
                 stateStore2.initialise(tree2.getAllPartitions());
-                stateStore2.addFile(file2);
+                update(stateStore2).addFile(file2);
             });
 
             // When

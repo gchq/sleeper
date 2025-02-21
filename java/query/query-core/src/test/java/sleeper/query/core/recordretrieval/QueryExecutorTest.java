@@ -64,6 +64,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -331,7 +332,7 @@ public class QueryExecutorTest {
     }
 
     private void addFileMetadata(FileReference fileReference) {
-        stateStore.addFile(fileReference);
+        update(stateStore).addFile(fileReference);
     }
 
     private QueryExecutor executor() throws Exception {

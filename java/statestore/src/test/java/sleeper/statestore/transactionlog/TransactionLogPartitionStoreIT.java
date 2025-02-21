@@ -32,6 +32,7 @@ import sleeper.core.statestore.StateStoreException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneTableTestBase {
 
@@ -211,7 +212,7 @@ public class TransactionLogPartitionStoreIT extends TransactionLogStateStoreOneT
                     .splitToNewChildren("root", "after1", "after2", 10L);
             initialiseWithPartitions(partitionsBefore);
 
-            store.addFile(factory.partitionFile("before2", 100L));
+            update(store).addFile(factory.partitionFile("before2", 100L));
 
             // When / Then
             assertThatThrownBy(() -> store.initialise(partitionsAfter.buildList()))
