@@ -159,6 +159,11 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public Partition getPartition(String partitionId) throws StateStoreException {
+        return partitionStore.getPartition(partitionId);
+    }
+
+    @Override
     public boolean hasNoFiles() throws StateStoreException {
         return fileReferenceStore.hasNoFiles();
     }
