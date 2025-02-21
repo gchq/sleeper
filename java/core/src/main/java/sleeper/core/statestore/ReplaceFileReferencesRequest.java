@@ -65,6 +65,12 @@ public class ReplaceFileReferencesRequest {
         jobRunId = builder.jobRunId;
         inputFiles = Objects.requireNonNull(builder.inputFiles, "inputFiles must not be null");
         newReference = Objects.requireNonNull(builder.newReference, "newReference must not be null");
+        if (taskId != null) {
+            Objects.requireNonNull(jobRunId, "jobRunId must not be null when taskId is set");
+        }
+        if (jobRunId != null) {
+            Objects.requireNonNull(taskId, "taskId must not be null when jobRunId is set");
+        }
     }
 
     public static Builder builder() {

@@ -184,7 +184,7 @@ public class InMemoryCompaction {
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
         stateStore.atomicallyReplaceFileReferencesWithNewOnes(
                 List.of(job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
-                        .taskId(run.getTaskId()).build()));
+                        .taskId(run.getTaskId()).jobRunId(job.getId()).build()));
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new JobRunSummary(recordsProcessed, startTime, finishTime);
     }
