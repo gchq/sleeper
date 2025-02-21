@@ -264,7 +264,7 @@ public class ReinitialiseTableIT extends LocalStackTestBase {
         TransactionLogStateStore transctionLogStateStore = DynamoDBTransactionLogStateStore.builderFrom(
                 instanceProperties, tableProperties, dynamoClient, s3Client, hadoopConf).build();
 
-        transctionLogStateStore.initialise();
+        update(transctionLogStateStore).initialise(KEY_VALUE_SCHEMA);
         setupPartitionsAndAddFiles(transctionLogStateStore);
 
         return transctionLogStateStore;

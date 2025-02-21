@@ -125,7 +125,7 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
 
     private StateStore initialiseTableStateStore() throws Exception {
         StateStore stateStore = getTableStateStore();
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
         return stateStore;
     }
 

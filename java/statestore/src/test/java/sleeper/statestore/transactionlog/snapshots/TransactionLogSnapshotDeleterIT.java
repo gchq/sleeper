@@ -122,7 +122,7 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         update(stateStore).addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));

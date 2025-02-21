@@ -62,6 +62,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.table.TableStatusTestHelper.uniqueIdAndName;
 
 public class DeleteTableIT extends LocalStackTestBase {
@@ -119,7 +120,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         // Given
         TableProperties table1 = createTable(uniqueIdAndName("test-table-1", "table-1"));
         StateStore stateStore1 = createStateStore(table1);
-        stateStore1.initialise();
+        update(stateStore1).initialise(schema);
         IngestResult result = ingestRecords(table1, List.of(
                 new Record(Map.of("key1", 25L))));
         FileReference rootFile = result.getFileReferenceList().get(0);
@@ -133,7 +134,7 @@ public class DeleteTableIT extends LocalStackTestBase {
                         FilenameUtils.getName(rootFile.getFilename()).replace("parquet", "sketches"));
         TableProperties table2 = createTable(uniqueIdAndName("test-table-2", "table-2"));
         StateStore stateStore2 = createStateStore(table2);
-        stateStore2.initialise();
+        update(stateStore2).initialise(schema);
         ingestRecords(table2, List.of(new Record(Map.of("key1", 25L))));
 
         // When

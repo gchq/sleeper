@@ -156,7 +156,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixPartitionUpdateTime(updateTime);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
 
         // When
         List<TransactionLogEntry> entries = partitionLogStore.readTransactions(toUpdateLocalStateAt(0)).toList();

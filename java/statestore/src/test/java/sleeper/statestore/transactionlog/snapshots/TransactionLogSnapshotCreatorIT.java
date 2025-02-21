@@ -142,7 +142,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
         FileReference file1 = FileReferenceFactory.from(partitions.buildTree())
                 .rootFile(123L);
         update(stateStore).addFile(file1);
@@ -182,7 +182,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         update(stateStore).addFile(factory.rootFile(123L));
         createSnapshots(table);
@@ -222,7 +222,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
 
         // When
         createSnapshots(table);
@@ -240,7 +240,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
         createSnapshots(table);
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
         update(stateStore).addFile(factory.rootFile(123L));
@@ -259,7 +259,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         // Given
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
 
         // When / Then
         IllegalStateException exception = new IllegalStateException();
@@ -294,7 +294,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         // Given we create a snapshot
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
         update(stateStore).addFile(FileReferenceFactory.from(stateStore).rootFile("file1.parquet", 123));
         createSnapshots(table);
         // And we add a transaction that would trigger a new snapshot creation

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
@@ -67,9 +68,11 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLogStateStoreTestBase {
 
+    private final Schema schema = schemaWithKey("key", new LongType());
+
     @BeforeEach
     void setUp() throws Exception {
-        initialiseWithSchema(schemaWithKey("key", new LongType()));
+        initialiseWithSchema(schema);
     }
 
     @Nested
@@ -1283,7 +1286,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
 
             // When
             update(store).clearSleeperTable();
-            store.initialise();
+            update(store).initialise(schema);
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
@@ -1303,7 +1306,7 @@ public class TransactionLogFileReferenceStoreTest extends InMemoryTransactionLog
 
             // When
             update(store).clearSleeperTable();
-            store.initialise();
+            update(store).initialise(schema);
 
             // Then
             assertThat(store.getFileReferences()).isEmpty();
