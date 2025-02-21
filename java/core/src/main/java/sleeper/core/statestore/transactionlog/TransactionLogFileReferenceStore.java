@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
-import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
@@ -32,7 +31,6 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
@@ -64,16 +62,6 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         AddFilesTransaction transaction = new AddFilesTransaction(files);
         transaction.validateFiles(head.state());
         head.addTransaction(clock.instant(), transaction);
-    }
-
-    @Override
-    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        AssignJobIdsTransaction transaction = new AssignJobIdsTransaction(requests);
-        if (transaction.isEmpty()) {
-            LOGGER.info("Ignoring assignJobIds call with no file assignments, received requests: {}", requests);
-        } else {
-            head.addTransaction(clock.instant(), transaction);
-        }
     }
 
     @Override
