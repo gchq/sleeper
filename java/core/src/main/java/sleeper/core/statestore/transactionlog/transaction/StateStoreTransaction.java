@@ -44,6 +44,15 @@ public interface StateStoreTransaction<T> {
     void apply(T state, Instant updateTime);
 
     /**
+     * Checks if this transaction is empty and can be ignored.
+     *
+     * @return true if the transaction is empty
+     */
+    default boolean isEmpty() {
+        return false;
+    }
+
+    /**
      * Validates against the state store before attempting to add this transaction. Should not be relied upon
      * but can be used as an extra check against state that this transaction does not operate on. Note that
      * any checks from this are before the state is updated as part of the transaction. This cannot validate

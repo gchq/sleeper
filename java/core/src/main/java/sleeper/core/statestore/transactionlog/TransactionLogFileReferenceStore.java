@@ -42,7 +42,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -69,11 +68,11 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     @Override
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        Optional<AssignJobIdsTransaction> transaction = AssignJobIdsTransaction.ignoringEmptyRequests(requests);
-        if (transaction.isPresent()) {
-            head.addTransaction(clock.instant(), transaction.get());
-        } else {
+        AssignJobIdsTransaction transaction = new AssignJobIdsTransaction(requests);
+        if (transaction.isEmpty()) {
             LOGGER.info("Ignoring assignJobIds call with no file assignments, received requests: {}", requests);
+        } else {
+            head.addTransaction(clock.instant(), transaction);
         }
     }
 

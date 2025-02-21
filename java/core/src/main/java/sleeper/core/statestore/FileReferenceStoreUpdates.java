@@ -32,17 +32,6 @@ import java.util.List;
 public interface FileReferenceStoreUpdates {
 
     /**
-     * Adds a file to the table, with one reference.
-     *
-     * @param  fileReference              the reference to be added
-     * @throws FileAlreadyExistsException if the file already exists
-     * @throws StateStoreException        if the update fails for another reason
-     */
-    default void addFile(FileReference fileReference) throws StateStoreException {
-        addFiles(List.of(fileReference));
-    }
-
-    /**
      * Adds files to the Sleeper table, with any number of references. Each reference to be added should be for a file
      * which does not yet exist in the table.
      * <p>

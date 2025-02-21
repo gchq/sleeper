@@ -46,6 +46,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
@@ -349,7 +350,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
             // When
             runTask("test-task", processJobs(jobSucceeds().withAction(() -> {
-                stateStore.clearFileData();
+                update(stateStore).clearFileData();
             })), timesInTask::poll);
 
             // Then
@@ -375,7 +376,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                     startTime, finishTime, failTime,
                     Instant.parse("2024-02-22T13:50:04Z"))); // Finish
             CompactionJob job = createJobOnQueueNotAssignedToFiles("test-job");
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("other-job", job.getPartitionId(), job.getInputFiles())));
+            update(stateStore).assignJobIds(List.of(assignJobOnPartitionToFiles("other-job", job.getPartitionId(), job.getInputFiles())));
 
             // When
             runTask("test-task", processJobs(jobSucceeds()), timesInTask::poll);

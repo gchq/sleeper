@@ -68,6 +68,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionTaskTestBase {
     protected static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -104,7 +105,7 @@ public class CompactionTaskTestBase {
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(TABLE_NAME, tableName);
         tables.add(tableProperties);
-        stateStore(tableProperties).initialise();
+        update(stateStore(tableProperties)).initialise(schema);
         return tableProperties;
     }
 
@@ -225,12 +226,12 @@ public class CompactionTaskTestBase {
 
     private void addInputFiles(CompactionJob job, StateStore stateStore) throws Exception {
         for (String inputFile : job.getInputFiles()) {
-            stateStore.addFile(factory.rootFile(inputFile, 123L));
+            update(stateStore).addFile(factory.rootFile(inputFile, 123L));
         }
     }
 
     protected void assignFilesToJob(CompactionJob job, StateStore stateStore) throws Exception {
-        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+        update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
     }
 
     protected void send(CompactionJob job) {

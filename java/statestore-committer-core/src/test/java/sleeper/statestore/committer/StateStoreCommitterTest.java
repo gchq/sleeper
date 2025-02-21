@@ -86,6 +86,7 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFiles;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
@@ -125,7 +126,7 @@ public class StateStoreCommitterTest {
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-            stateStore.addFile(inputFile);
+            update(stateStore).addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             StateStoreCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
 
@@ -154,7 +155,7 @@ public class StateStoreCommitterTest {
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-            stateStore.addFile(inputFile);
+            update(stateStore).addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             StateStoreCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
 
@@ -180,10 +181,10 @@ public class StateStoreCommitterTest {
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-            stateStore.addFile(inputFile);
+            update(stateStore).addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             StateStoreCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
-            stateStore.clearFileData();
+            update(stateStore).clearFileData();
 
             // When
             apply(committerWithTimes(List.of(failedTime)), request);
@@ -208,7 +209,7 @@ public class StateStoreCommitterTest {
             Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-            stateStore.addFile(inputFile);
+            update(stateStore).addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             StateStoreCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
             RuntimeException failure = new RuntimeException("Unexpected failure");
@@ -240,7 +241,7 @@ public class StateStoreCommitterTest {
         void shouldApplyCompactionJobIdAssignmentCommitRequest() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
-            stateStore.addFile(fileFactory.rootFile("input.parquet", 123L));
+            update(stateStore).addFile(fileFactory.rootFile("input.parquet", 123L));
             Instant filesAssignedTime = Instant.parse("2024-09-06T11:44:00Z");
             compactionJobTracker.fixUpdateTime(filesAssignedTime);
 
@@ -258,8 +259,8 @@ public class StateStoreCommitterTest {
         void shouldFailToApplyJobIdAssignmentIfFileReferenceIsAlreadyAssignedToJob() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
-            stateStore.addFile(fileFactory.rootFile("input.parquet", 123L));
-            stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
+            update(stateStore).addFile(fileFactory.rootFile("input.parquet", 123L));
+            update(stateStore).assignJobIds(List.of(assignJobOnPartitionToFiles("job1", "root", List.of("input.parquet"))));
 
             // When
             apply(StateStoreCommitRequest.create("test-table", new AssignJobIdsTransaction(
@@ -348,7 +349,7 @@ public class StateStoreCommitterTest {
             // Given we have a commit request during an ingest job, which may still be in progress
             StateStore stateStore = createTableGetStateStore("test-table");
             FileReference file = fileFactory.rootFile("output.parquet", 123L);
-            stateStore.addFile(file);
+            update(stateStore).addFile(file);
             IngestJob ingestJob = IngestJob.builder()
                     .id("test-job")
                     .tableId("test-table")
@@ -454,7 +455,7 @@ public class StateStoreCommitterTest {
                     .splitToNewChildren("root", "left", "right", "aaa")
                     .buildTree();
             StateStore stateStore = createTableGetStateStore("test-table");
-            stateStore.atomicallyUpdatePartitionAndCreateNewOnes(
+            update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(
                     afterTree.getPartition("root"),
                     afterTree.getPartition("left"),
                     afterTree.getPartition("right"));
@@ -478,14 +479,14 @@ public class StateStoreCommitterTest {
         void shouldApplyDeletedFilesRequest() throws Exception {
             // Given two files have been replaced by a compaction job
             StateStore stateStore = createTableGetStateStore("test-table");
-            stateStore.addFiles(List.of(
+            update(stateStore).addFiles(List.of(
                     fileFactory.rootFile("file1.parquet", 100),
                     fileFactory.rootFile("file2.parquet", 200)));
             List<String> filenames = List.of("file1.parquet", "file2.parquet");
-            stateStore.assignJobIds(List.of(
+            update(stateStore).assignJobIds(List.of(
                     assignJobOnPartitionToFiles("test-job", "root", filenames)));
             FileReference fileAfterCompaction = fileFactory.rootFile("after.parquet", 300);
-            stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(
+            update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
                     replaceJobFileReferences("test-job", filenames, fileAfterCompaction)));
             // And we have a request to commit that they have been deleted
             FileReferenceTransaction transaction = new DeleteFilesTransaction(filenames);
@@ -502,7 +503,7 @@ public class StateStoreCommitterTest {
         void shouldFailWhenFileStillHasAReference() throws Exception {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
-            stateStore.addFiles(List.of(fileFactory.rootFile("file.parquet", 100)));
+            update(stateStore).addFiles(List.of(fileFactory.rootFile("file.parquet", 100)));
             FileReferenceTransaction transaction = new DeleteFilesTransaction(List.of("file.parquet"));
 
             // When
@@ -523,7 +524,7 @@ public class StateStoreCommitterTest {
             // Given
             StateStore stateStore = createTableGetStateStore("test-table");
             FileReference file = fileFactory.rootFile("test.parquet", 123L);
-            stateStore.addFile(file);
+            update(stateStore).addFile(file);
             FileReference duplicate = fileFactory.rootFile("test.parquet", 123L);
             StateStoreCommitRequest commitRequest = addFilesRequest("test-table", duplicate);
 
@@ -570,7 +571,7 @@ public class StateStoreCommitterTest {
             FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
             FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
             FileReference file3 = fileFactory.rootFile("file-3.parquet", 300);
-            stateStore(tableProperties).addFile(file1);
+            update(stateStore(tableProperties)).addFile(file1);
             StateStoreCommitRequest commitRequest1 = addFilesRequest(tableProperties, file2);
             StateStoreCommitRequest commitRequest2 = addFilesRequest(tableProperties, file3);
             AtomicInteger addTransactionCalls = new AtomicInteger();
@@ -599,7 +600,7 @@ public class StateStoreCommitterTest {
             FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
             FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
             FileReference file3 = fileFactory.rootFile("file-3.parquet", 300);
-            stateStore(tableProperties).addFile(file1);
+            update(stateStore(tableProperties)).addFile(file1);
             AtomicInteger addTransactionCalls = new AtomicInteger();
             AtomicInteger readTransactionCalls = new AtomicInteger();
             filesLog(tableProperties).atStartOfAddTransaction(() -> addTransactionCalls.incrementAndGet());
@@ -628,7 +629,7 @@ public class StateStoreCommitterTest {
             FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
             FileReference file2 = fileFactory.rootFile("file-2.parquet", 200);
             FileReference file3 = fileFactory.rootFile("file-3.parquet", 300);
-            stateStore(tableProperties).addFile(file1);
+            update(stateStore(tableProperties)).addFile(file1);
             AtomicInteger addTransactionCalls = new AtomicInteger();
             AtomicInteger readTransactionCalls = new AtomicInteger();
             filesLog(tableProperties).atStartOfAddTransaction(() -> addTransactionCalls.incrementAndGet());
@@ -663,7 +664,7 @@ public class StateStoreCommitterTest {
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
-            stateStore.addFile(inputFile);
+            update(stateStore).addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             ReplaceFileReferencesTransaction transaction = createAndFinishCompactionAsTransaction(job, createdTime, startTime, summary);
             String bodyKey = TransactionBodyStore.createObjectKey("test-table", finishTime, "test-transaction");
@@ -731,7 +732,7 @@ public class StateStoreCommitterTest {
 
     private void createTable(TableProperties tableProperties) {
         propertiesByTableId.put(tableProperties.get(TABLE_ID), tableProperties);
-        stateStore(tableProperties).initialise(partitions.getAllPartitions());
+        update(stateStore(tableProperties)).initialise(partitions.getAllPartitions());
     }
 
     private StateStore stateStore(TableProperties tableProperties) {
@@ -781,7 +782,7 @@ public class StateStoreCommitterTest {
             CompactionJob job, Instant createTime, Instant startTime, JobRunSummary summary) throws Exception {
         List<AssignJobIdRequest> assignIdRequests = List.of(assignJobOnPartitionToFiles(
                 job.getId(), job.getPartitionId(), job.getInputFiles()));
-        stateStore(job.getTableId()).assignJobIds(assignIdRequests);
+        update(stateStore(job.getTableId())).assignJobIds(assignIdRequests);
         compactionJobTracker.jobCreated(job.createCreatedEvent(), createTime);
         compactionJobTracker.jobStarted(job.startedEventBuilder(startTime)
                 .taskId("test-task").jobRunId("test-job-run").build());

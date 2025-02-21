@@ -18,7 +18,10 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
+import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesContext;
 
@@ -39,13 +42,13 @@ public class SystemTestIngestToStateStore {
     public SystemTestIngestToStateStore addFileOnPartition(
             String name, String partitionId, long numberOfRecords) throws Exception {
         String path = ingestSource.getFilePath(name);
-        instance.getStateStore().addFile(FileReference.builder()
+        addFiles(List.of(FileReference.builder()
                 .filename(path)
                 .partitionId(partitionId)
                 .countApproximate(false)
                 .onlyContainsDataForThisPartition(true)
                 .numberOfRecords(numberOfRecords)
-                .build());
+                .build()));
         return this;
     }
 
@@ -53,7 +56,7 @@ public class SystemTestIngestToStateStore {
             String name, Map<String, Long> recordsByPartition) throws Exception {
         String path = ingestSource.getFilePath(name);
         boolean singlePartition = recordsByPartition.size() == 1;
-        instance.getStateStore().addFiles(recordsByPartition.entrySet().stream()
+        addFiles(recordsByPartition.entrySet().stream()
                 .map(entry -> FileReference.builder()
                         .filename(path)
                         .partitionId(entry.getKey())
@@ -70,7 +73,7 @@ public class SystemTestIngestToStateStore {
         PartitionTree partitionTree = new PartitionTree(instance.getStateStore().getAllPartitions());
         List<Partition> leafPartitions = partitionTree.getLeafPartitions();
         long recordsPerPartition = numberOfRecords / leafPartitions.size();
-        instance.getStateStore().addFiles(leafPartitions.stream()
+        addFiles(leafPartitions.stream()
                 .map(partition -> FileReference.builder()
                         .filename(path)
                         .partitionId(partition.getId())
@@ -80,5 +83,11 @@ public class SystemTestIngestToStateStore {
                         .build())
                 .collect(Collectors.toUnmodifiableList()));
         return this;
+    }
+
+    private void addFiles(List<FileReference> fileReferences) {
+        instance.getStateStore().addTransaction(AddTransactionRequest.withTransaction(
+                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(fileReferences)))
+                .build());
     }
 }

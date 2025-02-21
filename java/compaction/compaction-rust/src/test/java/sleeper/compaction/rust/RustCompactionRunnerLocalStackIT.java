@@ -59,6 +59,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
 
@@ -78,7 +79,7 @@ public class RustCompactionRunnerLocalStackIT extends LocalStackTestBase {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
         tableProperties.setSchema(schema);
-        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
         Record record1 = new Record(Map.of("key", "record-1"));
         Record record2 = new Record(Map.of("key", "record-2"));
         String file1 = writeFileForPartition("root", List.of(record1));

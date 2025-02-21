@@ -30,7 +30,6 @@ import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransacti
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -43,26 +42,9 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
     private final List<AssignJobIdRequest> requests;
 
     public AssignJobIdsTransaction(List<AssignJobIdRequest> requests) {
-        this.requests = requests;
-    }
-
-    /**
-     * Creates a transaction to apply a list of job assignment requests. Discards any requests that do not assign any
-     * files.
-     *
-     * @param  requests the list of requests to apply
-     * @return          the transaction, if any requests assign any files to a job
-     */
-    public static Optional<AssignJobIdsTransaction> ignoringEmptyRequests(List<AssignJobIdRequest> requests) {
-        List<AssignJobIdRequest> filtered = requests.stream()
+        this.requests = requests.stream()
                 .filter(request -> !request.getFilenames().isEmpty())
                 .collect(toUnmodifiableList());
-        if (filtered.isEmpty()) {
-            LOGGER.warn("Attempted to create transaction with no file assignments, received requests: {}", requests);
-            return Optional.empty();
-        } else {
-            return Optional.of(new AssignJobIdsTransaction(filtered));
-        }
     }
 
     @Override
@@ -88,6 +70,11 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
                         file -> file.setJobIdForPartition(request.getJobId(), request.getPartitionId(), updateTime));
             }
         }
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return requests.isEmpty();
     }
 
     @Override

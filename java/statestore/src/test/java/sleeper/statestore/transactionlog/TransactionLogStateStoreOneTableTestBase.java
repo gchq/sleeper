@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStateStoreTestBase {
 
@@ -41,13 +42,13 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
     protected void initialiseWithSchema(Schema schema) {
         createStore(schema);
         setPartitions(new PartitionsBuilder(schema).singlePartition("root"));
-        store.initialise();
+        update(store).initialise(schema);
     }
 
     protected void initialiseWithPartitions(PartitionsBuilder partitions) {
         createStore(partitions.getSchema());
         setPartitions(partitions);
-        store.initialise(partitions.buildList());
+        update(store).initialise(partitions.buildList());
     }
 
     private void createStore(Schema schema) {

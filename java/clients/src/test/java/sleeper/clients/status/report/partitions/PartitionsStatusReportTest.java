@@ -44,6 +44,7 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class PartitionsStatusReportTest {
     InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -55,7 +56,7 @@ class PartitionsStatusReportTest {
     void shouldReportNoPartitions() throws Exception {
         // Given
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        stateStore.initialise(List.of());
+        update(stateStore).initialise(List.of());
 
         // When
         assertThat(getStandardReport()).hasToString(
@@ -66,8 +67,8 @@ class PartitionsStatusReportTest {
     void shouldReportRootPartitionWithNoChildrenAndNoSplitNeeded() throws Exception {
         // Given
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        stateStore.initialise(partitionsBuilder().singlePartition("root").buildList());
-        stateStore.addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
+        update(stateStore).initialise(partitionsBuilder().singlePartition("root").buildList());
+        update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
 
         // When
         assertThat(getStandardReport()).isEqualTo(
@@ -78,10 +79,10 @@ class PartitionsStatusReportTest {
     void shouldReportRootPartitionWithTwoChildrenAndNoSplitsNeeded() throws Exception {
         // Given
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        stateStore.initialise(partitionsBuilder().rootFirst("parent")
+        update(stateStore).initialise(partitionsBuilder().rootFirst("parent")
                 .splitToNewChildren("parent", "A", "B", "aaa")
                 .buildList());
-        stateStore.addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
+        update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
 
         // When
         assertThat(getStandardReport()).hasToString(
@@ -92,10 +93,10 @@ class PartitionsStatusReportTest {
     void shouldReportRootPartitionWithTwoChildrenBothNeedSplitting() throws Exception {
         // Given
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        stateStore.initialise(partitionsBuilder().rootFirst("parent")
+        update(stateStore).initialise(partitionsBuilder().rootFirst("parent")
                 .splitToNewChildren("parent", "A", "B", "aaa")
                 .buildList());
-        stateStore.addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(100).toList());
+        update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(100).toList());
 
         // When
         assertThat(getStandardReport()).hasToString(
@@ -107,10 +108,10 @@ class PartitionsStatusReportTest {
         // Given
         tableProperties.setSchema(schemaWithKey("key", new ByteArrayType()));
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        stateStore.initialise(partitionsBuilder().rootFirst("parent")
+        update(stateStore).initialise(partitionsBuilder().rootFirst("parent")
                 .splitToNewChildren("parent", "A", "B", new byte[42])
                 .buildList());
-        stateStore.addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
+        update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
 
         // When
         assertThat(getStandardReport()).hasToString(
@@ -122,10 +123,10 @@ class PartitionsStatusReportTest {
         // Given
         tableProperties.setSchema(schemaWithKey("key", new StringType()));
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        stateStore.initialise(partitionsBuilder().rootFirst("parent")
+        update(stateStore).initialise(partitionsBuilder().rootFirst("parent")
                 .splitToNewChildren("parent", "A", "B", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
                 .buildList());
-        stateStore.addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
+        update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
 
         // When
         assertThat(getStandardReport()).hasToString(
@@ -141,11 +142,11 @@ class PartitionsStatusReportTest {
                         new Field("another-key", new StringType()))
                 .build());
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        stateStore.initialise(partitionsBuilder().rootFirst("parent")
+        update(stateStore).initialise(partitionsBuilder().rootFirst("parent")
                 .splitToNewChildrenOnDimension("parent", "A", "B", 0, 123L)
                 .splitToNewChildrenOnDimension("B", "C", "D", 1, "aaa")
                 .buildList());
-        stateStore.addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
+        update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
 
         // When
         assertThat(getStandardReport()).hasToString(
@@ -156,14 +157,14 @@ class PartitionsStatusReportTest {
     void shouldReportApproxAndKnownNumberOfRecordsWithSplitFilesInPartition() throws Exception {
         // Given
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-        stateStore.initialise(partitionsBuilder().rootFirst("parent")
+        update(stateStore).initialise(partitionsBuilder().rootFirst("parent")
                 .splitToNewChildren("parent", "A", "B", "aaa")
                 .buildList());
         FileReferenceFactory fileFactory = fileFactory();
-        stateStore.addFile(fileFactory.partitionFile("A", "file-a1.parquet", 5L));
-        stateStore.addFile(fileFactory.partitionFile("B", "file-b1.parquet", 5L));
+        update(stateStore).addFile(fileFactory.partitionFile("A", "file-a1.parquet", 5L));
+        update(stateStore).addFile(fileFactory.partitionFile("B", "file-b1.parquet", 5L));
         FileReference splitFile = fileFactory.partitionFile("parent", "file-split.parquet", 10L);
-        stateStore.addFiles(List.of(
+        update(stateStore).addFiles(List.of(
                 splitFile(splitFile, "A"),
                 splitFile(splitFile, "B")));
 
@@ -177,10 +178,10 @@ class PartitionsStatusReportTest {
         // Given
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
         tableProperties.setSchema(schemaWithKey("key", new StringType()));
-        stateStore.initialise(partitionsBuilder().rootFirst("root")
+        update(stateStore).initialise(partitionsBuilder().rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "abc")
                 .buildList());
-        stateStore.addFile(fileFactory().partitionFile("root", "not-split-yet.parquet", 100L));
+        update(stateStore).addFile(fileFactory().partitionFile("root", "not-split-yet.parquet", 100L));
 
         // When
         assertThat(getStandardReport()).isEqualTo(
@@ -191,14 +192,14 @@ class PartitionsStatusReportTest {
     void shouldReportWhenNonLeafPartitionRecordCountExceedsSplitThresholdWithRecordsFurtherUpTree() throws Exception {
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 100);
         tableProperties.setSchema(schemaWithKey("key", new StringType()));
-        stateStore.initialise(partitionsBuilder().rootFirst("root")
+        update(stateStore).initialise(partitionsBuilder().rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "abc")
                 .splitToNewChildren("R", "RL", "RR", "def")
                 .buildList());
-        stateStore.addFile(fileFactory().partitionFile("root", 100L));
-        stateStore.addFile(fileFactory().partitionFile("R", 100L));
-        stateStore.addFile(fileFactory().partitionFile("RL", 24L));
-        stateStore.addFile(fileFactory().partitionFile("RR", 26L));
+        update(stateStore).addFile(fileFactory().partitionFile("root", 100L));
+        update(stateStore).addFile(fileFactory().partitionFile("R", 100L));
+        update(stateStore).addFile(fileFactory().partitionFile("RL", 24L));
+        update(stateStore).addFile(fileFactory().partitionFile("RR", 26L));
 
         // When
         assertThat(getStandardReport()).isEqualTo(
@@ -209,11 +210,11 @@ class PartitionsStatusReportTest {
     void shouldReportSomeFilesAssignedToAJob() throws Exception {
         tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
         tableProperties.setSchema(schemaWithKey("key", new StringType()));
-        stateStore.initialise(partitionsBuilder().singlePartition("root").buildList());
-        stateStore.addFile(fileFactory().partitionFile("root", "1.parquet", 100L));
-        stateStore.addFile(fileFactory().partitionFile("root", "2.parquet", 100L));
-        stateStore.addFile(fileFactory().partitionFile("root", "3.parquet", 100L));
-        stateStore.assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("1.parquet", "2.parquet"))));
+        update(stateStore).initialise(partitionsBuilder().singlePartition("root").buildList());
+        update(stateStore).addFile(fileFactory().partitionFile("root", "1.parquet", 100L));
+        update(stateStore).addFile(fileFactory().partitionFile("root", "2.parquet", 100L));
+        update(stateStore).addFile(fileFactory().partitionFile("root", "3.parquet", 100L));
+        update(stateStore).assignJobIds(List.of(assignJobOnPartitionToFiles("test-job", "root", List.of("1.parquet", "2.parquet"))));
 
         // When
         assertThat(getStandardReport()).isEqualTo(

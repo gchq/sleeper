@@ -35,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
 
@@ -43,7 +44,7 @@ class JavaCompactionRunnerIteratorIT extends CompactionRunnerTestBase {
         // Given
         Schema schema = CompactionRunnerTestUtils.createSchemaWithKeyTimestampValue();
         tableProperties.setSchema(schema);
-        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         List<Record> data1 = CompactionRunnerTestData.specifiedFromEvens((even, record) -> {
             record.put("key", (long) even);

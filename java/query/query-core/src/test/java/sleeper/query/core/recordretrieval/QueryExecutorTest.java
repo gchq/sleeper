@@ -64,6 +64,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -115,7 +116,7 @@ public class QueryExecutorTest {
         @Test
         void shouldNotFindRecordOutsidePartitionRangeWhenFileContainsAnInactiveRecord() throws Exception {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 5L)
                     .buildList());
@@ -160,7 +161,7 @@ public class QueryExecutorTest {
         @BeforeEach
         void setUp() throws Exception {
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
         }
 
         @Test
@@ -218,7 +219,7 @@ public class QueryExecutorTest {
         @BeforeEach
         void setUp() throws Exception {
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             addRootFile("file.parquet", List.of(
                     new Record(Map.of("key", "A", "value", 2L)),
                     new Record(Map.of("key", "A", "value", 2L)),
@@ -331,7 +332,7 @@ public class QueryExecutorTest {
     }
 
     private void addFileMetadata(FileReference fileReference) {
-        stateStore.addFile(fileReference);
+        update(stateStore).addFile(fileReference);
     }
 
     private QueryExecutor executor() throws Exception {

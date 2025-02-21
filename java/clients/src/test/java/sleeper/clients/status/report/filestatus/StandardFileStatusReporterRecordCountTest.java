@@ -29,6 +29,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class StandardFileStatusReporterRecordCountTest extends FilesStatusReportTestBase {
 
@@ -144,8 +145,8 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
         FileReference file1 = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(1000);
         FileReference file1Left = SplitFileReference.referenceForChildPartition(file1, "L");
         FileReference file1Right = SplitFileReference.referenceForChildPartition(file1, "R");
-        stateStore.initialise(partitions.getAllPartitions());
-        stateStore.addFiles(List.of(file1Left, file1Right));
+        update(stateStore).initialise(partitions.getAllPartitions());
+        update(stateStore).addFiles(List.of(file1Left, file1Right));
 
         // When / Then
         assertThat(verboseReportString(StandardFileStatusReporter::new))
@@ -158,7 +159,7 @@ public class StandardFileStatusReporterRecordCountTest extends FilesStatusReport
     private void setupOneFileWithRecordCount(long recordCount) throws Exception {
         Instant lastStateStoreUpdate = Instant.parse("2022-08-22T14:20:00.001Z");
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
-        stateStore.addFile(FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(recordCount));
+        update(stateStore).initialise(partitions.getAllPartitions());
+        update(stateStore).addFile(FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate).rootFile(recordCount));
     }
 }
