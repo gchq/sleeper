@@ -205,7 +205,7 @@ public class FindPartitionsToSplitTest {
     private void setPartitions(Consumer<PartitionsBuilder> config) throws Exception {
         PartitionsBuilder builder = new PartitionsBuilder(tableProperties.getSchema());
         config.accept(builder);
-        stateStore.initialise(builder.buildList());
+        update(stateStore).initialise(builder.buildList());
         fileReferenceFactory = fileReferenceFactory();
     }
 

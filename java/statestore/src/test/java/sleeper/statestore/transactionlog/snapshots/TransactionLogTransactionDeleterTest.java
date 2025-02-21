@@ -196,7 +196,7 @@ public class TransactionLogTransactionDeleterTest {
     void shouldDeleteOldPartitionTransactionWhenTwoAreBeforeLatestSnapshot() throws Exception {
         // Given we have two partitions transactions
         PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("root");
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.initialise(partitions.buildList()));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).initialise(partitions.buildList()));
         setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> partitions
                 .splitToNewChildren("root", "L", "R", "m")
                 .applySplit(stateStore, "root"));

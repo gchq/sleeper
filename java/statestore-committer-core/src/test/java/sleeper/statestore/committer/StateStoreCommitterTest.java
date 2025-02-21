@@ -732,7 +732,7 @@ public class StateStoreCommitterTest {
 
     private void createTable(TableProperties tableProperties) {
         propertiesByTableId.put(tableProperties.get(TABLE_ID), tableProperties);
-        stateStore(tableProperties).initialise(partitions.getAllPartitions());
+        update(stateStore(tableProperties)).initialise(partitions.getAllPartitions());
     }
 
     private StateStore stateStore(TableProperties tableProperties) {

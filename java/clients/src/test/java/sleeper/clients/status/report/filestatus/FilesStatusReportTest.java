@@ -46,7 +46,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .splitToNewChildren("5", "6", "C", "bbb")
                 .splitToNewChildren("6", "A", "B", "aaa")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
         update(stateStore).addFiles(List.of(
                 fileReferenceFactory.partitionFile("A", 50000001),
@@ -73,7 +73,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .splitToNewChildren("B", "D", "E", "ggg")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
         update(stateStore).addFiles(List.of(
                 fileReferenceFactory.partitionFile("D", 50000001),
@@ -93,7 +93,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
         update(stateStore).addFiles(List.of(
                 fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
@@ -117,7 +117,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.from(partitions);
         update(stateStore).addFiles(List.of(
                 fileReferenceFactory.partitionFile("B", "file1.parquet", 100),
@@ -146,7 +146,7 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
                 .rootFirst("A")
                 .splitToNewChildren("A", "B", "C", "mmm")
                 .buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate);
         FileReference rootFile = fileReferenceFactory.partitionFile("A", "not-split.parquet", 1000);
         FileReference pendingSplit = fileReferenceFactory.partitionFile("B", "pending-split.parquet", 2000);
@@ -165,11 +165,11 @@ public class FilesStatusReportTest extends FilesStatusReportTestBase {
     public void shouldReportFilesStatusWhenPartitionsNoLongerExist() throws Exception {
         // Given
         PartitionTree partitions = new PartitionsBuilder(schema).rootFirst("A").buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         FileReferenceFactory fileReferenceFactory = FileReferenceFactory.fromUpdatedAt(partitions, lastStateStoreUpdate);
         FileReference file1 = fileReferenceFactory.rootFile("file1.parquet", 1000L);
         FileReference file2 = fileReferenceFactory.rootFile("file2.parquet", 2000L);
-        stateStore.initialise(new PartitionsBuilder(schema).rootFirst("B").buildList());
+        update(stateStore).initialise(new PartitionsBuilder(schema).rootFirst("B").buildList());
         update(stateStore).addFiles(List.of(file1, file2));
 
         // When / Then

@@ -138,7 +138,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixFileUpdateTime(updateTime);
         PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        stateStore.initialise(partitions.getAllPartitions());
+        update(stateStore).initialise(partitions.getAllPartitions());
         update(stateStore).addFile(FileReferenceFactory.from(partitions).rootFile(100));
 
         // When
@@ -233,7 +233,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixPartitionUpdateTime(updateTime);
-        stateStore.initialise(partitions);
+        update(stateStore).initialise(partitions);
 
         // Then the transaction is held in S3
         String file = singleFileInDataBucket();
@@ -253,7 +253,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
         stateStore.fixPartitionUpdateTime(updateTime);
-        stateStore.initialise(PartitionsBuilderSplitsFirst
+        update(stateStore).initialise(PartitionsBuilderSplitsFirst
                 .leavesWithSplits(schema, leafIds, splitPoints)
                 .anyTreeJoiningAllLeaves().buildList());
 

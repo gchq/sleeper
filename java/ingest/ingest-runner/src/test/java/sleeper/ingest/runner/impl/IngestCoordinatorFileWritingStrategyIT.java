@@ -65,6 +65,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
 import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_REFERENCE_PER_LEAF;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.accurateFileReferenceBuilder;
 import static sleeper.ingest.runner.testutils.IngestCoordinatorTestHelper.accurateSplitFileReference;
 import static sleeper.ingest.runner.testutils.RecordGenerator.genericKey1D;
@@ -110,7 +111,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
@@ -143,7 +144,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000050")
                     .buildTree();
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("lFile"))
@@ -178,7 +179,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .splitToNewChildren("L", "LL", "LR", "000000020")
                     .splitToNewChildren("R", "RL", "RR", "000000080")
                     .buildTree();
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("llFile", "lrFile", "rlFile", "rrFile"))
@@ -218,7 +219,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000010")
                     .buildTree();
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
@@ -273,7 +274,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
             setSchema(recordListAndSchema.sleeperSchema);
             PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                     .singlePartition("root").buildTree();
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
@@ -307,7 +308,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000050")
                     .buildTree();
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
@@ -343,7 +344,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .splitToNewChildren("L", "LL", "LR", "000000020")
                     .splitToNewChildren("R", "RL", "RR", "000000080")
                     .buildTree();
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile"))
@@ -381,7 +382,7 @@ public class IngestCoordinatorFileWritingStrategyIT extends LocalStackTestBase {
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "000000010")
                     .buildTree();
-            stateStore.initialise(tree.getAllPartitions());
+            update(stateStore).initialise(tree.getAllPartitions());
             stateStore.fixFileUpdateTime(stateStoreUpdateTime);
             IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                     .fileNames(List.of("rootFile1", "rootFile2"))

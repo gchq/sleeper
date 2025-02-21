@@ -71,6 +71,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.ingest.runner.testutils.RecordGenerator.genericKey1D;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readMergedRecordsFromPartitionDataFiles;
 import static sleeper.ingest.runner.testutils.ResultVerifier.readRecordsFromPartitionDataFile;
@@ -122,7 +123,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -161,7 +162,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 2)
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -206,7 +207,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 2L)
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -252,7 +253,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", "000000102")
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -300,7 +301,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", new byte[]{64, 64})
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -355,7 +356,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, "000000102")
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -405,7 +406,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, new byte[]{10})
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -459,7 +460,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 1, 10L)
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -507,7 +508,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 1, "2")
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -560,7 +561,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 2L)
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -602,7 +603,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         PartitionTree tree = new PartitionsBuilder(duplicatedRecordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
@@ -639,7 +640,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of())
                 .build();
@@ -675,7 +676,7 @@ public class IngestCoordinatorCommonIT extends LocalStackTestBase {
         PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
         stateStore.fixFileUpdateTime(stateStoreUpdateTime);
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()

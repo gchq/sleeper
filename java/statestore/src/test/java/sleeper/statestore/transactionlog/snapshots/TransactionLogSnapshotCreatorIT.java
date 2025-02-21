@@ -49,7 +49,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         FileReference file = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_UPDATE_TIME).rootFile(123);
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         StateStore inMemoryStateStore = createStateStoreWithInMemoryTransactionLog(table);
-        inMemoryStateStore.initialise(partitions.getAllPartitions());
+        update(inMemoryStateStore).initialise(partitions.getAllPartitions());
         update(inMemoryStateStore).addFile(file);
 
         // When we create a snapshot from the in-memory transactions
@@ -84,7 +84,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         FileReference file1 = FileReferenceFactory.fromUpdatedAt(partitions1, DEFAULT_UPDATE_TIME)
                 .rootFile("file1.parquet", 123L);
         StateStore inMemoryStateStore1 = createStateStoreWithInMemoryTransactionLog(table1);
-        inMemoryStateStore1.initialise(partitions1.getAllPartitions());
+        update(inMemoryStateStore1).initialise(partitions1.getAllPartitions());
         update(inMemoryStateStore1).addFile(file1);
 
         TableProperties table2 = createTable("test-table-id-2", "test-table-2");
@@ -95,7 +95,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         FileReference file2 = FileReferenceFactory.fromUpdatedAt(partitions2, DEFAULT_UPDATE_TIME)
                 .rootFile("file2.parquet", 123L);
         StateStore inMemoryStateStore2 = createStateStoreWithInMemoryTransactionLog(table2);
-        inMemoryStateStore2.initialise(partitions2.getAllPartitions());
+        update(inMemoryStateStore2).initialise(partitions2.getAllPartitions());
         update(inMemoryStateStore2).addFile(file2);
 
         // When
@@ -275,7 +275,7 @@ public class TransactionLogSnapshotCreatorIT extends TransactionLogSnapshotTestB
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         PartitionsBuilder partitions = new PartitionsBuilder(schema).singlePartition("root");
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        stateStore.initialise(partitions.buildList());
+        update(stateStore).initialise(partitions.buildList());
         createSnapshots(table);
         // And we add a transaction that would trigger a new snapshot creation
         partitions.splitToNewChildren("root", "L", "R", 123L)

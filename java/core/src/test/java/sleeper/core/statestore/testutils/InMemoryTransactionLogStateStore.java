@@ -68,7 +68,7 @@ public class InMemoryTransactionLogStateStore {
      */
     public static TransactionLogStateStore createAndInitialiseWithPartitions(List<Partition> partitions, TableProperties tableProperties, InMemoryTransactionLogs transactionLogs) {
         TransactionLogStateStore stateStore = create(tableProperties, transactionLogs);
-        stateStore.initialise(partitions);
+        update(stateStore).initialise(partitions);
         return stateStore;
     }
 

@@ -58,7 +58,7 @@ class PartitionsStatusTest {
         @Test
         void shouldCountRecordsFromReferencesOnLeaves() throws Exception {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
@@ -83,7 +83,7 @@ class PartitionsStatusTest {
         @Test
         void shouldCountRecordsFromReferenceOnLeafAndRoot() throws Exception {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
@@ -105,7 +105,7 @@ class PartitionsStatusTest {
         @Test
         void shouldCountRecordsFromNestedTree() throws Exception {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "aaa")
                     .splitToNewChildren("R", "RL", "RR", "bbb")
@@ -136,7 +136,7 @@ class PartitionsStatusTest {
         @Test
         void shouldCountLeafPartitions() {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
@@ -152,7 +152,7 @@ class PartitionsStatusTest {
         void shouldFindNoSplittingPartitionsWhenThresholdNotExceeded() {
             // Given
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
@@ -169,7 +169,7 @@ class PartitionsStatusTest {
         void shouldFindSplittingPartitionsWhenThresholdExceeded() {
             // Given
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("parent")
                     .splitToNewChildren("parent", "A", "B", "aaa")
                     .buildList());
@@ -186,7 +186,7 @@ class PartitionsStatusTest {
         void shouldExcludeNonLeafPartitionsInNeedsSplittingCount() {
             // Given
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "abc")
                     .buildList());
@@ -203,7 +203,7 @@ class PartitionsStatusTest {
     @Test
     void shouldOrderPartitionsByTreeLeavesFirst() {
         // Given
-        stateStore.initialise(new PartitionsBuilder(schema)
+        update(stateStore).initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "some-middle", "other-middle", "aaa")
                 .splitToNewChildren("some-middle", "some-leaf", "other-leaf", "bbb")

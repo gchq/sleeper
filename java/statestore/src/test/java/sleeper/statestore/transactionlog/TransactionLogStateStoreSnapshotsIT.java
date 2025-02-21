@@ -70,7 +70,7 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
 
         // When
         createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
-            stateStore.initialise(partitions.buildList());
+            update(stateStore).initialise(partitions.buildList());
         });
 
         // Then
@@ -121,11 +121,11 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
                 .minTransactionsAheadToLoadSnapshot(2));
         List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
         List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
-        stateStore.initialise(logPartitions);
+        update(stateStore).initialise(logPartitions);
 
         // When
         createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
-            snapshotStateStore.initialise(snapshotPartitions);
+            update(snapshotStateStore).initialise(snapshotPartitions);
         });
 
         // Then
@@ -139,11 +139,11 @@ public class TransactionLogStateStoreSnapshotsIT extends TransactionLogStateStor
                 .minTransactionsAheadToLoadSnapshot(2));
         List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
         List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
-        stateStore.initialise(logPartitions);
+        update(stateStore).initialise(logPartitions);
 
         // When
         createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-            snapshotStateStore.initialise(snapshotPartitions);
+            update(snapshotStateStore).initialise(snapshotPartitions);
         });
 
         // Then

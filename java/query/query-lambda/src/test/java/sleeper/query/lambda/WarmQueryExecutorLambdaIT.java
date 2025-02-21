@@ -25,7 +25,6 @@ import org.junit.jupiter.api.io.TempDir;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
-import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range;
@@ -46,7 +45,6 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +63,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.query.runner.output.NoResultsOutput.NO_RESULTS_OUTPUT;
 
 public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
@@ -152,6 +151,6 @@ public class WarmQueryExecutorLambdaIT extends LocalStackTestBase {
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).save(tableProperties);
         StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .getStateStore(tableProperties);
-        stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), new ArrayList<>()).construct());
+        update(stateStore).initialise(tableProperties.getSchema());
     }
 }

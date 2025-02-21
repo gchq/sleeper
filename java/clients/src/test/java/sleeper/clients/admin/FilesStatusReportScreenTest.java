@@ -59,7 +59,7 @@ class FilesStatusReportScreenTest extends AdminClientMockStoreBase {
     @BeforeEach
     void setUp() {
         setInstanceProperties(instanceProperties, tableProperties);
-        stateStore.initialise(PartitionsBuilderSplitsFirst.leavesWithSplits(
+        update(stateStore).initialise(PartitionsBuilderSplitsFirst.leavesWithSplits(
                 schema, List.of("A", "B"), List.of("aaa"))
                 .parentJoining("parent", "A", "B").buildList());
         update(stateStore).addFiles(FileReferenceFactory.from(stateStore).singleFileInEachLeafPartitionWithRecords(5).toList());

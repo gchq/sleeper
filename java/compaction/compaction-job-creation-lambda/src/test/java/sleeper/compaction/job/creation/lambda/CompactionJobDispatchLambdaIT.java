@@ -167,7 +167,7 @@ public class CompactionJobDispatchLambdaIT extends LocalStackTestBase {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                 .createTable(tableProperties);
-        stateStoreProvider.getStateStore(tableProperties)
+        update(stateStoreProvider.getStateStore(tableProperties))
                 .initialise(partitions.getAllPartitions());
         return tableProperties;
     }

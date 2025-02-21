@@ -69,8 +69,8 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
 
         // When
-        stateStore1.initialise(tree1.getAllPartitions());
-        stateStore2.initialise(tree2.getAllPartitions());
+        update(stateStore1).initialise(tree1.getAllPartitions());
+        update(stateStore2).initialise(tree2.getAllPartitions());
 
         // Then
         assertThat(stateStore1.getAllPartitions()).containsExactly(tree1.getRootPartition());
@@ -104,8 +104,8 @@ public class TransactionLogStateStoreMultipleTablesIT extends TransactionLogStat
         StateStore stateStore2 = getTableStateStore();
         PartitionTree tree1 = new PartitionsBuilder(schema).singlePartition("partition1").buildTree();
         PartitionTree tree2 = new PartitionsBuilder(schema).singlePartition("partition2").buildTree();
-        stateStore1.initialise(tree1.getAllPartitions());
-        stateStore2.initialise(tree2.getAllPartitions());
+        update(stateStore1).initialise(tree1.getAllPartitions());
+        update(stateStore2).initialise(tree2.getAllPartitions());
         FileReference file1 = FileReferenceFactory.from(tree1).rootFile("file1.parquet", 12);
         FileReference file2 = FileReferenceFactory.from(tree2).rootFile("file2.parquet", 34);
         update(stateStore1).addFile(file1);

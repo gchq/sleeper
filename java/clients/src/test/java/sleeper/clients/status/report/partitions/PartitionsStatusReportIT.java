@@ -61,7 +61,7 @@ public class PartitionsStatusReportIT extends LocalStackTestBase {
                 .splitToNewChildren("parent", "A", "B", "aaa")
                 .buildTree();
         StateStore stateStore = stateStore();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
         update(stateStore).addFiles(FileReferenceFactory.from(tree).singleFileInEachLeafPartitionWithRecords(100).toList());
 
         // When / Then

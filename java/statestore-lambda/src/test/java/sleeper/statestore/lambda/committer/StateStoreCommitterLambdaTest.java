@@ -56,6 +56,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class StateStoreCommitterLambdaTest {
     private static final Instant DEFAULT_FILE_UPDATE_TIME = FilesReportTestHelper.DEFAULT_UPDATE_TIME;
@@ -69,7 +70,7 @@ public class StateStoreCommitterLambdaTest {
 
     @BeforeEach
     void setUp() {
-        stateStore().initialise(partitions.getAllPartitions());
+        update(stateStore()).initialise(partitions.getAllPartitions());
     }
 
     @Test

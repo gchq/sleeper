@@ -52,7 +52,7 @@ class WaitForPartitionSplittingTest {
         void shouldFindSplitsNotFinishedWhenOnePartitionStillNeedsSplitting() {
             // Given
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
-            stateStore.initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
             update(stateStore).addFile(fileFactory().partitionFile("root", "test.parquet", 11));
 
             // When
@@ -84,11 +84,11 @@ class WaitForPartitionSplittingTest {
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
 
             StateStore before = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            before.initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            update(before).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
             update(before).addFile(fileFactory(before).partitionFile("root", "test.parquet", 11));
 
             StateStore after = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            after.initialise(new PartitionsBuilder(tableProperties)
+            update(after).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point")
                     .buildList());
@@ -108,7 +108,7 @@ class WaitForPartitionSplittingTest {
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
 
             StateStore before = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            before.initialise(new PartitionsBuilder(tableProperties)
+            update(before).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point")
                     .buildList());
@@ -116,7 +116,7 @@ class WaitForPartitionSplittingTest {
             update(before).addFile(fileFactory(before).partitionFile("right", "right.parquet", 11));
 
             StateStore after = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            after.initialise(new PartitionsBuilder(tableProperties)
+            update(after).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point")
                     .splitToNewChildren("left", "left left", "left right", "left split")
@@ -138,7 +138,7 @@ class WaitForPartitionSplittingTest {
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
 
             StateStore before = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            before.initialise(new PartitionsBuilder(tableProperties)
+            update(before).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point")
                     .buildList());
@@ -146,7 +146,7 @@ class WaitForPartitionSplittingTest {
             update(before).addFile(fileFactory(before).partitionFile("right", "right.parquet", 11));
 
             StateStore after = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            after.initialise(new PartitionsBuilder(tableProperties)
+            update(after).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point")
                     .splitToNewChildren("left", "left left", "left right", "left split")
@@ -173,11 +173,11 @@ class WaitForPartitionSplittingTest {
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
 
             StateStore before = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            before.initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            update(before).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
             update(before).addFile(fileFactory(before).partitionFile("root", "test.parquet", 11));
 
             StateStore after = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            after.initialise(new PartitionsBuilder(tableProperties)
+            update(after).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point")
                     .buildList());
@@ -198,14 +198,14 @@ class WaitForPartitionSplittingTest {
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
 
             StateStore before = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            before.initialise(new PartitionsBuilder(tableProperties)
+            update(before).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point")
                     .buildList());
             update(before).addFile(fileFactory(before).partitionFile("left", "left.parquet", 11));
 
             StateStore after = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            after.initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
+            update(after).initialise(new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
             update(after).addFile(fileFactory(after).partitionFile("root", "test.parquet", 11));
 
             // When
@@ -222,14 +222,14 @@ class WaitForPartitionSplittingTest {
             tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
 
             StateStore before = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            before.initialise(new PartitionsBuilder(tableProperties)
+            update(before).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point before")
                     .buildList());
             update(before).addFile(fileFactory(before).partitionFile("left", "left.parquet", 11));
 
             StateStore after = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
-            after.initialise(new PartitionsBuilder(tableProperties)
+            update(after).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point after")
                     .buildList());

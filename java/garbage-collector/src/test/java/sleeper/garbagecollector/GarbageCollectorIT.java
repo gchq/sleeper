@@ -449,7 +449,7 @@ public class GarbageCollectorIT {
     private TableProperties createTable() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
         tables.add(tableProperties);
-        stateStoreProvider.getStateStore(tableProperties).initialise(partitions.getAllPartitions());
+        update(stateStoreProvider.getStateStore(tableProperties)).initialise(partitions.getAllPartitions());
         return tableProperties;
     }
 

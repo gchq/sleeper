@@ -89,7 +89,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         // Given
         TableProperties table = createTable(uniqueIdAndName("test-table-1", "table-1"));
         StateStore stateStoreBefore = createStateStore(table);
-        stateStoreBefore.initialise(new PartitionsBuilder(schema)
+        update(stateStoreBefore).initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
@@ -154,7 +154,7 @@ public class DeleteTableIT extends LocalStackTestBase {
         // Given
         TableProperties table = createTable(uniqueIdAndName("test-table-1", "table-1"));
         StateStore stateStore = createStateStore(table);
-        stateStore.initialise(new PartitionsBuilder(schema)
+        update(stateStore).initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 50L)
                 .buildList());
