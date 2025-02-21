@@ -15,6 +15,7 @@
  */
 package sleeper.core.tracker.job.run;
 
+import sleeper.core.tracker.job.status.JobRunStatusUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.util.ArrayList;
@@ -46,7 +47,7 @@ class JobRunsBuilder {
     private final List<JobRun.Builder> orderedBuilders = new ArrayList<>();
 
     void add(JobStatusUpdateRecord record) {
-        if (!record.getStatusUpdate().isPartOfRun()) {
+        if (!(record.getStatusUpdate() instanceof JobRunStatusUpdate)) {
             return;
         }
         getBuilderIfCorrelatable(record)
@@ -59,7 +60,7 @@ class JobRunsBuilder {
     }
 
     private Optional<JobRun.Builder> getBuilderIfCorrelatable(JobStatusUpdateRecord record) {
-        if (!record.getStatusUpdate().isPartOfRun()) {
+        if (!(record.getStatusUpdate() instanceof JobRunStatusUpdate)) {
             return Optional.empty();
         }
         String jobRunId = record.getJobRunId();

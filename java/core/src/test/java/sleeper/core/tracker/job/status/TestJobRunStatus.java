@@ -18,13 +18,15 @@ package sleeper.core.tracker.job.status;
 import java.time.Instant;
 
 /**
- * Interface for a status update that marks the start of a run of a job.
+ * A test implementation of a job status update on a run.
+ *
+ * @param updateTime the time of the update
  */
-public interface JobRunStartedUpdate extends JobRunStatusUpdate {
-    /**
-     * Get the start time of this run.
-     *
-     * @return the start time
-     */
-    Instant getStartTime();
+public record TestJobRunStatus(Instant updateTime) implements JobRunStatusUpdate {
+
+    @Override
+    public Instant getUpdateTime() {
+        return updateTime;
+    }
+
 }

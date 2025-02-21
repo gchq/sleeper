@@ -15,7 +15,7 @@
  */
 package sleeper.core.tracker.ingest.job.query;
 
-import sleeper.core.tracker.job.status.JobStatusUpdate;
+import sleeper.core.tracker.job.status.JobRunStatusUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * A status update for when an ingest job has committed files to the state store.
  */
-public class IngestJobAddedFilesStatus implements JobStatusUpdate {
+public class IngestJobAddedFilesStatus implements JobRunStatusUpdate {
 
     private final Instant writtenTime;
     private final Instant updateTime;
@@ -50,11 +50,6 @@ public class IngestJobAddedFilesStatus implements JobStatusUpdate {
 
     public int getFileCount() {
         return fileCount;
-    }
-
-    @Override
-    public boolean isPartOfRun() {
-        return true;
     }
 
     @Override

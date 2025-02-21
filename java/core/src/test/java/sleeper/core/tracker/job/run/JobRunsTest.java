@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.tracker.job.status.AggregatedTaskJobsFinishedStatus;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
 import sleeper.core.tracker.job.status.JobRunStartedUpdate;
-import sleeper.core.tracker.job.status.JobStatusUpdate;
+import sleeper.core.tracker.job.status.TestJobRunStatus;
 import sleeper.core.tracker.job.status.TestJobStartedAndFinishedStatus;
 import sleeper.core.tracker.job.status.TestJobStartedStatus;
-import sleeper.core.tracker.job.status.TestJobStatus;
+import sleeper.core.tracker.job.status.TestJobStatusNotInRun;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -40,8 +40,6 @@ import static sleeper.core.tracker.job.run.JobRunsTestHelper.runsFromUpdates;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.finishedStatus;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.startedStatus;
-import static sleeper.core.tracker.job.status.TestJobStatus.notPartOfRunWithUpdateTime;
-import static sleeper.core.tracker.job.status.TestJobStatus.partOfRunWithUpdateTime;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forNoRunNoTask;
@@ -173,7 +171,7 @@ class JobRunsTest {
             // And the other process has an out of sync clock such that the update occurred before the start update
             TestJobStartedStatus started = startedStatus(
                     Instant.parse("2024-06-19T13:26:00Z"));
-            TestJobStatus update = partOfRunWithUpdateTime(
+            TestJobRunStatus update = new TestJobRunStatus(
                     Instant.parse("2024-06-19T13:25:59Z"));
 
             // When
@@ -195,7 +193,7 @@ class JobRunsTest {
                     Instant.parse("2024-06-19T13:26:00Z"));
             AggregatedTaskJobsFinishedStatus finished = finishedStatus(
                     started, Duration.ofMinutes(1), 123, 123);
-            TestJobStatus update = partOfRunWithUpdateTime(
+            TestJobRunStatus update = new TestJobRunStatus(
                     Instant.parse("2024-06-19T13:28:00Z"));
 
             // When
@@ -213,7 +211,7 @@ class JobRunsTest {
         @Test
         void shouldExcludeUpdateNotPartOfARun() {
             // Given
-            TestJobStatus notPartOfRun = notPartOfRunWithUpdateTime(Instant.parse("2024-06-19T14:06:00Z"));
+            TestJobStatusNotInRun notPartOfRun = new TestJobStatusNotInRun(Instant.parse("2024-06-19T14:06:00Z"));
             TestJobStartedStatus started = startedStatus(Instant.parse("2024-06-19T14:06:01Z"));
 
             // When
@@ -280,7 +278,7 @@ class JobRunsTest {
         @Test
         void shouldNotCreateRunIfStatusUpdateNotFlaggedAsPartOfRun() {
             // Given
-            JobStatusUpdate notStartedUpdate = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T09:23:30.001Z"));
+            TestJobStatusNotInRun notStartedUpdate = new TestJobStatusNotInRun(Instant.parse("2022-09-24T09:23:30.001Z"));
 
             // When
             JobRuns runs = runsFromSingleRunUpdates(notStartedUpdate);
@@ -293,7 +291,7 @@ class JobRunsTest {
         void shouldCreateRunWithCustomStatusUpdatePartOfRun() {
             // Given
             TestJobStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
-            TestJobStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+            TestJobRunStatus customStatus = new TestJobRunStatus(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
             JobRuns runs = runsFromSingleRunUpdates(startedStatus, customStatus);
@@ -309,7 +307,7 @@ class JobRunsTest {
         void shouldCreateRunWithCustomStatusUpdateNotPartOfRun() {
             // Given
             TestJobStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
-            TestJobStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+            TestJobStatusNotInRun customStatus = new TestJobStatusNotInRun(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
             JobRuns runs = runsFromUpdates(forRunOnTask("a-task", startedStatus), onNoTask(customStatus));
@@ -325,7 +323,7 @@ class JobRunsTest {
         void shouldCreateRunWithCustomStatusUpdateNotPartOfRunButStillOnTask() {
             // Given
             TestJobStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
-            TestJobStatus customStatus = notPartOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+            TestJobStatusNotInRun customStatus = new TestJobStatusNotInRun(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
             JobRuns runs = runsFromUpdates(forRunOnTask("a-task", startedStatus, customStatus));
@@ -441,14 +439,14 @@ class JobRunsTest {
         void shouldReturnLastStatusUpdateByClass() {
             // Given
             TestJobStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
-            TestJobStatus customStatus = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
+            TestJobRunStatus customStatus = new TestJobRunStatus(Instant.parse("2022-09-24T10:23:30Z"));
 
             // When
             JobRuns runs = runsFromSingleRunUpdates(startedStatus, customStatus);
 
             // Then
             assertThat(runs.getLatestRun()
-                    .flatMap(latestRun -> latestRun.getLastStatusOfType(TestJobStatus.class)))
+                    .flatMap(latestRun -> latestRun.getLastStatusOfType(TestJobRunStatus.class)))
                     .get().isEqualTo(customStatus);
         }
 
@@ -456,15 +454,15 @@ class JobRunsTest {
         void shouldReturnLastStatusUpdateByClassWithMultipleUpdatesForClass() {
             // Given
             TestJobStartedStatus startedStatus = startedStatus(Instant.parse("2022-09-24T09:23:30Z"));
-            TestJobStatus customStatus1 = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:23:30Z"));
-            TestJobStatus customStatus2 = partOfRunWithUpdateTime(Instant.parse("2022-09-24T10:25:30Z"));
+            TestJobRunStatus customStatus1 = new TestJobRunStatus(Instant.parse("2022-09-24T10:23:30Z"));
+            TestJobRunStatus customStatus2 = new TestJobRunStatus(Instant.parse("2022-09-24T10:25:30Z"));
 
             // When
             JobRuns runs = runsFromSingleRunUpdates(startedStatus, customStatus1, customStatus2);
 
             // Then
             assertThat(runs.getLatestRun()
-                    .flatMap(latestRun -> latestRun.getLastStatusOfType(TestJobStatus.class)))
+                    .flatMap(latestRun -> latestRun.getLastStatusOfType(TestJobRunStatus.class)))
                     .get().isEqualTo(customStatus2);
         }
 
