@@ -18,8 +18,6 @@ package sleeper.core.statestore;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
-import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
-import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
@@ -102,18 +100,6 @@ public interface FileReferenceStoreUpdates {
      * @throws ReplaceRequestsFailedException if any of the updates fail
      */
     void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException;
-
-    /**
-     * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
-     * used for compaction job input files.
-     *
-     * @param  requests                            A list of {@link AssignJobIdRequest}s which should each be applied
-     *                                             atomically
-     * @throws FileReferenceNotFoundException      if a reference does not exist
-     * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
-     * @throws StateStoreException                 if the update fails for another reason
-     */
-    void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException;
 
     /**
      * Records that files were garbage collected and have been deleted. The reference counts for those files should be
