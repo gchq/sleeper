@@ -239,7 +239,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException        if the update fails for another reason
      */
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
-        addTransaction(new DeleteFilesTransaction(filenames));
+        new DeleteFilesTransaction(filenames).synchronousCommit(stateStore);
     }
 
     /**

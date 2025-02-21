@@ -15,9 +15,11 @@
  */
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -51,6 +53,16 @@ public class DeleteFilesTransaction implements FileReferenceTransaction {
     @Override
     public void apply(StateStoreFiles stateStoreFiles, Instant updateTime) {
         filenames.forEach(stateStoreFiles::remove);
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param stateStore the state store
+     */
+    public void synchronousCommit(StateStore stateStore) {
+        stateStore.addFilesTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override
