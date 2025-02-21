@@ -509,6 +509,16 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         }
     }
 
+    @Nested
+    @DisplayName("Store too big transactions")
+    class StoreBigTransactions {
+
+        @Test
+        void shouldStoreTransactionInBodyStoreWhenTooBig() {
+            // TODO
+        }
+    }
+
     private StateStore otherProcess() {
         return stateStore();
     }
