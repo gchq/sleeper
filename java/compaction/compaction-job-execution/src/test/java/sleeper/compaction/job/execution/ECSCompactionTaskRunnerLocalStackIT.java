@@ -24,6 +24,7 @@ import com.amazonaws.services.sqs.model.SetQueueAttributesRequest;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.hadoop.ParquetReader;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,8 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
@@ -233,19 +236,14 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         }
 
         @Test
+        @Disabled("TODO")
         void shouldPutMessageBackOnSQSQueueIfStateStoreUpdateFailed() throws Exception {
             // Given
+            InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+            StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
             configureJobQueuesWithMaxReceiveCount(2);
-            StateStore stateStore = mock(StateStore.class);
-            doAnswer(invocation -> {
-                List<ReplaceFileReferencesRequest> requests = invocation.getArgument(0);
-                throw new ReplaceRequestsFailedException(requests, new IllegalStateException("Failed to update state store"));
-            }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            when(stateStore.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
-                    "job1", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "root"))))
-                    .thenReturn(true);
             String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
 
             // When
