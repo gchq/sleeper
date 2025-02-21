@@ -53,14 +53,11 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.CheckFileAssignmentsRequest;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
-import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
@@ -92,10 +89,6 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdsToInputFiles;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_DLQ_URL;
@@ -111,8 +104,8 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_MAX_IDLE_TIME_IN_SECONDS;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_WAIT_TIME_IN_SECONDS;
+import static sleeper.core.properties.instance.CompactionProperty.DEFAULT_COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_ASYNC_BATCHING;
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -124,12 +117,15 @@ import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
 
 public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
-    private final InstanceProperties instanceProperties = createInstance();
+    private final InstanceProperties instanceProperties = createInstanceProperties();
     private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
     private StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
-    private final Schema schema = createSchema();
-    private final TableProperties tableProperties = createTable();
+    private final Schema schema = Schema.builder()
+            .rowKeyFields(new Field("key", new LongType()))
+            .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
+            .build();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final String tableId = tableProperties.get(TABLE_ID);
     private final CompactionJobTracker jobTracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
     private final CompactionTaskTracker taskTracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
@@ -137,6 +133,13 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
 
     @BeforeEach
     void setUp() {
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        tablePropertiesStore.save(tableProperties);
+        update(stateStoreProvider.getStateStore(tableProperties)).initialise(schema);
         DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
         DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
     }
@@ -264,22 +267,19 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         @Test
         void shouldMoveMessageToDLQIfStateStoreUpdateFailedTooManyTimes() throws Exception {
             // Given
+            useInMemoryStateStore();
             configureJobQueuesWithMaxReceiveCount(1);
-            StateStore stateStore = mock(StateStore.class);
-            doAnswer(invocation -> {
-                List<ReplaceFileReferencesRequest> requests = invocation.getArgument(0);
-                throw new ReplaceRequestsFailedException(requests, new IllegalStateException("Failed to update state store"));
-            }).when(stateStore).atomicallyReplaceFileReferencesWithNewOnes(anyList());
             FileReference fileReference1 = ingestFileWith100Records();
             FileReference fileReference2 = ingestFileWith100Records();
-            when(stateStore.isAssigned(List.of(CheckFileAssignmentsRequest.isJobAssignedToFilesOnPartition(
-                    "job1", List.of(fileReference1.getFilename(), fileReference2.getFilename()), "root"))))
-                    .thenReturn(true);
-            String jobJson = sendCompactionJobForFilesGetJson("job1", "output1.parquet", fileReference1, fileReference2);
+            CompactionJob job = compactionJobForFiles("job1", "output1.parquet", fileReference1, fileReference2);
+            assignJobIdsToInputFiles(getStateStore(), job);
+            String jobJson = sendJob(job);
+            inMemoryFilesLogStore().atStartOfAddTransaction(() -> {
+                throw new RuntimeException("Test error message thrown");
+            });
 
             // When
-            StateStoreProvider provider = new FixedStateStoreProvider(tableProperties, stateStore);
-            createTask("task-id", provider).run();
+            createTask("task-id").run();
 
             // Then
             // - The compaction job should no longer be on the job queue
@@ -384,7 +384,7 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
                 .containsExactly(onJob(job, fileReference));
     }
 
-    private InstanceProperties createInstance() {
+    private InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "");
         instanceProperties.set(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE, "direct");
@@ -395,29 +395,8 @@ public class ECSCompactionTaskRunnerLocalStackIT extends LocalStackTestBase {
         instanceProperties.setNumber(COMPACTION_TASK_MAX_CONSECUTIVE_FAILURES, 1);
         instanceProperties.setNumber(COMPACTION_KEEP_ALIVE_PERIOD_IN_SECONDS, 1);
         instanceProperties.setNumber(COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS, 1);
-        createBucket(instanceProperties.get(CONFIG_BUCKET));
-        createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
-
+        instanceProperties.setNumber(DEFAULT_COMPACTION_FILES_BATCH_SIZE, 5);
         return instanceProperties;
-    }
-
-    private static Schema createSchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", new LongType()))
-                .valueFields(new Field("value1", new LongType()), new Field("value2", new LongType()))
-                .build();
-    }
-
-    private TableProperties createTable() {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        tableProperties.set(COMPACTION_FILES_BATCH_SIZE, "5");
-        tablePropertiesStore.save(tableProperties);
-        update(getStateStore()).initialise(schema);
-
-        return tableProperties;
     }
 
     private StateStore getStateStore() {
