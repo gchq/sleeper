@@ -134,15 +134,6 @@ public class DelegatingStateStore implements StateStore {
         fileReferenceStore.initialise();
     }
 
-    /**
-     * Initialises just the file reference store.
-     *
-     * @throws StateStoreException thrown if the initialisation fails
-     */
-    public void setInitialFileReferences() throws StateStoreException {
-        fileReferenceStore.initialise();
-    }
-
     @Override
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
         partitionStore.atomicallyUpdatePartitionAndCreateNewOnes(splitPartition, newPartition1, newPartition2);
