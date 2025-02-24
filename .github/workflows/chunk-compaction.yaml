@@ -34,7 +34,6 @@ on:
       - 'java/common/common-invoke-tables/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
-      - 'java/common/dynamodb-test/**'
       - 'java/parquet/**'
       - 'java/common/localstack-test/**'
       - 'java/example-iterators/**'

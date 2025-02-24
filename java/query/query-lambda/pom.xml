@@ -89,12 +89,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>dynamodb-test</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>ingest-runner</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>

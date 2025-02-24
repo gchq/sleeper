@@ -28,7 +28,7 @@ import sleeper.core.range.Range;
 import sleeper.core.range.Region;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.tracker.QueryState;
@@ -46,7 +46,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class QueryMessageHandlerIT extends DynamoDBTestBase {
+public class QueryMessageHandlerIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);

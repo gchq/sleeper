@@ -43,7 +43,7 @@
         <!-- Test dependencies -->
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>dynamodb-test</artifactId>
+            <artifactId>localstack-test</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
