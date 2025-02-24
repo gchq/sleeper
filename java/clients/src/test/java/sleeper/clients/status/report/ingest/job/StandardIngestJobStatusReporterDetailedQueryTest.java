@@ -168,7 +168,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
                     "]\n" +
                     "}";
             IngestJob job = createJob(1, 2);
-            List<IngestJobStatus> status = ingestJobStatusListFrom(records().fromUpdates(
+            List<IngestJobStatus> status = ingestJobStatusListFrom(records().singleRunUpdates(
                     rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
 
             // When / Then
@@ -180,7 +180,7 @@ public class StandardIngestJobStatusReporterDetailedQueryTest {
         void shouldReportRejectedJobWithInvalidJsonMessageSaved() throws IOException {
             String json = "{";
             IngestJob job = createJob(1, 2);
-            List<IngestJobStatus> status = ingestJobStatusListFrom(records().fromUpdates(
+            List<IngestJobStatus> status = ingestJobStatusListFrom(records().singleRunUpdates(
                     rejectedStatusUpdate(job, Instant.parse("2023-06-05T17:20:00Z"), json)));
 
             // When / Then

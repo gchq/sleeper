@@ -38,8 +38,8 @@ public class JobRunsTestHelper {
      * @param  updates the process status updates
      * @return         a {@link JobRuns} object
      */
-    public static JobRuns runsFromUpdates(JobStatusUpdate... updates) {
-        return runsFrom(records().fromUpdates(updates));
+    public static JobRuns runsFromSingleRunUpdates(JobStatusUpdate... updates) {
+        return runsFrom(records().singleRunUpdates(updates));
     }
 
     /**
