@@ -107,7 +107,7 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
     public Void handleRequest(SQSEvent event, Context context) {
         event.getRecords().stream()
                 .map(SQSEvent.SQSMessage::getBody)
-                .peek(body -> LOGGER.info("Received message with body {}", body))
+                .peek(body -> LOGGER.debug("Received message with body {}", body))
                 .flatMap(body -> deserialiseAndValidate(body).stream())
                 .peek(json -> LOGGER.debug(json.toString()))
                 .forEach(query -> {
@@ -132,13 +132,13 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
     public Optional<BulkExportQuery> deserialiseAndValidate(String message) {
         try {
             BulkExportQuery exportQuery = bulkExportQuerySerDe.fromJson(message);
-            LOGGER.info("Deserialised message to query {}", exportQuery);
+            LOGGER.debug("Deserialised message to export query {}", exportQuery);
             return Optional.of(exportQuery);
         } catch (BulkExportQueryValidationException e) {
-            LOGGER.error("QueryValidationException validating query from JSON {}", message, e);
+            LOGGER.error("QueryValidationException validating export query from JSON {}", message, e);
             return Optional.empty();
         } catch (RuntimeException e) {
-            LOGGER.error("Failed deserialising query from JSON {}", message, e);
+            LOGGER.error("Failed deserialising export query from JSON {}", message, e);
             return Optional.empty();
         }
     }
