@@ -62,9 +62,9 @@ public class QueryCompactionJobStatusByIdIT extends DynamoDBCompactionJobTracker
 
         // When
         storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId("test-task").build());
-        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId("test-task").build());
-        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId("test-task").build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId("test-task").jobRunId("test-run").build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId("test-task").jobRunId("test-run").build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId("test-task").jobRunId("test-run").build());
 
         // Then
         assertThat(getJobStatus(job.getId()))

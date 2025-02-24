@@ -41,7 +41,6 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIn
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.finishedIngestRunUncommitted;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAcceptedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
-import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatusListFrom;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestRejectedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleIngestJobStatusFrom;
@@ -54,7 +53,7 @@ import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.UNCOMMIT
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.run.JobRunTestData.validationRun;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnNoTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
@@ -503,23 +502,26 @@ public class IngestJobStatusTest {
             Instant finishExpiryTime = Instant.parse("2022-12-21T15:29:42.001Z");
 
             IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
-                    forJob("test-job", withExpiry(startExpiryTime,
+                    forJobRunOnTask("test-job", withExpiry(startExpiryTime,
                             startedStatusUpdate(startTime))),
-                    forJob("test-job", withExpiry(finishExpiryTime,
+                    forJobRunOnTask("test-job", withExpiry(finishExpiryTime,
                             finishedStatusUpdate(startTime, finishTime)))));
 
             assertThat(status.getExpiryDate()).isEqualTo(startExpiryTime);
         }
 
         @Test
-        public void shouldIgnoreJobWithoutStartedUpdateAsItMayHaveExpired() {
+        public void shouldIncludeJobWithExpiredStartedUpdate() {
             Instant startTime = Instant.parse("2022-12-14T15:28:42.001Z");
             Instant finishTime = Instant.parse("2022-12-14T15:29:42.001Z");
 
-            List<IngestJobStatus> statuses = ingestJobStatusListFrom(records().fromUpdates(
-                    forJob("test-job", finishedStatusUpdate(startTime, finishTime))));
+            IngestJobStatus status = singleIngestJobStatusFrom(records().fromUpdates(
+                    forJobRunOnTask("test-job", finishedStatusUpdate(startTime, finishTime))));
 
-            assertThat(statuses).isEmpty();
+            assertThat(status.getRunsLatestFirst())
+                    .singleElement()
+                    .extracting(JobRunReport::getStatusUpdates)
+                    .isEqualTo(List.of(finishedStatusUpdate(startTime, finishTime)));
         }
     }
 

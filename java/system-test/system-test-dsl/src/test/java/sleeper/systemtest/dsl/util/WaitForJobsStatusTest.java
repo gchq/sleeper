@@ -29,6 +29,7 @@ import sleeper.ingest.core.job.IngestJob;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
@@ -85,18 +86,18 @@ public class WaitForJobsStatusTest {
         tracker.fixUpdateTime(Instant.parse("2023-09-18T14:47:00Z"));
         jobsCreated(createdJob, startedJob, uncommittedJob, finishedJob);
         tracker.fixUpdateTime(Instant.parse("2023-09-18T14:48:03Z"));
-        tracker.jobStarted(startedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").build());
-        tracker.jobStarted(uncommittedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").build());
-        tracker.jobStarted(finishedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").build());
+        tracker.jobStarted(startedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").jobRunId("started-run").build());
+        tracker.jobStarted(uncommittedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").jobRunId("finished-run-1").build());
+        tracker.jobStarted(finishedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").jobRunId("finished-run-2").build());
         tracker.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
         tracker.jobFinished(uncommittedJob.finishedEventBuilder(
                 summary(Instant.parse("2023-09-18T14:48:01Z"), Instant.parse("2023-09-18T14:50:01Z"), 100L, 100L))
-                .taskId("finished-task-1").build());
+                .taskId("finished-task-1").jobRunId("finished-run-1").build());
         tracker.jobFinished(finishedJob.finishedEventBuilder(
                 summary(Instant.parse("2023-09-18T14:48:02Z"), Instant.parse("2023-09-18T14:50:02Z"), 100L, 100L))
-                .taskId("finished-task-2").build());
+                .taskId("finished-task-2").jobRunId("finished-run-2").build());
         tracker.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
-        tracker.jobCommitted(finishedJob.committedEventBuilder(Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").build());
+        tracker.jobCommitted(finishedJob.committedEventBuilder(Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").jobRunId("finished-run-2").build());
         // When
         WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker,
                 List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
@@ -250,19 +251,20 @@ public class WaitForJobsStatusTest {
 
     private void addUnfinishedRun(CompactionJob job, Instant startTime, String taskId) {
         tracker.fixUpdateTime(defaultUpdateTime(startTime));
-        tracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
+        tracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(UUID.randomUUID().toString()).build());
     }
 
     private void addFinishedRun(CompactionJob job, Instant startTime, Instant finishTime, String taskId) {
+        String jobRunId = UUID.randomUUID().toString();
         tracker.fixUpdateTime(defaultUpdateTime(startTime));
-        tracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).build());
+        tracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(jobRunId).build());
 
         tracker.fixUpdateTime(defaultUpdateTime(finishTime));
         tracker.jobFinished(job.finishedEventBuilder(
                 summary(startTime, finishTime, 100L, 100L))
-                .taskId(taskId).build());
+                .taskId(taskId).jobRunId(jobRunId).build());
         Instant commitTime = finishTime.plus(Duration.ofMinutes(1));
         tracker.fixUpdateTime(defaultUpdateTime(commitTime));
-        tracker.jobCommitted(job.committedEventBuilder(commitTime).taskId(taskId).build());
+        tracker.jobCommitted(job.committedEventBuilder(commitTime).taskId(taskId).jobRunId(jobRunId).build());
     }
 }

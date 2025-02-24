@@ -26,7 +26,7 @@ import java.util.Optional;
 /**
  * Interface for a status update that marks the end of a process run.
  */
-public interface JobRunEndUpdate extends JobStatusUpdate {
+public interface JobRunEndUpdate extends JobRunStatusUpdate {
 
     /**
      * Gets the time the job finished in the task.
@@ -52,9 +52,5 @@ public interface JobRunEndUpdate extends JobStatusUpdate {
 
     default List<String> getFailureReasons() {
         return List.of();
-    }
-
-    default boolean isPartOfRun() {
-        return true;
     }
 }

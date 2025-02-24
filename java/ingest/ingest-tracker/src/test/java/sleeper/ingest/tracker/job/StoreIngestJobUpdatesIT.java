@@ -80,10 +80,10 @@ public class StoreIngestJobUpdatesIT extends DynamoDBIngestJobTrackerTestBase {
         String taskId2 = "second-task";
 
         // When
-        tracker.jobStarted(job.startedEventBuilder(startTime1).taskId(taskId1).build());
-        tracker.jobStarted(job.startedEventBuilder(startTime2).taskId(taskId2).build());
-        tracker.jobFinished(job.finishedEventBuilder(defaultSummary(startTime1, finishTime1)).taskId(taskId1).numFilesWrittenByJob(1).build());
-        tracker.jobFinished(job.finishedEventBuilder(defaultSummary(startTime2, finishTime2)).taskId(taskId2).numFilesWrittenByJob(2).build());
+        tracker.jobStarted(job.startedEventBuilder(startTime1).taskId(taskId1).jobRunId("run-1").build());
+        tracker.jobStarted(job.startedEventBuilder(startTime2).taskId(taskId2).jobRunId("run-2").build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary(startTime1, finishTime1)).taskId(taskId1).jobRunId("run-1").numFilesWrittenByJob(1).build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary(startTime2, finishTime2)).taskId(taskId2).jobRunId("run-2").numFilesWrittenByJob(2).build());
 
         // Then
         assertThat(getAllJobStatuses())

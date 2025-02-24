@@ -64,7 +64,7 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTest
 
         // When
         storeJobCreated(tracker, job);
-        tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).jobRunId("a-run").build());
 
         // Then
         assertThat(getJobStatus(tracker, job.getId()).getExpiryDate())
@@ -84,10 +84,10 @@ public class StoreCompactionJobExpiryIT extends DynamoDBCompactionJobTrackerTest
 
         // When
         storeJobCreated(tracker, job);
-        tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
         tracker.jobFinished(job.finishedEventBuilder(new JobRunSummary(
                 new RecordsProcessed(60L, 60L), startedTime, finishedTime))
-                .taskId(DEFAULT_TASK_ID).build());
+                .taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
 
         // Then
         assertThat(getJobStatus(tracker, job.getId()).getExpiryDate())

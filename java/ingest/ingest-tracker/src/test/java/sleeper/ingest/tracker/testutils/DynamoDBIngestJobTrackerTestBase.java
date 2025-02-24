@@ -77,6 +77,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate").build();
     public static final String DEFAULT_TASK_ID = "task-id";
+    public static final String DEFAULT_JOB_RUN_ID = "run-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = DynamoDBIngestJobTracker.jobUpdatesTableName(instanceProperties.get(ID));
     protected final Schema schema = createSchema();
@@ -118,13 +119,14 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStartedEvent defaultJobStartedEvent(IngestJob job, Instant startedTime) {
-        return job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build();
+        return job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).jobRunId(DEFAULT_JOB_RUN_ID).build();
     }
 
     protected static IngestJobAddedFilesEvent defaultJobAddedFilesEvent(IngestJob job, List<FileReference> files, Instant writtenTime) {
         return job.addedFilesEventBuilder(writtenTime)
                 .files(filesWithReferences(files))
                 .taskId(DEFAULT_TASK_ID)
+                .jobRunId(DEFAULT_JOB_RUN_ID)
                 .build();
     }
 
@@ -134,7 +136,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, JobRunSummary summary) {
-        return job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
+        return job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).jobRunId(DEFAULT_JOB_RUN_ID).numFilesWrittenByJob(2).build();
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedButUncommittedEvent(
@@ -143,13 +145,14 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
                 .committedBySeparateFileUpdates(true)
                 .numFilesWrittenByJob(numFilesAdded)
                 .taskId(DEFAULT_TASK_ID)
+                .jobRunId(DEFAULT_JOB_RUN_ID)
                 .build();
     }
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
             IngestJob job, Instant failureTime, List<String> failureReasons) {
         return job.failedEventBuilder(failureTime)
-                .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build();
+                .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).jobRunId(DEFAULT_JOB_RUN_ID).build();
     }
 
     protected static IngestJobStatus defaultJobStartedStatus(IngestJob job, Instant startedTime) {

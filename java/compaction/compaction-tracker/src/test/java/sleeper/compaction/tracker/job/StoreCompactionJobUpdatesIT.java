@@ -44,7 +44,7 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -63,8 +63,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -83,9 +83,9 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
+        tracker.jobCommitted(job.committedEventBuilder(defaultCommitTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -105,8 +105,8 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobFailed(job.failedEventBuilder(defaultFinishTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
+        tracker.jobFailed(job.failedEventBuilder(defaultFinishTime()).failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).jobRunId("test-run").build());
 
         // Then
         assertThat(getAllJobStatuses())
@@ -134,12 +134,12 @@ public class StoreCompactionJobUpdatesIT extends DynamoDBCompactionJobTrackerTes
 
         // When
         storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(startTime1).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobStarted(job.startedEventBuilder(startTime2).taskId(DEFAULT_TASK_ID_2).build());
-        tracker.jobFinished(job.finishedEventBuilder(summary1).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobFinished(job.finishedEventBuilder(summary2).taskId(DEFAULT_TASK_ID_2).build());
-        tracker.jobCommitted(job.committedEventBuilder(commitTime1).taskId(DEFAULT_TASK_ID).build());
-        tracker.jobCommitted(job.committedEventBuilder(commitTime2).taskId(DEFAULT_TASK_ID_2).build());
+        tracker.jobStarted(job.startedEventBuilder(startTime1).taskId(DEFAULT_TASK_ID).jobRunId("run-1").build());
+        tracker.jobStarted(job.startedEventBuilder(startTime2).taskId(DEFAULT_TASK_ID_2).jobRunId("run-2").build());
+        tracker.jobFinished(job.finishedEventBuilder(summary1).taskId(DEFAULT_TASK_ID).jobRunId("run-1").build());
+        tracker.jobFinished(job.finishedEventBuilder(summary2).taskId(DEFAULT_TASK_ID_2).jobRunId("run-2").build());
+        tracker.jobCommitted(job.committedEventBuilder(commitTime1).taskId(DEFAULT_TASK_ID).jobRunId("run-1").build());
+        tracker.jobCommitted(job.committedEventBuilder(commitTime2).taskId(DEFAULT_TASK_ID_2).jobRunId("run-2").build());
 
         // Then
         assertThat(getAllJobStatuses())

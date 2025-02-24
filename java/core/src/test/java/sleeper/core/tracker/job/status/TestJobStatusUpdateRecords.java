@@ -19,6 +19,7 @@ package sleeper.core.tracker.job.status;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,8 +65,8 @@ public class TestJobStatusUpdateRecords {
      * @param  statusUpdates a collection of {@link JobStatusUpdate}
      * @return               this instance for chaining
      */
-    public TestJobStatusUpdateRecords fromUpdates(JobStatusUpdate... statusUpdates) {
-        return fromUpdates(forJobOnTask(DEFAULT_JOB_ID, DEFAULT_TASK_ID, statusUpdates));
+    public TestJobStatusUpdateRecords singleRunUpdates(JobStatusUpdate... statusUpdates) {
+        return fromUpdates(forJobRunOnTask(DEFAULT_JOB_ID, UUID.randomUUID().toString(), DEFAULT_TASK_ID, statusUpdates));
     }
 
     /**
@@ -76,9 +77,9 @@ public class TestJobStatusUpdateRecords {
      * @param  updates the job status updates
      * @return         a {@link TaskUpdates} instance
      */
-    public static TaskUpdates forJobOnTask(
+    public static TaskUpdates forJobRunOnTask(
             String jobId, String taskId, JobStatusUpdate... updates) {
-        return forJobRunOnTask(jobId, null, taskId, updates);
+        return forJobRunOnTask(jobId, UUID.randomUUID().toString(), taskId, updates);
     }
 
     /**
@@ -98,11 +99,6 @@ public class TestJobStatusUpdateRecords {
                         .collect(Collectors.toList()));
     }
 
-    private static TaskUpdates forJobOnTask(
-            String jobId, String taskId, UpdateWithExpiry... updates) {
-        return new TaskUpdates(jobId, taskId, List.of(updates));
-    }
-
     /**
      * Creates an instance of task updates with the default task ID.
      *
@@ -110,9 +106,9 @@ public class TestJobStatusUpdateRecords {
      * @param  updates the job status updates
      * @return         a {@link TaskUpdates} instance
      */
-    public static TaskUpdates forJob(
+    public static TaskUpdates forJobRunOnTask(
             String jobId, JobStatusUpdate... updates) {
-        return forJobOnTask(jobId, DEFAULT_TASK_ID, updates);
+        return forJobRunOnTask(jobId, DEFAULT_TASK_ID, updates);
     }
 
     /**
@@ -122,9 +118,9 @@ public class TestJobStatusUpdateRecords {
      * @param  updates the {@link UpdateWithExpiry} objects
      * @return         a {@link TaskUpdates} instance
      */
-    public static TaskUpdates forJob(
+    public static TaskUpdates forJobRunOnTask(
             String jobId, UpdateWithExpiry... updates) {
-        return forJobOnTask(jobId, DEFAULT_TASK_ID, updates);
+        return new TaskUpdates(jobId, UUID.randomUUID().toString(), DEFAULT_TASK_ID, List.of(updates));
     }
 
     /**
@@ -134,9 +130,9 @@ public class TestJobStatusUpdateRecords {
      * @param  updates the job status updates
      * @return         a {@link TaskUpdates} instance
      */
-    public static TaskUpdates onTask(
+    public static TaskUpdates forRunOnTask(
             String taskId, JobStatusUpdate... updates) {
-        return forJobOnTask(DEFAULT_JOB_ID, taskId, updates);
+        return forRunOnTask(UUID.randomUUID().toString(), taskId, updates);
     }
 
     /**
@@ -146,7 +142,17 @@ public class TestJobStatusUpdateRecords {
      * @return         a {@link TaskUpdates} instance
      */
     public static TaskUpdates onNoTask(JobStatusUpdate... updates) {
-        return forJobOnTask(DEFAULT_JOB_ID, null, updates);
+        return forJobRunOnTask(DEFAULT_JOB_ID, null, updates);
+    }
+
+    /**
+     * Creates an instance of task updates with the default job ID.
+     *
+     * @param  updates the job status updates
+     * @return         a {@link TaskUpdates} instance
+     */
+    public static TaskUpdates forRunOnTask(JobStatusUpdate... updates) {
+        return forJobRunOnTask(DEFAULT_JOB_ID, UUID.randomUUID().toString(), DEFAULT_TASK_ID, updates);
     }
 
     /**
@@ -196,6 +202,16 @@ public class TestJobStatusUpdateRecords {
     }
 
     /**
+     * Creates an instance of task updates with no run ID and no task ID.
+     *
+     * @param  updates the job status updates
+     * @return         a {@link TaskUpdates} instance
+     */
+    public static TaskUpdates forNoRunNoTask(JobStatusUpdate... updates) {
+        return forJobRunOnTask(DEFAULT_JOB_ID, null, null, updates);
+    }
+
+    /**
      * Creates an update with expiry instance.
      *
      * @param  expiryTime the expiry time
@@ -223,10 +239,6 @@ public class TestJobStatusUpdateRecords {
         private final String jobRunId;
         private final String taskId;
         private final List<UpdateWithExpiry> statusUpdates;
-
-        private TaskUpdates(String jobId, String taskId, List<UpdateWithExpiry> statusUpdates) {
-            this(jobId, null, taskId, statusUpdates);
-        }
 
         private TaskUpdates(String jobId, String jobRunId, String taskId, List<UpdateWithExpiry> statusUpdates) {
             this.jobId = jobId;
