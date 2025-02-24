@@ -36,14 +36,28 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
  */
 public class S3TransactionBodyStore implements TransactionBodyStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(S3TransactionBodyStore.class);
+
+    /**
+     * Minimum length of a JSON string that will be written to S3. A transaction will be held in a DynamoDB item for the
+     * log entry with {@link DynamoDBTransactionLogStore}. Max DynamoDB item size is 400KB. Leaves some space for the
+     * rest of the item. DynamoDB uses UTF-8 encoding for strings.
+     */
+    public static final int DEFAULT_JSON_LENGTH_TO_STORE = 1024 * 350;
+
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
     private final TransactionSerDeProvider serDeProvider;
+    private final int jsonLengthToStore;
 
     public S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDeProvider serDeProvider) {
+        this(instanceProperties, s3Client, serDeProvider, DEFAULT_JSON_LENGTH_TO_STORE);
+    }
+
+    public S3TransactionBodyStore(InstanceProperties instanceProperties, AmazonS3 s3Client, TransactionSerDeProvider serDeProvider, int jsonLengthToStore) {
         this.instanceProperties = instanceProperties;
         this.s3Client = s3Client;
         this.serDeProvider = serDeProvider;
+        this.jsonLengthToStore = jsonLengthToStore;
     }
 
     @Override
@@ -53,8 +67,14 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
 
     @Override
     public AddTransactionRequest storeIfTooBig(String tableId, AddTransactionRequest request) {
-        // TODO Auto-generated method stub
-        return TransactionBodyStore.super.storeIfTooBig(tableId, request);
+        String json = serDeProvider.getByTableId(tableId).toJson(request.getTransaction());
+        if (json.length() < jsonLengthToStore) {
+            return request.toBuilder().serialisedTransaction(json).build();
+        } else {
+            String key = TransactionBodyStore.createObjectKey(tableId);
+            store(key, json);
+            return request.toBuilder().bodyKey(key).build();
+        }
     }
 
     /**
