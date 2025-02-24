@@ -102,7 +102,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException if split is not valid or update fails
      */
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        addTransaction(new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
+        new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)).synchronousCommit(stateStore);
     }
 
     /**

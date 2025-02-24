@@ -16,7 +16,9 @@
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 
@@ -73,6 +75,16 @@ public class SplitPartitionTransaction implements PartitionTransaction {
     public void apply(StateStorePartitions stateStorePartitions, Instant updateTime) {
         stateStorePartitions.put(parent);
         newChildren.forEach(stateStorePartitions::put);
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param stateStore the state store
+     */
+    public void synchronousCommit(StateStore stateStore) {
+        stateStore.addPartitionsTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override
