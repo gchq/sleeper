@@ -110,4 +110,37 @@ public class InMemoryTransactionBodyStoreTest {
         assertThat(found1).isNotSameAs(request);
         assertThat(found2).isSameAs(request);
     }
+
+    @Test
+    void shouldIncludeSerialisedTransactionInResponseWhenNotStoringTransaction() {
+        // Given
+        ClearFilesTransaction transaction = new ClearFilesTransaction();
+        AddTransactionRequest request = AddTransactionRequest.withTransaction(transaction).build();
+        store.setReturnSerialisedTransactions(List.of("serialised-transaction"));
+        store.setStoreTransactions(false);
+
+        // When
+        AddTransactionRequest found = store.storeIfTooBig("test-table", request);
+
+        // Then
+        assertThat(found.getSerialisedTransaction()).containsSame("serialised-transaction");
+    }
+
+    @Test
+    void shouldNotIncludeSerialisedTransactionInResponseWhenStoringTransaction() {
+        // Given
+        ClearFilesTransaction transaction1 = new ClearFilesTransaction();
+        ClearFilesTransaction transaction2 = new ClearFilesTransaction();
+        store.setReturnSerialisedTransactions(List.of("transaction-1", "transaction-2"));
+
+        // When
+        store.setStoreTransactions(true);
+        AddTransactionRequest found1 = store.storeIfTooBig("test-table", AddTransactionRequest.withTransaction(transaction1).build());
+        store.setStoreTransactions(false);
+        AddTransactionRequest found2 = store.storeIfTooBig("test-table", AddTransactionRequest.withTransaction(transaction2).build());
+
+        // Then
+        assertThat(found1.getSerialisedTransaction()).isEmpty();
+        assertThat(found2.getSerialisedTransaction()).containsSame("transaction-2");
+    }
 }

@@ -35,6 +35,7 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
     private final Map<String, StateStoreTransaction<?>> transactionByKey = new HashMap<>();
     private boolean storeTransactions = false;
     private Function<String, String> createObjectKey = TransactionBodyStore::createObjectKey;
+    private Function<AddTransactionRequest, AddTransactionRequest> serialiseTransaction = request -> request;
 
     @Override
     public void store(String key, String tableId, StateStoreTransaction<?> transaction) {
@@ -43,8 +44,9 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
 
     @Override
     public AddTransactionRequest storeIfTooBig(String tableId, AddTransactionRequest request) {
+        AddTransactionRequest serialised = serialiseTransaction.apply(request);
         if (!storeTransactions) {
-            return request;
+            return serialised;
         }
         String key = createObjectKey.apply(tableId);
         transactionByKey.put(key, request.getTransaction());
@@ -77,7 +79,23 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
         setCreateObjectKey(keys.iterator()::next);
     }
 
+    /**
+     * Simulates serialising transactions in order to determine whether they big enough that they must be held in the
+     * body store. If the transaction is big enough, this serialisation will occur but will not be passed on to be
+     * recorded in the log, because the transaction is stored here instead. If the transaction is not big enough, the
+     * resulting serialised transaction will be included in the request to store the transaction in the log.
+     *
+     * @param transactionBodies the fake serialised bodies of each transaction we expect to process
+     */
+    public void setReturnSerialisedTransactions(List<String> transactionBodies) {
+        setSerialiseTransaction(transactionBodies.iterator()::next);
+    }
+
     private void setCreateObjectKey(Supplier<String> keySupplier) {
         this.createObjectKey = tableId -> keySupplier.get();
+    }
+
+    private void setSerialiseTransaction(Supplier<String> transactionBodySupplier) {
+        this.serialiseTransaction = request -> request.toBuilder().serialisedTransaction(transactionBodySupplier.get()).build();
     }
 }

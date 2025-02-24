@@ -36,13 +36,15 @@ import java.util.Optional;
 public class AddTransactionRequest {
     public static final Logger LOGGER = LoggerFactory.getLogger(AddTransactionRequest.class);
 
-    private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
+    private final String bodyKey;
+    private final String serialisedTransaction;
     private final StateListenerBeforeApply beforeApplyListener;
 
     private AddTransactionRequest(Builder builder) {
-        bodyKey = builder.bodyKey;
         transaction = builder.transaction;
+        bodyKey = builder.bodyKey;
+        serialisedTransaction = builder.serialisedTransaction;
         beforeApplyListener = builder.beforeApplyListener;
     }
 
@@ -65,6 +67,17 @@ public class AddTransactionRequest {
      */
     public <T extends StateStoreTransaction<?>> T getTransaction() {
         return (T) transaction;
+    }
+
+    /**
+     * Retrieves the serialised string representation of the transaction, if it has been serialised and not uploaded to
+     * S3.
+     *
+     * @return a string representation of the transaction, unless it has not yet been serialised or it has been uploaded
+     *         to S3
+     */
+    public Optional<String> getSerialisedTransaction() {
+        return Optional.ofNullable(serialisedTransaction);
     }
 
     /**
@@ -112,6 +125,7 @@ public class AddTransactionRequest {
 
         private final StateStoreTransaction<?> transaction;
         private String bodyKey;
+        private String serialisedTransaction;
         private StateListenerBeforeApply beforeApplyListener = StateListenerBeforeApply.none();
 
         private Builder(StateStoreTransaction<?> transaction) {
@@ -131,6 +145,20 @@ public class AddTransactionRequest {
          */
         public Builder bodyKey(String bodyKey) {
             this.bodyKey = bodyKey;
+            return this;
+        }
+
+        /**
+         * Sets the string representation of the transaction. To decide whether to upload the transaction to S3, we have
+         * to serialise the transaction and check if it's too big. If it's not too big, we want to hold the transaction
+         * directly in the log, but we want to avoid reserialising it again, so we can hold it here. This should only
+         * be set at that point, and will not be set at all if the transaction is uploaded to S3.
+         *
+         * @param  serialisedTransaction the object key in the data bucket
+         * @return                       this builder
+         */
+        public Builder serialisedTransaction(String serialisedTransaction) {
+            this.serialisedTransaction = serialisedTransaction;
             return this;
         }
 

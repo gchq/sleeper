@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
@@ -48,6 +49,12 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     @Override
     public void store(String key, String tableId, StateStoreTransaction<?> transaction) {
         store(key, serDeProvider.getByTableId(tableId).toJson(transaction));
+    }
+
+    @Override
+    public AddTransactionRequest storeIfTooBig(String tableId, AddTransactionRequest request) {
+        // TODO Auto-generated method stub
+        return TransactionBodyStore.super.storeIfTooBig(tableId, request);
     }
 
     /**
