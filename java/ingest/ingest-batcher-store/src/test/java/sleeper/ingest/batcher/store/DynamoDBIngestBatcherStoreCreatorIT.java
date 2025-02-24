@@ -20,13 +20,13 @@ import com.amazonaws.services.dynamodbv2.model.DescribeTableResult;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBIngestBatcherStoreCreatorIT extends DynamoDBTestBase {
+public class DynamoDBIngestBatcherStoreCreatorIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String tableName = DynamoDBIngestBatcherStore.ingestRequestsTableName(instanceProperties.get(ID));
 

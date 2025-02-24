@@ -24,7 +24,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
 import java.time.Instant;
@@ -38,7 +38,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestBase {
+public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");

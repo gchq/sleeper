@@ -77,12 +77,6 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
-            <artifactId>dynamodb-test</artifactId>
-            <version>${project.parent.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
             <artifactId>localstack-test</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
