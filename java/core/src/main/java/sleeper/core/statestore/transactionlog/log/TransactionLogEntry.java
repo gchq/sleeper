@@ -112,7 +112,7 @@ public class TransactionLogEntry {
 
     @Override
     public int hashCode() {
-        return Objects.hash(transactionNumber, transaction);
+        return Objects.hash(transactionNumber, updateTime, transactionType, bodyKey, transaction);
     }
 
     @Override
@@ -124,14 +124,14 @@ public class TransactionLogEntry {
             return false;
         }
         TransactionLogEntry other = (TransactionLogEntry) obj;
-        return transactionNumber == other.transactionNumber
-                && Objects.equals(updateTime, other.updateTime)
+        return transactionNumber == other.transactionNumber && Objects.equals(updateTime, other.updateTime) && transactionType == other.transactionType && Objects.equals(bodyKey, other.bodyKey)
                 && Objects.equals(transaction, other.transaction);
     }
 
     @Override
     public String toString() {
-        return "TransactionLogEntry{transactionNumber=" + transactionNumber + ", updateTime=" + updateTime + ", transaction=" + transaction + "}";
+        return "TransactionLogEntry{transactionNumber=" + transactionNumber + ", updateTime=" + updateTime +
+                ", transactionType=" + transactionType + ", bodyKey=" + bodyKey + ", transaction=" + transaction + "}";
     }
 
 }
