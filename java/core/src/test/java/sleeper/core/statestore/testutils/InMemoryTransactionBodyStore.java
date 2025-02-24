@@ -65,6 +65,13 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
         this.storeTransactions = storeTransactions;
     }
 
+    /**
+     * Turns on storing transactions in the store, and supplies locations where they should be held. After this is
+     * called, every transaction added to the log will have its body held in this store, with one of the given object
+     * keys. The object keys will be used in order until none are left, at which point adding a transaction will fail.
+     *
+     * @param keys the object keys representing where each transaction is held
+     */
     public void setStoreTransactionsWithObjectKeys(List<String> keys) {
         setStoreTransactions(true);
         setCreateObjectKey(keys.iterator()::next);
