@@ -98,9 +98,9 @@ public class QueryIngestJobStatusUnfinishedIT extends DynamoDBIngestJobTrackerTe
         Instant startedTime2 = Instant.parse("2022-12-14T13:52:12.001Z");
 
         // When
-        tracker.jobStarted(defaultJobStartedEvent(job, startedTime1));
-        tracker.jobFinished(defaultJobFinishedEvent(job, startedTime1, finishedTime1));
-        tracker.jobStarted(defaultJobStartedEvent(job, startedTime2));
+        tracker.jobStarted(job.startedEventBuilder(startedTime1).taskId(DEFAULT_TASK_ID).jobRunId("run-1").build());
+        tracker.jobFinished(job.finishedEventBuilder(defaultSummary(startedTime1, finishedTime1)).taskId(DEFAULT_TASK_ID).jobRunId("run-1").numFilesWrittenByJob(2).build());
+        tracker.jobStarted(job.startedEventBuilder(startedTime2).taskId(DEFAULT_TASK_ID).jobRunId("run-2").build());
 
         // Then
         assertThat(tracker.getUnfinishedJobs(tableId))

@@ -34,7 +34,7 @@ import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_EXPIRY;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnTask;
 
 class CompactionJobStatusFromRecordsTest {
 
@@ -58,8 +58,8 @@ class CompactionJobStatusFromRecordsTest {
 
         // When
         List<CompactionJobStatus> statuses = jobStatusListFromUpdates(
-                forJob("job1", created1, started1, finished1),
-                forJob("job2", created2, started2, finished2));
+                forJobRunOnTask("job1", created1, started1, finished1),
+                forJobRunOnTask("job2", created2, started2, finished2));
 
         // Then
         assertThat(statuses).containsExactly(
@@ -79,7 +79,7 @@ class CompactionJobStatusFromRecordsTest {
 
         // When
         List<CompactionJobStatus> statuses = jobStatusListFromUpdates(
-                forJob("test-job", started, finished));
+                forJobRunOnTask("test-job", started, finished));
 
         // Then
         assertThat(statuses).containsExactly(
@@ -101,7 +101,7 @@ class CompactionJobStatusFromRecordsTest {
 
         // When
         List<CompactionJobStatus> statuses = jobStatusListFromUpdates(
-                forJob("test-job", created, started, finished));
+                forJobRunOnTask("test-job", created, started, finished));
 
         // Then
         assertThat(statuses).containsExactly(

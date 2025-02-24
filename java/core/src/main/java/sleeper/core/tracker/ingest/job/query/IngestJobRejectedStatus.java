@@ -90,11 +90,6 @@ public class IngestJobRejectedStatus implements IngestJobValidatedStatus, JobRun
     }
 
     @Override
-    public boolean isPartOfRun() {
-        return true;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

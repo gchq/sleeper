@@ -15,12 +15,12 @@
  */
 package sleeper.core.tracker.compaction.job.query;
 
-import sleeper.core.tracker.job.status.JobStatusUpdate;
+import sleeper.core.tracker.job.status.JobRunStatusUpdate;
 
 import java.time.Instant;
 import java.util.Objects;
 
-public class CompactionJobCommittedStatus implements JobStatusUpdate {
+public class CompactionJobCommittedStatus implements JobRunStatusUpdate {
 
     private final Instant commitTime;
     private final Instant updateTime;
@@ -32,11 +32,6 @@ public class CompactionJobCommittedStatus implements JobStatusUpdate {
 
     public static CompactionJobCommittedStatus commitAndUpdateTime(Instant commitTime, Instant updateTime) {
         return new CompactionJobCommittedStatus(commitTime, updateTime);
-    }
-
-    @Override
-    public boolean isPartOfRun() {
-        return true;
     }
 
     @Override

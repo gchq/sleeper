@@ -35,7 +35,7 @@ public class CompactionJobFailedEvent {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
         taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
-        jobRunId = builder.jobRunId;
+        jobRunId = Objects.requireNonNull(builder.jobRunId, "jobRunId must not be null");
         failureTime = Objects.requireNonNull(builder.failureTime, "failureTime must not be null");
         failureReasons = Objects.requireNonNull(builder.failureReasons, "failureReasons must not be null");
     }

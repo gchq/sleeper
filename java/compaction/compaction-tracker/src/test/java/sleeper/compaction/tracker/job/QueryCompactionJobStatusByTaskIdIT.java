@@ -45,8 +45,8 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobTra
 
         // When
         storeJobsCreated(job1, job2);
-        tracker.jobStarted(job1.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).build());
-        tracker.jobStarted(job2.startedEventBuilder(defaultStartTime()).taskId("another-task").build());
+        tracker.jobStarted(job1.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).jobRunId("run1").build());
+        tracker.jobStarted(job2.startedEventBuilder(defaultStartTime()).taskId("another-task").jobRunId("run2").build());
 
         // Then
         assertThat(tracker.getJobsByTaskId(tableId, searchingTaskId))
@@ -69,9 +69,9 @@ public class QueryCompactionJobStatusByTaskIdIT extends DynamoDBCompactionJobTra
 
         // When
         storeJobCreated(job);
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId1).build());
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).build());
-        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId3).build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId1).jobRunId("run1").build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(searchingTaskId).jobRunId("run2").build());
+        tracker.jobStarted(job.startedEventBuilder(defaultStartTime()).taskId(taskId3).jobRunId("run3").build());
 
         // Then
         assertThat(tracker.getJobsByTaskId(tableId, searchingTaskId))

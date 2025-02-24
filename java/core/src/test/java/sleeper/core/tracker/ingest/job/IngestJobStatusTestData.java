@@ -249,7 +249,7 @@ public class IngestJobStatusTestData {
      * @return            an ingest job started status
      */
     public static IngestJobStartedStatus ingestStartedStatus(int fileCount, Instant startTime, Instant updateTime) {
-        return IngestJobStartedStatus.withStartOfRun(true).inputFileCount(fileCount)
+        return IngestJobStartedStatus.builder().inputFileCount(fileCount)
                 .startTime(startTime).updateTime(updateTime)
                 .build();
     }
@@ -272,7 +272,7 @@ public class IngestJobStatusTestData {
      * @return           an ingest job started status
      */
     public static IngestJobStartedStatus validatedIngestStartedStatus(Instant startTime) {
-        return IngestJobStartedStatus.withStartOfRun(false).inputFileCount(1)
+        return IngestJobStartedStatus.builder().inputFileCount(1)
                 .startTime(startTime).updateTime(defaultUpdateTime(startTime))
                 .build();
     }
@@ -285,7 +285,7 @@ public class IngestJobStatusTestData {
      * @return                an ingest job started status
      */
     public static IngestJobStartedStatus validatedIngestStartedStatus(Instant startTime, int inputFileCount) {
-        return IngestJobStartedStatus.withStartOfRun(false).inputFileCount(inputFileCount)
+        return IngestJobStartedStatus.builder().inputFileCount(inputFileCount)
                 .startTime(startTime).updateTime(defaultUpdateTime(startTime))
                 .build();
     }

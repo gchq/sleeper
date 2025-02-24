@@ -24,6 +24,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.tracker.job.status.JobStatusUpdate;
+import sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.TaskUpdates;
 
 import java.time.Instant;
 
@@ -34,6 +35,7 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStar
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.singleIngestJobStatusFrom;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class IngestJobStatusInPeriodTest {
@@ -158,9 +160,8 @@ public class IngestJobStatusInPeriodTest {
 
             // When / Then
             assertThat(statusFromUpdates(
-                    startedRun(run1StartTime),
-                    finishedRun(run1FinishTime),
-                    startedRun(run2StartTime))
+                    forRunOnTask(startedRun(run1StartTime), finishedRun(run1FinishTime)),
+                    forRunOnTask(startedRun(run2StartTime)))
                     .isInPeriod(windowStartTime, windowEndTime))
                     .isTrue();
         }
@@ -177,10 +178,8 @@ public class IngestJobStatusInPeriodTest {
 
             // When / Then
             assertThat(statusFromUpdates(
-                    startedRun(run1StartTime),
-                    finishedRun(run1FinishTime),
-                    startedRun(run2StartTime),
-                    finishedRun(run2FinishTime))
+                    forRunOnTask(startedRun(run1StartTime), finishedRun(run1FinishTime)),
+                    forRunOnTask(startedRun(run2StartTime), finishedRun(run2FinishTime)))
                     .isInPeriod(windowStartTime, windowEndTime))
                     .isFalse();
         }
@@ -197,32 +196,34 @@ public class IngestJobStatusInPeriodTest {
 
             // When / Then
             assertThat(statusFromUpdates(
-                    startedRun(run1StartTime),
-                    finishedRun(run1FinishTime),
-                    startedRun(run2StartTime),
-                    finishedRun(run2FinishTime))
+                    forRunOnTask(startedRun(run1StartTime), finishedRun(run1FinishTime)),
+                    forRunOnTask(startedRun(run2StartTime), finishedRun(run2FinishTime)))
                     .isInPeriod(windowStartTime, windowEndTime))
                     .isTrue();
         }
     }
 
     private IngestJobStatus unfinishedStatus(Instant startTime) {
-        return statusFromUpdates(ingestStartedStatus(startTime));
+        return singleRunStatus(ingestStartedStatus(startTime));
     }
 
     private IngestJobStatus finishedStatus(Instant startTime, Instant finishTime) {
-        return statusFromUpdates(
+        return singleRunStatus(
                 ingestStartedStatus(startTime),
                 ingestFinishedStatus(summary(startTime, finishTime, 100, 100), 2));
     }
 
     private IngestJobStatus finishedStatusUncommitted(Instant startTime, Instant finishTime) {
-        return statusFromUpdates(
+        return singleRunStatus(
                 ingestStartedStatus(startTime),
                 ingestFinishedStatusUncommitted(summary(startTime, finishTime, 100, 100), 2));
     }
 
-    private IngestJobStatus statusFromUpdates(JobStatusUpdate... updates) {
+    private IngestJobStatus singleRunStatus(JobStatusUpdate... updates) {
+        return singleIngestJobStatusFrom(records().singleRunUpdates(updates));
+    }
+
+    private IngestJobStatus statusFromUpdates(TaskUpdates... updates) {
         return singleIngestJobStatusFrom(records().fromUpdates(updates));
     }
 

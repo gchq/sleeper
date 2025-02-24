@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package sleeper.dynamodb.test;
+package sleeper.core.tracker.job.status;
 
-import org.testcontainers.containers.GenericContainer;
+import java.time.Instant;
 
-import java.util.List;
+/**
+ * A test implementation of a job status update that is not part of a run.
+ *
+ * @param updateTime the time of the update
+ */
+public record TestJobStatusNotInRun(Instant updateTime) implements JobStatusUpdate {
 
-public class DynamoDBContainer extends GenericContainer<DynamoDBContainer> {
-
-    private static final String DYNAMO_CONTAINER_IMAGE = "amazon/dynamodb-local:2.5.4";
-    private static final int DYNAMO_PORT = 8000;
-
-    public DynamoDBContainer() {
-        super(DYNAMO_CONTAINER_IMAGE);
-        setExposedPorts(List.of(DYNAMO_PORT));
-    }
-
-    public int getDynamoPort() {
-        return DYNAMO_PORT;
+    @Override
+    public Instant getUpdateTime() {
+        return updateTime;
     }
 }

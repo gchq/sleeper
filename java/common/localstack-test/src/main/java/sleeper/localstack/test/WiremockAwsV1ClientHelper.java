@@ -14,42 +14,37 @@
  * limitations under the License.
  */
 
-package sleeper.dynamodb.test;
+package sleeper.localstack.test;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.client.builder.AwsSyncClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 
 import static com.amazonaws.regions.Regions.DEFAULT_REGION;
 
-public class DynamoDBWiremockTestHelper {
+public class WiremockAwsV1ClientHelper {
 
     public static final String WIREMOCK_ACCESS_KEY = "wiremock-access-key";
     public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
 
-    private DynamoDBWiremockTestHelper() {
+    private WiremockAwsV1ClientHelper() {
     }
 
-    public static AmazonDynamoDBClientBuilder wiremockDynamoDBClientBuilder(WireMockRuntimeInfo runtimeInfo) {
-        return AmazonDynamoDBClientBuilder.standard()
+    public static <C, B extends AwsSyncClientBuilder<B, C>> C buildAwsV1Client(WireMockRuntimeInfo runtimeInfo, B builder) {
+        return builder
                 .withEndpointConfiguration(wiremockEndpointConfiguration(runtimeInfo))
-                .withCredentials(wiremockCredentialsProvider());
-    }
-
-    public static AmazonDynamoDB wiremockDynamoDBClient(WireMockRuntimeInfo runtimeInfo) {
-        return wiremockDynamoDBClientBuilder(runtimeInfo)
+                .withCredentials(wiremockCredentialsProvider())
                 .build();
     }
 
-    public static AwsClientBuilder.EndpointConfiguration wiremockEndpointConfiguration(WireMockRuntimeInfo runtimeInfo) {
+    private static AwsClientBuilder.EndpointConfiguration wiremockEndpointConfiguration(WireMockRuntimeInfo runtimeInfo) {
         return new AwsClientBuilder.EndpointConfiguration(runtimeInfo.getHttpBaseUrl(), DEFAULT_REGION.getName());
     }
 
-    public static AWSCredentialsProvider wiremockCredentialsProvider() {
+    private static AWSCredentialsProvider wiremockCredentialsProvider() {
         return new AWSStaticCredentialsProvider(new BasicAWSCredentials(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY));
     }
 }

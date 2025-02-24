@@ -30,7 +30,6 @@ public class IngestJobValidatedEvent implements IngestJobEvent {
     private final Instant validationTime;
     private final List<String> reasons;
     private final String jobRunId;
-    private final String taskId;
     private final String jsonMessage;
 
     private IngestJobValidatedEvent(Builder builder) {
@@ -40,7 +39,6 @@ public class IngestJobValidatedEvent implements IngestJobEvent {
         validationTime = Objects.requireNonNull(builder.validationTime, "validationTime must not be null");
         reasons = Objects.requireNonNull(builder.reasons, "reasons must not be null");
         jobRunId = builder.jobRunId;
-        taskId = builder.taskId;
         jsonMessage = builder.jsonMessage;
     }
 
@@ -82,10 +80,6 @@ public class IngestJobValidatedEvent implements IngestJobEvent {
         return jobRunId;
     }
 
-    public String getTaskId() {
-        return taskId;
-    }
-
     public Instant getValidationTime() {
         return validationTime;
     }
@@ -114,13 +108,13 @@ public class IngestJobValidatedEvent implements IngestJobEvent {
         return fileCount == that.fileCount && Objects.equals(jobId, that.jobId)
                 && Objects.equals(tableId, that.tableId)
                 && Objects.equals(validationTime, that.validationTime) && Objects.equals(reasons, that.reasons)
-                && Objects.equals(jobRunId, that.jobRunId) && Objects.equals(taskId, that.taskId)
+                && Objects.equals(jobRunId, that.jobRunId)
                 && Objects.equals(jsonMessage, that.jsonMessage);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, tableId, fileCount, validationTime, reasons, jobRunId, taskId, jsonMessage);
+        return Objects.hash(jobId, tableId, fileCount, validationTime, reasons, jobRunId, jsonMessage);
     }
 
     @Override
@@ -132,7 +126,6 @@ public class IngestJobValidatedEvent implements IngestJobEvent {
                 ", validationTime=" + validationTime +
                 ", reasons=" + reasons +
                 ", jobRunId='" + jobRunId + '\'' +
-                ", taskId='" + taskId + '\'' +
                 ", jsonMessage='" + jsonMessage + '\'' +
                 '}';
     }
@@ -147,7 +140,6 @@ public class IngestJobValidatedEvent implements IngestJobEvent {
         private Instant validationTime;
         private List<String> reasons;
         private String jobRunId;
-        private String taskId;
         private String jsonMessage;
 
         private Builder() {
@@ -226,17 +218,6 @@ public class IngestJobValidatedEvent implements IngestJobEvent {
          */
         public Builder jobRunId(String jobRunId) {
             this.jobRunId = jobRunId;
-            return this;
-        }
-
-        /**
-         * Sets the task ID.
-         *
-         * @param  taskId the task ID
-         * @return        the builder
-         */
-        public Builder taskId(String taskId) {
-            this.taskId = taskId;
             return this;
         }
 
