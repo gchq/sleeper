@@ -21,13 +21,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createInstanceProperties;
 
-public class DynamoDBIngestJobTrackerCreatorIT extends DynamoDBTestBase {
+public class DynamoDBIngestJobTrackerCreatorIT extends LocalStackTestBase {
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String tableName = DynamoDBIngestJobTracker.jobUpdatesTableName(instanceProperties.get(ID));
 

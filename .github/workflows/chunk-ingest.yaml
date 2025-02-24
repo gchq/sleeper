@@ -26,7 +26,6 @@ on:
       - 'java/common/common-job/**'
       - 'java/configuration/**'
       - 'java/common/dynamodb-tools/**'
-      - 'java/common/dynamodb-test/**'
       - 'java/parquet/**'
       - 'java/common/localstack-test/**'
       - 'java/sketches/**'

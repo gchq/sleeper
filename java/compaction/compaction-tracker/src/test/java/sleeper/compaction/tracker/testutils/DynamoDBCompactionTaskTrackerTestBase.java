@@ -28,7 +28,7 @@ import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -40,7 +40,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_STATUS_TTL_IN_SECONDS;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBCompactionTaskTrackerTestBase extends DynamoDBTestBase {
+public class DynamoDBCompactionTaskTrackerTestBase extends LocalStackTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate").build();

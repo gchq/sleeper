@@ -19,7 +19,6 @@ on:
       - 'java/common/common-invoke-tables/**'
       - 'java/build/**'
       - 'java/common/dynamodb-tools/**'
-      - 'java/common/dynamodb-test/**'
       - 'java/common/localstack-test/**'
       - 'java/statestore/**'
       - 'java/statestore-committer-core/**'
