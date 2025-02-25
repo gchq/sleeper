@@ -23,7 +23,6 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -58,11 +57,6 @@ class TransactionLogPartitionStore implements PartitionStore {
     public Partition getPartition(String partitionId) throws StateStoreException {
         return partitions().byId(partitionId)
                 .orElseThrow(() -> new StateStoreException("Partition not found: " + partitionId));
-    }
-
-    @Override
-    public void initialise() throws StateStoreException {
-        head.addTransaction(clock.instant(), InitialisePartitionsTransaction.singlePartition(schema));
     }
 
     @Override

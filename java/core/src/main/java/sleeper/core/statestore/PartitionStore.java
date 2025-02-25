@@ -52,14 +52,6 @@ public interface PartitionStore {
     Partition getPartition(String partitionId) throws StateStoreException;
 
     /**
-     * Initialises the store with a single partition covering all keys. This is the root partition which may be split
-     * in the future.
-     *
-     * @throws StateStoreException if update fails
-     */
-    void initialise() throws StateStoreException;
-
-    /**
      * Used to fix the time of partition updates. Should only be called during tests.
      *
      * @param time the time that any future partition updates will be considered to occur

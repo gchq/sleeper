@@ -78,7 +78,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException if the update fails
      */
     public void initialise(Schema schema) throws StateStoreException {
-        addTransaction(InitialisePartitionsTransaction.singlePartition(schema));
+        InitialisePartitionsTransaction.singlePartition(schema).synchronousCommit(stateStore);
     }
 
     /**
