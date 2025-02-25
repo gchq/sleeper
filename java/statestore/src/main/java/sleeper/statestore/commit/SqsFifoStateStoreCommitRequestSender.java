@@ -38,10 +38,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATES
 public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitRequestSender {
     public static final Logger LOGGER = LoggerFactory.getLogger(SqsFifoStateStoreCommitRequestSender.class);
 
-    // Max size of an SQS message is 256KiB. Leave space for request wrapper.
-    // https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html
-    public static final int DEFAULT_MAX_TRANSACTION_BYTES = 250 * 1024;
-
     private final InstanceProperties instanceProperties;
     private final StateStoreCommitRequestUploader requestUploader;
     private final AmazonSQS sqsClient;

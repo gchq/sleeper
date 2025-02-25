@@ -38,11 +38,18 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(S3TransactionBodyStore.class);
 
     /**
-     * Minimum length of a JSON string that will be written to S3. A transaction will be held in a DynamoDB item for the
-     * log entry with {@link DynamoDBTransactionLogStore}. Max DynamoDB item size is 400KB. Leaves some space for the
-     * rest of the item. DynamoDB uses UTF-8 encoding for strings.
+     * Minimum length of a JSON string that will be written to S3.
+     * <p>
+     * A transaction will be held in a DynamoDB item for the log entry with {@link DynamoDBTransactionLogStore}. A
+     * transaction will be held in an SQS message when sending an asynchronous commit.
+     * <p>
+     * Max DynamoDB item size is 400KiB. Space is needed for the rest of the item. DynamoDB uses UTF-8 encoding for
+     * strings.
+     * <p>
+     * Max size of an SQS message is 256KiB. Space is needed for the request wrapper.
+     * https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html
      */
-    public static final int DEFAULT_JSON_LENGTH_TO_STORE = 1024 * 350;
+    public static final int DEFAULT_JSON_LENGTH_TO_STORE = 1024 * 200;
 
     private final InstanceProperties instanceProperties;
     private final AmazonS3 s3Client;
