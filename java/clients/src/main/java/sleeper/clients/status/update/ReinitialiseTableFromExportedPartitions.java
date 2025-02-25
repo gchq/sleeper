@@ -60,7 +60,7 @@ public class ReinitialiseTableFromExportedPartitions {
         this.partitionsFile = partitionsFile;
     }
 
-    public void run() throws IOException {
+    public void run() {
         reinitialiseTable.run(tableProperties -> new InitialisePartitionsTransaction(readPartitions(tableProperties.getSchema())));
     }
 
@@ -107,7 +107,7 @@ public class ReinitialiseTableFromExportedPartitions {
                     s3Client, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
-        } catch (RuntimeException | IOException e) {
+        } catch (RuntimeException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());
