@@ -126,11 +126,6 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        partitionStore.atomicallyUpdatePartitionAndCreateNewOnes(splitPartition, newPartition1, newPartition2);
-    }
-
-    @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
         return partitionStore.getAllPartitions();
     }

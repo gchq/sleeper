@@ -28,19 +28,6 @@ import java.util.List;
 public interface PartitionStore {
 
     /**
-     * Atomically splits a partition to create child partitions. Updates the existing partition to record it as split,
-     * and creates new leaf partitions.
-     *
-     * @param  splitPartition      The {@link Partition} to be updated (must refer to the new leaves as children).
-     * @param  newPartition1       The first new {@link Partition} (must be a leaf partition).
-     * @param  newPartition2       The second new {@link Partition} (must be a leaf partition).
-     * @throws StateStoreException if split is not valid or update fails
-     */
-    void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition,
-            Partition newPartition1,
-            Partition newPartition2) throws StateStoreException;
-
-    /**
      * Returns all partitions.
      *
      * @return                     all the {@link Partition}s

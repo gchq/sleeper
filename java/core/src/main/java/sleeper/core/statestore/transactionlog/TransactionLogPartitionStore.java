@@ -23,7 +23,6 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -42,11 +41,6 @@ class TransactionLogPartitionStore implements PartitionStore {
     TransactionLogPartitionStore(Schema schema, TransactionLogHead<StateStorePartitions> head) {
         this.schema = schema;
         this.head = head;
-    }
-
-    @Override
-    public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        head.addTransaction(clock.instant(), new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
     }
 
     @Override
