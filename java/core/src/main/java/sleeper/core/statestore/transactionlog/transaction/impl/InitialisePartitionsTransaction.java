@@ -75,7 +75,7 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
      * @param stateStore the state store
      */
     public void synchronousCommit(StateStore stateStore) {
-        stateStore.addFilesTransaction(AddTransactionRequest.withTransaction(this).build());
+        stateStore.addPartitionsTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override
