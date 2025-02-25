@@ -59,8 +59,12 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
         this.jobs = jobs.stream()
                 .map(job -> job.withNoUpdateTime())
                 .collect(toUnmodifiableList());
-        for (ReplaceFileReferencesRequest job : jobs) {
-            job.validateNewReference();
+        try {
+            for (ReplaceFileReferencesRequest job : jobs) {
+                job.validateNewReference();
+            }
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(jobs, e);
         }
     }
 
