@@ -62,7 +62,7 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
 
     @Override
     public void store(String key, String tableId, StateStoreTransaction<?> transaction) {
-        store(key, serDeProvider.getByTableId(tableId).toJson(transaction));
+        store(key, transaction, serDeProvider.getByTableId(tableId).toJson(transaction));
     }
 
     @Override
@@ -72,7 +72,7 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
             return StoreTransactionBodyResult.notStored(json);
         } else {
             String key = TransactionBodyStore.createObjectKey(tableId);
-            store(key, json);
+            store(key, transaction, json);
             return StoreTransactionBodyResult.stored(key);
         }
     }
@@ -83,7 +83,9 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
      * @param key  the object key in the data bucket to store the file in
      * @param body the transaction body
      */
-    public void store(String key, String body) {
+    private void store(String key, StateStoreTransaction<?> transaction, String body) {
+        TransactionType transactionType = TransactionType.getType(transaction);
+        LOGGER.debug("Uploading large transaction of type {} to S3 at: {}", transactionType, key);
         Instant startTime = Instant.now();
         s3Client.putObject(instanceProperties.get(DATA_BUCKET), key, body);
         LOGGER.info("Saved to S3 in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));

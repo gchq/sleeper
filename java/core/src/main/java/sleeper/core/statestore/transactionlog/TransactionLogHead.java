@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
-import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
@@ -106,8 +105,8 @@ public class TransactionLogHead<T> {
         Instant startTime = Instant.now();
         LOGGER.debug("Adding transaction of type {} to table {}",
                 request.getTransactionType(), sleeperTable);
-        StoreTransactionBodyResult storeResult = transactionBodyStore.storeIfTooBig(sleeperTable.getTableUniqueId(), request.getTransaction());
-        request = request.withStoreBodyResult(storeResult);
+        request = request.withStoreBodyResult(
+                transactionBodyStore.storeIfTooBig(sleeperTable.getTableUniqueId(), request.getTransaction()));
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
             prepareAddTransactionAttempt(attempt, request.getTransaction());

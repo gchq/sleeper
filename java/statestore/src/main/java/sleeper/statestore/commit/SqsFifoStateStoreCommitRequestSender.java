@@ -24,11 +24,11 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
-import java.time.Instant;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.STATESTORE_COMMITTER_QUEUE_URL;
 
@@ -43,25 +43,23 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
     public static final int DEFAULT_MAX_TRANSACTION_BYTES = 250 * 1024;
 
     private final InstanceProperties instanceProperties;
-    private final S3StateStoreCommitRequestUploader requestUploader;
+    private final StateStoreCommitRequestUploader requestUploader;
     private final AmazonSQS sqsClient;
-    private final int maxTransactionBytes;
 
     public SqsFifoStateStoreCommitRequestSender(
             InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client,
             TransactionSerDeProvider transactionSerDeProvider) {
-        this(instanceProperties, sqsClient, s3Client, transactionSerDeProvider,
-                DEFAULT_MAX_TRANSACTION_BYTES, Instant::now, () -> UUID.randomUUID().toString());
+        this(instanceProperties, new S3TransactionBodyStore(instanceProperties, s3Client, transactionSerDeProvider), transactionSerDeProvider, sqsClient);
     }
 
     public SqsFifoStateStoreCommitRequestSender(
-            InstanceProperties instanceProperties, AmazonSQS sqsClient, AmazonS3 s3Client,
+            InstanceProperties instanceProperties,
+            TransactionBodyStore transactionBodyStore,
             TransactionSerDeProvider transactionSerDeProvider,
-            int maxTransactionBytes, Supplier<Instant> timeSupplier, Supplier<String> idSupplier) {
+            AmazonSQS sqsClient) {
         this.instanceProperties = instanceProperties;
-        this.requestUploader = new S3StateStoreCommitRequestUploader(instanceProperties, transactionSerDeProvider, s3Client, timeSupplier, idSupplier);
+        this.requestUploader = new StateStoreCommitRequestUploader(transactionBodyStore, transactionSerDeProvider);
         this.sqsClient = sqsClient;
-        this.maxTransactionBytes = maxTransactionBytes;
     }
 
     @Override
@@ -69,7 +67,7 @@ public class SqsFifoStateStoreCommitRequestSender implements StateStoreCommitReq
         LOGGER.debug("Sending asynchronous request to state store committer of type: {}", request.getTransactionType());
         sqsClient.sendMessage(new SendMessageRequest()
                 .withQueueUrl(instanceProperties.get(STATESTORE_COMMITTER_QUEUE_URL))
-                .withMessageBody(requestUploader.serialiseAndUploadIfTooBig(maxTransactionBytes, request))
+                .withMessageBody(requestUploader.serialiseAndUploadIfTooBig(request))
                 .withMessageGroupId(request.getTableId())
                 .withMessageDeduplicationId(UUID.randomUUID().toString()));
         LOGGER.debug("Submitted asynchronous request of type {} via state store committer queue", request.getTransactionType());
