@@ -15,7 +15,9 @@
  */
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 
@@ -29,6 +31,16 @@ public class ClearFilesTransaction implements FileReferenceTransaction {
 
     @Override
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param stateStore the state store
+     */
+    public void synchronousCommit(StateStore stateStore) {
+        stateStore.addFilesTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override

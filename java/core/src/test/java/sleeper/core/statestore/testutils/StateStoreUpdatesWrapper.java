@@ -89,7 +89,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException if the update fails
      */
     public void initialise(List<Partition> partitions) throws StateStoreException {
-        addTransaction(new InitialisePartitionsTransaction(partitions));
+        new InitialisePartitionsTransaction(partitions).synchronousCommit(stateStore);
     }
 
     /**
@@ -257,7 +257,7 @@ public class StateStoreUpdatesWrapper {
      * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
      */
     public void clearFileData() throws StateStoreException {
-        addTransaction(new ClearFilesTransaction());
+        new ClearFilesTransaction().synchronousCommit(stateStore);
     }
 
     /**
@@ -266,7 +266,7 @@ public class StateStoreUpdatesWrapper {
      * be used again. Any file references will need to be added again.
      */
     public void clearPartitionData() throws StateStoreException {
-        addTransaction(new InitialisePartitionsTransaction(List.of()));
+        new InitialisePartitionsTransaction(List.of()).synchronousCommit(stateStore);
     }
 
     private void addTransaction(StateStoreTransaction<?> transaction) {

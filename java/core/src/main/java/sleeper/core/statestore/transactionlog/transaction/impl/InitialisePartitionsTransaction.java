@@ -20,6 +20,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 
@@ -65,6 +66,16 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
         if (!stateStore.hasNoFiles()) {
             throw new StateStoreException("Cannot initialise state store when files are present");
         }
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param stateStore the state store
+     */
+    public void synchronousCommit(StateStore stateStore) {
+        stateStore.addFilesTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override
