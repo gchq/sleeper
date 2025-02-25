@@ -16,6 +16,7 @@
 package sleeper.core.properties.instance;
 
 import sleeper.core.properties.SleeperPropertyIndex;
+import sleeper.core.properties.validation.SleeperPropertyValueUtils;
 
 import java.util.List;
 
@@ -41,6 +42,13 @@ public interface BulkExportProperty {
             .propertyBuilder("sleeper.bulk.export.processor.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the bulk export processor queue.")
             .defaultValue("800")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty BULK_EXPORT_LEAF_PARTITION_LANGUAGE = Index
+            .propertyBuilder("sleeper.bulk.export.leaf.partition.language")
+            .description("The language to use for the leaf partition bulk export processor.")
+            .defaultValue("java")
+            .validationPredicate(SleeperPropertyValueUtils::isValidBulkExportLanguage)
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
 
