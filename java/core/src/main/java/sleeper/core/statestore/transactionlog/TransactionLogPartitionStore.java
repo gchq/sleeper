@@ -16,7 +16,6 @@
 package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
@@ -34,12 +33,10 @@ import java.util.List;
  */
 class TransactionLogPartitionStore implements PartitionStore {
 
-    private final Schema schema;
     private final TransactionLogHead<StateStorePartitions> head;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogPartitionStore(Schema schema, TransactionLogHead<StateStorePartitions> head) {
-        this.schema = schema;
+    TransactionLogPartitionStore(TransactionLogHead<StateStorePartitions> head) {
         this.head = head;
     }
 

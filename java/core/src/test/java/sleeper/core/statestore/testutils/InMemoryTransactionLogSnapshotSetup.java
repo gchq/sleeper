@@ -58,7 +58,6 @@ public class InMemoryTransactionLogSnapshotSetup {
         InMemoryTransactionBodyStore transactionBodyStore = new InMemoryTransactionBodyStore();
         StateStore stateStore = TransactionLogStateStore.builder()
                 .sleeperTable(sleeperTable)
-                .schema(schema)
                 .filesLogStore(fileTransactions)
                 .partitionsLogStore(partitionTransactions)
                 .transactionBodyStore(transactionBodyStore)

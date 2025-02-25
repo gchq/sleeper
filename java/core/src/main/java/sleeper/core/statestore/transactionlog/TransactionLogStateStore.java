@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
@@ -61,12 +60,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     }
 
     private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
-        this(builder.schema,
-                headBuilder.forFiles()
-                        .logStore(builder.filesLogStore)
-                        .snapshotLoader(builder.filesSnapshotLoader)
-                        .stateUpdateClock(builder.filesStateUpdateClock)
-                        .build(),
+        this(headBuilder.forFiles()
+                .logStore(builder.filesLogStore)
+                .snapshotLoader(builder.filesSnapshotLoader)
+                .stateUpdateClock(builder.filesStateUpdateClock)
+                .build(),
                 headBuilder.forPartitions()
                         .logStore(builder.partitionsLogStore)
                         .snapshotLoader(builder.partitionsSnapshotLoader)
@@ -74,9 +72,9 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                         .build());
     }
 
-    private TransactionLogStateStore(Schema schema, TransactionLogHead<StateStoreFiles> filesHead, TransactionLogHead<StateStorePartitions> partitionsHead) {
+    private TransactionLogStateStore(TransactionLogHead<StateStoreFiles> filesHead, TransactionLogHead<StateStorePartitions> partitionsHead) {
         this(new TransactionLogFileReferenceStore(filesHead),
-                new TransactionLogPartitionStore(schema, partitionsHead));
+                new TransactionLogPartitionStore(partitionsHead));
     }
 
     private TransactionLogStateStore(TransactionLogFileReferenceStore files, TransactionLogPartitionStore partitions) {
@@ -126,7 +124,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
      */
     public static class Builder {
         private TableStatus sleeperTable;
-        private Schema schema;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
         private TransactionBodyStore transactionBodyStore;
@@ -152,17 +149,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
          */
         public Builder sleeperTable(TableStatus sleeperTable) {
             this.sleeperTable = sleeperTable;
-            return this;
-        }
-
-        /**
-         * Sets the schema of the Sleeper table. Used to initialise partitions.
-         *
-         * @param  schema the schema
-         * @return        the builder
-         */
-        public Builder schema(Schema schema) {
-            this.schema = schema;
             return this;
         }
 

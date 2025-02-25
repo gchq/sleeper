@@ -90,7 +90,6 @@ public class InMemoryTransactionLogs {
     public TransactionLogStateStore.Builder stateStoreBuilder(TableStatus sleeperTable, Schema schema) {
         return TransactionLogStateStore.builder()
                 .sleeperTable(sleeperTable)
-                .schema(schema)
                 .filesLogStore(filesLogStore)
                 .filesSnapshotLoader(filesSnapshots)
                 .partitionsLogStore(partitionsLogStore)
