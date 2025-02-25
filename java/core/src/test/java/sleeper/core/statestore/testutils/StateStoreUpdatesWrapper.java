@@ -35,7 +35,6 @@ import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
-import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
@@ -205,14 +204,7 @@ public class StateStoreUpdatesWrapper {
      * @throws ReplaceRequestsFailedException if any of the updates fail
      */
     public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
-        try {
-            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(requests);
-            stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction)
-                    .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> transaction.validateStateChange(state)))
-                    .build());
-        } catch (StateStoreException e) {
-            throw new ReplaceRequestsFailedException(requests, e);
-        }
+        new ReplaceFileReferencesTransaction(requests).synchronousCommit(stateStore);
     }
 
     /**
