@@ -74,15 +74,6 @@ public abstract class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
-        if (filenames.isEmpty()) {
-            LOGGER.info("Ignoring deleteGarbageCollectedFileReferenceCounts call with no files");
-            return;
-        }
-        fileReferenceStore.deleteGarbageCollectedFileReferenceCounts(filenames);
-    }
-
-    @Override
     public List<FileReference> getFileReferences() throws StateStoreException {
         return fileReferenceStore.getFileReferences();
     }

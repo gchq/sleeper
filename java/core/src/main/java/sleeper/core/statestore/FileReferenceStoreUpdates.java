@@ -16,8 +16,6 @@
 package sleeper.core.statestore;
 
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
-import sleeper.core.statestore.exception.FileHasReferencesException;
-import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
 
@@ -101,21 +99,4 @@ public interface FileReferenceStoreUpdates {
      */
     void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException;
 
-    /**
-     * Records that files were garbage collected and have been deleted. The reference counts for those files should be
-     * deleted.
-     * <p>
-     * If there are any remaining internal references for the files on partitions, this should fail, as it should not be
-     * possible to reach that state.
-     * <p>
-     * If the reference count is non-zero for any other reason, it may be that the count was incremented after the file
-     * was ready for garbage collection. This should fail in that case as well, as we would like this to not be
-     * possible.
-     *
-     * @param  filenames                  The names of files that were deleted.
-     * @throws FileNotFoundException      if a file does not exist
-     * @throws FileHasReferencesException if a file still has references
-     * @throws StateStoreException        if the update fails for another reason
-     */
-    void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException;
 }

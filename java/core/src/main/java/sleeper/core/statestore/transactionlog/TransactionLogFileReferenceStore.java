@@ -32,7 +32,6 @@ import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 
@@ -78,11 +77,6 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     }
 
     @Override
-    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
-        head.addTransaction(clock.instant(), new DeleteFilesTransaction(filenames));
-    }
-
-    @Override
     public void fixFileUpdateTime(Instant time) {
         clock = Clock.fixed(time, ZoneId.of("UTC"));
     }
@@ -112,10 +106,6 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     @Override
     public boolean hasNoFiles() throws StateStoreException {
         return files().isEmpty();
-    }
-
-    @Override
-    public void initialise() throws StateStoreException {
     }
 
     @Override
