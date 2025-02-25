@@ -15,6 +15,11 @@
  */
 package sleeper.bulkexport.lambda;
 
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -24,26 +29,21 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.model.BulkExportQuerySerDe;
 import sleeper.bulkexport.core.model.BulkExportQueryValidationException;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.util.ObjectFactoryException;
 
-import java.util.Optional;
-
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
-
 /**
  * A lambda that is triggered when a serialised export query arrives on an SQS
- * queue. A processor executes the request and publishes the results to S3 based
- * on.
+ * queue. The lambda processes the query and splits the export into leaf
+ * partition queries.
  */
 @SuppressWarnings("unused")
 public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Void> {
@@ -84,7 +84,8 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
 
         String bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, bucket);
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
+        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client,
+                dynamoClient);
         bulkExportQuerySerDe = new BulkExportQuerySerDe();
         processor = SqsBulkExportProcessor.builder()
                 .sqsClient(sqsClient)
