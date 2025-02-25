@@ -17,13 +17,12 @@ package sleeper.core.statestore.testutils;
 
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.statestore.transactionlog.AddTransactionRequest;
-import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
+import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,94 +35,70 @@ public class InMemoryTransactionBodyStoreTest {
         // Given
         store.setStoreTransactions(true);
         ClearFilesTransaction transaction = new ClearFilesTransaction();
-        AddTransactionRequest request = AddTransactionRequest.withTransaction(transaction).build();
 
         // When
-        AddTransactionRequest found = store.storeIfTooBig("test-table", request);
+        StoreTransactionBodyResult found = store.storeIfTooBig("test-table", transaction);
 
         // Then
-        assertThat(found).isNotSameAs(request);
-        assertThat(found.<ClearFilesTransaction>getTransaction()).isEqualTo(transaction);
-        assertThat(store.<ClearFilesTransaction>getBody(found.getBodyKey().orElseThrow(), "test-table", TransactionType.CLEAR_FILES)).isEqualTo(transaction);
+        StateStoreTransaction<?> foundTransaction = store.getBody(found.getBodyKey().orElseThrow(), "test-table", TransactionType.CLEAR_FILES);
+        assertThat(foundTransaction).isEqualTo(transaction);
     }
 
     @Test
     void shouldNotStoreTransactionByDefault() {
         // Given
         ClearFilesTransaction transaction = new ClearFilesTransaction();
-        AddTransactionRequest request = AddTransactionRequest.withTransaction(transaction).build();
 
         // When
-        AddTransactionRequest found = store.storeIfTooBig("test-table", request);
+        StoreTransactionBodyResult found = store.storeIfTooBig("test-table", transaction);
 
         // Then
-        assertThat(found).isSameAs(request);
+        assertThat(found).isEqualTo(StoreTransactionBodyResult.notStored());
     }
 
     @Test
     void shouldFixObjectKeys() {
         store.setStoreTransactionsWithObjectKeys(List.of("key-1", "key-2"));
         ClearFilesTransaction transaction = new ClearFilesTransaction();
-        AddTransactionRequest request = AddTransactionRequest.withTransaction(transaction).build();
 
         // When
-        AddTransactionRequest found1 = store.storeIfTooBig("test-table", request);
-        AddTransactionRequest found2 = store.storeIfTooBig("test-table", request);
+        StoreTransactionBodyResult found1 = store.storeIfTooBig("test-table", transaction);
+        StoreTransactionBodyResult found2 = store.storeIfTooBig("test-table", transaction);
 
         // Then
-        assertThat(List.of(found1.getBodyKey(), found2.getBodyKey()))
-                .extracting(Optional::orElseThrow)
-                .containsExactly("key-1", "key-2");
-    }
-
-    @Test
-    void shouldRetainListenerWhenTransactionIsStored() {
-        // Given
-        store.setStoreTransactions(true);
-        ClearFilesTransaction transaction = new ClearFilesTransaction();
-        StateListenerBeforeApply listener = StateListenerBeforeApply.withFilesState(state -> {
-            state.references().count();
-        });
-        AddTransactionRequest request = AddTransactionRequest.withTransaction(transaction).beforeApplyListener(listener).build();
-
-        // When
-        AddTransactionRequest found = store.storeIfTooBig("test-table", request);
-
-        // Then
-        assertThat(found).isNotSameAs(request);
-        assertThat(found.getBeforeApplyListener()).isSameAs(listener);
+        assertThat(List.of(found1, found2)).containsExactly(
+                StoreTransactionBodyResult.stored("key-1"),
+                StoreTransactionBodyResult.stored("key-2"));
     }
 
     @Test
     void shouldTurnOffStoringTransactions() {
         // Given
         ClearFilesTransaction transaction = new ClearFilesTransaction();
-        AddTransactionRequest request = AddTransactionRequest.withTransaction(transaction).build();
-        store.setStoreTransactions(true);
-        AddTransactionRequest found1 = store.storeIfTooBig("test-table", request);
+        store.setStoreTransactionsWithObjectKeys(List.of("some-key"));
+        StoreTransactionBodyResult found1 = store.storeIfTooBig("test-table", transaction);
 
         // When
         store.setStoreTransactions(false);
-        AddTransactionRequest found2 = store.storeIfTooBig("test-table", request);
+        StoreTransactionBodyResult found2 = store.storeIfTooBig("test-table", transaction);
 
         // Then
-        assertThat(found1).isNotSameAs(request);
-        assertThat(found2).isSameAs(request);
+        assertThat(found1).isEqualTo(StoreTransactionBodyResult.stored("some-key"));
+        assertThat(found2).isEqualTo(StoreTransactionBodyResult.notStored());
     }
 
     @Test
     void shouldIncludeSerialisedTransactionInResponseWhenNotStoringTransaction() {
         // Given
         ClearFilesTransaction transaction = new ClearFilesTransaction();
-        AddTransactionRequest request = AddTransactionRequest.withTransaction(transaction).build();
         store.setReturnSerialisedTransactions(List.of("serialised-transaction"));
         store.setStoreTransactions(false);
 
         // When
-        AddTransactionRequest found = store.storeIfTooBig("test-table", request);
+        StoreTransactionBodyResult found = store.storeIfTooBig("test-table", transaction);
 
         // Then
-        assertThat(found.getSerialisedTransaction()).containsSame("serialised-transaction");
+        assertThat(found).isEqualTo(StoreTransactionBodyResult.notStored("serialised-transaction"));
     }
 
     @Test
@@ -135,9 +110,9 @@ public class InMemoryTransactionBodyStoreTest {
 
         // When
         store.setStoreTransactions(true);
-        AddTransactionRequest found1 = store.storeIfTooBig("test-table", AddTransactionRequest.withTransaction(transaction1).build());
+        StoreTransactionBodyResult found1 = store.storeIfTooBig("test-table", transaction1);
         store.setStoreTransactions(false);
-        AddTransactionRequest found2 = store.storeIfTooBig("test-table", AddTransactionRequest.withTransaction(transaction2).build());
+        StoreTransactionBodyResult found2 = store.storeIfTooBig("test-table", transaction2);
 
         // Then
         assertThat(found1.getSerialisedTransaction()).isEmpty();

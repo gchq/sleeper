@@ -71,7 +71,7 @@ public class StoreTransactionBodyResult {
 
     @Override
     public int hashCode() {
-        return Objects.hash(bodyKey);
+        return Objects.hash(bodyKey, serialisedTransaction);
     }
 
     @Override
@@ -83,11 +83,11 @@ public class StoreTransactionBodyResult {
             return false;
         }
         StoreTransactionBodyResult other = (StoreTransactionBodyResult) obj;
-        return Objects.equals(bodyKey, other.bodyKey);
+        return Objects.equals(bodyKey, other.bodyKey) && Objects.equals(serialisedTransaction, other.serialisedTransaction);
     }
 
     @Override
     public String toString() {
-        return "StoreTransactionBodyResult{bodyKey=" + bodyKey + "}";
+        return "StoreTransactionBodyResult{bodyKey=" + bodyKey + ", serialisedTransaction=" + serialisedTransaction + "}";
     }
 }
