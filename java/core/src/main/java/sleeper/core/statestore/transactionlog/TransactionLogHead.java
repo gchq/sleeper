@@ -305,6 +305,12 @@ public class TransactionLogHead<T> {
         return lastTransactionNumber;
     }
 
+    void clearTransactionLog(StateStoreTransaction<T> updateState, Instant time) {
+        logStore.deleteTransactionsAtOrBefore(Long.MAX_VALUE);
+        updateState.apply(state, time);
+        lastTransactionNumber = 0;
+    }
+
     /**
      * Builder to initialise the head to read from a transaction log and snapshots.
      *

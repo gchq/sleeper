@@ -29,10 +29,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
 
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
@@ -44,17 +41,18 @@ import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfiguration
 
 public class DeleteTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteTable.class);
+
     private final AmazonS3 s3Client;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
 
     public DeleteTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(instanceProperties, s3Client, S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB),
+        this(s3Client, instanceProperties, S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDB, getConfigurationForClient()));
     }
 
-    public DeleteTable(InstanceProperties instanceProperties, AmazonS3 s3Client, TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
+    public DeleteTable(AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
         this.s3Client = s3Client;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesStore = tablePropertiesStore;
@@ -71,9 +69,7 @@ public class DeleteTable {
          * last to handle the case where the deletion of files in the data bucket fails, so you can still see that a
          * table existed.
          */
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        new ClearFilesTransaction().synchronousCommit(stateStore);
-        ClearPartitionsTransaction.create().synchronousCommit(stateStore);
+        stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         tablePropertiesStore.deleteByName(tableName);
         LOGGER.info("Successfully deleted table {}", tableProperties.getStatus());

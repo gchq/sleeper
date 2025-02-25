@@ -249,8 +249,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException if the update fails
      */
     public void clearSleeperTable() throws StateStoreException {
-        clearFileData();
-        clearPartitionData();
+        stateStore.clearSleeperTable();
     }
 
     /**

@@ -111,6 +111,12 @@ public class TransactionLogStateStore extends DelegatingStateStore {
         }
     }
 
+    @Override
+    public void clearSleeperTable() {
+        files.clearTransactionLog();
+        partitions.clearTransactionLog();
+    }
+
     public static Builder builder() {
         return new Builder();
     }

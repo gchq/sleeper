@@ -22,6 +22,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 
 import java.time.Clock;
@@ -95,6 +96,10 @@ class TransactionLogPartitionStore implements PartitionStore {
     private StateStorePartitions partitions() throws StateStoreException {
         head.update();
         return head.state();
+    }
+
+    public void clearTransactionLog() {
+        head.clearTransactionLog(ClearPartitionsTransaction.create(), clock.instant());
     }
 
 }
