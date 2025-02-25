@@ -23,17 +23,14 @@ import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
-import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
-import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -106,15 +103,6 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     @Override
     public boolean hasNoFiles() throws StateStoreException {
         return files().isEmpty();
-    }
-
-    @Override
-    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
-        try {
-            head.addTransaction(clock.instant(), new SplitFileReferencesTransaction(splitRequests));
-        } catch (StateStoreException e) {
-            throw new SplitRequestsFailedException(List.of(), splitRequests, e);
-        }
     }
 
     void updateFromLog() throws StateStoreException {

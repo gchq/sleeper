@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
-import sleeper.core.statestore.exception.SplitRequestsFailedException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 
 import java.time.Instant;
@@ -57,15 +56,6 @@ public abstract class DelegatingStateStore implements StateStore {
             return;
         }
         fileReferenceStore.addFilesWithReferences(files);
-    }
-
-    @Override
-    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
-        if (splitRequests.isEmpty()) {
-            LOGGER.info("Ignoring splitFileReferences call with no requests");
-            return;
-        }
-        fileReferenceStore.splitFileReferences(splitRequests);
     }
 
     @Override
