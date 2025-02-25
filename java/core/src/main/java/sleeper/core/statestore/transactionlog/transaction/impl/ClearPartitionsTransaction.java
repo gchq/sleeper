@@ -18,7 +18,9 @@ package sleeper.core.statestore.transactionlog.transaction.impl;
 import java.util.List;
 
 /**
- * A transaction to clear partitions in a Sleeper table.
+ * Clears all partition data from the store. Note that this will invalidate any file references held in the store,
+ * so this should only be used when no files are present. The store must be initialised before the Sleeper table can
+ * be used again. Any file references will need to be added again.
  */
 public class ClearPartitionsTransaction {
 

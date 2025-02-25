@@ -237,6 +237,8 @@ public class StateStoreUpdatesWrapper {
 
     /**
      * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
+     *
+     * @throws StateStoreException if the update fails
      */
     public void clearFileData() throws StateStoreException {
         new ClearFilesTransaction().synchronousCommit(stateStore);
@@ -246,6 +248,8 @@ public class StateStoreUpdatesWrapper {
      * Clears all partition data from the store. Note that this will invalidate any file references held in the store,
      * so this should only be used when no files are present. The store must be initialised before the Sleeper table can
      * be used again. Any file references will need to be added again.
+     *
+     * @throws StateStoreException if the update fails
      */
     public void clearPartitionData() throws StateStoreException {
         new InitialisePartitionsTransaction(List.of()).synchronousCommit(stateStore);

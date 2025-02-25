@@ -25,7 +25,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A transaction to delete all files in the state store.
+ * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
  */
 public class ClearFilesTransaction implements FileReferenceTransaction {
 
@@ -37,9 +37,10 @@ public class ClearFilesTransaction implements FileReferenceTransaction {
      * Commit this transaction directly to the state store without going to the commit queue. This will throw any
      * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
      *
-     * @param stateStore the state store
+     * @param  stateStore          the state store
+     * @throws StateStoreException if the update fails
      */
-    public void synchronousCommit(StateStore stateStore) {
+    public void synchronousCommit(StateStore stateStore) throws StateStoreException {
         stateStore.addFilesTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
