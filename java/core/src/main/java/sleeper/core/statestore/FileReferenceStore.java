@@ -26,13 +26,6 @@ import java.time.Instant;
 public interface FileReferenceStore extends FileReferenceStoreQueries, FileReferenceStoreUpdates {
 
     /**
-     * Performs extra setup steps that are needed before the file reference store can be used.
-     *
-     * @throws StateStoreException if initialisation fails
-     */
-    void initialise() throws StateStoreException;
-
-    /**
      * Used to fix the time of file updates. Should only be called during tests.
      *
      * @param time the time that any future file updates will be considered to occur
