@@ -44,11 +44,6 @@ class TransactionLogPartitionStore implements PartitionStore {
     }
 
     @Override
-    public void clearPartitionData() throws StateStoreException {
-        head.addTransaction(clock.instant(), new InitialisePartitionsTransaction(List.of()));
-    }
-
-    @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
         return partitions().all().stream().toList();
     }

@@ -31,7 +31,6 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
@@ -75,11 +74,6 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         } catch (StateStoreException e) {
             throw new ReplaceRequestsFailedException(requests, e);
         }
-    }
-
-    @Override
-    public void clearFileData() throws StateStoreException {
-        head.addTransaction(clock.instant(), new ClearFilesTransaction());
     }
 
     @Override

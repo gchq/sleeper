@@ -29,7 +29,10 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
 
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
@@ -68,7 +71,9 @@ public class DeleteTable {
          * last to handle the case where the deletion of files in the data bucket fails, so you can still see that a
          * table existed.
          */
-        stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        new ClearFilesTransaction().synchronousCommit(stateStore);
+        ClearPartitionsTransaction.create().synchronousCommit(stateStore);
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         tablePropertiesStore.deleteByName(tableName);
         LOGGER.info("Successfully deleted table {}", tableProperties.getStatus());

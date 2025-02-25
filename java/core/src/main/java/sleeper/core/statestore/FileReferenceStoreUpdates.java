@@ -118,9 +118,4 @@ public interface FileReferenceStoreUpdates {
      * @throws StateStoreException        if the update fails for another reason
      */
     void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException;
-
-    /**
-     * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
-     */
-    void clearFileData() throws StateStoreException;
 }

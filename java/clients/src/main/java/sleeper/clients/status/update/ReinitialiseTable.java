@@ -30,6 +30,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
@@ -83,10 +85,9 @@ public class ReinitialiseTable {
 
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
 
+        new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
-            stateStore.clearSleeperTable();
-        } else {
-            stateStore.clearFileData();
+            ClearPartitionsTransaction.create().synchronousCommit(stateStore);
         }
         deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID),
                 key -> key.matches(tableProperties.get(TABLE_ID) + "/partition.*/.*"));

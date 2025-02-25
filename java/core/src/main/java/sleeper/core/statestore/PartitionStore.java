@@ -69,13 +69,6 @@ public interface PartitionStore {
     void initialise(List<Partition> partitions) throws StateStoreException;
 
     /**
-     * Clears all partition data from the store. Note that this will invalidate any file references held in the store,
-     * so this should only be used when no files are present. The store must be initialised before the Sleeper table can
-     * be used again. Any file references will need to be added again.
-     */
-    void clearPartitionData() throws StateStoreException;
-
-    /**
      * Used to fix the time of partition updates. Should only be called during tests.
      *
      * @param time the time that any future partition updates will be considered to occur

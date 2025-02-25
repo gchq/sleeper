@@ -146,16 +146,6 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void clearFileData() throws StateStoreException {
-        fileReferenceStore.clearFileData();
-    }
-
-    @Override
-    public void clearPartitionData() throws StateStoreException {
-        partitionStore.clearPartitionData();
-    }
-
-    @Override
     public void fixFileUpdateTime(Instant now) {
         fileReferenceStore.fixFileUpdateTime(now);
     }
