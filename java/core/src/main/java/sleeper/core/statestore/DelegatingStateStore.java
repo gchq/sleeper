@@ -117,15 +117,6 @@ public abstract class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void initialise(List<Partition> partitions) throws StateStoreException {
-        if (!hasNoFiles()) {
-            throw new StateStoreException("Cannot initialise state store when files are present");
-        }
-        partitionStore.initialise(partitions);
-        fileReferenceStore.initialise();
-    }
-
-    @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
         return partitionStore.getAllPartitions();
     }

@@ -16,7 +16,6 @@
 package sleeper.core.statestore;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 
 import java.time.Instant;
@@ -59,14 +58,6 @@ public interface PartitionStore {
      * @throws StateStoreException if update fails
      */
     void initialise() throws StateStoreException;
-
-    /**
-     * Initialises the store with a list of all partitions. This must be a complete {@link PartitionTree}.
-     *
-     * @param  partitions          The initial list of {@link Partition}s
-     * @throws StateStoreException if partitions not provided or update fails
-     */
-    void initialise(List<Partition> partitions) throws StateStoreException;
 
     /**
      * Used to fix the time of partition updates. Should only be called during tests.

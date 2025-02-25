@@ -66,11 +66,6 @@ class TransactionLogPartitionStore implements PartitionStore {
     }
 
     @Override
-    public void initialise(List<Partition> partitions) throws StateStoreException {
-        head.addTransaction(clock.instant(), new InitialisePartitionsTransaction(partitions));
-    }
-
-    @Override
     public void fixPartitionUpdateTime(Instant time) {
         clock = Clock.fixed(time, ZoneId.of("UTC"));
     }
