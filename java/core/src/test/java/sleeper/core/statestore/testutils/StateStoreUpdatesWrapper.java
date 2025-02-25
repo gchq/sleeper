@@ -181,11 +181,7 @@ public class StateStoreUpdatesWrapper {
      * @throws SplitRequestsFailedException if any of the requests fail, even if some succeeded
      */
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
-        try {
-            addTransaction(new SplitFileReferencesTransaction(splitRequests));
-        } catch (StateStoreException e) {
-            throw new SplitRequestsFailedException(List.of(), splitRequests, e);
-        }
+        new SplitFileReferencesTransaction(splitRequests).synchronousCommit(stateStore);
     }
 
     /**
