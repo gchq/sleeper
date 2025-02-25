@@ -26,7 +26,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
@@ -141,11 +141,11 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
                     FileReferenceFactory.from(partitions).rootFile("test.parquet", 100))));
 
             // When
-            AddTransactionRequest foundRequest = store.storeIfTooBig(tableId, AddTransactionRequest.withTransaction(transaction).build());
+            StoreTransactionBodyResult result = store.storeIfTooBig(tableId, transaction);
 
             // Then
-            assertThat(foundRequest.getBodyKey()).isEmpty();
-            assertThat(foundRequest.getSerialisedTransaction())
+            assertThat(result.getBodyKey()).isEmpty();
+            assertThat(result.getSerialisedTransaction())
                     .map(json -> (AddFilesTransaction) TransactionSerDe.forFileTransactions().toTransaction(TransactionType.ADD_FILES, json))
                     .contains(transaction);
         }
@@ -160,11 +160,11 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
                     FileReferenceFactory.from(partitions).rootFile("test3.parquet", 300))));
 
             // When
-            AddTransactionRequest foundRequest = store.storeIfTooBig(tableId, AddTransactionRequest.withTransaction(transaction).build());
+            StoreTransactionBodyResult result = store.storeIfTooBig(tableId, transaction);
 
             // Then
-            assertThat(foundRequest.getBodyKey()).isNotEmpty();
-            assertThat(foundRequest.getSerialisedTransaction()).isEmpty();
+            assertThat(result.getBodyKey()).isNotEmpty();
+            assertThat(result.getSerialisedTransaction()).isEmpty();
         }
     }
 
@@ -181,14 +181,13 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
     }
 
     private StateStoreTransaction<?> saveAndLoad(TransactionBodyStore store, StateStoreTransaction<?> transaction) {
-        AddTransactionRequest foundRequest = store.storeIfTooBig(tableId, AddTransactionRequest.withTransaction(transaction).build());
-        String foundKey = foundRequest.getBodyKey().orElseThrow();
+        StoreTransactionBodyResult found = store.storeIfTooBig(tableId, transaction);
+        String foundKey = found.getBodyKey().orElseThrow();
         return store.getBody(foundKey, tableId, TransactionType.getType(transaction));
     }
 
     private String saveGetKey(TransactionBodyStore store, StateStoreTransaction<?> transaction) {
-        AddTransactionRequest foundRequest = store.storeIfTooBig(tableId, AddTransactionRequest.withTransaction(transaction).build());
-        return foundRequest.getBodyKey().orElseThrow();
+        return store.storeIfTooBig(tableId, transaction).getBodyKey().orElseThrow();
     }
 
 }

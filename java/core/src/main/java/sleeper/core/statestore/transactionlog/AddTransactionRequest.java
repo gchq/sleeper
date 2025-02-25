@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
@@ -116,6 +117,24 @@ public class AddTransactionRequest {
 
     public Builder toBuilder() {
         return withTransaction(transaction).bodyKey(bodyKey).beforeApplyListener(beforeApplyListener);
+    }
+
+    /**
+     * Returns an updated copy of this request that reflects the result of storing the transaction body.
+     *
+     * @param  result the result
+     * @return        the updated copy
+     */
+    public AddTransactionRequest storedTransaction(StoreTransactionBodyResult result) {
+        Optional<String> bodyKey = result.getBodyKey();
+        if (bodyKey.isPresent()) {
+            return toBuilder().bodyKey(bodyKey.get()).build();
+        }
+        Optional<String> serialisedTransaction = result.getSerialisedTransaction();
+        if (serialisedTransaction.isPresent()) {
+            return toBuilder().serialisedTransaction(serialisedTransaction.get()).build();
+        }
+        return this;
     }
 
     /**
