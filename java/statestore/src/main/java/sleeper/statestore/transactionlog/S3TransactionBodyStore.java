@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
@@ -66,14 +66,14 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
     }
 
     @Override
-    public AddTransactionRequest storeIfTooBig(String tableId, AddTransactionRequest request) {
-        String json = serDeProvider.getByTableId(tableId).toJson(request.getTransaction());
+    public StoreTransactionBodyResult storeIfTooBig(String tableId, StateStoreTransaction<?> transaction) {
+        String json = serDeProvider.getByTableId(tableId).toJson(transaction);
         if (json.length() < jsonLengthToStore) {
-            return request.toBuilder().serialisedTransaction(json).build();
+            return StoreTransactionBodyResult.notStored(json);
         } else {
             String key = TransactionBodyStore.createObjectKey(tableId);
             store(key, json);
-            return request.toBuilder().bodyKey(key).build();
+            return StoreTransactionBodyResult.stored(key);
         }
     }
 
