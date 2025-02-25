@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.log;
 
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 
 import java.time.Instant;
@@ -34,21 +35,27 @@ public class TransactionLogEntry {
     private final TransactionType transactionType;
     private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
+    private final String serialisedTransaction;
 
     public TransactionLogEntry(long transactionNumber, Instant updateTime, StateStoreTransaction<?> transaction) {
-        this(transactionNumber, updateTime, TransactionType.getType(transaction), null, transaction);
+        this(transactionNumber, updateTime, transaction, null);
+    }
+
+    public TransactionLogEntry(long transactionNumber, Instant updateTime, StateStoreTransaction<?> transaction, String serialisedTransaction) {
+        this(transactionNumber, updateTime, TransactionType.getType(transaction), null, transaction, serialisedTransaction);
     }
 
     public TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, String bodyKey) {
-        this(transactionNumber, updateTime, transactionType, bodyKey, null);
+        this(transactionNumber, updateTime, transactionType, bodyKey, null, null);
     }
 
-    private TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, String bodyKey, StateStoreTransaction<?> transaction) {
+    private TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, String bodyKey, StateStoreTransaction<?> transaction, String serialisedTransaction) {
         this.transactionNumber = transactionNumber;
         this.updateTime = updateTime;
         this.transactionType = transactionType;
         this.bodyKey = bodyKey;
         this.transaction = transaction;
+        this.serialisedTransaction = serialisedTransaction;
     }
 
     /**
@@ -64,7 +71,9 @@ public class TransactionLogEntry {
         if (bodyKey.isPresent()) {
             return new TransactionLogEntry(transactionNumber, updateTime, request.getTransactionType(), bodyKey.get());
         } else {
-            return new TransactionLogEntry(transactionNumber, updateTime, request.getTransaction());
+            StateStoreTransaction<?> transaction = request.getTransaction();
+            String serialisedTransaction = request.getSerialisedTransaction().orElse(null);
+            return new TransactionLogEntry(transactionNumber, updateTime, transaction, serialisedTransaction);
         }
 
     }
@@ -92,6 +101,22 @@ public class TransactionLogEntry {
             withTransaction.accept(transaction);
         } else {
             withObjectKey.accept(bodyKey);
+        }
+    }
+
+    /**
+     * Applies some operation on the transaction or the object key in the data bucket, whichever is held in the entry.
+     *
+     * @param withTransaction the operation on a transaction
+     * @param withObjectKey   the operation on an object key
+     */
+    public void withSerialisedTransactionOrObjectKey(TransactionSerDe serDe, Consumer<String> withTransaction, Consumer<String> withObjectKey) {
+        if (bodyKey != null) {
+            withObjectKey.accept(bodyKey);
+        } else if (serialisedTransaction != null) {
+            withTransaction.accept(serialisedTransaction);
+        } else {
+            withTransaction.accept(serDe.toJson(transaction));
         }
     }
 
