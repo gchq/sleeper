@@ -93,13 +93,13 @@ class TransactionLogPartitionStore implements PartitionStore {
         head.applyTransactionUpdatingIfNecessary(logEntry, listener);
     }
 
+    void clearTransactionLog() {
+        head.clearTransactionLog(ClearPartitionsTransaction.create(), clock.instant());
+    }
+
     private StateStorePartitions partitions() throws StateStoreException {
         head.update();
         return head.state();
-    }
-
-    public void clearTransactionLog() {
-        head.clearTransactionLog(ClearPartitionsTransaction.create(), clock.instant());
     }
 
 }

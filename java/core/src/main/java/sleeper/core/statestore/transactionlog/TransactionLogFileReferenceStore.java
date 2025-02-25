@@ -140,12 +140,12 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         head.applyTransactionUpdatingIfNecessary(logEntry, listener);
     }
 
+    void clearTransactionLog() {
+        head.clearTransactionLog(new ClearFilesTransaction(), clock.instant());
+    }
+
     private StateStoreFiles files() throws StateStoreException {
         head.update();
         return head.state();
-    }
-
-    public void clearTransactionLog() {
-        head.clearTransactionLog(new ClearFilesTransaction(), clock.instant());
     }
 }
