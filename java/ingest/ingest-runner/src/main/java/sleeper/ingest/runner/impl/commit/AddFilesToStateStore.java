@@ -48,7 +48,7 @@ public interface AddFilesToStateStore {
             StateStore stateStore, IngestJobTracker tracker, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
-            stateStore.addFilesWithReferences(files);
+            new AddFilesTransaction(files).synchronousCommit(stateStore);
             tracker.jobAddedFiles(statusUpdateBuilder.files(files).build());
         };
     }

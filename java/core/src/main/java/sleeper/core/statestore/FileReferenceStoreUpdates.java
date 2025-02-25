@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore;
 
-import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 
 import java.util.List;
@@ -25,20 +24,6 @@ import java.util.List;
  * to the file, and internal references which assign all the data in the file to non-overlapping partitions.
  */
 public interface FileReferenceStoreUpdates {
-
-    /**
-     * Adds files to the Sleeper table, with any number of references. Each new file should be specified once, with all
-     * its references.
-     * <p>
-     * A file must never be referenced in two partitions where one is a descendent of another. This means each record in
-     * a file must only be covered by one reference. A partition covers a range of records. A partition which is the
-     * child of another covers a sub-range within the parent partition.
-     *
-     * @param  files                      The files to be added
-     * @throws FileAlreadyExistsException if a file already exists
-     * @throws StateStoreException        if the update fails for another reason
-     */
-    void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException;
 
     /**
      * Atomically applies the results of jobs. Removes file references for a job's input files, and adds a reference to
