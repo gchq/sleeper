@@ -84,17 +84,12 @@ public class S3TransactionBodyStore implements TransactionBodyStore {
         }
     }
 
-    /**
-     * Stores a transaction body that's already been serialised as a string.
-     *
-     * @param key  the object key in the data bucket to store the file in
-     * @param body the transaction body
-     */
     private void store(String key, StateStoreTransaction<?> transaction, String body) {
         TransactionType transactionType = TransactionType.getType(transaction);
         LOGGER.debug("Uploading large transaction of type {} to S3 at: {}", transactionType, key);
         Instant startTime = Instant.now();
         s3Client.putObject(instanceProperties.get(DATA_BUCKET), key, body);
+        LOGGER.debug("Uploaded large transaction of type {} to S3 at: {}", transactionType, key);
         LOGGER.info("Saved to S3 in {}", LoggedDuration.withShortOutput(startTime, Instant.now()));
     }
 
