@@ -41,15 +41,6 @@ public abstract class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        if (fileReferences.isEmpty()) {
-            LOGGER.info("Ignoring addFiles call with no files");
-            return;
-        }
-        fileReferenceStore.addFiles(fileReferences);
-    }
-
-    @Override
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
         if (files.isEmpty()) {
             LOGGER.info("Ignoring addFilesWithReferences call with no files");

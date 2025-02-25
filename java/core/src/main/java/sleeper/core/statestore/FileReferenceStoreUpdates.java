@@ -27,22 +27,6 @@ import java.util.List;
 public interface FileReferenceStoreUpdates {
 
     /**
-     * Adds files to the Sleeper table, with any number of references. Each reference to be added should be for a file
-     * which does not yet exist in the table.
-     * <p>
-     * When adding multiple references for a file, a file must never be referenced in two partitions where one is a
-     * descendent of another. This means each record in a file must only be covered by one reference. A partition covers
-     * a range of records. A partition which is the child of another covers a sub-range within the parent partition.
-     *
-     * @param  fileReferences             The file references to be added
-     * @throws FileAlreadyExistsException if a file already exists
-     * @throws StateStoreException        if the update fails for another reason
-     */
-    default void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        addFilesWithReferences(AllReferencesToAFile.newFilesWithReferences(fileReferences));
-    }
-
-    /**
      * Adds files to the Sleeper table, with any number of references. Each new file should be specified once, with all
      * its references.
      * <p>

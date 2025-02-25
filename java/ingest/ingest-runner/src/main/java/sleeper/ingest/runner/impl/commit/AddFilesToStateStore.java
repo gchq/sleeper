@@ -41,7 +41,7 @@ public interface AddFilesToStateStore {
     void addFiles(List<FileReference> references) throws StateStoreException;
 
     static AddFilesToStateStore synchronous(StateStore stateStore) {
-        return stateStore::addFiles;
+        return references -> AddFilesTransaction.fromReferences(references).synchronousCommit(stateStore);
     }
 
     static AddFilesToStateStore synchronous(
