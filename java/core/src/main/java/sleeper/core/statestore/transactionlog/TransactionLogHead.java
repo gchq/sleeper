@@ -107,7 +107,7 @@ public class TransactionLogHead<T> {
         LOGGER.debug("Adding transaction of type {} to table {}",
                 request.getTransactionType(), sleeperTable);
         StoreTransactionBodyResult storeResult = transactionBodyStore.storeIfTooBig(sleeperTable.getTableUniqueId(), request.getTransaction());
-        request = request.storedTransaction(storeResult);
+        request = request.withStoreBodyResult(storeResult);
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
             prepareAddTransactionAttempt(attempt, request.getTransaction());

@@ -125,7 +125,7 @@ public class AddTransactionRequest {
      * @param  result the result
      * @return        the updated copy
      */
-    public AddTransactionRequest storedTransaction(StoreTransactionBodyResult result) {
+    public AddTransactionRequest withStoreBodyResult(StoreTransactionBodyResult result) {
         Optional<String> bodyKey = result.getBodyKey();
         if (bodyKey.isPresent()) {
             return toBuilder().bodyKey(bodyKey.get()).build();
