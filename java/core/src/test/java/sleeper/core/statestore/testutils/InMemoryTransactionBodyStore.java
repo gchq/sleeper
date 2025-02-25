@@ -15,7 +15,7 @@
  */
 package sleeper.core.statestore.testutils;
 
-import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
@@ -35,7 +35,7 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
     private final Map<String, StateStoreTransaction<?>> transactionByKey = new HashMap<>();
     private boolean storeTransactions = false;
     private Function<String, String> createObjectKey = TransactionBodyStore::createObjectKey;
-    private Function<AddTransactionRequest, AddTransactionRequest> serialiseTransaction = request -> request;
+    private Supplier<String> serialiseTransaction = () -> null;
 
     @Override
     public void store(String key, String tableId, StateStoreTransaction<?> transaction) {
@@ -43,14 +43,15 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
     }
 
     @Override
-    public AddTransactionRequest storeIfTooBig(String tableId, AddTransactionRequest request) {
-        AddTransactionRequest serialised = serialiseTransaction.apply(request);
-        if (!storeTransactions) {
-            return serialised;
+    public StoreTransactionBodyResult storeIfTooBig(String tableId, StateStoreTransaction<?> transaction) {
+        String serialised = serialiseTransaction.get();
+        if (storeTransactions) {
+            String key = createObjectKey.apply(tableId);
+            transactionByKey.put(key, transaction);
+            return StoreTransactionBodyResult.stored(key);
+        } else {
+            return StoreTransactionBodyResult.notStored(serialised);
         }
-        String key = createObjectKey.apply(tableId);
-        transactionByKey.put(key, request.getTransaction());
-        return request.toBuilder().bodyKey(key).build();
     }
 
     @Override
@@ -95,7 +96,7 @@ public class InMemoryTransactionBodyStore implements TransactionBodyStore {
         this.createObjectKey = tableId -> keySupplier.get();
     }
 
-    private void setSerialiseTransaction(Supplier<String> transactionBodySupplier) {
-        this.serialiseTransaction = request -> request.toBuilder().serialisedTransaction(transactionBodySupplier.get()).build();
+    private void setSerialiseTransaction(Supplier<String> serialiseTransaction) {
+        this.serialiseTransaction = serialiseTransaction;
     }
 }

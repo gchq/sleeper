@@ -46,13 +46,28 @@ public interface TransactionBodyStore {
     /**
      * Stores a transaction if it is too large to fit in the associated log store.
      *
+     * @param  tableId     the ID of the Sleeper table the transaction is for
+     * @param  transaction the transaction
+     * @return             the result of uploading the transaction, with a pointer to the file holding the transaction
+     *                     if it was uploaded
+     */
+    default StoreTransactionBodyResult storeIfTooBig(String tableId, StateStoreTransaction<?> transaction) {
+        return StoreTransactionBodyResult.notStored();
+    }
+
+    /**
+     * Stores a transaction if it is too large to fit in the associated log store.
+     *
      * @param  tableId the ID of the Sleeper table the transaction is for
      * @param  request the request to add the transaction
      * @return         the new request, identical to the original but with a pointer to the new transaction entry if it
      *                 was uploaded
      */
     default AddTransactionRequest storeIfTooBig(String tableId, AddTransactionRequest request) {
-        return request;
+        StateStoreTransaction<?> transaction = request.getTransaction();
+        StoreTransactionBodyResult result = storeIfTooBig(tableId, transaction);
+        AddTransactionRequest request2 = result.getBodyKey().map(bodyKey -> request.toBuilder().bodyKey(bodyKey).build()).orElse(request);
+        return result.getSerialisedTransaction().map(serialised -> request2.toBuilder().serialisedTransaction(serialised).build()).orElse(request2);
     }
 
     /**
