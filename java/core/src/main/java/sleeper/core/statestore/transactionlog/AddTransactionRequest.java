@@ -115,10 +115,6 @@ public class AddTransactionRequest {
         return beforeApplyListener;
     }
 
-    public Builder toBuilder() {
-        return withTransaction(transaction).bodyKey(bodyKey).beforeApplyListener(beforeApplyListener);
-    }
-
     /**
      * Returns an updated copy of this request that reflects the result of storing the transaction body.
      *
@@ -135,6 +131,10 @@ public class AddTransactionRequest {
             return toBuilder().serialisedTransaction(serialisedTransaction.get()).build();
         }
         return this;
+    }
+
+    private Builder toBuilder() {
+        return withTransaction(transaction).bodyKey(bodyKey).serialisedTransaction(serialisedTransaction).beforeApplyListener(beforeApplyListener);
     }
 
     /**
