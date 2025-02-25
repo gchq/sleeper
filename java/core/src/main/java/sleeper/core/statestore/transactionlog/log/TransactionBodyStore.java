@@ -50,9 +50,7 @@ public interface TransactionBodyStore {
      * @return             the result of uploading the transaction, with a pointer to the file holding the transaction
      *                     if it was uploaded
      */
-    default StoreTransactionBodyResult storeIfTooBig(String tableId, StateStoreTransaction<?> transaction) {
-        return StoreTransactionBodyResult.notStored();
-    }
+    StoreTransactionBodyResult storeIfTooBig(String tableId, StateStoreTransaction<?> transaction);
 
     /**
      * Retrives a transaction from a given location.
