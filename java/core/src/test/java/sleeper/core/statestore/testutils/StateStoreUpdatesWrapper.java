@@ -129,7 +129,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException        if the update fails for another reason
      */
     public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        addFilesWithReferences(AllReferencesToAFile.newFilesWithReferences(fileReferences));
+        addFiles(AddFilesTransaction.fromReferences(fileReferences));
     }
 
     /**
@@ -145,7 +145,10 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException        if the update fails for another reason
      */
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        AddFilesTransaction transaction = new AddFilesTransaction(files);
+        addFiles(new AddFilesTransaction(files));
+    }
+
+    private void addFiles(AddFilesTransaction transaction) {
         stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction)
                 .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> transaction.validateFiles(state)))
                 .build());

@@ -85,7 +85,7 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
     void shouldNotUpdateTrackerWhenCommitIsNotForAnyIngestJob() {
         // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
         FileReference file = factory.rootFile("file.parquet", 100L);
-        AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+        AddFilesTransaction transaction = AddFilesTransaction.fromReferences(List.of(file));
 
         // When
         addTransactionWithTracking(transaction);
@@ -99,7 +99,7 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
     void shouldFailWhenFileAlreadyExists() {
         // Given
         FileReference file = factory.rootFile("file.parquet", 100L);
-        addTransactionWithTracking(new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))));
+        addTransactionWithTracking(AddFilesTransaction.fromReferences(List.of(file)));
         trackJobRun("test-job", "test-run", 1, file);
         AddFilesTransaction transaction = AddFilesTransaction.builder()
                 .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))

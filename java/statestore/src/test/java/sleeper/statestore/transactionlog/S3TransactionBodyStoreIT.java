@@ -25,7 +25,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -108,8 +107,8 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
             // Given
             String key = TransactionBodyStore.createObjectKey(tableId);
             PartitionTree partitions = new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildTree();
-            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(
-                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100))));
+            FileReferenceTransaction transaction = AddFilesTransaction.fromReferences(List.of(
+                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100)));
 
             // When
             store.store(key, tableId, transaction);

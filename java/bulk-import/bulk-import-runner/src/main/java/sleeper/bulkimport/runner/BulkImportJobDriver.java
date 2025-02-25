@@ -37,7 +37,6 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -119,7 +118,7 @@ public class BulkImportJobDriver {
             if (asyncCommit) {
                 AddFilesTransaction transaction = AddFilesTransaction.builder()
                         .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
-                        .files(AllReferencesToAFile.newFilesWithReferences(output.fileReferences()))
+                        .fileReferences(output.fileReferences())
                         .build();
                 asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(), transaction));
                 LOGGER.info("Submitted asynchronous request to state store committer to add {} files for job {} in table {}", output.numFiles(), job.getId(), table);

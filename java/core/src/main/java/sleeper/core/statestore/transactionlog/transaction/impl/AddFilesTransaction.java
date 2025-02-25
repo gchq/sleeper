@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
@@ -34,7 +35,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A transaction to add files to the state store.
+ * Adds files to the Sleeper table, with any number of references. Each new file should be specified once, with all
+ * its references. Once a file has been added, it may not be added again, even as a reference on a different partition.
+ * <p>
+ * A file must never be referenced in two partitions where one is a descendent of another. This means each record in
+ * a file must only be covered by one reference. A partition covers a range of records. A partition which is the
+ * child of another covers a sub-range within the parent partition.
  */
 public class AddFilesTransaction implements FileReferenceTransaction {
 
@@ -61,6 +67,16 @@ public class AddFilesTransaction implements FileReferenceTransaction {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    /**
+     * Creates a transaction to add files with the given references.
+     *
+     * @param  fileReferences the file references
+     * @return                the transaction
+     */
+    public static AddFilesTransaction fromReferences(List<FileReference> fileReferences) {
+        return builder().fileReferences(fileReferences).build();
     }
 
     @Override
@@ -263,6 +279,16 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         public Builder files(List<AllReferencesToAFile> files) {
             this.files = files;
             return this;
+        }
+
+        /**
+         * Sets the files to add to the state store.
+         *
+         * @param  fileReferences the file references to add
+         * @return                this builder
+         */
+        public Builder fileReferences(List<FileReference> fileReferences) {
+            return files(AllReferencesToAFile.newFilesWithReferences(fileReferences));
         }
 
         public AddFilesTransaction build() {
