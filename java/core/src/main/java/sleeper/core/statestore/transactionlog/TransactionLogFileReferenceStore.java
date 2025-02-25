@@ -21,14 +21,11 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.statestore.AllReferencesToAllFiles;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
-import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -49,19 +46,6 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
 
     TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> head) {
         this.head = head;
-    }
-
-    @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
-        try {
-            for (ReplaceFileReferencesRequest request : requests) {
-                request.validateNewReference();
-                request.validateStateChange(head.state());
-            }
-            head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(requests));
-        } catch (StateStoreException e) {
-            throw new ReplaceRequestsFailedException(requests, e);
-        }
     }
 
     @Override

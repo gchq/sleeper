@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 
 import java.time.Instant;
@@ -38,11 +37,6 @@ public abstract class DelegatingStateStore implements StateStore {
     public DelegatingStateStore(FileReferenceStore fileReferenceStore, PartitionStore partitionStore) {
         this.fileReferenceStore = fileReferenceStore;
         this.partitionStore = partitionStore;
-    }
-
-    @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
-        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOnes(requests);
     }
 
     @Override

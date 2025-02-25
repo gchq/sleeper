@@ -23,7 +23,7 @@ import java.time.Instant;
  * Stores information about the data files in a Sleeper table. This includes a count of the number of references
  * to the file, and internal references which assign all the data in the file to non-overlapping partitions.
  */
-public interface FileReferenceStore extends FileReferenceStoreQueries, FileReferenceStoreUpdates {
+public interface FileReferenceStore extends FileReferenceStoreQueries {
 
     /**
      * Used to fix the time of file updates. Should only be called during tests.
