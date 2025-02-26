@@ -456,7 +456,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         void shouldAddFileTransactionWhoseBodyIsHeldInS3() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
-            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            FileReferenceTransaction transaction = AddFilesTransaction.fromReferences(List.of(file));
             String key = "table/transactions/myTransaction.json";
             transactionBodyStore.store(key, tableId, transaction);
 
@@ -486,7 +486,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         void shouldFailToLoadTransactionIfBodyIsNotInBodyStore() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
-            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            FileReferenceTransaction transaction = AddFilesTransaction.fromReferences(List.of(file));
             String key = "table/transactions/myTransaction.json";
             store.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey(key).build());
 
@@ -500,7 +500,7 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
         void shouldFailToLoadTransactionIfTypeHeldInLogDoesNotMatchTypeInBodyStore() {
             // Given
             FileReference file = fileFactory().rootFile("file.parquet", 100);
-            FileReferenceTransaction transactionInStore = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            FileReferenceTransaction transactionInStore = AddFilesTransaction.fromReferences(List.of(file));
             FileReferenceTransaction transactionInLog = new ClearFilesTransaction();
             String key = "table/transactions/myTransaction.json";
             transactionBodyStore.store(key, tableId, transactionInStore);

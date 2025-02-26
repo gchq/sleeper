@@ -102,7 +102,7 @@ public class SplitPartition {
         LOGGER.info("New partition: {}", rightChild);
 
         if (!tableProperties.getBoolean(PARTITION_SPLIT_ASYNC_COMMIT)) {
-            stateStore.atomicallyUpdatePartitionAndCreateNewOnes(parentPartition, leftChild, rightChild);
+            new SplitPartitionTransaction(parentPartition, List.of(leftChild, rightChild)).synchronousCommit(stateStore);
         } else {
             sendAsyncCommit.sendCommit(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                     new SplitPartitionTransaction(parentPartition, List.of(leftChild, rightChild))));

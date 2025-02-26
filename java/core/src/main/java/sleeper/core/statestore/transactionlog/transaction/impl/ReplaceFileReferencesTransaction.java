@@ -19,12 +19,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.exception.FileNotFoundException;
 import sleeper.core.statestore.exception.FileReferenceNotAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -38,8 +42,13 @@ import java.util.Objects;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * A transaction to remove a number of file references that were assigned to a job, and replace them with a new file.
- * This can be used to apply the results of a compaction.
+ * Atomically applies the results of jobs. Removes file references for a job's input files, and adds a reference to
+ * an output file. This will be used for compaction.
+ * <p>
+ * This will validate that the input files were assigned to the job.
+ * <p>
+ * This will decrement the number of references for each of the input files. If no other references exist for those
+ * files, they will become available for garbage collection.
  */
 public class ReplaceFileReferencesTransaction implements FileReferenceTransaction {
     public static final Logger LOGGER = LoggerFactory.getLogger(ReplaceFileReferencesTransaction.class);
@@ -50,8 +59,29 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
         this.jobs = jobs.stream()
                 .map(job -> job.withNoUpdateTime())
                 .collect(toUnmodifiableList());
-        for (ReplaceFileReferencesRequest job : jobs) {
-            job.validateNewReference();
+        try {
+            for (ReplaceFileReferencesRequest job : jobs) {
+                job.validateNewReference();
+            }
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(jobs, e);
+        }
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param  stateStore                     the state store
+     * @throws ReplaceRequestsFailedException if any of the updates fail
+     */
+    public void synchronousCommit(StateStore stateStore) throws ReplaceRequestsFailedException {
+        try {
+            stateStore.addTransaction(AddTransactionRequest.withTransaction(this)
+                    .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> validateStateChange(state)))
+                    .build());
+        } catch (StateStoreException e) {
+            throw new ReplaceRequestsFailedException(jobs, e);
         }
     }
 

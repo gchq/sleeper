@@ -37,7 +37,6 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -116,16 +115,15 @@ public class BulkImportJobDriver {
         Instant finishTime = getTime.get();
         boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
         try {
+            AddFilesTransaction transaction = AddFilesTransaction.builder()
+                    .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
+                    .fileReferences(output.fileReferences())
+                    .build();
             if (asyncCommit) {
-                AddFilesTransaction transaction = AddFilesTransaction.builder()
-                        .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
-                        .files(AllReferencesToAFile.newFilesWithReferences(output.fileReferences()))
-                        .build();
                 asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(), transaction));
                 LOGGER.info("Submitted asynchronous request to state store committer to add {} files for job {} in table {}", output.numFiles(), job.getId(), table);
             } else {
-                stateStoreProvider.getStateStore(tableProperties)
-                        .addFiles(output.fileReferences());
+                transaction.synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
                 LOGGER.info("Added {} files to statestore for job {} in table {}", output.numFiles(), job.getId(), table);
             }
         } catch (RuntimeException e) {

@@ -30,7 +30,6 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -80,13 +79,13 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
         StateStoreCommitter committer = committer();
         FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
         committer.apply(StateStoreCommitRequest.create(tableId,
-                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(
-                        List.of(fileFactory.rootFile("prewarm-file.parquet", 123))))));
+                AddFilesTransaction.fromReferences(
+                        List.of(fileFactory.rootFile("prewarm-file.parquet", 123)))));
 
         return runRequestsGetStats(committer, IntStream.rangeClosed(1, numberOfRequests)
                 .mapToObj(i -> StateStoreCommitRequest.create(tableId,
-                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(
-                                List.of(fileFactory.rootFile("file-" + i + ".parquet", i)))))));
+                        AddFilesTransaction.fromReferences(
+                                List.of(fileFactory.rootFile("file-" + i + ".parquet", i))))));
     }
 
     private Stats runRequestsGetStats(StateStoreCommitter committer, Stream<StateStoreCommitRequest> requests) throws Exception {

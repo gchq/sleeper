@@ -22,11 +22,13 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 
 import static sleeper.configuration.ReadSplitPoints.readSplitPoints;
@@ -37,8 +39,9 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
  * and all the information in the state store. Then the state store for the table
  * is reinitialised using the split points in the provided file.
  */
-public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
+public class ReinitialiseTableFromSplitPoints {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromSplitPoints.class);
+    private final ReinitialiseTable reinitialiseTable;
     private final boolean splitPointStringsBase64Encoded;
     private final String splitPointsFileLocation;
 
@@ -49,15 +52,22 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
             String tableName,
             String splitPointsFileLocation,
             boolean splitPointStringsBase64Encoded) {
-        super(s3Client, dynamoDBClient, instanceId, tableName, true);
+        this.reinitialiseTable = new ReinitialiseTable(s3Client, dynamoDBClient, instanceId, tableName, true);
         this.splitPointStringsBase64Encoded = splitPointStringsBase64Encoded;
         this.splitPointsFileLocation = splitPointsFileLocation;
     }
 
-    @Override
-    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException {
-        List<Object> splitPoints = readSplitPoints(tableProperties, splitPointsFileLocation, splitPointStringsBase64Encoded);
-        stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
+    public void run() {
+        reinitialiseTable.run(tableProperties -> new InitialisePartitionsTransaction(readPartitions(tableProperties)));
+    }
+
+    private List<Partition> readPartitions(TableProperties tableProperties) {
+        try {
+            List<Object> splitPoints = readSplitPoints(tableProperties, splitPointsFileLocation, splitPointStringsBase64Encoded);
+            return new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static void main(String[] args) {
@@ -83,11 +93,11 @@ public class ReinitialiseTableFromSplitPoints extends ReinitialiseTable {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         try {
-            ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client, dynamoDBClient, instanceId, tableName,
+            ReinitialiseTableFromSplitPoints reinitialiseTable = new ReinitialiseTableFromSplitPoints(s3Client, dynamoDBClient, instanceId, tableName,
                     splitPointsFile, splitPointsFileBase64Encoded);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
-        } catch (RuntimeException | IOException e) {
+        } catch (RuntimeException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());

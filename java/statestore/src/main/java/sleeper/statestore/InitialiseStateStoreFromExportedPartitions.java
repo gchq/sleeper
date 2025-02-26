@@ -28,6 +28,7 @@ import sleeper.core.partition.PartitionSerDe;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.BufferedReader;
@@ -86,7 +87,7 @@ public class InitialiseStateStoreFromExportedPartitions {
             }
             System.out.println("Read " + partitions.size() + " partitions from file");
 
-            stateStore.initialise(partitions);
+            new InitialisePartitionsTransaction(partitions).synchronousCommit(stateStore);
         } finally {
             dynamoDBClient.shutdown();
             s3Client.shutdown();

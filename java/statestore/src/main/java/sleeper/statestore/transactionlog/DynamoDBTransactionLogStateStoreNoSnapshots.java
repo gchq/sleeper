@@ -56,7 +56,6 @@ public class DynamoDBTransactionLogStateStoreNoSnapshots {
             AmazonDynamoDB dynamoDB, AmazonS3 s3) {
         return TransactionLogStateStore.builder()
                 .sleeperTable(tableProperties.getStatus())
-                .schema(tableProperties.getSchema())
                 .timeBetweenSnapshotChecks(Duration.ofSeconds(tableProperties.getLong(TIME_BETWEEN_SNAPSHOT_CHECKS_SECS)))
                 .timeBetweenTransactionChecks(Duration.ofMillis(tableProperties.getLong(TIME_BETWEEN_TRANSACTION_CHECKS_MS)))
                 .minTransactionsAheadToLoadSnapshot(tableProperties.getLong(MIN_TRANSACTIONS_AHEAD_TO_LOAD_SNAPSHOT))

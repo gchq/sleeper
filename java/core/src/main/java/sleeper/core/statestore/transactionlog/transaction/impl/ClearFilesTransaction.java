@@ -15,7 +15,9 @@
  */
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 
@@ -23,12 +25,23 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * A transaction to delete all files in the state store.
+ * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
  */
 public class ClearFilesTransaction implements FileReferenceTransaction {
 
     @Override
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param  stateStore          the state store
+     * @throws StateStoreException if the update fails
+     */
+    public void synchronousCommit(StateStore stateStore) throws StateStoreException {
+        stateStore.addFilesTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override

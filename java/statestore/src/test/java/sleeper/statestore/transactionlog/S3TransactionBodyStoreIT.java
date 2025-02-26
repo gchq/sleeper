@@ -24,7 +24,6 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
@@ -102,8 +101,8 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         void shouldStoreFileTransaction() {
             // Given
             PartitionTree partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
-            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(
-                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100))));
+            FileReferenceTransaction transaction = AddFilesTransaction.fromReferences(List.of(
+                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100)));
 
             // When
             StateStoreTransaction<?> found = saveAndLoad(store, transaction);
@@ -137,8 +136,8 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         void shouldNotStoreTransactionSmallerThanThreshold() {
             // Given
             PartitionTree partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
-            AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(
-                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100))));
+            AddFilesTransaction transaction = AddFilesTransaction.fromReferences(List.of(
+                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100)));
 
             // When
             StoreTransactionBodyResult result = store.storeIfTooBig(tableId, transaction);
@@ -154,10 +153,10 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         void shouldStoreTransactionLargerThanThreshold() {
             // Given
             PartitionTree partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
-            AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(
+            AddFilesTransaction transaction = AddFilesTransaction.fromReferences(List.of(
                     FileReferenceFactory.from(partitions).rootFile("test1.parquet", 100),
                     FileReferenceFactory.from(partitions).rootFile("test2.parquet", 200),
-                    FileReferenceFactory.from(partitions).rootFile("test3.parquet", 300))));
+                    FileReferenceFactory.from(partitions).rootFile("test3.parquet", 300)));
 
             // When
             StoreTransactionBodyResult result = store.storeIfTooBig(tableId, transaction);

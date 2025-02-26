@@ -20,6 +20,7 @@ import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 
@@ -29,8 +30,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A transaction to set all partitions in a Sleeper table. This should specify the whole partition tree. Any partitions
- * that were present before will be deleted.
+ * Sets all partitions in a Sleeper table. These should build into a complete partition tree, where there is a single
+ * root and all partitions are connected to that either directly or indirectly via other partitions. Any partitions that
+ * were present before will be deleted.
  */
 public class InitialisePartitionsTransaction implements PartitionTransaction {
 
@@ -41,13 +43,25 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     }
 
     /**
-     * Creates a transaction to initialise the table with a single root partition.
+     * Creates a transaction to initialise the table with a single partition covering all keys. This is the root
+     * partition which may be split in the future.
      *
      * @param  schema the table schema
      * @return        the transaction
      */
     public static InitialisePartitionsTransaction singlePartition(Schema schema) {
         return new InitialisePartitionsTransaction(new PartitionsFromSplitPoints(schema, Collections.emptyList()).construct());
+    }
+
+    /**
+     * Commits this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param  stateStore          the state store
+     * @throws StateStoreException if the update fails
+     */
+    public void synchronousCommit(StateStore stateStore) throws StateStoreException {
+        stateStore.addPartitionsTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override
