@@ -66,7 +66,7 @@ public class AddFilesToStateStoreTest {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
         Instant startTime = Instant.parse("2025-02-26T11:30:00Z");
-        Instant addFilesTime = Instant.parse("2025-02-26T11:31:00Z");
+        Instant writtenTime = Instant.parse("2025-02-26T11:31:00Z");
         IngestJobStartedEvent startedEvent = IngestJobStartedEvent.builder()
                 .tableId(tableId)
                 .jobId("test-job")
@@ -78,7 +78,8 @@ public class AddFilesToStateStoreTest {
         jobTracker.jobStarted(startedEvent);
 
         // When
-        AddFilesToStateStore.asynchronous(tableProperties, stateStoreCommitQueue::add, supplyTimes(addFilesTime),
+        AddFilesToStateStore.asynchronous(tableProperties, stateStoreCommitQueue::add,
+                supplyTimes(writtenTime),
                 AddFilesTransaction.builder().jobId("test-job").jobRunId("test-run").taskId("test-task"))
                 .addFiles(List.of(file));
 
@@ -87,7 +88,7 @@ public class AddFilesToStateStoreTest {
                 .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                         AddFilesTransaction.builder()
                                 .jobId("test-job").jobRunId("test-run").taskId("test-task")
-                                .writtenTime(addFilesTime)
+                                .writtenTime(writtenTime)
                                 .fileReferences(List.of(file))
                                 .build()));
         assertThat(jobTracker.getAllJobs(tableId)).containsExactly(
@@ -101,7 +102,7 @@ public class AddFilesToStateStoreTest {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
         Instant startTime = Instant.parse("2025-02-26T11:30:00Z");
-        Instant addFilesTime = Instant.parse("2025-02-26T11:31:00Z");
+        Instant writtenTime = Instant.parse("2025-02-26T11:31:00Z");
         Instant updateTime = Instant.parse("2025-02-26T11:31:00Z");
         IngestJobStartedEvent startedEvent = IngestJobStartedEvent.builder()
                 .tableId(tableId)
@@ -116,7 +117,7 @@ public class AddFilesToStateStoreTest {
 
         // When
         AddFilesToStateStore.synchronous(stateStore, jobTracker,
-                supplyTimes(addFilesTime),
+                supplyTimes(writtenTime),
                 ingestJobAddedFilesEventBuilder(startedEvent))
                 .addFiles(List.of(file));
 
@@ -128,7 +129,7 @@ public class AddFilesToStateStoreTest {
                 ingestJobStatus("test-job",
                         jobRunOnTask("test-task",
                                 ingestStartedStatus(startTime, 2),
-                                ingestAddedFilesStatus(addFilesTime, 1))));
+                                ingestAddedFilesStatus(writtenTime, 1))));
     }
 
     @Test
