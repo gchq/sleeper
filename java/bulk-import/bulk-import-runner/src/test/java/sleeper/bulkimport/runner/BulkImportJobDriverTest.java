@@ -180,8 +180,36 @@ class BulkImportJobDriverTest {
         assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                 AddFilesTransaction.builder()
                         .jobId(job.getId()).taskId("test-task").jobRunId("test-run").writtenTime(finishTime)
+                        .updateTrackerFromLog(true)
                         .fileReferences(outputFiles)
                         .build()));
+    }
+
+    @Test
+    void shouldRecordInTransactionLogThatTrackerUpdateNotRequiredForSynchronousCommit() throws Exception {
+        // Given
+        tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
+        BulkImportJob job = singleFileImportJob();
+        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+        List<FileReference> outputFiles = List.of(
+                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+
+        // When
+        runJob(job, "test-run", "test-task", validationTime,
+                driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+
+        // Then
+        assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
+                .isEqualTo(AddFilesTransaction.builder()
+                        .jobId(job.getId())
+                        .taskId("test-task")
+                        .jobRunId("test-run")
+                        .writtenTime(finishTime)
+                        .updateTrackerFromLog(false)
+                        .fileReferences(outputFiles)
+                        .build());
     }
 
     private void runJob(

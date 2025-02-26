@@ -15,8 +15,10 @@
  */
 package sleeper.core.statestore.testutils;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ThreadSleep;
@@ -26,6 +28,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 
 /**
@@ -130,6 +133,17 @@ public class InMemoryTransactionLogs {
 
     public InMemoryTransactionBodyStore getTransactionBodyStore() {
         return transactionBodyStore;
+    }
+
+    /**
+     * Gets the last transaction from the files transaction log store.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the file reference transaction
+     */
+    public FileReferenceTransaction getLastFilesTransaction(TableProperties tableProperties) {
+        return (FileReferenceTransaction) filesLogStore.getLastEntry()
+                .getTransactionOrLoadFromPointer(tableProperties.get(TABLE_ID), transactionBodyStore);
     }
 
     public List<Duration> getRetryWaits() {

@@ -118,6 +118,7 @@ public class BulkImportJobDriver {
             AddFilesTransaction transaction = AddFilesTransaction.builder()
                     .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
                     .fileReferences(output.fileReferences())
+                    .updateTrackerFromLog(asyncCommit)
                     .build();
             if (asyncCommit) {
                 asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(), transaction));
