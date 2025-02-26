@@ -43,11 +43,7 @@ public interface AddFilesToStateStore {
 
     void addFiles(List<FileReference> references) throws StateStoreException;
 
-    static AddFilesToStateStore synchronous(StateStore stateStore) {
-        return references -> AddFilesTransaction.fromReferences(references).synchronousCommit(stateStore);
-    }
-
-    static AddFilesToStateStore synchronous(
+    static AddFilesToStateStore synchronousWithJob(
             StateStore stateStore, IngestJobTracker tracker,
             Supplier<Instant> timeSupplier, IngestJobRunIds jobRunIds) {
         return references -> {
@@ -61,12 +57,26 @@ public interface AddFilesToStateStore {
         };
     }
 
-    static AddFilesToStateStore asynchronous(
+    static AddFilesToStateStore asynchronousWithJob(
             TableProperties tableProperties, StateStoreCommitRequestSender commitSender,
-            Supplier<Instant> timeSupplier, AddFilesTransaction.Builder transactionBuilder) {
+            Supplier<Instant> timeSupplier, IngestJobRunIds jobRunIds) {
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
-            AddFilesTransaction transaction = transactionBuilder.files(files).writtenTime(timeSupplier.get()).build();
+            AddFilesTransaction transaction = AddFilesTransaction.builder().jobRunIds(jobRunIds).files(files).writtenTime(timeSupplier.get()).build();
+            commitSender.send(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction));
+            LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}", files.size(), references.size(), tableProperties.getStatus());
+        };
+    }
+
+    static AddFilesToStateStore synchronousNoJob(StateStore stateStore) {
+        return references -> AddFilesTransaction.fromReferences(references).synchronousCommit(stateStore);
+    }
+
+    static AddFilesToStateStore asynchronousNoJob(
+            TableProperties tableProperties, StateStoreCommitRequestSender commitSender) {
+        return references -> {
+            List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
+            AddFilesTransaction transaction = new AddFilesTransaction(files);
             commitSender.send(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction));
             LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}", files.size(), references.size(), tableProperties.getStatus());
         };

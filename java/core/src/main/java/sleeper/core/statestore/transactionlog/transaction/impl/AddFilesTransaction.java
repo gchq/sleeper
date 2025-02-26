@@ -251,6 +251,9 @@ public class AddFilesTransaction implements FileReferenceTransaction {
          * @return           the builder
          */
         public Builder jobRunIds(IngestJobRunIds jobRunIds) {
+            if (jobRunIds == null) {
+                return this;
+            }
             return jobId(jobRunIds.getJobId())
                     .taskId(jobRunIds.getTaskId())
                     .jobRunId(jobRunIds.getJobRunId());

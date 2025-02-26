@@ -37,7 +37,6 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
-import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 import sleeper.core.util.ObjectFactory;
@@ -164,10 +163,9 @@ public class IngestJobRunner implements IngestJobHandler {
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
         IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(job.getTableId()).jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).build();
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.asynchronous(tableProperties, commitSender, timeSupplier,
-                    AddFilesTransaction.builder().jobId(job.getId()).taskId(taskId).jobRunId(jobRunId));
+            return AddFilesToStateStore.asynchronousWithJob(tableProperties, commitSender, timeSupplier, runIds);
         } else {
-            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), tracker, timeSupplier, runIds);
+            return AddFilesToStateStore.synchronousWithJob(stateStoreProvider.getStateStore(tableProperties), tracker, timeSupplier, runIds);
         }
     }
 }

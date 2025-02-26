@@ -78,9 +78,7 @@ public class AddFilesToStateStoreTest {
         jobTracker.jobStarted(startedEvent);
 
         // When
-        AddFilesToStateStore.asynchronous(tableProperties, stateStoreCommitQueue::add,
-                supplyTimes(writtenTime),
-                AddFilesTransaction.builder().jobId("test-job").jobRunId("test-run").taskId("test-task"))
+        AddFilesToStateStore.asynchronousWithJob(tableProperties, stateStoreCommitQueue::add, supplyTimes(writtenTime), runIds)
                 .addFiles(List.of(file));
 
         // Then
@@ -115,7 +113,7 @@ public class AddFilesToStateStoreTest {
         stateStore.fixFileUpdateTime(updateTime);
 
         // When
-        AddFilesToStateStore.synchronous(stateStore, jobTracker, supplyTimes(writtenTime), runIds)
+        AddFilesToStateStore.synchronousWithJob(stateStore, jobTracker, supplyTimes(writtenTime), runIds)
                 .addFiles(List.of(file));
 
         // Then
@@ -150,7 +148,7 @@ public class AddFilesToStateStoreTest {
         });
 
         // When
-        AddFilesToStateStore.synchronous(stateStore, jobTracker, supplyTimes(writtenTime), runIds)
+        AddFilesToStateStore.synchronousWithJob(stateStore, jobTracker, supplyTimes(writtenTime), runIds)
                 .addFiles(List.of(file));
 
         // Then
@@ -163,6 +161,21 @@ public class AddFilesToStateStoreTest {
     }
 
     @Test
+    void shouldCommitAsynchronouslyWithNoJob() throws Exception {
+        // Given
+        FileReference file = factory.rootFile("test.parquet", 123L);
+
+        // When
+        AddFilesToStateStore.asynchronousNoJob(tableProperties, stateStoreCommitQueue::add)
+                .addFiles(List.of(file));
+
+        // Then
+        assertThat(stateStoreCommitQueue)
+                .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
+                        AddFilesTransaction.fromReferences(List.of(file))));
+    }
+
+    @Test
     void shouldCommitSynchronouslyWithNoJob() {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
@@ -170,7 +183,7 @@ public class AddFilesToStateStoreTest {
         stateStore.fixFileUpdateTime(updateTime);
 
         // When
-        AddFilesToStateStore.synchronous(stateStore).addFiles(List.of(file));
+        AddFilesToStateStore.synchronousNoJob(stateStore).addFiles(List.of(file));
 
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(withLastUpdate(updateTime, file));

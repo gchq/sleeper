@@ -50,7 +50,7 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = instance.getTableProperties();
         StateStore stateStore = instance.getStateStore(tableProperties);
-        ingest(instanceProperties, tableProperties, stateStore, AddFilesToStateStore.synchronous(stateStore), records);
+        ingest(instanceProperties, tableProperties, stateStore, AddFilesToStateStore.synchronousNoJob(stateStore), records);
     }
 
     public IngestResult ingest(
