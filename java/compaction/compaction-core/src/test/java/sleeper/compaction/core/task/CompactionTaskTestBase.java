@@ -79,7 +79,8 @@ public class CompactionTaskTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final Schema schema = schemaWithKey("key");
     private final List<TableProperties> tables = new ArrayList<>();
-    private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
+    protected final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
+    private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs);
     protected final TableProperties tableProperties = createTable(DEFAULT_TABLE_ID, DEFAULT_TABLE_NAME);
     protected final StateStore stateStore = stateStore(tableProperties);
     protected final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);

@@ -17,6 +17,7 @@ package sleeper.core.statestore.testutils;
 
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -85,5 +86,9 @@ public class InMemoryTransactionLogsPerTable {
         InMemoryTransactionLogs tableLogs = forTable(tableProperties);
         InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, tableLogs);
         return this;
+    }
+
+    public FileReferenceTransaction getLastFilesTransaction(TableProperties tableProperties) {
+        return forTable(tableProperties).getLastFilesTransaction(tableProperties);
     }
 }
