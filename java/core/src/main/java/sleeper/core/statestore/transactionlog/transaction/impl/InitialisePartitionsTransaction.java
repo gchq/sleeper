@@ -30,8 +30,9 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Sets all partitions in a Sleeper table. These should build into a complete partition tree, where all partitions are
- * linked to a single root. Any partitions that were present before will be deleted.
+ * Sets all partitions in a Sleeper table. These should build into a complete partition tree, where there is a single
+ * root and all partitions are connected to that either directly or indirectly via other partitions. Any partitions that
+ * were present before will be deleted.
  */
 public class InitialisePartitionsTransaction implements PartitionTransaction {
 
@@ -42,7 +43,7 @@ public class InitialisePartitionsTransaction implements PartitionTransaction {
     }
 
     /**
-     * Creates a transaction to initialise the table with a single pa0rtition covering all keys. This is the root
+     * Creates a transaction to initialise the table with a single partition covering all keys. This is the root
      * partition which may be split in the future.
      *
      * @param  schema the table schema
