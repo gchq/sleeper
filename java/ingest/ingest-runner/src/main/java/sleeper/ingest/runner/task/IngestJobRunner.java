@@ -60,6 +60,7 @@ import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * An IngestJobRunner takes ingest jobs and runs them.
@@ -161,7 +162,7 @@ public class IngestJobRunner implements IngestJobHandler {
     }
 
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
-        IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(job.getTableId()).jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).build();
+        IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(tableProperties.get(TABLE_ID)).jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).build();
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
             return AddFilesToStateStore.asynchronousWithJob(tableProperties, commitSender, timeSupplier, runIds);
         } else {
