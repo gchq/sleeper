@@ -30,6 +30,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 
 import java.time.Instant;
@@ -43,11 +44,11 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
-import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobAddedFilesEventBuilder;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
+import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 
 public class AddFilesToStateStoreTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -67,11 +68,10 @@ public class AddFilesToStateStoreTest {
         FileReference file = factory.rootFile("test.parquet", 123L);
         Instant startTime = Instant.parse("2025-02-26T11:30:00Z");
         Instant writtenTime = Instant.parse("2025-02-26T11:31:00Z");
+        IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(tableId)
+                .jobId("test-job").jobRunId("test-run").taskId("test-task").build();
         IngestJobStartedEvent startedEvent = IngestJobStartedEvent.builder()
-                .tableId(tableId)
-                .jobId("test-job")
-                .jobRunId("test-run")
-                .taskId("test-task")
+                .jobRunIds(runIds)
                 .fileCount(2)
                 .startTime(startTime)
                 .build();
@@ -87,7 +87,7 @@ public class AddFilesToStateStoreTest {
         assertThat(stateStoreCommitQueue)
                 .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                         AddFilesTransaction.builder()
-                                .jobId("test-job").jobRunId("test-run").taskId("test-task")
+                                .jobRunIds(runIds)
                                 .writtenTime(writtenTime)
                                 .fileReferences(List.of(file))
                                 .build()));
@@ -104,11 +104,10 @@ public class AddFilesToStateStoreTest {
         Instant startTime = Instant.parse("2025-02-26T11:30:00Z");
         Instant writtenTime = Instant.parse("2025-02-26T11:31:00Z");
         Instant updateTime = Instant.parse("2025-02-26T11:31:00Z");
+        IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(tableId)
+                .jobId("test-job").jobRunId("test-run").taskId("test-task").build();
         IngestJobStartedEvent startedEvent = IngestJobStartedEvent.builder()
-                .tableId(tableId)
-                .jobId("test-job")
-                .jobRunId("test-run")
-                .taskId("test-task")
+                .jobRunIds(runIds)
                 .fileCount(2)
                 .startTime(startTime)
                 .build();
@@ -116,9 +115,7 @@ public class AddFilesToStateStoreTest {
         stateStore.fixFileUpdateTime(updateTime);
 
         // When
-        AddFilesToStateStore.synchronous(stateStore, jobTracker,
-                supplyTimes(writtenTime),
-                ingestJobAddedFilesEventBuilder(startedEvent))
+        AddFilesToStateStore.synchronous(stateStore, jobTracker, supplyTimes(writtenTime), runIds)
                 .addFiles(List.of(file));
 
         // Then
@@ -130,6 +127,39 @@ public class AddFilesToStateStoreTest {
                         jobRunOnTask("test-task",
                                 ingestStartedStatus(startTime, 2),
                                 ingestAddedFilesStatus(writtenTime, 1))));
+    }
+
+    @Test
+    void shouldTrackFailureCommittingSynchronouslyWithJob() {
+        // Given
+        FileReference file = factory.rootFile("test.parquet", 123L);
+        Instant startTime = Instant.parse("2025-02-26T11:30:00Z");
+        Instant writtenTime = Instant.parse("2025-02-26T11:31:00Z");
+        Instant updateTime = Instant.parse("2025-02-26T11:31:00Z");
+        IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(tableId)
+                .jobId("test-job").jobRunId("test-run").taskId("test-task").build();
+        IngestJobStartedEvent startedEvent = IngestJobStartedEvent.builder()
+                .jobRunIds(runIds)
+                .fileCount(2)
+                .startTime(startTime)
+                .build();
+        jobTracker.jobStarted(startedEvent);
+        stateStore.fixFileUpdateTime(updateTime);
+        transactionLogs.getFilesLogStore().atStartOfAddTransaction(() -> {
+            throw new IllegalStateException("Test add transaction failure");
+        });
+
+        // When
+        AddFilesToStateStore.synchronous(stateStore, jobTracker, supplyTimes(writtenTime), runIds)
+                .addFiles(List.of(file));
+
+        // Then
+        assertThat(stateStore.getFileReferences()).isEmpty();
+        assertThat(jobTracker.getAllJobs(tableId)).containsExactly(
+                ingestJobStatus("test-job",
+                        jobRunOnTask("test-task",
+                                ingestStartedStatus(startTime, 2),
+                                failedStatus(writtenTime, List.of("Failed adding transaction", "Test add transaction failure")))));
     }
 
     @Test

@@ -28,6 +28,8 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 
 import java.time.Instant;
 import java.util.List;
@@ -47,11 +49,15 @@ public interface AddFilesToStateStore {
 
     static AddFilesToStateStore synchronous(
             StateStore stateStore, IngestJobTracker tracker,
-            Supplier<Instant> timeSupplier, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
+            Supplier<Instant> timeSupplier, IngestJobRunIds jobRunIds) {
         return references -> {
-            List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
-            new AddFilesTransaction(files).synchronousCommit(stateStore);
-            tracker.jobAddedFiles(statusUpdateBuilder.files(files).writtenTime(timeSupplier.get()).build());
+            try {
+                List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
+                new AddFilesTransaction(files).synchronousCommit(stateStore);
+                tracker.jobAddedFiles(IngestJobAddedFilesEvent.builder().jobRunIds(jobRunIds).files(files).writtenTime(timeSupplier.get()).build());
+            } catch (RuntimeException e) {
+                tracker.jobFailed(IngestJobFailedEvent.builder().jobRunIds(jobRunIds).failure(e).failureTime(timeSupplier.get()).build());
+            }
         };
     }
 
