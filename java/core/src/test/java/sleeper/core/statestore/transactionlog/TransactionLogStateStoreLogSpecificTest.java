@@ -34,8 +34,11 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreTestBase;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStore.ThrowingRunnable;
 import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
@@ -46,6 +49,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -506,6 +510,64 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             assertThatThrownBy(() -> otherProcess().getFileReferences())
                     .isInstanceOf(StateStoreException.class)
                     .hasMessage("Failed updating state from transactions");
+        }
+    }
+
+    @Nested
+    @DisplayName("Store too big transactions")
+    class StoreBigTransactions {
+
+        @Test
+        void shouldStoreTransactionInBodyStoreWhenTooBig() {
+            // Given the body store determines that the transaction is too big for the log
+            transactionBodyStore.setStoreTransactionsWithObjectKeys(List.of("test/object"));
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+
+            // When we add a transaction
+            store.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
+
+            // Then the log points to the transaction in the body store
+            assertThat(filesLogStore.getLastEntry())
+                    .isEqualTo(new TransactionLogEntry(1, DEFAULT_UPDATE_TIME, TransactionType.ADD_FILES, "test/object"));
+            assertThat(transactionBodyStore.<AddFilesTransaction>getBody("test/object", tableId, TransactionType.ADD_FILES))
+                    .isEqualTo(transaction);
+        }
+
+        @Test
+        void shouldStoreOnceWhenAddTransactionIsRetried() {
+            // Given we have 3 files
+            FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
+            FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
+            FileReference file3 = fileFactory().rootFile("file3.parquet", 300);
+            // And we will store 3 transactions in the body store
+            transactionBodyStore.setStoreTransactionsWithObjectKeys(List.of("object/1", "object/2", "object/3"));
+            // And we add one file now
+            update(store).addFile(file1);
+            // And we add one after the local state is updated but before the next transaction is added to the log
+            filesLogStore.atStartOfNextAddTransaction(() -> {
+                update(otherProcess()).addFile(file2);
+            });
+
+            // When we add the third file
+            update(store).addFile(file3);
+
+            // Then all 3 files are present, with one retry
+            assertThat(store.getFileReferences())
+                    .containsExactly(file1, file2, file3);
+            assertThat(retryWaits).hasSize(1);
+            // And 3 transactions were written to the log
+            assertThat(filesLogStore.readTransactions(TransactionLogRange.fromMinimum(1))).containsExactly(
+                    new TransactionLogEntry(1, DEFAULT_UPDATE_TIME, TransactionType.ADD_FILES, "object/1"),
+                    new TransactionLogEntry(2, DEFAULT_UPDATE_TIME, TransactionType.ADD_FILES, "object/3"),
+                    new TransactionLogEntry(3, DEFAULT_UPDATE_TIME, TransactionType.ADD_FILES, "object/2"));
+            // And 3 transactions were written to the body store before they were added to the log
+            assertThat(Stream.of("object/1", "object/2", "object/3")
+                    .map(key -> transactionBodyStore.getBody(key, tableId, TransactionType.ADD_FILES)))
+                    .containsExactly(
+                            new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1))),
+                            new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file3))),
+                            new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2))));
         }
     }
 
