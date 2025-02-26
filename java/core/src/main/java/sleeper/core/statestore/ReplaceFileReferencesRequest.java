@@ -23,6 +23,7 @@ import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.table.TableStatus;
+import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.job.update.CompactionJobFailedEvent;
 
@@ -127,13 +128,42 @@ public class ReplaceFileReferencesRequest {
     }
 
     /**
-     * Creates an event for when this request has been committed to the state store.
+     * Reports a commit or failure based on validity of the job in the state before the transaction. This should be
+     * used after the transaction is fully committed to the log.
      *
-     * @param  sleeperTable the table being updated
-     * @param  now          the current time
-     * @return              the event
+     * @param tracker      the job tracker
+     * @param sleeperTable the table being updated
+     * @param stateBefore  the state before the transaction was applied
+     * @param now          the current time
      */
-    public CompactionJobCommittedEvent createCommittedEvent(TableStatus sleeperTable, Instant now) {
+    public void reportCommitted(CompactionJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore, Instant now) {
+        if (taskId == null) {
+            return;
+        }
+        try {
+            validateStateChange(stateBefore);
+            tracker.jobCommitted(createCommittedEvent(sleeperTable, now));
+        } catch (StateStoreException e) {
+            tracker.jobFailed(createFailedEvent(sleeperTable, now, e));
+        }
+    }
+
+    /**
+     * Reports that the job failed to commit.
+     *
+     * @param tracker      the job tracker
+     * @param sleeperTable the table being updated
+     * @param now          the current time
+     * @param e            the failure
+     */
+    public void reportFailed(CompactionJobTracker tracker, TableStatus sleeperTable, Instant now, Exception e) {
+        if (taskId == null) {
+            return;
+        }
+        tracker.jobFailed(createFailedEvent(sleeperTable, now, e));
+    }
+
+    private CompactionJobCommittedEvent createCommittedEvent(TableStatus sleeperTable, Instant now) {
         return CompactionJobCommittedEvent.builder()
                 .jobId(jobId)
                 .tableId(sleeperTable.getTableUniqueId())
@@ -143,15 +173,7 @@ public class ReplaceFileReferencesRequest {
                 .build();
     }
 
-    /**
-     * Creates an event for when this request failed to commit to the state store.
-     *
-     * @param  sleeperTable the table being updated
-     * @param  now          the current time
-     * @param  e            the failure
-     * @return              the event
-     */
-    public CompactionJobFailedEvent createFailedEvent(TableStatus sleeperTable, Instant now, Exception e) {
+    private CompactionJobFailedEvent createFailedEvent(TableStatus sleeperTable, Instant now, Exception e) {
         return CompactionJobFailedEvent.builder()
                 .jobId(jobId)
                 .tableId(sleeperTable.getTableUniqueId())

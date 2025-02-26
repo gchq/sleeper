@@ -125,17 +125,7 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
      * @param now          the current time
      */
     public void reportJobCommits(CompactionJobTracker tracker, TableStatus sleeperTable, StateStoreFiles stateBefore, Instant now) {
-        for (ReplaceFileReferencesRequest job : jobs) {
-            if (job.getTaskId() == null) {
-                continue;
-            }
-            try {
-                job.validateStateChange(stateBefore);
-                tracker.jobCommitted(job.createCommittedEvent(sleeperTable, now));
-            } catch (StateStoreException e) {
-                tracker.jobFailed(job.createFailedEvent(sleeperTable, now, e));
-            }
-        }
+        jobs.forEach(job -> job.reportCommitted(tracker, sleeperTable, stateBefore, now));
     }
 
     /**
@@ -144,14 +134,10 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
      * @param tracker      the job tracker
      * @param sleeperTable the table being updated
      * @param now          the current time
+     * @param e            the failure
      */
     public void reportJobsAllFailed(CompactionJobTracker tracker, TableStatus sleeperTable, Instant now, Exception e) {
-        for (ReplaceFileReferencesRequest job : jobs) {
-            if (job.getTaskId() == null) {
-                continue;
-            }
-            tracker.jobFailed(job.createFailedEvent(sleeperTable, now, e));
-        }
+        jobs.forEach(job -> job.reportFailed(tracker, sleeperTable, now, e));
     }
 
     /**
