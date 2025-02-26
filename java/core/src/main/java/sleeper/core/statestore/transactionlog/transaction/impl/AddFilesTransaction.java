@@ -245,15 +245,14 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         }
 
         /**
-         * Sets the IDs relating to this run of an ingest job.
+         * Sets the IDs relating to this run of an ingest job. Used to update the job tracker based on the transaction
+         * log. These should only be set if we need a job tracker update to happen against the transaction. Usually
+         * for a synchronous commit the tracker will be updated separately.
          *
          * @param  jobRunIds the IDs
          * @return           the builder
          */
         public Builder jobRunIds(IngestJobRunIds jobRunIds) {
-            if (jobRunIds == null) {
-                return this;
-            }
             return jobId(jobRunIds.getJobId())
                     .taskId(jobRunIds.getTaskId())
                     .jobRunId(jobRunIds.getJobRunId());
