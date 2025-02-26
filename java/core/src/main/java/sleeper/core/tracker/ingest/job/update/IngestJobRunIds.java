@@ -17,6 +17,9 @@ package sleeper.core.tracker.ingest.job.update;
 
 import java.util.Objects;
 
+/**
+ * The IDs required for a run of an ingest job in the ingest job tracker.
+ */
 public class IngestJobRunIds {
     private final String jobId;
     private final String tableId;
@@ -57,10 +60,12 @@ public class IngestJobRunIds {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!(obj instanceof IngestJobRunIds))
+        }
+        if (!(obj instanceof IngestJobRunIds)) {
             return false;
+        }
         IngestJobRunIds other = (IngestJobRunIds) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(tableId, other.tableId) && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(taskId, other.taskId);
     }
@@ -70,6 +75,9 @@ public class IngestJobRunIds {
         return "IngestJobRunIds{jobId=" + jobId + ", tableId=" + tableId + ", jobRunId=" + jobRunId + ", taskId=" + taskId + "}";
     }
 
+    /**
+     * Builder for this class.
+     */
     public static class Builder {
         private String jobId;
         private String tableId;
@@ -79,21 +87,45 @@ public class IngestJobRunIds {
         private Builder() {
         }
 
+        /**
+         * Sets the ingest job ID.
+         *
+         * @param  jobId the job ID
+         * @return       this builder
+         */
         public Builder jobId(String jobId) {
             this.jobId = jobId;
             return this;
         }
 
+        /**
+         * Sets the Sleeper table ID.
+         *
+         * @param  jobId the Sleeper table ID
+         * @return       this builder
+         */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
             return this;
         }
 
+        /**
+         * Sets the correlation ID of the run of the job.
+         *
+         * @param  jobRunId the run ID
+         * @return          this builder
+         */
         public Builder jobRunId(String jobRunId) {
             this.jobRunId = jobRunId;
             return this;
         }
 
+        /**
+         * Sets the ID of the task that ran the job.
+         *
+         * @param  taskId the task ID
+         * @return        this builder
+         */
         public Builder taskId(String taskId) {
             this.taskId = taskId;
             return this;
