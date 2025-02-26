@@ -19,6 +19,7 @@ import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
@@ -28,6 +29,7 @@ import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 import sleeper.systemtest.configuration.SystemTestPropertyValues;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Iterator;
 
 import static sleeper.core.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
@@ -71,11 +73,10 @@ public class WriteRandomDataDirect {
 
     private static AddFilesToStateStore addFilesToStateStore(InstanceIngestSession session) {
         if (session.tableProperties().getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(session.tableProperties(),
+            return AddFilesToStateStore.asynchronous(session.tableProperties(),
                     new SqsFifoStateStoreCommitRequestSender(session.instanceProperties(), session.sqs(), session.s3(),
                             TransactionSerDeProvider.forOneTable(session.tableProperties())),
-                    transactionBuilder -> {
-                    });
+                    Instant::now, AddFilesTransaction.builder());
         } else {
             return AddFilesToStateStore.synchronous(session.stateStoreProvider().getStateStore(session.tableProperties()));
         }

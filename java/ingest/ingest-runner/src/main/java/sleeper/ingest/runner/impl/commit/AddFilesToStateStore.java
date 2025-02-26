@@ -31,7 +31,6 @@ import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -55,25 +54,12 @@ public interface AddFilesToStateStore {
         };
     }
 
-    static AddFilesToStateStore bySqs(
+    static AddFilesToStateStore asynchronous(
             TableProperties tableProperties, StateStoreCommitRequestSender commitSender, Supplier<Instant> timeSupplier,
             AddFilesTransaction.Builder transactionBuilder) {
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
             AddFilesTransaction transaction = transactionBuilder.files(files).writtenTime(timeSupplier.get()).build();
-            commitSender.send(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction));
-            LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}", files.size(), references.size(), tableProperties.getStatus());
-        };
-    }
-
-    static AddFilesToStateStore bySqs(
-            TableProperties tableProperties, StateStoreCommitRequestSender commitSender,
-            Consumer<AddFilesTransaction.Builder> transactionConfig) {
-        return references -> {
-            List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
-            AddFilesTransaction.Builder requestBuilder = AddFilesTransaction.builder().files(files);
-            transactionConfig.accept(requestBuilder);
-            AddFilesTransaction transaction = requestBuilder.build();
             commitSender.send(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction));
             LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}", files.size(), references.size(), tableProperties.getStatus());
         };

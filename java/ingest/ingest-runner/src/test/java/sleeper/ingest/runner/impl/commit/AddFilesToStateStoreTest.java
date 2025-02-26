@@ -78,7 +78,7 @@ public class AddFilesToStateStoreTest {
         jobTracker.jobStarted(startedEvent);
 
         // When
-        AddFilesToStateStore.bySqs(tableProperties, stateStoreCommitQueue::add, supplyTimes(addFilesTime),
+        AddFilesToStateStore.asynchronous(tableProperties, stateStoreCommitQueue::add, supplyTimes(addFilesTime),
                 AddFilesTransaction.builder().jobId("test-job").jobRunId("test-run").taskId("test-task"))
                 .addFiles(List.of(file));
 
