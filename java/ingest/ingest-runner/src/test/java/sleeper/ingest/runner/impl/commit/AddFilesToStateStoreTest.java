@@ -24,9 +24,13 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +39,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 
 public class AddFilesToStateStoreTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -42,25 +47,63 @@ public class AddFilesToStateStoreTest {
     private final PartitionTree partitionTree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final List<StateStoreCommitRequest> stateStoreCommitQueue = new ArrayList<>();
 
     @Test
     void shouldSendCommitRequestToQueue() throws Exception {
         // Given
-        FileReference file1 = factory.rootFile("test.parquet", 123L);
+        FileReference file = factory.rootFile("test.parquet", 123L);
 
         // When
-        bySqs().addFiles(List.of(file1));
+        bySqs().addFiles(List.of(file));
 
         // Then
         assertThat(stateStoreCommitQueue)
                 .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
-                        AddFilesTransaction.fromReferences(List.of(file1))));
+                        AddFilesTransaction.fromReferences(List.of(file))));
+    }
+
+    @Test
+    void shouldCommitSynchronouslyWithNoJob() {
+        // Given
+        FileReference file = factory.rootFile("test.parquet", 123L);
+        Instant updateTime = Instant.parse("2025-02-26T11:31:00Z");
+        stateStore.fixFileUpdateTime(updateTime);
+
+        // When
+        synchronousNoJob().addFiles(List.of(file));
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(withLastUpdate(updateTime, file));
+        assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
+                .isEqualTo(AddFilesTransaction.fromReferences(List.of(file)));
+    }
+
+    @Test
+    void shouldCommitSynchronouslyWithJob() {
+        // Given
+        FileReference file = factory.rootFile("test.parquet", 123L);
+        Instant updateTime = Instant.parse("2025-02-26T11:31:00Z");
+        stateStore.fixFileUpdateTime(updateTime);
+
+        // When
+        synchronousNoJob().addFiles(List.of(file));
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(withLastUpdate(updateTime, file));
+        assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
+                .isEqualTo(AddFilesTransaction.fromReferences(List.of(file)));
     }
 
     private AddFilesToStateStore bySqs() {
         return AddFilesToStateStore.bySqs(tableProperties, stateStoreCommitQueue::add,
                 request -> {
                 });
+    }
+
+    private AddFilesToStateStore synchronousNoJob() {
+        return AddFilesToStateStore.synchronous(stateStore);
     }
 }
