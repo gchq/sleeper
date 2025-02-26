@@ -15,9 +15,11 @@
  */
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileHasReferencesException;
 import sleeper.core.statestore.exception.FileNotFoundException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -27,7 +29,15 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A transaction to delete files that have no remaining references. This is used to perform garbage collection.
+ * Records that files were garbage collected and have been deleted. The reference counts for those files should be
+ * deleted.
+ * <p>
+ * If there are any remaining internal references for the files on partitions, this should fail, as it should not be
+ * possible to reach that state.
+ * <p>
+ * If the reference count is non-zero for any other reason, it may be that the count was incremented after the file
+ * was ready for garbage collection. This should fail in that case as well, as we would like this to not be
+ * possible.
  */
 public class DeleteFilesTransaction implements FileReferenceTransaction {
 
@@ -35,6 +45,19 @@ public class DeleteFilesTransaction implements FileReferenceTransaction {
 
     public DeleteFilesTransaction(List<String> filenames) {
         this.filenames = filenames;
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param  stateStore                 the state store
+     * @throws FileNotFoundException      if a file does not exist
+     * @throws FileHasReferencesException if a file still has references
+     * @throws StateStoreException        if the update fails for another reason
+     */
+    public void synchronousCommit(StateStore stateStore) throws StateStoreException {
+        stateStore.addFilesTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override

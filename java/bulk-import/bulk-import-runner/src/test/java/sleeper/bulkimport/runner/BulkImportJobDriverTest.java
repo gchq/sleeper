@@ -23,7 +23,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -181,7 +180,7 @@ class BulkImportJobDriverTest {
         assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                 AddFilesTransaction.builder()
                         .jobId(job.getId()).taskId("test-task").jobRunId("test-run").writtenTime(finishTime)
-                        .files(AllReferencesToAFile.newFilesWithReferences(outputFiles))
+                        .fileReferences(outputFiles)
                         .build()));
     }
 

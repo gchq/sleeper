@@ -16,14 +16,12 @@
 package sleeper.core.statestore.transactionlog;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.PartitionStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
-import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -35,23 +33,11 @@ import java.util.List;
  */
 class TransactionLogPartitionStore implements PartitionStore {
 
-    private final Schema schema;
     private final TransactionLogHead<StateStorePartitions> head;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogPartitionStore(Schema schema, TransactionLogHead<StateStorePartitions> head) {
-        this.schema = schema;
+    TransactionLogPartitionStore(TransactionLogHead<StateStorePartitions> head) {
         this.head = head;
-    }
-
-    @Override
-    public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        head.addTransaction(clock.instant(), new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
-    }
-
-    @Override
-    public void clearPartitionData() throws StateStoreException {
-        head.addTransaction(clock.instant(), new InitialisePartitionsTransaction(List.of()));
     }
 
     @Override
@@ -68,16 +54,6 @@ class TransactionLogPartitionStore implements PartitionStore {
     public Partition getPartition(String partitionId) throws StateStoreException {
         return partitions().byId(partitionId)
                 .orElseThrow(() -> new StateStoreException("Partition not found: " + partitionId));
-    }
-
-    @Override
-    public void initialise() throws StateStoreException {
-        head.addTransaction(clock.instant(), InitialisePartitionsTransaction.singlePartition(schema));
-    }
-
-    @Override
-    public void initialise(List<Partition> partitions) throws StateStoreException {
-        head.addTransaction(clock.instant(), new InitialisePartitionsTransaction(partitions));
     }
 
     @Override
@@ -101,6 +77,10 @@ class TransactionLogPartitionStore implements PartitionStore {
 
     void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
         head.applyTransactionUpdatingIfNecessary(logEntry, listener);
+    }
+
+    void clearTransactionLog() {
+        head.clearTransactionLog(ClearPartitionsTransaction.create(), clock.instant());
     }
 
     private StateStorePartitions partitions() throws StateStoreException {

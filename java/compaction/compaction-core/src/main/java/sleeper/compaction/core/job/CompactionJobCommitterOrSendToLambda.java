@@ -86,7 +86,8 @@ public class CompactionJobCommitterOrSendToLambda {
             }
         } else {
             LOGGER.debug("Committing compaction job {} inside compaction task", job.getId());
-            stateStoreProvider.getStateStore(tableProperties).atomicallyReplaceFileReferencesWithNewOnes(List.of(request));
+            new ReplaceFileReferencesTransaction(List.of(request))
+                    .synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
             tracker.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
                     .taskId(finishedEvent.getTaskId())

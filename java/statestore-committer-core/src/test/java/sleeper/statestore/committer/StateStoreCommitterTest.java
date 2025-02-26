@@ -334,7 +334,7 @@ public class StateStoreCommitterTest {
             // Given we have a commit request without an ingest job (e.g. from an endless stream of records)
             StateStore stateStore = createTableGetStateStore("test-table");
             FileReference outputFile = fileFactory.rootFile("output.parquet", 123L);
-            AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(outputFile)));
+            AddFilesTransaction transaction = AddFilesTransaction.fromReferences(List.of(outputFile));
 
             // When
             apply(StateStoreCommitRequest.create("test-table", transaction));

@@ -33,6 +33,8 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
@@ -41,6 +43,7 @@ import sleeper.ingest.runner.IngestFactory;
 import sleeper.ingest.runner.IngestRecords;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
 
@@ -113,6 +116,8 @@ public class DeleteTableIT extends LocalStackTestBase {
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(streamTableObjects(table)).isEmpty();
+        assertThat(streamTableFileTransactions(table)).isEmpty();
+        assertThat(streamTablePartitionTransactions(table)).isEmpty();
     }
 
     @Test
@@ -144,9 +149,13 @@ public class DeleteTableIT extends LocalStackTestBase {
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(streamTableObjects(table1)).isEmpty();
+        assertThat(streamTableFileTransactions(table1)).isEmpty();
+        assertThat(streamTablePartitionTransactions(table1)).isEmpty();
         assertThat(propertiesStore.loadByName("table-2"))
                 .isEqualTo(table2);
         assertThat(streamTableObjects(table2)).isNotEmpty();
+        assertThat(streamTableFileTransactions(table2)).isNotEmpty();
+        assertThat(streamTablePartitionTransactions(table2)).isNotEmpty();
     }
 
     @Test
@@ -196,7 +205,7 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     private void deleteTable(String tableName) throws Exception {
-        new DeleteTable(instanceProperties, s3Client, propertiesStore,
+        new DeleteTable(s3Client, instanceProperties, propertiesStore,
                 StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
                 .delete(tableName);
     }
@@ -236,5 +245,15 @@ public class DeleteTableIT extends LocalStackTestBase {
                 .withPrefix(tableProperties.get(TABLE_ID) + "/"))
                 .getObjectSummaries().stream()
                 .filter(s3ObjectSummary -> s3ObjectSummary.getSize() > 0);
+    }
+
+    private Stream<TransactionLogEntry> streamTableFileTransactions(TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client)
+                .readTransactions(TransactionLogRange.fromMinimum(1));
+    }
+
+    private Stream<TransactionLogEntry> streamTablePartitionTransactions(TableProperties tableProperties) {
+        return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client)
+                .readTransactions(TransactionLogRange.fromMinimum(1));
     }
 }

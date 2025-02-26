@@ -132,7 +132,7 @@ public class GarbageCollector {
                         tableProperties.get(TABLE_ID), new DeleteFilesTransaction(deletedFilenames)));
                 LOGGER.info("Submitted asynchronous request to state store committer for {} deleted files in table {}", deletedFilenames.size(), tableProperties.getStatus());
             } else {
-                stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
+                new DeleteFilesTransaction(deletedFilenames).synchronousCommit(stateStore);
                 LOGGER.info("Applied deletion to state store");
             }
         } catch (Exception e) {

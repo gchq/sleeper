@@ -43,6 +43,16 @@ public interface TransactionBodyStore {
     void store(String key, String tableId, StateStoreTransaction<?> transaction);
 
     /**
+     * Stores a transaction if it is too large to fit in the associated log store.
+     *
+     * @param  tableId     the ID of the Sleeper table the transaction is for
+     * @param  transaction the transaction
+     * @return             the result of uploading the transaction, with a pointer to the file holding the transaction
+     *                     if it was uploaded
+     */
+    StoreTransactionBodyResult storeIfTooBig(String tableId, StateStoreTransaction<?> transaction);
+
+    /**
      * Retrives a transaction from a given location.
      *
      * @param  key             the object key in the data bucket

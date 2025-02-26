@@ -290,9 +290,8 @@ public class TransactionSerDeTest {
         void shouldSerialiseFileTransactionWithoutSchema() {
             // Given
             PartitionTree partitions = new PartitionsBuilder(schemaWithKey("key")).singlePartition("root").buildTree();
-            FileReferenceTransaction transaction = new AddFilesTransaction(
-                    AllReferencesToAFile.newFilesWithReferences(List.of(
-                            FileReferenceFactory.from(partitions).rootFile("file.parquet", 100))));
+            FileReferenceTransaction transaction = AddFilesTransaction.fromReferences(List.of(
+                    FileReferenceFactory.from(partitions).rootFile("file.parquet", 100)));
 
             // When
             String json = serDe.toJson(transaction);

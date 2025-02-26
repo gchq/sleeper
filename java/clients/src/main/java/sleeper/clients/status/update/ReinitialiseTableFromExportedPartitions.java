@@ -25,14 +25,14 @@ import org.slf4j.LoggerFactory;
 import sleeper.clients.status.partitions.ExportPartitions;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionSerDe;
-import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +45,9 @@ import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
  * is reinitialised using the partitions in the provided file. This file should
  * have been created using the class {@link ExportPartitions}.
  */
-public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
+public class ReinitialiseTableFromExportedPartitions {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReinitialiseTableFromExportedPartitions.class);
+    private final ReinitialiseTable reinitialiseTable;
     private final String partitionsFile;
 
     public ReinitialiseTableFromExportedPartitions(
@@ -55,16 +56,15 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
             String instanceId,
             String tableName,
             String partitionsFile) {
-        super(s3Client, dynamoDBClient, instanceId, tableName, true);
+        this.reinitialiseTable = new ReinitialiseTable(s3Client, dynamoDBClient, instanceId, tableName, true);
         this.partitionsFile = partitionsFile;
     }
 
-    @Override
-    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException {
-        stateStore.initialise(readPartitions(tableProperties.getSchema()));
+    public void run() {
+        reinitialiseTable.run(tableProperties -> new InitialisePartitionsTransaction(readPartitions(tableProperties.getSchema())));
     }
 
-    private List<Partition> readPartitions(Schema schema) throws IOException {
+    private List<Partition> readPartitions(Schema schema) {
         PartitionSerDe partitionSerDe = new PartitionSerDe(schema);
         List<Partition> partitions = new ArrayList<>();
         LOGGER.info("Attempting to read partitions from file {}", partitionsFile);
@@ -75,6 +75,8 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
                     partitions.add(partitionSerDe.fromJson(line));
                 }
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
         LOGGER.info("Read {} partitions from file", partitions.size());
 
@@ -101,10 +103,11 @@ public class ReinitialiseTableFromExportedPartitions extends ReinitialiseTable {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
 
         try {
-            ReinitialiseTable reinitialiseTable = new ReinitialiseTableFromExportedPartitions(s3Client, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
+            ReinitialiseTableFromExportedPartitions reinitialiseTable = new ReinitialiseTableFromExportedPartitions(
+                    s3Client, dynamoDBClient, instanceId, tableName, exportedPartitionsFile);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
-        } catch (RuntimeException | IOException e) {
+        } catch (RuntimeException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());

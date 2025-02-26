@@ -22,7 +22,6 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -56,7 +55,7 @@ public class AddFilesToStateStoreTest {
         // Then
         assertThat(stateStoreCommitQueue)
                 .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
-                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))));
+                        AddFilesTransaction.fromReferences(List.of(file1))));
     }
 
     private AddFilesToStateStore bySqs() {

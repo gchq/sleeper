@@ -19,8 +19,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileAlreadyExistsException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -34,7 +38,12 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * A transaction to add files to the state store.
+ * Adds files to the Sleeper table, with any number of references. Each new file should be specified once, with all
+ * its references. Once a file has been added, it may not be added again, even as a reference on a different partition.
+ * <p>
+ * A file must never be referenced in two partitions where one is a descendent of another. This means each record in
+ * a file must only be covered by one reference. A partition covers a range of records. A partition which is the
+ * child of another covers a sub-range within the parent partition.
  */
 public class AddFilesTransaction implements FileReferenceTransaction {
 
@@ -63,6 +72,30 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         return new Builder();
     }
 
+    /**
+     * Creates a transaction to add files with the given references.
+     *
+     * @param  fileReferences the file references
+     * @return                the transaction
+     */
+    public static AddFilesTransaction fromReferences(List<FileReference> fileReferences) {
+        return builder().fileReferences(fileReferences).build();
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param  stateStore                 the state store
+     * @throws FileAlreadyExistsException if a file already exists
+     * @throws StateStoreException        if the update fails for another reason
+     */
+    public void synchronousCommit(StateStore stateStore) throws StateStoreException {
+        stateStore.addTransaction(AddTransactionRequest.withTransaction(this)
+                .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> validateFiles(state)))
+                .build());
+    }
+
     @Override
     public void validate(StateStoreFiles stateStoreFiles) throws StateStoreException {
         // We want to update the job tracker whether the new files are valid or not, and the job tracker is updated
@@ -75,8 +108,8 @@ public class AddFilesTransaction implements FileReferenceTransaction {
      * regardless of whether the files may be added, so that any failure can be reported to the job tracker after the
      * fact.
      *
-     * @param  stateStoreFiles     the state before the transaction
-     * @throws StateStoreException thrown if the files should not be added
+     * @param  stateStoreFiles            the state before the transaction
+     * @throws FileAlreadyExistsException if a file already exists
      */
     public void validateFiles(StateStoreFiles stateStoreFiles) throws StateStoreException {
         for (AllReferencesToAFile file : files) {
@@ -263,6 +296,16 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         public Builder files(List<AllReferencesToAFile> files) {
             this.files = files;
             return this;
+        }
+
+        /**
+         * Sets the files to add to the state store.
+         *
+         * @param  fileReferences the file references to add
+         * @return                this builder
+         */
+        public Builder fileReferences(List<FileReference> fileReferences) {
+            return files(AllReferencesToAFile.newFilesWithReferences(fileReferences));
         }
 
         public AddFilesTransaction build() {

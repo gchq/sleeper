@@ -41,14 +41,14 @@ public interface AddFilesToStateStore {
     void addFiles(List<FileReference> references) throws StateStoreException;
 
     static AddFilesToStateStore synchronous(StateStore stateStore) {
-        return stateStore::addFiles;
+        return references -> AddFilesTransaction.fromReferences(references).synchronousCommit(stateStore);
     }
 
     static AddFilesToStateStore synchronous(
             StateStore stateStore, IngestJobTracker tracker, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
-            stateStore.addFilesWithReferences(files);
+            new AddFilesTransaction(files).synchronousCommit(stateStore);
             tracker.jobAddedFiles(statusUpdateBuilder.files(files).build());
         };
     }

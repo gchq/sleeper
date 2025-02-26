@@ -22,6 +22,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
+import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreCompactionTrackerTestBase;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -219,7 +220,8 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         // When / Then
         assertThatThrownBy(() -> new ReplaceFileReferencesTransaction(List.of(
                 replaceJobFileReferences("job1", List.of("file1"), file))))
-                .isInstanceOf(NewReferenceSameAsOldReferenceException.class);
+                .isInstanceOf(ReplaceRequestsFailedException.class)
+                .cause().isInstanceOf(NewReferenceSameAsOldReferenceException.class);
     }
 
     @Test
