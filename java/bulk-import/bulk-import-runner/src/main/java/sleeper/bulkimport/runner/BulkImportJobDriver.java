@@ -100,9 +100,9 @@ public class BulkImportJobDriver {
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         TableStatus table = tableProperties.getStatus();
         Instant startTime = getTime.get();
-        LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
-        LOGGER.info("Job is for table {}: {}", table, job);
         IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(table.getTableUniqueId()).jobId(job.getId()).jobRunId(jobRunId).taskId(taskId).build();
+        LOGGER.info("Received bulk import job at time {}, {}", startTime, runIds);
+        LOGGER.info("Job is for table {}: {}", table, job);
         tracker.jobStarted(IngestJobStartedEvent.builder()
                 .jobRunIds(runIds)
                 .startTime(startTime)
@@ -131,7 +131,7 @@ public class BulkImportJobDriver {
                                 .writtenTime(finishTime)
                                 .fileReferences(output.fileReferences())
                                 .build()));
-                LOGGER.info("Submitted asynchronous request to state store committer to add {} files for job {} in table {}", output.numFiles(), job.getId(), table);
+                LOGGER.info("Submitted asynchronous request to state store committer to add {} files in table {}, {}", output.numFiles(), table, runIds);
             } else {
                 AddFilesTransaction.fromReferences(output.fileReferences())
                         .synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
