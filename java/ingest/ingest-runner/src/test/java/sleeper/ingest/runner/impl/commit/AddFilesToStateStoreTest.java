@@ -62,33 +62,38 @@ public class AddFilesToStateStoreTest {
     private final List<StateStoreCommitRequest> stateStoreCommitQueue = new ArrayList<>();
 
     @Test
-    void shouldSendCommitRequestToQueue() throws Exception {
+    void shouldCommitAsynchronouslyWithJob() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
+        Instant startTime = Instant.parse("2025-02-26T11:30:00Z");
+        Instant addFilesTime = Instant.parse("2025-02-26T11:31:00Z");
+        IngestJobStartedEvent startedEvent = IngestJobStartedEvent.builder()
+                .tableId(tableId)
+                .jobId("test-job")
+                .jobRunId("test-run")
+                .taskId("test-task")
+                .fileCount(2)
+                .startTime(startTime)
+                .build();
+        jobTracker.jobStarted(startedEvent);
 
         // When
-        bySqs().addFiles(List.of(file));
+        AddFilesToStateStore.bySqs(tableProperties, stateStoreCommitQueue::add, supplyTimes(addFilesTime),
+                AddFilesTransaction.builder().jobId("test-job").jobRunId("test-run").taskId("test-task"))
+                .addFiles(List.of(file));
 
         // Then
         assertThat(stateStoreCommitQueue)
                 .containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
-                        AddFilesTransaction.fromReferences(List.of(file))));
-    }
-
-    @Test
-    void shouldCommitSynchronouslyWithNoJob() {
-        // Given
-        FileReference file = factory.rootFile("test.parquet", 123L);
-        Instant updateTime = Instant.parse("2025-02-26T11:31:00Z");
-        stateStore.fixFileUpdateTime(updateTime);
-
-        // When
-        synchronousNoJob().addFiles(List.of(file));
-
-        // Then
-        assertThat(stateStore.getFileReferences()).containsExactly(withLastUpdate(updateTime, file));
-        assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
-                .isEqualTo(AddFilesTransaction.fromReferences(List.of(file)));
+                        AddFilesTransaction.builder()
+                                .jobId("test-job").jobRunId("test-run").taskId("test-task")
+                                .writtenTime(addFilesTime)
+                                .fileReferences(List.of(file))
+                                .build()));
+        assertThat(jobTracker.getAllJobs(tableId)).containsExactly(
+                ingestJobStatus("test-job",
+                        jobRunOnTask("test-task",
+                                ingestStartedStatus(startTime, 2))));
     }
 
     @Test
@@ -126,13 +131,19 @@ public class AddFilesToStateStoreTest {
                                 ingestAddedFilesStatus(addFilesTime, 1))));
     }
 
-    private AddFilesToStateStore bySqs() {
-        return AddFilesToStateStore.bySqs(tableProperties, stateStoreCommitQueue::add,
-                request -> {
-                });
-    }
+    @Test
+    void shouldCommitSynchronouslyWithNoJob() {
+        // Given
+        FileReference file = factory.rootFile("test.parquet", 123L);
+        Instant updateTime = Instant.parse("2025-02-26T11:31:00Z");
+        stateStore.fixFileUpdateTime(updateTime);
 
-    private AddFilesToStateStore synchronousNoJob() {
-        return AddFilesToStateStore.synchronous(stateStore);
+        // When
+        AddFilesToStateStore.synchronous(stateStore).addFiles(List.of(file));
+
+        // Then
+        assertThat(stateStore.getFileReferences()).containsExactly(withLastUpdate(updateTime, file));
+        assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
+                .isEqualTo(AddFilesTransaction.fromReferences(List.of(file)));
     }
 }

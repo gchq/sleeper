@@ -56,6 +56,17 @@ public interface AddFilesToStateStore {
     }
 
     static AddFilesToStateStore bySqs(
+            TableProperties tableProperties, StateStoreCommitRequestSender commitSender, Supplier<Instant> timeSupplier,
+            AddFilesTransaction.Builder transactionBuilder) {
+        return references -> {
+            List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
+            AddFilesTransaction transaction = transactionBuilder.files(files).writtenTime(timeSupplier.get()).build();
+            commitSender.send(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction));
+            LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}", files.size(), references.size(), tableProperties.getStatus());
+        };
+    }
+
+    static AddFilesToStateStore bySqs(
             TableProperties tableProperties, StateStoreCommitRequestSender commitSender,
             Consumer<AddFilesTransaction.Builder> transactionConfig) {
         return references -> {
