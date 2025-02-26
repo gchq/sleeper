@@ -180,13 +180,12 @@ class BulkImportJobDriverTest {
         assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                 AddFilesTransaction.builder()
                         .jobId(job.getId()).taskId("test-task").jobRunId("test-run").writtenTime(finishTime)
-                        .updateTrackerFromLog(true)
                         .fileReferences(outputFiles)
                         .build()));
     }
 
     @Test
-    void shouldRecordInTransactionLogThatTrackerUpdateNotRequiredForSynchronousCommit() throws Exception {
+    void shouldNotRecordJobTrackerUpdateDetailsInTransactionLogForSynchronousCommit() throws Exception {
         // Given
         tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
         BulkImportJob job = singleFileImportJob();
@@ -202,14 +201,7 @@ class BulkImportJobDriverTest {
 
         // Then
         assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
-                .isEqualTo(AddFilesTransaction.builder()
-                        .jobId(job.getId())
-                        .taskId("test-task")
-                        .jobRunId("test-run")
-                        .writtenTime(finishTime)
-                        .updateTrackerFromLog(false)
-                        .fileReferences(outputFiles)
-                        .build());
+                .isEqualTo(AddFilesTransaction.fromReferences(outputFiles));
     }
 
     private void runJob(

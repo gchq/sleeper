@@ -53,7 +53,6 @@ public class AddFilesTransaction implements FileReferenceTransaction {
     private final String taskId;
     private final String jobRunId;
     private final Instant writtenTime;
-    private final boolean updateTrackerFromLog;
     private final List<AllReferencesToAFile> files;
 
     public AddFilesTransaction(List<AllReferencesToAFile> files) {
@@ -65,7 +64,6 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         taskId = builder.taskId;
         jobRunId = builder.jobRunId;
         writtenTime = builder.writtenTime;
-        updateTrackerFromLog = builder.updateTrackerFromLog;
         files = Objects.requireNonNull(builder.files, "files must not be null")
                 .stream().map(file -> file.withCreatedUpdateTime(null)).toList();
     }
@@ -209,7 +207,7 @@ public class AddFilesTransaction implements FileReferenceTransaction {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobId, taskId, jobRunId, writtenTime, updateTrackerFromLog, files);
+        return Objects.hash(jobId, taskId, jobRunId, writtenTime, files);
     }
 
     @Override
@@ -223,13 +221,13 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         AddFilesTransaction other = (AddFilesTransaction) obj;
         return Objects.equals(jobId, other.jobId) && Objects.equals(taskId, other.taskId)
                 && Objects.equals(jobRunId, other.jobRunId) && Objects.equals(writtenTime, other.writtenTime)
-                && Objects.equals(updateTrackerFromLog, other.updateTrackerFromLog) && Objects.equals(files, other.files);
+                && Objects.equals(files, other.files);
     }
 
     @Override
     public String toString() {
         return "AddFilesTransaction{jobId=" + jobId + ", taskId=" + taskId + ", jobRunId=" + jobRunId + ", writtenTime="
-                + writtenTime + ", updateTrackerFromLog=" + updateTrackerFromLog + ", files=" + files + "}";
+                + writtenTime + ", files=" + files + "}";
     }
 
     /**
@@ -240,7 +238,6 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         private String taskId;
         private String jobRunId;
         private Instant writtenTime;
-        private boolean updateTrackerFromLog = true;
         private List<AllReferencesToAFile> files;
 
         private Builder() {
@@ -276,18 +273,6 @@ public class AddFilesTransaction implements FileReferenceTransaction {
          */
         public Builder writtenTime(Instant writtenTime) {
             this.writtenTime = writtenTime;
-            return this;
-        }
-
-        /**
-         * Sets the flag for whether to update the tracker following the transaction log. Default to true, set to false
-         * for synchronous commits.
-         *
-         * @param  updateTrackerFromLog whether tracker needs to be updated
-         * @return                      this builder
-         */
-        public Builder updateTrackerFromLog(boolean updateTrackerFromLog) {
-            this.updateTrackerFromLog = updateTrackerFromLog;
             return this;
         }
 

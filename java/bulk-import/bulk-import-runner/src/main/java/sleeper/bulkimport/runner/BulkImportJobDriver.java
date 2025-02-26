@@ -115,16 +115,16 @@ public class BulkImportJobDriver {
         Instant finishTime = getTime.get();
         boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
         try {
-            AddFilesTransaction transaction = AddFilesTransaction.builder()
-                    .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
-                    .fileReferences(output.fileReferences())
-                    .updateTrackerFromLog(asyncCommit)
-                    .build();
             if (asyncCommit) {
-                asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(), transaction));
+                asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(),
+                        AddFilesTransaction.builder()
+                                .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
+                                .fileReferences(output.fileReferences())
+                                .build()));
                 LOGGER.info("Submitted asynchronous request to state store committer to add {} files for job {} in table {}", output.numFiles(), job.getId(), table);
             } else {
-                transaction.synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
+                AddFilesTransaction.fromReferences(output.fileReferences())
+                        .synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
                 LOGGER.info("Added {} files to statestore for job {} in table {}", output.numFiles(), job.getId(), table);
             }
         } catch (RuntimeException e) {
