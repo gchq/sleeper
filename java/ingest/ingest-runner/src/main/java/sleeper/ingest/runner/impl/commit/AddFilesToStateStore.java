@@ -46,7 +46,8 @@ public interface AddFilesToStateStore {
     }
 
     static AddFilesToStateStore synchronous(
-            StateStore stateStore, IngestJobTracker tracker, Supplier<Instant> timeSupplier, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
+            StateStore stateStore, IngestJobTracker tracker,
+            Supplier<Instant> timeSupplier, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
             new AddFilesTransaction(files).synchronousCommit(stateStore);
@@ -55,8 +56,8 @@ public interface AddFilesToStateStore {
     }
 
     static AddFilesToStateStore asynchronous(
-            TableProperties tableProperties, StateStoreCommitRequestSender commitSender, Supplier<Instant> timeSupplier,
-            AddFilesTransaction.Builder transactionBuilder) {
+            TableProperties tableProperties, StateStoreCommitRequestSender commitSender,
+            Supplier<Instant> timeSupplier, AddFilesTransaction.Builder transactionBuilder) {
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
             AddFilesTransaction transaction = transactionBuilder.files(files).writtenTime(timeSupplier.get()).build();
