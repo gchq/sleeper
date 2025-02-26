@@ -31,15 +31,15 @@ public interface BulkExportProperty {
             .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT = Index
+    UserDefinedInstanceProperty BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS = Index
             .propertyBuilder("sleeper.bulk.export.processor.timeout")
-            .description("The default timeout for the bulk export processor lambda.")
+            .description("The default timeout in seconds for the bulk export processor lambda.")
             .defaultValue("800")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index
             .propertyBuilder("sleeper.bulk.export.processor.queue.visibility.timeout.seconds")
-            .description("The visibility timeout for the bulk export processor queue.")
+            .description("The visibility timeout in seconds for the bulk export processor queue.")
             .defaultValue("800")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();

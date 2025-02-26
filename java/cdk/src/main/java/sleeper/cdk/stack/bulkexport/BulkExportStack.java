@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.Objects;
 
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_PROCESSOR_LAMBDA_MEMORY_IN_MB;
-import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT;
+import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_PROCESSOR_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 
@@ -83,18 +83,18 @@ public class BulkExportStack extends NestedStack {
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
-        IFunction lambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT, "BulkExportProcessorLambda",
+        IFunction splitterLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT, "BulkExportSplitterLambda",
                 builder -> builder
-                        .functionName(functionName)
+                        .functionName(String.join("-", functionName, "splitter"))
                         .description("Sends a message to export from a leaf partition")
                         .memorySize(instanceProperties.getInt(BULK_EXPORT_PROCESSOR_LAMBDA_MEMORY_IN_MB))
                         .timeout(Duration.seconds(instanceProperties.getInt(
-                                BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT)))
+                                BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
                         .environment(Utils.createDefaultEnvironment(instanceProperties))
                         .reservedConcurrentExecutions(1)
-                        .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_PROCESSOR)));
+                        .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_SPITTER)));
 
-        attachPolicy(lambda, "BulkExport");
+        attachPolicy(splitterLambda, "BulkExportSplitter");
 
         List<Queue> splitterQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
         Queue bulkExportSplitterQ = splitterQueues.get(0);
@@ -106,26 +106,52 @@ public class BulkExportStack extends NestedStack {
                 .batchSize(1)
                 .build();
 
-        lambda.addEventSource(new SqsEventSource(bulkExportSplitterQ, eventSourceProps));
+        splitterLambda.addEventSource(new SqsEventSource(bulkExportSplitterQ, eventSourceProps));
 
         List<Queue> processorQueues = createQueueAndDeadLetterQueue("BulkExportProcessor", instanceProperties);
         Queue bulkExportProcessorQ = processorQueues.get(0);
         Queue bulkExportProcessorDlq = processorQueues.get(1);
         setQueueOutputProps(instanceProperties, bulkExportProcessorQ, bulkExportProcessorDlq, QueueType.PROCESSOR);
 
+        IFunction processorLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT, "BulkExportProcessorLambda",
+                builder -> builder
+                        .functionName(String.join("-", functionName, "processor"))
+                        .description("Does the bulk export for a leaf partition")
+                        .memorySize(instanceProperties.getInt(BULK_EXPORT_PROCESSOR_LAMBDA_MEMORY_IN_MB))
+                        .timeout(Duration.seconds(instanceProperties.getInt(
+                                BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS)))
+                        .environment(Utils.createDefaultEnvironment(instanceProperties))
+                        .reservedConcurrentExecutions(1)
+                        .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_PROCESSOR)));
+
+        attachPolicy(processorLambda, "BulkExport");
+
+        processorLambda.addEventSource(new SqsEventSource(bulkExportProcessorQ, eventSourceProps));
+
         /*
          * Output the role of the lambda as a property so that clients that want the
          * results of queries written
          * to their own SQS queue can give the role permission to write to their queue
          */
-        IRole role = Objects.requireNonNull(lambda.getRole());
-        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_LAMBDA_ROLE, role.getRoleName());
+        IRole splitterRole = Objects.requireNonNull(splitterLambda.getRole());
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_SPLITTER_LAMBDA_ROLE,
+                splitterRole.getRoleName());
+
+        IRole processorRole = Objects.requireNonNull(processorLambda.getRole());
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_LAMBDA_ROLE,
+                processorRole.getRoleName());
 
         CfnOutputProps bulkExportSplitterLambdaRoleOutputProps = new CfnOutputProps.Builder()
-                .value(lambda.getRole().getRoleArn())
+                .value(splitterLambda.getRole().getRoleArn())
+                .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_SPLITTER_LAMBDA_ROLE_ARN)
+                .build();
+        new CfnOutput(this, BULK_EXPORT_SPLITTER_LAMBDA_ROLE_ARN, bulkExportSplitterLambdaRoleOutputProps);
+
+        CfnOutputProps bulkExportProcessorLambdaRoleOutputProps = new CfnOutputProps.Builder()
+                .value(processorLambda.getRole().getRoleArn())
                 .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_PROCESSOR_LAMBDA_ROLE_ARN)
                 .build();
-        new CfnOutput(this, BULK_EXPORT_PROCESSOR_LAMBDA_ROLE_ARN, bulkExportSplitterLambdaRoleOutputProps);
+        new CfnOutput(this, BULK_EXPORT_PROCESSOR_LAMBDA_ROLE_ARN, bulkExportProcessorLambdaRoleOutputProps);
     }
 
     /**

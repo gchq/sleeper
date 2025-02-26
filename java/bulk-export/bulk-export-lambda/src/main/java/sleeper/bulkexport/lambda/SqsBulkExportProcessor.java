@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuery;
+import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
 import sleeper.bulkexport.core.model.BulkExportQuery;
 import sleeper.bulkexport.core.recordretrieval.BulkExportQuerySplitter;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -74,13 +75,14 @@ public class SqsBulkExportProcessor {
         TableProperties tableProperties = bulkExportQuery.getTableProperties(tablePropertiesProvider);
         StateStore statestore = stateStoreProvider.getStateStore(tableProperties);
         BulkExportQuerySplitter splitter = new BulkExportQuerySplitter(tableProperties, statestore);
+        BulkExportLeafPartitionQuerySerDe querySerDe = new BulkExportLeafPartitionQuerySerDe(tablePropertiesProvider);
         splitter.initIfNeeded();
         List<BulkExportLeafPartitionQuery> leafPartitionQueries = splitter.splitIntoLeafPartitionQueries(bulkExportQuery);
         LOGGER.debug("Got {} leaf partition export queries for bulk export query {}.",
             leafPartitionQueries.size(), bulkExportQuery.getExportId());
         leafPartitionQueries.forEach(query ->  {
             LOGGER.debug("Sending leaf partition export query {} to queue {}.", query.getSubExportId(), sqsUrl);
-            sqsClient.sendMessage(sqsUrl, query.toString());
+            sqsClient.sendMessage(sqsUrl, querySerDe.toJson(query));
         });
     }
 

@@ -301,6 +301,11 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
                     "The ARN of the SQS  dead letter queue that is used by that triggers the bulk export splitter lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_LAMBDA_ROLE = Index
+            .propertyBuilder("sleeper.bulk.export.splitter.lambda.role")
+            .description("The ARN of the role for the bulk export splitter lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
     // Compactions
     CdkDefinedInstanceProperty COMPACTION_CLUSTER = Index.propertyBuilder("sleeper.compaction.cluster")
             .description("The name of the cluster used for compactions.")
