@@ -29,6 +29,8 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -40,6 +42,12 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
+import static sleeper.core.testutils.SupplierTestHelper.supplyTimes;
+import static sleeper.core.tracker.ingest.job.IngestJobEventTestData.ingestJobAddedFilesEventBuilder;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
+import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class AddFilesToStateStoreTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -47,7 +55,9 @@ public class AddFilesToStateStoreTest {
     private final PartitionTree partitionTree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final FileReferenceFactory factory = FileReferenceFactory.from(partitionTree);
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    private final String tableId = tableProperties.get(TABLE_ID);
     private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+    private final InMemoryIngestJobTracker jobTracker = new InMemoryIngestJobTracker();
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final List<StateStoreCommitRequest> stateStoreCommitQueue = new ArrayList<>();
 
@@ -85,16 +95,35 @@ public class AddFilesToStateStoreTest {
     void shouldCommitSynchronouslyWithJob() {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
+        Instant startTime = Instant.parse("2025-02-26T11:30:00Z");
+        Instant addFilesTime = Instant.parse("2025-02-26T11:31:00Z");
         Instant updateTime = Instant.parse("2025-02-26T11:31:00Z");
+        IngestJobStartedEvent startedEvent = IngestJobStartedEvent.builder()
+                .tableId(tableId)
+                .jobId("test-job")
+                .jobRunId("test-run")
+                .taskId("test-task")
+                .fileCount(2)
+                .startTime(startTime)
+                .build();
+        jobTracker.jobStarted(startedEvent);
         stateStore.fixFileUpdateTime(updateTime);
 
         // When
-        synchronousNoJob().addFiles(List.of(file));
+        AddFilesToStateStore.synchronous(stateStore, jobTracker,
+                supplyTimes(addFilesTime),
+                ingestJobAddedFilesEventBuilder(startedEvent))
+                .addFiles(List.of(file));
 
         // Then
         assertThat(stateStore.getFileReferences()).containsExactly(withLastUpdate(updateTime, file));
         assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
                 .isEqualTo(AddFilesTransaction.fromReferences(List.of(file)));
+        assertThat(jobTracker.getAllJobs(tableId)).containsExactly(
+                ingestJobStatus("test-job",
+                        jobRunOnTask("test-task",
+                                ingestStartedStatus(startTime, 2),
+                                ingestAddedFilesStatus(addFilesTime, 1))));
     }
 
     private AddFilesToStateStore bySqs() {

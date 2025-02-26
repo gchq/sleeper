@@ -29,8 +29,10 @@ import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransacti
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -45,11 +47,11 @@ public interface AddFilesToStateStore {
     }
 
     static AddFilesToStateStore synchronous(
-            StateStore stateStore, IngestJobTracker tracker, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
+            StateStore stateStore, IngestJobTracker tracker, Supplier<Instant> timeSupplier, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
             new AddFilesTransaction(files).synchronousCommit(stateStore);
-            tracker.jobAddedFiles(statusUpdateBuilder.files(files).build());
+            tracker.jobAddedFiles(statusUpdateBuilder.files(files).writtenTime(timeSupplier.get()).build());
         };
     }
 

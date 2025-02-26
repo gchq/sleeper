@@ -164,8 +164,8 @@ public class InMemoryIngestByQueue {
         InstanceProperties instanceProperties = context.instance().getInstanceProperties();
         TableProperties tableProperties = context.instance().getTablePropertiesProvider().getById(job.getTableId());
         StateStore stateStore = context.instance().getStateStore(tableProperties);
-        AddFilesToStateStore addFilesToStateStore = AddFilesToStateStore.synchronous(stateStore, jobTracker,
-                job.addedFilesEventBuilder(timeSupplier.get()).taskId(taskId).jobRunId(jobRunId));
+        AddFilesToStateStore addFilesToStateStore = AddFilesToStateStore.synchronous(stateStore, jobTracker, timeSupplier,
+                job.addedFilesEventBuilder().taskId(taskId).jobRunId(jobRunId));
         Iterator<Record> iterator = sourceFiles.streamRecords(filesWithFs(instanceProperties, job)).iterator();
         return new InMemoryDirectIngestDriver(context.instance(), data, sketches)
                 .ingest(instanceProperties, tableProperties, stateStore, addFilesToStateStore, iterator);
