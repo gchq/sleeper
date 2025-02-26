@@ -86,6 +86,14 @@ public class CompactionJobStatusTestData {
                 compactionFailedStatus(failureTime, failureReasons));
     }
 
+    public static CompactionJobCreatedStatus compactionCreatedStatus(Instant createdTime, String partitionId, int inputFilesCount) {
+        return CompactionJobCreatedStatus.builder()
+                .updateTime(createdTime)
+                .partitionId(partitionId)
+                .inputFilesCount(inputFilesCount)
+                .build();
+    }
+
     public static CompactionJobStartedStatus compactionStartedStatus(Instant startTime) {
         return CompactionJobStartedStatus.startAndUpdateTime(startTime, defaultUpdateTime(startTime));
     }
@@ -114,8 +122,8 @@ public class CompactionJobStatusTestData {
                 .build();
     }
 
-    public static CompactionJobStatus jobStatusFromUpdates(JobStatusUpdate... updates) {
-        return jobStatusFrom(records().fromUpdates(updates));
+    public static CompactionJobStatus jobStatusFromSingleRunUpdates(JobStatusUpdate... updates) {
+        return jobStatusFrom(records().singleRunUpdates(updates));
     }
 
     public static List<CompactionJobStatus> jobStatusListFromUpdates(

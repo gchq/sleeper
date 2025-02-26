@@ -39,7 +39,9 @@ public interface IngestJobEvent {
      *
      * @return the ID, or null if the event did not occur on a task
      */
-    String getTaskId();
+    default String getTaskId() {
+        return null;
+    }
 
     /**
      * Gets the correlation ID for the run of the ingest job.

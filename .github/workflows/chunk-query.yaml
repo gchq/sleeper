@@ -26,7 +26,6 @@ on:
       - 'java/common/dynamodb-tools/**'
       - 'java/example-iterators/**'
       - 'java/core/**'
-      - 'java/common/dynamodb-test/**'
       - 'java/common/localstack-test/**'
 
 jobs:

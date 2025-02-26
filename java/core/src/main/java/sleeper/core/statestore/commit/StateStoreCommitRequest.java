@@ -15,7 +15,6 @@
  */
 package sleeper.core.statestore.commit;
 
-import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 
@@ -81,17 +80,6 @@ public class StateStoreCommitRequest {
      */
     public <T extends StateStoreTransaction<?>> Optional<T> getTransactionIfHeld() {
         return (Optional<T>) Optional.ofNullable(transaction);
-    }
-
-    /**
-     * Retrieves the transaction, loading from the body store if it is held there.
-     *
-     * @param  bodyStore the transaction body store
-     * @return           the transaction
-     */
-    public StateStoreTransaction<?> getTransaction(TransactionBodyStore bodyStore) {
-        return getTransactionIfHeld()
-                .orElseGet(() -> bodyStore.getBody(bodyKey, tableId, transactionType));
     }
 
     @Override

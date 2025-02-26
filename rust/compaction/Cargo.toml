@@ -33,8 +33,10 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 cxx = { version = "1.0.141" } # Exception handling for Rust
-libc = { version = "0.2.169" } # FFI type support
-log = { version = "0.4.25" } # Logging support
+
+libc = { version = "0.2.170" } # FFI type support
+log = { version = "0.4.26" } # Logging support
+
 arrow = { version = "54.2.0", features = ["prettyprint"] } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
 async-trait = { version = "0.1.86" }
@@ -45,7 +47,7 @@ object_store = { version = "0.11.0", features = [
 thiserror = { version = "2.0.11" } # Derivable error enums
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
 tokio = { version = "1.43.0", features = ["full"] }
-aws-config = { version = "1.5.16" } # Credential loading
+aws-config = { version = "1.5.17" } # Credential loading
 aws-credential-types = { version = "1.2.1", features = [
     "hardcoded-credentials",
 ] } # Credential provider types

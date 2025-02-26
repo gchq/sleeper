@@ -69,7 +69,7 @@ class CompactionStatusReportScreenTest extends AdminClientMockStoreBase {
             tracker.fixUpdateTime(Instant.parse("2023-03-15T17:52:12.001Z"));
             tracker.jobCreated(exampleJob.createCreatedEvent());
             tracker.fixUpdateTime(Instant.parse("2023-03-15T17:53:12.123Z"));
-            tracker.jobStarted(exampleJob.startedEventBuilder(Instant.parse("2023-03-15T17:53:12.001Z")).taskId("test-task-1").build());
+            tracker.jobStarted(exampleJob.startedEventBuilder(Instant.parse("2023-03-15T17:53:12.001Z")).taskId("test-task-1").jobRunId("test-run-1").build());
         }
 
         @Test

@@ -31,20 +31,20 @@ import java.util.Objects;
 public class IngestJobFinishedEvent implements IngestJobEvent {
     private final String jobId;
     private final String tableId;
+    private final String jobRunId;
+    private final String taskId;
     private final JobRunSummary summary;
     private final int numFilesWrittenByJob;
     private final boolean committedBySeparateFileUpdates;
-    private final String jobRunId;
-    private final String taskId;
 
     private IngestJobFinishedEvent(Builder builder) {
         jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
         tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        jobRunId = Objects.requireNonNull(builder.jobRunId, "jobRunId must not be null");
+        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
         summary = Objects.requireNonNull(builder.summary, "summary must not be null");
         numFilesWrittenByJob = Objects.requireNonNull(builder.numFilesWrittenByJob, "numFilesWrittenByJob must not be null");
         committedBySeparateFileUpdates = builder.committedBySeparateFileUpdates;
-        jobRunId = builder.jobRunId;
-        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
     }
 
     public static Builder builder() {
@@ -57,6 +57,14 @@ public class IngestJobFinishedEvent implements IngestJobEvent {
 
     public String getTableId() {
         return tableId;
+    }
+
+    public String getJobRunId() {
+        return jobRunId;
+    }
+
+    public String getTaskId() {
+        return taskId;
     }
 
     public Instant getFinishTime() {
@@ -73,14 +81,6 @@ public class IngestJobFinishedEvent implements IngestJobEvent {
 
     public boolean isCommittedBySeparateFileUpdates() {
         return committedBySeparateFileUpdates;
-    }
-
-    public String getJobRunId() {
-        return jobRunId;
-    }
-
-    public String getTaskId() {
-        return taskId;
     }
 
     @Override

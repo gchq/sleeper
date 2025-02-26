@@ -87,7 +87,7 @@ public class IngestJob {
      * @return           the builder
      */
     public IngestJobStartedEvent.Builder startedEventBuilder(Instant startTime) {
-        return IngestJobStartedEvent.builder().jobId(id).tableId(tableId).startTime(startTime).fileCount(getFileCount()).startOfRun(true);
+        return IngestJobStartedEvent.builder().jobId(id).tableId(tableId).startTime(startTime).fileCount(getFileCount());
     }
 
     /**
@@ -106,7 +106,7 @@ public class IngestJob {
      * @return           the builder
      */
     public IngestJobStartedEvent.Builder startedAfterValidationEventBuilder(Instant startTime) {
-        return IngestJobStartedEvent.builder().jobId(id).tableId(tableId).startTime(startTime).fileCount(getFileCount()).startOfRun(false);
+        return IngestJobStartedEvent.builder().jobId(id).tableId(tableId).startTime(startTime).fileCount(getFileCount());
     }
 
     /**

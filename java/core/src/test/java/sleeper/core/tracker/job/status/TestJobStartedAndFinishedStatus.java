@@ -66,11 +66,6 @@ public class TestJobStartedAndFinishedStatus implements JobRunStartedUpdate, Job
     }
 
     @Override
-    public boolean isPartOfRun() {
-        return true;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

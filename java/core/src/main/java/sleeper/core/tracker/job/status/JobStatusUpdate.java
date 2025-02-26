@@ -18,7 +18,8 @@ package sleeper.core.tracker.job.status;
 import java.time.Instant;
 
 /**
- * Interface representing a status update for a job.
+ * Interface representing a status update for a job. Note that if the update is part of a run of the job, it should
+ * implement {@link JobRunStatusUpdate}.
  */
 public interface JobStatusUpdate {
 
@@ -28,8 +29,4 @@ public interface JobStatusUpdate {
      * @return the update time
      */
     Instant getUpdateTime();
-
-    default boolean isPartOfRun() {
-        return false;
-    }
 }

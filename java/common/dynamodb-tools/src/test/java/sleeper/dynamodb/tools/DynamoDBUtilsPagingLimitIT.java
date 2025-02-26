@@ -24,13 +24,12 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
 import java.util.Map;
@@ -43,14 +42,9 @@ import static sleeper.dynamodb.tools.DynamoDBTableTestBase.TEST_VALUE;
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 import static sleeper.dynamodb.tools.DynamoDBUtils.loadPagedItemsWithLimit;
 
-public class DynamoDBUtilsPagingLimitIT extends DynamoDBTestBase {
+public class DynamoDBUtilsPagingLimitIT extends LocalStackTestBase {
 
     private final String tableName = UUID.randomUUID().toString();
-
-    @AfterEach
-    public void tearDown() {
-        dynamoClient.deleteTable(tableName);
-    }
 
     @Nested
     @DisplayName("Running Scan")
