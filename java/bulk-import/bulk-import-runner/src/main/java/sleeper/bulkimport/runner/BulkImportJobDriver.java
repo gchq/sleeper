@@ -135,7 +135,7 @@ public class BulkImportJobDriver {
             } else {
                 AddFilesTransaction.fromReferences(output.fileReferences())
                         .synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
-                LOGGER.info("Added {} files to statestore for job {} in table {}", output.numFiles(), job.getId(), table);
+                LOGGER.info("Added {} files to state store in table {}, {}", output.numFiles(), table, runIds);
             }
         } catch (RuntimeException e) {
             tracker.jobFailed(IngestJobFailedEvent.builder()

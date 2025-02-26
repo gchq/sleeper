@@ -25,6 +25,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -113,7 +115,7 @@ public class AddFilesToStateStoreTest {
         stateStore.fixFileUpdateTime(updateTime);
 
         // When
-        AddFilesToStateStore.synchronousWithJob(stateStore, jobTracker, supplyTimes(writtenTime), runIds)
+        AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, supplyTimes(writtenTime), runIds)
                 .addFiles(List.of(file));
 
         // Then
@@ -143,15 +145,16 @@ public class AddFilesToStateStoreTest {
                 .build();
         jobTracker.jobStarted(startedEvent);
         stateStore.fixFileUpdateTime(updateTime);
+        RuntimeException failure = new IllegalStateException("Test add transaction failure");
         transactionLogs.getFilesLogStore().atStartOfAddTransaction(() -> {
-            throw new IllegalStateException("Test add transaction failure");
+            throw failure;
         });
+        AddFilesToStateStore addFiles = AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, supplyTimes(writtenTime), runIds);
 
-        // When
-        AddFilesToStateStore.synchronousWithJob(stateStore, jobTracker, supplyTimes(writtenTime), runIds)
-                .addFiles(List.of(file));
-
-        // Then
+        // When / Then
+        assertThatThrownBy(() -> addFiles.addFiles(List.of(file)))
+                .isInstanceOf(StateStoreException.class)
+                .cause().isSameAs(failure);
         assertThat(stateStore.getFileReferences()).isEmpty();
         assertThat(jobTracker.getAllJobs(tableId)).containsExactly(
                 ingestJobStatus("test-job",

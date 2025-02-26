@@ -166,7 +166,7 @@ public class IngestJobRunner implements IngestJobHandler {
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
             return AddFilesToStateStore.asynchronousWithJob(tableProperties, commitSender, timeSupplier, runIds);
         } else {
-            return AddFilesToStateStore.synchronousWithJob(stateStoreProvider.getStateStore(tableProperties), tracker, timeSupplier, runIds);
+            return AddFilesToStateStore.synchronousWithJob(tableProperties, stateStoreProvider.getStateStore(tableProperties), tracker, timeSupplier, runIds);
         }
     }
 }

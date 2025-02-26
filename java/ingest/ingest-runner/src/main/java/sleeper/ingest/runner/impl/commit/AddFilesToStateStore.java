@@ -45,15 +45,18 @@ public interface AddFilesToStateStore {
     void addFiles(List<FileReference> references) throws StateStoreException;
 
     static AddFilesToStateStore synchronousWithJob(
-            StateStore stateStore, IngestJobTracker tracker,
+            TableProperties tableProperties, StateStore stateStore, IngestJobTracker tracker,
             Supplier<Instant> timeSupplier, IngestJobRunIds jobRunIds) {
+        TableStatus tableStatus = tableProperties.getStatus();
         return references -> {
             try {
                 List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
                 new AddFilesTransaction(files).synchronousCommit(stateStore);
                 tracker.jobAddedFiles(IngestJobAddedFilesEvent.builder().jobRunIds(jobRunIds).files(files).writtenTime(timeSupplier.get()).build());
+                LOGGER.info("Added {} files to state store with {} references in table {}, {}", files.size(), references.size(), tableStatus, jobRunIds);
             } catch (RuntimeException e) {
                 tracker.jobFailed(IngestJobFailedEvent.builder().jobRunIds(jobRunIds).failure(e).failureTime(timeSupplier.get()).build());
+                throw e;
             }
         };
     }
