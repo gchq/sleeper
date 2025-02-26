@@ -101,8 +101,8 @@ public class IngestJobRunIds {
         /**
          * Sets the Sleeper table ID.
          *
-         * @param  jobId the Sleeper table ID
-         * @return       this builder
+         * @param  tableId the Sleeper table ID
+         * @return         this builder
          */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
