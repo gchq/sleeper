@@ -88,6 +88,12 @@ public class InMemoryTransactionLogsPerTable {
         return this;
     }
 
+    /**
+     * Gets the last transaction from the files transaction log store.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the file reference transaction
+     */
     public FileReferenceTransaction getLastFilesTransaction(TableProperties tableProperties) {
         return forTable(tableProperties).getLastFilesTransaction(tableProperties);
     }
