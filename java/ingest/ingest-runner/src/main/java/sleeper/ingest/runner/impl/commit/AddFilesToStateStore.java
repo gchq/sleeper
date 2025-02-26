@@ -26,6 +26,7 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
@@ -60,11 +61,13 @@ public interface AddFilesToStateStore {
     static AddFilesToStateStore asynchronousWithJob(
             TableProperties tableProperties, StateStoreCommitRequestSender commitSender,
             Supplier<Instant> timeSupplier, IngestJobRunIds jobRunIds) {
+        TableStatus tableStatus = tableProperties.getStatus();
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
             AddFilesTransaction transaction = AddFilesTransaction.builder().jobRunIds(jobRunIds).files(files).writtenTime(timeSupplier.get()).build();
-            commitSender.send(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction));
-            LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}", files.size(), references.size(), tableProperties.getStatus());
+            commitSender.send(StateStoreCommitRequest.create(tableStatus.getTableUniqueId(), transaction));
+            LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}, {}",
+                    files.size(), references.size(), tableStatus, jobRunIds);
         };
     }
 
