@@ -94,6 +94,10 @@ public class TransactionLogEntry {
         return Optional.ofNullable(bodyKey);
     }
 
+    public Optional<StateStoreTransaction<?>> getTransaction() {
+        return Optional.ofNullable(transaction);
+    }
+
     /**
      * Applies some operation on the transaction or the object key in the data bucket, whichever is held in the entry.
      *

@@ -55,6 +55,8 @@ public class CheckState {
         assertThat(check.totalRecordsAtTransaction(10)).isEqualTo(10_000_000L);
         assertThat(check.totalRecordsAtTransaction(19)).isEqualTo(10_000_000L);
         assertThat(check.totalRecordsAtTransaction(20)).isEqualTo(10_000_000L);
+        assertThat(check.totalRecordsAtTransaction(30)).isEqualTo(10_000_000L);
+        assertThat(check.totalRecordsAtTransaction(50)).isEqualTo(10_000_000L);
         assertThat(check.totalRecordsAtTransaction(100)).isEqualTo(10_000_000L);
         assertThat(check.totalRecordsAtTransaction(171)).isEqualTo(10_000_000L);
     }
