@@ -58,11 +58,11 @@ import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
 public class DynamoDBTransactionLogStore implements TransactionLogStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogStore.class);
 
-    private static final String TABLE_ID = DynamoDBTransactionLogStateStore.TABLE_ID;
-    private static final String TRANSACTION_NUMBER = DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER;
-    private static final String UPDATE_TIME = "UPDATE_TIME";
-    private static final String TYPE = "TYPE";
-    private static final String BODY = "BODY";
+    public static final String TABLE_ID = DynamoDBTransactionLogStateStore.TABLE_ID;
+    public static final String TRANSACTION_NUMBER = DynamoDBTransactionLogStateStore.TRANSACTION_NUMBER;
+    public static final String UPDATE_TIME = "UPDATE_TIME";
+    public static final String TYPE = "TYPE";
+    public static final String BODY = "BODY";
     private static final String BODY_S3_KEY = "BODY_S3_KEY";
 
     private final String transactionDescription;

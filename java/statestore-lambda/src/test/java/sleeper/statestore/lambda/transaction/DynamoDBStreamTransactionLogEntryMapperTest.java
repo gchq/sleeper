@@ -15,13 +15,36 @@
  */
 package sleeper.statestore.lambda.transaction;
 
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
 import org.junit.jupiter.api.Test;
+
+import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
+
+import java.util.Map;
 
 public class DynamoDBStreamTransactionLogEntryMapperTest {
 
     @Test
     void shouldConvertEntryToFromDynamoStreamEvent() {
-
+        new DynamodbStreamRecord()
+                .withEventName("INSERT")
+                .withEventVersion("1.1")
+                .withAwsRegion("eu-west-2")
+                .withDynamodb(new StreamRecord()
+                        .withKeys(Map.of(DynamoDBTransactionLogStore.TABLE_ID, new AttributeValue("3b31edf9"),
+                                DynamoDBTransactionLogStore.TRANSACTION_NUMBER, new AttributeValue().withN("120")))
+                        .withNewImage(Map.of(
+                                DynamoDBTransactionLogStore.TABLE_ID, new AttributeValue("3b31edf9"),
+                                DynamoDBTransactionLogStore.UPDATE_TIME, new AttributeValue().withN("1740587429688"),
+                                DynamoDBTransactionLogStore.BODY, new AttributeValue(),
+                                DynamoDBTransactionLogStore.TRANSACTION_NUMBER, new AttributeValue().withN("120"),
+                                DynamoDBTransactionLogStore.TYPE, new AttributeValue("REPLACE_FILE_REFERENCES")))
+                        .withSequenceNumber("12000000000006169888197")
+                        .withSizeBytes(148709L)
+                        .withStreamViewType(StreamViewType.NEW_IMAGE));
     }
 
     private DynamoDBStreamTransactionLogEntryMapper mapper() {
