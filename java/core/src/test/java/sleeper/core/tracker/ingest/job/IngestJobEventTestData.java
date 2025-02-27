@@ -110,12 +110,22 @@ public class IngestJobEventTestData {
      * @return             the builder
      */
     public static IngestJobAddedFilesEvent.Builder ingestJobAddedFilesEventBuilder(IngestJobEvent job, Instant writtenTime) {
+        return ingestJobAddedFilesEventBuilder(job)
+                .writtenTime(writtenTime);
+    }
+
+    /**
+     * Creates a builder for an ingest job added files event.
+     *
+     * @param  job a previous event for the same job
+     * @return     the builder
+     */
+    public static IngestJobAddedFilesEvent.Builder ingestJobAddedFilesEventBuilder(IngestJobEvent job) {
         return IngestJobAddedFilesEvent.builder()
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
-                .jobRunId(job.getJobRunId())
-                .writtenTime(writtenTime);
+                .jobRunId(job.getJobRunId());
     }
 
     /**

@@ -184,6 +184,26 @@ class BulkImportJobDriverTest {
                         .build()));
     }
 
+    @Test
+    void shouldNotRecordJobTrackerUpdateDetailsInTransactionLogForSynchronousCommit() throws Exception {
+        // Given
+        tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
+        BulkImportJob job = singleFileImportJob();
+        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+        List<FileReference> outputFiles = List.of(
+                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+
+        // When
+        runJob(job, "test-run", "test-task", validationTime,
+                driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+
+        // Then
+        assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
+                .isEqualTo(AddFilesTransaction.fromReferences(outputFiles));
+    }
+
     private void runJob(
             BulkImportJob job, String jobRunId, String taskId, Instant validationTime,
             BulkImportJobDriver driver) throws Exception {

@@ -74,7 +74,7 @@ public class IngestRandomDataToDocker {
                         .s3AsyncClient(buildS3AsyncClient(S3AsyncClient.builder()))
                         .instanceProperties(instanceProperties)
                         .build(),
-                AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties)),
+                AddFilesToStateStore.synchronousNoJob(stateStoreProvider.getStateStore(tableProperties)),
                 systemTestProperties, tableProperties);
     }
 

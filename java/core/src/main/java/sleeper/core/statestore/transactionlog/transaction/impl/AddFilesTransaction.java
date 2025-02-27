@@ -32,6 +32,7 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 
 import java.time.Instant;
 import java.util.List;
@@ -241,6 +242,20 @@ public class AddFilesTransaction implements FileReferenceTransaction {
         private List<AllReferencesToAFile> files;
 
         private Builder() {
+        }
+
+        /**
+         * Sets the IDs relating to this run of an ingest job. Used to update the job tracker based on the transaction
+         * log. These should only be set if we need a job tracker update to happen against the transaction. Usually
+         * for a synchronous commit the tracker will be updated separately.
+         *
+         * @param  jobRunIds the IDs
+         * @return           the builder
+         */
+        public Builder jobRunIds(IngestJobRunIds jobRunIds) {
+            return jobId(jobRunIds.getJobId())
+                    .taskId(jobRunIds.getTaskId())
+                    .jobRunId(jobRunIds.getJobRunId());
         }
 
         /**
