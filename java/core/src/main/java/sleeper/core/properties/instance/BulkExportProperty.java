@@ -15,9 +15,10 @@
  */
 package sleeper.core.properties.instance;
 
+import sleeper.core.properties.SleeperPropertyIndex;
+
 import java.util.List;
 
-import sleeper.core.properties.SleeperPropertyIndex;
 import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
 
 /**
