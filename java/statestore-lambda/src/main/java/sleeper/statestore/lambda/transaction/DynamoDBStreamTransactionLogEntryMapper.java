@@ -47,16 +47,6 @@ public class DynamoDBStreamTransactionLogEntryMapper {
     }
 
     /**
-     * Reads a DynamoDB Stream record for a transaction log entry.
-     *
-     * @param  record the record
-     * @return        the log entry
-     */
-    public TransactionLogEntryHandle toTransactionLogEntry(Record record) {
-        return toTransactionLogEntryOrThrow(record);
-    }
-
-    /**
      * Reads a list of DynamoDB Stream records to produce a stream of transaction log entries, wrapped as handles.
      *
      * @param  records a list of records
@@ -64,6 +54,16 @@ public class DynamoDBStreamTransactionLogEntryMapper {
      */
     public Stream<TransactionLogEntryHandle> toTransactionLogEntries(List<? extends Record> records) {
         return records.stream().map(record -> toTransactionLogEntry(record));
+    }
+
+    /**
+     * Reads a DynamoDB Stream record for a transaction log entry.
+     *
+     * @param  record the record
+     * @return        the log entry
+     */
+    public TransactionLogEntryHandle toTransactionLogEntry(Record record) {
+        return toTransactionLogEntryOrThrow(record);
     }
 
     private TransactionLogEntryHandle toTransactionLogEntryOrThrow(Record record) {
