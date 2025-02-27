@@ -524,8 +524,27 @@ public class TransactionLogStateStoreLogSpecificTest extends InMemoryTransaction
             FileReference file = fileFactory().rootFile("file.parquet", 100);
             AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
 
-            // When we add a transaction
+            // When we add the transaction
             store.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
+
+            // Then the log points to the transaction in the body store
+            assertThat(filesLogStore.getLastEntry())
+                    .isEqualTo(new TransactionLogEntry(1, DEFAULT_UPDATE_TIME, TransactionType.ADD_FILES, "test/object"));
+            assertThat(transactionBodyStore.<AddFilesTransaction>getBody("test/object", tableId, TransactionType.ADD_FILES))
+                    .isEqualTo(transaction);
+        }
+
+        @Test
+        void shouldNotCopyTransactionInBodyStoreWhenAlreadyPresent() {
+            // Given the body store determines that the transaction is too big for the log
+            transactionBodyStore.setStoreTransactionsWithObjectKeys(List.of());
+            FileReference file = fileFactory().rootFile("file.parquet", 100);
+            AddFilesTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            // And we upload the transaction to the body store
+            transactionBodyStore.store("test/object", tableId, transaction);
+
+            // When we add the transaction
+            store.addTransaction(AddTransactionRequest.withTransaction(transaction).bodyKey("test/object").build());
 
             // Then the log points to the transaction in the body store
             assertThat(filesLogStore.getLastEntry())
