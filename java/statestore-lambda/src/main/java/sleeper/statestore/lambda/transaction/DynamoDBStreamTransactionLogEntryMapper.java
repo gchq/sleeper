@@ -53,7 +53,13 @@ public class DynamoDBStreamTransactionLogEntryMapper {
      * @return         a stream of log entries
      */
     public Stream<TransactionLogEntryHandle> toTransactionLogEntries(List<? extends Record> records) {
-        return records.stream().map(record -> toTransactionLogEntry(record));
+        return records.stream().flatMap(record -> {
+            try {
+                return Stream.of(toTransactionLogEntry(record));
+            } catch (RuntimeException e) {
+                return Stream.empty();
+            }
+        });
     }
 
     /**

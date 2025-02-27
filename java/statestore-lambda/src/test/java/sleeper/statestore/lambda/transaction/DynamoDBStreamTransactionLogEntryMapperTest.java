@@ -20,7 +20,6 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeVal
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.Record;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -119,7 +118,6 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
     }
 
     @Test
-    @Disabled
     void shouldFailToProcessEntry() {
         // Given
         List<Record> records = List.of(new DynamodbStreamRecord());
@@ -129,7 +127,6 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
 
         // Then
         assertThat(entries).isEmpty();
-
     }
 
     private DynamoDBStreamTransactionLogEntryMapper mapper() {
