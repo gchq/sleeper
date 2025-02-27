@@ -18,6 +18,6 @@ package sleeper.statestore.lambda.transaction;
 /**
  * Maps between transaction log entries and their DynamoDB Stream event objects.
  */
-public class DynamoStreamTransactionLogEntryMapper {
+public class DynamoDBStreamTransactionLogEntryMapper {
 
 }

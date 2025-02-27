@@ -17,15 +17,15 @@ package sleeper.statestore.lambda.transaction;
 
 import org.junit.jupiter.api.Test;
 
-public class DynamoStreamTransactionLogEntryMapperTest {
+public class DynamoDBStreamTransactionLogEntryMapperTest {
 
     @Test
     void shouldConvertEntryToFromDynamoStreamEvent() {
 
     }
 
-    private DynamoStreamTransactionLogEntryMapper mapper() {
-        return new DynamoStreamTransactionLogEntryMapper();
+    private DynamoDBStreamTransactionLogEntryMapper mapper() {
+        return new DynamoDBStreamTransactionLogEntryMapper();
     }
 
 }
