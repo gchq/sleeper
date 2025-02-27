@@ -24,7 +24,9 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvid
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStore.BODY;
 import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStore.BODY_S3_KEY;
@@ -51,6 +53,20 @@ public class DynamoDBStreamTransactionLogEntryMapper {
      * @return        the log entry
      */
     public TransactionLogEntryHandle toTransactionLogEntry(Record record) {
+        return toTransactionLogEntryOrThrow(record);
+    }
+
+    /**
+     * Reads a list of DynamoDB Stream records to produce a stream of transaction log entries, wrapped as handles.
+     *
+     * @param  records a list of records
+     * @return         a stream of log entries
+     */
+    public Stream<TransactionLogEntryHandle> toTransactionLogEntries(List<? extends Record> records) {
+        return records.stream().map(record -> toTransactionLogEntry(record));
+    }
+
+    private TransactionLogEntryHandle toTransactionLogEntryOrThrow(Record record) {
         String sequenceNumber = record.getDynamodb().getSequenceNumber();
         Map<String, AttributeValue> image = record.getDynamodb().getNewImage();
         String tableId = image.get(TABLE_ID).getS();
@@ -69,5 +85,4 @@ public class DynamoDBStreamTransactionLogEntryMapper {
                     new TransactionLogEntry(transactionNumber, updateTime, transactionType, bodyKey));
         }
     }
-
 }

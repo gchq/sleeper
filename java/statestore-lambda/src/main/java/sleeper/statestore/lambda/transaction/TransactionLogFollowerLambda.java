@@ -85,8 +85,7 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
     @Override
     public StreamsEventResponse handleRequest(DynamodbEvent event, Context context) {
         LOGGER.debug("Received event with {} records", event.getRecords().size());
-        return handleRecords(event.getRecords().stream()
-                .map(record -> mapper.toTransactionLogEntry(record)));
+        return handleRecords(mapper.toTransactionLogEntries(event.getRecords()));
     }
 
     /**

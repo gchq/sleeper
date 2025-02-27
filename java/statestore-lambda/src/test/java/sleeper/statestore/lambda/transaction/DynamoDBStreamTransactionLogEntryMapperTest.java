@@ -20,6 +20,7 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeVal
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.Record;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -40,6 +41,7 @@ import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -114,6 +116,20 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
         // Then
         assertThat(entry).isEqualTo(new TransactionLogEntryHandle("3b31edf9", "12000000000006169888197",
                 new TransactionLogEntry(120, Instant.parse("2025-02-26T16:30:29.688Z"), TransactionType.REPLACE_FILE_REFERENCES, "transaction/test")));
+    }
+
+    @Test
+    @Disabled
+    void shouldFailToProcessEntry() {
+        // Given
+        List<Record> records = List.of(new DynamodbStreamRecord());
+
+        // When
+        Stream<TransactionLogEntryHandle> entries = mapper().toTransactionLogEntries(records);
+
+        // Then
+        assertThat(entries).isEmpty();
+
     }
 
     private DynamoDBStreamTransactionLogEntryMapper mapper() {

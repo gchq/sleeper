@@ -53,9 +53,6 @@ import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class TransactionLogFollowerLambdaTest {
     // Tests to create
-    // - All entries success
-    //      - Results in tracker update
-    //      - Results in no tracker update
     // - First entry fails, all fail
     // - Second entry fails, subsequent fails
 
