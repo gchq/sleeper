@@ -67,11 +67,9 @@ public class CompactionJobCommitterOrSendToLambda {
         TableProperties tableProperties = tablePropertiesProvider.getById(job.getTableId());
         TableStatus table = tableProperties.getStatus();
         tracker.jobFinished(finishedEvent);
-        ReplaceFileReferencesRequest request = job.replaceFileReferencesRequestBuilder(finishedEvent.getRecordsProcessed().getRecordsWritten())
-                .taskId(finishedEvent.getTaskId())
-                .jobRunId(finishedEvent.getJobRunId())
-                .build();
+        ReplaceFileReferencesRequest.Builder requestBuilder = job.replaceFileReferencesRequestBuilder(finishedEvent.getRecordsProcessed().getRecordsWritten());
         if (tableProperties.getBoolean(COMPACTION_JOB_COMMIT_ASYNC)) {
+            ReplaceFileReferencesRequest request = requestBuilder.taskId(finishedEvent.getTaskId()).jobRunId(finishedEvent.getJobRunId()).build();
             if (tableProperties.getBoolean(COMPACTION_JOB_ASYNC_BATCHING)) {
                 CompactionCommitMessage message = new CompactionCommitMessage(table.getTableUniqueId(), request);
                 LOGGER.debug("Sending asynchronous request to commit batcher: {}", message);
@@ -86,7 +84,7 @@ public class CompactionJobCommitterOrSendToLambda {
             }
         } else {
             LOGGER.debug("Committing compaction job {} inside compaction task", job.getId());
-            new ReplaceFileReferencesTransaction(List.of(request))
+            new ReplaceFileReferencesTransaction(List.of(requestBuilder.build()))
                     .synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
             tracker.jobCommitted(job.committedEventBuilder(timeSupplier.get())
                     .jobRunId(finishedEvent.getJobRunId())
