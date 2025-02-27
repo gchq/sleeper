@@ -50,7 +50,7 @@ public class DynamoDBStreamTransactionLogEntryMapper {
      * @param  record the record
      * @return        the log entry
      */
-    public TransactionLogEntry toTransactionLogEntry(Record record) {
+    public TransactionLogEntryForTable toTransactionLogEntry(Record record) {
         Map<String, AttributeValue> image = record.getDynamodb().getNewImage();
         String tableId = image.get(TABLE_ID).getS();
         long transactionNumber = Long.parseLong(image.get(TRANSACTION_NUMBER).getN());
@@ -60,10 +60,10 @@ public class DynamoDBStreamTransactionLogEntryMapper {
         AttributeValue body = image.get(BODY);
         if (body != null) {
             StateStoreTransaction<?> transaction = serDeProvider.getByTableId(tableId).toTransaction(transactionType, body.getS());
-            return new TransactionLogEntry(transactionNumber, updateTime, transaction);
+            return new TransactionLogEntryForTable(tableId, new TransactionLogEntry(transactionNumber, updateTime, transaction));
         } else {
             String bodyKey = image.get(BODY_S3_KEY).getS();
-            return new TransactionLogEntry(transactionNumber, updateTime, transactionType, bodyKey);
+            return new TransactionLogEntryForTable(tableId, new TransactionLogEntry(transactionNumber, updateTime, transactionType, bodyKey));
         }
     }
 
