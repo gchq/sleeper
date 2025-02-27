@@ -15,10 +15,9 @@
  */
 package sleeper.core.properties.instance;
 
-import sleeper.core.properties.SleeperPropertyIndex;
-
 import java.util.List;
 
+import sleeper.core.properties.SleeperPropertyIndex;
 import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_TABLE_STATE_LAMBDA_MEMORY;
 
 /**
@@ -32,7 +31,7 @@ public interface BulkExportProperty {
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT_IN_SECONDS = Index
-            .propertyBuilder("sleeper.bulk.export.processor.timeout")
+            .propertyBuilder("sleeper.bulk.export.processor.timeout.seconds")
             .description("The default timeout in seconds for the bulk export processor lambda.")
             .defaultValue("800")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
