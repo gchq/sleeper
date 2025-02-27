@@ -26,7 +26,6 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
-import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 
 import java.time.Instant;
 
@@ -51,18 +50,19 @@ public class CheckStateTest {
     }
 
     @Test
-    void shouldLoadFilesState() {
+    void shouldLoadFilesStateWithTransactionBody() {
         // Given
         FileReference file1 = fileFactory().rootFile("test1.parquet", 100);
         FileReference file2 = fileFactory().rootFile("test2.parquet", 100);
+        transactionLogs.getTransactionBodyStore().setStoreTransactions(true);
         update(stateStore).addFile(file1);
         update(stateStore).addFile(file2);
 
         // When
-        StateStoreFiles state = checkState().filesStateAtTransaction(2);
+        CheckState check = checkState();
 
         // Then
-        assertThat(state.references()).containsExactly(file1, file2);
+        assertThat(check.totalRecordsAtTransaction(2)).isEqualTo(200);
     }
 
     private FileReferenceFactory fileFactory() {

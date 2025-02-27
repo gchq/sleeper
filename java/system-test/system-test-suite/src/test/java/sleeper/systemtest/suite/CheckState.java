@@ -52,9 +52,11 @@ public class CheckState {
 
     public static void main(String[] args) {
         CheckState check = load();
-        StateStoreFiles state = check.filesStateAtTransaction(10);
-        long totalRecords = state.references().mapToLong(FileReference::getNumberOfRecords).sum();
-        assertThat(totalRecords).isEqualTo(10_000_000_000L);
+        assertThat(check.totalRecordsAtTransaction(10)).isEqualTo(10_000_000L);
+        assertThat(check.totalRecordsAtTransaction(19)).isEqualTo(10_000_000L);
+        assertThat(check.totalRecordsAtTransaction(20)).isEqualTo(10_000_000L);
+        assertThat(check.totalRecordsAtTransaction(100)).isEqualTo(10_000_000L);
+        assertThat(check.totalRecordsAtTransaction(171)).isEqualTo(10_000_000L);
     }
 
     public static CheckState load(TableProperties tableProperties, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
@@ -66,6 +68,11 @@ public class CheckState {
                 })
                 .collect(toCollection(LinkedList::new));
         return new CheckState(log);
+    }
+
+    public long totalRecordsAtTransaction(long transactionNumber) {
+        return filesStateAtTransaction(transactionNumber)
+                .references().mapToLong(FileReference::getNumberOfRecords).sum();
     }
 
     public StateStoreFiles filesStateAtTransaction(long transactionNumber) {

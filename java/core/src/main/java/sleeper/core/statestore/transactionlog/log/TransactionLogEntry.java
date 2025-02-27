@@ -90,18 +90,8 @@ public class TransactionLogEntry {
         return transactionType;
     }
 
-    /**
-     * Applies some operation on the transaction or the object key in the data bucket, whichever is held in the entry.
-     *
-     * @param withTransaction the operation on a transaction
-     * @param withObjectKey   the operation on an object key
-     */
-    public void withTransactionOrObjectKey(Consumer<StateStoreTransaction<?>> withTransaction, Consumer<String> withObjectKey) {
-        if (transaction != null) {
-            withTransaction.accept(transaction);
-        } else {
-            withObjectKey.accept(bodyKey);
-        }
+    public Optional<String> getBodyKey() {
+        return Optional.ofNullable(bodyKey);
     }
 
     /**
