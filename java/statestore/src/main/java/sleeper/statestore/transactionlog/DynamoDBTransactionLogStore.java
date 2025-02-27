@@ -63,7 +63,7 @@ public class DynamoDBTransactionLogStore implements TransactionLogStore {
     public static final String UPDATE_TIME = "UPDATE_TIME";
     public static final String TYPE = "TYPE";
     public static final String BODY = "BODY";
-    private static final String BODY_S3_KEY = "BODY_S3_KEY";
+    public static final String BODY_S3_KEY = "BODY_S3_KEY";
 
     private final String transactionDescription;
     private final String logTableName;

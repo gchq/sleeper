@@ -17,19 +17,49 @@ package sleeper.statestore.lambda.transaction;
 
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.Record;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.schema.Schema;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
+
 public class DynamoDBStreamTransactionLogEntryMapperTest {
+    Schema schema = schemaWithKey("key");
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
 
     @Test
-    void shouldConvertEntryToFromDynamoStreamEvent() {
-        new DynamodbStreamRecord()
+    void shouldReadEntryWithBodyFromDynamodbStreamRecord() {
+        // Given
+        tableProperties.set(TABLE_ID, "3b31edf9");
+        FileReference outputFile = FileReferenceFactory.from(partitions).rootFile("output.parquet", 100);
+        ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
+                replaceJobFileReferences("test-job", List.of("input.parquet"), outputFile)));
+        Record record = new DynamodbStreamRecord()
                 .withEventName("INSERT")
                 .withEventVersion("1.1")
                 .withAwsRegion("eu-west-2")
@@ -39,16 +69,22 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
                         .withNewImage(Map.of(
                                 DynamoDBTransactionLogStore.TABLE_ID, new AttributeValue("3b31edf9"),
                                 DynamoDBTransactionLogStore.UPDATE_TIME, new AttributeValue().withN("1740587429688"),
-                                DynamoDBTransactionLogStore.BODY, new AttributeValue(),
+                                DynamoDBTransactionLogStore.BODY, new AttributeValue(new TransactionSerDe(schema).toJson(transaction)),
                                 DynamoDBTransactionLogStore.TRANSACTION_NUMBER, new AttributeValue().withN("120"),
                                 DynamoDBTransactionLogStore.TYPE, new AttributeValue("REPLACE_FILE_REFERENCES")))
                         .withSequenceNumber("12000000000006169888197")
                         .withSizeBytes(148709L)
                         .withStreamViewType(StreamViewType.NEW_IMAGE));
+
+        // When
+        TransactionLogEntry entry = mapper().toTransactionLogEntry(record);
+
+        // Then
+        assertThat(entry).isEqualTo(new TransactionLogEntry(120, Instant.parse("2025-02-26T16:30:29.688Z"), transaction));
     }
 
     private DynamoDBStreamTransactionLogEntryMapper mapper() {
-        return new DynamoDBStreamTransactionLogEntryMapper();
+        return new DynamoDBStreamTransactionLogEntryMapper(TransactionSerDeProvider.forOneTable(tableProperties));
     }
 
 }
