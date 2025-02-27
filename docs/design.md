@@ -246,6 +246,8 @@ and atomically removing the original reference and creating 2 new references in 
 file references down one "level" on each execution of the lambda, so the lambda would need to be invoked multiple times
 for the file references in the root partition to be moved down to the bottom of the tree.
 
+![Compaction job creation design diagram](design/compaction-job-creation.png)
+
 The lambda then queries the state store for information about the partitions and the file
 references that do not have a job id (if a file reference has a job id it means that a compaction job has already been
 created for that file). It then uses a compaction strategy to decide what compaction jobs should be created.
@@ -254,14 +256,15 @@ create compaction jobs for files that are in leaf partitions at the time of crea
 happen after a job has been created, but before the job has run). Jobs that are created by the strategy are sent
 to an SQS queue.
 
-Compaction jobs are executed in containers. Currently, these containers are executed in Fargate tasks, but they could
-be executed on ECS running on EC2 instances, or anywhere that supports running Docker containers. These containers
+Compaction jobs are executed in ECS tasks running on either Fargate tasks or EC2 instances. These tasks
 retrieve compaction jobs from the SQS queue and execute them. Executing them involves a streaming merge of the
-N input files into one sorted file. Once the job is finished, the state store is updated. The number of Fargate
+N input files into one sorted file. Once the job is finished, the state store is updated. The number of ECS
 tasks that are running scales down naturally as the task terminates if there are no more messages on the SQS queue.
 To scale up the number of tasks, a Cloudwatch rule periodically triggers a lambda. This lambda looks at the number
 of messages on the queue that are not being processed and if necessary creates more Fargate tasks. The maximum
 number of concurrent compaction tasks is configurable.
+
+![Execution of compaction tasks design diagram](design/compaction-task-running.png)
 
 ## Garbage collection
 

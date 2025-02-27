@@ -86,6 +86,20 @@ import static sleeper.core.properties.instance.CompactionProperty.PENDING_COMPAC
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB;
 import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS;
 
+/**
+ * Deploys the resources needed to create and commit compaction jobs. Specifically, there are the following resources:
+ * <p>
+ * - A Cloudwatch Rule that periodically triggers a lambda named sleeper-id-compaction-job-creation-trigger. The
+ * purpose of this lambda is to identify online tables and send the table ids to an SQS FIFO queue.
+ * - This SQS FIFO queue triggers a lambda named sleeper-id-compaction-job-creation-handler. The purpose of this
+ * lambda is to split any file references that need splitting and to create batches of compaction jobs in leaf
+ * partitions. The lambda sends updates to the state store and sends batches of compaction jobs to an SQS queue
+ * named sleeper-id-PendingCompactionJobBatch Q.
+ * - This queue triggers a lambda named sleeper-compaction-job-dispatcher that checks whether the state store
+ * has been upated with these compaction jobs. If so then the jobs in the batch are sent to an SQS queue named
+ * sleeper-compactionJobQ; if not then the batch is returned to the queue for processing later.
+ * - Jobs will be processed from the compaction job queue by resources defined in CompactionTaskResources.
+ */
 public class CompactionJobResources {
     private static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
     private static final String COMPACTION_STACK_DLQ_URL = "CompactionStackDLQUrlKey";
@@ -108,7 +122,8 @@ public class CompactionJobResources {
         Queue pendingQueue = sqsQueueForCompactionJobBatches(coreStacks, topic, errorMetrics);
         commitBatcherQueue = sqsQueueForCompactionBatcher(coreStacks, topic, errorMetrics);
         compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);
-        IFunction creationFunction = lambdaToCreateCompactionJobBatches(coreStacks, topic, errorMetrics, jarsBucket, lambdaCode, pendingQueue, compactionJobsQueue);
+        IFunction creationFunction = lambdaToCreateCompactionJobBatches(coreStacks, topic, errorMetrics, jarsBucket,
+                lambdaCode, compactionJobsQueue);
         IFunction sendFunction = lambdaToSendCompactionJobBatches(coreStacks, lambdaCode, pendingQueue, compactionJobsQueue);
         lambdaToBatchUpCompactionCommits(coreStacks, lambdaCode, commitBatcherQueue);
 
@@ -165,7 +180,8 @@ public class CompactionJobResources {
 
     private IFunction lambdaToCreateCompactionJobBatches(
             CoreStacks coreStacks, Topic topic, List<IMetric> errorMetrics,
-            IBucket jarsBucket, LambdaCode lambdaCode, Queue pendingQueue, Queue compactionJobsQueue) {
+            IBucket jarsBucket, LambdaCode lambdaCode,
+            Queue compactionJobsQueue) {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String triggerFunctionName = String.join("-", "sleeper", instanceId, "compaction-job-creation-trigger");
@@ -174,7 +190,7 @@ public class CompactionJobResources {
 
         IFunction triggerFunction = lambdaCode.buildFunction(stack, LambdaHandler.COMPACTION_JOB_CREATOR_TRIGGER, "CompactionJobsCreationTrigger", builder -> builder
                 .functionName(triggerFunctionName)
-                .description("Create batches of tables and send requests to create compaction jobs for those batches")
+                .description("Create batches of online tables and send requests to create compaction jobs for those batches")
                 .memorySize(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_MEMORY_IN_MB))
                 .timeout(Duration.seconds(instanceProperties.getInt(TABLE_BATCHING_LAMBDAS_TIMEOUT_IN_SECONDS)))
                 .environment(environmentVariables)
