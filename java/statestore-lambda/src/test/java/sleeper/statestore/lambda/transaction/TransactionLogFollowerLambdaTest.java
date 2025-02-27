@@ -52,9 +52,6 @@ import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStar
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class TransactionLogFollowerLambdaTest {
-    // Tests to create
-    // - First entry fails, all fail
-    // - Second entry fails, subsequent fails
 
     InstanceProperties instanceProperties = createTestInstanceProperties();
     Schema schema = schemaWithKey("key");
