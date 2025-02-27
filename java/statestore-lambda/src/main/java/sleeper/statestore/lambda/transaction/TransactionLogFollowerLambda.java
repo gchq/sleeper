@@ -95,7 +95,7 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
      * @param  entries the entries
      * @return         the result of which records failed requiring a retry
      */
-    public StreamsEventResponse handleRecords(Stream<TransactionLogEntryForTable> entries) {
+    public StreamsEventResponse handleRecords(Stream<TransactionLogEntryHandle> entries) {
         entries.forEach(entry -> {
             TableProperties tableProperties = tablePropertiesProvider.getById(entry.tableId());
             TransactionLogStateStore statestore = (TransactionLogStateStore) stateStoreProvider.getStateStore(tableProperties);

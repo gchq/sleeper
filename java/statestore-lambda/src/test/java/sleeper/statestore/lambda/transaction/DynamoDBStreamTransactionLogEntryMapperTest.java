@@ -80,10 +80,10 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
                         .withStreamViewType(StreamViewType.NEW_IMAGE));
 
         // When
-        TransactionLogEntryForTable entry = mapper().toTransactionLogEntry(record);
+        TransactionLogEntryHandle entry = mapper().toTransactionLogEntry(record);
 
         // Then
-        assertThat(entry).isEqualTo(new TransactionLogEntryForTable("3b31edf9",
+        assertThat(entry).isEqualTo(new TransactionLogEntryHandle("3b31edf9", "12000000000006169888197",
                 new TransactionLogEntry(120, Instant.parse("2025-02-26T16:30:29.688Z"), transaction)));
     }
 
@@ -109,10 +109,10 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
                         .withStreamViewType(StreamViewType.NEW_IMAGE));
 
         // When
-        TransactionLogEntryForTable entry = mapper().toTransactionLogEntry(record);
+        TransactionLogEntryHandle entry = mapper().toTransactionLogEntry(record);
 
         // Then
-        assertThat(entry).isEqualTo(new TransactionLogEntryForTable("3b31edf9",
+        assertThat(entry).isEqualTo(new TransactionLogEntryHandle("3b31edf9", "12000000000006169888197",
                 new TransactionLogEntry(120, Instant.parse("2025-02-26T16:30:29.688Z"), TransactionType.REPLACE_FILE_REFERENCES, "transaction/test")));
     }
 

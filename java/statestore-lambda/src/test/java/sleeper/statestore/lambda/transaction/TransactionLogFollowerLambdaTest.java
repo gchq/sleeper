@@ -118,7 +118,7 @@ public class TransactionLogFollowerLambdaTest {
         createLambda().handleRecords(
                 transactionLogs.forTable(tableProperties).getFilesLogStore()
                         .readTransactions(TransactionLogRange.fromMinimum(1))
-                        .map(entry -> new TransactionLogEntryForTable(tableId, entry)));
+                        .map(entry -> new TransactionLogEntryHandle(tableId, null, entry)));
     }
 
     private TransactionLogFollowerLambda createLambda() {

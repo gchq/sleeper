@@ -18,11 +18,12 @@ package sleeper.statestore.lambda.transaction;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 
 /**
- * A transaction log entry for a certain Sleeper table.
+ * A handle to a transaction log entry processed in a transaction log follower.
  *
- * @param tableId the Sleeper table ID
- * @param entry   the transaction log entry
+ * @param tableId        the Sleeper table ID
+ * @param itemIdentifier the sequence number of the stream record this was derived from
+ * @param entry          the transaction log entry
  */
-public record TransactionLogEntryForTable(String tableId, TransactionLogEntry entry) {
+public record TransactionLogEntryHandle(String tableId, String itemIdentifier, TransactionLogEntry entry) {
 
 }
