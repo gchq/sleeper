@@ -21,6 +21,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.amazonaws.services.lambda.runtime.events.StreamsEventResponse;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.slf4j.Logger;
@@ -37,7 +38,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 /**
  * A lambda that follows the transaction log of a Sleeper state store.
  */
-public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEvent, Void> {
+public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEvent, StreamsEventResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogFollowerLambda.class);
 
     private final DynamoDBStreamTransactionLogEntryMapper mapper;
@@ -52,12 +53,12 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
     }
 
     @Override
-    public Void handleRequest(DynamodbEvent event, Context context) {
+    public StreamsEventResponse handleRequest(DynamodbEvent event, Context context) {
         LOGGER.debug("Received event with {} records", event.getRecords().size());
         for (DynamodbStreamRecord record : event.getRecords()) {
             TransactionLogEntryForTable entry = mapper.toTransactionLogEntry(record);
         }
-        return null;
+        return new StreamsEventResponse();
     }
 
 }
