@@ -58,9 +58,13 @@ public class DynamoDBStreamTransactionLogEntryMapper {
         Instant updateTime = Instant.ofEpochMilli(updateTimeMillis);
         TransactionType transactionType = TransactionType.valueOf(image.get(TYPE).getS());
         AttributeValue body = image.get(BODY);
-        AttributeValue bodyKey = image.get(BODY_S3_KEY);
-        StateStoreTransaction<?> transaction = serDeProvider.getByTableId(tableId).toTransaction(transactionType, body.getS());
-        return new TransactionLogEntry(transactionNumber, updateTime, transaction);
+        if (body != null) {
+            StateStoreTransaction<?> transaction = serDeProvider.getByTableId(tableId).toTransaction(transactionType, body.getS());
+            return new TransactionLogEntry(transactionNumber, updateTime, transaction);
+        } else {
+            String bodyKey = image.get(BODY_S3_KEY).getS();
+            return new TransactionLogEntry(transactionNumber, updateTime, transactionType, bodyKey);
+        }
     }
 
 }
