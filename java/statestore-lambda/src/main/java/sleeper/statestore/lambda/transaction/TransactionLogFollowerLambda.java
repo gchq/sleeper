@@ -71,6 +71,16 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
         mapper = new DynamoDBStreamTransactionLogEntryMapper(TransactionSerDeProvider.from(tablePropertiesProvider));
     }
 
+    // Used only for testing
+    public TransactionLogFollowerLambda(DynamoDBStreamTransactionLogEntryMapper mapper, TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
+            CompactionJobTracker compactionJobTracker, IngestJobTracker ingestJobTracker) {
+        this.mapper = mapper;
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
+        this.compactionJobTracker = compactionJobTracker;
+        this.ingestJobTracker = ingestJobTracker;
+    }
+
     @Override
     public StreamsEventResponse handleRequest(DynamodbEvent event, Context context) {
         LOGGER.debug("Received event with {} records", event.getRecords().size());
