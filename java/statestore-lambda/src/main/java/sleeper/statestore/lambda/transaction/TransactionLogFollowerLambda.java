@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.StreamsEventResponse;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
@@ -43,6 +42,8 @@ import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
+
+import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
@@ -84,12 +85,22 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
     @Override
     public StreamsEventResponse handleRequest(DynamodbEvent event, Context context) {
         LOGGER.debug("Received event with {} records", event.getRecords().size());
-        for (DynamodbStreamRecord record : event.getRecords()) {
-            TransactionLogEntryForTable entry = mapper.toTransactionLogEntry(record);
+        return handleRecords(event.getRecords().stream()
+                .map(record -> mapper.toTransactionLogEntry(record)));
+    }
+
+    /**
+     * Used by the lambda handler to process transaction log entries that have been mapped from the DynamoDB stream.
+     *
+     * @param  entries the entries
+     * @return         the result of which records failed requiring a retry
+     */
+    public StreamsEventResponse handleRecords(Stream<TransactionLogEntryForTable> entries) {
+        entries.forEach(entry -> {
             TableProperties tableProperties = tablePropertiesProvider.getById(entry.tableId());
             TransactionLogStateStore statestore = (TransactionLogStateStore) stateStoreProvider.getStateStore(tableProperties);
             statestore.applyEntryFromLog(entry.entry(), StateListenerBeforeApply.updateTrackers(tableProperties.getStatus(), ingestJobTracker, compactionJobTracker));
-        }
+        });
         return new StreamsEventResponse();
     }
 

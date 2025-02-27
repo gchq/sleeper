@@ -37,6 +37,7 @@
     "sleeper.core.tracker.compaction.job.CompactionJobStatusTestData",
     "sleeper.core.tracker.ingest.job.IngestJobEventTestData",
     "sleeper.core.tracker.ingest.job.IngestJobStatusTestData",
+    "sleeper.core.tracker.job.run.JobRunTestData",
     "sleeper.core.statestore.testutils.StateStoreUpdatesWrapper"
   ],
   "comment.java.configuration.runtimes": [
