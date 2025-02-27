@@ -33,10 +33,8 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
-import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 
@@ -68,8 +66,8 @@ public class TransactionLogFollowerLambdaTest {
     PartitionTree partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
     InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
     StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs.forTable(tableProperties));
-    CompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
-    IngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
+    InMemoryCompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
+    InMemoryIngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
 
     @Test
     void shouldProcessEntrySuccessfullyTriggersTrackerUpdate() {
@@ -101,6 +99,19 @@ public class TransactionLogFollowerLambdaTest {
                         jobRunOnTask("test-task",
                                 ingestStartedStatus(Instant.parse("2025-02-27T13:31:00Z"), 2),
                                 ingestAddedFilesStatus(Instant.parse("2025-02-27T13:32:00Z"), 1))));
+    }
+
+    @Test
+    void shouldProcessEntrySuccessfullyWithNoTrackerUpdate() {
+        // Given
+        FileReference file = fileFactory().rootFile("test.parquet", 100);
+        AddFilesTransaction.fromReferences(List.of(file)).synchronousCommit(stateStore);
+
+        // When
+        streamAllEntriesFromFileTransactionLogToLambda();
+
+        // Then
+        assertThat(ingestJobTracker.streamTableRecords(tableId)).isEmpty();
     }
 
     private void streamAllEntriesFromFileTransactionLogToLambda() {
