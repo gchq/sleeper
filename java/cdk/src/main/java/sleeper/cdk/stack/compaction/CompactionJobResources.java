@@ -329,7 +329,6 @@ public class CompactionJobResources {
 
     private void lambdaToBatchUpCompactionCommits(
             CoreStacks coreStacks, LambdaCode lambdaCode, Queue batcherQueue) {
-
         String functionName = String.join("-", "sleeper",
                 Utils.cleanInstanceId(instanceProperties), "compaction-commit-batcher");
 
