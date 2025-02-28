@@ -15,11 +15,36 @@
  */
 package sleeper.systemtest.suite.investigate;
 
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import static java.util.stream.Collectors.toCollection;
+
 public record TransactionLogEntryHandle(TransactionLogEntry original, StateStoreTransaction<?> transaction) {
+
+    public static List<TransactionLogEntryHandle> load(TransactionLogStore logStore) {
+        return logStore
+                .readTransactions(TransactionLogRange.fromMinimum(1))
+                .map(entry -> new TransactionLogEntryHandle(entry, entry.getTransaction().orElseThrow()))
+                .collect(toCollection(LinkedList::new));
+    }
+
+    public static List<TransactionLogEntryHandle> load(String tableId, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
+        return logStore
+                .readTransactions(TransactionLogRange.fromMinimum(1))
+                .map(entry -> {
+                    StateStoreTransaction<?> transaction = entry.getTransactionOrLoadFromPointer(tableId, bodyStore);
+                    return new TransactionLogEntryHandle(entry, transaction);
+                })
+                .collect(toCollection(LinkedList::new));
+    }
 
     public <S> void apply(S state) {
         StateStoreTransaction<S> transaction = castTransaction();

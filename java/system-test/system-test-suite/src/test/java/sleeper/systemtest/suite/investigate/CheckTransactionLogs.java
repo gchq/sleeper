@@ -32,10 +32,8 @@ import sleeper.core.record.Record;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.testutils.OnDiskTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
-import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
@@ -48,24 +46,21 @@ import sleeper.systemtest.dsl.util.SystemTestSchema;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static java.util.stream.Collectors.toCollection;
-
-public class CheckState {
-    public static final Logger LOGGER = LoggerFactory.getLogger(CheckState.class);
+public class CheckTransactionLogs {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CheckTransactionLogs.class);
 
     private final List<TransactionLogEntryHandle> filesLog;
 
-    private CheckState(List<TransactionLogEntryHandle> filesLog) {
+    public CheckTransactionLogs(List<TransactionLogEntryHandle> filesLog) {
         this.filesLog = filesLog;
     }
 
     public static void main(String[] args) throws IOException {
-        CheckState check = load();
+        CheckTransactionLogs check = load();
         LOGGER.info("Compaction commit transactions: {}", check.countCompactionCommitTransactions());
         LOGGER.info("Compaction jobs committed: {}", check.countCompactionJobsCommitted());
         var reports = check.reportCompactionTransactionsChangedRecordCount();
@@ -95,17 +90,6 @@ public class CheckState {
             }
         }
         return count;
-    }
-
-    public static CheckState load(String tableId, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
-        List<TransactionLogEntryHandle> log = logStore
-                .readTransactions(TransactionLogRange.fromMinimum(1))
-                .map(entry -> {
-                    StateStoreTransaction<?> transaction = entry.getTransactionOrLoadFromPointer(tableId, bodyStore);
-                    return new TransactionLogEntryHandle(entry, transaction);
-                })
-                .collect(toCollection(LinkedList::new));
-        return new CheckState(log);
     }
 
     public long totalRecordsAtTransaction(long transactionNumber) {
@@ -140,14 +124,13 @@ public class CheckState {
         throw new IllegalArgumentException("Transaction number not found: " + transactionNumber);
     }
 
-    private static CheckState load() {
+    private static CheckTransactionLogs load() {
         String instanceId = Objects.requireNonNull(System.getenv("INSTANCE_ID"), "INSTANCE_ID must be set");
         String tableId = Objects.requireNonNull(System.getenv("TABLE_ID"), "TABLE_ID must be set");
         boolean cacheTransactions = Optional.ofNullable(System.getenv("CACHE_TRANSACTIONS")).map(Boolean::parseBoolean).orElse(true);
         Path cacheDirectory = OnDiskTransactionLogs.getLocalCacheDirectory(instanceId, tableId);
         if (cacheTransactions && Files.isDirectory(cacheDirectory)) {
-            OnDiskTransactionLogs cache = OnDiskTransactionLogs.load(cacheDirectory);
-            return load(tableId, cache.getFilesLogStore(), null);
+            return from(OnDiskTransactionLogs.load(cacheDirectory));
         }
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
@@ -156,9 +139,13 @@ public class CheckState {
         TransactionBodyStore bodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
         TransactionLogStore filesLogStore = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
         if (cacheTransactions) {
-            OnDiskTransactionLogs cache = OnDiskTransactionLogs.cacheState(instanceProperties, tableProperties, filesLogStore, filesLogStore, bodyStore, cacheDirectory);
-            filesLogStore = cache.getFilesLogStore();
+            return from(OnDiskTransactionLogs.cacheState(instanceProperties, tableProperties, filesLogStore, filesLogStore, bodyStore, cacheDirectory));
+        } else {
+            return new CheckTransactionLogs(TransactionLogEntryHandle.load(tableId, filesLogStore, bodyStore));
         }
-        return load(tableId, filesLogStore, bodyStore);
+    }
+
+    private static CheckTransactionLogs from(OnDiskTransactionLogs cache) {
+        return new CheckTransactionLogs(TransactionLogEntryHandle.load(cache.getFilesLogStore()));
     }
 }

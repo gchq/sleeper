@@ -42,7 +42,7 @@ import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class CheckStateTest {
+public class CheckTransactionLogsTest {
 
     static final Instant UPDATE_TIME = Instant.parse("2025-02-27T12:43:00Z");
     InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -66,7 +66,7 @@ public class CheckStateTest {
         update(stateStore).addFile(file2);
 
         // When
-        CheckState check = checkState();
+        CheckTransactionLogs check = checkState();
 
         // Then
         assertThat(check.totalRecordsAtTransaction(2)).isEqualTo(200);
@@ -82,7 +82,7 @@ public class CheckStateTest {
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes("test-job", List.of("input.parquet"), output);
 
         // When
-        CheckState check = checkState();
+        CheckTransactionLogs check = checkState();
 
         // Then
         ReplaceFileReferencesRequest expectedRequest = replaceJobFileReferences("test-job", List.of("input.parquet"), output).withNoUpdateTime();
@@ -103,7 +103,7 @@ public class CheckStateTest {
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes("test-job", List.of("input.parquet"), output);
 
         // When
-        CheckState check = checkState();
+        CheckTransactionLogs check = checkState();
 
         // Then
         assertThat(check.reportCompactionTransactionsChangedRecordCount()).isEmpty();
@@ -113,8 +113,9 @@ public class CheckStateTest {
         return FileReferenceFactory.fromUpdatedAt(stateStore, UPDATE_TIME);
     }
 
-    private CheckState checkState() {
-        return CheckState.load(tableProperties.get(TABLE_ID), transactionLogs.getFilesLogStore(), transactionLogs.getTransactionBodyStore());
+    private CheckTransactionLogs checkState() {
+        List<TransactionLogEntryHandle> filesLog = TransactionLogEntryHandle.load(tableProperties.get(TABLE_ID), transactionLogs.getFilesLogStore(), transactionLogs.getTransactionBodyStore());
+        return new CheckTransactionLogs(filesLog);
     }
 
 }
