@@ -47,8 +47,11 @@ import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.record.RecordReadSupport;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
+import sleeper.statestore.StateStoreArrowFileStore;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 import sleeper.systemtest.dsl.util.SystemTestSchema;
 
 import java.io.IOException;
@@ -87,28 +90,39 @@ public class CheckTransactionLogs {
         LOGGER.info("Compaction jobs committed: {}", check.countCompactionJobsCommitted());
         var reports = check.reportCompactionTransactionsChangedRecordCount();
         LOGGER.info("Compaction transactions which changed number of records: {}", reports.size());
-        Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForClient();
-        JavaCompactionRunner compactionRunner = new JavaCompactionRunner(ObjectFactory.noUserJars(), hadoopConf);
-        Path tempDir = Files.createTempDirectory("sleeper-test");
         for (var report : reports) {
             LOGGER.info("Transaction {} had {} jobs changing records", report.transactionNumber(), report.jobs().size());
-            for (var job : report.jobs()) {
-                for (FileReference file : job.inputFiles()) {
-                    long actualRecords = countActualRecords(file.getFilename(), hadoopConf);
-                    LOGGER.info("Counted {} actual records in file {}", actualRecords, file.getFilename());
-                }
-                LOGGER.info("Job {} had {} input files, {} records before, {} records after",
-                        job.jobId(), job.inputFiles().size(), job.recordsBefore(), job.recordsAfter());
-                Partition partition = partitions.getPartition(job.partitionId());
-                LOGGER.info("Partition: {}", partition);
-                String outputFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
-                CompactionJob compactionJob = job.asCompactionJobToNewFile(tableId, outputFile);
-                RecordsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition);
-                long actualOutputRecords = countActualRecords(outputFile, hadoopConf);
-                LOGGER.info("Counted {} actual records in compaction output, reported {}", actualOutputRecords, processed);
-                LOGGER.info("Compation job: {}", new CompactionJobSerDe().toJson(compactionJob));
-            }
         }
+        CompactionChangedRecordCount job = reports.stream().flatMap(report -> report.jobs().stream()).findFirst().orElse(null);
+
+        Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForClient();
+        AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
+
+        for (FileReference file : job.inputFiles()) {
+            long actualRecords = countActualRecords(file.getFilename(), hadoopConf);
+            LOGGER.info("Counted {} actual records in file {}", actualRecords, file.getFilename());
+        }
+        LOGGER.info("Job {} had {} input files, {} records before, {} records after",
+                job.jobId(), job.inputFiles().size(), job.recordsBefore(), job.recordsAfter());
+
+        Partition partition = partitions.getPartition(job.partitionId());
+        LOGGER.info("Partition: {}", partition);
+
+        Path tempDir = Files.createTempDirectory("sleeper-test");
+        String outputFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
+        CompactionJob compactionJob = job.asCompactionJobToNewFile(tableId, outputFile);
+        JavaCompactionRunner compactionRunner = new JavaCompactionRunner(ObjectFactory.noUserJars(), hadoopConf);
+        RecordsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition);
+        long actualOutputRecords = countActualRecords(outputFile, hadoopConf);
+        LOGGER.info("Counted {} actual records in compaction output, reported {}", actualOutputRecords, processed);
+        LOGGER.info("Compation job: {}", new CompactionJobSerDe().toJson(compactionJob));
+
+        DynamoDBTransactionLogSnapshotMetadataStore metadataStore = new DynamoDBTransactionLogSnapshotMetadataStore(check.instanceProperties(), check.tableProperties(), dynamoClient);
+        StateStoreArrowFileStore fileStore = new StateStoreArrowFileStore(check.tableProperties(), hadoopConf);
+        LatestSnapshots latestSnapshots = metadataStore.getLatestSnapshots();
+        StateStorePartitions partitionsSnapshot = latestSnapshots.getPartitionsSnapshot().map(fileStore::loadSnapshot).map(snapshot -> snapshot.<StateStorePartitions>getState()).orElse(null);
+        Partition partitionFromSnapshot = partitionsSnapshot.byId(job.partitionId()).orElseThrow();
+        LOGGER.info("Partition from snapshot: {}", partitionFromSnapshot);
     }
 
     private static long countActualRecords(String filename, Configuration hadoopConf) throws IOException {
