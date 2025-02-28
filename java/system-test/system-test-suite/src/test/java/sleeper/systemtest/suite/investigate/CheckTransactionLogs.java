@@ -123,6 +123,11 @@ public class CheckTransactionLogs {
         StateStorePartitions partitionsSnapshot = latestSnapshots.getPartitionsSnapshot().map(fileStore::loadSnapshot).map(snapshot -> snapshot.<StateStorePartitions>getState()).orElse(null);
         Partition partitionFromSnapshot = partitionsSnapshot.byId(job.partitionId()).orElseThrow();
         LOGGER.info("Partition from snapshot: {}", partitionFromSnapshot);
+
+        String snapshotFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
+        fileStore.savePartitions(snapshotFile, List.of(partition));
+        Partition partitionFromLocalFile = fileStore.loadPartitions(snapshotFile).stream().findFirst().orElse(null);
+        LOGGER.info("Partition from local file: {}", partitionFromLocalFile);
     }
 
     private static long countActualRecords(String filename, Configuration hadoopConf) throws IOException {
