@@ -19,6 +19,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.parquet.hadoop.ParquetReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +28,7 @@ import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.record.Record;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.testutils.OnDiskTransactionLogStore;
@@ -40,9 +43,13 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.parquet.record.RecordReadSupport;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
+import sleeper.systemtest.dsl.util.SystemTestSchema;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -63,19 +70,37 @@ public class CheckState {
         this.filesLog = filesLog;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         CheckState check = load();
         LOGGER.info("Compaction commit transactions: {}", check.countCompactionCommitTransactions());
         LOGGER.info("Compaction jobs committed: {}", check.countCompactionJobsCommitted());
         var reports = check.reportCompactionTransactionsChangedRecordCount();
         LOGGER.info("Compaction transactions which changed number of records: {}", reports.size());
+        Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForClient();
         for (var report : reports) {
             LOGGER.info("Transaction {} had {} jobs changing records", report.transactionNumber(), report.jobs().size());
             for (var job : report.jobs()) {
+                for (FileReference file : job.inputFiles()) {
+                    long actualRecords = countActualRecords(file, hadoopConf);
+                    LOGGER.info("Counted {} actual records in file {}", actualRecords, file.getFilename());
+                }
                 LOGGER.info("Job {} had {} input files, {} records before, {} records after",
                         job.jobId(), job.inputFiles().size(), job.recordsBefore(), job.recordsAfter());
             }
         }
+    }
+
+    private static long countActualRecords(FileReference file, Configuration hadoopConf) throws IOException {
+        var path = new org.apache.hadoop.fs.Path(file.getFilename());
+        long count = 0;
+        try (ParquetReader<Record> reader = ParquetReader.builder(new RecordReadSupport(SystemTestSchema.DEFAULT_SCHEMA), path)
+                .withConf(hadoopConf)
+                .build()) {
+            for (Record record = reader.read(); record != null; record = reader.read()) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public static CheckState load(String tableId, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
