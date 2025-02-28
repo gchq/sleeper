@@ -114,8 +114,11 @@ public class CheckTransactionLogsTest {
     }
 
     private CheckTransactionLogs checkState() {
-        List<TransactionLogEntryHandle> filesLog = TransactionLogEntryHandle.load(tableProperties.get(TABLE_ID), transactionLogs.getFilesLogStore(), transactionLogs.getTransactionBodyStore());
-        return new CheckTransactionLogs(filesLog);
+        List<TransactionLogEntryHandle> filesLog = TransactionLogEntryHandle.load(
+                tableProperties.get(TABLE_ID), transactionLogs.getFilesLogStore(), transactionLogs.getTransactionBodyStore());
+        List<TransactionLogEntryHandle> partitionsLog = TransactionLogEntryHandle.load(
+                tableProperties.get(TABLE_ID), transactionLogs.getPartitionsLogStore(), transactionLogs.getTransactionBodyStore());
+        return new CheckTransactionLogs(filesLog, partitionsLog);
     }
 
 }

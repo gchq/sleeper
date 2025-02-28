@@ -25,6 +25,10 @@ public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, Lis
         return job.getJobId();
     }
 
+    public String partitionId() {
+        return job.getPartitionId();
+    }
+
     public long recordsBefore() {
         return inputFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
     }

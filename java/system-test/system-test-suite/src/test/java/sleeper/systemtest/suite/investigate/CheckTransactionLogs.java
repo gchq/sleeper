@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -34,6 +35,7 @@ import sleeper.core.statestore.testutils.OnDiskTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
@@ -54,13 +56,20 @@ public class CheckTransactionLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(CheckTransactionLogs.class);
 
     private final List<TransactionLogEntryHandle> filesLog;
+    private final List<TransactionLogEntryHandle> partitionsLog;
 
-    public CheckTransactionLogs(List<TransactionLogEntryHandle> filesLog) {
+    public CheckTransactionLogs(List<TransactionLogEntryHandle> filesLog, List<TransactionLogEntryHandle> partitionsLog) {
         this.filesLog = filesLog;
+        this.partitionsLog = partitionsLog;
     }
 
     public static void main(String[] args) throws IOException {
-        CheckTransactionLogs check = load();
+        String instanceId = Objects.requireNonNull(System.getenv("INSTANCE_ID"), "INSTANCE_ID must be set");
+        String tableId = Objects.requireNonNull(System.getenv("TABLE_ID"), "TABLE_ID must be set");
+        boolean cacheTransactions = Optional.ofNullable(System.getenv("CACHE_TRANSACTIONS")).map(Boolean::parseBoolean).orElse(true);
+
+        CheckTransactionLogs check = load(instanceId, tableId, cacheTransactions);
+        PartitionTree partitions = check.partitionTree();
         LOGGER.info("Compaction commit transactions: {}", check.countCompactionCommitTransactions());
         LOGGER.info("Compaction jobs committed: {}", check.countCompactionJobsCommitted());
         var reports = check.reportCompactionTransactionsChangedRecordCount();
@@ -75,6 +84,7 @@ public class CheckTransactionLogs {
                 }
                 LOGGER.info("Job {} had {} input files, {} records before, {} records after",
                         job.jobId(), job.inputFiles().size(), job.recordsBefore(), job.recordsAfter());
+                LOGGER.info("Partition: {}", partitions.getPartition(job.partitionId()));
             }
         }
     }
@@ -124,10 +134,15 @@ public class CheckTransactionLogs {
         throw new IllegalArgumentException("Transaction number not found: " + transactionNumber);
     }
 
-    private static CheckTransactionLogs load() {
-        String instanceId = Objects.requireNonNull(System.getenv("INSTANCE_ID"), "INSTANCE_ID must be set");
-        String tableId = Objects.requireNonNull(System.getenv("TABLE_ID"), "TABLE_ID must be set");
-        boolean cacheTransactions = Optional.ofNullable(System.getenv("CACHE_TRANSACTIONS")).map(Boolean::parseBoolean).orElse(true);
+    public PartitionTree partitionTree() {
+        StateStorePartitions state = new StateStorePartitions();
+        for (TransactionLogEntryHandle entry : partitionsLog) {
+            entry.apply(state);
+        }
+        return new PartitionTree(state.all());
+    }
+
+    private static CheckTransactionLogs load(String instanceId, String tableId, boolean cacheTransactions) {
         Path cacheDirectory = OnDiskTransactionLogs.getLocalCacheDirectory(instanceId, tableId);
         if (cacheTransactions && Files.isDirectory(cacheDirectory)) {
             return from(OnDiskTransactionLogs.load(cacheDirectory));
@@ -138,14 +153,19 @@ public class CheckTransactionLogs {
         TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient).getById(tableId);
         TransactionBodyStore bodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
         TransactionLogStore filesLogStore = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
+        TransactionLogStore partitionsLogStore = DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client);
         if (cacheTransactions) {
-            return from(OnDiskTransactionLogs.cacheState(instanceProperties, tableProperties, filesLogStore, filesLogStore, bodyStore, cacheDirectory));
+            return from(OnDiskTransactionLogs.cacheState(instanceProperties, tableProperties, filesLogStore, partitionsLogStore, bodyStore, cacheDirectory));
         } else {
-            return new CheckTransactionLogs(TransactionLogEntryHandle.load(tableId, filesLogStore, bodyStore));
+            return new CheckTransactionLogs(
+                    TransactionLogEntryHandle.load(tableId, filesLogStore, bodyStore),
+                    TransactionLogEntryHandle.load(tableId, partitionsLogStore, bodyStore));
         }
     }
 
     private static CheckTransactionLogs from(OnDiskTransactionLogs cache) {
-        return new CheckTransactionLogs(TransactionLogEntryHandle.load(cache.getFilesLogStore()));
+        return new CheckTransactionLogs(
+                TransactionLogEntryHandle.load(cache.getFilesLogStore()),
+                TransactionLogEntryHandle.load(cache.getPartitionsLogStore()));
     }
 }

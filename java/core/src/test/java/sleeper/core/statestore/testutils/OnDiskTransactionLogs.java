@@ -29,6 +29,7 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
@@ -78,13 +79,23 @@ public class OnDiskTransactionLogs {
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore,
             TransactionBodyStore transactionBodyStore, Path cacheDirectory) {
+        Path filesLogDir = cacheDirectory.resolve("filesLog");
+        Path partitionsLogDir = cacheDirectory.resolve("partitionsLog");
+        Path configDir = cacheDirectory.resolve("config");
+        try {
+            Files.createDirectories(filesLogDir);
+            Files.createDirectories(partitionsLogDir);
+            Files.createDirectories(configDir);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         TransactionSerDe transactionSerDe = new TransactionSerDe(tableProperties.getSchema());
-        TransactionLogStore filesCache = OnDiskTransactionLogStore.inDirectory(cacheDirectory.resolve("filesLog"), transactionSerDe);
-        TransactionLogStore partitionsCache = OnDiskTransactionLogStore.inDirectory(cacheDirectory.resolve("partitionsLog"), transactionSerDe);
+        TransactionLogStore filesCache = OnDiskTransactionLogStore.inDirectory(filesLogDir, transactionSerDe);
+        TransactionLogStore partitionsCache = OnDiskTransactionLogStore.inDirectory(partitionsLogDir, transactionSerDe);
         copyTransactionsWithBodies(tableProperties.get(TABLE_ID), filesLogStore, filesCache, transactionBodyStore);
         copyTransactionsWithBodies(tableProperties.get(TABLE_ID), partitionsLogStore, partitionsCache, transactionBodyStore);
         try {
-            SaveLocalProperties.saveToDirectory(cacheDirectory.resolve("config"), instanceProperties, Stream.of(tableProperties));
+            SaveLocalProperties.saveToDirectory(configDir, instanceProperties, Stream.of(tableProperties));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
