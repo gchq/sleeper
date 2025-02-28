@@ -31,15 +31,13 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
-import sleeper.core.statestore.testutils.OnDiskTransactionLogStore;
-import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
+import sleeper.core.statestore.testutils.OnDiskTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
@@ -57,7 +55,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toCollection;
 
@@ -214,10 +211,10 @@ public class CheckState {
         String instanceId = Objects.requireNonNull(System.getenv("INSTANCE_ID"), "INSTANCE_ID must be set");
         String tableId = Objects.requireNonNull(System.getenv("TABLE_ID"), "TABLE_ID must be set");
         boolean cacheTransactions = Optional.ofNullable(System.getenv("CACHE_TRANSACTIONS")).map(Boolean::parseBoolean).orElse(true);
-        Path filesCacheDirectory = OnDiskTransactionLogStore.getLocalCacheDirectory(instanceId, tableId, "files");
-        TransactionLogStore filesCache = OnDiskTransactionLogStore.inDirectory(filesCacheDirectory, TransactionSerDe.forFileTransactions());
-        if (cacheTransactions && Files.isDirectory(filesCacheDirectory)) {
-            return load(tableId, filesCache, null);
+        Path cacheDirectory = OnDiskTransactionLogs.getLocalCacheDirectory(instanceId, tableId);
+        if (cacheTransactions && Files.isDirectory(cacheDirectory)) {
+            OnDiskTransactionLogs cache = OnDiskTransactionLogs.load(cacheDirectory);
+            return load(tableId, cache.getFilesLogStore(), null);
         }
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
@@ -226,28 +223,9 @@ public class CheckState {
         TransactionBodyStore bodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
         TransactionLogStore filesLogStore = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
         if (cacheTransactions) {
-            copyTransactionsWithBodies(tableId, filesLogStore, filesCache, bodyStore);
-            filesLogStore = filesCache;
+            OnDiskTransactionLogs cache = OnDiskTransactionLogs.cacheState(instanceProperties, tableProperties, filesLogStore, filesLogStore, bodyStore, cacheDirectory);
+            filesLogStore = cache.getFilesLogStore();
         }
         return load(tableId, filesLogStore, bodyStore);
-    }
-
-    private static void copyTransactionsWithBodies(String tableId, TransactionLogStore source, TransactionLogStore target, TransactionBodyStore bodyStore) {
-        readAllTransactionsWithBodies(tableId, source, bodyStore)
-                .forEach(entry -> {
-                    try {
-                        target.addTransaction(entry);
-                    } catch (DuplicateTransactionNumberException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-    }
-
-    private static Stream<TransactionLogEntry> readAllTransactionsWithBodies(String tableId, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
-        return logStore.readTransactions(TransactionLogRange.fromMinimum(1))
-                .map(entry -> {
-                    StateStoreTransaction<?> transaction = entry.getTransactionOrLoadFromPointer(tableId, bodyStore);
-                    return new TransactionLogEntry(entry.getTransactionNumber(), entry.getUpdateTime(), transaction);
-                });
     }
 }
