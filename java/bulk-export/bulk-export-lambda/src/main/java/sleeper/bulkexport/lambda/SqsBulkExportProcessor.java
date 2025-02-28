@@ -37,7 +37,7 @@ import sleeper.statestore.StateStoreFactory;
 
 import java.util.List;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 
 
 /**
@@ -71,7 +71,7 @@ public class SqsBulkExportProcessor {
      * @throws ObjectFactoryException If there is an error creating the necessary objects.
      */
     public void processExport(BulkExportQuery bulkExportQuery) throws ObjectFactoryException {
-        String sqsUrl = instanceProperties.get(BULK_EXPORT_PROCESSOR_QUEUE_URL);
+        String sqsUrl = instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL);
         TableProperties tableProperties = bulkExportQuery.getTableProperties(tablePropertiesProvider);
         StateStore statestore = stateStoreProvider.getStateStore(tableProperties);
         BulkExportQuerySplitter splitter = new BulkExportQuerySplitter(tableProperties, statestore);

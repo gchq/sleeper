@@ -20,10 +20,8 @@ import sleeper.core.properties.instance.InstanceProperty;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_PROCESSOR_QUEUE_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_SPLITTER_QUEUE_DLQ_URL;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_SPLITTER_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EKS_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_JOB_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL;
@@ -44,6 +42,8 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_BATCHER_SUBMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_JOB_QUEUE_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_DLQ_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_QUERY_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.PARTITION_SPLITTING_JOB_DLQ_URL;
@@ -92,8 +92,8 @@ public class SqsQueues {
             BULK_IMPORT_EMR_SERVERLESS_JOB_QUEUE_URL,
             BULK_IMPORT_PERSISTENT_EMR_JOB_QUEUE_URL,
             BULK_IMPORT_EKS_JOB_QUEUE_URL,
-            BULK_EXPORT_PROCESSOR_QUEUE_URL,
-            BULK_EXPORT_SPLITTER_QUEUE_URL);
+            BULK_EXPORT_QUEUE_URL,
+            LEAF_PARTITION_BULK_EXPORT_QUEUE_URL);
 
     public static final List<InstanceProperty> DEAD_LETTER_QUEUE_URL_PROPERTIES = List.of(
             TRANSACTION_LOG_SNAPSHOT_CREATION_DLQ_URL,
@@ -112,8 +112,8 @@ public class SqsQueues {
             GARBAGE_COLLECTOR_DLQ_URL,
             INGEST_JOB_DLQ_URL,
             INGEST_BATCHER_SUBMIT_DLQ_URL,
-            BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL,
-            BULK_EXPORT_SPLITTER_QUEUE_DLQ_URL);
+            BULK_EXPORT_QUEUE_DLQ_URL,
+            LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL);
 
     public static final List<InstanceProperty> ALL_QUEUE_URL_PROPERTIES = Stream.of(
             QUEUE_URL_PROPERTIES, DEAD_LETTER_QUEUE_URL_PROPERTIES).flatMap(List::stream).toList();

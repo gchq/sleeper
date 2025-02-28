@@ -255,55 +255,50 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .propertyGroup(InstancePropertyGroup.QUERY)
             .build();
     // Bulk Export
-    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_URL = Index
-            .propertyBuilder("sleeper.bulk.export.processor.queue.url")
-            .description("The URL of the SQS queue that triggers the bulk export processor lambda.")
+    CdkDefinedInstanceProperty BULK_EXPORT_QUEUE_URL = Index
+            .propertyBuilder("sleeper.bulk.export.queue.url")
+            .description("The URL of the SQS queue that triggers the bulk export lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_ARN = Index
-            .propertyBuilder("sleeper.bulk.export.processor.queue.arn")
-            .description("The ARN of the SQS queue that triggers the bulk export processor lambda.")
+    CdkDefinedInstanceProperty BULK_EXPORT_QUEUE_ARN = Index
+            .propertyBuilder("sleeper.bulk.export.queue.arn")
+            .description("The ARN of the SQS queue that triggers the bulk export lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_DLQ_URL = Index
-            .propertyBuilder("sleeper.bulk.export.processor.queue.dlq.url")
-            .description("The URL of the SQS dead letter queue that is used by the bulk export processor lambda.")
+    CdkDefinedInstanceProperty BULK_EXPORT_QUEUE_DLQ_URL = Index
+            .propertyBuilder("sleeper.bulk.export.queue.dlq.url")
+            .description("The URL of the SQS dead letter queue that is used by the bulk export lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_DLQ_ARN = Index
-            .propertyBuilder("sleeper.bulk.export.processor.queue.dlq.arn")
-            .description("The ARN of the SQS  dead letter queue that is used by that triggers the bulk export processor lambda.")
+    CdkDefinedInstanceProperty BULK_EXPORT_QUEUE_DLQ_ARN = Index
+            .propertyBuilder("sleeper.bulk.export.queue.dlq.arn")
+            .description("The ARN of the SQS  dead letter queue that is used by that triggers the bulk export lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_PROCESSOR_LAMBDA_ROLE = Index
-            .propertyBuilder("sleeper.bulk.export.processor.lambda.role")
-            .description("The ARN of the role for the bulk export processor lambda.")
+    CdkDefinedInstanceProperty BULK_EXPORT_LAMBDA_ROLE = Index
+            .propertyBuilder("sleeper.bulk.export.lambda.role")
+            .description("The ARN of the role for the bulk export lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_QUEUE_URL = Index
-            .propertyBuilder("sleeper.bulk.export.splitter.queue.url")
-            .description("The URL of the SQS queue that triggers the bulk export splitter lambda.")
+    CdkDefinedInstanceProperty LEAF_PARTITION_BULK_EXPORT_QUEUE_URL = Index
+            .propertyBuilder("sleeper.bulk.export.leaf.partition.queue.url")
+            .description("The URL of the SQS queue that triggers the bulk export for a leaf partition.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_QUEUE_ARN = Index
-            .propertyBuilder("sleeper.bulk.export.splitter.queue.arn")
-            .description("The ARN of the SQS queue that triggers the bulk export splitter lambda.")
+    CdkDefinedInstanceProperty LEAF_PARTITION_BULK_EXPORT_QUEUE_ARN = Index
+            .propertyBuilder("sleeper.bulk.export.leaf.partition.queue.arn")
+            .description("The ARN of the SQS queue that triggers the bulk export for a leaf partition.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_QUEUE_DLQ_URL = Index
-            .propertyBuilder("sleeper.bulk.export.splitter.queue.dlq.url")
-            .description("The URL of the SQS dead letter queue that is used by the bulk export splitter lambda.")
+    CdkDefinedInstanceProperty LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_URL = Index
+            .propertyBuilder("sleeper.bulk.export.leaf.partition.queue.dlq.url")
+            .description("The URL of the SQS dead letter queue that is used by the bulk export for a leaf partition.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_QUEUE_DLQ_ARN = Index
-            .propertyBuilder("sleeper.bulk.export.splitter.queue.dlq.arn")
+    CdkDefinedInstanceProperty LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_ARN = Index
+            .propertyBuilder("sleeper.bulk.export.leaf.partition.queue.dlq.arn")
             .description(
-                    "The ARN of the SQS  dead letter queue that is used by that triggers the bulk export splitter lambda.")
-            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
-            .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_SPLITTER_LAMBDA_ROLE = Index
-            .propertyBuilder("sleeper.bulk.export.splitter.lambda.role")
-            .description("The ARN of the role for the bulk export splitter lambda.")
+                    "The ARN of the SQS  dead letter queue that is used by that triggers the bulk export for a leaf partition.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
     // Compactions
