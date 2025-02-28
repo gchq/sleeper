@@ -15,6 +15,7 @@
  */
 package sleeper.systemtest.suite.investigate;
 
+import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 
@@ -35,5 +36,15 @@ public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, Lis
 
     public long recordsAfter() {
         return outputFile.getNumberOfRecords();
+    }
+
+    public CompactionJob asCompactionJobToNewFile(String tableId, String outputFile) {
+        return CompactionJob.builder()
+                .tableId(tableId)
+                .jobId(job.getJobId())
+                .partitionId(job.getPartitionId())
+                .inputFiles(job.getInputFiles())
+                .outputFile(outputFile)
+                .build();
     }
 }

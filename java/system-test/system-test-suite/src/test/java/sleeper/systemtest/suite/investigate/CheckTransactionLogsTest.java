@@ -118,7 +118,7 @@ public class CheckTransactionLogsTest {
                 tableProperties.get(TABLE_ID), transactionLogs.getFilesLogStore(), transactionLogs.getTransactionBodyStore());
         List<TransactionLogEntryHandle> partitionsLog = TransactionLogEntryHandle.load(
                 tableProperties.get(TABLE_ID), transactionLogs.getPartitionsLogStore(), transactionLogs.getTransactionBodyStore());
-        return new CheckTransactionLogs(filesLog, partitionsLog);
+        return new CheckTransactionLogs(instanceProperties, tableProperties, filesLog, partitionsLog);
     }
 
 }

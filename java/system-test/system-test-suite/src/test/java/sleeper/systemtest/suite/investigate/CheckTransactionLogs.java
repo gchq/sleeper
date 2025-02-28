@@ -24,8 +24,11 @@ import org.apache.parquet.hadoop.ParquetReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
+import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
@@ -39,6 +42,8 @@ import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.core.tracker.job.run.RecordsProcessed;
+import sleeper.core.util.ObjectFactory;
 import sleeper.parquet.record.RecordReadSupport;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
@@ -51,19 +56,26 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 public class CheckTransactionLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(CheckTransactionLogs.class);
 
+    private final InstanceProperties instanceProperties;
+    private final TableProperties tableProperties;
     private final List<TransactionLogEntryHandle> filesLog;
     private final List<TransactionLogEntryHandle> partitionsLog;
 
-    public CheckTransactionLogs(List<TransactionLogEntryHandle> filesLog, List<TransactionLogEntryHandle> partitionsLog) {
+    public CheckTransactionLogs(
+            InstanceProperties instanceProperties, TableProperties tableProperties,
+            List<TransactionLogEntryHandle> filesLog, List<TransactionLogEntryHandle> partitionsLog) {
+        this.instanceProperties = instanceProperties;
+        this.tableProperties = tableProperties;
         this.filesLog = filesLog;
         this.partitionsLog = partitionsLog;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         String instanceId = Objects.requireNonNull(System.getenv("INSTANCE_ID"), "INSTANCE_ID must be set");
         String tableId = Objects.requireNonNull(System.getenv("TABLE_ID"), "TABLE_ID must be set");
         boolean cacheTransactions = Optional.ofNullable(System.getenv("CACHE_TRANSACTIONS")).map(Boolean::parseBoolean).orElse(true);
@@ -75,22 +87,30 @@ public class CheckTransactionLogs {
         var reports = check.reportCompactionTransactionsChangedRecordCount();
         LOGGER.info("Compaction transactions which changed number of records: {}", reports.size());
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForClient();
+        JavaCompactionRunner compactionRunner = new JavaCompactionRunner(ObjectFactory.noUserJars(), hadoopConf);
+        Path tempDir = Files.createTempDirectory("sleeper-test");
         for (var report : reports) {
             LOGGER.info("Transaction {} had {} jobs changing records", report.transactionNumber(), report.jobs().size());
             for (var job : report.jobs()) {
                 for (FileReference file : job.inputFiles()) {
-                    long actualRecords = countActualRecords(file, hadoopConf);
+                    long actualRecords = countActualRecords(file.getFilename(), hadoopConf);
                     LOGGER.info("Counted {} actual records in file {}", actualRecords, file.getFilename());
                 }
                 LOGGER.info("Job {} had {} input files, {} records before, {} records after",
                         job.jobId(), job.inputFiles().size(), job.recordsBefore(), job.recordsAfter());
-                LOGGER.info("Partition: {}", partitions.getPartition(job.partitionId()));
+                Partition partition = partitions.getPartition(job.partitionId());
+                LOGGER.info("Partition: {}", partition);
+                String outputFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
+                CompactionJob compactionJob = job.asCompactionJobToNewFile(tableId, outputFile);
+                RecordsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition);
+                long actualOutputRecords = countActualRecords(outputFile, hadoopConf);
+                LOGGER.info("Counted {} actual records in compaction output, reported {}", actualOutputRecords, processed);
             }
         }
     }
 
-    private static long countActualRecords(FileReference file, Configuration hadoopConf) throws IOException {
-        var path = new org.apache.hadoop.fs.Path(file.getFilename());
+    private static long countActualRecords(String filename, Configuration hadoopConf) throws IOException {
+        var path = new org.apache.hadoop.fs.Path(filename);
         long count = 0;
         try (ParquetReader<Record> reader = ParquetReader.builder(new RecordReadSupport(SystemTestSchema.DEFAULT_SCHEMA), path)
                 .withConf(hadoopConf)
@@ -100,6 +120,14 @@ public class CheckTransactionLogs {
             }
         }
         return count;
+    }
+
+    public InstanceProperties instanceProperties() {
+        return instanceProperties;
+    }
+
+    public TableProperties tableProperties() {
+        return tableProperties;
     }
 
     public long totalRecordsAtTransaction(long transactionNumber) {
@@ -158,6 +186,7 @@ public class CheckTransactionLogs {
             return from(OnDiskTransactionLogs.cacheState(instanceProperties, tableProperties, filesLogStore, partitionsLogStore, bodyStore, cacheDirectory));
         } else {
             return new CheckTransactionLogs(
+                    instanceProperties, tableProperties,
                     TransactionLogEntryHandle.load(tableId, filesLogStore, bodyStore),
                     TransactionLogEntryHandle.load(tableId, partitionsLogStore, bodyStore));
         }
@@ -165,6 +194,7 @@ public class CheckTransactionLogs {
 
     private static CheckTransactionLogs from(OnDiskTransactionLogs cache) {
         return new CheckTransactionLogs(
+                cache.getInstanceProperties(), cache.getTableProperties(),
                 TransactionLogEntryHandle.load(cache.getFilesLogStore()),
                 TransactionLogEntryHandle.load(cache.getPartitionsLogStore()));
     }
