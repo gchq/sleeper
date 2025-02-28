@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobSerDe;
 import sleeper.compaction.job.execution.JavaCompactionRunner;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -105,6 +106,7 @@ public class CheckTransactionLogs {
                 RecordsProcessed processed = compactionRunner.compact(compactionJob, check.tableProperties(), partition);
                 long actualOutputRecords = countActualRecords(outputFile, hadoopConf);
                 LOGGER.info("Counted {} actual records in compaction output, reported {}", actualOutputRecords, processed);
+                LOGGER.info("Compation job: {}", new CompactionJobSerDe().toJson(compactionJob));
             }
         }
     }
