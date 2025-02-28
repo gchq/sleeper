@@ -29,8 +29,6 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
-import sleeper.systemtest.suite.investigate.CheckState.CompactionChangedRecordCount;
-import sleeper.systemtest.suite.investigate.CheckState.CompactionChangedRecordCountReport;
 
 import java.time.Instant;
 import java.util.List;

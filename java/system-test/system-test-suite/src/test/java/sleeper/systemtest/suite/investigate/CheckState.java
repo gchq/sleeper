@@ -30,10 +30,8 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.testutils.OnDiskTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
@@ -50,7 +48,6 @@ import sleeper.systemtest.dsl.util.SystemTestSchema;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -61,9 +58,9 @@ import static java.util.stream.Collectors.toCollection;
 public class CheckState {
     public static final Logger LOGGER = LoggerFactory.getLogger(CheckState.class);
 
-    private final List<Entry> filesLog;
+    private final List<TransactionLogEntryHandle> filesLog;
 
-    private CheckState(List<Entry> filesLog) {
+    private CheckState(List<TransactionLogEntryHandle> filesLog) {
         this.filesLog = filesLog;
     }
 
@@ -101,11 +98,11 @@ public class CheckState {
     }
 
     public static CheckState load(String tableId, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
-        List<Entry> log = logStore
+        List<TransactionLogEntryHandle> log = logStore
                 .readTransactions(TransactionLogRange.fromMinimum(1))
                 .map(entry -> {
                     StateStoreTransaction<?> transaction = entry.getTransactionOrLoadFromPointer(tableId, bodyStore);
-                    return new Entry(entry, transaction);
+                    return new TransactionLogEntryHandle(entry, transaction);
                 })
                 .collect(toCollection(LinkedList::new));
         return new CheckState(log);
@@ -129,82 +126,18 @@ public class CheckState {
     }
 
     public List<CompactionChangedRecordCountReport> reportCompactionTransactionsChangedRecordCount() {
-        StateStoreFiles state = new StateStoreFiles();
-        List<CompactionChangedRecordCountReport> reports = new ArrayList<>();
-        for (Entry entry : filesLog) {
-            if (entry.isType(TransactionType.REPLACE_FILE_REFERENCES)) {
-                ReplaceFileReferencesTransaction transaction = entry.castTransaction();
-                List<CompactionChangedRecordCount> changes = new ArrayList<>();
-                for (ReplaceFileReferencesRequest job : transaction.getJobs()) {
-                    String partitionId = job.getPartitionId();
-                    List<FileReference> inputFiles = job.getInputFiles().stream()
-                            .map(filename -> state.file(filename).orElseThrow()
-                                    .getReferenceForPartitionId(partitionId).orElseThrow())
-                            .toList();
-                    FileReference outputFile = job.getNewReference();
-                    if (outputFile.getNumberOfRecords() != inputFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum()) {
-                        FileReference outputFileAfter = outputFile.toBuilder().lastStateStoreUpdateTime(entry.original().getUpdateTime()).build();
-                        changes.add(new CompactionChangedRecordCount(job, inputFiles, outputFileAfter));
-                    }
-                }
-                if (!changes.isEmpty()) {
-                    reports.add(new CompactionChangedRecordCountReport(entry.original(), entry.castTransaction(), changes));
-                }
-            }
-            entry.apply(state);
-        }
-        return reports;
+        return CompactionChangedRecordCountReport.findChanges(filesLog);
     }
 
     public StateStoreFiles filesStateAtTransaction(long transactionNumber) {
         StateStoreFiles state = new StateStoreFiles();
-        for (Entry entry : filesLog) {
+        for (TransactionLogEntryHandle entry : filesLog) {
             entry.apply(state);
             if (entry.transactionNumber() == transactionNumber) {
                 return state;
             }
         }
         throw new IllegalArgumentException("Transaction number not found: " + transactionNumber);
-    }
-
-    public record CompactionChangedRecordCountReport(TransactionLogEntry entry, ReplaceFileReferencesTransaction transaction, List<CompactionChangedRecordCount> jobs) {
-        public long transactionNumber() {
-            return entry.getTransactionNumber();
-        }
-    }
-
-    public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, List<FileReference> inputFiles, FileReference outputFile) {
-        public String jobId() {
-            return job.getJobId();
-        }
-
-        public long recordsBefore() {
-            return inputFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
-        }
-
-        public long recordsAfter() {
-            return outputFile.getNumberOfRecords();
-        }
-    }
-
-    private record Entry(TransactionLogEntry original, StateStoreTransaction<?> transaction) {
-
-        public <S> void apply(S state) {
-            StateStoreTransaction<S> transaction = castTransaction();
-            transaction.apply(state, original.getUpdateTime());
-        }
-
-        public boolean isType(TransactionType transactionType) {
-            return original.getTransactionType() == transactionType;
-        }
-
-        public <S, T extends StateStoreTransaction<S>> T castTransaction() {
-            return (T) transaction;
-        }
-
-        public long transactionNumber() {
-            return original.getTransactionNumber();
-        }
     }
 
     private static CheckState load() {
