@@ -37,7 +37,7 @@ cxx = { version = "1.0.141" } # Exception handling for Rust
 libc = { version = "0.2.170" } # FFI type support
 log = { version = "0.4.26" } # Logging support
 
-arrow = { version = "54.2.0", features = ["prettyprint"] } # Batch of reading from Parquet files
+arrow = { version = "54.2.1", features = ["prettyprint"] } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
 async-trait = { version = "0.1.86" }
 datafusion = { version = "45.0.0", features = ["backtrace"] }
