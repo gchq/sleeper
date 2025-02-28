@@ -15,7 +15,6 @@
  */
 package sleeper.cdk.stack.bulkexport;
 
-import com.amazonaws.auth.policy.actions.DynamoDBv2Actions;
 import com.amazonaws.auth.policy.actions.S3Actions;
 import com.amazonaws.auth.policy.actions.SQSActions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
