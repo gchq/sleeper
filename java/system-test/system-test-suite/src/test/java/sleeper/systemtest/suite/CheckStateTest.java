@@ -23,11 +23,13 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.systemtest.suite.CheckState.CompactionChangedRecordCount;
 import sleeper.systemtest.suite.CheckState.CompactionChangedRecordCountReport;
 
 import java.time.Instant;
@@ -38,6 +40,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
@@ -84,11 +87,12 @@ public class CheckStateTest {
         CheckState check = checkState();
 
         // Then
-        ReplaceFileReferencesTransaction expectedTransaction = new ReplaceFileReferencesTransaction(List.of(
-                replaceJobFileReferences("test-job", List.of("input.parquet"), output)));
+        ReplaceFileReferencesRequest expectedRequest = replaceJobFileReferences("test-job", List.of("input.parquet"), output).withNoUpdateTime();
+        ReplaceFileReferencesTransaction expectedTransaction = new ReplaceFileReferencesTransaction(List.of(expectedRequest));
         TransactionLogEntry expectedEntry = new TransactionLogEntry(3, UPDATE_TIME, expectedTransaction);
         assertThat(check.reportCompactionTransactionsChangedRecordCount()).containsExactly(
-                new CompactionChangedRecordCountReport(expectedEntry, expectedTransaction, List.of()));
+                new CompactionChangedRecordCountReport(expectedEntry, expectedTransaction,
+                        List.of(new CompactionChangedRecordCount(expectedRequest, List.of(withJobId("test-job", input)), output))));
     }
 
     @Test

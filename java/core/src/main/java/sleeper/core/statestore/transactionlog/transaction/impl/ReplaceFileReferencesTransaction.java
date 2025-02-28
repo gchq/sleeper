@@ -158,6 +158,10 @@ public class ReplaceFileReferencesTransaction implements FileReferenceTransactio
         }
     }
 
+    public List<ReplaceFileReferencesRequest> getJobs() {
+        return jobs;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(jobs);

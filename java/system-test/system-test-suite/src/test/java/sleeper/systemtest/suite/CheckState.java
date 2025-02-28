@@ -27,6 +27,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.testutils.OnDiskTransactionLogStore;
 import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
@@ -52,7 +53,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toCollection;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class CheckState {
     public static final Logger LOGGER = LoggerFactory.getLogger(CheckState.class);
@@ -65,18 +65,17 @@ public class CheckState {
 
     public static void main(String[] args) {
         CheckState check = load();
+        LOGGER.info("Compaction commit transactions: {}", check.countCompactionCommitTransactions());
+        LOGGER.info("Compaction jobs committed: {}", check.countCompactionJobsCommitted());
         var reports = check.reportCompactionTransactionsChangedRecordCount();
         LOGGER.info("Compaction transactions which changed number of records: {}", reports.size());
         for (var report : reports) {
-            LOGGER.info("{}", report);
+            LOGGER.info("Transaction {} had {} jobs changing records", report.transactionNumber(), report.jobs().size());
+            for (var job : report.jobs()) {
+                LOGGER.info("Job {} had {} input files, {} records before, {} records after",
+                        job.jobId(), job.inputFiles().size(), job.recordsBefore(), job.recordsAfter());
+            }
         }
-        assertThat(check.totalRecordsAtTransaction(10)).isEqualTo(10_000_000L);
-        assertThat(check.totalRecordsAtTransaction(19)).isEqualTo(10_000_000L);
-        assertThat(check.totalRecordsAtTransaction(20)).isEqualTo(10_000_000L);
-        assertThat(check.totalRecordsAtTransaction(30)).isEqualTo(10_000_000L);
-        assertThat(check.totalRecordsAtTransaction(50)).isEqualTo(10_000_000L);
-        assertThat(check.totalRecordsAtTransaction(100)).isEqualTo(10_000_000L);
-        assertThat(check.totalRecordsAtTransaction(171)).isEqualTo(10_000_000L);
     }
 
     public static CheckState load(String tableId, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
@@ -95,20 +94,42 @@ public class CheckState {
                 .references().mapToLong(FileReference::getNumberOfRecords).sum();
     }
 
+    public long countCompactionCommitTransactions() {
+        return filesLog.stream().filter(entry -> entry.isType(TransactionType.REPLACE_FILE_REFERENCES)).count();
+    }
+
+    public long countCompactionJobsCommitted() {
+        return filesLog.stream().filter(entry -> entry.isType(TransactionType.REPLACE_FILE_REFERENCES))
+                .mapToLong(entry -> {
+                    ReplaceFileReferencesTransaction transaction = entry.castTransaction();
+                    return transaction.getJobs().size();
+                }).sum();
+    }
+
     public List<CompactionChangedRecordCountReport> reportCompactionTransactionsChangedRecordCount() {
         StateStoreFiles state = new StateStoreFiles();
         List<CompactionChangedRecordCountReport> reports = new ArrayList<>();
         for (Entry entry : filesLog) {
             if (entry.isType(TransactionType.REPLACE_FILE_REFERENCES)) {
-                long totalRecordsBefore = state.references().mapToLong(FileReference::getNumberOfRecords).sum();
-                entry.apply(state);
-                long totalRecordsAfter = state.references().mapToLong(FileReference::getNumberOfRecords).sum();
-                if (totalRecordsBefore != totalRecordsAfter) {
-                    reports.add(new CompactionChangedRecordCountReport(entry.original(), entry.castTransaction(), List.of()));
+                ReplaceFileReferencesTransaction transaction = entry.castTransaction();
+                List<CompactionChangedRecordCount> changes = new ArrayList<>();
+                for (ReplaceFileReferencesRequest job : transaction.getJobs()) {
+                    String partitionId = job.getPartitionId();
+                    List<FileReference> inputFiles = job.getInputFiles().stream()
+                            .map(filename -> state.file(filename).orElseThrow()
+                                    .getReferenceForPartitionId(partitionId).orElseThrow())
+                            .toList();
+                    FileReference outputFile = job.getNewReference();
+                    if (outputFile.getNumberOfRecords() != inputFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum()) {
+                        FileReference outputFileAfter = outputFile.toBuilder().lastStateStoreUpdateTime(entry.original().getUpdateTime()).build();
+                        changes.add(new CompactionChangedRecordCount(job, inputFiles, outputFileAfter));
+                    }
                 }
-            } else {
-                entry.apply(state);
+                if (!changes.isEmpty()) {
+                    reports.add(new CompactionChangedRecordCountReport(entry.original(), entry.castTransaction(), changes));
+                }
             }
+            entry.apply(state);
         }
         return reports;
     }
@@ -124,10 +145,24 @@ public class CheckState {
         throw new IllegalArgumentException("Transaction number not found: " + transactionNumber);
     }
 
-    public record CompactionChangedRecordCountReport(TransactionLogEntry entry, ReplaceFileReferencesTransaction transaction, List<RecordCountChange> changes) {
+    public record CompactionChangedRecordCountReport(TransactionLogEntry entry, ReplaceFileReferencesTransaction transaction, List<CompactionChangedRecordCount> jobs) {
+        public long transactionNumber() {
+            return entry.getTransactionNumber();
+        }
     }
 
-    public record RecordCountChange(List<FileReference> inputFiles, FileReference outputFile) {
+    public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, List<FileReference> inputFiles, FileReference outputFile) {
+        public String jobId() {
+            return job.getJobId();
+        }
+
+        public long recordsBefore() {
+            return inputFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum();
+        }
+
+        public long recordsAfter() {
+            return outputFile.getNumberOfRecords();
+        }
     }
 
     private record Entry(TransactionLogEntry original, StateStoreTransaction<?> transaction) {
@@ -161,8 +196,8 @@ public class CheckState {
         }
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, System.getenv("CONFIG_BUCKET"));
-        TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient).getById(System.getenv("TABLE_ID"));
+        InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
+        TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient).getById(tableId);
         TransactionBodyStore bodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
         TransactionLogStore filesLogStore = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
         if (cacheTransactions) {
