@@ -19,13 +19,19 @@ import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberExce
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -47,6 +53,7 @@ public class OnDiskTransactionLogStore implements TransactionLogStore {
         try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(directory.resolve(entry.getTransactionNumber() + ".transaction")))) {
             writer.println(entry.getTransactionNumber());
             writer.println(entry.getTransactionType());
+            writer.println(entry.getUpdateTime());
             writer.println(entry.getBodyKey().orElse(""));
             writer.println(entry.getTransaction().map(serDe::toJson).orElse(""));
         } catch (IOException e) {
@@ -56,13 +63,50 @@ public class OnDiskTransactionLogStore implements TransactionLogStore {
 
     @Override
     public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
-        return Stream.of();
+        List<Path> files = listFiles();
+        return files.stream()
+                .filter(file -> isInRange(file, range))
+                .map(this::readEntry);
     }
 
     @Override
     public void deleteTransactionsAtOrBefore(long transactionNumber) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'deleteTransactionsAtOrBefore'");
+    }
+
+    private List<Path> listFiles() {
+        try (Stream<Path> stream = Files.list(directory)) {
+            return stream.toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private boolean isInRange(Path file, TransactionLogRange range) {
+        String filename = file.getFileName().toString();
+        long transactionNumber = Long.parseLong(filename.substring(0, filename.indexOf('.')));
+        return transactionNumber >= range.startInclusive()
+                && (!range.isMaxTransactionBounded() || transactionNumber < range.endExclusive());
+    }
+
+    private TransactionLogEntry readEntry(Path file) {
+        try (BufferedReader reader = Files.newBufferedReader(file)) {
+            long transactionNumber = Long.parseLong(reader.readLine());
+            TransactionType transactionType = TransactionType.valueOf(reader.readLine());
+            Instant updateTime = Instant.parse(reader.readLine());
+            String bodyKey = reader.readLine();
+            if (bodyKey.length() > 0) {
+                return new TransactionLogEntry(transactionNumber, updateTime, transactionType, bodyKey);
+            } else {
+                StringWriter stringWriter = new StringWriter();
+                reader.transferTo(stringWriter);
+                StateStoreTransaction<?> transaction = serDe.toTransaction(transactionType, stringWriter.toString());
+                return new TransactionLogEntry(transactionNumber, updateTime, transaction);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**

@@ -16,7 +16,6 @@
 package sleeper.core.statestore.testutils;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -31,6 +30,7 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 
 import java.nio.file.Path;
@@ -58,19 +58,51 @@ public class OnDiskTransactionLogStoreIT {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldWriteAndReadATransaction() throws Exception {
         // Given
         FileReference file = FileReferenceFactory.from(partitions).rootFile("test.parquet", 100);
-        Instant updateTime = Instant.parse("2025-02-27T15:43:00Z");
         AddFilesTransaction transaction = AddFilesTransaction.fromReferences(List.of(file));
-        TransactionLogEntry entry = new TransactionLogEntry(1, updateTime, transaction);
+        TransactionLogEntry entry = new TransactionLogEntry(1, Instant.parse("2025-02-27T15:43:00Z"), transaction);
 
         // When
         store.addTransaction(entry);
 
         // Then
         assertThat(store.readTransactions(TransactionLogRange.fromMinimum(1)))
-                .containsExactly(new TransactionLogEntry(1, updateTime, transaction));
+                .containsExactly(entry);
+    }
+
+    @Test
+    void shouldWriteAndReadATransactionBodyKey() throws Exception {
+        // Given
+        TransactionLogEntry entry = new TransactionLogEntry(1,
+                Instant.parse("2025-02-27T15:43:00Z"), TransactionType.ADD_FILES, "transactions/test");
+
+        // When
+        store.addTransaction(entry);
+
+        // Then
+        assertThat(store.readTransactions(TransactionLogRange.fromMinimum(1)))
+                .containsExactly(entry);
+    }
+
+    @Test
+    void shouldReadARangeOfTransactions() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = new TransactionLogEntry(1,
+                Instant.parse("2025-02-27T15:43:00Z"), TransactionType.ADD_FILES, "transactions/test1");
+        TransactionLogEntry entry2 = new TransactionLogEntry(2,
+                Instant.parse("2025-02-27T15:44:00Z"), TransactionType.ADD_FILES, "transactions/test2");
+        TransactionLogEntry entry3 = new TransactionLogEntry(3,
+                Instant.parse("2025-02-27T15:45:00Z"), TransactionType.ADD_FILES, "transactions/test3");
+
+        // When
+        store.addTransaction(entry1);
+        store.addTransaction(entry2);
+        store.addTransaction(entry3);
+
+        // Then
+        assertThat(store.readTransactions(new TransactionLogRange(2, 3)))
+                .containsExactly(entry2);
     }
 }
