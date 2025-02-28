@@ -26,14 +26,19 @@ import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
+import sleeper.systemtest.suite.CheckState.CompactionChangedRecordCountReport;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CheckStateTest {
@@ -64,6 +69,42 @@ public class CheckStateTest {
 
         // Then
         assertThat(check.totalRecordsAtTransaction(2)).isEqualTo(200);
+    }
+
+    @Test
+    void shouldFindCompactionWhichChangedNumberOfRecords() {
+        // Given
+        FileReference input = fileFactory().rootFile("input.parquet", 100);
+        FileReference output = fileFactory().rootFile("output.parquet", 90);
+        update(stateStore).addFile(input);
+        update(stateStore).assignJobId("test-job", "root", List.of("input.parquet"));
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes("test-job", List.of("input.parquet"), output);
+
+        // When
+        CheckState check = checkState();
+
+        // Then
+        ReplaceFileReferencesTransaction expectedTransaction = new ReplaceFileReferencesTransaction(List.of(
+                replaceJobFileReferences("test-job", List.of("input.parquet"), output)));
+        TransactionLogEntry expectedEntry = new TransactionLogEntry(3, UPDATE_TIME, expectedTransaction);
+        assertThat(check.reportCompactionTransactionsChangedRecordCount()).containsExactly(
+                new CompactionChangedRecordCountReport(expectedEntry, expectedTransaction, List.of()));
+    }
+
+    @Test
+    void shouldFindNoCompactionChangedNumberOfRecords() {
+        // Given
+        FileReference input = fileFactory().rootFile("input.parquet", 100);
+        FileReference output = fileFactory().rootFile("output.parquet", 100);
+        update(stateStore).addFile(input);
+        update(stateStore).assignJobId("test-job", "root", List.of("input.parquet"));
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes("test-job", List.of("input.parquet"), output);
+
+        // When
+        CheckState check = checkState();
+
+        // Then
+        assertThat(check.reportCompactionTransactionsChangedRecordCount()).isEmpty();
     }
 
     private FileReferenceFactory fileFactory() {

@@ -19,6 +19,8 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -35,11 +37,14 @@ import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -50,6 +55,7 @@ import static java.util.stream.Collectors.toCollection;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CheckState {
+    public static final Logger LOGGER = LoggerFactory.getLogger(CheckState.class);
 
     private final List<Entry> filesLog;
 
@@ -59,6 +65,11 @@ public class CheckState {
 
     public static void main(String[] args) {
         CheckState check = load();
+        var reports = check.reportCompactionTransactionsChangedRecordCount();
+        LOGGER.info("Compaction transactions which changed number of records: {}", reports.size());
+        for (var report : reports) {
+            LOGGER.info("{}", report);
+        }
         assertThat(check.totalRecordsAtTransaction(10)).isEqualTo(10_000_000L);
         assertThat(check.totalRecordsAtTransaction(19)).isEqualTo(10_000_000L);
         assertThat(check.totalRecordsAtTransaction(20)).isEqualTo(10_000_000L);
@@ -84,6 +95,24 @@ public class CheckState {
                 .references().mapToLong(FileReference::getNumberOfRecords).sum();
     }
 
+    public List<CompactionChangedRecordCountReport> reportCompactionTransactionsChangedRecordCount() {
+        StateStoreFiles state = new StateStoreFiles();
+        List<CompactionChangedRecordCountReport> reports = new ArrayList<>();
+        for (Entry entry : filesLog) {
+            if (entry.isType(TransactionType.REPLACE_FILE_REFERENCES)) {
+                long totalRecordsBefore = state.references().mapToLong(FileReference::getNumberOfRecords).sum();
+                entry.apply(state);
+                long totalRecordsAfter = state.references().mapToLong(FileReference::getNumberOfRecords).sum();
+                if (totalRecordsBefore != totalRecordsAfter) {
+                    reports.add(new CompactionChangedRecordCountReport(entry.original(), entry.castTransaction(), List.of()));
+                }
+            } else {
+                entry.apply(state);
+            }
+        }
+        return reports;
+    }
+
     public StateStoreFiles filesStateAtTransaction(long transactionNumber) {
         StateStoreFiles state = new StateStoreFiles();
         for (Entry entry : filesLog) {
@@ -95,11 +124,21 @@ public class CheckState {
         throw new IllegalArgumentException("Transaction number not found: " + transactionNumber);
     }
 
+    public record CompactionChangedRecordCountReport(TransactionLogEntry entry, ReplaceFileReferencesTransaction transaction, List<RecordCountChange> changes) {
+    }
+
+    public record RecordCountChange(List<FileReference> inputFiles, FileReference outputFile) {
+    }
+
     private record Entry(TransactionLogEntry original, StateStoreTransaction<?> transaction) {
 
         public <S> void apply(S state) {
             StateStoreTransaction<S> transaction = castTransaction();
             transaction.apply(state, original.getUpdateTime());
+        }
+
+        public boolean isType(TransactionType transactionType) {
+            return original.getTransactionType() == transactionType;
         }
 
         public <S, T extends StateStoreTransaction<S>> T castTransaction() {
