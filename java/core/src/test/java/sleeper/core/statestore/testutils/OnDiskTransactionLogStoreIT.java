@@ -105,4 +105,45 @@ public class OnDiskTransactionLogStoreIT {
         assertThat(store.readTransactions(new TransactionLogRange(2, 3)))
                 .containsExactly(entry2);
     }
+
+    @Test
+    void shouldReadTransactionsInOrder() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = new TransactionLogEntry(1,
+                Instant.parse("2025-02-27T15:43:00Z"), TransactionType.ADD_FILES, "transactions/test1");
+        TransactionLogEntry entry2 = new TransactionLogEntry(2,
+                Instant.parse("2025-02-27T15:44:00Z"), TransactionType.ADD_FILES, "transactions/test2");
+        TransactionLogEntry entry3 = new TransactionLogEntry(3,
+                Instant.parse("2025-02-27T15:45:00Z"), TransactionType.ADD_FILES, "transactions/test3");
+
+        // When
+        store.addTransaction(entry1);
+        store.addTransaction(entry2);
+        store.addTransaction(entry3);
+
+        // Then
+        assertThat(store.readTransactions(TransactionLogRange.fromMinimum(1)))
+                .containsExactly(entry1, entry2, entry3);
+    }
+
+    @Test
+    void shouldDeleteTransactions() throws Exception {
+        // Given
+        TransactionLogEntry entry1 = new TransactionLogEntry(1,
+                Instant.parse("2025-02-27T15:43:00Z"), TransactionType.ADD_FILES, "transactions/test1");
+        TransactionLogEntry entry2 = new TransactionLogEntry(2,
+                Instant.parse("2025-02-27T15:44:00Z"), TransactionType.ADD_FILES, "transactions/test2");
+        TransactionLogEntry entry3 = new TransactionLogEntry(3,
+                Instant.parse("2025-02-27T15:45:00Z"), TransactionType.ADD_FILES, "transactions/test3");
+        store.addTransaction(entry1);
+        store.addTransaction(entry2);
+        store.addTransaction(entry3);
+
+        // When
+        store.deleteTransactionsAtOrBefore(2);
+
+        // Then
+        assertThat(store.readTransactions(TransactionLogRange.fromMinimum(1)))
+                .containsExactly(entry3);
+    }
 }

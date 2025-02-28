@@ -31,6 +31,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -63,29 +64,35 @@ public class OnDiskTransactionLogStore implements TransactionLogStore {
 
     @Override
     public Stream<TransactionLogEntry> readTransactions(TransactionLogRange range) {
-        List<Path> files = listFiles();
+        List<TransactionFile> files = listFiles(range);
         return files.stream()
-                .filter(file -> isInRange(file, range))
-                .map(this::readEntry);
+                .sorted(Comparator.comparing(TransactionFile::transactionNumber))
+                .map(file -> readEntry(file.file()));
     }
 
     @Override
     public void deleteTransactionsAtOrBefore(long transactionNumber) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deleteTransactionsAtOrBefore'");
+        List<TransactionFile> files = listFiles(new TransactionLogRange(1, transactionNumber + 1));
+        for (TransactionFile file : files) {
+            try {
+                Files.delete(file.file());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 
-    private List<Path> listFiles() {
+    private List<TransactionFile> listFiles(TransactionLogRange range) {
         try (Stream<Path> stream = Files.list(directory)) {
-            return stream.toList();
+            return stream.map(TransactionFile::from)
+                    .filter(file -> isInRange(file.transactionNumber(), range))
+                    .toList();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private boolean isInRange(Path file, TransactionLogRange range) {
-        String filename = file.getFileName().toString();
-        long transactionNumber = Long.parseLong(filename.substring(0, filename.indexOf('.')));
+    private boolean isInRange(long transactionNumber, TransactionLogRange range) {
         return transactionNumber >= range.startInclusive()
                 && (!range.isMaxTransactionBounded() || transactionNumber < range.endExclusive());
     }
@@ -118,6 +125,21 @@ public class OnDiskTransactionLogStore implements TransactionLogStore {
      */
     public static TransactionLogStore inDirectory(Path directory, TransactionSerDe serDe) {
         return new OnDiskTransactionLogStore(directory, serDe);
+    }
+
+    /**
+     * A holder of a transaction file where the transaction number has been detected from the file name.
+     *
+     * @param file              the path to the file
+     * @param transactionNumber the transaction number in the file name
+     */
+    private record TransactionFile(Path file, long transactionNumber) {
+
+        static TransactionFile from(Path file) {
+            String filename = file.getFileName().toString();
+            long transactionNumber = Long.parseLong(filename.substring(0, filename.indexOf('.')));
+            return new TransactionFile(file, transactionNumber);
+        }
     }
 
 }
