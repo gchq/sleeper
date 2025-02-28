@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.suite;
+package sleeper.systemtest.suite.investigate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,8 +29,8 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
-import sleeper.systemtest.suite.CheckState.CompactionChangedRecordCount;
-import sleeper.systemtest.suite.CheckState.CompactionChangedRecordCountReport;
+import sleeper.systemtest.suite.investigate.CheckState.CompactionChangedRecordCount;
+import sleeper.systemtest.suite.investigate.CheckState.CompactionChangedRecordCountReport;
 
 import java.time.Instant;
 import java.util.List;
