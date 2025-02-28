@@ -23,11 +23,11 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.local.LoadLocalProperties;
 import sleeper.core.properties.table.TableProperties;
+import sleeper.core.table.TableFilePaths;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreArrowFileStore;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -54,8 +54,8 @@ public class TestMain {
         List<Partition> partitions = fileStore.loadPartitions(snapshotFile);
         LOGGER.info("Loaded partitions: {}", partitions);
 
-        Path tempDir = Files.createTempDirectory("sleeper-test");
-        String outputFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
+        TableFilePaths paths = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
+        String outputFile = paths.getFilePathPrefix() + "/test/" + UUID.randomUUID().toString();
         LOGGER.info("Saving to file: {}", outputFile);
         fileStore.savePartitions(outputFile, partitions);
         LOGGER.info("Reloading file: {}", outputFile);
