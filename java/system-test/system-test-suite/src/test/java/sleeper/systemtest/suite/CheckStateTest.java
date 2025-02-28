@@ -30,6 +30,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -70,7 +71,7 @@ public class CheckStateTest {
     }
 
     private CheckState checkState() {
-        return CheckState.load(tableProperties, transactionLogs.getFilesLogStore(), transactionLogs.getTransactionBodyStore());
+        return CheckState.load(tableProperties.get(TABLE_ID), transactionLogs.getFilesLogStore(), transactionLogs.getTransactionBodyStore());
     }
 
 }

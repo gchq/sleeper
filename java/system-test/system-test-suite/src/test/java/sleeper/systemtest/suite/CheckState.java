@@ -25,22 +25,29 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.testutils.OnDiskTransactionLogStore;
+import sleeper.core.statestore.transactionlog.log.DuplicateTransactionNumberException;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toCollection;
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 public class CheckState {
 
@@ -61,11 +68,11 @@ public class CheckState {
         assertThat(check.totalRecordsAtTransaction(171)).isEqualTo(10_000_000L);
     }
 
-    public static CheckState load(TableProperties tableProperties, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
+    public static CheckState load(String tableId, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
         List<Entry> log = logStore
                 .readTransactions(TransactionLogRange.fromMinimum(1))
                 .map(entry -> {
-                    StateStoreTransaction<?> transaction = entry.getTransactionOrLoadFromPointer(tableProperties.get(TABLE_ID), bodyStore);
+                    StateStoreTransaction<?> transaction = entry.getTransactionOrLoadFromPointer(tableId, bodyStore);
                     return new Entry(entry, transaction);
                 })
                 .collect(toCollection(LinkedList::new));
@@ -105,12 +112,43 @@ public class CheckState {
     }
 
     private static CheckState load() {
+        String instanceId = Objects.requireNonNull(System.getenv("INSTANCE_ID"), "INSTANCE_ID must be set");
+        String tableId = Objects.requireNonNull(System.getenv("TABLE_ID"), "TABLE_ID must be set");
+        boolean cacheTransactions = Optional.ofNullable(System.getenv("CACHE_TRANSACTIONS")).map(Boolean::parseBoolean).orElse(true);
+        Path filesCacheDirectory = OnDiskTransactionLogStore.getLocalCacheDirectory(instanceId, tableId, "files");
+        TransactionLogStore filesCache = OnDiskTransactionLogStore.inDirectory(filesCacheDirectory, TransactionSerDe.forFileTransactions());
+        if (cacheTransactions && Files.isDirectory(filesCacheDirectory)) {
+            return load(tableId, filesCache, null);
+        }
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        InstanceProperties properties = S3InstanceProperties.loadFromBucket(s3Client, System.getenv("CONFIG_BUCKET"));
-        TableProperties tableProperties = S3TableProperties.createProvider(properties, s3Client, dynamoClient).getById(System.getenv("TABLE_ID"));
-        DynamoDBTransactionLogStore filesLogStore = DynamoDBTransactionLogStore.forFiles(properties, tableProperties, dynamoClient, s3Client);
-        S3TransactionBodyStore bodyStore = new S3TransactionBodyStore(properties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
-        return load(tableProperties, filesLogStore, bodyStore);
+        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, System.getenv("CONFIG_BUCKET"));
+        TableProperties tableProperties = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient).getById(System.getenv("TABLE_ID"));
+        TransactionBodyStore bodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
+        TransactionLogStore filesLogStore = DynamoDBTransactionLogStore.forFiles(instanceProperties, tableProperties, dynamoClient, s3Client);
+        if (cacheTransactions) {
+            copyTransactionsWithBodies(tableId, filesLogStore, filesCache, bodyStore);
+            filesLogStore = filesCache;
+        }
+        return load(tableId, filesLogStore, bodyStore);
+    }
+
+    private static void copyTransactionsWithBodies(String tableId, TransactionLogStore source, TransactionLogStore target, TransactionBodyStore bodyStore) {
+        readAllTransactionsWithBodies(tableId, source, bodyStore)
+                .forEach(entry -> {
+                    try {
+                        target.addTransaction(entry);
+                    } catch (DuplicateTransactionNumberException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
+    private static Stream<TransactionLogEntry> readAllTransactionsWithBodies(String tableId, TransactionLogStore logStore, TransactionBodyStore bodyStore) {
+        return logStore.readTransactions(TransactionLogRange.fromMinimum(1))
+                .map(entry -> {
+                    StateStoreTransaction<?> transaction = entry.getTransactionOrLoadFromPointer(tableId, bodyStore);
+                    return new TransactionLogEntry(entry.getTransactionNumber(), entry.getUpdateTime(), transaction);
+                });
     }
 }

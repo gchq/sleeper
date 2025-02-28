@@ -30,6 +30,7 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -47,6 +48,29 @@ public class OnDiskTransactionLogStore implements TransactionLogStore {
     private OnDiskTransactionLogStore(Path directory, TransactionSerDe serDe) {
         this.directory = directory;
         this.serDe = serDe;
+    }
+
+    /**
+     * Creates a store to hold the transaction log in a specific directory. The directory should not contain anything
+     * else.
+     *
+     * @param  directory the directory
+     * @return           the store
+     */
+    public static TransactionLogStore inDirectory(Path directory, TransactionSerDe serDe) {
+        return new OnDiskTransactionLogStore(directory, serDe);
+    }
+
+    /**
+     * Creates the path to the local temporary directory where a given transaction log can be cached.
+     *
+     * @param  instanceId the Sleeper instance ID
+     * @param  tableId    the Sleeper table ID
+     * @param  type       the transaction type, used as a directory name
+     * @return            the directory
+     */
+    public static Path getLocalCacheDirectory(String instanceId, String tableId, String type) {
+        return Paths.get("/tmp/sleeper/transactions").resolve(instanceId).resolve(tableId).resolve(type);
     }
 
     @Override
@@ -114,17 +138,6 @@ public class OnDiskTransactionLogStore implements TransactionLogStore {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    /**
-     * Creates a store to hold the transaction log in a specific directory. The directory should not contain anything
-     * else.
-     *
-     * @param  directory the directory
-     * @return           the store
-     */
-    public static TransactionLogStore inDirectory(Path directory, TransactionSerDe serDe) {
-        return new OnDiskTransactionLogStore(directory, serDe);
     }
 
     /**
