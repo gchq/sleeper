@@ -91,7 +91,7 @@ public class BulkExportStack extends NestedStack {
                                 BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS)))
                         .environment(Utils.createDefaultEnvironment(instanceProperties))
                         .reservedConcurrentExecutions(1)
-                        .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_SPITTER)));
+                        .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
 
         attachPolicy(bulkExportLambda, "BulkExportLambda");
 
