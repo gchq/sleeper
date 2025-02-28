@@ -37,11 +37,11 @@ cxx = { version = "1.0.141" } # Exception handling for Rust
 libc = { version = "0.2.170" } # FFI type support
 log = { version = "0.4.26" } # Logging support
 
-arrow = { version = "54.2.0", features = ["prettyprint"] } # Batch of reading from Parquet files
+arrow = { version = "54.2.1", features = ["prettyprint"] } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
 async-trait = { version = "0.1.86" }
 datafusion = { version = "45.0.0", features = ["backtrace"] }
-object_store = { version = "0.11.0", features = [
+object_store = { version = "0.11.2", features = [
     "aws",
 ] } # Remote cloud storage access
 thiserror = { version = "2.0.11" } # Derivable error enums
@@ -51,17 +51,17 @@ aws-config = { version = "1.5.17" } # Credential loading
 aws-credential-types = { version = "1.2.1", features = [
     "hardcoded-credentials",
 ] } # Credential provider types
-aws-types = { version = "1.3.4" } # for Region
+aws-types = { version = "1.3.5" } # for Region
 url = { version = "2.5.4" } # URL processing for S3
 bytes = { version = "1.10.0" } # Byte buffer for S3 uploading
 num-format = { version = "0.4.4" } # Nicely formatted numbers
-tokio-test = { version = "0.4.2" } # Doc tests
+tokio-test = { version = "0.4.4" } # Doc tests
 env_logger = { version = "0.11.6" }
 chrono = { version = "0.4.39" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
 
 [dev-dependencies]
 tempfile = { version = "3.17.1" }                                 # Create temporary files
-object_store = { version = "0.11.1", features = ["integration"] }
+object_store = { version = "0.11.2", features = ["integration"] }
 testing_logger = { version = "0.1.1" }                            # Assert on logger output in tests
 test-log = { version = "0.2.17" }                                 # Enable logging in tests
