@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.bulkexport;
 
+import com.amazonaws.auth.policy.actions.DynamoDBv2Actions;
 import com.amazonaws.auth.policy.actions.S3Actions;
 import com.amazonaws.auth.policy.actions.SQSActions;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -90,7 +91,7 @@ public class BulkExportStack extends NestedStack {
                                 BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS)))
                         .environment(Utils.createDefaultEnvironment(instanceProperties))
                         .reservedConcurrentExecutions(1)
-                        .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
+                        .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_SPITTER)));
 
         attachPolicy(bulkExportLambda, "BulkExportLambda");
 
@@ -166,7 +167,8 @@ public class BulkExportStack extends NestedStack {
                         Arrays.asList(SQSActions.SendMessage.getActionName(),
                                 SQSActions.ReceiveMessage.getActionName(),
                                 S3Actions.PutObject.getActionName(),
-                                S3Actions.GetObject.getActionName()))
+                                S3Actions.GetObject.getActionName(),
+                                DynamoDBv2Actions.Query.getActionName()))
                 .resources(Collections.singletonList("*"))
                 .build();
         PolicyStatement policyStatement = new PolicyStatement(policyStatementProps);
