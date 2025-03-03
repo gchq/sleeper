@@ -116,6 +116,7 @@ pub struct FFICompactionParams {
     region_mins_inclusive: *const *const bool,
     region_maxs_inclusive_len: usize,
     region_maxs_inclusive: *const *const bool,
+    iterator_config: *const c_char,
 }
 
 impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
@@ -128,6 +129,14 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
             .map(String::from)
             .collect::<Vec<_>>();
         let region = compute_region(params, &row_key_cols)?;
+        // Extract iterator config
+        let iterator_config = Some(
+            unsafe { CStr::from_ptr((params.iterator_config)) }
+                .to_str()?
+                .to_owned(),
+        )
+        // Set option to None if config is empty
+        .and_then(|v| if v.trim().is_empty() { Some(v) } else { None });
 
         Ok(Self {
             aws_config: unpack_aws_config(params)?,
@@ -157,6 +166,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
             dict_enc_sort_keys: params.dict_enc_sort_keys,
             dict_enc_values: params.dict_enc_values,
             region,
+            iterator_config,
         })
     }
 }

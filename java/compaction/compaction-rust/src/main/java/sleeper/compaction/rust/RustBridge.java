@@ -172,6 +172,8 @@ public class RustBridge {
         public final Array<java.lang.Boolean> region_mins_inclusive = new Array<>(this);
         /** Compaction partition region maximums are inclusive? MUST BE SAME LENGTH AS row_key_cols. */
         public final Array<java.lang.Boolean> region_maxs_inclusive = new Array<>(this);
+        /** Compaction iterator configuration. This is optional. */
+        public final Struct.UTF8StringRef iterator_config = new Struct.UTF8StringRef();
 
         public FFICompactionParams(jnr.ffi.Runtime runtime) {
             super(runtime);

@@ -34,6 +34,8 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
  * other environmental information.
  */
 public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
+    /** Special iterator marker name indicating the use of DataFusion exclusive iterators. */
+    public static final String DATAFUSION_ITERATOR_NAME = "DATAFUSION";
     private final ObjectFactory objectFactory;
     private final Configuration configuration;
 
@@ -53,6 +55,13 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
         if (job.getIteratorClassName() != null && !runner.supportsIterators()) {
             LOGGER.debug("Table has an iterator set, which compactor {} doesn't support, falling back to default", runner.getClass().getSimpleName());
             runner = createJavaRunner();
+        }
+
+        // Has an experimental DataFusion only iterator been specified? If so, make sure
+        // we are using the DataFusion compactor
+        if (job.getIteratorClassName().equals(DATAFUSION_ITERATOR_NAME) && !(runner instanceof RustCompactionRunner)) {
+            throw new IllegalStateException("DataFusion-only iterator specified, but DataFusion compactor not selected for job ID "
+                    + job.getId() + " table ID " + job.getTableId());
         }
 
         LOGGER.info("Selecting {} compactor (language {}) for job ID {} table ID {}", runner.getClass().getSimpleName(), runner.implementationLanguage(), job.getId(), job.getTableId());

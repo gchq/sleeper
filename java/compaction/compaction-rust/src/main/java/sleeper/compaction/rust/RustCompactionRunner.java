@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionRunner;
+import sleeper.compaction.job.execution.DefaultCompactionRunnerFactory;
 import sleeper.compaction.rust.RustBridge.FFICompactionParams;
 import sleeper.core.partition.Partition;
 import sleeper.core.properties.table.TableProperties;
@@ -122,6 +123,10 @@ public class RustCompactionRunner implements CompactionRunner {
         params.dict_enc_row_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_ROW_KEY_FIELDS));
         params.dict_enc_sort_keys.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_SORT_KEY_FIELDS));
         params.dict_enc_values.set(tableProperties.getBoolean(DICTIONARY_ENCODING_FOR_VALUE_FIELDS));
+        // Is there a DataFusion iterator set?
+        if (job.getIteratorClassName().equals(DefaultCompactionRunnerFactory.DATAFUSION_ITERATOR_NAME)) {
+            params.iterator_config.set(job.getIteratorConfig());
+        }
         // Extra braces: Make sure wrong array isn't populated to wrong pointers
         {
             // This array can't contain nulls
@@ -223,7 +228,7 @@ public class RustCompactionRunner implements CompactionRunner {
 
     @Override
     public boolean supportsIterators() {
-        return false;
+        return true;
     }
 
     public static class AwsConfig {
