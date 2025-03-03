@@ -120,16 +120,12 @@ public class TransactionLogFollowerLambdaTest {
     void shouldIgnoreEntryWhenTableDoesNotExist() {
         // Given
         FileReference file = fileFactory().rootFile("test.parquet", 100);
-        IngestJobRunIds jobRunIds = IngestJobRunIds.builder()
-                .tableId(tableId)
-                .jobId("test-job")
-                .jobRunId("test-run")
-                .taskId("test-task")
-                .build();
         TransactionLogEntryHandle entry = new TransactionLogEntryHandle("table-gone", "",
                 new TransactionLogEntry(1L, Instant.now(),
                         AddFilesTransaction.builder()
-                                .jobRunIds(jobRunIds)
+                                .jobId("test-job")
+                                .jobRunId("test-run")
+                                .taskId("test-task")
                                 .writtenTime(Instant.parse("2025-02-27T13:32:00Z"))
                                 .fileReferences(List.of(file))
                                 .build()));
