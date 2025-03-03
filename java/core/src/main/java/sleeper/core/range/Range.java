@@ -50,6 +50,12 @@ public class Range {
         this.minInclusive = minInclusive;
         this.max = max;
         this.maxInclusive = maxInclusive;
+        if (min == null) {
+            throw new IllegalArgumentException("Minimum value must not be null for field " + field.getName());
+        }
+        if (maxInclusive && max == null) {
+            throw new IllegalArgumentException("Maximum value cannot be inclusive null for field " + field.getName());
+        }
         Comparable minComparable = validateComparable(field, min, "minimum value");
         Comparable maxComparable = validateComparable(field, max, "maximum value");
         if (maxComparable != null && PrimitiveType.COMPARATOR.compare(minComparable, maxComparable) > 0) {
@@ -426,20 +432,6 @@ public class Range {
             if (!rowKeyFieldNames.contains(field.getName())) {
                 throw new IllegalArgumentException("Field name should be a row key field, got " + field.getName() + ", row key fields are " + rowKeyFieldNames);
             }
-
-            // min should not be null and should be of the correct type
-            if (null == min) {
-                throw new IllegalArgumentException("Min should not be null");
-            }
-            validateType(field.getName(), min, "min");
-
-            // max should be null or of the correct type
-            if (null != max) {
-                validateType(field.getName(), max, "max");
-            } else {
-                maxInclusive = false;
-            }
-
             return new Range(field, min, minInclusive, max, maxInclusive);
         }
 
@@ -501,29 +493,6 @@ public class Range {
          */
         public Range createExactRange(String fieldName, Object value) {
             return createRange(fieldName, value, true, value, true);
-        }
-
-        private void validateType(String fieldName, Object object, String description) {
-            PrimitiveType type = rowKeyFieldToType.get(fieldName);
-            if (type instanceof IntType) {
-                if (!(object instanceof Integer)) {
-                    throw new IllegalArgumentException("The " + description + " must match the schema: expected an Integer, got " + object);
-                }
-            } else if (type instanceof LongType) {
-                if (!(object instanceof Long)) {
-                    throw new IllegalArgumentException("The " + description + " must match the schema: expected a Long, got " + object);
-                }
-            } else if (type instanceof StringType) {
-                if (!(object instanceof String)) {
-                    throw new IllegalArgumentException("The " + description + " must match the schema: expected a String, got " + object);
-                }
-            } else if (type instanceof ByteArrayType) {
-                if (!(object instanceof byte[])) {
-                    throw new IllegalArgumentException("The " + description + " must match the schema: expected a byte[], got " + object);
-                }
-            } else {
-                throw new IllegalArgumentException("Unknown type in the schema: " + type);
-            }
         }
     }
 }

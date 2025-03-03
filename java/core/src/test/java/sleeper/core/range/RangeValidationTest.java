@@ -18,6 +18,7 @@ package sleeper.core.range;
 import com.facebook.collections.ByteArray;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.IntType;
@@ -25,11 +26,13 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
 public class RangeValidationTest {
 
     @Test
     void shouldNotCreateRangeWithWrongTypeMin() {
+        // Given
         Field field = new Field("key", new LongType());
         Object min = 1;
         Object max = 2L;
@@ -43,6 +46,7 @@ public class RangeValidationTest {
 
     @Test
     void shouldNotCreateRangeWithWrongTypeMax() {
+        // Given
         Field field = new Field("key", new LongType());
         Object min = 1L;
         Object max = 2;
@@ -55,7 +59,30 @@ public class RangeValidationTest {
     }
 
     @Test
+    void shouldNotCreateRangeWithNullMin() {
+        // Given
+        Field field = new Field("key", new StringType());
+
+        // When / Then
+        assertThatThrownBy(() -> new Range(field, null, "a"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Minimum value must not be null for field key");
+    }
+
+    @Test
+    void shouldNotCreateRangeWithNullMaxInclusive() {
+        // Given
+        RangeFactory factory = new RangeFactory(schemaWithKey("key", new StringType()));
+
+        // When / Then
+        assertThatThrownBy(() -> factory.createRange("key", "a", true, null, true))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Maximum value cannot be inclusive null for field key");
+    }
+
+    @Test
     void shouldNotCreateRangeWithWrongTypeByteArray() {
+        // Given
         Field field = new Field("key", new ByteArrayType());
         Object min = new byte[]{1};
         Object max = ByteArray.wrap(new byte[]{2});
