@@ -66,8 +66,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         FileReference oldFile = factory.rootFile("oldFile", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
         update(committerStore).addFiles(List.of(oldFile));
-        update(committerStore).assignJobIds(List.of(
-                assignJobOnPartitionToFiles("job1", "root", List.of("oldFile"))));
+        update(committerStore).assignJobId("job1", "root", List.of("oldFile"));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "test-run");
 
@@ -168,8 +167,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         FileReference oldFile1 = factory.rootFile("oldFile1", 100L);
         FileReference newFile = factory.rootFile("newFile", 100L);
         update(committerStore).addFile(oldFile1);
-        update(committerStore).assignJobIds(List.of(
-                assignJobOnPartitionToFiles("job1", "root", List.of("oldFile1"))));
+        update(committerStore).assignJobId("job1", "root", List.of("oldFile1"));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 2);
         trackJobRun(trackedJob, "run1");
         ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
@@ -214,8 +212,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         // Given
         FileReference file = factory.rootFile("file1", 100L);
         update(committerStore).addFile(file);
-        update(committerStore).assignJobIds(List.of(
-                assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
+        update(committerStore).assignJobId("job1", "root", List.of("file1"));
 
         // When / Then
         assertThatThrownBy(() -> new ReplaceFileReferencesTransaction(List.of(
@@ -232,8 +229,7 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         FileReference existingReference = splitFile(file, "L");
         FileReference newReference = factory.partitionFile("L", "newFile", 100L);
         update(committerStore).addFiles(List.of(existingReference, newReference));
-        update(committerStore).assignJobIds(List.of(
-                assignJobOnPartitionToFiles("job1", "L", List.of("oldFile"))));
+        update(committerStore).assignJobId("job1", "L", List.of("oldFile"));
         CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
         trackJobRun(trackedJob, "run1");
         ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(List.of(
