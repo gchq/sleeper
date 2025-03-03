@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreCompactionTrackerTestBase;
@@ -42,13 +43,11 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogStateStoreCompactionTrackerTestBase {
-
-    // Tests to write:
-    // - Another process commits the same job synchronously, then we perform a synchronous commit
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
@@ -245,6 +244,36 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId())).containsExactly(
                 defaultStatus(trackedJob, defaultFailedCommitRun(100,
                         List.of("File already exists: newFile"))));
+    }
+
+    @Test
+    void shouldFailWhenOtherProcessMakesConflictingSynchronousCommitOfSameJob() {
+        // Given
+        FileReference oldFile = factory.rootFile("oldFile", 100L);
+        FileReference newFile = factory.rootFile("newFile", 100L);
+        update(committerStore).addFiles(List.of(oldFile));
+        update(committerStore).assignJobId("job1", "root", List.of("oldFile"));
+        CompactionJobCreatedEvent trackedJob = trackJobCreated("job1", "root", 1);
+        trackJobRun(trackedJob, "test-run");
+        trackJobRun(trackedJob, "other-run");
+        ReplaceFileReferencesRequest.Builder requestBuilder = replaceJobFileReferencesBuilder("job1", List.of("oldFile"), newFile);
+        ReplaceFileReferencesTransaction testTransaction = new ReplaceFileReferencesTransaction(List.of(
+                requestBuilder.jobRunId("test-run").build()));
+        ReplaceFileReferencesTransaction otherTransaction = new ReplaceFileReferencesTransaction(List.of(
+                requestBuilder.jobRunId("other-run").build()));
+        filesLogStore.atStartOfNextAddTransaction(() -> {
+            addTransactionWithTracking(otherTransaction);
+        });
+
+        // When
+        addTransactionWithTracking(testTransaction);
+
+        // Then
+        assertThat(followerStore.getFileReferences()).containsExactly(withLastUpdate(DEFAULT_COMMIT_TIME, newFile));
+        assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId()))
+                .containsExactly(defaultStatus(trackedJob,
+                        defaultFailedCommitRun(100, List.of("File reference not found in partition root, filename oldFile")),
+                        defaultCommittedRun(100)));
     }
 
     private void addTransactionWithTracking(ReplaceFileReferencesTransaction transaction) {
