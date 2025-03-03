@@ -67,7 +67,6 @@ public class TransactionLogFollowerLambdaTest {
     InMemoryIngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
 
     // Tests remaining
-    //  - Failure on tableProperties provider
     //  - Failure on statestore
     //  - Failure within trackers
 
@@ -93,9 +92,10 @@ public class TransactionLogFollowerLambdaTest {
                 .build().synchronousCommit(stateStore);
 
         // When
-        streamAllEntriesFromFileTransactionLogToLambda();
+        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda();
 
         // Then
+        assertThat(response).isEqualTo(new StreamsEventResponse());
         assertThat(ingestJobTracker.getAllJobs(tableId)).containsExactly(
                 ingestJobStatus("test-job",
                         jobRunOnTask("test-task",
@@ -110,9 +110,10 @@ public class TransactionLogFollowerLambdaTest {
         AddFilesTransaction.fromReferences(List.of(file)).synchronousCommit(stateStore);
 
         // When
-        streamAllEntriesFromFileTransactionLogToLambda();
+        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda();
 
         // Then
+        assertThat(response).isEqualTo(new StreamsEventResponse());
         assertThat(ingestJobTracker.streamTableRecords(tableId)).isEmpty();
     }
 
@@ -130,12 +131,17 @@ public class TransactionLogFollowerLambdaTest {
                                 .fileReferences(List.of(file))
                                 .build()));
 
-        // When / Then
-        assertThat(createLambda().handleRecords(Stream.of(entry))).isEqualTo(new StreamsEventResponse());
+        // When
+        StreamsEventResponse response = createLambda().handleRecords(Stream.of(entry));
+
+        // Then
+        assertThat(response).isEqualTo(new StreamsEventResponse());
+        assertThat(ingestJobTracker.streamTableRecords(tableId)).isEmpty();
+        assertThat(ingestJobTracker.streamTableRecords("table-gone")).isEmpty();
     }
 
-    private void streamAllEntriesFromFileTransactionLogToLambda() {
-        createLambda().handleRecords(
+    private StreamsEventResponse streamAllEntriesFromFileTransactionLogToLambda() {
+        return createLambda().handleRecords(
                 transactionLogs.forTable(tableProperties).getFilesLogStore()
                         .readTransactions(TransactionLogRange.fromMinimum(1))
                         .map(entry -> new TransactionLogEntryHandle(tableId, null, entry)));
