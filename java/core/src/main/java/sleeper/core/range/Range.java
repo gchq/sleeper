@@ -44,7 +44,7 @@ public class Range {
     private final Object max;
     private final boolean maxInclusive;
 
-    public Range(Field field, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
+    private Range(Field field, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
         this.field = field;
         this.min = min;
         this.minInclusive = minInclusive;
