@@ -669,4 +669,16 @@ public class RangeTest {
         assertThat(doesEmptyTo888OverlapPartition).isTrue();
         assertThat(does888ToNullOverlapPartition).isTrue();
     }
+
+    @Test
+    void shouldNotCreateRangeWithMinStringGreaterThanMax() {
+        // Given
+        Field field = new Field("key", new StringType());
+        Object min = "b";
+        Object max = "a";
+
+        // When / Then
+        assertThatThrownBy(() -> new Range(field, min, max))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }
