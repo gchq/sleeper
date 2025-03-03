@@ -102,7 +102,7 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
                 TransactionLogStateStore statestore = (TransactionLogStateStore) stateStoreProvider.getStateStore(tableProperties);
                 statestore.applyEntryFromLog(entry.entry(), StateListenerBeforeApply.updateTrackers(tableProperties.getStatus(), ingestJobTracker, compactionJobTracker));
             } catch (TableNotFoundException e) {
-                return;
+                LOGGER.warn("Found entry for Sleeper table that does not exist: {}", entry);
             }
         });
         return new StreamsEventResponse();
