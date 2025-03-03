@@ -17,8 +17,6 @@ package sleeper.core.range;
 
 import com.facebook.collections.ByteArray;
 
-import sleeper.core.key.Key;
-import sleeper.core.record.KeyComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -151,10 +149,14 @@ public class Range {
         //      Overlapping range:         |-------------)
         //      Overlapping range:                           |-------------)
 
-        KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
+        PrimitiveType type = (PrimitiveType) field.getType();
+        Comparable thisMin = type.toComparable(canonicalRange.min);
+        Comparable thisMax = type.toComparable(canonicalRange.max);
+        Comparable otherMin = type.toComparable(canonicalOtherRange.min);
+        Comparable otherMax = type.toComparable(canonicalOtherRange.max);
 
         // Other range to the left of this one
-        boolean otherRangeMaxLessThanRangeMin = keyComparator.compare(Key.create(canonicalOtherRange.max), Key.create(canonicalRange.min)) <= 0;
+        boolean otherRangeMaxLessThanRangeMin = PrimitiveType.COMPARATOR.compare(otherMax, thisMin) <= 0;
         if (otherRangeMaxLessThanRangeMin) {
             return false;
         }
@@ -162,7 +164,7 @@ public class Range {
         // Other range to the right of this one
         // Region right of partition case:
         //  max of partition <= min of range
-        boolean otherRangeMinGreaterThanRangeMax = keyComparator.compare(Key.create(canonicalRange.max), Key.create(canonicalOtherRange.min)) <= 0;
+        boolean otherRangeMinGreaterThanRangeMax = PrimitiveType.COMPARATOR.compare(thisMax, otherMin) <= 0;
         if (otherRangeMinGreaterThanRangeMax) {
             return false;
         }
