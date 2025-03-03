@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.suite.investigate;
 
-import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
@@ -32,10 +31,7 @@ public record CompactionChangedRecordCountReport(TransactionLogEntry entry, Repl
         for (TransactionLogEntryHandle entry : filesLog) {
             if (entry.isType(TransactionType.REPLACE_FILE_REFERENCES)) {
                 ReplaceFileReferencesTransaction transaction = entry.castTransaction();
-                List<CompactionChangedRecordCount> changes = new ArrayList<>();
-                for (ReplaceFileReferencesRequest job : transaction.getJobs()) {
-                    CompactionChangedRecordCount.detectChange(job, entry.original(), state).ifPresent(changes::add);
-                }
+                List<CompactionChangedRecordCount> changes = CompactionChangedRecordCount.detectChanges(transaction, entry, state);
                 if (!changes.isEmpty()) {
                     reports.add(new CompactionChangedRecordCountReport(entry.original(), entry.castTransaction(), changes));
                 }

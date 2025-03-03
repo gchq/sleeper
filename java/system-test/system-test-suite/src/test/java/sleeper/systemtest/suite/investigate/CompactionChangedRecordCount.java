@@ -20,13 +20,21 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 
 import java.util.List;
 import java.util.Optional;
 
 public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, List<FileReference> inputFiles, FileReference outputFile) {
 
-    public static Optional<CompactionChangedRecordCount> detectChange(ReplaceFileReferencesRequest job, TransactionLogEntry entry, StateStoreFiles state) {
+    public static List<CompactionChangedRecordCount> detectChanges(
+            ReplaceFileReferencesTransaction transaction, TransactionLogEntryHandle entry, StateStoreFiles state) {
+        return transaction.getJobs().stream()
+                .flatMap(job -> detectChange(job, entry.original(), state).stream())
+                .toList();
+    }
+
+    private static Optional<CompactionChangedRecordCount> detectChange(ReplaceFileReferencesRequest job, TransactionLogEntry entry, StateStoreFiles state) {
         List<FileReference> inputFiles = job.getInputFiles().stream()
                 .map(filename -> state.file(filename).orElseThrow()
                         .getReferenceForPartitionId(job.getPartitionId()).orElseThrow())
