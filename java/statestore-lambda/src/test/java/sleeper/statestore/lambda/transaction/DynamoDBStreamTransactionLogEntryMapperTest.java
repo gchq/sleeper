@@ -81,7 +81,7 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
                         .withStreamViewType(StreamViewType.NEW_IMAGE));
 
         // When
-        TransactionLogEntryHandle entry = mapper().toTransactionLogEntry(record);
+        TransactionLogEntryHandle entry = mapper().toTransactionLogEntryOrThrow(record);
 
         // Then
         assertThat(entry).isEqualTo(new TransactionLogEntryHandle("3b31edf9", "12000000000006169888197",
@@ -110,7 +110,7 @@ public class DynamoDBStreamTransactionLogEntryMapperTest {
                         .withStreamViewType(StreamViewType.NEW_IMAGE));
 
         // When
-        TransactionLogEntryHandle entry = mapper().toTransactionLogEntry(record);
+        TransactionLogEntryHandle entry = mapper().toTransactionLogEntryOrThrow(record);
 
         // Then
         assertThat(entry).isEqualTo(new TransactionLogEntryHandle("3b31edf9", "12000000000006169888197",

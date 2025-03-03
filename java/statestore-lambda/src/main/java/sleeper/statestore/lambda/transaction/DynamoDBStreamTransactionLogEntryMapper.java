@@ -55,7 +55,7 @@ public class DynamoDBStreamTransactionLogEntryMapper {
     public Stream<TransactionLogEntryHandle> toTransactionLogEntries(List<? extends Record> records) {
         return records.stream().flatMap(record -> {
             try {
-                return Stream.of(toTransactionLogEntry(record));
+                return Stream.of(toTransactionLogEntryOrThrow(record));
             } catch (RuntimeException e) {
                 return Stream.empty();
             }
@@ -68,11 +68,7 @@ public class DynamoDBStreamTransactionLogEntryMapper {
      * @param  record the record
      * @return        the log entry
      */
-    public TransactionLogEntryHandle toTransactionLogEntry(Record record) {
-        return toTransactionLogEntryOrThrow(record);
-    }
-
-    private TransactionLogEntryHandle toTransactionLogEntryOrThrow(Record record) {
+    public TransactionLogEntryHandle toTransactionLogEntryOrThrow(Record record) {
         String sequenceNumber = record.getDynamodb().getSequenceNumber();
         Map<String, AttributeValue> image = record.getDynamodb().getNewImage();
         String tableId = image.get(TABLE_ID).getS();
