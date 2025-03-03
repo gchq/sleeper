@@ -22,6 +22,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.exception.FileAlreadyExistsException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreIngestTrackerTestBase;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
@@ -33,6 +34,7 @@ import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestFinishedStatusUncommitted;
@@ -42,9 +44,6 @@ import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.failedStatus;
 
 public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateStoreIngestTrackerTestBase {
-
-    // Tests to write:
-    // - Another process commits the same job synchronously, then we perform a synchronous commit
 
     private TransactionLogStateStore committerStore;
     private TransactionLogStateStore followerStore;
@@ -120,6 +119,29 @@ public class IngestJobCommitTransactionTest extends InMemoryTransactionLogStateS
                                 ingestStartedStatus(DEFAULT_START_TIME),
                                 ingestFinishedStatusUncommitted(defaultSummary(100)),
                                 failedStatus(DEFAULT_COMMIT_TIME, List.of("File already exists: file.parquet")))));
+    }
+
+    @Test
+    void shouldFailWhenOtherProcessMakesConflictingSynchronousCommitOfSameFile() {
+        // Given
+        FileReference file = factory.rootFile("file.parquet", 100L);
+        trackJobRun("test-job", "test-run", 1, file);
+        trackJobRun("test-job", "other-run", 1, file);
+        AddFilesTransaction.Builder transactionBuilder = AddFilesTransaction.builder()
+                .files(AllReferencesToAFile.newFilesWithReferences(List.of(file)))
+                .jobId("test-job")
+                .taskId(DEFAULT_TASK_ID)
+                .writtenTime(DEFAULT_COMMIT_TIME);
+        AddFilesTransaction testTransaction = transactionBuilder.jobRunId("test-run").build();
+        AddFilesTransaction otherTransaction = transactionBuilder.jobRunId("other-run").build();
+        filesLogStore.atStartOfNextAddTransaction(() -> {
+            otherTransaction.synchronousCommit(store);
+        });
+
+        // When / Then
+        assertThatThrownBy(() -> testTransaction.synchronousCommit(store))
+                .isInstanceOf(FileAlreadyExistsException.class);
+        assertThat(followerStore.getFileReferences()).containsExactly(file);
     }
 
     private void addTransactionWithTracking(AddFilesTransaction transaction) {

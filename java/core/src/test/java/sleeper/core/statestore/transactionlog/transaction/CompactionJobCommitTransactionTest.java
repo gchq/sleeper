@@ -44,7 +44,6 @@ import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToF
 import static sleeper.core.statestore.FileReferenceTestData.AFTER_DEFAULT_UPDATE_TIME;
 import static sleeper.core.statestore.FileReferenceTestData.splitFile;
 import static sleeper.core.statestore.FileReferenceTestData.withJobId;
-import static sleeper.core.statestore.FileReferenceTestData.withLastUpdate;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
@@ -265,13 +264,12 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         filesLogStore.atStartOfNextAddTransaction(() -> {
             otherTransaction.synchronousCommit(store);
         });
-        committerStore.fixFileUpdateTime(DEFAULT_COMMIT_TIME);
 
         // When / Then
         assertThatThrownBy(() -> testTransaction.synchronousCommit(store))
                 .isInstanceOf(ReplaceRequestsFailedException.class)
                 .cause().isInstanceOf(FileReferenceNotFoundException.class);
-        assertThat(followerStore.getFileReferences()).containsExactly(withLastUpdate(DEFAULT_COMMIT_TIME, newFile));
+        assertThat(followerStore.getFileReferences()).containsExactly(newFile);
     }
 
     private void addTransactionWithTracking(ReplaceFileReferencesTransaction transaction) {
