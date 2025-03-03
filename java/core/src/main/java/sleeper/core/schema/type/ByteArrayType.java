@@ -15,10 +15,21 @@
  */
 package sleeper.core.schema.type;
 
+import com.facebook.collections.ByteArray;
+
 /**
  * A primitive type that represents a byte array.
  */
-public class ByteArrayType extends PrimitiveType {
+public class ByteArrayType implements PrimitiveType {
+
+    @Override
+    public Comparable toComparable(Object value) {
+        if (value == null) {
+            return null;
+        } else {
+            return ByteArray.wrap((byte[]) value);
+        }
+    }
 
     @Override
     public int hashCode() {

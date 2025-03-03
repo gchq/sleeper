@@ -15,19 +15,14 @@
  */
 package sleeper.core.schema.type;
 
-import com.facebook.collections.ByteArray;
-
 import java.util.Comparator;
 
 /**
  * A marker interface used to identify types that are primitives. These can be used for row and sort keys.
  */
-public class PrimitiveType implements Type {
+public interface PrimitiveType extends Type {
 
-    private static final Comparator<Comparable> COMPARATOR = Comparator.nullsLast(Comparator.naturalOrder());
-
-    protected PrimitiveType() {
-    }
+    Comparator<Comparable> COMPARATOR = Comparator.nullsLast(Comparator.naturalOrder());
 
     /**
      * Converts a value of this type to a comparable object.
@@ -35,14 +30,8 @@ public class PrimitiveType implements Type {
      * @param  value the value
      * @return       the comparable object
      */
-    public Comparable toComparable(Object value) {
-        if (value == null) {
-            return null;
-        } else if (this instanceof ByteArrayType) {
-            return ByteArray.wrap((byte[]) value);
-        } else {
-            return (Comparable) value;
-        }
+    default Comparable toComparable(Object value) {
+        return (Comparable) value;
     }
 
     /**
@@ -50,7 +39,7 @@ public class PrimitiveType implements Type {
      *
      * @return the comparator
      */
-    public Comparator<Comparable> comparator() {
+    default Comparator<Comparable> comparator() {
         return COMPARATOR;
     }
 }

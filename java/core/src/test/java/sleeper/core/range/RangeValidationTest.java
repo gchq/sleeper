@@ -15,6 +15,7 @@
  */
 package sleeper.core.range;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Field;
@@ -26,6 +27,19 @@ import sleeper.core.schema.type.StringType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class RangeValidationTest {
+
+    @Test
+    @Disabled("TODO")
+    void shouldNotCreateRangeWithWrongTypeMin() {
+        Field field = new Field("key", new LongType());
+        Object min = 1;
+        Object max = 2L;
+
+        // When / Then
+        assertThatThrownBy(() -> new Range(field, min, max))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Minimum value for field key does not match expected type");
+    }
 
     @Test
     void shouldNotCreateRangeWithMinLongGreaterThanMax() {
