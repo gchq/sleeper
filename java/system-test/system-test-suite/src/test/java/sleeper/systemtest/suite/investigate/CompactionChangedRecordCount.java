@@ -18,10 +18,28 @@ package sleeper.systemtest.suite.investigate;
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 
 import java.util.List;
+import java.util.Optional;
 
 public record CompactionChangedRecordCount(ReplaceFileReferencesRequest job, List<FileReference> inputFiles, FileReference outputFile) {
+
+    public static Optional<CompactionChangedRecordCount> detectChange(ReplaceFileReferencesRequest job, TransactionLogEntry entry, StateStoreFiles state) {
+        List<FileReference> inputFiles = job.getInputFiles().stream()
+                .map(filename -> state.file(filename).orElseThrow()
+                        .getReferenceForPartitionId(job.getPartitionId()).orElseThrow())
+                .toList();
+        FileReference outputFile = job.getNewReference();
+        if (outputFile.getNumberOfRecords() != inputFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum()) {
+            FileReference outputFileAfter = outputFile.toBuilder().lastStateStoreUpdateTime(entry.getUpdateTime()).build();
+            return Optional.of(new CompactionChangedRecordCount(job, inputFiles, outputFileAfter));
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public String jobId() {
         return job.getJobId();
     }

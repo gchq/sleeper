@@ -15,7 +15,6 @@
  */
 package sleeper.systemtest.suite.investigate;
 
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
@@ -35,16 +34,7 @@ public record CompactionChangedRecordCountReport(TransactionLogEntry entry, Repl
                 ReplaceFileReferencesTransaction transaction = entry.castTransaction();
                 List<CompactionChangedRecordCount> changes = new ArrayList<>();
                 for (ReplaceFileReferencesRequest job : transaction.getJobs()) {
-                    String partitionId = job.getPartitionId();
-                    List<FileReference> inputFiles = job.getInputFiles().stream()
-                            .map(filename -> state.file(filename).orElseThrow()
-                                    .getReferenceForPartitionId(partitionId).orElseThrow())
-                            .toList();
-                    FileReference outputFile = job.getNewReference();
-                    if (outputFile.getNumberOfRecords() != inputFiles.stream().mapToLong(FileReference::getNumberOfRecords).sum()) {
-                        FileReference outputFileAfter = outputFile.toBuilder().lastStateStoreUpdateTime(entry.original().getUpdateTime()).build();
-                        changes.add(new CompactionChangedRecordCount(job, inputFiles, outputFileAfter));
-                    }
+                    CompactionChangedRecordCount.detectChange(job, entry.original(), state).ifPresent(changes::add);
                 }
                 if (!changes.isEmpty()) {
                     reports.add(new CompactionChangedRecordCountReport(entry.original(), entry.castTransaction(), changes));
