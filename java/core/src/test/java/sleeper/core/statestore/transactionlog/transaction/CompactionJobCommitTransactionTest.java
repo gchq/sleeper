@@ -22,6 +22,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
+import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.NewReferenceSameAsOldReferenceException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreCompactionTrackerTestBase;
@@ -262,18 +263,15 @@ public class CompactionJobCommitTransactionTest extends InMemoryTransactionLogSt
         ReplaceFileReferencesTransaction otherTransaction = new ReplaceFileReferencesTransaction(List.of(
                 requestBuilder.jobRunId("other-run").build()));
         filesLogStore.atStartOfNextAddTransaction(() -> {
-            addTransactionWithTracking(otherTransaction);
+            otherTransaction.synchronousCommit(store);
         });
+        committerStore.fixFileUpdateTime(DEFAULT_COMMIT_TIME);
 
-        // When
-        addTransactionWithTracking(testTransaction);
-
-        // Then
+        // When / Then
+        assertThatThrownBy(() -> testTransaction.synchronousCommit(store))
+                .isInstanceOf(ReplaceRequestsFailedException.class)
+                .cause().isInstanceOf(FileReferenceNotFoundException.class);
         assertThat(followerStore.getFileReferences()).containsExactly(withLastUpdate(DEFAULT_COMMIT_TIME, newFile));
-        assertThat(tracker.getAllJobs(sleeperTable.getTableUniqueId()))
-                .containsExactly(defaultStatus(trackedJob,
-                        defaultFailedCommitRun(100, List.of("File reference not found in partition root, filename oldFile")),
-                        defaultCommittedRun(100)));
     }
 
     private void addTransactionWithTracking(ReplaceFileReferencesTransaction transaction) {
