@@ -60,7 +60,7 @@ public class RangeTest {
     }
 
     @Test
-    public void shouldThrowIllegalArgumentExceptionIfGivenWrongType() {
+    public void shouldThrowExceptionIfGivenWrongType() {
         // Given
         Field field = new Field("key", new IntType());
         Schema schema = Schema.builder().rowKeyFields(field).build();
@@ -69,7 +69,7 @@ public class RangeTest {
 
         // When / Then
         assertThatThrownBy(() -> range.doesRangeContainObject(10L))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(ClassCastException.class);
     }
 
     @Test
@@ -633,7 +633,7 @@ public class RangeTest {
         boolean doesXToNullOverlapPartition = range.doesRangeOverlap(rangeFactory.createRange(field, "X", null));
         //  - Inclusive of min, inclusive of max
         boolean doesBToBOverlapPartition = range.doesRangeOverlap(rangeFactory.createRange(field, "B", true, "B", true));
-        boolean doesEmptyStringToNullOverlapPartition = range.doesRangeOverlap(rangeFactory.createRange(field, "", true, null, true));
+        boolean doesEmptyStringToNullOverlapPartition = range.doesRangeOverlap(rangeFactory.createRange(field, "", true, null, false));
         //  - Exclusive of min, exclusive of max
         boolean doesEmptyStringToEmptyExcStringOverlapPartition = range.doesRangeOverlap(rangeFactory.createRange(field, "", false, "B", false));
         //  - Exclusive of min, inclusive of max
