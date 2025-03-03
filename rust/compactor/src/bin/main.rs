@@ -56,6 +56,9 @@ struct CmdLineArgs {
     /// Partition region maximum keys (exclusive). Must be one per row key specified.
     #[arg(short='n',long,required=true,num_args=1..)]
     region_maxs: Vec<String>,
+    /// Sleeper iterator configuration
+    #[arg(short = 'i', long, required = false, num_args = 1)]
+    iterator_config: Option<String>,
 }
 
 /// Converts a [`Path`] reference to an absolute path (if not already absolute)
@@ -144,7 +147,7 @@ async fn main() -> color_eyre::Result<()> {
         region: map,
         row_key_cols: args.row_keys,
         sort_key_cols: args.sort_keys,
-        iterator_config: None,
+        iterator_config: args.iterator_config,
     };
 
     let result = merge_sorted_files(&details).await;
