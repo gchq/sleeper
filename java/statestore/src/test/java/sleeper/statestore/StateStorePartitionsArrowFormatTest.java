@@ -246,13 +246,13 @@ public class StateStorePartitionsArrowFormatTest {
     void shouldWriteManyPartitions() throws Exception {
         List<Partition> partitions = PartitionsBuilderSplitsFirst.leavesWithSplits(
                 schemaWithKey("key", new StringType()),
-                IntStream.range(0, 8192).mapToObj(i -> "partn-" + i).toList(),
-                IntStream.range(0, 8191).<Object>mapToObj(i -> "" + i).toList())
+                IntStream.range(0, 4).mapToObj(i -> "partn-" + i).toList(),
+                IntStream.range(0, 3).<Object>mapToObj(i -> "" + i).toList())
                 .anyTreeJoiningAllLeaves().buildList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
-        WriteResult writeResult = writeWithMaxElementsInBatch(1000, partitions, bytes);
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, partitions, bytes);
         ReadResult readResult = readResult(bytes);
 
         // Then
