@@ -89,7 +89,7 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
 
     @Override
     public StreamsEventResponse handleRequest(DynamodbEvent event, Context context) {
-        LOGGER.debug("Received event with {} records", event.getRecords().size());
+        LOGGER.info("Received event with {} records", event.getRecords().size());
         return handleRecords(mapper.toTransactionLogEntries(event.getRecords()));
     }
 
@@ -114,6 +114,7 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
                 List<BatchItemFailure> batchItemFailures = new ArrayList<>();
                 batchItemFailures.add(new BatchItemFailure(entry.itemIdentifier()));
                 iterator.forEachRemaining(failEntry -> batchItemFailures.add(new BatchItemFailure(failEntry.itemIdentifier())));
+                LOGGER.error("Total entries to attempt to retry: {}", batchItemFailures.size());
                 return new StreamsEventResponse(batchItemFailures);
             }
         }
