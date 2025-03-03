@@ -64,7 +64,8 @@ import java.util.UUID;
 
 /**
  * Checks transaction logs to aid with debugging. This is intended to be used after a failed system test to investigate
- * the state of the system. Will cache transaction logs locally to enable repeated runs to investigate the state.
+ * the state of the system. This will cache transaction logs locally to enable repeated runs to investigate the state,
+ * as you change the code in the main method.
  */
 public class CheckTransactionLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(CheckTransactionLogs.class);
