@@ -45,6 +45,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,6 +54,8 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.testutils.SupplierTestHelper.fixIds;
+import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
@@ -173,7 +176,7 @@ public class TransactionLogFollowerLambdaTest {
                 .build());
 
         // When
-        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda();
+        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda(fixIds("item-1", "item-2"));
 
         // Then neither transaction is applied
         assertThat(response).isEqualTo(new StreamsEventResponse(List.of(
@@ -212,7 +215,7 @@ public class TransactionLogFollowerLambdaTest {
         transactionBodyStore.store("transaction/2", tableId, new ClearFilesTransaction());
 
         // When
-        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda();
+        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda(fixIds("item-1", "item-2"));
 
         // Then the first transaction is applied
         assertThat(response).isEqualTo(new StreamsEventResponse(List.of(
@@ -225,10 +228,14 @@ public class TransactionLogFollowerLambdaTest {
     }
 
     private StreamsEventResponse streamAllEntriesFromFileTransactionLogToLambda() {
+        return streamAllEntriesFromFileTransactionLogToLambda(supplyNumberedIdsWithPrefix("item-"));
+    }
+
+    private StreamsEventResponse streamAllEntriesFromFileTransactionLogToLambda(Supplier<String> itemIdentifierSupplier) {
         return createLambda().handleRecords(
                 transactionLogs.forTable(tableProperties).getFilesLogStore()
                         .readTransactions(TransactionLogRange.fromMinimum(1))
-                        .map(entry -> new TransactionLogEntryHandle(tableId, "item-" + entry.getTransactionNumber(), entry)));
+                        .map(entry -> new TransactionLogEntryHandle(tableId, itemIdentifierSupplier.get(), entry)));
     }
 
     private TransactionLogFollowerLambda createLambda() {
