@@ -37,6 +37,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.table.TableNotFoundException;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
@@ -96,9 +97,13 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
      */
     public StreamsEventResponse handleRecords(Stream<TransactionLogEntryHandle> entries) {
         entries.forEach(entry -> {
-            TableProperties tableProperties = tablePropertiesProvider.getById(entry.tableId());
-            TransactionLogStateStore statestore = (TransactionLogStateStore) stateStoreProvider.getStateStore(tableProperties);
-            statestore.applyEntryFromLog(entry.entry(), StateListenerBeforeApply.updateTrackers(tableProperties.getStatus(), ingestJobTracker, compactionJobTracker));
+            try {
+                TableProperties tableProperties = tablePropertiesProvider.getById(entry.tableId());
+                TransactionLogStateStore statestore = (TransactionLogStateStore) stateStoreProvider.getStateStore(tableProperties);
+                statestore.applyEntryFromLog(entry.entry(), StateListenerBeforeApply.updateTrackers(tableProperties.getStatus(), ingestJobTracker, compactionJobTracker));
+            } catch (TableNotFoundException e) {
+                return;
+            }
         });
         return new StreamsEventResponse();
     }

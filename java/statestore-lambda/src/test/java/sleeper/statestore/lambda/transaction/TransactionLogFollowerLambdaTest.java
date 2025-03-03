@@ -15,6 +15,7 @@
  */
 package sleeper.statestore.lambda.transaction;
 
+import com.amazonaws.services.lambda.runtime.events.StreamsEventResponse;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -30,6 +31,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
@@ -40,6 +42,7 @@ import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
@@ -111,6 +114,28 @@ public class TransactionLogFollowerLambdaTest {
 
         // Then
         assertThat(ingestJobTracker.streamTableRecords(tableId)).isEmpty();
+    }
+
+    @Test
+    void shouldIgnoreEntryWhenTableDoesNotExist() {
+        // Given
+        FileReference file = fileFactory().rootFile("test.parquet", 100);
+        IngestJobRunIds jobRunIds = IngestJobRunIds.builder()
+                .tableId(tableId)
+                .jobId("test-job")
+                .jobRunId("test-run")
+                .taskId("test-task")
+                .build();
+        TransactionLogEntryHandle entry = new TransactionLogEntryHandle("table-gone", "",
+                new TransactionLogEntry(1L, Instant.now(),
+                        AddFilesTransaction.builder()
+                                .jobRunIds(jobRunIds)
+                                .writtenTime(Instant.parse("2025-02-27T13:32:00Z"))
+                                .fileReferences(List.of(file))
+                                .build()));
+
+        // When / Then
+        assertThat(createLambda().handleRecords(Stream.of(entry))).isEqualTo(new StreamsEventResponse());
     }
 
     private void streamAllEntriesFromFileTransactionLogToLambda() {
