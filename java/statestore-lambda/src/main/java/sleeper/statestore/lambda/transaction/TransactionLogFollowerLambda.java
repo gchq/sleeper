@@ -101,7 +101,6 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
      */
     public StreamsEventResponse handleRecords(Stream<TransactionLogEntryHandle> entries) {
         Iterator<TransactionLogEntryHandle> iterator = entries.iterator();
-        List<BatchItemFailure> batchItemFailures = new ArrayList<>();
         while (iterator.hasNext()) {
             TransactionLogEntryHandle entry = iterator.next();
             try {
@@ -112,11 +111,13 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
                 LOGGER.warn("Found entry for Sleeper table that does not exist: {}", entry);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed processing entry: {}", entry, e);
+                List<BatchItemFailure> batchItemFailures = new ArrayList<>();
                 batchItemFailures.add(new BatchItemFailure(entry.itemIdentifier()));
                 iterator.forEachRemaining(failEntry -> batchItemFailures.add(new BatchItemFailure(failEntry.itemIdentifier())));
+                return new StreamsEventResponse(batchItemFailures);
             }
         }
-        return new StreamsEventResponse(batchItemFailures);
+        return new StreamsEventResponse();
     }
 
 }

@@ -104,7 +104,7 @@ public class TransactionLogFollowerLambdaTest {
         StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda();
 
         // Then
-        assertThat(response).isEqualTo(new StreamsEventResponse(List.of()));
+        assertThat(response).isEqualTo(new StreamsEventResponse());
         assertThat(ingestJobTracker.getAllJobs(tableId)).containsExactly(
                 ingestJobStatus("test-job",
                         jobRunOnTask("test-task",
@@ -122,7 +122,7 @@ public class TransactionLogFollowerLambdaTest {
         StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda();
 
         // Then
-        assertThat(response).isEqualTo(new StreamsEventResponse(List.of()));
+        assertThat(response).isEqualTo(new StreamsEventResponse());
         assertThat(ingestJobTracker.streamTableRecords(tableId)).isEmpty();
     }
 
@@ -144,7 +144,7 @@ public class TransactionLogFollowerLambdaTest {
         StreamsEventResponse response = createLambda().handleRecords(Stream.of(entry));
 
         // Then
-        assertThat(response).isEqualTo(new StreamsEventResponse(List.of()));
+        assertThat(response).isEqualTo(new StreamsEventResponse());
         assertThat(ingestJobTracker.streamTableRecords(tableId)).isEmpty();
         assertThat(ingestJobTracker.streamTableRecords("table-gone")).isEmpty();
     }
