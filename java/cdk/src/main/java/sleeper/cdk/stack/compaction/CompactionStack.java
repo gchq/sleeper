@@ -17,9 +17,6 @@ package sleeper.cdk.stack.compaction;
 
 import software.amazon.awscdk.NestedStack;
 import software.amazon.awscdk.services.cloudwatch.IMetric;
-import software.amazon.awscdk.services.ecs.Cluster;
-import software.amazon.awscdk.services.ecs.Ec2TaskDefinition;
-import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.s3.IBucket;
 import software.amazon.awscdk.services.sns.Topic;
@@ -35,15 +32,10 @@ import sleeper.core.properties.instance.InstanceProperties;
 import java.util.List;
 
 /**
- * Deploys the resources needed to perform compaction jobs. Specifically, there is:
- * <p>
- * - A lambda, that is periodically triggered by a CloudWatch rule, to query the state store for
- * information about active files with no job id, to create compaction job definitions as
- * appropriate and post them to a queue.
- * - An ECS {@link Cluster} and either a {@link FargateTaskDefinition} or a {@link Ec2TaskDefinition}
- * for tasks that will perform compaction jobs.
- * - A lambda, that is periodically triggered by a CloudWatch rule, to look at the
- * size of the queue and the number of running tasks and create more tasks if necessary.
+ * Deploys the resources needed to create and execute compaction jobs. This is done by delegating
+ * to {@link CompactionJobResources} which creates resources that create and commit compaction jobs
+ * and to {@link CompactionTaskResources} which creates resources that run compaction tasks that
+ * process compaction jobs.
  */
 public class CompactionStack extends NestedStack {
     public static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
