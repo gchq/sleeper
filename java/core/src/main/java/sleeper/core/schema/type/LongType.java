@@ -21,6 +21,11 @@ package sleeper.core.schema.type;
 public class LongType implements PrimitiveType {
 
     @Override
+    public Long toComparable(Object value) {
+        return (Long) value;
+    }
+
+    @Override
     public int hashCode() {
         return 2;
     }

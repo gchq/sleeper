@@ -15,7 +15,7 @@
  */
 package sleeper.core.range;
 
-import org.junit.jupiter.api.Disabled;
+import com.facebook.collections.ByteArray;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.schema.Field;
@@ -29,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class RangeValidationTest {
 
     @Test
-    @Disabled("TODO")
     void shouldNotCreateRangeWithWrongTypeMin() {
         Field field = new Field("key", new LongType());
         Object min = 1;
@@ -38,7 +37,34 @@ public class RangeValidationTest {
         // When / Then
         assertThatThrownBy(() -> new Range(field, min, max))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Minimum value for field key does not match expected type");
+                .hasMessage("Could not read minimum value for field key")
+                .cause().isInstanceOf(ClassCastException.class);
+    }
+
+    @Test
+    void shouldNotCreateRangeWithWrongTypeMax() {
+        Field field = new Field("key", new LongType());
+        Object min = 1L;
+        Object max = 2;
+
+        // When / Then
+        assertThatThrownBy(() -> new Range(field, min, max))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Could not read maximum value for field key")
+                .cause().isInstanceOf(ClassCastException.class);
+    }
+
+    @Test
+    void shouldNotCreateRangeWithWrongTypeByteArray() {
+        Field field = new Field("key", new ByteArrayType());
+        Object min = new byte[]{1};
+        Object max = ByteArray.wrap(new byte[]{2});
+
+        // When / Then
+        assertThatThrownBy(() -> new Range(field, min, max))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Could not read maximum value for field key")
+                .cause().isInstanceOf(ClassCastException.class);
     }
 
     @Test

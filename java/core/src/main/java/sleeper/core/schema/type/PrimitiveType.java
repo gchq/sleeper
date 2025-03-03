@@ -30,16 +30,5 @@ public interface PrimitiveType extends Type {
      * @param  value the value
      * @return       the comparable object
      */
-    default Comparable toComparable(Object value) {
-        return (Comparable) value;
-    }
-
-    /**
-     * Returns a comparator that can compare values of primitive types after they have been converted to a comparable.
-     *
-     * @return the comparator
-     */
-    default Comparator<Comparable> comparator() {
-        return COMPARATOR;
-    }
+    Comparable toComparable(Object value);
 }

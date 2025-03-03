@@ -52,7 +52,7 @@ public class KeyComparator implements Comparator<Key> {
         for (PrimitiveType type : rowKeyTypes) {
             Comparable value1 = type.toComparable(key1.get(count));
             Comparable value2 = type.toComparable(key2.get(count));
-            int diff = type.comparator().compare(value1, value2);
+            int diff = PrimitiveType.COMPARATOR.compare(value1, value2);
             if (0 != diff) {
                 return diff;
             }

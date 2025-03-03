@@ -21,6 +21,11 @@ package sleeper.core.schema.type;
 public class IntType implements PrimitiveType {
 
     @Override
+    public Integer toComparable(Object value) {
+        return (Integer) value;
+    }
+
+    @Override
     public int hashCode() {
         return 1;
     }

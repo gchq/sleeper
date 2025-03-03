@@ -50,11 +50,19 @@ public class Range {
         this.minInclusive = minInclusive;
         this.max = max;
         this.maxInclusive = maxInclusive;
-        PrimitiveType type = (PrimitiveType) field.getType();
-        Comparable minComparable = type.toComparable(min);
-        Comparable maxComparable = type.toComparable(max);
-        if (maxComparable != null && type.comparator().compare(minComparable, maxComparable) > 0) {
+        Comparable minComparable = validateComparable(field, min, "minimum value");
+        Comparable maxComparable = validateComparable(field, max, "maximum value");
+        if (maxComparable != null && PrimitiveType.COMPARATOR.compare(minComparable, maxComparable) > 0) {
             throw new IllegalArgumentException("Range of field " + field.getName() + " has minimum greater than maximum, " + minComparable + " > " + maxComparable);
+        }
+    }
+
+    private static Comparable validateComparable(Field field, Object value, String description) {
+        try {
+            PrimitiveType type = (PrimitiveType) field.getType();
+            return type.toComparable(value);
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Could not read " + description + " for field " + field.getName(), e);
         }
     }
 
