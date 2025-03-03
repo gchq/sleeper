@@ -131,7 +131,7 @@ impl<'a> TryFrom<&'a FFICompactionParams> for CompactionInput<'a> {
         let region = compute_region(params, &row_key_cols)?;
         // Extract iterator config
         let iterator_config = Some(
-            unsafe { CStr::from_ptr((params.iterator_config)) }
+            unsafe { CStr::from_ptr(params.iterator_config) }
                 .to_str()?
                 .to_owned(),
         )

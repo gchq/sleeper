@@ -144,6 +144,7 @@ async fn main() -> color_eyre::Result<()> {
         region: map,
         row_key_cols: args.row_keys,
         sort_key_cols: args.sort_keys,
+        iterator_config: None,
     };
 
     let result = merge_sorted_files(&details).await;

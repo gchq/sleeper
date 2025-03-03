@@ -37,11 +37,6 @@
             <version>${project.parent.version}</version>
         </dependency>
         <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>compaction-job-execution</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-        <dependency>
             <!-- Native code loading and linking -->
             <groupId>com.github.jnr</groupId>
             <artifactId>jnr-ffi</artifactId>

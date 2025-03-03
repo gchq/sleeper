@@ -34,8 +34,6 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_METHOD;
  * other environmental information.
  */
 public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
-    /** Special iterator marker name indicating the use of DataFusion exclusive iterators. */
-    public static final String DATAFUSION_ITERATOR_NAME = "DATAFUSION";
     private final ObjectFactory objectFactory;
     private final Configuration configuration;
 
@@ -59,7 +57,7 @@ public class DefaultCompactionRunnerFactory implements CompactionRunnerFactory {
 
         // Has an experimental DataFusion only iterator been specified? If so, make sure
         // we are using the DataFusion compactor
-        if (job.getIteratorClassName().equals(DATAFUSION_ITERATOR_NAME) && !(runner instanceof RustCompactionRunner)) {
+        if (job.getIteratorClassName().equals(CompactionJob.DATAFUSION_ITERATOR_NAME) && !(runner instanceof RustCompactionRunner)) {
             throw new IllegalStateException("DataFusion-only iterator specified, but DataFusion compactor not selected for job ID "
                     + job.getId() + " table ID " + job.getTableId());
         }
