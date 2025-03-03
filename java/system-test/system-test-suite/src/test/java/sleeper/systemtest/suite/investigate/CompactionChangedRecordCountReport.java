@@ -20,25 +20,34 @@ import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public record CompactionChangedRecordCountReport(TransactionLogEntry entry, ReplaceFileReferencesTransaction transaction, List<CompactionChangedRecordCount> jobs) {
 
     public static List<CompactionChangedRecordCountReport> findChanges(List<TransactionLogEntryHandle> filesLog) {
         StateStoreFiles state = new StateStoreFiles();
-        List<CompactionChangedRecordCountReport> reports = new ArrayList<>();
-        for (TransactionLogEntryHandle entry : filesLog) {
-            if (entry.isType(TransactionType.REPLACE_FILE_REFERENCES)) {
-                ReplaceFileReferencesTransaction transaction = entry.castTransaction();
-                List<CompactionChangedRecordCount> changes = CompactionChangedRecordCount.detectChanges(transaction, entry, state);
-                if (!changes.isEmpty()) {
-                    reports.add(new CompactionChangedRecordCountReport(entry.original(), entry.castTransaction(), changes));
-                }
-            }
-            entry.apply(state);
-        }
+        List<CompactionChangedRecordCountReport> reports = filesLog.stream()
+                .flatMap(entry -> {
+                    Optional<CompactionChangedRecordCountReport> change = findChange(entry, state);
+                    entry.apply(state);
+                    return change.stream();
+                })
+                .toList();
         return reports;
+    }
+
+    private static Optional<CompactionChangedRecordCountReport> findChange(TransactionLogEntryHandle entry, StateStoreFiles state) {
+        if (!entry.isType(TransactionType.REPLACE_FILE_REFERENCES)) {
+            return Optional.empty();
+        }
+        ReplaceFileReferencesTransaction transaction = entry.castTransaction();
+        List<CompactionChangedRecordCount> changes = CompactionChangedRecordCount.detectChanges(transaction, entry, state);
+        if (!changes.isEmpty()) {
+            return Optional.of(new CompactionChangedRecordCountReport(entry.original(), entry.castTransaction(), changes));
+        } else {
+            return Optional.empty();
+        }
     }
 
     public long transactionNumber() {
