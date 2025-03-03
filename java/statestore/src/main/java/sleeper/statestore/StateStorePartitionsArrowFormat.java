@@ -244,21 +244,31 @@ public class StateStorePartitionsArrowFormat {
     }
 
     private static void writeRowKeyValue(Type fieldType, Object value, BufferAllocator allocator, StructWriter struct) {
-        if (value == null) {
-            return;
-        }
         struct.start();
         if (fieldType instanceof StringType) {
-            writeVarChar(struct.varChar("string"), allocator, (String) value);
-        }
-        if (fieldType instanceof LongType) {
-            struct.bigInt("long").writeBigInt((long) value);
-        }
-        if (fieldType instanceof IntType) {
-            struct.integer("int").writeInt((int) value);
-        }
-        if (fieldType instanceof ByteArrayType) {
-            writeVarBinary(struct.varBinary("bytes"), allocator, (byte[]) value);
+            if (value != null) {
+                writeVarChar(struct.varChar("string"), allocator, (String) value);
+            } else {
+                struct.varChar("string").writeNull();
+            }
+        } else if (fieldType instanceof LongType) {
+            if (value != null) {
+                struct.bigInt("long").writeBigInt((long) value);
+            } else {
+                struct.bigInt("long").writeNull();
+            }
+        } else if (fieldType instanceof IntType) {
+            if (value != null) {
+                struct.integer("int").writeInt((int) value);
+            } else {
+                struct.integer("int").writeNull();
+            }
+        } else if (fieldType instanceof ByteArrayType) {
+            if (value != null) {
+                writeVarBinary(struct.varBinary("bytes"), allocator, (byte[]) value);
+            } else {
+                struct.varBinary("bytes").writeNull();
+            }
         }
         struct.end();
     }
