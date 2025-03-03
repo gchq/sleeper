@@ -65,7 +65,7 @@ public class TransactionLogFollowerLambdaTest {
 
     // Tests remaining
     //  - Failure on tableProperties provider
-    //  - Failure on statestore 
+    //  - Failure on statestore
     //  - Failure within trackers
 
     @Test
