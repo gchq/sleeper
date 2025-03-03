@@ -17,6 +17,8 @@ package sleeper.statestore.lambda.transaction;
 
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.Record;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
@@ -40,6 +42,7 @@ import static sleeper.statestore.transactionlog.DynamoDBTransactionLogStore.UPDA
  */
 public class DynamoDBStreamTransactionLogEntryMapper {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBStreamTransactionLogEntryMapper.class);
     private final TransactionSerDeProvider serDeProvider;
 
     public DynamoDBStreamTransactionLogEntryMapper(TransactionSerDeProvider serDeProvider) {
@@ -57,6 +60,7 @@ public class DynamoDBStreamTransactionLogEntryMapper {
             try {
                 return Stream.of(toTransactionLogEntryOrThrow(record));
             } catch (RuntimeException e) {
+                LOGGER.error("Unable to map to transaction log entry: {}", record, e);
                 return Stream.empty();
             }
         });
