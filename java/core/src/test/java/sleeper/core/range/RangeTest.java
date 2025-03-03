@@ -671,6 +671,32 @@ public class RangeTest {
     }
 
     @Test
+    void shouldNotCreateRangeWithMinLongGreaterThanMax() {
+        // Given
+        Field field = new Field("key", new LongType());
+        Object min = 2L;
+        Object max = 1L;
+
+        // When / Then
+        assertThatThrownBy(() -> new Range(field, min, max))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Range of field key has minimum greater than maximum");
+    }
+
+    @Test
+    void shouldNotCreateRangeWithMinIntGreaterThanMax() {
+        // Given
+        Field field = new Field("key", new IntType());
+        Object min = 2;
+        Object max = 1;
+
+        // When / Then
+        assertThatThrownBy(() -> new Range(field, min, max))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Range of field key has minimum greater than maximum");
+    }
+
+    @Test
     void shouldNotCreateRangeWithMinStringGreaterThanMax() {
         // Given
         Field field = new Field("key", new StringType());
@@ -679,6 +705,20 @@ public class RangeTest {
 
         // When / Then
         assertThatThrownBy(() -> new Range(field, min, max))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Range of field key has minimum greater than maximum");
+    }
+
+    @Test
+    void shouldNotCreateRangeWithMinByteArrayGreaterThanMax() {
+        // Given
+        Field field = new Field("key", new ByteArrayType());
+        Object min = new byte[]{2};
+        Object max = new byte[]{1};
+
+        // When / Then
+        assertThatThrownBy(() -> new Range(field, min, max))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Range of field key has minimum greater than maximum");
     }
 }

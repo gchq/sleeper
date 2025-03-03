@@ -51,8 +51,10 @@ public class Range {
         this.max = max;
         this.maxInclusive = maxInclusive;
         PrimitiveType type = (PrimitiveType) field.getType();
-        if (max != null && new KeyComparator(type).compare(Key.create(min), Key.create(max)) > 0) {
-            throw new IllegalArgumentException("Range of field " + field.getName() + " has minimum greater than maximum, " + min + " > " + max);
+        Comparable minComparable = type.toComparable(min);
+        Comparable maxComparable = type.toComparable(max);
+        if (maxComparable != null && type.comparator().compare(minComparable, maxComparable) > 0) {
+            throw new IllegalArgumentException("Range of field " + field.getName() + " has minimum greater than maximum, " + minComparable + " > " + maxComparable);
         }
     }
 

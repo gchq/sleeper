@@ -15,11 +15,9 @@
  */
 package sleeper.core.record;
 
-import com.facebook.collections.ByteArray;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import sleeper.core.key.Key;
-import sleeper.core.schema.type.ByteArrayType;
 import sleeper.core.schema.type.PrimitiveType;
 
 import java.util.ArrayList;
@@ -51,29 +49,10 @@ public class KeyComparator implements Comparator<Key> {
     @Override
     public int compare(Key key1, Key key2) {
         int count = 0;
-        int diff;
         for (PrimitiveType type : rowKeyTypes) {
-            Comparable key1Field = null;
-            Comparable key2Field = null;
-            if (type instanceof ByteArrayType) {
-                key1Field = null == key1.get(count) ? null : ByteArray.wrap((byte[]) key1.get(count));
-                key2Field = null == key2.get(count) ? null : ByteArray.wrap((byte[]) key2.get(count));
-            } else {
-                key1Field = (Comparable) key1.get(count);
-                key2Field = (Comparable) key2.get(count);
-            }
-            if (null == key1Field && null != key2Field) {
-                return 1;
-            }
-            if (null != key1Field && null == key2Field) {
-                return -1;
-            }
-            // If both null want to return 0, but don't return that now
-            // as there may be other types to compare.
-            if (null == key1Field && null == key2Field) {
-                continue;
-            }
-            diff = key1Field.compareTo(key2Field);
+            Comparable value1 = type.toComparable(key1.get(count));
+            Comparable value2 = type.toComparable(key2.get(count));
+            int diff = type.comparator().compare(value1, value2);
             if (0 != diff) {
                 return diff;
             }
