@@ -153,7 +153,7 @@ public class TransactionLogFollowerLambdaTest {
         transactionBodyStore.setStoreTransactionsWithObjectKeys(List.of("transaction/1", "transaction/2"));
         update(stateStore).addFile(file1);
         transactionBodyStore.store("transaction/1", tableId, new ClearFilesTransaction());
-        // And one transaction that would be successfully added to the tracker
+        // And then one transaction that would be successfully added to the tracker
         FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
         IngestJobRunIds jobRunIds = IngestJobRunIds.builder()
                 .tableId(tableId)
