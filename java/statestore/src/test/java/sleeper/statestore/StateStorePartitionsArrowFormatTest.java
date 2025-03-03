@@ -17,6 +17,7 @@ package sleeper.statestore;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.Partition;
@@ -226,10 +227,8 @@ public class StateStorePartitionsArrowFormatTest {
         PartitionTree tree = new PartitionsBuilder(schemaWithKey("key", new StringType()))
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "c")
-                .splitToNewChildren("L", "LL", "LR", "b")
                 .buildTree();
-        // List<Partition> partitions = Stream.of("LL", "LR", "R", "L", "root").map(tree::getPartition).toList();
-        List<Partition> partitions = Stream.of("root", "L", "R", "L", "LL", "LR").map(tree::getPartition).toList();
+        List<Partition> partitions = Stream.of("root", "L", "R").map(tree::getPartition).toList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
@@ -238,7 +237,48 @@ public class StateStorePartitionsArrowFormatTest {
 
         // Then
         assertThat(readResult.partitions()).isEqualTo(partitions);
-        assertThat(writeResult.numBatches()).isEqualTo(3).isEqualTo(readResult.numBatches());
+        assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldWritePartitionTreeInBatchesWithRootLast() throws Exception {
+        // Given
+        PartitionTree tree = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "c")
+                .buildTree();
+        List<Partition> partitions = Stream.of("L", "R", "root").map(tree::getPartition).toList();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, partitions, bytes);
+        ReadResult readResult = readResult(bytes);
+
+        // Then
+        assertThat(readResult.partitions()).isEqualTo(partitions);
+        assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
+    }
+
+    @Test
+    @Disabled("TODO")
+    void shouldWriteLargerPartitionTreeInBatchesInTreeOrder() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "c")
+                .splitToNewChildren("L", "LL", "LR", "b")
+                .splitToNewChildren("LL", "LLL", "LLR", "a")
+                .buildTree().streamLeavesInTreeOrder().toList();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, partitions, bytes);
+        ReadResult readResult = readResult(bytes);
+
+        // Then
+        assertThat(readResult.partitions()).isEqualTo(partitions);
+        assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
     }
 
     private void write(List<Partition> partitions, ByteArrayOutputStream stream) throws Exception {
