@@ -74,10 +74,6 @@ public class TransactionLogFollowerLambdaTest {
     InMemoryCompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
     InMemoryIngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
 
-    // Tests remaining
-    //  - Failure on statestore
-    //  - Failure within trackers
-
     @Test
     void shouldProcessEntrySuccessfullyTriggersTrackerUpdate() {
         // Given
