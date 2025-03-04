@@ -164,7 +164,7 @@ public class TransactionLogFollowerLambdaTest {
     }
 
     @Test
-    void shouldNotUpdateTrackerWhenDisabled() {
+    void shouldNotUpdateCompactionJobTrackerWhenDisabled() {
         // Given
         instanceProperties.set(COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED, "false");
         FileReference input = fileFactory().rootFile("input.parquet", 100);
