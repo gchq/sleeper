@@ -36,7 +36,7 @@ import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAI
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
 @InMemoryDslTest
-public class CompactionCommitTest {
+public class CompactionFakeCommitTest {
     PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
 
