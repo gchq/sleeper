@@ -162,7 +162,8 @@ public class CoreStacks {
     }
 
     public void grantUpdateJobTrackersFromTransactionLog(IGrantable grantee) {
-        grantReadTablesConfig(grantee);
+        configBucketStack.grantRead(grantee);
+        tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
         compactionTracker.grantWriteJobEvent(grantee);
         ingestTracker.grantWriteJobEvent(grantee);
