@@ -37,99 +37,17 @@ use datafusion::{
     physical_plan::{accept, collect},
     prelude::*,
 };
+use functions::FilterAggregationConfig;
 use log::{error, info, warn};
 use metrics::{log_metrics, RowCounts};
 use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, iter::once, sync::Arc};
 use url::Url;
 
+mod functions;
 mod metrics;
 pub mod sketch;
 mod udf;
-
-/// Parsed details of prototype iterator configuration. We only allow one filter operation and simple aggregation.
-#[derive(Debug, Default)]
-struct FilterAggregationConfig {
-    pub filter: Option<Filter>,
-    pub aggregation: Vec<Aggregate>,
-}
-
-/// Supported filters
-#[derive(Debug)]
-enum Filter {
-    // Skip any record where timestamp in named column is older than `delay` milliseconds.
-    Ageoff { column: String, delay: u64 },
-}
-
-/// Aggregation support. Consists of a column name and operation.
-#[derive(Debug)]
-struct Aggregate(String, AggOp);
-
-// Supported aggregating operations.
-#[derive(Debug)]
-enum AggOp {
-    Sum,
-    Count,
-    Min,
-    Max,
-}
-
-impl TryFrom<&str> for AggOp {
-    type Error = DataFusionError;
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value.to_lowercase().as_str() {
-            "sum" => Ok(Self::Sum),
-            "count" => Ok(Self::Count),
-            "min" => Ok(Self::Min),
-            "Max" => Ok(Self::Max),
-            _ => Err(Self::Error::NotImplemented(format!(
-                "Aggregation operator {} not recognised",
-                value
-            ))),
-        }
-    }
-}
-
-impl TryFrom<&str> for FilterAggregationConfig {
-    type Error = DataFusionError;
-
-    /// This is a minimum viable parser for the configuration for filters/aggregators.
-    /// It is a really good example of how NOT to do it.
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        // Create list of strings delimited by comma as iterator
-        let values = value.split(',').map(str::trim).collect::<Vec<_>>();
-        let filter = if values[0].starts_with("ageoff=") {
-            let filter_col = values[0].split('=').collect::<Vec<_>>()[1].replace("'", "");
-            let filter_delay = values[1]
-                .replace("'", "")
-                .parse::<u64>()
-                .map_err(|_| DataFusionError::Internal(format!("Invalid number {}", values[1])))?;
-            Some(Filter::Ageoff {
-                column: filter_col,
-                delay: filter_delay,
-            })
-        } else {
-            None
-        };
-        // Look for aggregators, skip first part if no we didn't have ageoff filter, otherwise skip 2
-        // This is a really hacky implementation
-        let iter = if let Some(_) = &filter {
-            values.iter().skip(2)
-        } else {
-            values.iter().skip(1)
-        };
-        let mut aggregation = Vec::new();
-        for agg in iter {
-            if let Some((col, op)) = agg.split_once("=") {
-                aggregation.push(Aggregate(col.replace("'", ""), op.try_into()?));
-            }
-        }
-        Ok(Self {
-            filter,
-            aggregation,
-        })
-    }
-}
 
 /// Starts a Sleeper compaction.
 ///
@@ -148,6 +66,12 @@ pub async fn compact(
     );
     info!("DataFusion output file {}", output_path.as_str());
     info!("Compaction partition region {:?}", input_data.region);
+
+    let filter_agg_conf = input_data
+        .iterator_config
+        .as_deref()
+        .map(FilterAggregationConfig::try_from)
+        .transpose()?;
 
     let sf = create_session_cfg(input_data, input_paths);
     let ctx = SessionContext::new_with_config(sf);
@@ -191,6 +115,15 @@ pub async fn compact(
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
         frame = frame.filter(expr)?;
+    }
+
+    // Do we have a Sleeper iterator filter to apply?
+    if let Some(FilterAggregationConfig {
+        filter: Some(f),
+        aggregation: _,
+    }) = filter_agg_conf
+    {
+        info!("Applying Sleeper filter iterator: {f:?}");
     }
 
     // Create the sketch function
