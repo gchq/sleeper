@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.compaction;
 
+import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -132,5 +133,11 @@ public class SystemTestCompaction {
 
     public void scaleToZero() {
         driver.scaleToZero();
+    }
+
+    public SystemTestCompaction sendFakeCommitsWithSingleFiles(
+            List<FileReference> inputFiles, List<String> jobIds, List<FileReference> outputFiles) {
+        lastJobIds = jobIds;
+        return this;
     }
 }
