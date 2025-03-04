@@ -18,7 +18,7 @@ use arrow::datatypes::DataType;
 * limitations under the License.
 */
 use datafusion::{
-    common::{internal_datafusion_err, internal_err},
+    common::internal_err,
     error::Result,
     logical_expr::{Expr, ScalarUDFImpl, Signature, Volatility},
 };

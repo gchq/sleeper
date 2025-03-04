@@ -1,3 +1,6 @@
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+use ageoff::AgeOff;
 /// Module contains structs and functions relating to implementing Sleeper 'iterators' in Rust using
 /// DataFusion.
 /*
@@ -15,8 +18,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use datafusion::error::DataFusionError;
-use datafusion::logical_expr::Expr;
+use datafusion::error::{DataFusionError, Result};
+use datafusion::logical_expr::{Expr, ScalarUDF};
 
 pub mod ageoff;
 
@@ -30,17 +33,32 @@ pub struct FilterAggregationConfig {
 /// Supported filters
 #[derive(Debug)]
 pub enum Filter {
-    // Skip any record where timestamp in named column is older than `delay` milliseconds.
-    Ageoff { column: String, delay: u64 },
+    // Skip any record where timestamp in named column is older than `max_age` milliseconds.
+    Ageoff { column: String, max_age: i64 },
 }
 
 impl Filter {
     /// Creates a filtering expression for this filter instance. The returned
     /// expression can be passed to [`DataFrame::filter`].
-    pub fn create_filter_expr(&self) -> Expr {
+    pub fn create_filter_expr(&self, args: Vec<Expr>) -> Result<Expr> {
         match self {
-            Self::Ageoff { column, delay } => {
-                todo!();
+            Self::Ageoff { column, max_age } => {
+                // Figure out max_age in as a millisecond threshold from current time
+                let threshold = if *max_age >= 0 {
+                    SystemTime::now().checked_sub(Duration::from_millis(max_age.unsigned_abs()))
+                } else {
+                    SystemTime::now().checked_add(Duration::from_millis(max_age.unsigned_abs()))
+                }
+                // Convert Option to Result with DataFusionError
+                .ok_or(DataFusionError::Configuration(
+                    "Age off filter max_age not representable as timestamp".into(),
+                ))?
+                // Figure out duration since unix epoch
+                .duration_since(UNIX_EPOCH)
+                .map_err(|e| DataFusionError::External(Box::new(e)))?
+                // Finally, convert to raw integer
+                .as_millis() as i64;
+                Ok(ScalarUDF::from(AgeOff::new(threshold)).call(args))
             }
         }
     }
@@ -84,15 +102,12 @@ impl TryFrom<&str> for FilterAggregationConfig {
         // Create list of strings delimited by comma as iterator
         let values = value.split(',').map(str::trim).collect::<Vec<_>>();
         let filter = if values[0].starts_with("ageoff=") {
-            let filter_col = values[0].split('=').collect::<Vec<_>>()[1].replace("'", "");
-            let filter_delay = values[1]
+            let column = values[0].split('=').collect::<Vec<_>>()[1].replace("'", "");
+            let max_age = values[1]
                 .replace("'", "")
-                .parse::<u64>()
+                .parse::<i64>()
                 .map_err(|_| DataFusionError::Internal(format!("Invalid number {}", values[1])))?;
-            Some(Filter::Ageoff {
-                column: filter_col,
-                delay: filter_delay,
-            })
+            Some(Filter::Ageoff { column, max_age })
         } else {
             None
         };
