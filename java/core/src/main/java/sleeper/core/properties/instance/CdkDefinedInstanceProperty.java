@@ -272,11 +272,11 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
     CdkDefinedInstanceProperty BULK_EXPORT_QUEUE_DLQ_ARN = Index
             .propertyBuilder("sleeper.bulk.export.queue.dlq.arn")
-            .description("The ARN of the SQS  dead letter queue that is used by that triggers the bulk export lambda.")
+            .description("The ARN of the SQS dead letter queue that is used by the bulk export lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
-    CdkDefinedInstanceProperty BULK_EXPORT_LAMBDA_ROLE = Index
-            .propertyBuilder("sleeper.bulk.export.lambda.role")
+    CdkDefinedInstanceProperty BULK_EXPORT_LAMBDA_ROLE_ARN = Index
+            .propertyBuilder("sleeper.bulk.export.lambda.role.arn")
             .description("The ARN of the role for the bulk export lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
@@ -298,7 +298,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
     CdkDefinedInstanceProperty LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_ARN = Index
             .propertyBuilder("sleeper.bulk.export.leaf.partition.queue.dlq.arn")
             .description(
-                    "The ARN of the SQS  dead letter queue that is used by that triggers the bulk export for a leaf partition.")
+                    "The ARN of the SQS dead letter queue that is used by the bulk export for a leaf partition.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
     // Compactions

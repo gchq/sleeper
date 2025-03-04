@@ -114,12 +114,12 @@ public class BulkExportStack extends NestedStack {
         setQueueOutputProps(instanceProperties, leafPartitionQueuesQ, leafPartitionQueuesDlq, QueueType.LEAF_PARTITION);
 
         /*
-         * Output the role of the lambda as a property so that clients that want the
-         * results of queries written
-         * to their own SQS queue can give the role permission to write to their queue
+         * Output the role arn of the lambda as a property so that clients that want the
+         * results of queries written to their own SQS queue can give the role permission
+         * to write to their queue
          */
         IRole bulkExportLambdaRole = Objects.requireNonNull(bulkExportLambda.getRole());
-        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_LAMBDA_ROLE,
+        instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_LAMBDA_ROLE_ARN,
                 bulkExportLambdaRole.getRoleName());
 
         CfnOutputProps bulkExportLambdaRoleOutputProps = new CfnOutputProps.Builder()
