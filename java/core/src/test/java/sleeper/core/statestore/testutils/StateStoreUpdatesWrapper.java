@@ -45,7 +45,6 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileRefere
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -205,26 +204,6 @@ public class StateStoreUpdatesWrapper {
      */
     public void assignJobId(String jobId, String partitionId, List<String> filenames) throws StateStoreException {
         assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
-    }
-
-    /**
-     * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
-     * used for compaction job input files. This assumes that each compaction will only have one input file.
-     *
-     * @param  files                               the input file for each compaction
-     * @param  jobIds                              the compaction job IDs
-     * @throws FileReferenceNotFoundException      if a reference does not exist
-     * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
-     * @throws StateStoreException                 if the update fails for another reason
-     */
-    public void assignSingleInputFileToJobs(List<FileReference> files, List<String> jobIds) throws StateStoreException {
-        List<AssignJobIdRequest> requests = new ArrayList<>(files.size());
-        for (int i = 0; i < files.size(); i++) {
-            FileReference file = files.get(i);
-            String jobId = jobIds.get(i);
-            requests.add(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, file.getPartitionId(), List.of(file.getFilename())));
-        }
-        assignJobIds(requests);
     }
 
     /**

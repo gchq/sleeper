@@ -62,6 +62,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
@@ -148,9 +149,9 @@ public class InMemoryCompaction {
         }
 
         @Override
-        public void sendCompactionCommits(List<CompactionCommitMessage> commits) {
+        public void sendCompactionCommits(Stream<CompactionCommitMessage> commits) {
             TablePropertiesProvider tablesProvider = instance.getTablePropertiesProvider();
-            for (CompactionCommitMessage commit : commits) {
+            commits.forEach(commit -> {
                 ReplaceFileReferencesRequest request = commit.request();
                 TableProperties tableProperties = tablesProvider.getById(commit.tableId());
                 update(instance.getStateStore(tableProperties)).atomicallyReplaceFileReferencesWithNewOnes(List.of(request));
@@ -163,7 +164,7 @@ public class InMemoryCompaction {
                             .commitTime(Instant.now())
                             .build());
                 }
-            }
+            });
         }
 
         private CreateCompactionJobs jobCreator() {

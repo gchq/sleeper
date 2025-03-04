@@ -24,18 +24,17 @@ import sleeper.compaction.core.job.commit.CompactionCommitMessageHandle;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,36 +66,26 @@ public class CompactionFakeCommitIT {
     @Test
     void shouldFakeCompactionCommits(SleeperSystemTest sleeper) throws Exception {
         // Given
-        int numCompactions = 100;
-        List<FileReference> fakeInputs = IntStream.rangeClosed(1, numCompactions)
-                .mapToObj(i -> fileFactory.rootFile("input-" + i + ".parquet", 100))
-                .toList();
-        List<String> fakeJobIds = IntStream.rangeClosed(1, numCompactions)
-                .mapToObj(i -> "job-" + i)
-                .toList();
-        List<FileReference> fakeOutputs = IntStream.rangeClosed(1, numCompactions)
-                .mapToObj(i -> fileFactory.rootFile("output-" + i + ".parquet", 100))
-                .toList();
+        StreamFakeCompactions compactions = StreamFakeCompactions.builder()
+                .numCompactions(100)
+                .generateInputFiles(i -> List.of(fileFactory.rootFile("input-" + i + ".parquet", 100)))
+                .generateJobId(i -> "job-" + i)
+                .generateOutputFile(i -> fileFactory.rootFile("output-" + i + ".parquet", 100))
+                .build();
         sleeper.stateStore().fakeCommits().setupStateStore(store -> {
-            update(store).addFiles(fakeInputs);
-            update(store).assignSingleInputFileToJobs(fakeInputs, fakeJobIds);
+            compactions.streamAddFiles().forEach(update(store)::addTransaction);
+            compactions.streamAssignJobIds().forEach(update(store)::addTransaction);
         });
 
         // When
         sleeper.compaction()
-                .sendFakeCommitsWithSingleFiles(fakeInputs, fakeJobIds, fakeOutputs);
+                .sendFakeCommits(compactions);
 
         // Then
-        assertThat(drainCommitQueue()).isEqualTo(IntStream.rangeClosed(1, numCompactions)
-                .mapToObj(i -> ReplaceFileReferencesRequest.builder()
-                        .jobId("job-" + i)
-                        .taskId("fake-task")
-                        .jobRunId("job-" + i + "-run")
-                        .inputFiles(List.of(fakeInputs.get(i - 1).getFilename()))
-                        .newReference(fakeOutputs.get(i - 1))
-                        .build())
-                .map(this::handle)
-                .collect(toSet()));
+        assertThat(drainCommitQueue()).isEqualTo(
+                compactions.streamCommitRequests()
+                        .map(this::handle)
+                        .collect(toSet()));
     }
 
     private Set<CompactionCommitMessageHandle> drainCommitQueue() {

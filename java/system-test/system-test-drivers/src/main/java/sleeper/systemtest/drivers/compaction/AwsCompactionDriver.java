@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
@@ -125,8 +126,8 @@ public class AwsCompactionDriver implements CompactionDriver {
     }
 
     @Override
-    public void sendCompactionCommits(List<CompactionCommitMessage> commits) {
-        for (List<CompactionCommitMessage> batch : SplitIntoBatches.splitListIntoBatchesOf(10, commits)) {
+    public void sendCompactionCommits(Stream<CompactionCommitMessage> commits) {
+        SplitIntoBatches.streamBatchesOf(10, commits).forEach(batch -> {
             LOGGER.info("Submitting batch of {} commits", batch);
             EXECUTOR.submit(() -> {
                 CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
@@ -140,6 +141,6 @@ public class AwsCompactionDriver implements CompactionDriver {
                                 .toList()));
                 LOGGER.info("Sent batch of {} commits", batch);
             });
-        }
+        });
     }
 }

@@ -13,27 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package sleeper.systemtest.suite;
 
-package sleeper.systemtest.dsl.compaction;
+public class CompactionCommitThroughputST {
 
-import sleeper.compaction.core.job.CompactionJob;
-import sleeper.compaction.core.job.commit.CompactionCommitMessage;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
-
-import java.util.List;
-import java.util.stream.Stream;
-
-public interface CompactionDriver {
-
-    CompactionJobTracker getJobTracker();
-
-    void triggerCreateJobs();
-
-    void forceCreateJobs();
-
-    void scaleToZero();
-
-    List<CompactionJob> drainJobsQueueForWholeInstance();
-
-    void sendCompactionCommits(Stream<CompactionCommitMessage> commits);
 }

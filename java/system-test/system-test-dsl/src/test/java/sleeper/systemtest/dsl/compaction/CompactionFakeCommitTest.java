@@ -26,7 +26,6 @@ import sleeper.systemtest.dsl.SleeperSystemTest;
 import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.List;
-import java.util.stream.IntStream;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
@@ -49,29 +48,25 @@ public class CompactionFakeCommitTest {
     @Test
     void shouldFakeCompactionCommits(SleeperSystemTest sleeper) throws Exception {
         // Given
-        int numCompactions = 10;
-        List<FileReference> fakeInputs = IntStream.rangeClosed(1, numCompactions)
-                .mapToObj(i -> fileFactory.rootFile("input-" + i + ".parquet", 100))
-                .toList();
-        List<String> fakeJobIds = IntStream.rangeClosed(1, numCompactions)
-                .mapToObj(i -> "job-" + i)
-                .toList();
-        List<FileReference> fakeOutputs = IntStream.rangeClosed(1, numCompactions)
-                .mapToObj(i -> fileFactory.rootFile("output-" + i + ".parquet", 100))
-                .toList();
+        StreamFakeCompactions compactions = StreamFakeCompactions.builder()
+                .numCompactions(100)
+                .generateInputFiles(i -> List.of(fileFactory.rootFile("input-" + i + ".parquet", 100)))
+                .generateJobId(i -> "job-" + i)
+                .generateOutputFile(i -> fileFactory.rootFile("output-" + i + ".parquet", 100))
+                .build();
         sleeper.stateStore().fakeCommits().setupStateStore(store -> {
-            update(store).addFiles(fakeInputs);
-            update(store).assignSingleInputFileToJobs(fakeInputs, fakeJobIds);
+            compactions.streamAddFiles().forEach(update(store)::addTransaction);
+            compactions.streamAssignJobIds().forEach(update(store)::addTransaction);
         });
 
         // When
         sleeper.compaction()
-                .sendFakeCommitsWithSingleFiles(fakeInputs, fakeJobIds, fakeOutputs)
+                .sendFakeCommits(compactions)
                 .waitForJobs();
 
         // Then
         assertThat(sleeper.tableFiles().recordsByFilename())
-                .isEqualTo(fakeOutputs.stream()
+                .isEqualTo(compactions.streamOutputFiles()
                         .collect(groupingBy(FileReference::getFilename,
                                 summingLong(FileReference::getNumberOfRecords))));
     }
