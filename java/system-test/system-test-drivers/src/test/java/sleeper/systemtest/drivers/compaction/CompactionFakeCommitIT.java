@@ -17,17 +17,30 @@ package sleeper.systemtest.drivers.compaction;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.model.Message;
 
+import sleeper.compaction.core.job.commit.CompactionCommitMessageHandle;
+import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
+import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
+import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.dsl.SleeperSystemTest;
 
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.toSet;
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
@@ -36,17 +49,25 @@ import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 public class CompactionFakeCommitIT {
     PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+    SqsClient sqsClient;
+    CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
+    String compactionCommitQueueUrl;
+    String tableId;
 
     @BeforeEach
-    void setUp(SleeperSystemTest sleeper) throws Exception {
+    void setUp(SleeperSystemTest sleeper, LocalStackSystemTestDrivers drivers) throws Exception {
         sleeper.connectToInstance(LOCALSTACK_MAIN);
         sleeper.partitioning().setPartitions(partitions);
+        sqsClient = drivers.clients().getSqsV2();
+        compactionCommitQueueUrl = sqsClient.createQueue(builder -> builder.queueName(UUID.randomUUID().toString())).queueUrl();
+        sleeper.instanceProperties().set(COMPACTION_COMMIT_QUEUE_URL, compactionCommitQueueUrl);
+        tableId = sleeper.tableProperties().get(TABLE_ID);
     }
 
     @Test
     void shouldFakeCompactionCommits(SleeperSystemTest sleeper) throws Exception {
         // Given
-        int numCompactions = 10;
+        int numCompactions = 100;
         List<FileReference> fakeInputs = IntStream.rangeClosed(1, numCompactions)
                 .mapToObj(i -> fileFactory.rootFile("input-" + i + ".parquet", 100))
                 .toList();
@@ -66,6 +87,29 @@ public class CompactionFakeCommitIT {
                 .sendFakeCommitsWithSingleFiles(fakeInputs, fakeJobIds, fakeOutputs);
 
         // Then
-        // TODO check commit queue
+        assertThat(drainCommitQueue()).isEqualTo(IntStream.rangeClosed(1, numCompactions)
+                .mapToObj(i -> ReplaceFileReferencesRequest.builder()
+                        .jobId("job-" + i)
+                        .taskId("fake-task")
+                        .jobRunId("job-" + i + "-run")
+                        .inputFiles(List.of(fakeInputs.get(i - 1).getFilename()))
+                        .newReference(fakeOutputs.get(i - 1))
+                        .build())
+                .map(this::handle)
+                .collect(toSet()));
+    }
+
+    private Set<CompactionCommitMessageHandle> drainCommitQueue() {
+        return AwsDrainSqsQueue.drainQueueForWholeInstance(sqsClient, compactionCommitQueueUrl)
+                .map(this::readCommitMessage)
+                .collect(toSet());
+    }
+
+    private CompactionCommitMessageHandle readCommitMessage(Message message) {
+        return serDe.fromJsonWithCallbackOnFail(message.body(), null);
+    }
+
+    private CompactionCommitMessageHandle handle(ReplaceFileReferencesRequest request) {
+        return new CompactionCommitMessageHandle(tableId, request, null);
     }
 }
