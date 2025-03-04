@@ -15,6 +15,64 @@
  */
 package sleeper.systemtest.suite;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.util.PollWithRetries;
+import sleeper.systemtest.dsl.SleeperSystemTest;
+import sleeper.systemtest.dsl.compaction.StreamFakeCompactions;
+import sleeper.systemtest.dsl.extension.AfterTestReports;
+import sleeper.systemtest.suite.testutil.SystemTest;
+
+import java.time.Duration;
+import java.util.List;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingLong;
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
+import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
+
+@SystemTest
 public class CompactionCommitThroughputST {
+    PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
+    FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
+
+    @BeforeEach
+    void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
+        sleeper.connectToInstance(MAIN);
+        sleeper.partitioning().setPartitions(partitions);
+    }
+
+    @Test
+    void shouldFakeCompactionCommits(SleeperSystemTest sleeper) throws Exception {
+        // Given
+        StreamFakeCompactions compactions = StreamFakeCompactions.builder()
+                .numCompactions(200000)
+                .generateInputFiles(i -> List.of(fileFactory.rootFile("input-" + i + ".parquet", 100)))
+                .generateJobId(i -> "job-" + i)
+                .generateOutputFile(i -> fileFactory.rootFile("output-" + i + ".parquet", 100))
+                .build();
+        sleeper.stateStore().fakeCommits().setupStateStore(store -> {
+            compactions.streamAddFiles().forEach(update(store)::addTransaction);
+            compactions.streamAssignJobIds().forEach(update(store)::addTransaction);
+        });
+
+        // When
+        sleeper.compaction()
+                .sendFakeCommits(compactions)
+                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5)));
+
+        // Then
+        assertThat(sleeper.tableFiles().recordsByFilename())
+                .isEqualTo(compactions.streamOutputFiles()
+                        .collect(groupingBy(FileReference::getFilename,
+                                summingLong(FileReference::getNumberOfRecords))));
+    }
 
 }
