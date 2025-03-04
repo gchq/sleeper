@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
@@ -30,10 +31,12 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
@@ -142,6 +145,25 @@ public class InMemoryCompaction {
             List<CompactionJob> jobs = new ArrayList<>(queuedJobs);
             queuedJobs.clear();
             return jobs;
+        }
+
+        @Override
+        public void sendCompactionCommits(List<CompactionCommitMessage> commits) {
+            TablePropertiesProvider tablesProvider = instance.getTablePropertiesProvider();
+            for (CompactionCommitMessage commit : commits) {
+                ReplaceFileReferencesRequest request = commit.request();
+                TableProperties tableProperties = tablesProvider.getById(commit.tableId());
+                update(instance.getStateStore(tableProperties)).atomicallyReplaceFileReferencesWithNewOnes(List.of(request));
+                if (request.getJobRunId() != null) {
+                    jobTracker.jobCommitted(CompactionJobCommittedEvent.builder()
+                            .jobId(request.getJobId())
+                            .tableId(commit.tableId())
+                            .taskId(request.getTaskId())
+                            .jobRunId(request.getJobRunId())
+                            .commitTime(Instant.now())
+                            .build());
+                }
+            }
         }
 
         private CreateCompactionJobs jobCreator() {

@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.compaction;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 
 import java.util.List;
@@ -32,4 +33,6 @@ public interface CompactionDriver {
     void scaleToZero();
 
     List<CompactionJob> drainJobsQueueForWholeInstance();
+
+    void sendCompactionCommits(List<CompactionCommitMessage> commits);
 }

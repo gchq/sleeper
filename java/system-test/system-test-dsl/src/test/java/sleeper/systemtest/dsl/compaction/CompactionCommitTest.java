@@ -16,7 +16,6 @@
 package sleeper.systemtest.dsl.compaction;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -30,6 +29,8 @@ import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingLong;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
@@ -41,22 +42,21 @@ public class CompactionCommitTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
-        sleeper.connectToInstanceNoTables(IN_MEMORY_MAIN);
-        sleeper.tables().create("fake-compaction", DEFAULT_SCHEMA);
+        sleeper.connectToInstance(IN_MEMORY_MAIN);
         sleeper.partitioning().setPartitions(partitions);
     }
 
     @Test
-    @Disabled("TODO")
-    void shouldFakeCompactionCommit(SleeperSystemTest sleeper) throws Exception {
+    void shouldFakeCompactionCommits(SleeperSystemTest sleeper) throws Exception {
         // Given
-        List<FileReference> fakeInputs = IntStream.rangeClosed(1, 10)
+        int numCompactions = 10;
+        List<FileReference> fakeInputs = IntStream.rangeClosed(1, numCompactions)
                 .mapToObj(i -> fileFactory.rootFile("input-" + i + ".parquet", 100))
                 .toList();
-        List<String> fakeJobIds = IntStream.rangeClosed(1, 10)
+        List<String> fakeJobIds = IntStream.rangeClosed(1, numCompactions)
                 .mapToObj(i -> "job-" + i)
                 .toList();
-        List<FileReference> fakeOutputs = IntStream.rangeClosed(1, 10)
+        List<FileReference> fakeOutputs = IntStream.rangeClosed(1, numCompactions)
                 .mapToObj(i -> fileFactory.rootFile("output-" + i + ".parquet", 100))
                 .toList();
         sleeper.stateStore().fakeCommits()
@@ -69,7 +69,10 @@ public class CompactionCommitTest {
                 .waitForJobs();
 
         // Then
-        assertThat(sleeper.tableFiles().references()).isEqualTo(fakeOutputs);
+        assertThat(sleeper.tableFiles().recordsByFilename())
+                .isEqualTo(fakeOutputs.stream()
+                        .collect(groupingBy(FileReference::getFilename,
+                                summingLong(FileReference::getNumberOfRecords))));
     }
 
 }

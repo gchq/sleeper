@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.sqs.model.Message;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
@@ -114,5 +115,10 @@ public class AwsCompactionDriver implements CompactionDriver {
                 .toList();
         LOGGER.info("Found {} jobs", jobs.size());
         return jobs;
+    }
+
+    @Override
+    public void sendCompactionCommits(List<CompactionCommitMessage> commits) {
+        // TODO Auto-generated method stub
     }
 }

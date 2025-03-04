@@ -16,7 +16,9 @@
 
 package sleeper.systemtest.dsl.compaction;
 
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -27,9 +29,11 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class SystemTestCompaction {
@@ -137,6 +141,21 @@ public class SystemTestCompaction {
 
     public SystemTestCompaction sendFakeCommitsWithSingleFiles(
             List<FileReference> inputFiles, List<String> jobIds, List<FileReference> outputFiles) {
+        List<CompactionCommitMessage> messages = new ArrayList<>(inputFiles.size());
+        for (int i = 0; i < inputFiles.size(); i++) {
+            FileReference inputFile = inputFiles.get(i);
+            String jobId = jobIds.get(i);
+            FileReference outputFile = outputFiles.get(i);
+            messages.add(new CompactionCommitMessage(instance.getTableProperties().get(TABLE_ID),
+                    ReplaceFileReferencesRequest.builder()
+                            .jobId(jobId)
+                            .taskId("fake-task")
+                            .jobRunId(jobId + "-run")
+                            .inputFiles(List.of(inputFile.getFilename()))
+                            .newReference(outputFile)
+                            .build()));
+        }
+        driver.sendCompactionCommits(messages);
         lastJobIds = jobIds;
         return this;
     }
