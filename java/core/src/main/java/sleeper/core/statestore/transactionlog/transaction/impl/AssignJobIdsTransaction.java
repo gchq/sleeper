@@ -20,9 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStoreFile;
 import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
@@ -34,7 +36,8 @@ import java.util.Objects;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * A transaction to assign files to jobs.
+ * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
+ * used for compaction job input files.
  */
 public class AssignJobIdsTransaction implements FileReferenceTransaction {
     public static final Logger LOGGER = LoggerFactory.getLogger(AssignJobIdsTransaction.class);
@@ -45,6 +48,19 @@ public class AssignJobIdsTransaction implements FileReferenceTransaction {
         this.requests = requests.stream()
                 .filter(request -> !request.getFilenames().isEmpty())
                 .collect(toUnmodifiableList());
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param  stateStore                          the state store
+     * @throws FileReferenceNotFoundException      if a reference does not exist
+     * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
+     * @throws StateStoreException                 if the update fails for another reason
+     */
+    public void synchronousCommit(StateStore stateStore) {
+        stateStore.addFilesTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override

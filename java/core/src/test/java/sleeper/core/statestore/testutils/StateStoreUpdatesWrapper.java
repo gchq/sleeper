@@ -34,9 +34,6 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
-import sleeper.core.statestore.transactionlog.AddTransactionRequest;
-import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
-import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
@@ -78,7 +75,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException if the update fails
      */
     public void initialise(Schema schema) throws StateStoreException {
-        addTransaction(InitialisePartitionsTransaction.singlePartition(schema));
+        InitialisePartitionsTransaction.singlePartition(schema).synchronousCommit(stateStore);
     }
 
     /**
@@ -89,7 +86,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException if the update fails
      */
     public void initialise(List<Partition> partitions) throws StateStoreException {
-        addTransaction(new InitialisePartitionsTransaction(partitions));
+        new InitialisePartitionsTransaction(partitions).synchronousCommit(stateStore);
     }
 
     /**
@@ -102,7 +99,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException if split is not valid or update fails
      */
     public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        addTransaction(new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)));
+        new SplitPartitionTransaction(splitPartition, List.of(newPartition1, newPartition2)).synchronousCommit(stateStore);
     }
 
     /**
@@ -129,7 +126,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException        if the update fails for another reason
      */
     public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        addFilesWithReferences(AllReferencesToAFile.newFilesWithReferences(fileReferences));
+        AddFilesTransaction.fromReferences(fileReferences).synchronousCommit(stateStore);
     }
 
     /**
@@ -145,10 +142,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException        if the update fails for another reason
      */
     public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        AddFilesTransaction transaction = new AddFilesTransaction(files);
-        stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction)
-                .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> transaction.validateFiles(state)))
-                .build());
+        new AddFilesTransaction(files).synchronousCommit(stateStore);
     }
 
     /**
@@ -178,11 +172,7 @@ public class StateStoreUpdatesWrapper {
      * @throws SplitRequestsFailedException if any of the requests fail, even if some succeeded
      */
     public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
-        try {
-            addTransaction(new SplitFileReferencesTransaction(splitRequests));
-        } catch (StateStoreException e) {
-            throw new SplitRequestsFailedException(List.of(), splitRequests, e);
-        }
+        new SplitFileReferencesTransaction(splitRequests).synchronousCommit(stateStore);
     }
 
     /**
@@ -196,7 +186,22 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException                 if the update fails for another reason
      */
     public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        addTransaction(new AssignJobIdsTransaction(requests));
+        new AssignJobIdsTransaction(requests).synchronousCommit(stateStore);
+    }
+
+    /**
+     * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
+     * used for compaction job input files.
+     *
+     * @param  jobId                               the ID of the job
+     * @param  partitionId                         the ID of the partition
+     * @param  filenames                           the filenames that identify the files in the state store
+     * @throws FileReferenceNotFoundException      if a reference does not exist
+     * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
+     * @throws StateStoreException                 if the update fails for another reason
+     */
+    public void assignJobId(String jobId, String partitionId, List<String> filenames) throws StateStoreException {
+        assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
     }
 
     /**
@@ -212,14 +217,25 @@ public class StateStoreUpdatesWrapper {
      * @throws ReplaceRequestsFailedException if any of the updates fail
      */
     public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
-        try {
-            ReplaceFileReferencesTransaction transaction = new ReplaceFileReferencesTransaction(requests);
-            stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction)
-                    .beforeApplyListener(StateListenerBeforeApply.withFilesState(state -> transaction.validateStateChange(state)))
-                    .build());
-        } catch (StateStoreException e) {
-            throw new ReplaceRequestsFailedException(requests, e);
-        }
+        new ReplaceFileReferencesTransaction(requests).synchronousCommit(stateStore);
+    }
+
+    /**
+     * Atomically applies the results of a job. Removes file references for a job's input files, and adds a reference to
+     * an output file. This will be used for compaction.
+     * <p>
+     * This will validate that the input files were assigned to the job.
+     * <p>
+     * This will decrement the number of references for each of the input files. If no other references exist for those
+     * files, they will become available for garbage collection.
+     *
+     * @param  jobId                          the job ID
+     * @param  inputFiles                     the filenames of the job's input files
+     * @param  newReference                   the new reference to replace the input file references on the partition
+     * @throws ReplaceRequestsFailedException if any of the updates fail
+     */
+    public void atomicallyReplaceFileReferencesWithNewOnes(String jobId, List<String> inputFiles, FileReference newReference) throws ReplaceRequestsFailedException {
+        atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.replaceJobFileReferences(jobId, inputFiles, newReference)));
     }
 
     /**
@@ -239,7 +255,7 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException        if the update fails for another reason
      */
     public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
-        addTransaction(new DeleteFilesTransaction(filenames));
+        new DeleteFilesTransaction(filenames).synchronousCommit(stateStore);
     }
 
     /**
@@ -249,28 +265,27 @@ public class StateStoreUpdatesWrapper {
      * @throws StateStoreException if the update fails
      */
     public void clearSleeperTable() throws StateStoreException {
-        clearFileData();
-        clearPartitionData();
+        stateStore.clearSleeperTable();
     }
 
     /**
      * Clears all file data from the file reference store. Note that this does not delete any of the actual files.
+     *
+     * @throws StateStoreException if the update fails
      */
     public void clearFileData() throws StateStoreException {
-        addTransaction(new ClearFilesTransaction());
+        new ClearFilesTransaction().synchronousCommit(stateStore);
     }
 
     /**
      * Clears all partition data from the store. Note that this will invalidate any file references held in the store,
      * so this should only be used when no files are present. The store must be initialised before the Sleeper table can
      * be used again. Any file references will need to be added again.
+     *
+     * @throws StateStoreException if the update fails
      */
     public void clearPartitionData() throws StateStoreException {
-        addTransaction(new InitialisePartitionsTransaction(List.of()));
-    }
-
-    private void addTransaction(StateStoreTransaction<?> transaction) {
-        stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
+        new InitialisePartitionsTransaction(List.of()).synchronousCommit(stateStore);
     }
 
 }

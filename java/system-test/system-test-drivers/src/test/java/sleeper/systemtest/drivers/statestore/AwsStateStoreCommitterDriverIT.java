@@ -24,7 +24,6 @@ import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
@@ -76,7 +75,7 @@ public class AwsStateStoreCommitterDriverIT {
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactly(tuple(tableId,
                         StateStoreCommitRequest.create(tableId,
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))))));
+                                AddFilesTransaction.fromReferences(List.of(file)))));
     }
 
     @Test
@@ -96,7 +95,7 @@ public class AwsStateStoreCommitterDriverIT {
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactlyInAnyOrderElementsOf(files.stream().map(file -> tuple(tableId,
                         StateStoreCommitRequest.create(tableId,
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))))))
+                                AddFilesTransaction.fromReferences(List.of(file)))))
                         .collect(toUnmodifiableList()));
     }
 

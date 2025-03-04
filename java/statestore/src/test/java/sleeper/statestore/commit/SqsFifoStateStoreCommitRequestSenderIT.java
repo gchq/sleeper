@@ -25,14 +25,13 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
-import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionBodyStore;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
@@ -40,13 +39,11 @@ import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.localstack.test.LocalStackTestBase;
-import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -57,20 +54,14 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.testutils.SupplierTestHelper.fixIds;
-import static sleeper.core.testutils.SupplierTestHelper.fixTime;
 
 public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
-
-    private static final Instant DEFAULT_TRANSACTION_TIME = Instant.parse("2025-01-23T11:36:00Z");
-    private static final String DEFAULT_TRANSACTION_ID = "test-transaction";
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     private final String tableId = tableProperties.get(TABLE_ID);
+    private final InMemoryTransactionBodyStore bodyStore = new InMemoryTransactionBodyStore();
     private final StateStoreCommitRequestSerDe serDe = new StateStoreCommitRequestSerDe(tableProperties);
-    private Supplier<Instant> timeSupplier = fixTime(DEFAULT_TRANSACTION_TIME);
-    private Supplier<String> idSupplier = fixIds(DEFAULT_TRANSACTION_ID);
 
     @BeforeEach
     void setUp() {
@@ -86,6 +77,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
         // Given
         PartitionTransaction transaction = new InitialisePartitionsTransaction(
                 new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
+        bodyStore.setStoreTransactions(false);
 
         // When
         sender().send(StateStoreCommitRequest.create(tableId, transaction));
@@ -100,16 +92,15 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
         // Given
         PartitionTransaction transaction = new InitialisePartitionsTransaction(
                 new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
+        bodyStore.setStoreTransactionsWithObjectKeys(List.of("test/object"));
 
         // When
-        senderWithMaxTransactionBytes(10)
-                .send(StateStoreCommitRequest.create(tableId, transaction));
+        sender().send(StateStoreCommitRequest.create(tableId, transaction));
 
         // Then
-        String expectedKey = TransactionBodyStore.createObjectKey(tableId, DEFAULT_TRANSACTION_TIME, DEFAULT_TRANSACTION_ID);
         assertThat(receiveCommitRequests())
-                .containsExactly(StateStoreCommitRequest.create(tableId, expectedKey, TransactionType.INITIALISE_PARTITIONS));
-        assertThat(readTransaction(expectedKey, TransactionType.INITIALISE_PARTITIONS))
+                .containsExactly(StateStoreCommitRequest.create(tableId, "test/object", TransactionType.INITIALISE_PARTITIONS));
+        assertThat(readTransaction("test/object", TransactionType.INITIALISE_PARTITIONS))
                 .isEqualTo(transaction);
     }
 
@@ -127,26 +118,21 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
                 .files(AllReferencesToAFile.newFilesWithReferences(fileReferences))
                 .build();
         StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction);
+        bodyStore.setStoreTransactionsWithObjectKeys(List.of("test/object"));
 
         // When
         sender().send(request);
 
         // Then
-        String expectedKey = TransactionBodyStore.createObjectKey(tableId, DEFAULT_TRANSACTION_TIME, DEFAULT_TRANSACTION_ID);
         assertThat(receiveCommitRequests())
-                .containsExactly(StateStoreCommitRequest.create(tableId, expectedKey, TransactionType.ADD_FILES));
-        assertThat(readTransaction(expectedKey, TransactionType.ADD_FILES))
+                .containsExactly(StateStoreCommitRequest.create(tableId, "test/object", TransactionType.ADD_FILES));
+        assertThat(readTransaction("test/object", TransactionType.ADD_FILES))
                 .isEqualTo(transaction);
     }
 
     private StateStoreCommitRequestSender sender() {
-        return senderWithMaxTransactionBytes(SqsFifoStateStoreCommitRequestSender.DEFAULT_MAX_TRANSACTION_BYTES);
-    }
-
-    private StateStoreCommitRequestSender senderWithMaxTransactionBytes(int maxBytes) {
-        TransactionSerDeProvider serDeProvider = TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties));
         return new SqsFifoStateStoreCommitRequestSender(
-                instanceProperties, sqsClient, s3Client, serDeProvider, maxBytes, timeSupplier, idSupplier);
+                instanceProperties, bodyStore, TransactionSerDeProvider.forOneTable(tableProperties), sqsClient);
     }
 
     private List<StateStoreCommitRequest> receiveCommitRequests() {
@@ -167,8 +153,7 @@ public class SqsFifoStateStoreCommitRequestSenderIT extends LocalStackTestBase {
     }
 
     private StateStoreTransaction<?> readTransaction(String key, TransactionType transactionType) {
-        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties))
-                .getBody(key, tableId, transactionType);
+        return bodyStore.getBody(key, tableId, transactionType);
     }
 
 }

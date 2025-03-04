@@ -27,7 +27,6 @@ import sleeper.core.partition.PartitionsBuilderSplitsFirst;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
@@ -126,7 +125,7 @@ public class TransactionLogStateStoreDynamoDBSpecificIT extends TransactionLogSt
             PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
             update(stateStore).initialise(tree.getAllPartitions());
             FileReference file = fileFactory(tree).rootFile("test.parquet", 100);
-            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file)));
+            FileReferenceTransaction transaction = AddFilesTransaction.fromReferences(List.of(file));
             String key = TransactionBodyStore.createObjectKey(tableProperties);
             TransactionBodyStore transactionBodyStore = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties));
 

@@ -30,7 +30,6 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.FilesReportTestHelper;
@@ -149,7 +148,7 @@ public class StateStoreCommitterLambdaTest {
 
     private SQSMessage addFilesMessage(String messageId, FileReference... files) {
         StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
-                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(files))));
+                AddFilesTransaction.fromReferences(List.of(files)));
         SQSMessage message = new SQSMessage();
         message.setMessageId(messageId);
         message.setBody(new StateStoreCommitRequestSerDe(tableProperties).toJson(request));

@@ -105,6 +105,7 @@ public class TransactionLogHead<T> {
         Instant startTime = Instant.now();
         LOGGER.debug("Adding transaction of type {} to table {}",
                 request.getTransactionType(), sleeperTable);
+        request = request.storeTransactionBodyIfTooBig(sleeperTable, transactionBodyStore);
         Exception failure = new IllegalArgumentException("No attempts made");
         for (int attempt = 1; attempt <= maxAddTransactionAttempts; attempt++) {
             prepareAddTransactionAttempt(attempt, request.getTransaction());
@@ -303,6 +304,12 @@ public class TransactionLogHead<T> {
 
     public long getLastTransactionNumber() {
         return lastTransactionNumber;
+    }
+
+    void clearTransactionLog(StateStoreTransaction<T> updateState, Instant time) {
+        logStore.deleteTransactionsAtOrBefore(Long.MAX_VALUE);
+        updateState.apply(state, time);
+        lastTransactionNumber = 0;
     }
 
     /**

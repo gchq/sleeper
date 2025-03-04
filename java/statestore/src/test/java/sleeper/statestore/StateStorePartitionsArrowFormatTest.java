@@ -35,6 +35,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.channels.Channels;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
@@ -47,68 +48,68 @@ public class StateStorePartitionsArrowFormatTest {
     void shouldWritePartitionsSplitOnOneStringField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
-        PartitionTree tree = new PartitionsBuilder(schema)
+        List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "mmm")
-                .buildTree();
+                .buildTree().traverseLeavesFirst().toList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
-        write(tree.getAllPartitions(), bytes);
+        write(partitions, bytes);
 
         // Then
-        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+        assertThat(read(bytes)).isEqualTo(partitions);
     }
 
     @Test
     void shouldWritePartitionsSplitOnOneLongField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new LongType());
-        PartitionTree tree = new PartitionsBuilder(schema)
+        List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 123L)
-                .buildTree();
+                .buildTree().traverseLeavesFirst().toList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
-        write(tree.getAllPartitions(), bytes);
+        write(partitions, bytes);
 
         // Then
-        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+        assertThat(read(bytes)).isEqualTo(partitions);
     }
 
     @Test
     void shouldWritePartitionsSplitOnOneIntField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new IntType());
-        PartitionTree tree = new PartitionsBuilder(schema)
+        List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 123)
-                .buildTree();
+                .buildTree().traverseLeavesFirst().toList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
-        write(tree.getAllPartitions(), bytes);
+        write(partitions, bytes);
 
         // Then
-        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+        assertThat(read(bytes)).isEqualTo(partitions);
     }
 
     @Test
     void shouldWritePartitionsSplitOnOneByteArrayField() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new ByteArrayType());
-        PartitionTree tree = new PartitionsBuilder(schema)
+        List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", new byte[]{123})
-                .buildTree();
+                .buildTree().traverseLeavesFirst().toList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
-        write(tree.getAllPartitions(), bytes);
+        write(partitions, bytes);
 
         // Then
-        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+        assertThat(read(bytes)).isEqualTo(partitions);
     }
 
     @Test
@@ -117,16 +118,16 @@ public class StateStorePartitionsArrowFormatTest {
         Schema schema = Schema.builder().rowKeyFields(
                 new Field("key1", new StringType()),
                 new Field("key2", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
+        List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
-                .buildTree();
+                .buildList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
-        write(tree.getAllPartitions(), bytes);
+        write(partitions, bytes);
 
         // Then
-        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+        assertThat(read(bytes)).isEqualTo(partitions);
     }
 
     @Test
@@ -137,35 +138,35 @@ public class StateStorePartitionsArrowFormatTest {
                 new Field("key2", new LongType()),
                 new Field("key3", new IntType()),
                 new Field("key4", new ByteArrayType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
+        List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
-                .buildTree();
+                .buildList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
-        write(tree.getAllPartitions(), bytes);
+        write(partitions, bytes);
 
         // Then
-        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+        assertThat(read(bytes)).isEqualTo(partitions);
     }
 
     @Test
     void shouldWritePartitionsSplitOnOneStringFieldOverMultipleLevels() throws Exception {
         // Given
         Schema schema = schemaWithKey("key", new StringType());
-        PartitionTree tree = new PartitionsBuilder(schema)
+        List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "mmm")
                 .splitToNewChildren("L", "LL", "LR", "ccc")
                 .splitToNewChildren("R", "RL", "RR", "ttt")
-                .buildTree();
+                .buildList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
-        write(tree.getAllPartitions(), bytes);
+        write(partitions, bytes);
 
         // Then
-        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+        assertThat(read(bytes)).isEqualTo(partitions);
     }
 
     @Test
@@ -174,19 +175,19 @@ public class StateStorePartitionsArrowFormatTest {
         Schema schema = Schema.builder().rowKeyFields(
                 new Field("key1", new StringType()),
                 new Field("key2", new StringType())).build();
-        PartitionTree tree = new PartitionsBuilder(schema)
+        List<Partition> partitions = new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "L", "R", 0, "mmm")
                 .splitToNewChildrenOnDimension("L", "LL", "LR", 1, "ccc")
                 .splitToNewChildrenOnDimension("R", "RL", "RR", 1, "ttt")
-                .buildTree();
+                .buildList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
-        write(tree.getAllPartitions(), bytes);
+        write(partitions, bytes);
 
         // Then
-        assertThat(read(bytes)).isEqualTo(tree.getAllPartitions());
+        assertThat(read(bytes)).isEqualTo(partitions);
     }
 
     @Test
@@ -220,13 +221,13 @@ public class StateStorePartitionsArrowFormatTest {
     }
 
     @Test
-    void shouldWriteFivePartitionsInThreeBatches() throws Exception {
+    void shouldWritePartitionTreeInBatches() throws Exception {
         // Given
-        List<Partition> partitions = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+        PartitionTree tree = new PartitionsBuilder(schemaWithKey("key", new StringType()))
                 .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", "m")
-                .splitToNewChildren("L", "LL", "LR", "g")
-                .buildList();
+                .splitToNewChildren("root", "L", "R", "c")
+                .buildTree();
+        List<Partition> partitions = Stream.of("root", "L", "R").map(tree::getPartition).toList();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 
         // When
@@ -235,7 +236,46 @@ public class StateStorePartitionsArrowFormatTest {
 
         // Then
         assertThat(readResult.partitions()).isEqualTo(partitions);
-        assertThat(writeResult.numBatches()).isEqualTo(3).isEqualTo(readResult.numBatches());
+        assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
+    }
+
+    @Test
+    void shouldWritePartitionTreeInBatchesWithRootLast() throws Exception {
+        // Given
+        PartitionTree tree = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "c")
+                .buildTree();
+        List<Partition> partitions = Stream.of("L", "R", "root").map(tree::getPartition).toList();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, partitions, bytes);
+        ReadResult readResult = readResult(bytes);
+
+        // Then
+        assertThat(readResult.partitions()).isEqualTo(partitions);
+        assertThat(writeResult.numBatches()).isEqualTo(2).isEqualTo(readResult.numBatches());
+    }
+
+    @Test
+    void shouldWriteLargerPartitionTreeInBatchesInTreeOrder() throws Exception {
+        // Given
+        List<Partition> partitions = new PartitionsBuilder(schemaWithKey("key", new StringType()))
+                .rootFirst("root")
+                .splitToNewChildren("root", "L", "R", "c")
+                .splitToNewChildren("L", "LL", "LR", "b")
+                .splitToNewChildren("LL", "LLL", "LLR", "a")
+                .buildTree().traverseLeavesFirst().toList();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+
+        // When
+        WriteResult writeResult = writeWithMaxElementsInBatch(2, partitions, bytes);
+        ReadResult readResult = readResult(bytes);
+
+        // Then
+        assertThat(readResult.partitions()).isEqualTo(partitions);
+        assertThat(writeResult.numBatches()).isEqualTo(4).isEqualTo(readResult.numBatches());
     }
 
     private void write(List<Partition> partitions, ByteArrayOutputStream stream) throws Exception {

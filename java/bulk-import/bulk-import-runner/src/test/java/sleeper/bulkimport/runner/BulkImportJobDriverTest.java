@@ -23,7 +23,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
@@ -181,8 +180,28 @@ class BulkImportJobDriverTest {
         assertThat(commitRequestQueue).containsExactly(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
                 AddFilesTransaction.builder()
                         .jobId(job.getId()).taskId("test-task").jobRunId("test-run").writtenTime(finishTime)
-                        .files(AllReferencesToAFile.newFilesWithReferences(outputFiles))
+                        .fileReferences(outputFiles)
                         .build()));
+    }
+
+    @Test
+    void shouldNotRecordJobTrackerUpdateDetailsInTransactionLogForSynchronousCommit() throws Exception {
+        // Given
+        tableProperties.set(BULK_IMPORT_FILES_COMMIT_ASYNC, "false");
+        BulkImportJob job = singleFileImportJob();
+        Instant validationTime = Instant.parse("2023-04-06T12:30:01Z");
+        Instant startTime = Instant.parse("2023-04-06T12:40:01Z");
+        Instant finishTime = Instant.parse("2023-04-06T12:41:01Z");
+        List<FileReference> outputFiles = List.of(
+                defaultFileOnRootPartitionWithRecords("test-output.parquet", 100));
+
+        // When
+        runJob(job, "test-run", "test-task", validationTime,
+                driver(successfulWithOutput(outputFiles), startAndFinishTime(startTime, finishTime)));
+
+        // Then
+        assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
+                .isEqualTo(AddFilesTransaction.fromReferences(outputFiles));
     }
 
     private void runJob(

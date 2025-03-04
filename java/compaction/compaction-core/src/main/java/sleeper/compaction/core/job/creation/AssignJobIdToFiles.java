@@ -35,7 +35,7 @@ public interface AssignJobIdToFiles {
 
     static AssignJobIdToFiles synchronous(StateStore stateStore) {
         return (assignJobIdRequests, tableStatus) -> {
-            stateStore.assignJobIds(assignJobIdRequests);
+            new AssignJobIdsTransaction(assignJobIdRequests).synchronousCommit(stateStore);
         };
     }
 

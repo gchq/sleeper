@@ -26,11 +26,15 @@ import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 
+import java.time.Instant;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
@@ -40,27 +44,45 @@ public interface AddFilesToStateStore {
 
     void addFiles(List<FileReference> references) throws StateStoreException;
 
-    static AddFilesToStateStore synchronous(StateStore stateStore) {
-        return stateStore::addFiles;
-    }
-
-    static AddFilesToStateStore synchronous(
-            StateStore stateStore, IngestJobTracker tracker, IngestJobAddedFilesEvent.Builder statusUpdateBuilder) {
+    static AddFilesToStateStore synchronousWithJob(
+            TableProperties tableProperties, StateStore stateStore, IngestJobTracker tracker,
+            Supplier<Instant> timeSupplier, IngestJobRunIds jobRunIds) {
+        TableStatus tableStatus = tableProperties.getStatus();
         return references -> {
-            List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
-            stateStore.addFilesWithReferences(files);
-            tracker.jobAddedFiles(statusUpdateBuilder.files(files).build());
+            try {
+                List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
+                new AddFilesTransaction(files).synchronousCommit(stateStore);
+                tracker.jobAddedFiles(IngestJobAddedFilesEvent.builder().jobRunIds(jobRunIds).files(files).writtenTime(timeSupplier.get()).build());
+                LOGGER.info("Added {} files to state store with {} references in table {}, {}", files.size(), references.size(), tableStatus, jobRunIds);
+            } catch (RuntimeException e) {
+                tracker.jobFailed(IngestJobFailedEvent.builder().jobRunIds(jobRunIds).failure(e).failureTime(timeSupplier.get()).build());
+                throw e;
+            }
         };
     }
 
-    static AddFilesToStateStore bySqs(
+    static AddFilesToStateStore asynchronousWithJob(
             TableProperties tableProperties, StateStoreCommitRequestSender commitSender,
-            Consumer<AddFilesTransaction.Builder> transactionConfig) {
+            Supplier<Instant> timeSupplier, IngestJobRunIds jobRunIds) {
+        TableStatus tableStatus = tableProperties.getStatus();
         return references -> {
             List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
-            AddFilesTransaction.Builder requestBuilder = AddFilesTransaction.builder().files(files);
-            transactionConfig.accept(requestBuilder);
-            AddFilesTransaction transaction = requestBuilder.build();
+            AddFilesTransaction transaction = AddFilesTransaction.builder().jobRunIds(jobRunIds).files(files).writtenTime(timeSupplier.get()).build();
+            commitSender.send(StateStoreCommitRequest.create(tableStatus.getTableUniqueId(), transaction));
+            LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}, {}",
+                    files.size(), references.size(), tableStatus, jobRunIds);
+        };
+    }
+
+    static AddFilesToStateStore synchronousNoJob(StateStore stateStore) {
+        return references -> AddFilesTransaction.fromReferences(references).synchronousCommit(stateStore);
+    }
+
+    static AddFilesToStateStore asynchronousNoJob(
+            TableProperties tableProperties, StateStoreCommitRequestSender commitSender) {
+        return references -> {
+            List<AllReferencesToAFile> files = AllReferencesToAFile.newFilesWithReferences(references);
+            AddFilesTransaction transaction = new AddFilesTransaction(files);
             commitSender.send(StateStoreCommitRequest.create(tableProperties.get(TABLE_ID), transaction));
             LOGGER.info("Submitted asynchronous request to state store committer to add {} files with {} references in table {}", files.size(), references.size(), tableProperties.getStatus());
         };

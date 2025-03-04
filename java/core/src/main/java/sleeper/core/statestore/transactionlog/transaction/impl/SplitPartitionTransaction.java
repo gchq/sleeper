@@ -16,7 +16,9 @@
 package sleeper.core.statestore.transactionlog.transaction.impl;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 
@@ -29,8 +31,11 @@ import java.util.Set;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
- * A transaction to add new partitions to the tree. This is done by setting child partitions for a partition that was
- * previously a leaf partition. This will turn the leaf partition into a parent and add new leaf partitions below it.
+ * Atomically splits a partition to create child partitions. This is done by setting child partitions for a partition
+ * that was previously a leaf partition.
+ * <p>
+ * The new partitions must be leaf partitions. The parent partition must already exist, and will be replaced with the
+ * updated version. The new version must refer to the new leaf partitions as children.
  */
 public class SplitPartitionTransaction implements PartitionTransaction {
 
@@ -40,6 +45,17 @@ public class SplitPartitionTransaction implements PartitionTransaction {
     public SplitPartitionTransaction(Partition parent, List<Partition> newChildren) {
         this.parent = parent;
         this.newChildren = newChildren;
+    }
+
+    /**
+     * Commit this transaction directly to the state store without going to the commit queue. This will throw any
+     * validation exceptions immediately, even if they wouldn't be as part of an asynchronous commit.
+     *
+     * @param  stateStore          the state store
+     * @throws StateStoreException if the split is not valid or the update fails
+     */
+    public void synchronousCommit(StateStore stateStore) {
+        stateStore.addPartitionsTransaction(AddTransactionRequest.withTransaction(this).build());
     }
 
     @Override

@@ -26,21 +26,21 @@ import static sleeper.core.properties.instance.TableStateProperty.DEFAULT_TABLE_
  * Properties for bulk export processing.
  */
 public interface BulkExportProperty {
-    UserDefinedInstanceProperty BULK_EXPORT_PROCESSOR_LAMBDA_MEMORY_IN_MB = Index
-            .propertyBuilder("sleeper.bulk.export.processor.memory.mb")
+    UserDefinedInstanceProperty BULK_EXPORT_LAMBDA_MEMORY_IN_MB = Index
+            .propertyBuilder("sleeper.bulk.export.memory.mb")
             .description("The amount of memory in MB for lambda functions that start bulk export jobs.")
             .defaultProperty(DEFAULT_TABLE_STATE_LAMBDA_MEMORY)
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_EXPORT_PROCESSOR_LAMBDA_TIMEOUT = Index
-            .propertyBuilder("sleeper.bulk.export.processor.timeout")
-            .description("The default timeout for the bulk export processor lambda.")
+    UserDefinedInstanceProperty BULK_EXPORT_LAMBDA_TIMEOUT_IN_SECONDS = Index
+            .propertyBuilder("sleeper.bulk.export.timeout.seconds")
+            .description("The default timeout in seconds for the bulk export lambda.")
             .defaultValue("800")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_EXPORT_PROCESSOR_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index
-            .propertyBuilder("sleeper.bulk.export.processor.queue.visibility.timeout.seconds")
-            .description("The visibility timeout for the bulk export processor queue.")
+    UserDefinedInstanceProperty BULK_EXPORT_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index
+            .propertyBuilder("sleeper.bulk.export.queue.visibility.timeout.seconds")
+            .description("The visibility timeout in seconds for the bulk export queue.")
             .defaultValue("800")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();

@@ -17,6 +17,7 @@ package sleeper.core.statestore.transactionlog.log;
 
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 
 import java.time.Instant;
@@ -34,21 +35,27 @@ public class TransactionLogEntry {
     private final TransactionType transactionType;
     private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
+    private final String serialisedTransaction;
 
     public TransactionLogEntry(long transactionNumber, Instant updateTime, StateStoreTransaction<?> transaction) {
-        this(transactionNumber, updateTime, TransactionType.getType(transaction), null, transaction);
+        this(transactionNumber, updateTime, transaction, null);
+    }
+
+    public TransactionLogEntry(long transactionNumber, Instant updateTime, StateStoreTransaction<?> transaction, String serialisedTransaction) {
+        this(transactionNumber, updateTime, TransactionType.getType(transaction), null, transaction, serialisedTransaction);
     }
 
     public TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, String bodyKey) {
-        this(transactionNumber, updateTime, transactionType, bodyKey, null);
+        this(transactionNumber, updateTime, transactionType, bodyKey, null, null);
     }
 
-    private TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, String bodyKey, StateStoreTransaction<?> transaction) {
+    private TransactionLogEntry(long transactionNumber, Instant updateTime, TransactionType transactionType, String bodyKey, StateStoreTransaction<?> transaction, String serialisedTransaction) {
         this.transactionNumber = transactionNumber;
         this.updateTime = updateTime;
         this.transactionType = transactionType;
         this.bodyKey = bodyKey;
         this.transaction = transaction;
+        this.serialisedTransaction = serialisedTransaction;
     }
 
     /**
@@ -64,7 +71,9 @@ public class TransactionLogEntry {
         if (bodyKey.isPresent()) {
             return new TransactionLogEntry(transactionNumber, updateTime, request.getTransactionType(), bodyKey.get());
         } else {
-            return new TransactionLogEntry(transactionNumber, updateTime, request.getTransaction());
+            StateStoreTransaction<?> transaction = request.getTransaction();
+            String serialisedTransaction = request.getSerialisedTransaction().orElse(null);
+            return new TransactionLogEntry(transactionNumber, updateTime, transaction, serialisedTransaction);
         }
 
     }
@@ -81,17 +90,27 @@ public class TransactionLogEntry {
         return transactionType;
     }
 
+    public Optional<String> getBodyKey() {
+        return Optional.ofNullable(bodyKey);
+    }
+
+    public Optional<StateStoreTransaction<?>> getTransaction() {
+        return Optional.ofNullable(transaction);
+    }
+
     /**
      * Applies some operation on the transaction or the object key in the data bucket, whichever is held in the entry.
      *
      * @param withTransaction the operation on a transaction
      * @param withObjectKey   the operation on an object key
      */
-    public void withTransactionOrObjectKey(Consumer<StateStoreTransaction<?>> withTransaction, Consumer<String> withObjectKey) {
-        if (transaction != null) {
-            withTransaction.accept(transaction);
-        } else {
+    public void withSerialisedTransactionOrObjectKey(TransactionSerDe serDe, Consumer<String> withTransaction, Consumer<String> withObjectKey) {
+        if (bodyKey != null) {
             withObjectKey.accept(bodyKey);
+        } else if (serialisedTransaction != null) {
+            withTransaction.accept(serialisedTransaction);
+        } else {
+            withTransaction.accept(serDe.toJson(transaction));
         }
     }
 
@@ -112,7 +131,7 @@ public class TransactionLogEntry {
 
     @Override
     public int hashCode() {
-        return Objects.hash(transactionNumber, transaction);
+        return Objects.hash(transactionNumber, updateTime, transactionType, bodyKey, transaction);
     }
 
     @Override
@@ -124,14 +143,14 @@ public class TransactionLogEntry {
             return false;
         }
         TransactionLogEntry other = (TransactionLogEntry) obj;
-        return transactionNumber == other.transactionNumber
-                && Objects.equals(updateTime, other.updateTime)
+        return transactionNumber == other.transactionNumber && Objects.equals(updateTime, other.updateTime) && transactionType == other.transactionType && Objects.equals(bodyKey, other.bodyKey)
                 && Objects.equals(transaction, other.transaction);
     }
 
     @Override
     public String toString() {
-        return "TransactionLogEntry{transactionNumber=" + transactionNumber + ", updateTime=" + updateTime + ", transaction=" + transaction + "}";
+        return "TransactionLogEntry{transactionNumber=" + transactionNumber + ", updateTime=" + updateTime +
+                ", transactionType=" + transactionType + ", bodyKey=" + bodyKey + ", transaction=" + transaction + "}";
     }
 
 }

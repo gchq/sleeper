@@ -18,7 +18,6 @@ package sleeper.systemtest.dsl.ingest;
 
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
@@ -87,7 +86,7 @@ public class SystemTestIngestToStateStore {
 
     private void addFiles(List<FileReference> fileReferences) {
         instance.getStateStore().addTransaction(AddTransactionRequest.withTransaction(
-                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(fileReferences)))
+                AddFilesTransaction.fromReferences(fileReferences))
                 .build());
     }
 }

@@ -110,7 +110,6 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
                 .map(SQSEvent.SQSMessage::getBody)
                 .peek(body -> LOGGER.debug("Received message with body {}", body))
                 .flatMap(body -> deserialiseAndValidate(body).stream())
-                .peek(json -> LOGGER.debug(json.toString()))
                 .forEach(query -> {
                     try {
                         processor.processExport(query);

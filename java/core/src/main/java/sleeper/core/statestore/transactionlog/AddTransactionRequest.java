@@ -20,11 +20,14 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
+import sleeper.core.table.TableStatus;
 
 import java.util.Optional;
 
@@ -36,13 +39,15 @@ import java.util.Optional;
 public class AddTransactionRequest {
     public static final Logger LOGGER = LoggerFactory.getLogger(AddTransactionRequest.class);
 
-    private final String bodyKey;
     private final StateStoreTransaction<?> transaction;
+    private final String bodyKey;
+    private final String serialisedTransaction;
     private final StateListenerBeforeApply beforeApplyListener;
 
     private AddTransactionRequest(Builder builder) {
-        bodyKey = builder.bodyKey;
         transaction = builder.transaction;
+        bodyKey = builder.bodyKey;
+        serialisedTransaction = builder.serialisedTransaction;
         beforeApplyListener = builder.beforeApplyListener;
     }
 
@@ -65,6 +70,17 @@ public class AddTransactionRequest {
      */
     public <T extends StateStoreTransaction<?>> T getTransaction() {
         return (T) transaction;
+    }
+
+    /**
+     * Retrieves the serialised string representation of the transaction, if it has been serialised and not uploaded to
+     * S3.
+     *
+     * @return a string representation of the transaction, unless it has not yet been serialised or it has been uploaded
+     *         to S3
+     */
+    public Optional<String> getSerialisedTransaction() {
+        return Optional.ofNullable(serialisedTransaction);
     }
 
     /**
@@ -102,12 +118,45 @@ public class AddTransactionRequest {
     }
 
     /**
+     * Stores the transaction body if it will not fit in a transaction log entry. Returns a copy of this object if
+     * anything changed.
+     *
+     * @param  sleeperTable the Sleeper table status
+     * @param  store        the transaction body store
+     * @return              the updated copy
+     */
+    public AddTransactionRequest storeTransactionBodyIfTooBig(TableStatus sleeperTable, TransactionBodyStore store) {
+        if (bodyKey != null) {
+            return this;
+        } else {
+            return withStoreBodyResult(store.storeIfTooBig(sleeperTable.getTableUniqueId(), transaction));
+        }
+    }
+
+    private AddTransactionRequest withStoreBodyResult(StoreTransactionBodyResult result) {
+        Optional<String> bodyKey = result.getBodyKey();
+        if (bodyKey.isPresent()) {
+            return toBuilder().bodyKey(bodyKey.get()).build();
+        }
+        Optional<String> serialisedTransaction = result.getSerialisedTransaction();
+        if (serialisedTransaction.isPresent()) {
+            return toBuilder().serialisedTransaction(serialisedTransaction.get()).build();
+        }
+        return this;
+    }
+
+    private Builder toBuilder() {
+        return withTransaction(transaction).bodyKey(bodyKey).serialisedTransaction(serialisedTransaction).beforeApplyListener(beforeApplyListener);
+    }
+
+    /**
      * A builder for this class.
      */
     public static class Builder {
 
         private final StateStoreTransaction<?> transaction;
         private String bodyKey;
+        private String serialisedTransaction;
         private StateListenerBeforeApply beforeApplyListener = StateListenerBeforeApply.none();
 
         private Builder(StateStoreTransaction<?> transaction) {
@@ -127,6 +176,20 @@ public class AddTransactionRequest {
          */
         public Builder bodyKey(String bodyKey) {
             this.bodyKey = bodyKey;
+            return this;
+        }
+
+        /**
+         * Sets the string representation of the transaction. To decide whether to upload the transaction to S3, we have
+         * to serialise the transaction and check if it's too big. If it's not too big, we want to hold the transaction
+         * directly in the log, but we want to avoid reserialising it again, so we can hold it here. This should only
+         * be set at that point, and will not be set at all if the transaction is uploaded to S3.
+         *
+         * @param  serialisedTransaction the object key in the data bucket
+         * @return                       this builder
+         */
+        public Builder serialisedTransaction(String serialisedTransaction) {
+            this.serialisedTransaction = serialisedTransaction;
             return this;
         }
 

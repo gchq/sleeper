@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitFileReferencesTransaction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,9 +68,7 @@ public class SplitFileReferences {
                         .map(fileReference -> splitFileInPartition(fileReference, partition)))
                 .forEach(splitRequests::add);
         LOGGER.info("Found {} files in non-leaf partitions that need splitting", splitRequests.size());
-        if (!splitRequests.isEmpty()) {
-            stateStore.splitFileReferences(splitRequests);
-        }
+        new SplitFileReferencesTransaction(splitRequests).synchronousCommit(stateStore);
     }
 
     private static SplitFileReferenceRequest splitFileInPartition(FileReference file, Partition partition) {

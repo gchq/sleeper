@@ -116,7 +116,16 @@ public class IngestJob {
      * @return             the builder
      */
     public IngestJobAddedFilesEvent.Builder addedFilesEventBuilder(Instant writtenTime) {
-        return IngestJobAddedFilesEvent.builder().jobId(id).tableId(tableId).writtenTime(writtenTime);
+        return addedFilesEventBuilder().writtenTime(writtenTime);
+    }
+
+    /**
+     * Creates a builder for an event when files have been added to the state store. Used with the ingest job tracker.
+     *
+     * @return the builder
+     */
+    public IngestJobAddedFilesEvent.Builder addedFilesEventBuilder() {
+        return IngestJobAddedFilesEvent.builder().jobId(id).tableId(tableId);
     }
 
     /**
