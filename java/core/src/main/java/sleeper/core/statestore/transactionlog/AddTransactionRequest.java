@@ -21,11 +21,13 @@ import org.slf4j.LoggerFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
 import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
 import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
 import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.TransactionType;
+import sleeper.core.table.TableStatus;
 
 import java.util.Optional;
 
@@ -116,12 +118,22 @@ public class AddTransactionRequest {
     }
 
     /**
-     * Returns an updated copy of this request that reflects the result of storing the transaction body.
+     * Stores the transaction body if it will not fit in a transaction log entry. Returns a copy of this object if
+     * anything changed.
      *
-     * @param  result the result
-     * @return        the updated copy
+     * @param  sleeperTable the Sleeper table status
+     * @param  store        the transaction body store
+     * @return              the updated copy
      */
-    public AddTransactionRequest withStoreBodyResult(StoreTransactionBodyResult result) {
+    public AddTransactionRequest storeTransactionBodyIfTooBig(TableStatus sleeperTable, TransactionBodyStore store) {
+        if (bodyKey != null) {
+            return this;
+        } else {
+            return withStoreBodyResult(store.storeIfTooBig(sleeperTable.getTableUniqueId(), transaction));
+        }
+    }
+
+    private AddTransactionRequest withStoreBodyResult(StoreTransactionBodyResult result) {
         Optional<String> bodyKey = result.getBodyKey();
         if (bodyKey.isPresent()) {
             return toBuilder().bodyKey(bodyKey.get()).build();

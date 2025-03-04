@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.testutils.SupplierTestHelper.exampleUUID;
 import static sleeper.core.testutils.SupplierTestHelper.numberedUUID;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
+import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedUuidsWithPrefix;
 
 public class SupplierTestHelperTest {
 
@@ -41,12 +42,22 @@ public class SupplierTestHelperTest {
 
     @Test
     void shouldSupplyUUIDsWithNumberAtEnd() {
-        Supplier<String> supplier = supplyNumberedIdsWithPrefix("object");
+        Supplier<String> supplier = supplyNumberedUuidsWithPrefix("object");
         assertThat(List.of(supplier.get(), supplier.get(), supplier.get()))
                 .containsExactly(
                         "object00-0000-0000-0000-000000000001",
                         "object00-0000-0000-0000-000000000002",
                         "object00-0000-0000-0000-000000000003");
+    }
+
+    @Test
+    void shouldSupplyIdsWithNumberAtEnd() {
+        Supplier<String> supplier = supplyNumberedIdsWithPrefix("object-");
+        assertThat(List.of(supplier.get(), supplier.get(), supplier.get()))
+                .containsExactly(
+                        "object-1",
+                        "object-2",
+                        "object-3");
     }
 
 }
