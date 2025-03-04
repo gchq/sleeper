@@ -14,7 +14,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use arrow::datatypes::DataType;
+use arrow::{
+    array::{AsArray, BooleanBuilder},
+    datatypes::{DataType, Int64Type},
+};
 use datafusion::{
     common::internal_err,
     error::{DataFusionError, Result},
@@ -22,9 +25,11 @@ use datafusion::{
         interval_arithmetic::Interval, ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature,
         Volatility,
     },
+    scalar::ScalarValue,
 };
 use std::{
     any::Any,
+    sync::Arc,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
@@ -46,8 +51,15 @@ impl AgeOff {
     pub fn new(threshold: i64) -> Self {
         Self {
             threshold,
-            signature: Signature::numeric(1, Volatility::Immutable),
+            signature: Signature::exact(vec![DataType::Int64], Volatility::Immutable),
         }
+    }
+
+    /// Tests if the timestamp `t` >= the threshold for retention. Returns true if the record
+    /// with timestamp `t` should be retained.
+    #[inline]
+    fn retain(&self, t: i64) -> bool {
+        t >= self.threshold
     }
 }
 
@@ -55,7 +67,7 @@ impl TryFrom<&Filter> for AgeOff {
     type Error = DataFusionError;
 
     fn try_from(value: &Filter) -> std::result::Result<Self, Self::Error> {
-        if let Filter::Ageoff { column, max_age } = value {
+        if let Filter::Ageoff { column: _, max_age } = value {
             // Figure out max_age in as a millisecond threshold from current time
             let threshold = if *max_age >= 0 {
                 SystemTime::now().checked_sub(Duration::from_millis(max_age.unsigned_abs()))
@@ -91,22 +103,35 @@ impl ScalarUDFImpl for AgeOff {
         &self.signature
     }
 
-    fn return_type(&self, arg_types: &[DataType]) -> Result<DataType> {
-        internal_err!("Expected return_type_from_args, found call to return_type")
-    }
-
-    fn return_type_from_args(
-        &self,
-        args: datafusion::logical_expr::ReturnTypeArgs,
-    ) -> datafusion::error::Result<datafusion::logical_expr::ReturnInfo> {
-        let return_type = self.return_type(args.arg_types)?;
-        Ok(datafusion::logical_expr::ReturnInfo::new_nullable(
-            return_type,
-        ))
+    fn return_type(&self, _arg_types: &[DataType]) -> Result<DataType> {
+        Ok(DataType::Boolean)
     }
 
     fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
-        self.invoke_batch(&args.args, args.number_rows)
+        if args.args.len() != 1 {
+            return internal_err!(
+                "AgeOff UDF called with {} input columns, only accepts 1",
+                args.args.len()
+            );
+        }
+        match &args.args[0] {
+            ColumnarValue::Scalar(ScalarValue::Int64(Some(v))) => Ok(ColumnarValue::Scalar(
+                ScalarValue::Boolean(Some(self.retain(*v))),
+            )),
+            ColumnarValue::Array(arr) => {
+                let prim_arr = arr.as_primitive::<Int64Type>();
+                let mut result_builder = BooleanBuilder::with_capacity(args.number_rows);
+                for v in prim_arr {
+                    if let Some(num) = v {
+                        result_builder.append_value(self.retain(num));
+                    } else {
+                        result_builder.append_null();
+                    }
+                }
+                Ok(ColumnarValue::Array(Arc::new(result_builder.finish())))
+            }
+            _ => todo!(),
+        }
     }
 
     fn evaluate_bounds(&self, _input: &[&Interval]) -> Result<Interval> {

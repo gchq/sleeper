@@ -21,7 +21,6 @@ use datafusion::{
     error::{DataFusionError, Result},
     logical_expr::{Expr, ScalarUDF},
 };
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub mod ageoff;
 
@@ -44,7 +43,7 @@ impl Filter {
     /// expression can be passed to [`DataFrame::filter`].
     pub fn create_filter_expr(&self) -> Result<Expr> {
         match self {
-            Self::Ageoff { column, max_age } => {
+            Self::Ageoff { column, .. } => {
                 Ok(ScalarUDF::from(AgeOff::try_from(self)?).call(vec![col(column)]))
             }
         }
