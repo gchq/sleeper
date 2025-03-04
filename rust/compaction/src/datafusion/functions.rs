@@ -1,6 +1,3 @@
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
-
-use ageoff::AgeOff;
 /// Module contains structs and functions relating to implementing Sleeper 'iterators' in Rust using
 /// DataFusion.
 /*
@@ -18,8 +15,13 @@ use ageoff::AgeOff;
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-use datafusion::error::{DataFusionError, Result};
-use datafusion::logical_expr::{Expr, ScalarUDF};
+use ageoff::AgeOff;
+use datafusion::logical_expr::col;
+use datafusion::{
+    error::{DataFusionError, Result},
+    logical_expr::{Expr, ScalarUDF},
+};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub mod ageoff;
 
@@ -40,25 +42,10 @@ pub enum Filter {
 impl Filter {
     /// Creates a filtering expression for this filter instance. The returned
     /// expression can be passed to [`DataFrame::filter`].
-    pub fn create_filter_expr(&self, args: Vec<Expr>) -> Result<Expr> {
+    pub fn create_filter_expr(&self) -> Result<Expr> {
         match self {
             Self::Ageoff { column, max_age } => {
-                // Figure out max_age in as a millisecond threshold from current time
-                let threshold = if *max_age >= 0 {
-                    SystemTime::now().checked_sub(Duration::from_millis(max_age.unsigned_abs()))
-                } else {
-                    SystemTime::now().checked_add(Duration::from_millis(max_age.unsigned_abs()))
-                }
-                // Convert Option to Result with DataFusionError
-                .ok_or(DataFusionError::Configuration(
-                    "Age off filter max_age not representable as timestamp".into(),
-                ))?
-                // Figure out duration since unix epoch
-                .duration_since(UNIX_EPOCH)
-                .map_err(|e| DataFusionError::External(Box::new(e)))?
-                // Finally, convert to raw integer
-                .as_millis() as i64;
-                Ok(ScalarUDF::from(AgeOff::new(threshold)).call(args))
+                Ok(ScalarUDF::from(AgeOff::try_from(self)?).call(vec![col(column)]))
             }
         }
     }

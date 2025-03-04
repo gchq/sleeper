@@ -1,6 +1,3 @@
-use std::any::Any;
-
-use arrow::datatypes::DataType;
 /// Implementation of [`ScalarUDF`] for age off filtering.
 /*
 * Copyright 2022-2025 Crown Copyright
@@ -17,11 +14,21 @@ use arrow::datatypes::DataType;
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+use arrow::datatypes::DataType;
 use datafusion::{
     common::internal_err,
-    error::Result,
-    logical_expr::{Expr, ScalarUDFImpl, Signature, Volatility},
+    error::{DataFusionError, Result},
+    logical_expr::{
+        interval_arithmetic::Interval, ColumnarValue, ScalarFunctionArgs, ScalarUDFImpl, Signature,
+        Volatility,
+    },
 };
+use std::{
+    any::Any,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
+
+use super::Filter;
 
 /// A filtering expression (returns bool) for an integer column based upon a given threshold.
 /// If the value in a given column is lower than the given threshold, it will be filtered out.
@@ -44,6 +51,33 @@ impl AgeOff {
     }
 }
 
+impl TryFrom<&Filter> for AgeOff {
+    type Error = DataFusionError;
+
+    fn try_from(value: &Filter) -> std::result::Result<Self, Self::Error> {
+        if let Filter::Ageoff { column, max_age } = value {
+            // Figure out max_age in as a millisecond threshold from current time
+            let threshold = if *max_age >= 0 {
+                SystemTime::now().checked_sub(Duration::from_millis(max_age.unsigned_abs()))
+            } else {
+                SystemTime::now().checked_add(Duration::from_millis(max_age.unsigned_abs()))
+            }
+            // Convert Option to Result with DataFusionError
+            .ok_or(DataFusionError::Configuration(
+                "Age off filter max_age not representable as timestamp".into(),
+            ))?
+            // Figure out duration since unix epoch
+            .duration_since(UNIX_EPOCH)
+            .map_err(|e| DataFusionError::External(Box::new(e)))?
+            // Finally, convert to raw integer
+            .as_millis() as i64;
+            Ok(AgeOff::new(threshold))
+        } else {
+            internal_err!("AgeOff try_from called on non Filter::AgeOff variant")
+        }
+    }
+}
+
 impl ScalarUDFImpl for AgeOff {
     fn as_any(&self) -> &dyn Any {
         self
@@ -61,23 +95,6 @@ impl ScalarUDFImpl for AgeOff {
         internal_err!("Expected return_type_from_args, found call to return_type")
     }
 
-    fn schema_name(&self, args: &[datafusion::prelude::Expr]) -> datafusion::error::Result<String> {
-        Ok(std::format!(
-            "{}({})",
-            self.name(),
-            schema_name_from_exprs_comma_separated_without_space(args)?
-        ))
-    }
-
-    fn return_type_from_exprs(
-        &self,
-        _args: &[datafusion::prelude::Expr],
-        _schema: &dyn datafusion::common::ExprSchema,
-        arg_types: &[arrow::datatypes::DataType],
-    ) -> datafusion::error::Result<arrow::datatypes::DataType> {
-        self.return_type(arg_types)
-    }
-
     fn return_type_from_args(
         &self,
         args: datafusion::logical_expr::ReturnTypeArgs,
@@ -88,148 +105,11 @@ impl ScalarUDFImpl for AgeOff {
         ))
     }
 
-    fn is_nullable(
-        &self,
-        _args: &[datafusion::prelude::Expr],
-        _schema: &dyn datafusion::common::ExprSchema,
-    ) -> bool {
-        true
-    }
-
-    fn invoke(
-        &self,
-        _args: &[datafusion::logical_expr::ColumnarValue],
-    ) -> datafusion::error::Result<datafusion::logical_expr::ColumnarValue> {
-        datafusion::common::not_impl_err!(
-            "Function {} does not implement invoke but called",
-            self.name()
-        )
-    }
-
-    fn invoke_batch(
-        &self,
-        args: &[datafusion::logical_expr::ColumnarValue],
-        number_rows: usize,
-    ) -> datafusion::error::Result<datafusion::logical_expr::ColumnarValue> {
-        match args.is_empty() {
-            true =>
-            {
-                #[allow(deprecated)]
-                self.invoke_no_args(number_rows)
-            }
-            false =>
-            {
-                #[allow(deprecated)]
-                self.invoke(args)
-            }
-        }
-    }
-
-    fn invoke_with_args(
-        &self,
-        args: datafusion::logical_expr::ScalarFunctionArgs,
-    ) -> datafusion::error::Result<datafusion::logical_expr::ColumnarValue> {
+    fn invoke_with_args(&self, args: ScalarFunctionArgs) -> Result<ColumnarValue> {
         self.invoke_batch(&args.args, args.number_rows)
     }
 
-    fn invoke_no_args(
-        &self,
-        _number_rows: usize,
-    ) -> datafusion::error::Result<datafusion::logical_expr::ColumnarValue> {
-        datafusion::common::not_impl_err!(
-            "Function {} does not implement invoke_no_args but called",
-            self.name()
-        )
-    }
-
-    fn aliases(&self) -> &[String] {
-        &[]
-    }
-
-    fn simplify(
-        &self,
-        args: Vec<datafusion::prelude::Expr>,
-        _info: &dyn datafusion::logical_expr::simplify::SimplifyInfo,
-    ) -> datafusion::error::Result<datafusion::logical_expr::simplify::ExprSimplifyResult> {
-        Ok(datafusion::logical_expr::simplify::ExprSimplifyResult::Original(args))
-    }
-
-    fn short_circuits(&self) -> bool {
-        false
-    }
-
-    fn evaluate_bounds(
-        &self,
-        _input: &[&datafusion::logical_expr::interval_arithmetic::Interval],
-    ) -> datafusion::error::Result<datafusion::logical_expr::interval_arithmetic::Interval> {
-        // We cannot assume the input datatype is the same of output type.
-        datafusion::logical_expr::interval_arithmetic::Interval::make_unbounded(
-            &arrow::datatypes::DataType::Null,
-        )
-    }
-
-    fn propagate_constraints(
-        &self,
-        _interval: &datafusion::logical_expr::interval_arithmetic::Interval,
-        _inputs: &[&datafusion::logical_expr::interval_arithmetic::Interval],
-    ) -> datafusion::error::Result<
-        Option<Vec<datafusion::logical_expr::interval_arithmetic::Interval>>,
-    > {
-        Ok(Some(std::vec![]))
-    }
-
-    fn output_ordering(
-        &self,
-        inputs: &[datafusion::logical_expr::sort_properties::ExprProperties],
-    ) -> datafusion::error::Result<datafusion::logical_expr::sort_properties::SortProperties> {
-        if !self.preserves_lex_ordering(inputs)? {
-            return Ok(datafusion::logical_expr::sort_properties::SortProperties::Unordered);
-        }
-
-        let Some(first_order) = inputs.first().map(|p| &p.sort_properties) else {
-            return Ok(datafusion::logical_expr::sort_properties::SortProperties::Singleton);
-        };
-
-        if inputs
-            .iter()
-            .skip(1)
-            .all(|input| &input.sort_properties == first_order)
-        {
-            Ok(*first_order)
-        } else {
-            Ok(datafusion::logical_expr::sort_properties::SortProperties::Unordered)
-        }
-    }
-
-    fn preserves_lex_ordering(
-        &self,
-        _inputs: &[datafusion::logical_expr::sort_properties::ExprProperties],
-    ) -> datafusion::error::Result<bool> {
-        Ok(false)
-    }
-
-    fn coerce_types(
-        &self,
-        _arg_types: &[arrow::datatypes::DataType],
-    ) -> datafusion::error::Result<Vec<arrow::datatypes::DataType>> {
-        datafusion::common::not_impl_err!(
-            "Function {} does not implement coerce_types",
-            self.name()
-        )
-    }
-
-    fn equals(&self, other: &dyn ScalarUDFImpl) -> bool {
-        self.name() == other.name() && self.signature() == other.signature()
-    }
-
-    fn hash_value(&self) -> u64 {
-        let hasher = &mut std::hash::DefaultHasher::new();
-        self.name().hash(hasher);
-        self.signature().hash(hasher);
-        hasher.finish()
-    }
-
-    fn documentation(&self) -> Option<&datafusion::logical_expr::Documentation> {
-        None
+    fn evaluate_bounds(&self, _input: &[&Interval]) -> Result<Interval> {
+        Interval::make_unbounded(&DataType::Boolean)
     }
 }

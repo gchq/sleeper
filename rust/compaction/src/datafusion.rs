@@ -66,13 +66,6 @@ pub async fn compact(
     );
     info!("DataFusion output file {}", output_path.as_str());
     info!("Compaction partition region {:?}", input_data.region);
-
-    let filter_agg_conf = input_data
-        .iterator_config
-        .as_deref()
-        .map(FilterAggregationConfig::try_from)
-        .transpose()?;
-
     let sf = create_session_cfg(input_data, input_paths);
     let ctx = SessionContext::new_with_config(sf);
 
@@ -118,12 +111,18 @@ pub async fn compact(
     }
 
     // Do we have a Sleeper iterator filter to apply?
+    let filter_agg_conf = input_data
+        .iterator_config
+        .as_deref()
+        .map(FilterAggregationConfig::try_from)
+        .transpose()?;
     if let Some(FilterAggregationConfig {
         filter: Some(f),
         aggregation: _,
-    }) = filter_agg_conf
+    }) = &filter_agg_conf
     {
         info!("Applying Sleeper filter iterator: {f:?}");
+        frame = frame.filter(f.create_filter_expr()?)?;
     }
 
     // Create the sketch function
