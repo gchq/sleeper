@@ -28,6 +28,7 @@ import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionBodyStore;
@@ -38,7 +39,9 @@ import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCreatedEvent;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
@@ -49,6 +52,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -56,9 +60,16 @@ import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
+import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionFinishedEvent;
+import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionStartedEventBuilder;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionJobCreated;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestAddedFilesStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestJobStatus;
 import static sleeper.core.tracker.ingest.job.IngestJobStatusTestData.ingestStartedStatus;
+import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
 public class TransactionLogFollowerLambdaTest {
@@ -75,8 +86,87 @@ public class TransactionLogFollowerLambdaTest {
     InMemoryIngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
 
     @Test
-    void shouldProcessEntrySuccessfullyTriggersTrackerUpdate() {
+    void shouldUpdateIngestJobTrackerWhenFileWasAdded() {
         // Given
+        FileReference file = fileFactory().rootFile("test.parquet", 100);
+        IngestJobRunIds jobRunIds = IngestJobRunIds.builder()
+                .tableId(tableId)
+                .jobId("test-job")
+                .jobRunId("test-run")
+                .taskId("test-task")
+                .build();
+        ingestJobTracker.jobStarted(IngestJobStartedEvent.builder()
+                .jobRunIds(jobRunIds)
+                .fileCount(2)
+                .startTime(Instant.parse("2025-02-27T13:31:00Z"))
+                .build());
+
+        update(stateStore).addTransaction(AddFilesTransaction.builder()
+                .jobRunIds(jobRunIds)
+                .writtenTime(Instant.parse("2025-02-27T13:32:00Z"))
+                .fileReferences(List.of(file))
+                .build());
+
+        // When
+        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda();
+
+        // Then
+        assertThat(response).isEqualTo(new StreamsEventResponse());
+        assertThat(ingestJobTracker.getAllJobs(tableId)).containsExactly(
+                ingestJobStatus("test-job",
+                        jobRunOnTask("test-task",
+                                ingestStartedStatus(Instant.parse("2025-02-27T13:31:00Z"), 2),
+                                ingestAddedFilesStatus(Instant.parse("2025-02-27T13:32:00Z"), 1))));
+    }
+
+    @Test
+    void shouldUpdateCompactionJobTrackerWhenCompactionWasCommitted() {
+        // Given
+        FileReference input = fileFactory().rootFile("input.parquet", 100);
+        FileReference output = fileFactory().rootFile("output.parquet", 50);
+        var createTime = Instant.parse("2025-03-04T08:57:00Z");
+        var startTime = Instant.parse("2025-03-04T08:58:00Z");
+        var finishTime = Instant.parse("2025-03-04T08:59:00Z");
+        var commitTime = Instant.parse("2025-03-04T08:59:05Z");
+        var job = CompactionJobCreatedEvent.builder()
+                .jobId("test-job")
+                .tableId(tableId)
+                .partitionId("root")
+                .inputFilesCount(1)
+                .build();
+        var run = compactionStartedEventBuilder(job, startTime).taskId("test-task").jobRunId("test-run").build();
+        var finished = compactionFinishedEvent(run, summary(startTime, finishTime, 100, 50));
+        compactionJobTracker.jobCreated(job, createTime);
+        compactionJobTracker.jobStarted(run);
+        compactionJobTracker.jobFinished(finished);
+        update(stateStore).addFile(input);
+        update(stateStore).assignJobId("test-job", "root", List.of("input.parquet"));
+        stateStore.fixFileUpdateTime(commitTime);
+        update(stateStore).addTransaction(new ReplaceFileReferencesTransaction(List.of(
+                ReplaceFileReferencesRequest.builder()
+                        .jobId("test-job")
+                        .taskId("test-task")
+                        .jobRunId("test-run")
+                        .inputFiles(List.of("input.parquet"))
+                        .newReference(output)
+                        .build())));
+
+        // When
+        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda();
+
+        // Then
+        assertThat(response).isEqualTo(new StreamsEventResponse());
+        assertThat(compactionJobTracker.getAllJobs(tableId)).containsExactly(
+                compactionJobCreated(job, createTime, jobRunOnTask("test-task",
+                        compactionStartedStatus(startTime),
+                        compactionFinishedStatus(summary(startTime, finishTime, 100, 50)),
+                        compactionCommittedStatus(commitTime))));
+    }
+
+    @Test
+    void shouldNotUpdateTrackerWhenDisabled() {
+        // Given
+        instanceProperties.set(COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED, "false");
         FileReference file = fileFactory().rootFile("test.parquet", 100);
         IngestJobRunIds jobRunIds = IngestJobRunIds.builder()
                 .tableId(tableId)
