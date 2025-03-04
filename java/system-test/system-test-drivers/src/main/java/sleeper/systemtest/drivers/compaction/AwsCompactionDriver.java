@@ -49,6 +49,7 @@ import sleeper.task.common.EC2Scaler;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -127,20 +128,33 @@ public class AwsCompactionDriver implements CompactionDriver {
 
     @Override
     public void sendCompactionCommits(Stream<CompactionCommitMessage> commits) {
-        SplitIntoBatches.streamBatchesOf(10, commits).forEach(batch -> {
-            LOGGER.info("Submitting batch of {} commits", batch);
-            EXECUTOR.submit(() -> {
-                CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
-                sqsClientV2.sendMessageBatch(builder -> builder
-                        .queueUrl(instance.getInstanceProperties().get(COMPACTION_COMMIT_QUEUE_URL))
-                        .entries(batch.stream()
-                                .map(commit -> SendMessageBatchRequestEntry.builder()
-                                        .id(commit.request().getJobId())
-                                        .messageBody(serDe.toJson(commit))
-                                        .build())
-                                .toList()));
-                LOGGER.info("Sent batch of {} commits", batch);
-            });
+        SplitIntoBatches.streamBatchesOf(10000, commits).forEach(bigBatch -> {
+            LOGGER.info("Processing batch of {} commits", bigBatch.size());
+            SplitIntoBatches.streamBatchesOf(10, bigBatch)
+                    .map(batch -> {
+                        return EXECUTOR.submit(() -> {
+                            CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
+                            sqsClientV2.sendMessageBatch(builder -> builder
+                                    .queueUrl(instance.getInstanceProperties().get(COMPACTION_COMMIT_QUEUE_URL))
+                                    .entries(batch.stream()
+                                            .map(commit -> SendMessageBatchRequestEntry.builder()
+                                                    .id(commit.request().getJobId())
+                                                    .messageBody(serDe.toJson(commit))
+                                                    .build())
+                                            .toList()));
+                        });
+                    })
+                    .forEach(future -> {
+                        try {
+                            future.get();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(e);
+                        } catch (ExecutionException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+            LOGGER.info("Sent batch of {} commits", bigBatch.size());
         });
     }
 }

@@ -46,9 +46,17 @@ public class SplitIntoBatches {
         return () -> streamBatchesOf(batchSize, list).iterator();
     }
 
-    private static <T> Stream<List<T>> streamBatchesOf(int batchSize, List<T> items) {
-        return IntStream.iterate(0, i -> i < items.size(), i -> i + batchSize)
-                .mapToObj(i -> items.subList(i, Math.min(i + batchSize, items.size())));
+    /**
+     * Splits a list of items into batches of a given size.
+     *
+     * @param  <T>       the item type
+     * @param  batchSize the maximum size of sub-list to return
+     * @param  list      the list to split
+     * @return           a stream of sub-lists backed by the source list
+     */
+    public static <T> Stream<List<T>> streamBatchesOf(int batchSize, List<T> list) {
+        return IntStream.iterate(0, i -> i < list.size(), i -> i + batchSize)
+                .mapToObj(i -> list.subList(i, Math.min(i + batchSize, list.size())));
     }
 
     /**
