@@ -124,7 +124,7 @@ public class IngestCoordinator<INCOMINGDATATYPE> implements AutoCloseable {
         this.objectFactory = requireNonNull(builder.objectFactory);
         this.sleeperStateStore = requireNonNull(builder.stateStore);
         this.addFilesToStateStore = requireNonNullElseGet(builder.addFilesToStateStore,
-                () -> AddFilesToStateStore.synchronous(sleeperStateStore));
+                () -> AddFilesToStateStore.synchronousNoJob(sleeperStateStore));
         this.sleeperSchema = requireNonNull(builder.schema);
         this.sleeperIteratorClassName = builder.iteratorClassName;
         this.sleeperIteratorConfig = builder.iteratorConfig;

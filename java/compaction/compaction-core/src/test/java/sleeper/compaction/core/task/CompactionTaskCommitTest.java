@@ -27,6 +27,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
@@ -46,6 +47,7 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TAS
 import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_COMMIT_ASYNC;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFailedStatus;
@@ -63,8 +65,8 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
     private final StateStore store2 = stateStore(table2);
 
     @Nested
-    @DisplayName("Send commits to state store commit queue")
-    class SendCommitsToStateStoreCommitQueue {
+    @DisplayName("Send asynchronous commits to state store commit queue")
+    class AsynchronousByDirectCommitQueue {
 
         @Test
         void shouldSendJobCommitRequestToQueue() throws Exception {
@@ -235,7 +237,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
     @Nested
     @DisplayName("Send commits to the commit batcher queue")
-    class CommitBatcherQueue {
+    class AsynchronousByBatcherQueue {
 
         @Test
         void shouldSendJobCommitRequestToBatcher() throws Exception {
@@ -280,7 +282,7 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
 
     @Nested
     @DisplayName("Update state store")
-    class UpdateStateStore {
+    class SynchronousStateStoreUpdate {
         @BeforeEach
         void setup() {
             tableProperties.set(COMPACTION_JOB_COMMIT_ASYNC, "false");
@@ -389,6 +391,31 @@ public class CompactionTaskCommitTest extends CompactionTaskTestBase {
                             failedCompactionRun("test-task", startTime, finishTime, failTime, List.of(
                                     "1 replace file reference requests failed to update the state store",
                                     "Reference to file is not assigned to job test-job, in partition root, filename " + job.getInputFiles().get(0)))));
+        }
+
+        @Test
+        void shouldNotRecordJobTrackerUpdateDetailsInTransactionLogForSynchronousCommit() throws Exception {
+            // Given
+            Instant startTime = Instant.parse("2024-02-22T13:50:01Z");
+            Instant finishTime = Instant.parse("2024-02-22T13:50:02Z");
+            Instant failTime = Instant.parse("2024-02-22T13:50:03Z");
+            Queue<Instant> timesInTask = new LinkedList<>(List.of(
+                    Instant.parse("2024-02-22T13:50:00Z"), // Start
+                    startTime, finishTime, failTime,
+                    Instant.parse("2024-02-22T13:50:04Z"))); // Finish
+            CompactionJob job = createJob("test-job");
+            send(job);
+
+            // When
+            RecordsProcessed recordsProcessed = new RecordsProcessed(10L, 10L);
+            runTask("test-task", processJobs(
+                    jobSucceeds(recordsProcessed)),
+                    timesInTask::poll);
+
+            // Then
+            assertThat(transactionLogs.getLastFilesTransaction(tableProperties))
+                    .isEqualTo(new ReplaceFileReferencesTransaction(List.of(
+                            replaceJobFileReferences("test-job", job.getInputFiles(), job.createOutputFileReference(10)))));
         }
     }
 

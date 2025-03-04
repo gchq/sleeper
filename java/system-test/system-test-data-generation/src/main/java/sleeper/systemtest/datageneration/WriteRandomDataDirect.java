@@ -71,13 +71,11 @@ public class WriteRandomDataDirect {
 
     private static AddFilesToStateStore addFilesToStateStore(InstanceIngestSession session) {
         if (session.tableProperties().getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(session.tableProperties(),
+            return AddFilesToStateStore.asynchronousNoJob(session.tableProperties(),
                     new SqsFifoStateStoreCommitRequestSender(session.instanceProperties(), session.sqs(), session.s3(),
-                            TransactionSerDeProvider.forOneTable(session.tableProperties())),
-                    transactionBuilder -> {
-                    });
+                            TransactionSerDeProvider.forOneTable(session.tableProperties())));
         } else {
-            return AddFilesToStateStore.synchronous(session.stateStoreProvider().getStateStore(session.tableProperties()));
+            return AddFilesToStateStore.synchronousNoJob(session.stateStoreProvider().getStateStore(session.tableProperties()));
         }
     }
 }

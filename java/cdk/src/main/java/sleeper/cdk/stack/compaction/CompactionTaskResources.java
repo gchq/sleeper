@@ -28,6 +28,8 @@ import software.amazon.awscdk.services.ecr.IRepository;
 import software.amazon.awscdk.services.ecr.Repository;
 import software.amazon.awscdk.services.ecs.Cluster;
 import software.amazon.awscdk.services.ecs.ContainerImage;
+import software.amazon.awscdk.services.ecs.Ec2TaskDefinition;
+import software.amazon.awscdk.services.ecs.FargateTaskDefinition;
 import software.amazon.awscdk.services.ecs.ITaskDefinition;
 import software.amazon.awscdk.services.events.Rule;
 import software.amazon.awscdk.services.events.Schedule;
@@ -67,9 +69,18 @@ import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_ECS
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TASK_CREATION_PERIOD_IN_MINUTES;
 import static sleeper.core.properties.instance.CompactionProperty.ECR_COMPACTION_REPO;
 
+/**
+ * Deploys the resources to run compaction tasks that process compaction jobs. Specfically, there are the
+ * following resources:
+ * <p>
+ * - An ECS {@link Cluster} and either a {@link FargateTaskDefinition} or a {@link Ec2TaskDefinition}
+ * for tasks that will perform compaction jobs.
+ * - A lambda, that is periodically triggered by a CloudWatch rule, to look at the
+ * size of the compaction job queue and the number of running tasks and create more tasks if necessary.
+ */
 public class CompactionTaskResources {
-
     private static final String COMPACTION_CLUSTER_NAME = "CompactionClusterName";
+
     private final InstanceProperties instanceProperties;
     private final Stack stack;
 

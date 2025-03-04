@@ -114,6 +114,19 @@ public class IngestJobStartedEvent implements IngestJobEvent {
         }
 
         /**
+         * Sets the IDs relating to this run of the job.
+         *
+         * @param  jobRunIds the IDs
+         * @return           the builder
+         */
+        public Builder jobRunIds(IngestJobRunIds jobRunIds) {
+            return jobId(jobRunIds.getJobId())
+                    .tableId(jobRunIds.getTableId())
+                    .jobRunId(jobRunIds.getJobRunId())
+                    .taskId(jobRunIds.getTaskId());
+        }
+
+        /**
          * Sets the ingest job ID.
          *
          * @param  jobId the ingest job ID

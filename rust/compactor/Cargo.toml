@@ -34,7 +34,7 @@ log = { version = "0.4.26", features = [
 env_logger = { version = "0.11.6" } # Standard logging to stderr
 human-panic = { version = "2.0.2" } # Readable panic messages
 clap = { version = "4.5.31", features = ["derive"] } # Cmd line args processing
-color-eyre = { version = "0.6.2" } # Colourised version of `anyhow`
+color-eyre = { version = "0.6.3" } # Colourised version of `anyhow`
 owo-colors = { version = "4.2.0" } # Colourised output
 compaction = { path = "../compaction" }
 chrono = { version = "0.4.39" } # Log helper

@@ -1,0 +1,140 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.0.16 Chrome/132.0.6834.196 Electron/34.2.0 Safari/537.36" version="26.0.16">
+  <diagram name="Page-1" id="bR9HOR6jf02DX5lBVoME">
+    <mxGraphModel dx="928" dy="901" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="IyrwF_sSJSI5K8-rsG6f-1" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;gradientColor=#F78E04;gradientDirection=north;fillColor=#D05C17;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" parent="1" vertex="1">
+          <mxGeometry x="360" y="329" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="IyrwF_sSJSI5K8-rsG6f-4" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;gradientColor=#4D72F3;gradientDirection=north;fillColor=#3334B9;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.dynamodb;" parent="1" vertex="1">
+          <mxGeometry x="360" y="429.5" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="g8x8Qy_UaAUrV20m9tOx-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="IyrwF_sSJSI5K8-rsG6f-9" target="IyrwF_sSJSI5K8-rsG6f-1" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="IyrwF_sSJSI5K8-rsG6f-9" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;gradientColor=#F34482;gradientDirection=north;fillColor=#BC1356;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudwatch_2;" parent="1" vertex="1">
+          <mxGeometry x="240" y="329" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="IyrwF_sSJSI5K8-rsG6f-18" value="CloudWatch rule to periodically trigger lambda" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="180" y="279" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="IyrwF_sSJSI5K8-rsG6f-19" value="Lambda to identify online tables and send table ids to job creation queue" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="325" y="260" width="110" height="59" as="geometry" />
+        </mxCell>
+        <mxCell id="g8x8Qy_UaAUrV20m9tOx-2" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=orthogonalEdgeStyle;startArrow=classic;startFill=1;" parent="1" source="IyrwF_sSJSI5K8-rsG6f-4" target="IyrwF_sSJSI5K8-rsG6f-1" edge="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="490" y="400" as="sourcePoint" />
+            <mxPoint x="540" y="350" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8lTLG8cXME6h-0I4ITZz-22" value="&lt;ol&gt;&lt;li style=&quot;text-align: left;&quot;&gt;A CloudWatch rule (R) periodically triggers a lambda (L1).&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;Lambda L1 connects to the table information store T to identify the tables in this instance that are currently online. It sends those to an SQS FIFO queue (Q1).&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;Lambda L2 is triggered when a message arrives on queue Q1. It connects to the state store for that Sleeper table, and lists all the current partitions and file references. It performs splitting of file references and creates batches of compaction jobs. It sends the updates to the file references to the state store and the batches of compaction jobs to queue Q2.&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;Lambda L3 is triggered when a batch of compaction jobs appears on queue Q2. It checks whether the state store has been updated with the details of these compaction jobs. If yes then the jobs in the batch are sent to the compaction job queue Q3; if not then the batch is returned to the queue for processing later.&lt;/li&gt;&lt;/ol&gt;&lt;div style=&quot;text-align: left;&quot;&gt;The above diagram does not show some details such as dead-letter queues, and the interactions with the compaction job tracker.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fontSize=12;size=16;" parent="1" vertex="1">
+          <mxGeometry x="180" y="580" width="570" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-1" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;gradientColor=#FF4F8B;gradientDirection=north;fillColor=#BC1356;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.sqs;" parent="1" vertex="1">
+          <mxGeometry x="480" y="329" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="400" y="348.83" as="sourcePoint" />
+            <mxPoint x="480" y="348.83" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-3" value="FIFO queue containing table ids to create compaction jobs for" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="460" y="260" width="110" height="59" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-4" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;gradientColor=#F78E04;gradientDirection=north;fillColor=#D05C17;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" parent="1" vertex="1">
+          <mxGeometry x="600" y="329" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="520" y="348.83" as="sourcePoint" />
+            <mxPoint x="600" y="348.83" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-6" value="Lambda to create batches of compaction jobs" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="605" y="260" width="110" height="59" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-7" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;gradientColor=#FF4F8B;gradientDirection=north;fillColor=#BC1356;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.sqs;" parent="1" vertex="1">
+          <mxGeometry x="600" y="430" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-9" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;entryPerimeter=0;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="BI4qkSBktyaM1zWKE75I-4" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="619.83" y="500" as="sourcePoint" />
+            <mxPoint x="619.83" y="430" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-10" value="Queue of batches of pending compaction jobs" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="640" y="420" width="110" height="59" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-11" value="Table Information Store" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="250" y="430" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-12" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="619.84" y="469.5" as="sourcePoint" />
+            <mxPoint x="620" y="520" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="620" y="500" />
+              <mxPoint x="620" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-13" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;gradientColor=#F78E04;gradientDirection=north;fillColor=#D05C17;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" parent="1" vertex="1">
+          <mxGeometry x="600" y="520" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-14" value="Lambda to dispatch jobs to compaction queue" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="640" y="501" width="110" height="59" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-15" value="" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;gradientColor=#FF4F8B;gradientDirection=north;fillColor=#BC1356;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.sqs;" parent="1" vertex="1">
+          <mxGeometry x="480" y="520" width="40" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" target="BI4qkSBktyaM1zWKE75I-15" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="600" y="539.76" as="sourcePoint" />
+            <mxPoint x="680" y="539.76" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-17" value="R" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="250" y="370" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-18" value="Queue of compaction jobs" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+          <mxGeometry x="370" y="510.5" width="110" height="59" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-19" value="&lt;span style=&quot;color: rgb(90, 108, 134); font-family: Helvetica; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(251, 251, 251); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;Creation of compaction jobs&lt;/span&gt;" style="text;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="140" y="220" width="210" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-20" value="State stores" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="720" y="311" width="80" height="79" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-21" value="L1" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="400" y="369" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-22" value="Q1" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="490" y="369" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-23" value="L2" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="580" y="369" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-24" value="Q2" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="580" y="439.5" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-25" value="L3" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="580" y="510.5" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-28" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=classic;startFill=1;" parent="1" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="720" y="348.76" as="sourcePoint" />
+            <mxPoint x="640" y="348.76" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-26" value="Q3" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="490" y="500" width="20" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="BI4qkSBktyaM1zWKE75I-29" value="T" style="ellipse;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="400" y="439.5" width="20" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

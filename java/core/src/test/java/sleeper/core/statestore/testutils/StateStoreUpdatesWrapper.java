@@ -190,6 +190,21 @@ public class StateStoreUpdatesWrapper {
     }
 
     /**
+     * Atomically updates the job field of file references, as long as the job field is currently unset. This will be
+     * used for compaction job input files.
+     *
+     * @param  jobId                               the ID of the job
+     * @param  partitionId                         the ID of the partition
+     * @param  filenames                           the filenames that identify the files in the state store
+     * @throws FileReferenceNotFoundException      if a reference does not exist
+     * @throws FileReferenceAssignedToJobException if a reference is already assigned to a job
+     * @throws StateStoreException                 if the update fails for another reason
+     */
+    public void assignJobId(String jobId, String partitionId, List<String> filenames) throws StateStoreException {
+        assignJobIds(List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames)));
+    }
+
+    /**
      * Atomically applies the results of jobs. Removes file references for a job's input files, and adds a reference to
      * an output file. This will be used for compaction.
      * <p>
@@ -203,6 +218,24 @@ public class StateStoreUpdatesWrapper {
      */
     public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
         new ReplaceFileReferencesTransaction(requests).synchronousCommit(stateStore);
+    }
+
+    /**
+     * Atomically applies the results of a job. Removes file references for a job's input files, and adds a reference to
+     * an output file. This will be used for compaction.
+     * <p>
+     * This will validate that the input files were assigned to the job.
+     * <p>
+     * This will decrement the number of references for each of the input files. If no other references exist for those
+     * files, they will become available for garbage collection.
+     *
+     * @param  jobId                          the job ID
+     * @param  inputFiles                     the filenames of the job's input files
+     * @param  newReference                   the new reference to replace the input file references on the partition
+     * @throws ReplaceRequestsFailedException if any of the updates fail
+     */
+    public void atomicallyReplaceFileReferencesWithNewOnes(String jobId, List<String> inputFiles, FileReference newReference) throws ReplaceRequestsFailedException {
+        atomicallyReplaceFileReferencesWithNewOnes(List.of(ReplaceFileReferencesRequest.replaceJobFileReferences(jobId, inputFiles, newReference)));
     }
 
     /**
