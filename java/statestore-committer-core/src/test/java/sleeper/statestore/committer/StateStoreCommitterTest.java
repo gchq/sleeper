@@ -53,21 +53,17 @@ import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTrans
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
-import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
-import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter.RequestHandle;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -90,8 +86,6 @@ public class StateStoreCommitterTest {
     private final Schema schema = schemaWithKey("key", new StringType());
     private final PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     private final FileReferenceFactory fileFactory = FileReferenceFactory.fromUpdatedAt(partitions, DEFAULT_FILE_UPDATE_TIME);
-    private final InMemoryCompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
-    private final InMemoryIngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Map<String, TableProperties> propertiesByTableId = new LinkedHashMap<>();
     private final Map<String, StateStore> stateStoreByTableId = new LinkedHashMap<>();
@@ -111,14 +105,13 @@ public class StateStoreCommitterTest {
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
-            Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             update(stateStore).addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
             StateStoreCommitRequest request = createAndFinishCompaction(job, createdTime, startTime, summary);
 
             // When
-            apply(committerWithTimes(List.of(commitTime)), request);
+            apply(request);
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
@@ -132,7 +125,6 @@ public class StateStoreCommitterTest {
             Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
-            Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             update(stateStore).addFile(inputFile);
@@ -141,7 +133,7 @@ public class StateStoreCommitterTest {
             update(stateStore).clearFileData();
 
             // When
-            apply(committerWithTimes(List.of(failedTime)), request);
+            apply(request);
 
             // Then
             assertThat(failures).isEmpty();
@@ -155,7 +147,6 @@ public class StateStoreCommitterTest {
             Instant createdTime = Instant.parse("2024-06-14T15:34:00Z");
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
-            Instant failedTime = Instant.parse("2024-06-14T15:38:00Z");
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             update(stateStore).addFile(inputFile);
@@ -168,7 +159,7 @@ public class StateStoreCommitterTest {
             });
 
             // When
-            apply(committerWithTimes(List.of(failedTime)), request);
+            apply(request);
 
             // Then
             assertThat(failures).singleElement()
@@ -561,7 +552,6 @@ public class StateStoreCommitterTest {
             Instant startTime = Instant.parse("2024-06-14T15:35:00Z");
             Instant finishTime = Instant.parse("2024-06-14T15:37:00Z");
             JobRunSummary summary = summary(startTime, finishTime, 123, 123);
-            Instant commitTime = Instant.parse("2024-06-14T15:40:00Z");
             FileReference inputFile = fileFactory.rootFile("input.parquet", 123L);
             update(stateStore).addFile(inputFile);
             CompactionJob job = compactionFactoryForTable("test-table").createCompactionJob(List.of(inputFile), "root");
@@ -571,7 +561,7 @@ public class StateStoreCommitterTest {
             StateStoreCommitRequest request = StateStoreCommitRequest.create("test-table", bodyKey, TransactionType.REPLACE_FILE_REFERENCES);
 
             // When
-            apply(committerWithTimes(List.of(commitTime)), request);
+            apply(request);
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(
@@ -580,31 +570,17 @@ public class StateStoreCommitterTest {
     }
 
     private void apply(StateStoreCommitRequest... requests) {
-        apply(committer(), requests);
-    }
-
-    private void apply(StateStoreCommitter committer, StateStoreCommitRequest... requests) {
-        committer.applyBatch(operation -> operation.run(),
+        committer().applyBatch(operation -> operation.run(),
                 Stream.of(requests)
                         .map(this::message)
                         .collect(toUnmodifiableList()));
     }
 
     private StateStoreCommitter committer() {
-        return committerWithTimes(Instant::now);
-    }
-
-    private StateStoreCommitter committerWithTimes(Collection<Instant> times) {
-        return committerWithTimes(times.iterator()::next);
-    }
-
-    private StateStoreCommitter committerWithTimes(Supplier<Instant> timeSupplier) {
-        return new StateStoreCommitter(instanceProperties,
+        return new StateStoreCommitter(
                 new FixedTablePropertiesProvider(propertiesByTableId.values()),
                 new StateStoreProvider(instanceProperties, this::stateStoreForCommitter),
-                compactionJobTracker,
-                ingestJobTracker,
-                transactionLogs.getTransactionBodyStore(), timeSupplier);
+                transactionLogs.getTransactionBodyStore());
     }
 
     private StateStore createTableGetStateStore(String tableId) {

@@ -61,6 +61,15 @@ public class StateStoreCommitter {
         this.transactionBodyStore = transactionBodyStore;
     }
 
+    public StateStoreCommitter(
+            TablePropertiesProvider tablePropertiesProvider,
+            StateStoreProvider stateStoreProvider,
+            TransactionBodyStore transactionBodyStore) {
+        this.tablePropertiesProvider = tablePropertiesProvider;
+        this.stateStoreProvider = stateStoreProvider;
+        this.transactionBodyStore = transactionBodyStore;
+    }
+
     /**
      * Applies a batch of state store commit requests.
      *
