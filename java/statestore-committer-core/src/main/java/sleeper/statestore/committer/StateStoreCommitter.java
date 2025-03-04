@@ -18,7 +18,6 @@ package sleeper.statestore.committer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
@@ -28,13 +27,10 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
 import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
-import sleeper.core.tracker.ingest.job.IngestJobTracker;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import static sleeper.core.properties.table.TableProperty.STATESTORE_COMMITTER_UPDATE_ON_EVERY_BATCH;
 
@@ -47,19 +43,6 @@ public class StateStoreCommitter {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final TransactionBodyStore transactionBodyStore;
-
-    public StateStoreCommitter(
-            InstanceProperties instanceProperties,
-            TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider,
-            CompactionJobTracker compactionJobTracker,
-            IngestJobTracker ingestJobTracker,
-            TransactionBodyStore transactionBodyStore,
-            Supplier<Instant> timeSupplier) {
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
-        this.transactionBodyStore = transactionBodyStore;
-    }
 
     public StateStoreCommitter(
             TablePropertiesProvider tablePropertiesProvider,

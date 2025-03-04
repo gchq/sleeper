@@ -27,7 +27,6 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -89,9 +88,9 @@ public class InMemoryStateStoreCommitter {
             instance = context.instance();
             TablePropertiesProvider tablePropertiesProvider = instance.getTablePropertiesProvider();
             committer = new StateStoreCommitter(
-                    instance.getInstanceProperties(), tablePropertiesProvider,
-                    instance.getStateStoreProvider(), compaction.jobTracker(), ingest.jobTracker(),
-                    transactionBodyStore, Instant::now);
+                    tablePropertiesProvider,
+                    instance.getStateStoreProvider(),
+                    transactionBodyStore);
         }
 
         @Override
