@@ -44,12 +44,9 @@ public class Range {
         this.min = min;
         this.minInclusive = minInclusive;
         this.max = max;
-        this.maxInclusive = maxInclusive;
+        this.maxInclusive = max == null ? false : maxInclusive;
         if (min == null) {
             throw new IllegalArgumentException("Minimum value must not be null for field " + field.getName());
-        }
-        if (maxInclusive && max == null) {
-            throw new IllegalArgumentException("Maximum value cannot be inclusive null for field " + field.getName());
         }
         Comparable minComparable = validateComparable(field, min, "minimum value");
         Comparable maxComparable = validateComparable(field, max, "maximum value");
