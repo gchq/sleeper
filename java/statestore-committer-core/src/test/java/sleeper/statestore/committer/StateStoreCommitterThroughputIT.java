@@ -15,12 +15,10 @@
  */
 package sleeper.statestore.committer;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -36,7 +34,6 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
@@ -57,7 +54,6 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-@Disabled("For manual testing")
 public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterThroughputIT.class);
 
@@ -66,11 +62,11 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
     @Test
     void shouldSendManyAddFilesRequestsWithNoJob() throws Exception {
         Stats stats10 = runAddFilesRequestsWithNoJobGetStats(10);
-        Stats stats200 = runAddFilesRequestsWithNoJobGetStats(200);
-        Stats stats1000 = runAddFilesRequestsWithNoJobGetStats(1000);
+        // Stats stats200 = runAddFilesRequestsWithNoJobGetStats(200);
+        // Stats stats1000 = runAddFilesRequestsWithNoJobGetStats(1000);
         stats10.log();
-        stats200.log();
-        stats1000.log();
+        // stats200.log();
+        // stats1000.log();
     }
 
     private Stats runAddFilesRequestsWithNoJobGetStats(int numberOfRequests) throws Exception {
@@ -141,12 +137,9 @@ public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
     private StateStoreCommitter committer() {
         TablePropertiesProvider tablePropertiesProvider = tablePropertiesProvider();
         return new StateStoreCommitter(
-                instanceProperties,
                 tablePropertiesProvider,
                 stateStoreProvider(),
-                CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties),
-                IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties),
-                new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)), Instant::now);
+                new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {
