@@ -120,7 +120,7 @@ public class BulkExportStack extends NestedStack {
          */
         IRole bulkExportLambdaRole = Objects.requireNonNull(bulkExportLambda.getRole());
         instanceProperties.set(CdkDefinedInstanceProperty.BULK_EXPORT_LAMBDA_ROLE_ARN,
-                bulkExportLambdaRole.getRoleName());
+                bulkExportLambdaRole.getRoleArn());
 
         CfnOutputProps bulkExportLambdaRoleOutputProps = new CfnOutputProps.Builder()
                 .value(bulkExportLambda.getRole().getRoleArn())
