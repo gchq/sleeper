@@ -21,7 +21,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.StreamsEventResponse;
-import com.amazonaws.services.lambda.runtime.events.StreamsEventResponse.BatchItemFailure;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
@@ -45,9 +44,6 @@ import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -105,9 +101,7 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
      * @return         the result of which records failed requiring a retry
      */
     public StreamsEventResponse handleRecords(Stream<TransactionLogEntryHandle> entries) {
-        Iterator<TransactionLogEntryHandle> iterator = entries.iterator();
-        while (iterator.hasNext()) {
-            TransactionLogEntryHandle entry = iterator.next();
+        entries.forEach(entry -> {
             try {
                 TableProperties tableProperties = tablePropertiesProvider.getById(entry.tableId());
                 TransactionLogStateStore statestore = (TransactionLogStateStore) stateStoreProvider.getStateStore(tableProperties);
@@ -116,13 +110,8 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
                 LOGGER.warn("Found entry for Sleeper table that does not exist: {}", entry);
             } catch (RuntimeException e) {
                 LOGGER.error("Failed processing entry: {}", entry, e);
-                List<BatchItemFailure> batchItemFailures = new ArrayList<>();
-                batchItemFailures.add(new BatchItemFailure(entry.itemIdentifier()));
-                iterator.forEachRemaining(failEntry -> batchItemFailures.add(new BatchItemFailure(failEntry.itemIdentifier())));
-                LOGGER.error("Total entries to attempt to retry: {}", batchItemFailures.size());
-                return new StreamsEventResponse(batchItemFailures);
             }
-        }
+        });
         return new StreamsEventResponse();
     }
 

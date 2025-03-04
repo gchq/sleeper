@@ -16,7 +16,6 @@
 package sleeper.statestore.lambda.transaction;
 
 import com.amazonaws.services.lambda.runtime.events.StreamsEventResponse;
-import com.amazonaws.services.lambda.runtime.events.StreamsEventResponse.BatchItemFailure;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -37,6 +36,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
@@ -58,7 +58,6 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.core.testutils.SupplierTestHelper.fixIds;
 import static sleeper.core.testutils.SupplierTestHelper.supplyNumberedIdsWithPrefix;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionFinishedEvent;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionStartedEventBuilder;
@@ -84,6 +83,7 @@ public class TransactionLogFollowerLambdaTest {
     StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs.forTable(tableProperties));
     InMemoryCompactionJobTracker compactionJobTracker = new InMemoryCompactionJobTracker();
     InMemoryIngestJobTracker ingestJobTracker = new InMemoryIngestJobTracker();
+    Supplier<String> itemIdentifierSupplier = supplyNumberedIdsWithPrefix("item-");
 
     @Test
     void shouldUpdateIngestJobTrackerWhenFileWasAdded() {
@@ -245,92 +245,83 @@ public class TransactionLogFollowerLambdaTest {
     }
 
     @Test
-    void shouldFailOnUnexpectedExceptionAndNotProcessFurtherEntries() {
-        // Given one transaction that cannot be read
+    void shouldIgnoreUnexpectedExceptionAndProcessFurtherEntries() {
+        // Given two transactions to add files
         FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
-        transactionBodyStore.setStoreTransactionsWithObjectKeys(List.of("transaction/1", "transaction/2"));
-        update(stateStore).addFile(file1);
-        transactionBodyStore.store("transaction/1", tableId, new ClearFilesTransaction());
-        // And then one transaction that would be successfully added to the tracker
-        FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
-        IngestJobRunIds jobRunIds = IngestJobRunIds.builder()
+        IngestJobRunIds job1RunIds = IngestJobRunIds.builder()
                 .tableId(tableId)
-                .jobId("test-job")
-                .jobRunId("test-run")
+                .jobId("job-1")
+                .jobRunId("run-1")
                 .taskId("test-task")
                 .build();
         ingestJobTracker.jobStarted(IngestJobStartedEvent.builder()
-                .jobRunIds(jobRunIds)
-                .fileCount(2)
+                .jobRunIds(job1RunIds)
+                .fileCount(1)
                 .startTime(Instant.parse("2025-02-27T13:31:00Z"))
                 .build());
         update(stateStore).addTransaction(AddFilesTransaction.builder()
-                .jobRunIds(jobRunIds)
-                .writtenTime(Instant.parse("2025-02-27T13:32:00Z"))
-                .fileReferences(List.of(file2))
-                .build());
-
-        // When
-        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda(fixIds("item-1", "item-2"));
-
-        // Then neither transaction is applied
-        assertThat(response).isEqualTo(new StreamsEventResponse(List.of(
-                new BatchItemFailure("item-1"),
-                new BatchItemFailure("item-2"))));
-        assertThat(ingestJobTracker.getAllJobs(tableId)).containsExactly(
-                ingestJobStatus("test-job",
-                        jobRunOnTask("test-task",
-                                ingestStartedStatus(Instant.parse("2025-02-27T13:31:00Z"), 2))));
-    }
-
-    @Test
-    void shouldFailOnUnexpectedExceptionAfterProcessingEntries() {
-        // Given one transaction to be successfully added to the tracker
-        FileReference file1 = fileFactory().rootFile("file1.parquet", 100);
-        IngestJobRunIds jobRunIds = IngestJobRunIds.builder()
-                .tableId(tableId)
-                .jobId("test-job")
-                .jobRunId("test-run")
-                .taskId("test-task")
-                .build();
-        ingestJobTracker.jobStarted(IngestJobStartedEvent.builder()
-                .jobRunIds(jobRunIds)
-                .fileCount(2)
-                .startTime(Instant.parse("2025-02-27T13:31:00Z"))
-                .build());
-        transactionBodyStore.setStoreTransactionsWithObjectKeys(List.of("transaction/1", "transaction/2"));
-        update(stateStore).addTransaction(AddFilesTransaction.builder()
-                .jobRunIds(jobRunIds)
+                .jobRunIds(job1RunIds)
                 .writtenTime(Instant.parse("2025-02-27T13:32:00Z"))
                 .fileReferences(List.of(file1))
                 .build());
-        // And then one transaction which cannot be read
         FileReference file2 = fileFactory().rootFile("file2.parquet", 200);
-        update(stateStore).addFile(file2);
-        transactionBodyStore.store("transaction/2", tableId, new ClearFilesTransaction());
+        IngestJobRunIds job2RunIds = IngestJobRunIds.builder()
+                .tableId(tableId)
+                .jobId("job-2")
+                .jobRunId("run-2")
+                .taskId("test-task")
+                .build();
+        ingestJobTracker.jobStarted(IngestJobStartedEvent.builder()
+                .jobRunIds(job2RunIds)
+                .fileCount(2)
+                .startTime(Instant.parse("2025-02-27T14:31:00Z"))
+                .build());
+        update(stateStore).addTransaction(AddFilesTransaction.builder()
+                .jobRunIds(job2RunIds)
+                .writtenTime(Instant.parse("2025-02-27T14:32:00Z"))
+                .fileReferences(List.of(file2))
+                .build());
+        // And we replace the first entry with an entry that cannot be read
+        transactionBodyStore.store("transaction/1", tableId, new ClearFilesTransaction());
+        TransactionLogEntryHandle entry1 = fakeEntryHandle(new TransactionLogEntry(
+                1, Instant.parse("2025-02-27T13:32:00Z"), TransactionType.ADD_FILES, "transaction/1"));
+        TransactionLogEntryHandle entry2 = handleForTransaction(2);
 
         // When
-        StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda(fixIds("item-1", "item-2"));
+        StreamsEventResponse response = createLambda().handleRecords(Stream.of(entry1, entry2));
 
-        // Then the first transaction is applied
-        assertThat(response).isEqualTo(new StreamsEventResponse(List.of(
-                new BatchItemFailure("item-2"))));
+        // Then the second transaction is applied to the job tracker
+        assertThat(response).isEqualTo(new StreamsEventResponse());
         assertThat(ingestJobTracker.getAllJobs(tableId)).containsExactly(
-                ingestJobStatus("test-job",
+                ingestJobStatus("job-2",
                         jobRunOnTask("test-task",
-                                ingestStartedStatus(Instant.parse("2025-02-27T13:31:00Z"), 2),
-                                ingestAddedFilesStatus(Instant.parse("2025-02-27T13:32:00Z"), 1))));
+                                ingestStartedStatus(Instant.parse("2025-02-27T14:31:00Z"), 2),
+                                ingestAddedFilesStatus(Instant.parse("2025-02-27T14:32:00Z"), 1))),
+                ingestJobStatus("job-1",
+                        jobRunOnTask("test-task",
+                                ingestStartedStatus(Instant.parse("2025-02-27T13:31:00Z"), 1))));
     }
 
     private StreamsEventResponse streamAllEntriesFromFileTransactionLogToLambda() {
-        return streamAllEntriesFromFileTransactionLogToLambda(supplyNumberedIdsWithPrefix("item-"));
-    }
-
-    private StreamsEventResponse streamAllEntriesFromFileTransactionLogToLambda(Supplier<String> itemIdentifierSupplier) {
         return createLambda().handleRecords(
                 transactionLogs.forTable(tableProperties).getFilesLogStore()
                         .readTransactions(TransactionLogRange.fromMinimum(1))
                         .map(entry -> new TransactionLogEntryHandle(tableId, itemIdentifierSupplier.get(), entry)));
+    }
+
+    private TransactionLogEntryHandle fakeEntryHandle(TransactionLogEntry entry) {
+        return new TransactionLogEntryHandle(tableId, itemIdentifierSupplier.get(), entry);
+    }
+
+    private TransactionLogEntryHandle handleForTransaction(long transactionNumber) {
+        return handleForTransaction(transactionNumber, itemIdentifierSupplier.get());
+    }
+
+    private TransactionLogEntryHandle handleForTransaction(long transactionNumber, String itemIdentifier) {
+        return transactionLogs.forTable(tableProperties).getFilesLogStore()
+                .readTransactions(new TransactionLogRange(transactionNumber, transactionNumber + 1))
+                .map(entry -> new TransactionLogEntryHandle(tableId, itemIdentifier, entry))
+                .findFirst().orElseThrow();
     }
 
     private TransactionLogFollowerLambda createLambda() {
