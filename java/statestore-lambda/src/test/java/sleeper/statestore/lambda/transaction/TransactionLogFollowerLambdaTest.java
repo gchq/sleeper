@@ -281,14 +281,13 @@ public class TransactionLogFollowerLambdaTest {
                 .writtenTime(Instant.parse("2025-02-27T14:32:00Z"))
                 .fileReferences(List.of(file2))
                 .build());
-        // And we replace the first entry with an entry that cannot be read
-        transactionBodyStore.store("transaction/1", tableId, new ClearFilesTransaction());
-        TransactionLogEntryHandle entry1 = fakeEntryHandle(new TransactionLogEntry(
-                1, Instant.parse("2025-02-27T13:32:00Z"), TransactionType.ADD_FILES, "transaction/1"));
-        TransactionLogEntryHandle entry2 = handleForTransaction(2);
 
-        // When
-        StreamsEventResponse response = createLambda().handleRecords(Stream.of(entry1, entry2));
+        // When we replace the first entry with an entry that cannot be read
+        transactionBodyStore.store("transaction/fake", tableId, new ClearFilesTransaction());
+        StreamsEventResponse response = createLambda().handleRecords(Stream.of(
+                fakeEntryHandle(new TransactionLogEntry(
+                        1, Instant.parse("2025-02-27T13:32:00Z"), TransactionType.ADD_FILES, "transaction/fake")),
+                handleForTransaction(2)));
 
         // Then the second transaction is applied to the job tracker
         assertThat(response).isEqualTo(new StreamsEventResponse());
