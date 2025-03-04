@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static sleeper.core.properties.validation.OptionalStack.BulkExportStack;
+
 /**
  * Definitions of handler methods for lambda functions.
  */
@@ -100,6 +102,10 @@ public class LambdaHandler {
             .jar(LambdaJar.QUERY)
             .handler("sleeper.query.lambda.WarmQueryExecutorLambda::handleRequest")
             .optionalStack(OptionalStack.KeepLambdaWarmStack).add();
+    public static final LambdaHandler BULK_EXPORT = builder()
+            .jar(LambdaJar.BULK_EXPORT)
+            .handler("sleeper.bulkexport.lambda.SqsBulkExportProcessorLambda::handleRequest")
+            .optionalStack(BulkExportStack).add();
     public static final LambdaHandler QUERY_EXECUTOR = builder()
             .jar(LambdaJar.QUERY)
             .handler("sleeper.query.lambda.SqsQueryProcessorLambda::handleRequest")

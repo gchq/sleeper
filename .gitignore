@@ -5,6 +5,7 @@ target/
 dependency-reduced-pom.xml
 *.jar
 *.classpath
+*.class
 *.settings
 *.project
 *.log
