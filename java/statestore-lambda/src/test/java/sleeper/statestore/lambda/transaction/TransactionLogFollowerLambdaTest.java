@@ -167,35 +167,44 @@ public class TransactionLogFollowerLambdaTest {
     void shouldNotUpdateTrackerWhenDisabled() {
         // Given
         instanceProperties.set(COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED, "false");
-        FileReference file = fileFactory().rootFile("test.parquet", 100);
-        IngestJobRunIds jobRunIds = IngestJobRunIds.builder()
-                .tableId(tableId)
+        FileReference input = fileFactory().rootFile("input.parquet", 100);
+        FileReference output = fileFactory().rootFile("output.parquet", 50);
+        var createTime = Instant.parse("2025-03-04T08:57:00Z");
+        var startTime = Instant.parse("2025-03-04T08:58:00Z");
+        var finishTime = Instant.parse("2025-03-04T08:59:00Z");
+        var commitTime = Instant.parse("2025-03-04T08:59:05Z");
+        var job = CompactionJobCreatedEvent.builder()
                 .jobId("test-job")
-                .jobRunId("test-run")
-                .taskId("test-task")
+                .tableId(tableId)
+                .partitionId("root")
+                .inputFilesCount(1)
                 .build();
-        ingestJobTracker.jobStarted(IngestJobStartedEvent.builder()
-                .jobRunIds(jobRunIds)
-                .fileCount(2)
-                .startTime(Instant.parse("2025-02-27T13:31:00Z"))
-                .build());
-
-        update(stateStore).addTransaction(AddFilesTransaction.builder()
-                .jobRunIds(jobRunIds)
-                .writtenTime(Instant.parse("2025-02-27T13:32:00Z"))
-                .fileReferences(List.of(file))
-                .build());
+        var run = compactionStartedEventBuilder(job, startTime).taskId("test-task").jobRunId("test-run").build();
+        var finished = compactionFinishedEvent(run, summary(startTime, finishTime, 100, 50));
+        compactionJobTracker.jobCreated(job, createTime);
+        compactionJobTracker.jobStarted(run);
+        compactionJobTracker.jobFinished(finished);
+        update(stateStore).addFile(input);
+        update(stateStore).assignJobId("test-job", "root", List.of("input.parquet"));
+        stateStore.fixFileUpdateTime(commitTime);
+        update(stateStore).addTransaction(new ReplaceFileReferencesTransaction(List.of(
+                ReplaceFileReferencesRequest.builder()
+                        .jobId("test-job")
+                        .taskId("test-task")
+                        .jobRunId("test-run")
+                        .inputFiles(List.of("input.parquet"))
+                        .newReference(output)
+                        .build())));
 
         // When
         StreamsEventResponse response = streamAllEntriesFromFileTransactionLogToLambda();
 
         // Then
         assertThat(response).isEqualTo(new StreamsEventResponse());
-        assertThat(ingestJobTracker.getAllJobs(tableId)).containsExactly(
-                ingestJobStatus("test-job",
-                        jobRunOnTask("test-task",
-                                ingestStartedStatus(Instant.parse("2025-02-27T13:31:00Z"), 2),
-                                ingestAddedFilesStatus(Instant.parse("2025-02-27T13:32:00Z"), 1))));
+        assertThat(compactionJobTracker.getAllJobs(tableId)).containsExactly(
+                compactionJobCreated(job, createTime, jobRunOnTask("test-task",
+                        compactionStartedStatus(startTime),
+                        compactionFinishedStatus(summary(startTime, finishTime, 100, 50)))));
     }
 
     @Test
@@ -328,7 +337,7 @@ public class TransactionLogFollowerLambdaTest {
         TablePropertiesProvider tablePropertiesProvider = new FixedTablePropertiesProvider(tableProperties);
         DynamoDBStreamTransactionLogEntryMapper mapper = new DynamoDBStreamTransactionLogEntryMapper(TransactionSerDeProvider.from(tablePropertiesProvider));
         StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs);
-        return new TransactionLogFollowerLambda(mapper, tablePropertiesProvider, stateStoreProvider, compactionJobTracker, ingestJobTracker);
+        return new TransactionLogFollowerLambda(instanceProperties, tablePropertiesProvider, mapper, stateStoreProvider, compactionJobTracker, ingestJobTracker);
     }
 
     private FileReferenceFactory fileFactory() {

@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
+import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED;
 
 /**
  * A lambda that follows the transaction log of a Sleeper state store.
@@ -58,8 +59,9 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEvent, StreamsEventResponse> {
     public static final Logger LOGGER = LoggerFactory.getLogger(TransactionLogFollowerLambda.class);
 
-    private final DynamoDBStreamTransactionLogEntryMapper mapper;
+    private final InstanceProperties instanceProperties;
     private final TablePropertiesProvider tablePropertiesProvider;
+    private final DynamoDBStreamTransactionLogEntryMapper mapper;
     private final StateStoreProvider stateStoreProvider;
     private final CompactionJobTracker compactionJobTracker;
     private final IngestJobTracker ingestJobTracker;
@@ -68,7 +70,7 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
         String s3Bucket = System.getenv(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
-        InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
+        instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
         Configuration config = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, config);
@@ -78,10 +80,13 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
     }
 
     // Used only for testing
-    public TransactionLogFollowerLambda(DynamoDBStreamTransactionLogEntryMapper mapper, TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider,
+    public TransactionLogFollowerLambda(
+            InstanceProperties instanceProperties, TablePropertiesProvider tablePropertiesProvider,
+            DynamoDBStreamTransactionLogEntryMapper mapper, StateStoreProvider stateStoreProvider,
             CompactionJobTracker compactionJobTracker, IngestJobTracker ingestJobTracker) {
-        this.mapper = mapper;
+        this.instanceProperties = instanceProperties;
         this.tablePropertiesProvider = tablePropertiesProvider;
+        this.mapper = mapper;
         this.stateStoreProvider = stateStoreProvider;
         this.compactionJobTracker = compactionJobTracker;
         this.ingestJobTracker = ingestJobTracker;
@@ -106,7 +111,7 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
             try {
                 TableProperties tableProperties = tablePropertiesProvider.getById(entry.tableId());
                 TransactionLogStateStore statestore = (TransactionLogStateStore) stateStoreProvider.getStateStore(tableProperties);
-                statestore.applyEntryFromLog(entry.entry(), StateListenerBeforeApply.updateTrackers(tableProperties.getStatus(), ingestJobTracker, compactionJobTracker));
+                statestore.applyEntryFromLog(entry.entry(), StateListenerBeforeApply.updateTrackers(tableProperties.getStatus(), ingestJobTracker, compactionJobTracker()));
             } catch (TableNotFoundException e) {
                 LOGGER.warn("Found entry for Sleeper table that does not exist: {}", entry);
             } catch (RuntimeException e) {
@@ -119,6 +124,14 @@ public class TransactionLogFollowerLambda implements RequestHandler<DynamodbEven
             }
         }
         return new StreamsEventResponse();
+    }
+
+    private CompactionJobTracker compactionJobTracker() {
+        if (instanceProperties.getBoolean(COMPACTION_TRACKER_ASYNC_COMMIT_UPDATES_ENABLED)) {
+            return compactionJobTracker;
+        } else {
+            return CompactionJobTracker.NONE;
+        }
     }
 
 }
