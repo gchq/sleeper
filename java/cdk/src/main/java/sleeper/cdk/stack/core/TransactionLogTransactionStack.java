@@ -164,5 +164,6 @@ public class TransactionLogTransactionStack extends NestedStack {
                         .metrics(List.of(MetricType.EVENT_COUNT))
                         .build())
                 .build());
+        coreStacks.grantUpdateJobTrackersFromTransactionLog(lambda);
     }
 }
