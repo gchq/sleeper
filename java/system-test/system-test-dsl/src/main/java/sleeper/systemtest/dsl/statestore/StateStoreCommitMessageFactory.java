@@ -31,7 +31,6 @@ import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileRefere
 import sleeper.core.tracker.job.run.JobRunSummary;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -69,16 +68,6 @@ public class StateStoreCommitMessageFactory {
     public StateStoreCommitRequest assignJobOnPartitionToFiles(String jobId, String partitionId, List<String> filenames) {
         return message(new AssignJobIdsTransaction(
                 List.of(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, partitionId, filenames))));
-    }
-
-    public StateStoreCommitRequest assignFilesToJobs(List<FileReference> files, List<String> jobIds) {
-        List<AssignJobIdRequest> requests = new ArrayList<>(files.size());
-        for (int i = 0; i < files.size(); i++) {
-            FileReference file = files.get(i);
-            String jobId = jobIds.get(i);
-            requests.add(AssignJobIdRequest.assignJobOnPartitionToFiles(jobId, file.getPartitionId(), List.of(file.getFilename())));
-        }
-        return message(new AssignJobIdsTransaction(requests));
     }
 
     public StateStoreCommitRequest commitCompactionForPartitionOnTaskInRun(

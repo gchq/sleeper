@@ -48,10 +48,6 @@ public class StateStoreCommitMessage {
                         .build()));
     }
 
-    public static Commit assignFilesToJobs(List<FileReference> files, List<String> jobIds) {
-        return factory -> factory.assignFilesToJobs(files, jobIds);
-    }
-
     public interface Commit {
         StateStoreCommitRequest createMessage(StateStoreCommitMessageFactory factory);
     }

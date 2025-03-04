@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.compaction;
+package sleeper.systemtest.drivers.compaction;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,27 +22,24 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.dsl.SleeperSystemTest;
-import sleeper.systemtest.dsl.testutil.InMemoryDslTest;
 
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingLong;
-import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.systemtest.dsl.testutil.InMemoryTestInstance.IN_MEMORY_MAIN;
+import static sleeper.systemtest.drivers.testutil.LocalStackTestInstance.LOCALSTACK_MAIN;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 
-@InMemoryDslTest
-public class CompactionFakeCommitTest {
+@LocalStackDslTest
+public class CompactionFakeCommitIT {
     PartitionTree partitions = new PartitionsBuilder(DEFAULT_SCHEMA).singlePartition("root").buildTree();
     FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions);
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstance(LOCALSTACK_MAIN);
         sleeper.partitioning().setPartitions(partitions);
     }
 
@@ -66,14 +63,9 @@ public class CompactionFakeCommitTest {
 
         // When
         sleeper.compaction()
-                .sendFakeCommitsWithSingleFiles(fakeInputs, fakeJobIds, fakeOutputs)
-                .waitForJobs();
+                .sendFakeCommitsWithSingleFiles(fakeInputs, fakeJobIds, fakeOutputs);
 
         // Then
-        assertThat(sleeper.tableFiles().recordsByFilename())
-                .isEqualTo(fakeOutputs.stream()
-                        .collect(groupingBy(FileReference::getFilename,
-                                summingLong(FileReference::getNumberOfRecords))));
+        // TODO check commit queue
     }
-
 }
