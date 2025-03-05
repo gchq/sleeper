@@ -1,5 +1,5 @@
 /// Module contains structs and functions relating to implementing Sleeper 'iterators' in Rust using
-/// DataFusion.
+/// `DataFusion`.
 /*
 * Copyright 2022-2025 Crown Copyright
 *
@@ -88,8 +88,7 @@ impl TryFrom<&str> for AggOp {
             "min" => Ok(Self::Min),
             "max" => Ok(Self::Max),
             _ => Err(Self::Error::NotImplemented(format!(
-                "Aggregation operator {} not recognised",
-                value
+                "Aggregation operator {value} not recognised"
             ))),
         }
     }
@@ -104,9 +103,9 @@ impl TryFrom<&str> for FilterAggregationConfig {
         // Create list of strings delimited by comma as iterator
         let values = value.split(',').map(str::trim).collect::<Vec<_>>();
         let filter = if values[0].starts_with("ageoff=") {
-            let column = values[0].split('=').collect::<Vec<_>>()[1].replace("'", "");
+            let column = values[0].split('=').collect::<Vec<_>>()[1].replace('\'', "");
             let max_age = values[1]
-                .replace("'", "")
+                .replace('\'', "")
                 .parse::<i64>()
                 .map_err(|_| DataFusionError::Internal(format!("Invalid number {}", values[1])))?;
             Some(Filter::Ageoff { column, max_age })
@@ -115,21 +114,21 @@ impl TryFrom<&str> for FilterAggregationConfig {
         };
         // Look for aggregators, skip first part if no we didn't have ageoff filter, otherwise skip 2
         // This is a really hacky implementation
-        let iter = if let Some(_) = &filter {
+        let iter = if filter.is_some() {
             values.iter().skip(2)
         } else {
             values.iter().skip(1)
         };
         let mut aggregation = Vec::new();
         for agg in iter {
-            if let Some((col, op)) = agg.split_once("=") {
-                aggregation.push(Aggregate(col.replace("'", ""), op.try_into()?));
+            if let Some((col, op)) = agg.split_once('=') {
+                aggregation.push(Aggregate(col.replace('\'', ""), op.try_into()?));
             }
         }
-        let aggregation = if aggregation.len() > 0 {
-            Some(aggregation)
-        } else {
+        let aggregation = if aggregation.is_empty() {
             None
+        } else {
+            Some(aggregation)
         };
         Ok(Self {
             filter,
@@ -146,9 +145,9 @@ impl TryFrom<&str> for FilterAggregationConfig {
 ///
 /// Raise an error if this is not the case.
 pub fn validate_aggregations(
-    row_keys: &Vec<String>,
+    row_keys: &[String],
     schema: &DFSchema,
-    agg_conf: &Vec<Aggregate>,
+    agg_conf: &[Aggregate],
 ) -> Result<()> {
     if !agg_conf.is_empty() {
         // List of columns

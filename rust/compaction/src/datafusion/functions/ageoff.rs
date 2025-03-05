@@ -66,6 +66,7 @@ impl AgeOff {
 impl TryFrom<&Filter> for AgeOff {
     type Error = DataFusionError;
 
+    #[allow(irrefutable_let_patterns, clippy::cast_possible_wrap)]
     fn try_from(value: &Filter) -> std::result::Result<Self, Self::Error> {
         if let Filter::Ageoff { column: _, max_age } = value {
             // Figure out max_age in as a millisecond threshold from current time
@@ -95,7 +96,7 @@ impl ScalarUDFImpl for AgeOff {
         self
     }
 
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "age_off"
     }
 
@@ -130,7 +131,7 @@ impl ScalarUDFImpl for AgeOff {
                 }
                 Ok(ColumnarValue::Array(Arc::new(result_builder.finish())))
             }
-            _ => internal_err!(
+            ColumnarValue::Scalar(_) => internal_err!(
                 "Age off called with unsupported column datatype {:?}",
                 args.args[0].data_type()
             ),

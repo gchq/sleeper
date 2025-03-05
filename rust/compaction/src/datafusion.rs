@@ -54,6 +54,7 @@ mod udf;
 /// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
 /// from the input URLs and writing to the output URL. A sketch file will be produced for
 /// the output file.
+#[allow(clippy::too_many_lines)]
 pub async fn compact(
     store_factory: &ObjectStoreFactory,
     input_data: &CompactionInput<'_>,
@@ -75,7 +76,6 @@ pub async fn compact(
     // Find total input size and configure multipart upload size on output store
     let input_size = calculate_input_size(input_paths, &store)
         .await
-        .inspect(|v| {})
         .inspect_err(|e| warn!("Error getting total input size {e}"));
     let multipart_size = std::cmp::max(
         crate::store::MULTIPART_BUF_SIZE,
@@ -149,7 +149,7 @@ pub async fn compact(
     }) = &filter_agg_conf
     {
         // Check aggregations meet validity checks
-        validate_aggregations(&input_data.row_key_cols, &frame.schema(), aggregation)?;
+        validate_aggregations(&input_data.row_key_cols, frame.schema(), aggregation)?;
         let aggregations = aggregation
             .iter()
             .map(Aggregate::to_expr)
