@@ -17,6 +17,7 @@
 */
 use ageoff::AgeOff;
 use datafusion::common::{config_err, DFSchema, HashSet};
+use datafusion::functions_aggregate::expr_fn::{count, max, min, sum};
 use datafusion::logical_expr::col;
 use datafusion::{
     error::{DataFusionError, Result},
@@ -54,6 +55,20 @@ impl Filter {
 /// Aggregation support. Consists of a column name and operation.
 #[derive(Debug)]
 pub struct Aggregate(String, AggOp);
+
+impl Aggregate {
+    // Create a DataFusion logical expression to represent this aggregation operation.
+    pub fn to_expr(&self) -> Expr {
+        match self.1 {
+            AggOp::Count => count(col(&self.0)),
+            AggOp::Sum => sum(col(&self.0)),
+            AggOp::Min => min(col(&self.0)),
+            AggOp::Max => max(col(&self.0)),
+        }
+        // Rename column to original name
+        .alias(&self.0)
+    }
+}
 
 // Supported aggregating operations.
 #[derive(Debug)]

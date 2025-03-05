@@ -37,7 +37,7 @@ use datafusion::{
     physical_plan::{accept, collect},
     prelude::*,
 };
-use functions::{validate_aggregations, FilterAggregationConfig};
+use functions::{validate_aggregations, Aggregate, FilterAggregationConfig};
 use log::{error, info, warn};
 use metrics::{log_metrics, RowCounts};
 use num_format::{Locale, ToFormattedString};
@@ -142,7 +142,7 @@ pub async fn compact(
 
     let sketch_expr = once(
         sketch_func
-            .call(row_key_exprs)
+            .call(row_key_exprs.clone())
             .alias(&input_data.row_key_cols[0]),
     );
     // Perform sort of row key and sort key columns and projection of all columns
@@ -150,6 +150,8 @@ pub async fn compact(
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
 
+    // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
+    frame = frame.sort(sort_order)?;
     if let Some(FilterAggregationConfig {
         filter: _,
         aggregation,
@@ -157,10 +159,13 @@ pub async fn compact(
     {
         // Check aggregations meet validity checks
         validate_aggregations(&input_data.row_key_cols, &frame.schema(), aggregation)?;
+        let aggregations = aggregation
+            .iter()
+            .map(Aggregate::to_expr)
+            .collect::<Vec<_>>();
+        frame = frame.aggregate(row_key_exprs, aggregations)?;
     }
-
-    // Build compaction query
-    frame = frame.sort(sort_order)?.select(col_names_expr)?;
+    frame = frame.select(col_names_expr)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
