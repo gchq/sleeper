@@ -75,12 +75,7 @@ pub async fn compact(
     // Find total input size and configure multipart upload size on output store
     let input_size = calculate_input_size(input_paths, &store)
         .await
-        .inspect(|v| {
-            info!(
-                "Total input size {} bytes",
-                v.to_formatted_string(&Locale::en)
-            );
-        })
+        .inspect(|v| {})
         .inspect_err(|e| warn!("Error getting total input size {e}"));
     let multipart_size = std::cmp::max(
         crate::store::MULTIPART_BUF_SIZE,
@@ -102,8 +97,6 @@ pub async fn compact(
     // Tell DataFusion that the row key columns and sort columns are already sorted
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
-
-    info!("Loaded schema fields: {:?}", frame.schema().fields());
 
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
@@ -135,10 +128,8 @@ pub async fn compact(
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
-    info!("All columns in schema {col_names:?}");
 
     let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
-    info!("Using sketch function {sketch_func:?}");
 
     let sketch_expr = once(
         sketch_func
@@ -154,7 +145,7 @@ pub async fn compact(
     frame = frame.sort(sort_order)?;
     if let Some(FilterAggregationConfig {
         filter: _,
-        aggregation,
+        aggregation: Some(aggregation),
     }) = &filter_agg_conf
     {
         // Check aggregations meet validity checks
@@ -171,7 +162,6 @@ pub async fn compact(
     let explained = frame.clone().explain(false, false)?.collect().await?;
     let output = pretty_format_batches(&explained)?;
     info!("DataFusion plan:\n {output}");
-    info!("Planned schema fields: {:?}", frame.schema().fields());
 
     let mut pqo = ctx.copied_table_options().parquet;
     // Figure out which columns should be dictionary encoded
@@ -387,6 +377,7 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
     sf.options_mut().execution.target_partitions =
         std::cmp::max(sf.options().execution.target_partitions, input_paths.len());
     sf.options_mut().execution.parquet.enable_page_index = false;
+    sf.options_mut().optimizer.repartition_aggregations = false;
     sf.options_mut().execution.parquet.max_row_group_size = input_data.max_row_group_size;
     sf.options_mut().execution.parquet.data_pagesize_limit = input_data.max_page_size;
     sf.options_mut().execution.parquet.compression = Some(get_compression(&input_data.compression));

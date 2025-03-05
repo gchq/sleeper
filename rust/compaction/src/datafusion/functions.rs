@@ -30,7 +30,7 @@ pub mod ageoff;
 #[derive(Debug, Default)]
 pub struct FilterAggregationConfig {
     pub filter: Option<Filter>,
-    pub aggregation: Vec<Aggregate>,
+    pub aggregation: Option<Vec<Aggregate>>,
 }
 
 /// Supported filters
@@ -126,6 +126,11 @@ impl TryFrom<&str> for FilterAggregationConfig {
                 aggregation.push(Aggregate(col.replace("'", ""), op.try_into()?));
             }
         }
+        let aggregation = if aggregation.len() > 0 {
+            Some(aggregation)
+        } else {
+            None
+        };
         Ok(Self {
             filter,
             aggregation,
