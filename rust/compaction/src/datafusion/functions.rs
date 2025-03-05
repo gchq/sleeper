@@ -16,6 +16,7 @@
 * limitations under the License.
 */
 use ageoff::AgeOff;
+use datafusion::common::{config_err, DFSchema};
 use datafusion::logical_expr::col;
 use datafusion::{
     error::{DataFusionError, Result},
@@ -115,4 +116,34 @@ impl TryFrom<&str> for FilterAggregationConfig {
             aggregation,
         })
     }
+}
+
+/// Validate that
+///  1. All columns that are NOT row key columns have an aggregation operation specified for them,
+///  2. No row key columns have aggregations specified,
+///  3. No aggregation column is specified multiple times.
+///
+/// Raise an error if this is not the case.
+pub fn validate_aggregations(
+    row_keys: &Vec<String>,
+    schema: &DFSchema,
+    agg_conf: &Vec<Aggregate>,
+) -> Result<()> {
+    if !agg_conf.is_empty() {
+        // List of columns
+        let mut non_row_key_cols = schema.clone().strip_qualifiers().field_names();
+        // Remove row keys
+        non_row_key_cols.retain(|col| !row_keys.contains(col));
+        // Columns with aggregators
+        let agg_cols = agg_conf.iter().map(|agg| &agg.0).collect::<Vec<_>>();
+        // Check all non row key columns exist in aggregation column list
+        for col in non_row_key_cols {
+            if !agg_cols.contains(&&col) {
+                return config_err!(
+                    "Column \"{col}\" doesn't have a aggregation operator specified!"
+                );
+            }
+        }
+    }
+    Ok(())
 }

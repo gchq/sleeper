@@ -37,7 +37,7 @@ use datafusion::{
     physical_plan::{accept, collect},
     prelude::*,
 };
-use functions::FilterAggregationConfig;
+use functions::{validate_aggregations, FilterAggregationConfig};
 use log::{error, info, warn};
 use metrics::{log_metrics, RowCounts};
 use num_format::{Locale, ToFormattedString};
@@ -119,11 +119,13 @@ pub async fn compact(
     // Do we have a Sleeper iterator filter to apply?
     if let Some(FilterAggregationConfig {
         filter: Some(f),
-        aggregation: _,
+        aggregation,
     }) = &filter_agg_conf
     {
         info!("Applying Sleeper filter iterator: {f:?}");
         frame = frame.filter(f.create_filter_expr()?)?;
+        // If aggregation is present, check all non row-key columns have an aggregating operator specified
+        validate_aggregations(&input_data.row_key_cols, &frame.schema(), aggregation)?;
     }
 
     // Create the sketch function

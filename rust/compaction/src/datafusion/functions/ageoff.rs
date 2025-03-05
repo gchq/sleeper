@@ -130,7 +130,10 @@ impl ScalarUDFImpl for AgeOff {
                 }
                 Ok(ColumnarValue::Array(Arc::new(result_builder.finish())))
             }
-            _ => todo!(),
+            _ => internal_err!(
+                "Age off called with unsupported column datatype {:?}",
+                args.args[0].data_type()
+            ),
         }
     }
 
