@@ -110,12 +110,13 @@ pub async fn compact(
         frame = frame.filter(expr)?;
     }
 
-    // Do we have a Sleeper iterator filter to apply?
+    // Parse Sleeper iterator configuration
     let filter_agg_conf = input_data
         .iterator_config
         .as_deref()
         .map(FilterAggregationConfig::try_from)
         .transpose()?;
+    // Do we have a Sleeper iterator filter to apply?
     if let Some(FilterAggregationConfig {
         filter: Some(f),
         aggregation: _,

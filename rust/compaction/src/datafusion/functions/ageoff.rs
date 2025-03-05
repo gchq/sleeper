@@ -39,7 +39,7 @@ use super::Filter;
 /// If the value in a given column is lower than the given threshold, it will be filtered out.
 #[derive(Debug)]
 pub struct AgeOff {
-    /// Threshold value
+    /// Threshold value (seconds since UNIX epoch)
     threshold: i64,
     /// Signature for this filter expression
     signature: Signature,
@@ -70,9 +70,9 @@ impl TryFrom<&Filter> for AgeOff {
         if let Filter::Ageoff { column: _, max_age } = value {
             // Figure out max_age in as a millisecond threshold from current time
             let threshold = if *max_age >= 0 {
-                SystemTime::now().checked_sub(Duration::from_millis(max_age.unsigned_abs()))
+                SystemTime::now().checked_sub(Duration::from_secs(max_age.unsigned_abs()))
             } else {
-                SystemTime::now().checked_add(Duration::from_millis(max_age.unsigned_abs()))
+                SystemTime::now().checked_add(Duration::from_secs(max_age.unsigned_abs()))
             }
             // Convert Option to Result with DataFusionError
             .ok_or(DataFusionError::Configuration(
@@ -82,7 +82,7 @@ impl TryFrom<&Filter> for AgeOff {
             .duration_since(UNIX_EPOCH)
             .map_err(|e| DataFusionError::External(Box::new(e)))?
             // Finally, convert to raw integer
-            .as_millis() as i64;
+            .as_secs() as i64;
             Ok(AgeOff::new(threshold))
         } else {
             internal_err!("AgeOff try_from called on non Filter::AgeOff variant")

@@ -34,7 +34,7 @@ pub struct FilterAggregationConfig {
 /// Supported filters
 #[derive(Debug)]
 pub enum Filter {
-    // Skip any record where timestamp in named column is older than `max_age` milliseconds.
+    // Skip any record where timestamp in named column is older than `max_age` seconds.
     Ageoff { column: String, max_age: i64 },
 }
 
