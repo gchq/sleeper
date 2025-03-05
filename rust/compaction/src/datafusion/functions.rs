@@ -16,7 +16,7 @@
 * limitations under the License.
 */
 use ageoff::AgeOff;
-use datafusion::common::{config_err, DFSchema};
+use datafusion::common::{config_err, DFSchema, HashSet};
 use datafusion::logical_expr::col;
 use datafusion::{
     error::{DataFusionError, Result},
@@ -84,7 +84,7 @@ impl TryFrom<&str> for FilterAggregationConfig {
     type Error = DataFusionError;
 
     /// This is a minimum viable parser for the configuration for filters/aggregators.
-    /// It is a really good example of how NOT to do it.
+    /// It is a really good example of how NOT to do it. This routine has some odd
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         // Create list of strings delimited by comma as iterator
         let values = value.split(',').map(str::trim).collect::<Vec<_>>();
@@ -122,6 +122,7 @@ impl TryFrom<&str> for FilterAggregationConfig {
 ///  1. All columns that are NOT row key columns have an aggregation operation specified for them,
 ///  2. No row key columns have aggregations specified,
 ///  3. No aggregation column is specified multiple times.
+///  4. Aggregation columns must be valid in schema.
 ///
 /// Raise an error if this is not the case.
 pub fn validate_aggregations(
@@ -136,6 +137,19 @@ pub fn validate_aggregations(
         non_row_key_cols.retain(|col| !row_keys.contains(col));
         // Columns with aggregators
         let agg_cols = agg_conf.iter().map(|agg| &agg.0).collect::<Vec<_>>();
+        // Check for duplications in aggregation columns and row key aggregations
+        let mut col_checks: HashSet<&String> = HashSet::new();
+        for col in &agg_cols {
+            if row_keys.contains(*col) {
+                return config_err!("Row key column \"{col}\" cannot have an aggregation");
+            }
+            if !col_checks.insert(*col) {
+                return config_err!("Aggregation column \"{col}\" duplicated");
+            }
+            if !non_row_key_cols.contains(*col) {
+                return config_err!("Aggregation column \"{col}\" doesn't exist");
+            }
+        }
         // Check all non row key columns exist in aggregation column list
         for col in non_row_key_cols {
             if !agg_cols.contains(&&col) {

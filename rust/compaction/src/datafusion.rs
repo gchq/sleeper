@@ -119,13 +119,11 @@ pub async fn compact(
     // Do we have a Sleeper iterator filter to apply?
     if let Some(FilterAggregationConfig {
         filter: Some(f),
-        aggregation,
+        aggregation: _,
     }) = &filter_agg_conf
     {
         info!("Applying Sleeper filter iterator: {f:?}");
         frame = frame.filter(f.create_filter_expr()?)?;
-        // If aggregation is present, check all non row-key columns have an aggregating operator specified
-        validate_aggregations(&input_data.row_key_cols, &frame.schema(), aggregation)?;
     }
 
     // Create the sketch function
@@ -151,6 +149,15 @@ pub async fn compact(
     let col_names_expr = sketch_expr
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
+
+    if let Some(FilterAggregationConfig {
+        filter: _,
+        aggregation,
+    }) = &filter_agg_conf
+    {
+        // Check aggregations meet validity checks
+        validate_aggregations(&input_data.row_key_cols, &frame.schema(), aggregation)?;
+    }
 
     // Build compaction query
     frame = frame.sort(sort_order)?.select(col_names_expr)?;
