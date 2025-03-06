@@ -13,11 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkexport.core.configuration;
+package sleeper.statestore.lambda.transaction;
+
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
 
 /**
- * The configuration for a bulk export.
+ * A handle to a transaction log entry processed in a transaction log follower.
+ *
+ * @param tableId        the Sleeper table ID
+ * @param itemIdentifier the sequence number of the stream record this was derived from
+ * @param entry          the transaction log entry
  */
-public class BulkExportPlatformSpec {
+public record TransactionLogEntryHandle(String tableId, String itemIdentifier, TransactionLogEntry entry) {
 
 }

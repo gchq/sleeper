@@ -225,5 +225,12 @@
             <outputDirectory>scripts/jars</outputDirectory>
             <destName>statestore-lambda-${project.version}.jar</destName>
         </file>
+        <file>
+            <source>
+                ${project.basedir}/../bulk-export/bulk-export-lambda/target/bulk-export-lambda-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/jars/</outputDirectory>
+            <destName>bulk-export-lambda-${project.version}.jar</destName>
+        </file>
     </files>
 </assembly>

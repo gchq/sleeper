@@ -34,6 +34,8 @@ import sleeper.core.statestore.exception.FileReferenceAssignedToJobException;
 import sleeper.core.statestore.exception.FileReferenceNotFoundException;
 import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
 import sleeper.core.statestore.exception.SplitRequestsFailedException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
@@ -286,6 +288,16 @@ public class StateStoreUpdatesWrapper {
      */
     public void clearPartitionData() throws StateStoreException {
         new InitialisePartitionsTransaction(List.of()).synchronousCommit(stateStore);
+    }
+
+    /**
+     * Simulates an asynchronous commit of the given transaction.
+     *
+     * @param  transaction         the transaction
+     * @throws StateStoreException if the update fails
+     */
+    public void addTransaction(StateStoreTransaction<?> transaction) throws StateStoreException {
+        stateStore.addTransaction(AddTransactionRequest.withTransaction(transaction).build());
     }
 
 }

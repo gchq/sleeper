@@ -62,6 +62,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Checks transaction logs to aid with debugging. This is intended to be used after a failed system test to investigate
+ * the state of the system. This will cache transaction logs locally to enable repeated runs to investigate the state,
+ * as you change the code in the main method.
+ */
 public class CheckTransactionLogs {
     public static final Logger LOGGER = LoggerFactory.getLogger(CheckTransactionLogs.class);
 
@@ -93,7 +98,13 @@ public class CheckTransactionLogs {
         for (var report : reports) {
             LOGGER.info("Transaction {} had {} jobs changing records", report.transactionNumber(), report.jobs().size());
         }
-        CompactionChangedRecordCount job = reports.stream().flatMap(report -> report.jobs().stream()).findFirst().orElse(null);
+        CompactionChangedRecordCount job = reports.stream()
+                .flatMap(report -> report.jobs().stream())
+                .findFirst().orElse(null);
+        if (job == null) {
+            LOGGER.info("Found no compaction changing the number of records.");
+            return;
+        }
 
         Configuration hadoopConf = HadoopConfigurationProvider.getConfigurationForClient();
         AmazonDynamoDB dynamoClient = AmazonDynamoDBClientBuilder.defaultClient();
@@ -108,6 +119,7 @@ public class CheckTransactionLogs {
         Partition partition = partitions.getPartition(job.partitionId());
         LOGGER.info("Partition: {}", partition);
 
+        // Rerun compaction to a local file & count actual records
         Path tempDir = Files.createTempDirectory("sleeper-test");
         String outputFile = tempDir.resolve(UUID.randomUUID().toString()).toString();
         CompactionJob compactionJob = job.asCompactionJobToNewFile(tableId, outputFile);

@@ -30,8 +30,10 @@ import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionCommittedEvent;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionCommittedEventBuilder;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionFailedEventBuilder;
+import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionFinishedEvent;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionFinishedEventBuilder;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.compactionStartedEventBuilder;
 import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.defaultCompactionJobCreatedEventForTable;
@@ -156,7 +158,7 @@ class InMemoryCompactionJobTrackerTest {
             tracker.jobCreated(job, createdTime);
             var run = compactionStartedEventBuilder(job, startedTime).taskId(taskId).build();
             tracker.jobStarted(run);
-            tracker.jobFinished(compactionFinishedEventBuilder(run, summary).taskId(taskId).build());
+            tracker.jobFinished(compactionFinishedEvent(run, summary));
 
             // When / Then
             assertThat(tracker.streamAllJobs(tableId))
@@ -362,10 +364,10 @@ class InMemoryCompactionJobTrackerTest {
             var run2 = compactionStartedEventBuilder(job, startedTime2).taskId(taskId2).build();
             tracker.jobStarted(run1);
             tracker.jobStarted(run2);
-            tracker.jobFinished(compactionFinishedEventBuilder(run2, summary2).build());
-            tracker.jobCommitted(compactionCommittedEventBuilder(run2, committedTime2).build());
-            tracker.jobFinished(compactionFinishedEventBuilder(run1, summary1).build());
-            tracker.jobCommitted(compactionCommittedEventBuilder(run1, committedTime1).build());
+            tracker.jobFinished(compactionFinishedEvent(run2, summary2));
+            tracker.jobCommitted(compactionCommittedEvent(run2, committedTime2));
+            tracker.jobFinished(compactionFinishedEvent(run1, summary1));
+            tracker.jobCommitted(compactionCommittedEvent(run1, committedTime1));
 
             // When / Then
             assertThat(tracker.getJobsInTimePeriod(tableId,
@@ -517,7 +519,7 @@ class InMemoryCompactionJobTrackerTest {
             Instant createdTime, JobRunSummary summary, String taskId) {
         CompactionJobStartedEvent job = addStartedJob(createdTime, summary.getStartTime(), taskId);
         tracker.fixUpdateTime(defaultUpdateTime(summary.getFinishTime()));
-        tracker.jobFinished(compactionFinishedEventBuilder(job, summary).taskId(taskId).build());
+        tracker.jobFinished(compactionFinishedEvent(job, summary));
         return job;
     }
 
@@ -525,7 +527,7 @@ class InMemoryCompactionJobTrackerTest {
             Instant createdTime, JobRunSummary summary, Instant committedTime, String taskId) {
         CompactionJobStartedEvent job = addFinishedJobUncommitted(createdTime, summary, taskId);
         tracker.fixUpdateTime(defaultUpdateTime(committedTime));
-        tracker.jobCommitted(compactionCommittedEventBuilder(job, committedTime).taskId(taskId).build());
+        tracker.jobCommitted(compactionCommittedEvent(job, committedTime));
         return job;
     }
 
