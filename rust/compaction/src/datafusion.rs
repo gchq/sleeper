@@ -26,7 +26,8 @@ use crate::{
 };
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
-    common::DFSchemaRef,
+    common::DFSchema,
+    config::TableParquetOptions,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
@@ -89,8 +90,8 @@ pub async fn compact(
     }
 
     // Parse Sleeper iterator configuration and apply
-    let filter_agg_conf = parse_iterator_config(&input_data.iterator_config)?;
-    apply_filters(&mut frame, &filter_agg_conf)?;
+    let filter_agg_conf = parse_iterator_config(input_data.iterator_config.as_ref())?;
+    frame = apply_filters(frame, filter_agg_conf.as_ref())?;
 
     // Create the sketch function
     let sketch_func = create_sketch_udf(&input_data.row_key_cols, &frame)?;
@@ -110,10 +111,10 @@ pub async fn compact(
 
     // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
     frame = frame.sort(sort_order)?;
-    apply_aggregations(
+    frame = apply_aggregations(
         &input_data.row_key_cols,
-        &mut frame,
-        filter_agg_conf,
+        frame,
+        filter_agg_conf.as_ref(),
         row_key_exprs,
     )?;
     frame = frame.select(col_names_expr)?;
@@ -129,7 +130,7 @@ pub async fn compact(
 
     // Write the frame out and collect stats
     let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
-    output_sketch(store_factory, output_path, sketch_func, &stats)?;
+    output_sketch(store_factory, output_path, &sketch_func, &stats)?;
 
     Ok(CompactionResult::from(&stats))
 }
@@ -155,7 +156,7 @@ fn set_dictionary_encoding(
     }
 }
 
-/// Extract the DataSketch result and write it out.
+/// Extract the Data Sketch result and write it out.
 ///
 /// This function should be called after a query has completed. The sketch function will be asked for the current
 /// sketch.
@@ -165,16 +166,16 @@ fn set_dictionary_encoding(
 fn output_sketch(
     store_factory: &ObjectStoreFactory,
     output_path: &Url,
-    sketch_func: Arc<ScalarUDF>,
+    sketch_func: &Arc<ScalarUDF>,
     stats: &RowCounts,
 ) -> Result<(), DataFusionError> {
     let binding = sketch_func.inner();
     let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
-    Ok(if let Some(func) = inner_function {
+    if let Some(func) = inner_function {
         {
             // Limit scope of MutexGuard
             let first_sketch = &func.get_sketch()[0];
-            *info!(
+            info!(
                 "Made {} calls to sketch UDF and processed {} rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
                 func.get_invoke_count().to_formatted_string(&Locale::en),
                 stats.rows_written.to_formatted_string(&Locale::en),
@@ -191,7 +192,8 @@ fn output_sketch(
             &func.get_sketch(),
         )
         .map_err(|e| DataFusionError::External(e.into()))?;
-    })
+    }
+    Ok(())
 }
 
 /// If any are present, apply Sleeper aggregations to this query.
@@ -200,10 +202,10 @@ fn output_sketch(
 /// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified.
 fn apply_aggregations(
     row_key_cols: &[String],
-    frame: &mut DataFrame,
-    filter_agg_conf: Option<FilterAggregationConfig>,
+    frame: DataFrame,
+    filter_agg_conf: Option<&FilterAggregationConfig>,
     row_key_exprs: Vec<Expr>,
-) -> Result<(), DataFusionError> {
+) -> Result<DataFrame, DataFusionError> {
     Ok(
         if let Some(FilterAggregationConfig {
             filter: _,
@@ -216,12 +218,14 @@ fn apply_aggregations(
                 .iter()
                 .map(Aggregate::to_expr)
                 .collect::<Vec<_>>();
-            *frame = frame.aggregate(row_key_exprs, aggregations)?;
+            frame.aggregate(row_key_exprs, aggregations)?
+        } else {
+            frame
         },
     )
 }
 
-/// Create a DataSketches UDF from the given frame schema.
+/// Create a Data Sketches UDF from the given frame schema.
 ///
 /// # Errors
 /// If the function couldn't be registered.
@@ -239,9 +243,9 @@ fn create_sketch_udf(
 
 /// Apply any configured filters to the query if any are present.
 fn apply_filters(
-    frame: &mut DataFrame,
-    filter_agg_conf: &Option<FilterAggregationConfig>,
-) -> Result<(), DataFusionError> {
+    frame: DataFrame,
+    filter_agg_conf: Option<&FilterAggregationConfig>,
+) -> Result<DataFrame, DataFusionError> {
     Ok(
         if let Some(FilterAggregationConfig {
             filter: Some(f),
@@ -249,7 +253,9 @@ fn apply_filters(
         }) = filter_agg_conf
         {
             info!("Applying Sleeper filter iterator: {f:?}");
-            *frame = frame.filter(f.create_filter_expr()?)?;
+            frame.filter(f.create_filter_expr()?)?
+        } else {
+            frame
         },
     )
 }
@@ -259,11 +265,10 @@ fn apply_filters(
 // # Errors
 // If there is an error in parsing the configuration string.
 fn parse_iterator_config(
-    iterator_config: &Option<String>,
+    iterator_config: Option<&String>,
 ) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
     let filter_agg_conf = iterator_config
-        .as_deref()
-        .map(FilterAggregationConfig::try_from)
+        .map(|s| FilterAggregationConfig::try_from(s.as_str()))
         .transpose()?;
     Ok(filter_agg_conf)
 }
