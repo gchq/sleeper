@@ -97,14 +97,11 @@ public class AwsDrainSqsQueue {
     }
 
     private long emptyMessageBatch(String queueUrl) {
-        long count = receiveOnThreads(queueUrl, counting()).mapToLong(n -> n).sum();
-        LOGGER.info("Deleted a batch of {} messages from queue: {}", count, queueUrl);
-        return count;
+        return receiveOnThreads(queueUrl, counting()).mapToLong(n -> n).sum();
     }
 
     private <A, R> Stream<R> receiveOnThreads(String queueUrl, Collector<Message, A, R> threadCollector) {
         try {
-            LOGGER.info("Receiving a batch of messages from queue: {}", queueUrl);
             List<Future<R>> results = EXECUTOR.invokeAll(IntStream.range(0, numThreads)
                     .mapToObj(i -> (Callable<R>) () -> receiveMessageBatchOneThread(queueUrl, threadCollector))
                     .toList());
