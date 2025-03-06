@@ -161,6 +161,14 @@ public class CoreStacks {
         dataStack.grantReadWrite(grantee); // Needed to write transaction body to S3
     }
 
+    public void grantUpdateJobTrackersFromTransactionLog(IGrantable grantee) {
+        configBucketStack.grantRead(grantee);
+        tableIndexStack.grantRead(grantee);
+        stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
+        compactionTracker.grantWriteJobEvent(grantee);
+        ingestTracker.grantWriteJobEvent(grantee);
+    }
+
     // The Lambda IFunction.getRole method is annotated as nullable, even though it will never return null in practice.
     // This means SpotBugs complains if we pass that role into attachToRole.
     // The role parameter is marked as nullable to convince SpotBugs that it's fine to pass it into this method,
