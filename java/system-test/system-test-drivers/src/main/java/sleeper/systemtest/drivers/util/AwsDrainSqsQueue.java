@@ -27,8 +27,10 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -40,7 +42,10 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class AwsDrainSqsQueue {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsDrainSqsQueue.class);
-    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+    private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(
+            0, 40,
+            60L, TimeUnit.SECONDS,
+            new SynchronousQueue<Runnable>());
 
     private final SqsClient sqsClient;
     private final int numThreads;
