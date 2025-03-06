@@ -196,35 +196,6 @@ fn output_sketch(
     Ok(())
 }
 
-/// If any are present, apply Sleeper aggregations to this query.
-///
-/// # Errors
-/// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified.
-fn apply_aggregations(
-    row_key_cols: &[String],
-    frame: DataFrame,
-    filter_agg_conf: Option<&FilterAggregationConfig>,
-    row_key_exprs: Vec<Expr>,
-) -> Result<DataFrame, DataFusionError> {
-    Ok(
-        if let Some(FilterAggregationConfig {
-            filter: _,
-            aggregation: Some(aggregation),
-        }) = &filter_agg_conf
-        {
-            // Check aggregations meet validity checks
-            validate_aggregations(row_key_cols, frame.schema(), aggregation)?;
-            let aggregations = aggregation
-                .iter()
-                .map(Aggregate::to_expr)
-                .collect::<Vec<_>>();
-            frame.aggregate(row_key_exprs, aggregations)?
-        } else {
-            frame
-        },
-    )
-}
-
 /// Create a Data Sketches UDF from the given frame schema.
 ///
 /// # Errors
@@ -254,6 +225,35 @@ fn apply_filters(
         {
             info!("Applying Sleeper filter iterator: {f:?}");
             frame.filter(f.create_filter_expr()?)?
+        } else {
+            frame
+        },
+    )
+}
+
+/// If any are present, apply Sleeper aggregations to this query.
+///
+/// # Errors
+/// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified.
+fn apply_aggregations(
+    row_key_cols: &[String],
+    frame: DataFrame,
+    filter_agg_conf: Option<&FilterAggregationConfig>,
+    row_key_exprs: Vec<Expr>,
+) -> Result<DataFrame, DataFusionError> {
+    Ok(
+        if let Some(FilterAggregationConfig {
+            filter: _,
+            aggregation: Some(aggregation),
+        }) = &filter_agg_conf
+        {
+            // Check aggregations meet validity checks
+            validate_aggregations(row_key_cols, frame.schema(), aggregation)?;
+            let aggregations = aggregation
+                .iter()
+                .map(Aggregate::to_expr)
+                .collect::<Vec<_>>();
+            frame.aggregate(row_key_exprs, aggregations)?
         } else {
             frame
         },
