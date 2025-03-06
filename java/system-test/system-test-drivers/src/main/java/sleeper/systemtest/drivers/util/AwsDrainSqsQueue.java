@@ -82,7 +82,7 @@ public class AwsDrainSqsQueue {
     }
 
     public void empty(String queueUrl) {
-        LOGGER.info("Draining queue until empty: {}", queueUrl);
+        LOGGER.info("Emptying queue: {}", queueUrl);
         long count = LongStream.iterate(
                 emptyMessageBatch(queueUrl), n -> n > 0, lastCount -> emptyMessageBatch(queueUrl))
                 .sum();
