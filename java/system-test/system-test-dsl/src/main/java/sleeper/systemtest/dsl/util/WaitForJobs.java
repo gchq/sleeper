@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -59,7 +60,7 @@ public class WaitForJobs {
             Function<InstanceProperties, IngestTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "ingest",
-                properties -> JobTracker.forIngest(getJobTracker.apply(properties)),
+                properties -> JobTracker.forIngest(instance.currentTablePropertiesCollection(), getJobTracker.apply(properties)),
                 properties -> TaskTracker.forIngest(getTaskTracker.apply(properties)),
                 pollDriver);
     }
@@ -69,7 +70,7 @@ public class WaitForJobs {
             Function<InstanceProperties, IngestJobTracker> getJobTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "bulk import",
-                properties -> JobTracker.forIngest(getJobTracker.apply(properties)),
+                properties -> JobTracker.forIngest(instance.currentTablePropertiesCollection(), getJobTracker.apply(properties)),
                 properties -> () -> true,
                 pollDriver);
     }
@@ -80,7 +81,7 @@ public class WaitForJobs {
             Function<InstanceProperties, CompactionTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "compaction",
-                properties -> JobTracker.forCompaction(getJobTracker.apply(properties)),
+                properties -> JobTracker.forCompaction(instance.currentTablePropertiesCollection(), getJobTracker.apply(properties)),
                 properties -> TaskTracker.forCompaction(getTaskTracker.apply(properties)),
                 pollDriver);
     }
@@ -139,12 +140,12 @@ public class WaitForJobs {
     private interface JobTracker {
         WaitForJobsStatus getStatus(Collection<String> jobIds);
 
-        static JobTracker forIngest(IngestJobTracker tracker) {
-            return jobId -> WaitForJobsStatus.forIngest(tracker, jobId, Instant.now());
+        static JobTracker forIngest(Collection<TableProperties> tables, IngestJobTracker tracker) {
+            return jobId -> WaitForJobsStatus.forIngest(tracker, tables, jobId, Instant.now());
         }
 
-        static JobTracker forCompaction(CompactionJobTracker tracker) {
-            return jobId -> WaitForJobsStatus.forCompaction(tracker, jobId, Instant.now());
+        static JobTracker forCompaction(Collection<TableProperties> tables, CompactionJobTracker tracker) {
+            return jobId -> WaitForJobsStatus.forCompaction(tracker, tables, jobId, Instant.now());
         }
     }
 

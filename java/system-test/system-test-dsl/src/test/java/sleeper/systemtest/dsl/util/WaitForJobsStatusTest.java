@@ -19,8 +19,9 @@ package sleeper.systemtest.dsl.util;
 import org.junit.jupiter.api.Test;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.table.TableStatus;
-import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -28,37 +29,43 @@ import sleeper.ingest.core.job.IngestJob;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 import static sleeper.ingest.core.job.IngestJobTestData.createJobWithTableAndFiles;
 
 public class WaitForJobsStatusTest {
 
-    private final TableStatus table = TableStatusTestHelper.uniqueIdAndName("test-table-id", "test-table");
-    private final InMemoryCompactionJobTracker tracker = new InMemoryCompactionJobTracker();
+    InstanceProperties instanceProperties = createTestInstanceProperties();
+    TableProperties tableProperties = createTestTableProperties(instanceProperties, schemaWithKey("key"));
+    TableStatus table = tableProperties.getStatus();
+    InMemoryCompactionJobTracker compactionTracker = new InMemoryCompactionJobTracker();
+    IngestJobTracker ingestTracker = new InMemoryIngestJobTracker();
 
     @Test
     void shouldReportSeveralBulkImportJobs() {
         // Given
-        IngestJobTracker tracker = new InMemoryIngestJobTracker();
         IngestJob acceptedJob = createJobWithTableAndFiles("accepted-job", table, "test.parquet", "test2.parquet");
         IngestJob startedJob = createJobWithTableAndFiles("started-job", table, "test3.parquet", "test4.parquet");
         IngestJob finishedJob = createJobWithTableAndFiles("finished-job", table, "test3.parquet", "test4.parquet");
-        tracker.jobValidated(acceptedJob.acceptedEventBuilder(Instant.parse("2022-09-22T13:33:10Z")).jobRunId("accepted-run").build());
-        tracker.jobValidated(startedJob.acceptedEventBuilder(Instant.parse("2022-09-22T13:33:11Z")).jobRunId("started-run").build());
-        tracker.jobValidated(finishedJob.acceptedEventBuilder(Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());
-        tracker.jobStarted(startedJob.startedAfterValidationEventBuilder(Instant.parse("2022-09-22T13:33:31Z")).jobRunId("started-run").taskId("started-task").build());
-        tracker.jobStarted(finishedJob.startedAfterValidationEventBuilder(Instant.parse("2022-09-22T13:33:32Z")).jobRunId("finished-run").taskId("finished-task").build());
-        tracker.jobFinished(finishedJob.finishedEventBuilder(
+        ingestTracker.jobValidated(acceptedJob.acceptedEventBuilder(Instant.parse("2022-09-22T13:33:10Z")).jobRunId("accepted-run").build());
+        ingestTracker.jobValidated(startedJob.acceptedEventBuilder(Instant.parse("2022-09-22T13:33:11Z")).jobRunId("started-run").build());
+        ingestTracker.jobValidated(finishedJob.acceptedEventBuilder(Instant.parse("2022-09-22T13:33:12Z")).jobRunId("finished-run").build());
+        ingestTracker.jobStarted(startedJob.startedAfterValidationEventBuilder(Instant.parse("2022-09-22T13:33:31Z")).jobRunId("started-run").taskId("started-task").build());
+        ingestTracker.jobStarted(finishedJob.startedAfterValidationEventBuilder(Instant.parse("2022-09-22T13:33:32Z")).jobRunId("finished-run").taskId("finished-task").build());
+        ingestTracker.jobFinished(finishedJob.finishedEventBuilder(
                 summary(Instant.parse("2022-09-22T13:33:32Z"), Instant.parse("2022-09-22T13:35:32Z"), 100L, 100L))
                 .jobRunId("finished-run").taskId("finished-task").numFilesWrittenByJob(2).build());
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forIngest(tracker,
+        WaitForJobsStatus status = ingestStatus(
                 List.of("accepted-job", "started-job", "finished-job"),
                 Instant.parse("2022-09-22T13:34:00Z"));
 
@@ -83,23 +90,23 @@ public class WaitForJobsStatusTest {
         CompactionJob startedJob = compactionJob("started-job", "x.parquet", "y.parquet");
         CompactionJob uncommittedJob = compactionJob("uncommitted-job", "alpha.parquet", "beta.parquet");
         CompactionJob finishedJob = compactionJob("finished-job", "first.parquet", "second.parquet");
-        tracker.fixUpdateTime(Instant.parse("2023-09-18T14:47:00Z"));
+        compactionTracker.fixUpdateTime(Instant.parse("2023-09-18T14:47:00Z"));
         jobsCreated(createdJob, startedJob, uncommittedJob, finishedJob);
-        tracker.fixUpdateTime(Instant.parse("2023-09-18T14:48:03Z"));
-        tracker.jobStarted(startedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").jobRunId("started-run").build());
-        tracker.jobStarted(uncommittedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").jobRunId("finished-run-1").build());
-        tracker.jobStarted(finishedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").jobRunId("finished-run-2").build());
-        tracker.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
-        tracker.jobFinished(uncommittedJob.finishedEventBuilder(
+        compactionTracker.fixUpdateTime(Instant.parse("2023-09-18T14:48:03Z"));
+        compactionTracker.jobStarted(startedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:00Z")).taskId("started-task").jobRunId("started-run").build());
+        compactionTracker.jobStarted(uncommittedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:01Z")).taskId("finished-task-1").jobRunId("finished-run-1").build());
+        compactionTracker.jobStarted(finishedJob.startedEventBuilder(Instant.parse("2023-09-18T14:48:02Z")).taskId("finished-task-2").jobRunId("finished-run-2").build());
+        compactionTracker.fixUpdateTime(Instant.parse("2023-09-18T14:48:05Z"));
+        compactionTracker.jobFinished(uncommittedJob.finishedEventBuilder(
                 summary(Instant.parse("2023-09-18T14:48:01Z"), Instant.parse("2023-09-18T14:50:01Z"), 100L, 100L))
                 .taskId("finished-task-1").jobRunId("finished-run-1").build());
-        tracker.jobFinished(finishedJob.finishedEventBuilder(
+        compactionTracker.jobFinished(finishedJob.finishedEventBuilder(
                 summary(Instant.parse("2023-09-18T14:48:02Z"), Instant.parse("2023-09-18T14:50:02Z"), 100L, 100L))
                 .taskId("finished-task-2").jobRunId("finished-run-2").build());
-        tracker.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
-        tracker.jobCommitted(finishedJob.committedEventBuilder(Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").jobRunId("finished-run-2").build());
+        compactionTracker.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
+        compactionTracker.jobCommitted(finishedJob.committedEventBuilder(Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").jobRunId("finished-run-2").build());
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker,
+        WaitForJobsStatus status = compactionStatus(
                 List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
                 Instant.parse("2023-09-18T14:50:01Z"));
 
@@ -130,7 +137,7 @@ public class WaitForJobsStatusTest {
         addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:49:00Z"), Instant.parse("2023-09-18T14:51:00Z"), "test-task");
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker,
+        WaitForJobsStatus status = compactionStatus(
                 List.of("finished-job"),
                 Instant.parse("2023-09-18T14:50:00Z"));
 
@@ -155,7 +162,7 @@ public class WaitForJobsStatusTest {
         addUnfinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:51:00Z"), "task-2");
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker,
+        WaitForJobsStatus status = compactionStatus(
                 List.of("finished-job"),
                 Instant.parse("2023-09-18T14:52:00Z"));
 
@@ -185,7 +192,7 @@ public class WaitForJobsStatusTest {
         addUnfinishedRun(inProgressJob, Instant.parse("2023-09-18T14:51:00Z"), "test-task");
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker,
+        WaitForJobsStatus status = compactionStatus(
                 List.of("finished-job", "unfinished-job"),
                 Instant.parse("2023-09-18T14:52:00Z"));
 
@@ -205,15 +212,14 @@ public class WaitForJobsStatusTest {
     @Test
     void shouldReportIngestJobUnfinishedWhenUncommitted() {
         // Given
-        IngestJobTracker tracker = new InMemoryIngestJobTracker();
         IngestJob job = createJobWithTableAndFiles("test-job", table, "test.parquet");
-        tracker.jobStarted(job.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z")).jobRunId("test-run").taskId("test-task").build());
-        tracker.jobFinished(job.finishedEventBuilder(summary(Instant.parse("2024-06-27T09:40:00Z"), Duration.ofMinutes(2), 100L, 100L))
+        ingestTracker.jobStarted(job.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z")).jobRunId("test-run").taskId("test-task").build());
+        ingestTracker.jobFinished(job.finishedEventBuilder(summary(Instant.parse("2024-06-27T09:40:00Z"), Duration.ofMinutes(2), 100L, 100L))
                 .jobRunId("test-run").taskId("test-task").numFilesWrittenByJob(2)
                 .committedBySeparateFileUpdates(true).build());
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forIngest(tracker,
+        WaitForJobsStatus status = ingestStatus(
                 List.of("test-job"),
                 Instant.parse("2024-06-27T09:43:00Z"));
 
@@ -229,9 +235,17 @@ public class WaitForJobsStatusTest {
         assertThat(status.areAllJobsFinished()).isFalse();
     }
 
+    private WaitForJobsStatus compactionStatus(Collection<String> jobIds, Instant now) {
+        return WaitForJobsStatus.forCompaction(compactionTracker, List.of(tableProperties), jobIds, now);
+    }
+
+    private WaitForJobsStatus ingestStatus(Collection<String> jobIds, Instant now) {
+        return WaitForJobsStatus.forIngest(ingestTracker, List.of(tableProperties), jobIds, now);
+    }
+
     private CompactionJob compactionJob(String id, String... files) {
         return CompactionJob.builder()
-                .tableId("test-table-id")
+                .tableId(table.getTableUniqueId())
                 .jobId(id)
                 .inputFiles(List.of(files))
                 .outputFile(id + "/outputFile")
@@ -239,32 +253,32 @@ public class WaitForJobsStatusTest {
     }
 
     private void addCreatedJob(CompactionJob job, Instant createdTime) {
-        tracker.fixUpdateTime(defaultUpdateTime(createdTime));
-        tracker.jobCreated(job.createCreatedEvent());
+        compactionTracker.fixUpdateTime(defaultUpdateTime(createdTime));
+        compactionTracker.jobCreated(job.createCreatedEvent());
     }
 
     private void jobsCreated(CompactionJob... jobs) {
         for (CompactionJob job : jobs) {
-            tracker.jobCreated(job.createCreatedEvent());
+            compactionTracker.jobCreated(job.createCreatedEvent());
         }
     }
 
     private void addUnfinishedRun(CompactionJob job, Instant startTime, String taskId) {
-        tracker.fixUpdateTime(defaultUpdateTime(startTime));
-        tracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(UUID.randomUUID().toString()).build());
+        compactionTracker.fixUpdateTime(defaultUpdateTime(startTime));
+        compactionTracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(UUID.randomUUID().toString()).build());
     }
 
     private void addFinishedRun(CompactionJob job, Instant startTime, Instant finishTime, String taskId) {
         String jobRunId = UUID.randomUUID().toString();
-        tracker.fixUpdateTime(defaultUpdateTime(startTime));
-        tracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(jobRunId).build());
+        compactionTracker.fixUpdateTime(defaultUpdateTime(startTime));
+        compactionTracker.jobStarted(job.startedEventBuilder(startTime).taskId(taskId).jobRunId(jobRunId).build());
 
-        tracker.fixUpdateTime(defaultUpdateTime(finishTime));
-        tracker.jobFinished(job.finishedEventBuilder(
+        compactionTracker.fixUpdateTime(defaultUpdateTime(finishTime));
+        compactionTracker.jobFinished(job.finishedEventBuilder(
                 summary(startTime, finishTime, 100L, 100L))
                 .taskId(taskId).jobRunId(jobRunId).build());
         Instant commitTime = finishTime.plus(Duration.ofMinutes(1));
-        tracker.fixUpdateTime(defaultUpdateTime(commitTime));
-        tracker.jobCommitted(job.committedEventBuilder(commitTime).taskId(taskId).jobRunId(jobRunId).build());
+        compactionTracker.fixUpdateTime(defaultUpdateTime(commitTime));
+        compactionTracker.jobCommitted(job.committedEventBuilder(commitTime).taskId(taskId).jobRunId(jobRunId).build());
     }
 }
