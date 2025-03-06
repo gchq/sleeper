@@ -149,8 +149,8 @@ class WaitForPartitionSplittingTest {
             update(after).initialise(new PartitionsBuilder(tableProperties)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", "split point")
-                    .splitToNewChildren("left", "left left", "left right", "left split")
-                    .splitToNewChildren("right", "right left", "right right", "right split")
+                    .splitToNewChildren("left", "left left", "left right", "split left")
+                    .splitToNewChildren("right", "right left", "right right", "split right")
                     .buildList());
             update(after).addFile(fileFactory(after).partitionFile("left", "left.parquet", 11));
             update(after).addFile(fileFactory(after).partitionFile("right", "right.parquet", 11));
