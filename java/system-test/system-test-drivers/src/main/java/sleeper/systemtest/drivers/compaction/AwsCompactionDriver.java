@@ -69,9 +69,14 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final SqsClient sqsClientV2;
     private final AutoScalingClient asClient;
     private final Ec2Client ec2Client;
+    private final AwsDrainSqsQueue drainQueue;
     private final CompactionJobSerDe serDe = new CompactionJobSerDe();
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
+        this(instance, clients, AwsDrainSqsQueue.forSystemTests(clients.getSqsV2()));
+    }
+
+    public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients, AwsDrainSqsQueue drainQueue) {
         this.instance = instance;
         this.dynamoDBClient = clients.getDynamoDB();
         this.s3Client = clients.getS3();
@@ -79,6 +84,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         this.sqsClientV2 = clients.getSqsV2();
         this.asClient = clients.getAutoScaling();
         this.ec2Client = clients.getEc2();
+        this.drainQueue = drainQueue;
     }
 
     @Override
@@ -118,7 +124,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     public List<CompactionJob> drainJobsQueueForWholeInstance() {
         String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_QUEUE_URL);
         LOGGER.info("Draining compaction jobs queue: {}", queueUrl);
-        List<CompactionJob> jobs = AwsDrainSqsQueue.forSystemTests(sqsClientV2).drain(queueUrl)
+        List<CompactionJob> jobs = drainQueue.drain(queueUrl)
                 .map(Message::body)
                 .map(serDe::fromJson)
                 .toList();

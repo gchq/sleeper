@@ -57,12 +57,7 @@ public class AwsResetInstanceOnFirstConnectIT {
         instanceDriver = drivers.instance(parameters);
         tablesDriver = drivers.tables(parameters);
         sqs = drivers.clients().getSqsV2();
-        drainQueue = AwsDrainSqsQueue.builder()
-                .sqsClient(sqs)
-                .numThreads(1)
-                .messagesPerBatchPerThread(100)
-                .waitTimeSeconds(1)
-                .build();
+        drainQueue = AwsDrainSqsQueue.forLocalStackTests(sqs);
         onFirstConnect = new AwsResetInstanceOnFirstConnect(drivers.clients(), drainQueue);
     }
 

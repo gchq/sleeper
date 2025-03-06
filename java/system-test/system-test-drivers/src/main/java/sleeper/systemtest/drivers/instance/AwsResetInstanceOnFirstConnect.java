@@ -61,7 +61,7 @@ public class AwsResetInstanceOnFirstConnect {
     private final AwsDrainSqsQueue drainSqsQueue;
 
     public AwsResetInstanceOnFirstConnect(SystemTestClients clients) {
-        this(clients, AwsDrainSqsQueue.builder().sqsClient(clients.getSqsV2()).build());
+        this(clients, AwsDrainSqsQueue.forSystemTests(clients.getSqsV2()));
     }
 
     public AwsResetInstanceOnFirstConnect(SystemTestClients clients, AwsDrainSqsQueue drainSqsQueue) {

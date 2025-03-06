@@ -43,8 +43,8 @@ public class AwsDrainSqsQueue {
     private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
 
     private final SqsClient sqsClient;
-    private final int messagesPerBatchPerThread;
     private final int numThreads;
+    private final int messagesPerBatchPerThread;
     private final int waitTimeSeconds;
 
     private AwsDrainSqsQueue(Builder builder) {
@@ -55,7 +55,23 @@ public class AwsDrainSqsQueue {
     }
 
     public static AwsDrainSqsQueue forSystemTests(SqsClient sqsClient) {
-        return builder().sqsClient(sqsClient).build();
+        return withClient(sqsClient)
+                .numThreads(10)
+                .messagesPerBatchPerThread(10_000)
+                .waitTimeSeconds(10)
+                .build();
+    }
+
+    public static AwsDrainSqsQueue forLocalStackTests(SqsClient sqsClient) {
+        return withClient(sqsClient)
+                .numThreads(2)
+                .messagesPerBatchPerThread(10)
+                .waitTimeSeconds(1)
+                .build();
+    }
+
+    private static Builder withClient(SqsClient sqsClient) {
+        return new Builder().sqsClient(sqsClient);
     }
 
     public Stream<Message> drain(String queueUrl) {
@@ -147,8 +163,8 @@ public class AwsDrainSqsQueue {
     public static class Builder {
 
         private SqsClient sqsClient;
-        private int messagesPerBatchPerThread = 10_000;
         private int numThreads = 1;
+        private int messagesPerBatchPerThread = 10_000;
         private int waitTimeSeconds = 10;
 
         private Builder() {
@@ -159,13 +175,13 @@ public class AwsDrainSqsQueue {
             return this;
         }
 
-        public Builder messagesPerBatchPerThread(int messagesPerBatchPerThread) {
-            this.messagesPerBatchPerThread = messagesPerBatchPerThread;
+        public Builder numThreads(int numThreads) {
+            this.numThreads = numThreads;
             return this;
         }
 
-        public Builder numThreads(int numThreads) {
-            this.numThreads = numThreads;
+        public Builder messagesPerBatchPerThread(int messagesPerBatchPerThread) {
+            this.messagesPerBatchPerThread = messagesPerBatchPerThread;
             return this;
         }
 
