@@ -109,7 +109,7 @@ public final class DeployedSleeperTablesForTest {
         return tableByName.values().stream();
     }
 
-    public Collection<TableProperties> tableProperties() {
+    public Collection<TableProperties> tablePropertiesCollection() {
         return tableByName.values();
     }
 

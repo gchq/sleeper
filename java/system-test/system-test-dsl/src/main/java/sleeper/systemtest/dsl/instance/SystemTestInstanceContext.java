@@ -209,11 +209,11 @@ public class SystemTestInstanceContext {
     }
 
     public Stream<TableProperties> streamTableProperties() {
-        return allTestTableProperties().stream();
+        return currentTablePropertiesCollection().stream();
     }
 
-    public Collection<TableProperties> allTestTableProperties() {
-        return currentTables().tableProperties();
+    public Collection<TableProperties> currentTablePropertiesCollection() {
+        return currentTables().tablePropertiesCollection();
     }
 
     public void setCurrentTable(TableProperties tableProperties) {
