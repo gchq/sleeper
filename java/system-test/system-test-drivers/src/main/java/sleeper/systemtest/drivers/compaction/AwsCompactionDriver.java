@@ -118,7 +118,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     public List<CompactionJob> drainJobsQueueForWholeInstance() {
         String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_QUEUE_URL);
         LOGGER.info("Draining compaction jobs queue: {}", queueUrl);
-        List<CompactionJob> jobs = AwsDrainSqsQueue.drainQueueForWholeInstance(sqsClientV2, queueUrl)
+        List<CompactionJob> jobs = AwsDrainSqsQueue.forSystemTests(sqsClientV2).drain(queueUrl)
                 .map(Message::body)
                 .map(serDe::fromJson)
                 .toList();

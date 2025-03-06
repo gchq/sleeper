@@ -24,39 +24,113 @@ import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.stream.Collector;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class AwsDrainSqsQueue {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsDrainSqsQueue.class);
+    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
 
-    private AwsDrainSqsQueue() {
+    private final SqsClient sqsClient;
+    private final int messagesPerBatchPerThread;
+    private final int numThreads;
+    private final int waitTimeSeconds;
+
+    private AwsDrainSqsQueue(Builder builder) {
+        sqsClient = builder.sqsClient;
+        messagesPerBatchPerThread = builder.messagesPerBatchPerThread;
+        numThreads = builder.numThreads;
+        waitTimeSeconds = builder.waitTimeSeconds;
     }
 
-    public static void emptyQueueForWholeInstance(SqsClient sqs, String queueUrl) {
+    public static AwsDrainSqsQueue forSystemTests(SqsClient sqsClient) {
+        return builder().sqsClient(sqsClient).build();
+    }
+
+    public Stream<Message> drain(String queueUrl) {
         LOGGER.info("Draining queue until empty: {}", queueUrl);
-        long messages = drainQueueForWholeInstance(sqs, queueUrl).collect(counting());
-        LOGGER.info("Deleted {} messages", messages);
-    }
-
-    public static Stream<Message> drainQueueForWholeInstance(SqsClient sqs, String queueUrl) {
         return Stream.iterate(
-                receiveMessages(sqs, queueUrl), not(List::isEmpty), lastJobs -> receiveMessages(sqs, queueUrl))
+                receiveMessageBatch(queueUrl), not(List::isEmpty), lastJobs -> receiveMessageBatch(queueUrl))
                 .flatMap(List::stream);
     }
 
-    private static List<Message> receiveMessages(SqsClient sqs, String queueUrl) {
-        ReceiveMessageResponse receiveResult = sqs.receiveMessage(request -> request
+    public void empty(String queueUrl) {
+        LOGGER.info("Draining queue until empty: {}", queueUrl);
+        long count = LongStream.iterate(
+                emptyMessageBatch(queueUrl), n -> n > 0, lastCount -> emptyMessageBatch(queueUrl))
+                .sum();
+        LOGGER.info("Deleted {} messages from queue: {}", count, queueUrl);
+    }
+
+    private List<Message> receiveMessageBatch(String queueUrl) {
+        List<Message> messages = receiveOnThreads(queueUrl, toUnmodifiableList())
+                .flatMap(List::stream).toList();
+        LOGGER.info("Received a batch of {} messages from queue: {}", messages.size(), queueUrl);
+        return messages;
+    }
+
+    private long emptyMessageBatch(String queueUrl) {
+        long count = receiveOnThreads(queueUrl, counting()).mapToLong(n -> n).sum();
+        LOGGER.info("Deleted a batch of {} messages from queue: {}", count, queueUrl);
+        return count;
+    }
+
+    private <A, R> Stream<R> receiveOnThreads(String queueUrl, Collector<Message, A, R> threadCollector) {
+        try {
+            LOGGER.info("Receiving a batch of messages from queue: {}", queueUrl);
+            List<Future<R>> results = EXECUTOR.invokeAll(IntStream.range(0, numThreads)
+                    .mapToObj(i -> (Callable<R>) () -> receiveMessageBatchOneThread(queueUrl, threadCollector))
+                    .toList());
+            return results.stream()
+                    .map(future -> {
+                        try {
+                            return future.get();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(e);
+                        } catch (ExecutionException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private <A, R> R receiveMessageBatchOneThread(String queueUrl, Collector<Message, A, R> collector) {
+        return Stream.iterate(
+                receiveMessages(queueUrl), not(List::isEmpty), lastJobs -> receiveMessages(queueUrl))
+                .limit(messagesPerBatchPerThread / 10)
+                .flatMap(List::stream)
+                .collect(collector);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    private List<Message> receiveMessages(String queueUrl) {
+        ReceiveMessageResponse receiveResult = sqsClient.receiveMessage(request -> request
                 .queueUrl(queueUrl)
                 .maxNumberOfMessages(10)
-                .waitTimeSeconds(10));
+                .waitTimeSeconds(waitTimeSeconds));
         List<Message> messages = receiveResult.messages();
         if (messages.isEmpty()) {
             return List.of();
         }
-        DeleteMessageBatchResponse deleteResult = sqs.deleteMessageBatch(request -> request
+        DeleteMessageBatchResponse deleteResult = sqsClient.deleteMessageBatch(request -> request
                 .queueUrl(queueUrl)
                 .entries(messages.stream()
                         .map(message -> DeleteMessageBatchRequestEntry.builder()
@@ -70,4 +144,38 @@ public class AwsDrainSqsQueue {
         return messages;
     }
 
+    public static class Builder {
+
+        private SqsClient sqsClient;
+        private int messagesPerBatchPerThread = 10_000;
+        private int numThreads = 1;
+        private int waitTimeSeconds = 10;
+
+        private Builder() {
+        }
+
+        public Builder sqsClient(SqsClient sqsClient) {
+            this.sqsClient = sqsClient;
+            return this;
+        }
+
+        public Builder messagesPerBatchPerThread(int messagesPerBatchPerThread) {
+            this.messagesPerBatchPerThread = messagesPerBatchPerThread;
+            return this;
+        }
+
+        public Builder numThreads(int numThreads) {
+            this.numThreads = numThreads;
+            return this;
+        }
+
+        public Builder waitTimeSeconds(int waitTimeSeconds) {
+            this.waitTimeSeconds = waitTimeSeconds;
+            return this;
+        }
+
+        public AwsDrainSqsQueue build() {
+            return new AwsDrainSqsQueue(this);
+        }
+    }
 }

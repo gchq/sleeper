@@ -47,6 +47,7 @@ public class AwsResetInstanceOnFirstConnectIT {
     SleeperTablesDriver tablesDriver;
     AwsResetInstanceOnFirstConnect onFirstConnect;
     SqsClient sqs;
+    AwsDrainSqsQueue drainQueue;
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, LocalStackSystemTestDrivers drivers, SystemTestContext context, SystemTestParameters parameters) {
@@ -55,8 +56,14 @@ public class AwsResetInstanceOnFirstConnectIT {
         instanceProperties = sleeper.instanceProperties();
         instanceDriver = drivers.instance(parameters);
         tablesDriver = drivers.tables(parameters);
-        onFirstConnect = new AwsResetInstanceOnFirstConnect(drivers.clients());
         sqs = drivers.clients().getSqsV2();
+        drainQueue = AwsDrainSqsQueue.builder()
+                .sqsClient(sqs)
+                .numThreads(1)
+                .messagesPerBatchPerThread(100)
+                .waitTimeSeconds(1)
+                .build();
+        onFirstConnect = new AwsResetInstanceOnFirstConnect(drivers.clients(), drainQueue);
     }
 
     @Test
@@ -72,7 +79,7 @@ public class AwsResetInstanceOnFirstConnectIT {
         // Then
         assertThat(tablesDriver.tableIndex(instanceProperties).streamAllTables())
                 .isEmpty();
-        assertThat(AwsDrainSqsQueue.drainQueueForWholeInstance(sqs, instanceProperties.get(COMPACTION_JOB_QUEUE_URL)))
+        assertThat(drainQueue.drain(instanceProperties.get(COMPACTION_JOB_QUEUE_URL)))
                 .isEmpty();
     }
 
