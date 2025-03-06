@@ -82,8 +82,9 @@ public class WaitForJobs {
             Function<InstanceProperties, CompactionJobTracker> getJobTracker,
             Function<InstanceProperties, CompactionTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
+        TableStatus table = instance.getTableStatus();
         return new WaitForJobs(instance, "compaction",
-                properties -> JobTracker.forCompaction(getJobTracker.apply(properties)),
+                properties -> JobTracker.forCompaction(table, getJobTracker.apply(properties)),
                 properties -> TaskTracker.forCompaction(getTaskTracker.apply(properties)),
                 pollDriver);
     }
@@ -146,8 +147,8 @@ public class WaitForJobs {
             return jobId -> WaitForJobsStatus.forIngest(tracker, table, jobId, Instant.now());
         }
 
-        static JobTracker forCompaction(CompactionJobTracker tracker) {
-            return jobId -> WaitForJobsStatus.forCompaction(tracker, jobId, Instant.now());
+        static JobTracker forCompaction(TableStatus table, CompactionJobTracker tracker) {
+            return jobId -> WaitForJobsStatus.forCompaction(tracker, table, jobId, Instant.now());
         }
     }
 

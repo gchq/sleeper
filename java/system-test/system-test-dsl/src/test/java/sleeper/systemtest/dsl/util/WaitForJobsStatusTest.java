@@ -99,7 +99,7 @@ public class WaitForJobsStatusTest {
         tracker.fixUpdateTime(Instant.parse("2023-09-18T14:50:10Z"));
         tracker.jobCommitted(finishedJob.committedEventBuilder(Instant.parse("2023-09-18T14:50:06Z")).taskId("finished-task-2").jobRunId("finished-run-2").build());
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker,
+        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker, table,
                 List.of("created-job", "started-job", "uncommitted-job", "finished-job"),
                 Instant.parse("2023-09-18T14:50:01Z"));
 
@@ -130,7 +130,7 @@ public class WaitForJobsStatusTest {
         addFinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:49:00Z"), Instant.parse("2023-09-18T14:51:00Z"), "test-task");
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker,
+        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker, table,
                 List.of("finished-job"),
                 Instant.parse("2023-09-18T14:50:00Z"));
 
@@ -155,7 +155,7 @@ public class WaitForJobsStatusTest {
         addUnfinishedRun(jobRunTwice, Instant.parse("2023-09-18T14:51:00Z"), "task-2");
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker,
+        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker, table,
                 List.of("finished-job"),
                 Instant.parse("2023-09-18T14:52:00Z"));
 
@@ -185,7 +185,7 @@ public class WaitForJobsStatusTest {
         addUnfinishedRun(inProgressJob, Instant.parse("2023-09-18T14:51:00Z"), "test-task");
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker,
+        WaitForJobsStatus status = WaitForJobsStatus.forCompaction(tracker, table,
                 List.of("finished-job", "unfinished-job"),
                 Instant.parse("2023-09-18T14:52:00Z"));
 

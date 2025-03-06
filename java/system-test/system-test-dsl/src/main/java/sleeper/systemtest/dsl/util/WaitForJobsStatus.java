@@ -69,7 +69,7 @@ public class WaitForJobsStatus {
         return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::ingest), jobIds, now);
     }
 
-    public static WaitForJobsStatus forCompaction(CompactionJobTracker tracker, Collection<String> jobIds, Instant now) {
+    public static WaitForJobsStatus forCompaction(CompactionJobTracker tracker, TableStatus table, Collection<String> jobIds, Instant now) {
         return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::compaction), jobIds, now);
     }
 
