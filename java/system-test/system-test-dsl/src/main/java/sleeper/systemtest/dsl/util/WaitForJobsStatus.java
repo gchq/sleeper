@@ -185,6 +185,8 @@ public class WaitForJobsStatus {
             int numUnreported = numJobs - totalReported;
             if (numUnreported > 0) {
                 countByFurthestStatus.put("NONE", numUnreported);
+                numUnstarted = numUnstarted == null ? 1 : numUnstarted + numUnreported;
+                numUnfinished += numUnreported;
             }
         }
 

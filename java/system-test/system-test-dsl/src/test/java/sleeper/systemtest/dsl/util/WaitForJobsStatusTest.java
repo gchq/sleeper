@@ -235,6 +235,49 @@ public class WaitForJobsStatusTest {
         assertThat(status.areAllJobsFinished()).isFalse();
     }
 
+    @Test
+    void shouldReportIngestJobUnstarted() {
+        // When
+        WaitForJobsStatus status = ingestStatus(
+                List.of("test-job"),
+                Instant.parse("2024-06-27T09:43:00Z"));
+
+        // Then
+        assertThat(status).hasToString("{\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"NONE\": 1\n" +
+                "  },\n" +
+                "  \"numUnstarted\": 1,\n" +
+                "  \"numUnfinished\": 1\n" +
+                "}");
+        assertThat(status.areAllJobsFinished()).isFalse();
+    }
+
+    @Test
+    void shouldReportIngestJobStartedAndUnstarted() {
+        // Given
+        IngestJob job = createJobWithTableAndFiles("job-1", table, "test.parquet");
+        ingestTracker.jobStarted(job.startedEventBuilder(Instant.parse("2024-06-27T09:40:00Z")).jobRunId("test-run").taskId("test-task").build());
+
+        // When
+        WaitForJobsStatus status = ingestStatus(
+                List.of("job-1", "job-2"),
+                Instant.parse("2024-06-27T09:43:00Z"));
+
+        // Then
+        assertThat(status).hasToString("{\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"IN_PROGRESS\": 1,\n" +
+                "    \"NONE\": 1\n" +
+                "  },\n" +
+                "  \"numUnstarted\": 1,\n" +
+                "  \"numUnfinished\": 2,\n" +
+                "  \"firstInProgressStartTime\": \"2024-06-27T09:40:00Z\",\n" +
+                "  \"longestInProgressDuration\": \"PT3M\"\n" +
+                "}");
+        assertThat(status.areAllJobsFinished()).isFalse();
+    }
+
     private WaitForJobsStatus compactionStatus(Collection<String> jobIds, Instant now) {
         return WaitForJobsStatus.forCompaction(compactionTracker, List.of(tableProperties), jobIds, now);
     }
