@@ -36,8 +36,10 @@ import sleeper.core.util.GsonConfig;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -65,11 +67,11 @@ public class WaitForJobsStatus {
     }
 
     public static WaitForJobsStatus forIngest(IngestJobTracker tracker, TableStatus table, Collection<String> jobIds, Instant now) {
-        return fromJobs(streamIngestJobs(tracker, table, jobIds), jobIds.size(), now);
+        return fromJobs(streamIngestJobs(tracker, table, new HashSet<>(jobIds)), jobIds.size(), now);
     }
 
     public static WaitForJobsStatus forCompaction(CompactionJobTracker tracker, TableStatus table, Collection<String> jobIds, Instant now) {
-        return fromJobs(streamCompactionJobs(tracker, table, jobIds), jobIds.size(), now);
+        return fromJobs(streamCompactionJobs(tracker, table, new HashSet<>(jobIds)), jobIds.size(), now);
     }
 
     public boolean areAllJobsFinished() {
@@ -96,13 +98,13 @@ public class WaitForJobsStatus {
         return (duration, type, context) -> new JsonPrimitive(duration.toString());
     }
 
-    private static Stream<JobStatus<?>> streamIngestJobs(IngestJobTracker tracker, TableStatus table, Collection<String> jobIds) {
+    private static Stream<JobStatus<?>> streamIngestJobs(IngestJobTracker tracker, TableStatus table, Set<String> jobIds) {
         return tracker.streamAllJobs(table.getTableUniqueId())
                 .filter(job -> jobIds.contains(job.getJobId()))
                 .map(JobStatus::ingest);
     }
 
-    private static Stream<JobStatus<?>> streamCompactionJobs(CompactionJobTracker tracker, TableStatus table, Collection<String> jobIds) {
+    private static Stream<JobStatus<?>> streamCompactionJobs(CompactionJobTracker tracker, TableStatus table, Set<String> jobIds) {
         return tracker.streamAllJobs(table.getTableUniqueId())
                 .filter(job -> jobIds.contains(job.getJobId()))
                 .map(JobStatus::compaction);
