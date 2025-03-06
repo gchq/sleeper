@@ -42,10 +42,16 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class AwsDrainSqsQueue {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsDrainSqsQueue.class);
-    private static final ExecutorService EXECUTOR = new ThreadPoolExecutor(
-            0, 40,
-            60L, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>());
+    private static final ExecutorService EXECUTOR = createThreadPool();
+
+    private static ExecutorService createThreadPool() {
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(
+                40, 40,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>());
+        pool.allowCoreThreadTimeOut(true);
+        return pool;
+    }
 
     private final SqsClient sqsClient;
     private final int numThreads;
