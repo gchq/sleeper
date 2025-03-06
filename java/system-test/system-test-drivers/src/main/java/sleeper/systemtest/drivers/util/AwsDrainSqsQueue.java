@@ -82,17 +82,9 @@ public class AwsDrainSqsQueue {
     }
 
     public void empty(List<String> queueUrls) {
-        try {
-            EXECUTOR.invokeAll(queueUrls.stream()
-                    .map(queueUrl -> (Callable<Void>) () -> {
-                        empty(queueUrl);
-                        return null;
-                    })
-                    .toList());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
-        }
+        invokeAll(queueUrls.stream()
+                .map(queueUrl -> (Runnable) () -> empty(queueUrl))
+                .toList());
     }
 
     public void empty(String queueUrl) {
@@ -115,10 +107,25 @@ public class AwsDrainSqsQueue {
     }
 
     private <A, R> Stream<R> receiveOnThreads(String queueUrl, Collector<Message, A, R> threadCollector) {
+        return streamInvokeAll(IntStream.range(0, numThreads)
+                .mapToObj(i -> (Callable<R>) () -> receiveMessageBatchOneThread(queueUrl, threadCollector))
+                .toList());
+    }
+
+    private void invokeAll(List<Runnable> runnables) {
+        List<Callable<Void>> callables = runnables.stream()
+                .map(runnable -> (Callable<Void>) () -> {
+                    runnable.run();
+                    return null;
+                }).toList();
+        streamInvokeAll(callables)
+                .forEach(result -> {
+                });
+    }
+
+    private <R> Stream<R> streamInvokeAll(List<Callable<R>> callables) {
         try {
-            List<Future<R>> results = EXECUTOR.invokeAll(IntStream.range(0, numThreads)
-                    .mapToObj(i -> (Callable<R>) () -> receiveMessageBatchOneThread(queueUrl, threadCollector))
-                    .toList());
+            List<Future<R>> results = EXECUTOR.invokeAll(callables);
             return results.stream()
                     .map(future -> {
                         try {
