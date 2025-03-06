@@ -15,8 +15,20 @@
  */
 package sleeper.core.schema.type;
 
+import java.util.Comparator;
+
 /**
  * A marker interface used to identify types that are primitives. These can be used for row and sort keys.
  */
-public class PrimitiveType implements Type {
+public interface PrimitiveType extends Type {
+
+    Comparator<Comparable> COMPARATOR = Comparator.nullsLast(Comparator.naturalOrder());
+
+    /**
+     * Converts a value of this type to a comparable object.
+     *
+     * @param  value the value
+     * @return       the comparable object
+     */
+    Comparable toComparable(Object value);
 }

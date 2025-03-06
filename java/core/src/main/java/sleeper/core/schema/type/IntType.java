@@ -18,7 +18,12 @@ package sleeper.core.schema.type;
 /**
  * A primitive type that represents an integer.
  */
-public class IntType extends PrimitiveType {
+public class IntType implements PrimitiveType {
+
+    @Override
+    public Integer toComparable(Object value) {
+        return (Integer) value;
+    }
 
     @Override
     public int hashCode() {

@@ -225,7 +225,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
                 .mapToObj(i -> "" + i)
                 .collect(Collectors.toList());
         List<Object> splitPoints = LongStream.range(1, 1000)
-                .mapToObj(i -> "split" + i)
+                .mapToObj(i -> "split" + String.format("%04d", i))
                 .collect(Collectors.toList());
         List<Partition> partitions = PartitionsBuilderSplitsFirst
                 .leavesWithSplits(schema, leafIds, splitPoints)
@@ -248,7 +248,7 @@ public class DynamoDBTransactionLogStoreIT extends TransactionLogStateStoreTestB
                 .mapToObj(i -> "" + i)
                 .collect(Collectors.toList());
         List<Object> splitPoints = LongStream.range(1, 1000)
-                .mapToObj(i -> "split" + i)
+                .mapToObj(i -> "split" + String.format("%04d", i))
                 .collect(Collectors.toList());
         Instant updateTime = Instant.parse("2024-04-09T14:19:01Z");
         StateStore stateStore = createStateStore(tableProperties);
