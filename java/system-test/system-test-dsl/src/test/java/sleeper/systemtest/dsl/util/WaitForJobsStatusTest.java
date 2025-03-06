@@ -58,7 +58,7 @@ public class WaitForJobsStatusTest {
                 .jobRunId("finished-run").taskId("finished-task").numFilesWrittenByJob(2).build());
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forIngest(tracker,
+        WaitForJobsStatus status = WaitForJobsStatus.forIngest(tracker, table,
                 List.of("accepted-job", "started-job", "finished-job"),
                 Instant.parse("2022-09-22T13:34:00Z"));
 
@@ -213,7 +213,7 @@ public class WaitForJobsStatusTest {
                 .committedBySeparateFileUpdates(true).build());
 
         // When
-        WaitForJobsStatus status = WaitForJobsStatus.forIngest(tracker,
+        WaitForJobsStatus status = WaitForJobsStatus.forIngest(tracker, table,
                 List.of("test-job"),
                 Instant.parse("2024-06-27T09:43:00Z"));
 

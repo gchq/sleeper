@@ -21,6 +21,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
@@ -64,7 +65,7 @@ public class WaitForJobsStatus {
         longestInProgressDuration = builder.longestInProgressDuration;
     }
 
-    public static WaitForJobsStatus forIngest(IngestJobTracker tracker, Collection<String> jobIds, Instant now) {
+    public static WaitForJobsStatus forIngest(IngestJobTracker tracker, TableStatus table, Collection<String> jobIds, Instant now) {
         return forJobTracker(jobId -> tracker.getJob(jobId).map(JobStatus::ingest), jobIds, now);
     }
 

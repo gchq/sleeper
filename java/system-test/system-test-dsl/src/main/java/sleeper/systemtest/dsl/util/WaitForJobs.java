@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
@@ -58,8 +59,9 @@ public class WaitForJobs {
             Function<InstanceProperties, IngestJobTracker> getJobTracker,
             Function<InstanceProperties, IngestTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
+        TableStatus table = instance.getTableStatus();
         return new WaitForJobs(instance, "ingest",
-                properties -> JobTracker.forIngest(getJobTracker.apply(properties)),
+                properties -> JobTracker.forIngest(table, getJobTracker.apply(properties)),
                 properties -> TaskTracker.forIngest(getTaskTracker.apply(properties)),
                 pollDriver);
     }
@@ -68,8 +70,9 @@ public class WaitForJobs {
             SystemTestInstanceContext instance,
             Function<InstanceProperties, IngestJobTracker> getJobTracker,
             PollWithRetriesDriver pollDriver) {
+        TableStatus table = instance.getTableStatus();
         return new WaitForJobs(instance, "bulk import",
-                properties -> JobTracker.forIngest(getJobTracker.apply(properties)),
+                properties -> JobTracker.forIngest(table, getJobTracker.apply(properties)),
                 properties -> () -> true,
                 pollDriver);
     }
@@ -139,8 +142,8 @@ public class WaitForJobs {
     private interface JobTracker {
         WaitForJobsStatus getStatus(Collection<String> jobIds);
 
-        static JobTracker forIngest(IngestJobTracker tracker) {
-            return jobId -> WaitForJobsStatus.forIngest(tracker, jobId, Instant.now());
+        static JobTracker forIngest(TableStatus table, IngestJobTracker tracker) {
+            return jobId -> WaitForJobsStatus.forIngest(tracker, table, jobId, Instant.now());
         }
 
         static JobTracker forCompaction(CompactionJobTracker tracker) {
