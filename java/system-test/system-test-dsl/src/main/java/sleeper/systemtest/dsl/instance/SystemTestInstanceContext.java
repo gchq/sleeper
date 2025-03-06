@@ -33,6 +33,7 @@ import sleeper.systemtest.dsl.util.TestContext;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -208,7 +209,11 @@ public class SystemTestInstanceContext {
     }
 
     public Stream<TableProperties> streamTableProperties() {
-        return currentTables().streamTableProperties();
+        return allTableProperties().stream();
+    }
+
+    public Collection<TableProperties> allTableProperties() {
+        return currentTables().tableProperties();
     }
 
     public void setCurrentTable(TableProperties tableProperties) {

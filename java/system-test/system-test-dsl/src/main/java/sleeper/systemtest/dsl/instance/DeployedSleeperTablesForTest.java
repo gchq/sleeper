@@ -26,6 +26,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -106,6 +107,10 @@ public final class DeployedSleeperTablesForTest {
 
     public Stream<TableProperties> streamTableProperties() {
         return tableByName.values().stream();
+    }
+
+    public Collection<TableProperties> tableProperties() {
+        return tableByName.values();
     }
 
     public void setCurrent(TableProperties tableProperties) {
