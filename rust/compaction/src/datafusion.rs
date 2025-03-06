@@ -26,6 +26,7 @@ use crate::{
 };
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
+    common::DFSchemaRef,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
@@ -54,7 +55,6 @@ mod udf;
 /// The object store factory must be able to produce an [`object_store::ObjectStore`] capable of reading
 /// from the input URLs and writing to the output URL. A sketch file will be produced for
 /// the output file.
-#[allow(clippy::too_many_lines)]
 pub async fn compact(
     store_factory: &ObjectStoreFactory,
     input_data: &CompactionInput<'_>,
@@ -73,22 +73,8 @@ pub async fn compact(
     // Register some object store from first input file and output file
     let store = register_store(store_factory, input_paths, output_path, &ctx)?;
 
-    // Find total input size and configure multipart upload size on output store
-    let input_size = calculate_input_size(input_paths, &store)
-        .await
-        .inspect_err(|e| warn!("Error getting total input size {e}"));
-    let multipart_size = std::cmp::max(
-        crate::store::MULTIPART_BUF_SIZE,
-        input_size.unwrap_or_default() / 5000,
-    );
-    store_factory
-        .get_object_store(output_path)
-        .map_err(|e| DataFusionError::External(e.into()))?
-        .set_multipart_size_hint(multipart_size);
-    info!(
-        "Setting multipart size hint to {} bytes.",
-        multipart_size.to_formatted_string(&Locale::en)
-    );
+    // Set the upload size based upon size of input data
+    set_multipart_upload_hint(store_factory, input_paths, output_path, store).await?;
 
     // Sort on row key columns then sort key columns (nulls last)
     let sort_order = sort_order(input_data);
@@ -97,40 +83,21 @@ pub async fn compact(
     // Tell DataFusion that the row key columns and sort columns are already sorted
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
-
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
         frame = frame.filter(expr)?;
     }
 
-    // Parse Sleeper iterator configuration
-    let filter_agg_conf = input_data
-        .iterator_config
-        .as_deref()
-        .map(FilterAggregationConfig::try_from)
-        .transpose()?;
-    // Do we have a Sleeper iterator filter to apply?
-    if let Some(FilterAggregationConfig {
-        filter: Some(f),
-        aggregation: _,
-    }) = &filter_agg_conf
-    {
-        info!("Applying Sleeper filter iterator: {f:?}");
-        frame = frame.filter(f.create_filter_expr()?)?;
-    }
+    // Parse Sleeper iterator configuration and apply
+    let filter_agg_conf = parse_iterator_config(&input_data.iterator_config)?;
+    apply_filters(&mut frame, &filter_agg_conf)?;
 
     // Create the sketch function
-    let sketch_func = Arc::new(ScalarUDF::from(udf::SketchUDF::new(
-        frame.schema(),
-        &input_data.row_key_cols,
-    )));
-    frame.task_ctx().register_udf(sketch_func.clone())?;
+    let sketch_func = create_sketch_udf(&input_data.row_key_cols, &frame)?;
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
-
     let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
-
     let sketch_expr = once(
         sketch_func
             .call(row_key_exprs.clone())
@@ -143,29 +110,39 @@ pub async fn compact(
 
     // Apply sort to DataFrame, then aggregate if necessary, then project for DataSketch
     frame = frame.sort(sort_order)?;
-    if let Some(FilterAggregationConfig {
-        filter: _,
-        aggregation: Some(aggregation),
-    }) = &filter_agg_conf
-    {
-        // Check aggregations meet validity checks
-        validate_aggregations(&input_data.row_key_cols, frame.schema(), aggregation)?;
-        let aggregations = aggregation
-            .iter()
-            .map(Aggregate::to_expr)
-            .collect::<Vec<_>>();
-        frame = frame.aggregate(row_key_exprs, aggregations)?;
-    }
+    apply_aggregations(
+        &input_data.row_key_cols,
+        &mut frame,
+        filter_agg_conf,
+        row_key_exprs,
+    )?;
     frame = frame.select(col_names_expr)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
     let output = pretty_format_batches(&explained)?;
     info!("DataFusion plan:\n {output}");
-
     let mut pqo = ctx.copied_table_options().parquet;
+
     // Figure out which columns should be dictionary encoded
-    let col_names = frame.schema().clone().strip_qualifiers().field_names();
+    set_dictionary_encoding(input_data, frame.schema(), &mut pqo);
+
+    // Write the frame out and collect stats
+    let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
+    output_sketch(store_factory, output_path, sketch_func, &stats)?;
+
+    Ok(CompactionResult::from(&stats))
+}
+
+/// Configure the per column dictionary encoding based on the input configuration.
+///
+/// This ensure the output configuration matches what Sleeper is expecting.
+fn set_dictionary_encoding(
+    input_data: &CompactionInput<'_>,
+    schema: &DFSchema,
+    pqo: &mut TableParquetOptions,
+) {
+    let col_names = schema.clone().strip_qualifiers().field_names();
     for col in &col_names {
         let col_opts = pqo.column_specific_options.entry(col.into()).or_default();
         let dict_encode = (input_data.dict_enc_row_keys && input_data.row_key_cols.contains(col))
@@ -176,18 +153,28 @@ pub async fn compact(
                 && !input_data.sort_key_cols.contains(col));
         col_opts.dictionary_enabled = Some(dict_encode);
     }
+}
 
-    // Write the frame out and collect stats
-    let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
-
-    // Write sketches out to file in Sleeper compatible way
+/// Extract the DataSketch result and write it out.
+///
+/// This function should be called after a query has completed. The sketch function will be asked for the current
+/// sketch.
+///
+/// # Errors
+/// If the sketch couldn't be serialised.
+fn output_sketch(
+    store_factory: &ObjectStoreFactory,
+    output_path: &Url,
+    sketch_func: Arc<ScalarUDF>,
+    stats: &RowCounts,
+) -> Result<(), DataFusionError> {
     let binding = sketch_func.inner();
     let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
-    if let Some(func) = inner_function {
+    Ok(if let Some(func) = inner_function {
         {
             // Limit scope of MutexGuard
             let first_sketch = &func.get_sketch()[0];
-            info!(
+            *info!(
                 "Made {} calls to sketch UDF and processed {} rows. Quantile sketch column 0 retained {} out of {} values (K value = {}).",
                 func.get_invoke_count().to_formatted_string(&Locale::en),
                 stats.rows_written.to_formatted_string(&Locale::en),
@@ -204,9 +191,111 @@ pub async fn compact(
             &func.get_sketch(),
         )
         .map_err(|e| DataFusionError::External(e.into()))?;
-    }
+    })
+}
 
-    Ok(CompactionResult::from(&stats))
+/// If any are present, apply Sleeper aggregations to this query.
+///
+/// # Errors
+/// If any configuration errors are present in the aggregations, e.g. duplicates or row key columns specified.
+fn apply_aggregations(
+    row_key_cols: &[String],
+    frame: &mut DataFrame,
+    filter_agg_conf: Option<FilterAggregationConfig>,
+    row_key_exprs: Vec<Expr>,
+) -> Result<(), DataFusionError> {
+    Ok(
+        if let Some(FilterAggregationConfig {
+            filter: _,
+            aggregation: Some(aggregation),
+        }) = &filter_agg_conf
+        {
+            // Check aggregations meet validity checks
+            validate_aggregations(row_key_cols, frame.schema(), aggregation)?;
+            let aggregations = aggregation
+                .iter()
+                .map(Aggregate::to_expr)
+                .collect::<Vec<_>>();
+            *frame = frame.aggregate(row_key_exprs, aggregations)?;
+        },
+    )
+}
+
+/// Create a DataSketches UDF from the given frame schema.
+///
+/// # Errors
+/// If the function couldn't be registered.
+fn create_sketch_udf(
+    row_key_cols: &[String],
+    frame: &DataFrame,
+) -> Result<Arc<ScalarUDF>, DataFusionError> {
+    let sketch_func = Arc::new(ScalarUDF::from(udf::SketchUDF::new(
+        frame.schema(),
+        row_key_cols,
+    )));
+    frame.task_ctx().register_udf(sketch_func.clone())?;
+    Ok(sketch_func)
+}
+
+/// Apply any configured filters to the query if any are present.
+fn apply_filters(
+    frame: &mut DataFrame,
+    filter_agg_conf: &Option<FilterAggregationConfig>,
+) -> Result<(), DataFusionError> {
+    Ok(
+        if let Some(FilterAggregationConfig {
+            filter: Some(f),
+            aggregation: _,
+        }) = filter_agg_conf
+        {
+            info!("Applying Sleeper filter iterator: {f:?}");
+            *frame = frame.filter(f.create_filter_expr()?)?;
+        },
+    )
+}
+
+// Process the iterator configuration and create a filter and aggregation object from it.
+//
+// # Errors
+// If there is an error in parsing the configuration string.
+fn parse_iterator_config(
+    iterator_config: &Option<String>,
+) -> Result<Option<FilterAggregationConfig>, DataFusionError> {
+    let filter_agg_conf = iterator_config
+        .as_deref()
+        .map(FilterAggregationConfig::try_from)
+        .transpose()?;
+    Ok(filter_agg_conf)
+}
+
+/// Calculate the total input size of all the input paths and set the multipart upload size hint accordingly. This prevents
+/// uploads to S3 failing due to uploading too many small parts. We conseratively set the upload size hint so that fewer,
+/// larger uploads are output.
+///
+/// # Errors
+/// Fails if we can't obtain the size of the input files from the object store.
+async fn set_multipart_upload_hint(
+    store_factory: &ObjectStoreFactory,
+    input_paths: &[Url],
+    output_path: &Url,
+    store: Arc<dyn SizeHintableStore>,
+) -> Result<(), DataFusionError> {
+    let input_size = calculate_input_size(input_paths, &store)
+        .await
+        .inspect_err(|e| warn!("Error getting total input size {e}"));
+    let multipart_size = std::cmp::max(
+        crate::store::MULTIPART_BUF_SIZE,
+        input_size.unwrap_or_default() / 5000,
+    );
+    store_factory
+        .get_object_store(output_path)
+        .map_err(|e| DataFusionError::External(e.into()))?
+        .set_multipart_size_hint(multipart_size);
+    info!(
+        "Setting multipart size hint to {} bytes.",
+        multipart_size.to_formatted_string(&Locale::en)
+    );
+    Ok(())
 }
 
 /// Calculate the total size of all `input_paths` objects.
