@@ -81,6 +81,20 @@ public class AwsDrainSqsQueue {
                 .flatMap(List::stream);
     }
 
+    public void empty(List<String> queueUrls) {
+        try {
+            EXECUTOR.invokeAll(queueUrls.stream()
+                    .map(queueUrl -> (Callable<Void>) () -> {
+                        empty(queueUrl);
+                        return null;
+                    })
+                    .toList());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
     public void empty(String queueUrl) {
         LOGGER.info("Emptying queue: {}", queueUrl);
         long count = LongStream.iterate(
