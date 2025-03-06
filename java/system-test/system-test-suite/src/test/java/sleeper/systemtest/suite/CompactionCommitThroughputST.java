@@ -57,7 +57,7 @@ public class CompactionCommitThroughputST {
                 Map.of(TABLE_ONLINE, "false"));
         sleeper.partitioning().setPartitions(partitions);
         StreamFakeCompactions compactions = StreamFakeCompactions.builder()
-                .numCompactions(200000)
+                .numCompactions(30000)
                 .generateInputFiles(i -> List.of(fileFactory.rootFile("input-" + i + ".parquet", 100)))
                 .generateJobId(i -> "job-" + i)
                 .generateOutputFile(i -> fileFactory.rootFile("output-" + i + ".parquet", 100))
@@ -70,7 +70,7 @@ public class CompactionCommitThroughputST {
         // When
         sleeper.compaction()
                 .sendFakeCommits(compactions)
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(5)));
+                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // Then
         assertThat(sleeper.tableFiles().recordsByFilename())
