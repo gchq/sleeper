@@ -30,10 +30,12 @@ import sleeper.systemtest.suite.testutil.SystemTest;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.summingLong;
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.systemtest.dsl.util.SystemTestSchema.DEFAULT_SCHEMA;
 import static sleeper.systemtest.suite.fixtures.SystemTestInstance.MAIN;
@@ -45,13 +47,15 @@ public class CompactionCommitThroughputST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(MAIN);
-        sleeper.partitioning().setPartitions(partitions);
+        sleeper.connectToInstanceNoTables(MAIN);
     }
 
     @Test
     void shouldFakeCompactionCommits(SleeperSystemTest sleeper) throws Exception {
         // Given
+        sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA,
+                Map.of(TABLE_ONLINE, "false"));
+        sleeper.partitioning().setPartitions(partitions);
         StreamFakeCompactions compactions = StreamFakeCompactions.builder()
                 .numCompactions(200000)
                 .generateInputFiles(i -> List.of(fileFactory.rootFile("input-" + i + ".parquet", 100)))
