@@ -254,6 +254,24 @@ public class WaitForJobsStatusTest {
     }
 
     @Test
+    void shouldReportMultipleIngestJobsUnstarted() {
+        // When
+        WaitForJobsStatus status = ingestStatus(
+                List.of("job-1", "job-2"),
+                Instant.parse("2024-06-27T09:43:00Z"));
+
+        // Then
+        assertThat(status).hasToString("{\n" +
+                "  \"countByFurthestStatus\": {\n" +
+                "    \"NONE\": 2\n" +
+                "  },\n" +
+                "  \"numUnstarted\": 2,\n" +
+                "  \"numUnfinished\": 2\n" +
+                "}");
+        assertThat(status.areAllJobsFinished()).isFalse();
+    }
+
+    @Test
     void shouldReportIngestJobStartedAndUnstarted() {
         // Given
         IngestJob job = createJobWithTableAndFiles("job-1", table, "test.parquet");
