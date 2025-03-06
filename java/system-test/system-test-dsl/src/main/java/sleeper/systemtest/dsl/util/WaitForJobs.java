@@ -60,7 +60,7 @@ public class WaitForJobs {
             Function<InstanceProperties, IngestTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "ingest",
-                properties -> JobTracker.forIngest(instance.allTableProperties(), getJobTracker.apply(properties)),
+                properties -> JobTracker.forIngest(instance.allTestTableProperties(), getJobTracker.apply(properties)),
                 properties -> TaskTracker.forIngest(getTaskTracker.apply(properties)),
                 pollDriver);
     }
@@ -70,7 +70,7 @@ public class WaitForJobs {
             Function<InstanceProperties, IngestJobTracker> getJobTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "bulk import",
-                properties -> JobTracker.forIngest(instance.allTableProperties(), getJobTracker.apply(properties)),
+                properties -> JobTracker.forIngest(instance.allTestTableProperties(), getJobTracker.apply(properties)),
                 properties -> () -> true,
                 pollDriver);
     }
@@ -81,7 +81,7 @@ public class WaitForJobs {
             Function<InstanceProperties, CompactionTaskTracker> getTaskTracker,
             PollWithRetriesDriver pollDriver) {
         return new WaitForJobs(instance, "compaction",
-                properties -> JobTracker.forCompaction(instance.allTableProperties(), getJobTracker.apply(properties)),
+                properties -> JobTracker.forCompaction(instance.allTestTableProperties(), getJobTracker.apply(properties)),
                 properties -> TaskTracker.forCompaction(getTaskTracker.apply(properties)),
                 pollDriver);
     }
