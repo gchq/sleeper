@@ -136,7 +136,7 @@ public class SystemTestCompaction {
     }
 
     public SystemTestCompaction sendFakeCommits(StreamFakeCompactions compactions) {
-        driver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
+        baseDriver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
         lastJobIds = compactions.listJobIds();
         return this;
     }
