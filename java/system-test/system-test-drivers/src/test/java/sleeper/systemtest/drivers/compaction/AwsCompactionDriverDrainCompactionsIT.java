@@ -30,6 +30,7 @@ import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.util.HashSet;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,8 +59,8 @@ public class AwsCompactionDriverDrainCompactionsIT {
                 instance.getInstanceProperties(), instance.getTableProperties(), instance.getStateStore(), sqs);
 
         // When / Then
-        assertThat(driver.drainJobsQueueForWholeInstance())
-                .containsExactlyElementsOf(jobs);
+        assertThat(new HashSet<>(driver.drainJobsQueueForWholeInstance()))
+                .isEqualTo(new HashSet<>(jobs));
         assertThat(driver.drainJobsQueueForWholeInstance()).isEmpty();
     }
 

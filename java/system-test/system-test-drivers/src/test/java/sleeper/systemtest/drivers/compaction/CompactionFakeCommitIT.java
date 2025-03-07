@@ -89,7 +89,8 @@ public class CompactionFakeCommitIT {
     }
 
     private Set<CompactionCommitMessageHandle> drainCommitQueue() {
-        return AwsDrainSqsQueue.drainQueueForWholeInstance(sqsClient, compactionCommitQueueUrl)
+        return AwsDrainSqsQueue.forLocalStackTests(sqsClient)
+                .drain(compactionCommitQueueUrl)
                 .map(this::readCommitMessage)
                 .collect(toSet());
     }

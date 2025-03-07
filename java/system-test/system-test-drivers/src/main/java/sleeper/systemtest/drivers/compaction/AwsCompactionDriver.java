@@ -51,7 +51,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
@@ -60,7 +62,16 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
-    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+    private static final ExecutorService EXECUTOR = createThreadPool();
+
+    private static ExecutorService createThreadPool() {
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(
+                40, 40,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>());
+        pool.allowCoreThreadTimeOut(true);
+        return pool;
+    }
 
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
@@ -69,9 +80,14 @@ public class AwsCompactionDriver implements CompactionDriver {
     private final SqsClient sqsClientV2;
     private final AutoScalingClient asClient;
     private final Ec2Client ec2Client;
+    private final AwsDrainSqsQueue drainQueue;
     private final CompactionJobSerDe serDe = new CompactionJobSerDe();
 
     public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients) {
+        this(instance, clients, AwsDrainSqsQueue.forSystemTests(clients.getSqsV2()));
+    }
+
+    public AwsCompactionDriver(SystemTestInstanceContext instance, SystemTestClients clients, AwsDrainSqsQueue drainQueue) {
         this.instance = instance;
         this.dynamoDBClient = clients.getDynamoDB();
         this.s3Client = clients.getS3();
@@ -79,6 +95,7 @@ public class AwsCompactionDriver implements CompactionDriver {
         this.sqsClientV2 = clients.getSqsV2();
         this.asClient = clients.getAutoScaling();
         this.ec2Client = clients.getEc2();
+        this.drainQueue = drainQueue;
     }
 
     @Override
@@ -118,7 +135,7 @@ public class AwsCompactionDriver implements CompactionDriver {
     public List<CompactionJob> drainJobsQueueForWholeInstance() {
         String queueUrl = instance.getInstanceProperties().get(COMPACTION_JOB_QUEUE_URL);
         LOGGER.info("Draining compaction jobs queue: {}", queueUrl);
-        List<CompactionJob> jobs = AwsDrainSqsQueue.drainQueueForWholeInstance(sqsClientV2, queueUrl)
+        List<CompactionJob> jobs = drainQueue.drain(queueUrl)
                 .map(Message::body)
                 .map(serDe::fromJson)
                 .toList();

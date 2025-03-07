@@ -80,4 +80,8 @@ public abstract class LocalStackTestBase {
                 .withAttributes(Map.of("FifoQueue", "true"))).getQueueUrl();
     }
 
+    protected String createSqsQueueGetUrl() {
+        return sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl();
+    }
+
 }

@@ -25,8 +25,12 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
+import sleeper.systemtest.drivers.compaction.AwsCompactionDriver;
+import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.drivers.util.AwsSystemTestDrivers;
 import sleeper.systemtest.drivers.util.SystemTestClients;
+import sleeper.systemtest.dsl.SystemTestContext;
+import sleeper.systemtest.dsl.compaction.CompactionDriver;
 import sleeper.systemtest.dsl.instance.SleeperInstanceDriver;
 import sleeper.systemtest.dsl.instance.SystemTestDeploymentDriver;
 import sleeper.systemtest.dsl.instance.SystemTestParameters;
@@ -68,6 +72,12 @@ public class LocalStackSystemTestDrivers extends AwsSystemTestDrivers {
     @Override
     public SleeperInstanceDriver instance(SystemTestParameters parameters) {
         return new LocalStackSleeperInstanceDriver(parameters, clients);
+    }
+
+    @Override
+    public CompactionDriver compaction(SystemTestContext context) {
+        return new AwsCompactionDriver(context.instance(), clients,
+                AwsDrainSqsQueue.forLocalStackTests(clients.getSqsV2()));
     }
 
     @Override
