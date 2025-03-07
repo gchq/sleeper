@@ -23,7 +23,6 @@ import software.amazon.awscdk.services.dynamodb.ITable;
 import software.amazon.awscdk.services.dynamodb.StreamViewType;
 import software.amazon.awscdk.services.dynamodb.Table;
 import software.amazon.awscdk.services.iam.IGrantable;
-import software.amazon.awscdk.services.iam.ManagedPolicy;
 import software.constructs.Construct;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -139,11 +138,11 @@ public class TransactionLogStateStoreStack extends NestedStack {
         dataStack.grantReadWrite(grantee);
     }
 
-    public void grantReadAllSnapshotsTable(ManagedPolicy grantee) {
+    public void grantReadAllSnapshotsTable(IGrantable grantee) {
         allSnapshotsTable.grantReadData(grantee);
     }
 
-    public void grantClearSnapshots(ManagedPolicy grantee) {
+    public void grantClearSnapshots(IGrantable grantee) {
         latestSnapshotsTable.grantReadWriteData(grantee);
         allSnapshotsTable.grantReadWriteData(grantee);
     }

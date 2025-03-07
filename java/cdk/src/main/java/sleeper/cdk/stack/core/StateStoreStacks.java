@@ -80,4 +80,8 @@ public final class StateStoreStacks {
     public void grantAccess(StateStoreGrants grants, IGrantable grantee) {
         transactionLog.grantAccess(grants, grantee);
     }
+
+    public void grantReadAllSnapshotsTable(IGrantable grantee) {
+        transactionLog.grantReadAllSnapshotsTable(grantee);
+    }
 }
