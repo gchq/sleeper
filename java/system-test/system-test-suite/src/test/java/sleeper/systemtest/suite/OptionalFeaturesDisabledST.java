@@ -45,7 +45,7 @@ public class OptionalFeaturesDisabledST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(OPTIONAL_FEATURES_DISABLED);
+        sleeper.connectToInstanceAddOnlineTable(OPTIONAL_FEATURES_DISABLED);
     }
 
     @Test

@@ -17,15 +17,10 @@ package sleeper.core.range;
 
 import com.facebook.collections.ByteArray;
 
-import sleeper.core.key.Key;
-import sleeper.core.record.KeyComparator;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.PrimitiveType;
-import sleeper.core.schema.type.StringType;
 import sleeper.core.schema.type.Type;
 
 import java.util.HashMap;
@@ -44,12 +39,29 @@ public class Range {
     private final Object max;
     private final boolean maxInclusive;
 
-    public Range(Field field, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
+    private Range(Field field, Object min, boolean minInclusive, Object max, boolean maxInclusive) {
         this.field = field;
         this.min = min;
         this.minInclusive = minInclusive;
         this.max = max;
-        this.maxInclusive = maxInclusive;
+        this.maxInclusive = max == null ? false : maxInclusive;
+        if (min == null) {
+            throw new IllegalArgumentException("Minimum value must not be null for field " + field.getName());
+        }
+        Comparable minComparable = validateComparable(field, min, "minimum value");
+        Comparable maxComparable = validateComparable(field, max, "maximum value");
+        if (maxComparable != null && PrimitiveType.COMPARATOR.compare(minComparable, maxComparable) > 0) {
+            throw new IllegalArgumentException("Range of field " + field.getName() + " has minimum greater than maximum, " + minComparable + " > " + maxComparable);
+        }
+    }
+
+    private static Comparable validateComparable(Field field, Object value, String description) {
+        try {
+            PrimitiveType type = (PrimitiveType) field.getType();
+            return type.toComparable(value);
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Could not read " + description + " for field " + field.getName(), e);
+        }
     }
 
     public Range(Field field, Object min, Object max) {
@@ -91,29 +103,16 @@ public class Range {
      * @return       whether the object is contained within this range
      */
     public boolean doesRangeContainObject(Object value) {
-        Type type = field.getType();
-        if (type instanceof IntType) {
-            if (!(value instanceof Integer)) {
-                throw new IllegalArgumentException("The object must match the schema: expected an Integer, got " + value);
-            }
-            return doesRangeContainInt((Integer) value);
-        } else if (type instanceof LongType) {
-            if (!(value instanceof Long)) {
-                throw new IllegalArgumentException("The object must match the schema: expected a Long, got " + value);
-            }
-            return doesRangeContainLong((Long) value);
-        } else if (type instanceof StringType) {
-            if (!(value instanceof String)) {
-                throw new IllegalArgumentException("The object must match the schema: expected a String, got " + value);
-            }
-            return doesRangeContainString((String) value);
-        } else if (type instanceof ByteArrayType) {
-            if (!(value instanceof byte[])) {
-                throw new IllegalArgumentException("The object must match the schema: expected a byte[], got " + value);
-            }
-            return doesRangeContainByteArray((byte[]) value);
+        PrimitiveType type = (PrimitiveType) field.getType();
+        Comparable comparable = type.toComparable(value);
+        Comparable minComparable = type.toComparable(min);
+        int minCompare = PrimitiveType.COMPARATOR.compare(comparable, minComparable);
+        if (minCompare < 0 || (!minInclusive && minCompare == 0)) {
+            return false;
         }
-        throw new IllegalArgumentException("Unknown type in the schema: " + type);
+        Comparable maxComparable = type.toComparable(max);
+        int maxCompare = PrimitiveType.COMPARATOR.compare(comparable, maxComparable);
+        return maxCompare < 0 || (maxInclusive && maxCompare == 0);
     }
 
     /**
@@ -147,10 +146,14 @@ public class Range {
         //      Overlapping range:         |-------------)
         //      Overlapping range:                           |-------------)
 
-        KeyComparator keyComparator = new KeyComparator((PrimitiveType) field.getType());
+        PrimitiveType type = (PrimitiveType) field.getType();
+        Comparable thisMin = type.toComparable(canonicalRange.min);
+        Comparable thisMax = type.toComparable(canonicalRange.max);
+        Comparable otherMin = type.toComparable(canonicalOtherRange.min);
+        Comparable otherMax = type.toComparable(canonicalOtherRange.max);
 
         // Other range to the left of this one
-        boolean otherRangeMaxLessThanRangeMin = keyComparator.compare(Key.create(canonicalOtherRange.max), Key.create(canonicalRange.min)) <= 0;
+        boolean otherRangeMaxLessThanRangeMin = PrimitiveType.COMPARATOR.compare(otherMax, thisMin) <= 0;
         if (otherRangeMaxLessThanRangeMin) {
             return false;
         }
@@ -158,154 +161,9 @@ public class Range {
         // Other range to the right of this one
         // Region right of partition case:
         //  max of partition <= min of range
-        boolean otherRangeMinGreaterThanRangeMax = keyComparator.compare(Key.create(canonicalRange.max), Key.create(canonicalOtherRange.min)) <= 0;
+        boolean otherRangeMinGreaterThanRangeMax = PrimitiveType.COMPARATOR.compare(thisMax, otherMin) <= 0;
         if (otherRangeMinGreaterThanRangeMax) {
             return false;
-        }
-
-        return true;
-    }
-
-    private boolean doesRangeContainInt(Integer value) {
-        Integer minInteger = (Integer) min;
-
-        // If min is inclusive then return false if value is less than the minimum of the range
-        if (minInclusive) {
-            if (value < minInteger) {
-                return false;
-            }
-        } else {
-            // If min is not inclusive then return false if value is less than or equal to the minimum of the range
-            if (value <= minInteger) {
-                return false;
-            }
-        }
-
-        // If the max is null then the value is less than the max
-        if (null == max) {
-            return true;
-        }
-
-        Integer maxInteger = (Integer) max;
-        // If max is inclusive then return false if value is greater than the maximum of the range
-        if (maxInclusive) {
-            if (value > maxInteger) {
-                return false;
-            }
-        } else {
-            // If max is not inclusive then return false if value is greater than or equal to the maximum of the range
-            if (value >= maxInteger) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private boolean doesRangeContainLong(Long value) {
-        Long minLong = (Long) min;
-
-        // If min is inclusive then return false if value is less than the minimum of the range
-        if (minInclusive) {
-            if (value < minLong) {
-                return false;
-            }
-        } else {
-            // If min is not inclusive then return false if value is less than or equal to the minimum of the range
-            if (value <= minLong) {
-                return false;
-            }
-        }
-
-        // If the max is null then the value is less than the max
-        if (null == max) {
-            return true;
-        }
-
-        Long maxLong = (Long) max;
-        // If max is inclusive then return false if value is greater than the maximum of the range
-        if (maxInclusive) {
-            if (value > maxLong) {
-                return false;
-            }
-        } else {
-            // If max is not inclusive then return false if value is greater than or equal to the maximum of the range
-            if (value >= maxLong) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private boolean doesRangeContainString(String value) {
-        String minString = (String) min;
-
-        // If min is inclusive then return false if value is less than the minimum of the range
-        if (minInclusive) {
-            if (value.compareTo(minString) < 0) {
-                return false;
-            }
-        } else {
-            // If min is not inclusive then return false if value is less than or equal to the minimum of the range
-            if (value.compareTo(minString) <= 0) {
-                return false;
-            }
-        }
-
-        // If the max is null then the value is less than the max
-        if (null == max) {
-            return true;
-        }
-
-        String maxString = (String) max;
-        // If max is inclusive then return false if value is greater than the maximum of the range
-        if (maxInclusive) {
-            if (value.compareTo(maxString) > 0) {
-                return false;
-            }
-        } else {
-            // If max is not inclusive then return false if value is greater than or equal to the maximum of the range
-            if (value.compareTo(maxString) >= 0) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private boolean doesRangeContainByteArray(byte[] value) {
-        ByteArray valueByteArray = ByteArray.wrap(value);
-        ByteArray minByteArray = ByteArray.wrap((byte[]) min);
-
-        // If min is inclusive then return false if value is less than the minimum of the range
-        if (minInclusive) {
-            if (valueByteArray.compareTo(minByteArray) < 0) {
-                return false;
-            }
-        } else {
-            // If min is not inclusive then return false if value is less than or equal to the minimum of the range
-            if (valueByteArray.compareTo(minByteArray) <= 0) {
-                return false;
-            }
-        }
-
-        // If the max is null then the value is less than the max
-        if (null == max) {
-            return true;
-        }
-
-        ByteArray maxByteArray = ByteArray.wrap((byte[]) max);
-        // If max is inclusive then return false if value is greater than the maximum of the range
-        if (maxInclusive) {
-            if (valueByteArray.compareTo(maxByteArray) > 0) {
-                return false;
-            }
-        } else {
-            // If max is not inclusive then return false if value is greater than or equal to the maximum of the range
-            if (valueByteArray.compareTo(maxByteArray) >= 0) {
-                return false;
-            }
         }
 
         return true;
@@ -412,20 +270,6 @@ public class Range {
             if (!rowKeyFieldNames.contains(field.getName())) {
                 throw new IllegalArgumentException("Field name should be a row key field, got " + field.getName() + ", row key fields are " + rowKeyFieldNames);
             }
-
-            // min should not be null and should be of the correct type
-            if (null == min) {
-                throw new IllegalArgumentException("Min should not be null");
-            }
-            validateType(field.getName(), min, "min");
-
-            // max should be null or of the correct type
-            if (null != max) {
-                validateType(field.getName(), max, "max");
-            } else {
-                maxInclusive = false;
-            }
-
             return new Range(field, min, minInclusive, max, maxInclusive);
         }
 
@@ -487,29 +331,6 @@ public class Range {
          */
         public Range createExactRange(String fieldName, Object value) {
             return createRange(fieldName, value, true, value, true);
-        }
-
-        private void validateType(String fieldName, Object object, String description) {
-            PrimitiveType type = rowKeyFieldToType.get(fieldName);
-            if (type instanceof IntType) {
-                if (!(object instanceof Integer)) {
-                    throw new IllegalArgumentException("The " + description + " must match the schema: expected an Integer, got " + object);
-                }
-            } else if (type instanceof LongType) {
-                if (!(object instanceof Long)) {
-                    throw new IllegalArgumentException("The " + description + " must match the schema: expected a Long, got " + object);
-                }
-            } else if (type instanceof StringType) {
-                if (!(object instanceof String)) {
-                    throw new IllegalArgumentException("The " + description + " must match the schema: expected a String, got " + object);
-                }
-            } else if (type instanceof ByteArrayType) {
-                if (!(object instanceof byte[])) {
-                    throw new IllegalArgumentException("The " + description + " must match the schema: expected a byte[], got " + object);
-                }
-            } else {
-                throw new IllegalArgumentException("Unknown type in the schema: " + type);
-            }
         }
     }
 }

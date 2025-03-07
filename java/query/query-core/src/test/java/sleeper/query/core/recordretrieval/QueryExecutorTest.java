@@ -24,7 +24,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -387,8 +387,8 @@ public class QueryExecutorTest {
     }
 
     private Region range(Object min, Object max) {
-        Field field = tableProperties.getSchema().getField("key").orElseThrow();
-        return new Region(new Range(field, min, max));
+        RangeFactory factory = new RangeFactory(tableProperties.getSchema());
+        return new Region(factory.createRange("key", min, max));
     }
 
     private PartitionTree partitionTree() {

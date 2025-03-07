@@ -50,7 +50,7 @@ public class TableMetricsDslTest {
     @Test
     void shouldReportTableMetrics(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         sleeper.partitioning().setPartitions(new PartitionsBuilder(DEFAULT_SCHEMA)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", "row-50")

@@ -40,7 +40,7 @@ import static sleeper.systemtest.suite.fixtures.SystemTestInstance.COMPACTION_CR
 
 @SystemTest
 @Slow // Slow because it deploys its own instance so it can drain the whole compaction jobs queue
-public class CreateManyCompactionsST {
+public class CompactionCreationThroughputST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {

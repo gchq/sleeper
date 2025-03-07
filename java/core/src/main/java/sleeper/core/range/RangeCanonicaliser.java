@@ -44,7 +44,7 @@ public class RangeCanonicaliser {
 
         Object rangeMin = range.isMinInclusive() ? range.getMin() : nextValue(range.getFieldType(), range.getMin());
         Object rangeMax = range.isMaxInclusive() ? nextValue(range.getFieldType(), range.getMax()) : range.getMax();
-        return new Range(range.getField(), rangeMin, true, rangeMax, false);
+        return new Range(range.getField(), rangeMin, rangeMax);
     }
 
     private static Object nextValue(Type type, Object object) {

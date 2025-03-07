@@ -24,9 +24,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
@@ -233,7 +232,7 @@ public class QueryMessageHandlerIT extends LocalStackTestBase {
         assertThat(query).contains(new QueryOrLeafPartitionQuery(Query.builder()
                 .tableName("table-1")
                 .queryId("my-query")
-                .regions(List.of(new Region(new Range(new Field("key", new LongType()), 123L, 456L))))
+                .regions(List.of(new Region(rangeFactory().createRange("key", 123L, 456L))))
                 .build()));
         assertThat(queryTracker.getFailedQueries()).isEmpty();
     }
@@ -247,7 +246,11 @@ public class QueryMessageHandlerIT extends LocalStackTestBase {
     private TableProperties createTable(String tableName) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schemaWithKey("key"));
+        tableProperties.setSchema(schemaWithKey("key", new LongType()));
         return tableProperties;
+    }
+
+    private RangeFactory rangeFactory() {
+        return new RangeFactory(tableProperties.getSchema());
     }
 }
