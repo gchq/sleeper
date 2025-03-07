@@ -122,6 +122,14 @@ public class WaitForJobs {
         }
     }
 
+    public void waitForJobsToCommit(
+            Collection<String> jobIds, PollWithRetries pollUntilJobsCommit) {
+        InstanceProperties properties = instance.getInstanceProperties();
+        JobTracker jobTracker = getJobTracker.apply(properties);
+        LOGGER.info("Waiting for {} jobs to commit: {}", typeDescription, jobIds.size());
+        waitForJobsToCommit(jobIds, jobTracker, pollUntilJobsCommit);
+    }
+
     private void waitForJobsToCommit(
             Collection<String> jobIds, JobTracker tracker, PollWithRetries pollUntilJobsCommit) {
         try {

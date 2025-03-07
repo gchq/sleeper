@@ -70,7 +70,7 @@ public class CompactionCommitThroughputST {
         // When
         sleeper.compaction()
                 .sendFakeCommits(compactions)
-                .waitForJobs(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
+                .waitForJobsToCommit(PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(10), Duration.ofMinutes(5)));
 
         // Then
         assertThat(sleeper.tableFiles().recordsByFilename())
