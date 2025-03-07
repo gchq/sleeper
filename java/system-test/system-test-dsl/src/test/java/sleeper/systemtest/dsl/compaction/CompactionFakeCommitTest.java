@@ -41,7 +41,7 @@ public class CompactionFakeCommitTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         sleeper.partitioning().setPartitions(partitions);
     }
 
