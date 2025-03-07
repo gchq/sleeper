@@ -165,6 +165,7 @@ public class CoreStacks {
         configBucketStack.grantRead(grantee);
         tableIndexStack.grantRead(grantee);
         stateStoreStacks.grantReadActiveFilesAndPartitions(grantee);
+        stateStoreStacks.grantReadAllSnapshotsTable(grantee);
         compactionTracker.grantWriteJobEvent(grantee);
         ingestTracker.grantWriteJobEvent(grantee);
     }
