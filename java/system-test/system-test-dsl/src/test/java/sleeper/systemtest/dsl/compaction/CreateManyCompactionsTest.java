@@ -37,7 +37,7 @@ public class CreateManyCompactionsTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test

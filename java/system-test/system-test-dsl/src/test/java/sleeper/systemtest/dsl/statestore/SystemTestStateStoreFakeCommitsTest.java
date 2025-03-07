@@ -37,7 +37,7 @@ public class SystemTestStateStoreFakeCommitsTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, InMemorySystemTestDrivers drivers) {
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         committer = drivers.stateStoreCommitter();
     }
 

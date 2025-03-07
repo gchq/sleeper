@@ -49,7 +49,7 @@ public class CompactionTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) throws Exception {
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         sleeper.tables().createWithProperties("compaction", DEFAULT_SCHEMA, Map.of(
                 COMPACTION_STRATEGY_CLASS, BasicCompactionStrategy.class.getName(),
                 COMPACTION_FILES_BATCH_SIZE, "2"));

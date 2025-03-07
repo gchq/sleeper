@@ -45,7 +45,7 @@ public class AwsCompactionDriverDrainCompactionsIT {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
-        sleeper.connectToInstance(DRAIN_COMPACTIONS);
+        sleeper.connectToInstanceAddOnlineTable(DRAIN_COMPACTIONS);
         sqs = drivers.clients().getSqsV2();
         driver = drivers.compaction(context);
         instance = context.instance();

@@ -79,7 +79,7 @@ public class SleeperSystemTest {
         this.context = context;
     }
 
-    public void connectToInstance(SystemTestInstanceConfiguration configuration) {
+    public void connectToInstanceAddOnlineTable(SystemTestInstanceConfiguration configuration) {
         context.instance().connectTo(configuration);
         context.instance().addDefaultTables();
     }

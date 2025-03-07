@@ -43,7 +43,7 @@ public class PartitionSplittingTest {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
     }
 
     @Test

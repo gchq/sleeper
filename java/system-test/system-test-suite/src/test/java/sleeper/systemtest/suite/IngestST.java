@@ -41,7 +41,7 @@ public class IngestST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstanceAddOnlineTable(MAIN);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 
