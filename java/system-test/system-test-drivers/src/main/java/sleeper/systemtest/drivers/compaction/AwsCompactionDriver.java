@@ -25,9 +25,12 @@ import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sqs.model.Message;
+import software.amazon.awssdk.services.sqs.model.SendMessageBatchRequestEntry;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobSerDe;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
+import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.job.creation.AwsCreateCompactionJobs;
 import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
@@ -36,6 +39,7 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
+import sleeper.core.util.SplitIntoBatches;
 import sleeper.invoke.tables.InvokeForTables;
 import sleeper.systemtest.drivers.util.AwsDrainSqsQueue;
 import sleeper.systemtest.drivers.util.SystemTestClients;
@@ -45,12 +49,18 @@ import sleeper.task.common.EC2Scaler;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_QUEUE_URL;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_QUEUE_URL;
 
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
+    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
 
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
@@ -114,5 +124,37 @@ public class AwsCompactionDriver implements CompactionDriver {
                 .toList();
         LOGGER.info("Found {} jobs", jobs.size());
         return jobs;
+    }
+
+    @Override
+    public void sendCompactionCommits(Stream<CompactionCommitMessage> commits) {
+        SplitIntoBatches.streamBatchesOf(10000, commits).forEach(bigBatch -> {
+            LOGGER.info("Processing batch of {} commits", bigBatch.size());
+            SplitIntoBatches.streamBatchesOf(10, bigBatch)
+                    .map(batch -> {
+                        return EXECUTOR.submit(() -> {
+                            CompactionCommitMessageSerDe serDe = new CompactionCommitMessageSerDe();
+                            sqsClientV2.sendMessageBatch(builder -> builder
+                                    .queueUrl(instance.getInstanceProperties().get(COMPACTION_COMMIT_QUEUE_URL))
+                                    .entries(batch.stream()
+                                            .map(commit -> SendMessageBatchRequestEntry.builder()
+                                                    .id(commit.request().getJobId())
+                                                    .messageBody(serDe.toJson(commit))
+                                                    .build())
+                                            .toList()));
+                        });
+                    })
+                    .forEach(future -> {
+                        try {
+                            future.get();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException(e);
+                        } catch (ExecutionException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+            LOGGER.info("Sent batch of {} commits", bigBatch.size());
+        });
     }
 }

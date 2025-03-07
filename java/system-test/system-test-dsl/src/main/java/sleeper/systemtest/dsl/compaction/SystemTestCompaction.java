@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class SystemTestCompaction {
@@ -126,11 +127,22 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction waitForJobsToCommit(PollWithRetries poll) {
+        waitForJobs.waitForJobsToCommit(lastJobIds, poll);
+        return this;
+    }
+
     public FoundCompactionJobs drainJobsQueueForWholeInstance() {
         return FoundCompactionJobs.from(sourceFiles, baseDriver.drainJobsQueueForWholeInstance());
     }
 
     public void scaleToZero() {
         driver.scaleToZero();
+    }
+
+    public SystemTestCompaction sendFakeCommits(StreamFakeCompactions compactions) {
+        baseDriver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
+        lastJobIds = compactions.listJobIds();
+        return this;
     }
 }
