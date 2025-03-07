@@ -127,6 +127,11 @@ public class SystemTestCompaction {
         return this;
     }
 
+    public SystemTestCompaction waitForJobsToCommit(PollWithRetries poll) {
+        waitForJobs.waitForJobsToCommit(lastJobIds, poll);
+        return this;
+    }
+
     public FoundCompactionJobs drainJobsQueueForWholeInstance() {
         return FoundCompactionJobs.from(sourceFiles, baseDriver.drainJobsQueueForWholeInstance());
     }
