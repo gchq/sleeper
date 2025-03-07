@@ -55,7 +55,7 @@ public class CompactionFakeCommitIT {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, LocalStackSystemTestDrivers drivers) throws Exception {
-        sleeper.connectToInstance(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
         sleeper.partitioning().setPartitions(partitions);
         sqsClient = drivers.clients().getSqsV2();
         compactionCommitQueueUrl = sqsClient.createQueue(builder -> builder.queueName(UUID.randomUUID().toString())).queueUrl();

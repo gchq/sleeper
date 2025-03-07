@@ -86,12 +86,13 @@ public class SystemTestInstanceContext {
         return adminDrivers().tables(parameters);
     }
 
-    public void addDefaultTables() {
+    public void addDefaultTables(Map<TableProperty, String> extraProperties) {
         currentTables().addTablesAndSetCurrent(tablesDriver(), currentInstance().getDefaultTables().stream()
                 .map(deployProperties -> {
                     TableProperties properties = TableProperties.copyOf(deployProperties);
                     properties.unset(TABLE_ID);
                     properties.set(TABLE_NAME, buildTableName(properties.get(TABLE_NAME)));
+                    extraProperties.forEach(properties::set);
                     return properties;
                 }).collect(toUnmodifiableList()));
     }

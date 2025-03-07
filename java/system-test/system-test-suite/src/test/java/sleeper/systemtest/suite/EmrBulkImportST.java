@@ -37,7 +37,7 @@ public class EmrBulkImportST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @Test

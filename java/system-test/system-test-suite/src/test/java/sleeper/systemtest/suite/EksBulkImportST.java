@@ -54,7 +54,7 @@ public class EksBulkImportST {
         if (parameters.isInstancePropertyOverridden(LOG_RETENTION_IN_DAYS)) {
             return;
         }
-        sleeper.connectToInstance(BULK_IMPORT_EKS);
+        sleeper.connectToInstanceAddOnlineTable(BULK_IMPORT_EKS);
         sleeper.enableOptionalStack(OptionalStack.EksBulkImportStack);
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestJobs);
     }

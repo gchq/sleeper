@@ -39,7 +39,7 @@ public class PythonQueryST {
 
     @BeforeEach
     void setup(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @AfterEach
