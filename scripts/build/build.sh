@@ -32,6 +32,8 @@ echo "Building Project"
 echo "-------------------------------------------------------------------------------"
 echo "Running Maven in quiet mode."
 echo "For the first build, this should take up to 20 minutes. Subsequent builds should take closer to 4 minutes."
+echo "If using the CLI command, the first build make take up to an hour, with latter ones being closer to 10 minutes."
+echo "For reference, rust may be skipped as part of the build process by using -DskipRust an an argument."
 echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
 
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
