@@ -95,7 +95,7 @@ pub async fn compact(
     let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
     let sketch_expr = once(
         sketch_func
-            .call(row_key_exprs.clone())
+            .call(row_key_exprs)
             .alias(&input_data.row_key_cols[0]),
     );
     // Perform sort of row key and sort key columns and projection of all columns
