@@ -51,7 +51,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_COMMIT_QUEUE_URL;
@@ -60,7 +62,16 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPAC
 
 public class AwsCompactionDriver implements CompactionDriver {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsCompactionDriver.class);
-    private static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+    private static final ExecutorService EXECUTOR = createThreadPool();
+
+    private static ExecutorService createThreadPool() {
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(
+                40, 40,
+                60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>());
+        pool.allowCoreThreadTimeOut(true);
+        return pool;
+    }
 
     private final SystemTestInstanceContext instance;
     private final AmazonDynamoDB dynamoDBClient;
