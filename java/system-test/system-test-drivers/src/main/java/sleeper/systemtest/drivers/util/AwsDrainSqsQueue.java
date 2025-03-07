@@ -103,11 +103,8 @@ public class AwsDrainSqsQueue {
         LOGGER.info("Emptying queues: {}", queueUrls);
         EmptyQueueResults results = Stream.iterate(
                 emptyMessageBatch(queueUrls),
-                lastResults -> lastResults.stream().anyMatch(result -> result.messages() > 0),
-                lastResults -> emptyMessageBatch(lastResults.stream()
-                        .filter(result -> result.messages() > 0)
-                        .map(EmptyQueueResult::queueUrl)
-                        .toList()))
+                EmptyQueueResults::isAnyMessagesDeleted,
+                lastResults -> emptyMessageBatch(lastResults.getQueueUrlsWithMessages()))
                 .reduce(EmptyQueueResults.none(queueUrls),
                         (results1, results2) -> EmptyQueueResults.combine(Stream.of(results1, results2)));
         LOGGER.info("Deleted messages from queues: {}", results);
@@ -246,6 +243,17 @@ public class AwsDrainSqsQueue {
                     results.flatMap(EmptyQueueResults::stream)
                             .collect(groupingBy(EmptyQueueResult::queueUrl,
                                     summingLong(EmptyQueueResult::messages))));
+        }
+
+        public boolean isAnyMessagesDeleted() {
+            return messagesByQueueUrl.values().stream().anyMatch(count -> count > 0);
+        }
+
+        public List<String> getQueueUrlsWithMessages() {
+            return stream()
+                    .filter(result -> result.messages() > 0)
+                    .map(EmptyQueueResult::queueUrl)
+                    .toList();
         }
 
         public Stream<EmptyQueueResult> stream() {
