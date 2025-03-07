@@ -23,7 +23,11 @@ import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchResponse;
 import software.amazon.awssdk.services.sqs.model.Message;
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -38,6 +42,9 @@ import java.util.stream.Stream;
 
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.counting;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingLong;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 public class AwsDrainSqsQueue {
@@ -92,10 +99,19 @@ public class AwsDrainSqsQueue {
                 .flatMap(List::stream);
     }
 
-    public void empty(List<String> queueUrls) {
-        invokeAll(queueUrls.stream()
-                .map(queueUrl -> (Runnable) () -> empty(queueUrl))
-                .toList());
+    public EmptyQueueResults empty(List<String> queueUrls) {
+        LOGGER.info("Emptying queues: {}", queueUrls);
+        EmptyQueueResults results = Stream.iterate(
+                emptyMessageBatch(queueUrls),
+                lastResults -> lastResults.stream().anyMatch(result -> result.messages() > 0),
+                lastResults -> emptyMessageBatch(lastResults.stream()
+                        .filter(result -> result.messages() > 0)
+                        .map(EmptyQueueResult::queueUrl)
+                        .toList()))
+                .reduce(EmptyQueueResults.none(queueUrls),
+                        (results1, results2) -> EmptyQueueResults.combine(Stream.of(results1, results2)));
+        LOGGER.info("Deleted messages from queues: {}", results);
+        return results;
     }
 
     public void empty(String queueUrl) {
@@ -117,21 +133,37 @@ public class AwsDrainSqsQueue {
         return receiveOnThreads(queueUrl, counting()).mapToLong(n -> n).sum();
     }
 
+    private EmptyQueueResults emptyMessageBatch(List<String> queueUrls) {
+        List<List<String>> threadQueueBuckets = bucketQueuesByThreads(queueUrls);
+        List<Callable<EmptyQueueResults>> callables = threadQueueBuckets.stream()
+                .map(threadQueueUrls -> (Callable<EmptyQueueResults>) () -> emptyMessageBatchBucket(threadQueueUrls))
+                .toList();
+        return EmptyQueueResults.combine(streamInvokeAll(callables));
+    }
+
+    private List<List<String>> bucketQueuesByThreads(List<String> queueUrls) {
+        int numBuckets = Math.min(numThreads, queueUrls.size());
+        List<List<String>> threadBuckets = IntStream.range(0, numBuckets)
+                .mapToObj(i -> (List<String>) new ArrayList<String>())
+                .toList();
+        Queue<String> remaining = new ArrayDeque<>(queueUrls);
+        int thread = 0;
+        for (String queueUrl = remaining.poll(); queueUrl != null; queueUrl = remaining.poll()) {
+            threadBuckets.get(thread).add(queueUrl);
+            thread = (thread + 1) % numBuckets;
+        }
+        return threadBuckets;
+    }
+
+    private EmptyQueueResults emptyMessageBatchBucket(List<String> queueUrls) {
+        return EmptyQueueResults.fromOneThreadBatch(queueUrls.stream()
+                .map(queueUrl -> new EmptyQueueResult(queueUrl, receiveMessageBatchOneThread(queueUrl, counting()))));
+    }
+
     private <A, R> Stream<R> receiveOnThreads(String queueUrl, Collector<Message, A, R> threadCollector) {
         return streamInvokeAll(IntStream.range(0, numThreads)
                 .mapToObj(i -> (Callable<R>) () -> receiveMessageBatchOneThread(queueUrl, threadCollector))
                 .toList());
-    }
-
-    private void invokeAll(List<Runnable> runnables) {
-        List<Callable<Void>> callables = runnables.stream()
-                .map(runnable -> (Callable<Void>) () -> {
-                    runnable.run();
-                    return null;
-                }).toList();
-        streamInvokeAll(callables)
-                .forEach(result -> {
-                });
     }
 
     private <R> Stream<R> streamInvokeAll(List<Callable<R>> callables) {
@@ -187,6 +219,48 @@ public class AwsDrainSqsQueue {
             throw new RuntimeException("Failed deleting compaction job messages: " + deleteResult.failed());
         }
         return messages;
+    }
+
+    public record EmptyQueueResult(String queueUrl, long messages) {
+    }
+
+    public static class EmptyQueueResults {
+        private final Map<String, Long> messagesByQueueUrl;
+
+        private EmptyQueueResults(Map<String, Long> messagesByQueueUrl) {
+            this.messagesByQueueUrl = messagesByQueueUrl;
+        }
+
+        private static EmptyQueueResults none(List<String> queueUrls) {
+            return new EmptyQueueResults(queueUrls.stream()
+                    .collect(toMap(queueUrl -> queueUrl, queueUrl -> 0L)));
+        }
+
+        private static EmptyQueueResults fromOneThreadBatch(Stream<EmptyQueueResult> results) {
+            return new EmptyQueueResults(
+                    results.collect(toMap(EmptyQueueResult::queueUrl, EmptyQueueResult::messages)));
+        }
+
+        private static EmptyQueueResults combine(Stream<EmptyQueueResults> results) {
+            return new EmptyQueueResults(
+                    results.flatMap(EmptyQueueResults::stream)
+                            .collect(groupingBy(EmptyQueueResult::queueUrl,
+                                    summingLong(EmptyQueueResult::messages))));
+        }
+
+        public Stream<EmptyQueueResult> stream() {
+            return messagesByQueueUrl.entrySet().stream()
+                    .map(entry -> new EmptyQueueResult(entry.getKey(), entry.getValue()));
+        }
+
+        public long getMessagesDeleted(String queueUrl) {
+            return messagesByQueueUrl.getOrDefault(queueUrl, 0L);
+        }
+
+        @Override
+        public String toString() {
+            return messagesByQueueUrl.toString();
+        }
     }
 
     public static class Builder {
