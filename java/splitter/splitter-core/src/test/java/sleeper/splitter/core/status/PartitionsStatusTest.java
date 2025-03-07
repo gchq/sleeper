@@ -205,8 +205,8 @@ class PartitionsStatusTest {
         // Given
         update(stateStore).initialise(new PartitionsBuilder(schema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "some-middle", "other-middle", "aaa")
-                .splitToNewChildren("some-middle", "some-leaf", "other-leaf", "bbb")
+                .splitToNewChildren("root", "some-middle", "other-middle", "bbb")
+                .splitToNewChildren("some-middle", "some-leaf", "other-leaf", "aaa")
                 .splitToNewChildren("other-middle", "third-leaf", "fourth-leaf", "ccc")
                 .buildList());
 
