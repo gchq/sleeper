@@ -25,6 +25,7 @@ use datafusion::{
 };
 
 pub mod ageoff;
+mod state;
 
 /// Parsed details of prototype iterator configuration. We only allow one filter operation and simple aggregation.
 #[derive(Debug, Default)]
