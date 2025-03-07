@@ -38,7 +38,7 @@ public class StateStoreCommitterST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstanceAddOnlineTable(MAIN);
+        sleeper.connectToInstanceAddOfflineTable(MAIN);
     }
 
     @Test
