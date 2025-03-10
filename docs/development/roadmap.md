@@ -8,6 +8,7 @@ Being worked on actively:
 - https://github.com/gchq/sleeper/issues/3446 Bulk export.
 - https://github.com/gchq/sleeper/issues/1389 Upgrade to AWS SDK v2.
 - https://github.com/gchq/sleeper/issues/4155 Java API improvements.
+- https://github.com/gchq/sleeper/issues/3687 Update design documentation.
 
 
 Likely to happen in the near future:
