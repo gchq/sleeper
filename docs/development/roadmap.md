@@ -5,33 +5,26 @@ This section documents some of the planned functionality and improvements for Sl
 
 Here's a summary of what's being worked on actively:
 
-- Bulk export: Add the ability to perform a bulk export, i.e. read over all the data in
-    a table, filter it and then export it to Parquet. This will not be done in a lambda.
-  - https://github.com/gchq/sleeper/issues/3446
+- [Bulk export](https://github.com/gchq/sleeper/issues/3446): Add the ability to perform a bulk export, i.e. read over
+    all the data in a table, filter it and then export it to Parquet. This will not be done in a lambda.
 
-- Upgrade to AWS SDK v2.
-  - https://github.com/gchq/sleeper/issues/1389
+- [Upgrade to AWS SDK v2.](https://github.com/gchq/sleeper/issues/1389)
 
-- Java API improvements.
-  - https://github.com/gchq/sleeper/issues/4155
+- [Java API improvements.](https://github.com/gchq/sleeper/issues/4155)
 
 
 Here's a list of improvements that are likely to happen in the near future:
 
-- Create a library of repeatable, sustained, large-scale performance tests.
-  - https://github.com/gchq/sleeper/issues/1391
+- [Create a library of repeatable, sustained, large-scale performance tests.](https://github.com/gchq/sleeper/issues/1391)
 
 
 Here's a list of other future plans and improvements:
 
-- Improvements to deployment with infrastructure as code.
-  - https://github.com/gchq/sleeper/issues/3693
+- [Support for deployment with infrastructure as code.](https://github.com/gchq/sleeper/issues/3693)
 
-- Service that maintains an up-to-date cache of the statestore: Various parts of the
-    system need to query the state store. We could potentially reduce the cost and
-    latency of these queries if we had a long-running service that maintained an
-    up-to-date cache of the statestore.
-  - https://github.com/gchq/sleeper/issues/4215
+- [Service that maintains an up-to-date cache of the state store](https://github.com/gchq/sleeper/issues/4215): Various
+    parts of the system need to query the state store. We could potentially reduce the cost and latency of these queries
+    if we had a long-running service that maintained an up-to-date cache of the state store.
 
 - Review whether some of the performance sensitive parts of the code can be rewritten
     in Rust to take advantage of the improvements to the Parquet and Arrow Rust libraries.
