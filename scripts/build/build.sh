@@ -33,7 +33,7 @@ echo "--------------------------------------------------------------------------
 echo "Running Maven in quiet mode."
 echo "This build can take anywhere from between 5 mins to an hour."
 echo "Normally, most of this extra time in the first build is taken up compiling Rust. This is then quicker in "
-echo "subsequent builds. Passing the command argument -DskipRust with skip this compilation."
+echo "subsequent builds. Passing the command argument -DskipRust will skip this compilation."
 echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
 
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
