@@ -4,6 +4,18 @@ Releases
 This page documents the releases of Sleeper. Performance figures for each release
 are available [here](docs/development/system-tests.md#performance-benchmarks)
 
+## Version 0.29.0
+
+State store:
+- Removed DynamoDB & S3 state store implementations
+- Introduced a transaction log follower lambda following a DynamoDB stream
+- Moved job tracker updates derived from state store commits from state store committer lambda to follower lambda
+
+Build:
+- Use LocalStack for all DynamoDB tests, avoiding intermittent test failures due to lack of transactional integrity in DynamoDB local
+- Fixed intermittent failures where built jars had Hadoop file system implementations set incorrectly
+- Suppressed Rust build output in Maven quiet mode builds
+
 ## Version 0.28.0
 
 *Note: this release contains breaking changes. It is not possible to upgrade from a previous version of Sleeper
