@@ -9,11 +9,11 @@ Being worked on actively:
 - https://github.com/gchq/sleeper/issues/1389 Upgrade to AWS SDK v2.
 - https://github.com/gchq/sleeper/issues/4155 Java API improvements.
 - https://github.com/gchq/sleeper/issues/3687 Update design documentation.
+- https://github.com/gchq/sleeper/issues/4401 Garbage collector batching.
 
 
 Likely to be worked on in the near future:
 
-- https://github.com/gchq/sleeper/issues/4394 Parallelise garbage collection.
 - https://github.com/gchq/sleeper/issues/4393 Batch up partition splitting commits.
 - https://github.com/gchq/sleeper/issues/3693 Declarative deployment for infrastructure as code.
 - https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
@@ -32,6 +32,7 @@ Other future plans and improvements (in no particular order):
     - https://github.com/gchq/sleeper/issues/3117 Improve throughput of transactions with multiple Sleeper tables.
     - https://github.com/gchq/sleeper/issues/4214 Mitigate memory limitations with multiple Sleeper tables.
     - https://github.com/gchq/sleeper/issues/4395 Table state partitioning.
+    - https://github.com/gchq/sleeper/issues/4394 Parallelise garbage collection.
 
 - Usability improvements.
     - https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
