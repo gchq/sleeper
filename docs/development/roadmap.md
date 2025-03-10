@@ -17,10 +17,10 @@ Likely to happen in the near future:
 
 Other future plans and improvements:
 
-- https://github.com/gchq/sleeper/issues/3693 Support for deployment with infrastructure as code.
+- https://github.com/gchq/sleeper/issues/3693 Declarative deployment for infrastructure as code.
 - https://github.com/gchq/sleeper/issues/4215 Service that maintains an up-to-date cache of the state store.
-- https://github.com/gchq/sleeper/issues/1388 Review whether parts of the code can be rewritten in Rust.
-- https://github.com/gchq/sleeper/issues/576 Extend the range of supported types to all Arrow types.
+- https://github.com/gchq/sleeper/issues/1388 Rust implementations for interacting with data files.
+- https://github.com/gchq/sleeper/issues/576 Use Arrow types in the table schema.
 - https://github.com/gchq/sleeper/issues/1392 Create a predicate language for specifying filters on queries.
 - https://github.com/gchq/sleeper/issues/1390 Review and extend the integrations with Athena and Trino.
 
