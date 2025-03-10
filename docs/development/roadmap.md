@@ -20,15 +20,21 @@ Likely to happen in the near future:
 Other future plans and improvements (in no particular order):
 
 - https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
-- https://github.com/gchq/sleeper/issues/4218 Batch up updates to job trackers from state store commits.
-- https://github.com/gchq/sleeper/issues/4398 Trigger compaction dispatch in transaction log follower.
-- https://github.com/gchq/sleeper/issues/3117 Improve throughput of transactions with multiple Sleeper tables.
-- https://github.com/gchq/sleeper/issues/4214 Mitigate memory limitations with multiple Sleeper tables.
 - https://github.com/gchq/sleeper/issues/4396 Failure handling / backpressure for state store updates.
-- https://github.com/gchq/sleeper/issues/4215 Service that maintains an up-to-date cache of the state store.
-- https://github.com/gchq/sleeper/issues/4395 Table state partitioning.
-- https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
-- https://github.com/gchq/sleeper/issues/1328 Unify admin client and related scripts.
+- https://github.com/gchq/sleeper/issues/4398 Trigger compaction dispatch in transaction log follower.
+
+- Scaling improvements.
+    - https://github.com/gchq/sleeper/issues/4218 Batch up updates to job trackers from state store commits.
+    - https://github.com/gchq/sleeper/issues/3117 Improve throughput of transactions with multiple Sleeper tables.
+    - https://github.com/gchq/sleeper/issues/4214 Mitigate memory limitations with multiple Sleeper tables.
+    - https://github.com/gchq/sleeper/issues/4215 Service that maintains an up-to-date cache of the state store.
+    - https://github.com/gchq/sleeper/issues/4395 Table state partitioning.
+
+- Usability improvements.
+    - https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
+    - https://github.com/gchq/sleeper/issues/1328 Unify admin client and related scripts.
+    - Python API improvements. This is currently basic and needs further work.
+
 - https://github.com/gchq/sleeper/issues/1388 Rust implementations for operations on data files.
 - https://github.com/gchq/sleeper/issues/576 Use Arrow types in the table schema.
 - https://github.com/gchq/sleeper/issues/1392 Create a predicate language for specifying filters on queries.
@@ -40,7 +46,6 @@ Other future plans and improvements (in no particular order):
     - Optimise the parameters used when reading and writing Parquet files. These parameters include whether
     dictionary encoding is used, the row group and page sizes, the readahead size, etc.
 
-- Python API improvements. This is currently basic and needs further work.
 - Iterator improvements. This is likely to change based on how we use Rust.
 - Metrics page. Review and extend the metrics produced.
 - Purge data from a table, i.e. delete any items matching a predicate.
