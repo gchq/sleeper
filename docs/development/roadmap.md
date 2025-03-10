@@ -15,11 +15,11 @@ Likely to happen in the near future:
 - https://github.com/gchq/sleeper/issues/4394 Parallelise garbage collection.
 - https://github.com/gchq/sleeper/issues/4393 Batch up partition splitting commits.
 - https://github.com/gchq/sleeper/issues/3693 Declarative deployment for infrastructure as code.
-- https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
 
 
 Other future plans and improvements (in no particular order):
 
+- https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
 - https://github.com/gchq/sleeper/issues/4218 Batch up updates to job trackers from state store commits.
 - https://github.com/gchq/sleeper/issues/4398 Trigger compaction dispatch in transaction log follower.
 - https://github.com/gchq/sleeper/issues/3117 Improve throughput of transactions with multiple Sleeper tables.
