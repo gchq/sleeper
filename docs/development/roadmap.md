@@ -29,7 +29,7 @@ Other future plans and improvements (in no particular order):
 - https://github.com/gchq/sleeper/issues/4395 Table state partitioning.
 - https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
 - https://github.com/gchq/sleeper/issues/1328 Unify admin client and related scripts.
-- https://github.com/gchq/sleeper/issues/1388 Rust implementations for interacting with data files.
+- https://github.com/gchq/sleeper/issues/1388 Rust implementations for operations on data files.
 - https://github.com/gchq/sleeper/issues/576 Use Arrow types in the table schema.
 - https://github.com/gchq/sleeper/issues/1392 Create a predicate language for specifying filters on queries.
 - https://github.com/gchq/sleeper/issues/1390 Review and extend the integrations with Athena and Trino.
