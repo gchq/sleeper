@@ -34,6 +34,7 @@ Other future plans and improvements (in no particular order):
 - Usability improvements.
     - https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
     - https://github.com/gchq/sleeper/issues/1328 Unify admin client and related scripts.
+    - https://github.com/gchq/sleeper/issues/1786 REST API.
     - Python API improvements. This is currently basic and needs further work.
 
 - https://github.com/gchq/sleeper/issues/1388 Rust implementations for operations on data files.
