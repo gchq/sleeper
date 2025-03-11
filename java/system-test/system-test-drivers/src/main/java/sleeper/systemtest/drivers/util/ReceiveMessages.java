@@ -26,7 +26,7 @@ public interface ReceiveMessages {
 
     List<Message> receiveAndDeleteMessages(String queueUrl, int maxNumberOfMessages, int waitTimeSeconds);
 
-    public static ReceiveMessages from(SqsClient sqsClient) {
+    static ReceiveMessages from(SqsClient sqsClient) {
         return (queueUrl, maxNumberOfMessages, waitTimeSeconds) -> sqsReceiveAndDeleteMessages(
                 sqsClient, queueUrl, maxNumberOfMessages, waitTimeSeconds);
     }
