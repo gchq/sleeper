@@ -127,7 +127,9 @@ public class BulkExportStack extends NestedStack {
                 .exportName(instanceProperties.get(ID) + "-" + BULK_EXPORT_LAMBDA_ROLE_ARN)
                 .build();
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
-    }
+
+        new BulkExportECRResources(this,coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ);
+        }
 
     /**
      * Create a queue and a dead letter queue for the queue.

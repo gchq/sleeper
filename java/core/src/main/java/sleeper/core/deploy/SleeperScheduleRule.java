@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
+
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_JOB_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_CREATION_CLOUDWATCH_RULE;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.GARBAGE_COLLECTOR_CLOUDWATCH_RULE;
@@ -44,6 +46,9 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 public class SleeperScheduleRule {
 
     private static final List<SleeperScheduleRule> RULES = new ArrayList<>();
+    public static final SleeperScheduleRule BULK_EXPORT_TASK_CREATION = add(
+            BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, "%s-BulkExportJobCreationRule",
+            "Triggers creation of bulk export jobs for a Sleeper table");
     public static final SleeperScheduleRule COMPACTION_JOB_CREATION = add(
             COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "%s-CompactionJobCreationRule",
             "Triggers creation of compaction jobs for online Sleeper tables");

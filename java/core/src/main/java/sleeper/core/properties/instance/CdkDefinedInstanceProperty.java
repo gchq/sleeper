@@ -280,6 +280,25 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .description("The ARN of the role for the bulk export lambda.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY = Index
+            .propertyBuilder("sleeper.bulk.export.fargate.task.definition")
+            .description("The name of the family of Fargate task definitions used for bulk export.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_CLUSTER = Index.propertyBuilder("sleeper.bulk.export.cluster")
+            .description("The name of the cluster used for bulk export.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_TASK_CREATION_LAMBDA_FUNCTION = Index
+            .propertyBuilder("sleeper.bulk.export.task.creation.lambda.function")
+            .description("The function name of the bulk export task creation lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
+    CdkDefinedInstanceProperty BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE = Index
+            .propertyBuilder("sleeper.bulk.export.task.creation.rule")
+            .description("The name of the CloudWatch rule that periodically triggers the bulk export task creation lambda.")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
+            .build();
     CdkDefinedInstanceProperty LEAF_PARTITION_BULK_EXPORT_QUEUE_URL = Index
             .propertyBuilder("sleeper.bulk.export.leaf.partition.queue.url")
             .description("The URL of the SQS queue that triggers the bulk export for a leaf partition.")
@@ -297,8 +316,7 @@ public interface CdkDefinedInstanceProperty extends InstanceProperty {
             .build();
     CdkDefinedInstanceProperty LEAF_PARTITION_BULK_EXPORT_QUEUE_DLQ_ARN = Index
             .propertyBuilder("sleeper.bulk.export.leaf.partition.queue.dlq.arn")
-            .description(
-                    "The ARN of the SQS dead letter queue that is used by the bulk export for a leaf partition.")
+            .description("The ARN of the SQS dead letter queue that is used by the bulk export for a leaf partition.")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .build();
     // Compactions

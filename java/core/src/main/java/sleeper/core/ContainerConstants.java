@@ -23,6 +23,7 @@ public class ContainerConstants {
     private ContainerConstants() {
     }
 
+    public static final String BULK_EXPORT_CONTAINER_NAME = "BulkExportContainer";
     public static final String COMPACTION_CONTAINER_NAME = "CompactionContainer";
     public static final String INGEST_CONTAINER_NAME = "IngestContainer";
 }
