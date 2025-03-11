@@ -18,10 +18,7 @@ package sleeper.systemtest.drivers.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.sqs.SqsClient;
-import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequestEntry;
-import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchResponse;
 import software.amazon.awssdk.services.sqs.model.Message;
-import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,6 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -60,14 +58,16 @@ public class AwsDrainSqsQueue {
         return pool;
     }
 
-    private final SqsClient sqsClient;
+    private final ReceiveMessages receiveMessages;
     private final int numThreads;
     private final int messagesPerBatchPerThread;
+    private final int messagesPerReceive;
     private final int waitTimeSeconds;
 
     private AwsDrainSqsQueue(Builder builder) {
-        sqsClient = builder.sqsClient;
+        receiveMessages = builder.receiveMessages;
         messagesPerBatchPerThread = builder.messagesPerBatchPerThread;
+        messagesPerReceive = builder.messagesPerReceive;
         numThreads = builder.numThreads;
         waitTimeSeconds = builder.waitTimeSeconds;
     }
@@ -89,7 +89,11 @@ public class AwsDrainSqsQueue {
     }
 
     private static Builder withClient(SqsClient sqsClient) {
-        return new Builder().sqsClient(sqsClient);
+        return builder().sqsClient(sqsClient);
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public Stream<Message> drain(String queueUrl) {
@@ -185,37 +189,40 @@ public class AwsDrainSqsQueue {
 
     private <A, R> R receiveMessageBatchOneThread(String queueUrl, Collector<Message, A, R> collector) {
         return Stream.iterate(
-                receiveMessages(queueUrl), not(List::isEmpty), lastJobs -> receiveMessages(queueUrl))
-                .limit(messagesPerBatchPerThread / 10)
-                .flatMap(List::stream)
+                ReceiveBatchResult.first(receiveMessages(queueUrl)),
+                lastResult -> lastResult.hasMessages(),
+                lastResult -> lastResult.receiveIfMaxNotMet(messagesPerBatchPerThread, () -> receiveMessages(queueUrl)))
+                .flatMap(ReceiveBatchResult::stream)
                 .collect(collector);
     }
 
-    public static Builder builder() {
-        return new Builder();
+    private List<Message> receiveMessages(String queueUrl) {
+        return receiveMessages.receiveAndDeleteMessages(queueUrl, messagesPerReceive, waitTimeSeconds);
     }
 
-    private List<Message> receiveMessages(String queueUrl) {
-        ReceiveMessageResponse receiveResult = sqsClient.receiveMessage(request -> request
-                .queueUrl(queueUrl)
-                .maxNumberOfMessages(10)
-                .waitTimeSeconds(waitTimeSeconds));
-        List<Message> messages = receiveResult.messages();
-        if (messages.isEmpty()) {
-            return List.of();
+    private record ReceiveBatchResult(List<Message> messages, int totalMessages) {
+
+        static ReceiveBatchResult first(List<Message> messages) {
+            return new ReceiveBatchResult(messages, messages.size());
         }
-        DeleteMessageBatchResponse deleteResult = sqsClient.deleteMessageBatch(request -> request
-                .queueUrl(queueUrl)
-                .entries(messages.stream()
-                        .map(message -> DeleteMessageBatchRequestEntry.builder()
-                                .id(message.messageId())
-                                .receiptHandle(message.receiptHandle())
-                                .build())
-                        .toList()));
-        if (!deleteResult.failed().isEmpty()) {
-            throw new RuntimeException("Failed deleting compaction job messages: " + deleteResult.failed());
+
+        ReceiveBatchResult receiveIfMaxNotMet(int maxMessages, Supplier<List<Message>> receiveMessages) {
+            if (totalMessages >= maxMessages) {
+                return new ReceiveBatchResult(List.of(), totalMessages);
+            }
+            List<Message> receivedMessages = receiveMessages.get();
+            int newTotal = totalMessages + receivedMessages.size();
+            LOGGER.info("Recevied {} messages, total of {} for batch", receivedMessages.size(), newTotal);
+            return new ReceiveBatchResult(receivedMessages, newTotal);
         }
-        return messages;
+
+        boolean hasMessages() {
+            return !messages.isEmpty();
+        }
+
+        Stream<Message> stream() {
+            return messages.stream();
+        }
     }
 
     public record EmptyQueueResult(String queueUrl, long messages) {
@@ -273,16 +280,21 @@ public class AwsDrainSqsQueue {
 
     public static class Builder {
 
-        private SqsClient sqsClient;
+        private ReceiveMessages receiveMessages;
         private int numThreads = 1;
         private int messagesPerBatchPerThread = 10_000;
+        private int messagesPerReceive = 10;
         private int waitTimeSeconds = 10;
 
         private Builder() {
         }
 
         public Builder sqsClient(SqsClient sqsClient) {
-            this.sqsClient = sqsClient;
+            return receiveMessages(ReceiveMessages.from(sqsClient));
+        }
+
+        public Builder receiveMessages(ReceiveMessages receiveMessages) {
+            this.receiveMessages = receiveMessages;
             return this;
         }
 
@@ -293,6 +305,11 @@ public class AwsDrainSqsQueue {
 
         public Builder messagesPerBatchPerThread(int messagesPerBatchPerThread) {
             this.messagesPerBatchPerThread = messagesPerBatchPerThread;
+            return this;
+        }
+
+        public Builder messagesPerReceive(int messagesPerReceive) {
+            this.messagesPerReceive = messagesPerReceive;
             return this;
         }
 
