@@ -209,11 +209,12 @@ public class AwsDrainSqsQueue {
         ReceiveBatchResult receiveIfMaxNotMet(int maxMessages, Supplier<List<Message>> receiveMessages) {
             if (totalMessages >= maxMessages) {
                 return new ReceiveBatchResult(List.of(), totalMessages);
+            } else {
+                List<Message> receivedMessages = receiveMessages.get();
+                int newTotal = totalMessages + receivedMessages.size();
+                LOGGER.info("Recevied {} messages, total of {} for batch", receivedMessages.size(), newTotal);
+                return new ReceiveBatchResult(receivedMessages, newTotal);
             }
-            List<Message> receivedMessages = receiveMessages.get();
-            int newTotal = totalMessages + receivedMessages.size();
-            LOGGER.info("Recevied {} messages, total of {} for batch", receivedMessages.size(), newTotal);
-            return new ReceiveBatchResult(receivedMessages, newTotal);
         }
 
         boolean hasMessages() {
