@@ -18,7 +18,12 @@ package sleeper.core.schema.type;
 /**
  * A primitive type that represents a String.
  */
-public class StringType extends PrimitiveType {
+public class StringType implements PrimitiveType {
+
+    @Override
+    public String toComparable(Object value) {
+        return (String) value;
+    }
 
     @Override
     public int hashCode() {

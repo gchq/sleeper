@@ -30,6 +30,9 @@ pushd "$MAVEN_DIR"
 echo "-------------------------------------------------------------------------------"
 echo "Building Project"
 echo "-------------------------------------------------------------------------------"
+echo "Running Maven in quiet mode."
+echo "For the first build, this should take up to 20-50 minutes. Subsequent builds should take 4-10 minutes."
+echo "Rust compilation can be skipped to speed up the process by passing the argument -DskipRust."
 echo "Started at $(recorded_time_str "$START_BUILD_TIME")"
 
 VERSION=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)

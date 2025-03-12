@@ -15,12 +15,12 @@
  */
 package sleeper.ingest.core.job;
 
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobStatusTestData;
 import sleeper.core.tracker.ingest.job.query.IngestJobAcceptedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
@@ -130,7 +130,7 @@ public class IngestJobStatusFromJobTestData {
         return jobRunOnTask(taskId,
                 IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)),
-                IngestJobStartedStatus.withStartOfRun(false)
+                IngestJobStartedStatus.builder()
                         .inputFileCount(job.getFileCount())
                         .startTime(startTime).updateTime(defaultUpdateTime(startTime)).build());
     }
@@ -149,7 +149,7 @@ public class IngestJobStatusFromJobTestData {
         return jobRunOnTask(taskId,
                 IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)),
-                IngestJobStartedStatus.withStartOfRun(false)
+                IngestJobStartedStatus.builder()
                         .inputFileCount(job.getFileCount())
                         .startTime(summary.getStartTime())
                         .updateTime(defaultUpdateTime(summary.getStartTime())).build(),
@@ -175,7 +175,7 @@ public class IngestJobStatusFromJobTestData {
         return jobRunOnTask(taskId,
                 IngestJobAcceptedStatus.from(job.getFileCount(),
                         validationTime, defaultUpdateTime(validationTime)),
-                IngestJobStartedStatus.withStartOfRun(false)
+                IngestJobStartedStatus.builder()
                         .inputFileCount(job.getFileCount())
                         .startTime(runTime.getStartTime())
                         .updateTime(defaultUpdateTime(runTime.getStartTime())).build(),
@@ -195,20 +195,6 @@ public class IngestJobStatusFromJobTestData {
      */
     public static JobRun acceptedRun(IngestJob job, Instant validationTime) {
         return validationRun(
-                IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime)));
-    }
-
-    /**
-     * Creates a process run for an ingest job that was validated and picked up by an ingest task, but has not started
-     * yet.
-     *
-     * @param  job            the ingest job
-     * @param  taskId         the ingest task ID
-     * @param  validationTime the validation time
-     * @return                a {@link JobRun}
-     */
-    public static JobRun acceptedRunOnTask(IngestJob job, String taskId, Instant validationTime) {
-        return jobRunOnTask(taskId,
                 IngestJobAcceptedStatus.from(job.getFileCount(), validationTime, defaultUpdateTime(validationTime)));
     }
 

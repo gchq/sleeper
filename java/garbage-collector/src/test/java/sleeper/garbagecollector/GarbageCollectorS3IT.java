@@ -16,17 +16,8 @@
 
 package sleeper.garbagecollector;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.containers.localstack.LocalStackContainer.Service;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
@@ -41,9 +32,10 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
-import sleeper.localstack.test.SleeperLocalStackContainer;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.time.Duration;
@@ -61,31 +53,25 @@ import static sleeper.core.properties.testutils.TablePropertiesTestHelper.create
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class GarbageCollectorS3IT {
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(Service.S3, Service.SQS);
-    private final AmazonS3 s3Client = buildAwsV1Client(localStackContainer, Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonSQS sqsClient = buildAwsV1Client(localStackContainer, Service.SQS, AmazonSQSClientBuilder.standard());
+public class GarbageCollectorS3IT extends LocalStackTestBase {
 
     private static final Schema TEST_SCHEMA = getSchema();
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final FileReferenceFactory factory = FileReferenceFactory.from(partitions);
-    private final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
     private final String testBucket = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
 
     @BeforeEach
     void setUp() {
-        s3Client.createBucket(testBucket);
+        createBucket(testBucket);
     }
 
     StateStore setupStateStoreAndFixTime(Instant fixedTime) {
-        StateStore stateStore = inMemoryStateStoreWithSinglePartition(TEST_SCHEMA);
         stateStore.fixFileUpdateTime(fixedTime);
         return stateStore;
     }
@@ -93,23 +79,23 @@ public class GarbageCollectorS3IT {
     @Test
     void shouldContinueCollectingFilesIfTryingToDeleteFileThrowsIOException() throws Exception {
         // Given
-        TableProperties tableProperties = createTableWithGCDelay(instanceProperties, 10);
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
         Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
-        StateStore stateStore = setupStateStoreAndFixTime(oldEnoughTime);
+        stateStore.fixFileUpdateTime(oldEnoughTime);
         // Create a FileReference referencing a file in a bucket that does not exist
         FileReference oldFile1 = factory.rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
-        stateStore.addFile(oldFile1);
+        update(stateStore).addFile(oldFile1);
         // Perform a compaction on an existing file to create a readyForGC file
         s3Client.putObject(testBucket, "old-file-2.parquet", "abc");
         s3Client.putObject(testBucket, "new-file-2.parquet", "def");
         FileReference oldFile2 = factory.rootFile("s3a://" + testBucket + "/old-file-2.parquet", 100L);
         FileReference newFile2 = factory.rootFile("s3a://" + testBucket + "/new-file-2.parquet", 100L);
-        stateStore.addFile(oldFile2);
-        stateStore.assignJobIds(List.of(
+        update(stateStore).addFile(oldFile2);
+        update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root",
                         List.of(oldFile1.getFilename(), oldFile2.getFilename()))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2)));
 
         // When
@@ -133,14 +119,8 @@ public class GarbageCollectorS3IT {
         return instanceProperties;
     }
 
-    private TableProperties createTableWithGCDelay(InstanceProperties instanceProperties, int gcDelay) {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
-        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, gcDelay);
-        return tableProperties;
-    }
-
     private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
-        return new GarbageCollector(deleteFileAndSketches(configuration), instanceProperties,
+        return new GarbageCollector(deleteFileAndSketches(hadoopConf), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }

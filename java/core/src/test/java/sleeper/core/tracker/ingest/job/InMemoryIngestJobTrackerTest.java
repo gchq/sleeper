@@ -23,6 +23,7 @@ import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
@@ -498,16 +499,12 @@ public class InMemoryIngestJobTrackerTest {
             String taskId = "test-task";
             Instant validationTime = Instant.parse("2022-09-22T12:00:10.000Z");
             Instant startTime = Instant.parse("2022-09-22T12:00:15.000Z");
-            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).fileCount(1).build();
-
-            // When
+            IngestJobValidatedEvent job = ingestJobAcceptedEventBuilder(validationTime).jobRunId(null).fileCount(1).build();
             tracker.jobValidated(job);
-            tracker.jobStarted(ingestJobStartedAfterValidationEventBuilder(job, startTime).taskId(taskId).build());
 
-            // Then
-            assertThat(tracker.getAllJobs(tableId))
-                    .containsExactly(ingestJobStatus(job, validationRun(
-                            ingestAcceptedStatus(validationTime, 1))));
+            // When / Then
+            assertThatThrownBy(() -> ingestJobStartedAfterValidationEventBuilder(job, startTime).taskId(taskId).build())
+                    .isInstanceOf(NullPointerException.class);
         }
     }
 

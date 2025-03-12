@@ -30,7 +30,7 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.AllReferencesToAFile;
+import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.FilesReportTestHelper;
@@ -39,10 +39,9 @@ import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.tracker.compaction.job.CompactionJobTracker;
-import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.util.PollWithRetries;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter;
@@ -56,6 +55,9 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
+import static sleeper.core.statestore.FileReferenceTestData.withJobId;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class StateStoreCommitterLambdaTest {
     private static final Instant DEFAULT_FILE_UPDATE_TIME = FilesReportTestHelper.DEFAULT_UPDATE_TIME;
@@ -69,7 +71,7 @@ public class StateStoreCommitterLambdaTest {
 
     @BeforeEach
     void setUp() {
-        stateStore().initialise(partitions.getAllPartitions());
+        update(stateStore()).initialise(partitions.getAllPartitions());
     }
 
     @Test
@@ -93,24 +95,23 @@ public class StateStoreCommitterLambdaTest {
     void shouldFailSomeCommitsInBatch() throws Exception {
         // Given
         FileReference file1 = fileFactory.rootFile("file-1.parquet", 100);
-        FileReference duplicate1 = fileFactory.rootFile("file-1.parquet", 200);
         FileReference file2 = fileFactory.rootFile("file-2.parquet", 300);
-        FileReference duplicate2 = fileFactory.rootFile("file-2.parquet", 400);
 
         // When
         SQSBatchResponse response = lambda().handleRequest(event(
                 addFilesMessage("message-1", file1),
-                addFilesMessage("message-2", duplicate1),
-                addFilesMessage("message-3", file2),
-                addFilesMessage("message-4", duplicate2)),
+                assignJobIdMessage("message-2", assignJobOnPartitionToFiles("job-1", "root", List.of("file-1.parquet"))),
+                assignJobIdMessage("message-3", assignJobOnPartitionToFiles("job-2", "root", List.of("file-1.parquet"))),
+                addFilesMessage("message-4", file2),
+                assignJobIdMessage("message-5", assignJobOnPartitionToFiles("job-3", "root", List.of("file-1.parquet")))),
                 null);
 
         // Then
         assertThat(response.getBatchItemFailures())
                 .extracting(BatchItemFailure::getItemIdentifier)
-                .containsExactly("message-2", "message-4");
+                .containsExactly("message-3", "message-5");
         assertThat(stateStore().getFileReferences())
-                .containsExactly(file1, file2);
+                .containsExactly(withJobId("job-1", file1), file2);
         assertThat(retryWaits).isEmpty();
     }
 
@@ -135,9 +136,7 @@ public class StateStoreCommitterLambdaTest {
     }
 
     private StateStoreCommitter committer(TablePropertiesProvider tablePropertiesProvider, StateStoreProvider stateStoreProvider) {
-        return new StateStoreCommitter(instanceProperties, tablePropertiesProvider,
-                stateStoreProvider, CompactionJobTracker.NONE, IngestJobTracker.NONE,
-                transactionLogs.getTransactionBodyStore(), Instant::now);
+        return new StateStoreCommitter(tablePropertiesProvider, stateStoreProvider, transactionLogs.getTransactionBodyStore());
     }
 
     private SQSEvent event(SQSMessage... messages) {
@@ -148,7 +147,17 @@ public class StateStoreCommitterLambdaTest {
 
     private SQSMessage addFilesMessage(String messageId, FileReference... files) {
         StateStoreCommitRequest request = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
-                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(files))));
+                AddFilesTransaction.fromReferences(List.of(files)));
+        return sqsMessage(messageId, request);
+    }
+
+    private SQSMessage assignJobIdMessage(String messageId, AssignJobIdRequest request) {
+        StateStoreCommitRequest commitRequest = StateStoreCommitRequest.create(tableProperties.get(TABLE_ID),
+                new AssignJobIdsTransaction(List.of(request)));
+        return sqsMessage(messageId, commitRequest);
+    }
+
+    private SQSMessage sqsMessage(String messageId, StateStoreCommitRequest request) {
         SQSMessage message = new SQSMessage();
         message.setMessageId(messageId);
         message.setBody(new StateStoreCommitRequestSerDe(tableProperties).toJson(request));

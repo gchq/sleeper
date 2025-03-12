@@ -26,6 +26,8 @@ use crate::{
 };
 use arrow::util::pretty::pretty_format_batches;
 use datafusion::{
+    common::DFSchema,
+    config::TableParquetOptions,
     datasource::file_format::{format_as_file_type, parquet::ParquetFormatFactory},
     error::DataFusionError,
     execution::{
@@ -38,7 +40,7 @@ use datafusion::{
     prelude::*,
 };
 use log::{error, info, warn};
-use metrics::{log_metrics, RowCounts};
+use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, iter::once, sync::Arc};
 use url::Url;
@@ -64,35 +66,14 @@ pub async fn compact(
     );
     info!("DataFusion output file {}", output_path.as_str());
     info!("Compaction partition region {:?}", input_data.region);
-
     let sf = create_session_cfg(input_data, input_paths);
     let ctx = SessionContext::new_with_config(sf);
 
     // Register some object store from first input file and output file
     let store = register_store(store_factory, input_paths, output_path, &ctx)?;
 
-    // Find total input size and configure multipart upload size on output store
-    let input_size = calculate_input_size(input_paths, &store)
-        .await
-        .inspect(|v| {
-            info!(
-                "Total input size {} bytes",
-                v.to_formatted_string(&Locale::en)
-            );
-        })
-        .inspect_err(|e| warn!("Error getting total input size {e}"));
-    let multipart_size = std::cmp::max(
-        crate::store::MULTIPART_BUF_SIZE,
-        input_size.unwrap_or_default() / 5000,
-    );
-    store_factory
-        .get_object_store(output_path)
-        .map_err(|e| DataFusionError::External(e.into()))?
-        .set_multipart_size_hint(multipart_size);
-    info!(
-        "Setting multipart size hint to {} bytes.",
-        multipart_size.to_formatted_string(&Locale::en)
-    );
+    // Set the upload size based upon size of input data
+    set_multipart_upload_hint(store_factory, input_paths, output_path, store).await?;
 
     // Sort on row key columns then sort key columns (nulls last)
     let sort_order = sort_order(input_data);
@@ -101,26 +82,17 @@ pub async fn compact(
     // Tell DataFusion that the row key columns and sort columns are already sorted
     let po = ParquetReadOptions::default().file_sort_order(vec![sort_order.clone()]);
     let mut frame = ctx.read_parquet(input_paths.to_owned(), po).await?;
-
     // If we have a partition region, apply it first
     if let Some(expr) = region_filter(&input_data.region) {
         frame = frame.filter(expr)?;
     }
 
     // Create the sketch function
-    let sketch_func = Arc::new(ScalarUDF::from(udf::SketchUDF::new(
-        frame.schema(),
-        &input_data.row_key_cols,
-    )));
-    frame.task_ctx().register_udf(sketch_func.clone())?;
+    let sketch_func = create_sketch_udf(&input_data.row_key_cols, &frame)?;
 
     // Extract all column names
     let col_names = frame.schema().clone().strip_qualifiers().field_names();
-    info!("All columns in schema {col_names:?}");
-
     let row_key_exprs = input_data.row_key_cols.iter().map(col).collect::<Vec<_>>();
-    info!("Using sketch function {sketch_func:?}");
-
     let sketch_expr = once(
         sketch_func
             .call(row_key_exprs)
@@ -131,17 +103,34 @@ pub async fn compact(
         .chain(col_names.iter().skip(1).map(col)) // 1st column is the sketch function call
         .collect::<Vec<_>>();
 
-    // Build compaction query
+    // Apply sort to DataFrame, then project for DataSketch
     frame = frame.sort(sort_order)?.select(col_names_expr)?;
 
     // Show explanation of plan
     let explained = frame.clone().explain(false, false)?.collect().await?;
     let output = pretty_format_batches(&explained)?;
     info!("DataFusion plan:\n {output}");
-
     let mut pqo = ctx.copied_table_options().parquet;
+
     // Figure out which columns should be dictionary encoded
-    let col_names = frame.schema().clone().strip_qualifiers().field_names();
+    set_dictionary_encoding(input_data, frame.schema(), &mut pqo);
+
+    // Write the frame out and collect stats
+    let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
+    output_sketch(store_factory, output_path, &sketch_func, &stats)?;
+
+    Ok(CompactionResult::from(&stats))
+}
+
+/// Configure the per column dictionary encoding based on the input configuration.
+///
+/// This ensure the output configuration matches what Sleeper is expecting.
+fn set_dictionary_encoding(
+    input_data: &CompactionInput<'_>,
+    schema: &DFSchema,
+    pqo: &mut TableParquetOptions,
+) {
+    let col_names = schema.clone().strip_qualifiers().field_names();
     for col in &col_names {
         let col_opts = pqo.column_specific_options.entry(col.into()).or_default();
         let dict_encode = (input_data.dict_enc_row_keys && input_data.row_key_cols.contains(col))
@@ -152,11 +141,21 @@ pub async fn compact(
                 && !input_data.sort_key_cols.contains(col));
         col_opts.dictionary_enabled = Some(dict_encode);
     }
+}
 
-    // Write the frame out and collect stats
-    let stats = collect_stats(frame.clone(), input_paths, output_path, pqo).await?;
-
-    // Write sketches out to file in Sleeper compatible way
+/// Extract the Data Sketch result and write it out.
+///
+/// This function should be called after a query has completed. The sketch function will be asked for the current
+/// sketch.
+///
+/// # Errors
+/// If the sketch couldn't be serialised.
+fn output_sketch(
+    store_factory: &ObjectStoreFactory,
+    output_path: &Url,
+    sketch_func: &Arc<ScalarUDF>,
+    stats: &RowCounts,
+) -> Result<(), DataFusionError> {
     let binding = sketch_func.inner();
     let inner_function: Option<&SketchUDF> = binding.as_any().downcast_ref();
     if let Some(func) = inner_function {
@@ -181,8 +180,53 @@ pub async fn compact(
         )
         .map_err(|e| DataFusionError::External(e.into()))?;
     }
+    Ok(())
+}
 
-    Ok(CompactionResult::from(&stats))
+/// Create a Data Sketches UDF from the given frame schema.
+///
+/// # Errors
+/// If the function couldn't be registered.
+fn create_sketch_udf(
+    row_key_cols: &[String],
+    frame: &DataFrame,
+) -> Result<Arc<ScalarUDF>, DataFusionError> {
+    let sketch_func = Arc::new(ScalarUDF::from(udf::SketchUDF::new(
+        frame.schema(),
+        row_key_cols,
+    )));
+    frame.task_ctx().register_udf(sketch_func.clone())?;
+    Ok(sketch_func)
+}
+
+/// Calculate the total input size of all the input paths and set the multipart upload size hint accordingly. This prevents
+/// uploads to S3 failing due to uploading too many small parts. We conseratively set the upload size hint so that fewer,
+/// larger uploads are output.
+///
+/// # Errors
+/// Fails if we can't obtain the size of the input files from the object store.
+async fn set_multipart_upload_hint(
+    store_factory: &ObjectStoreFactory,
+    input_paths: &[Url],
+    output_path: &Url,
+    store: Arc<dyn SizeHintableStore>,
+) -> Result<(), DataFusionError> {
+    let input_size = calculate_input_size(input_paths, &store)
+        .await
+        .inspect_err(|e| warn!("Error getting total input size {e}"));
+    let multipart_size = std::cmp::max(
+        crate::store::MULTIPART_BUF_SIZE,
+        input_size.unwrap_or_default() / 5000,
+    );
+    store_factory
+        .get_object_store(output_path)
+        .map_err(|e| DataFusionError::External(e.into()))?
+        .set_multipart_size_hint(multipart_size);
+    info!(
+        "Setting multipart size hint to {} bytes.",
+        multipart_size.to_formatted_string(&Locale::en)
+    );
+    Ok(())
 }
 
 /// Calculate the total size of all `input_paths` objects.
@@ -229,7 +273,7 @@ async fn collect_stats(
     let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
     let mut stats = RowCounts::new(input_paths);
     accept(physical_plan.as_ref(), &mut stats)?;
-    log_metrics(&stats.file_metrics);
+    stats.log_metrics();
     Ok(stats)
 }
 
@@ -362,7 +406,6 @@ fn create_session_cfg<T>(input_data: &CompactionInput, input_paths: &[T]) -> Ses
         .execution
         .parquet
         .column_index_truncate_length = Some(input_data.column_truncate_length);
-    sf.options_mut().execution.parquet.max_statistics_size = Some(input_data.stats_truncate_length);
     sf
 }
 

@@ -25,10 +25,11 @@ import sleeper.clients.util.table.TableRow;
 import sleeper.clients.util.table.TableWriter;
 import sleeper.clients.util.table.TableWriterFactory;
 import sleeper.core.tracker.compaction.job.query.CompactionJobCommittedStatus;
+import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatusType;
 import sleeper.core.tracker.job.run.AverageRecordRate;
-import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.util.DurationStatistics;
 
 import java.io.PrintStream;
@@ -121,22 +122,21 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
         out.printf("State: %s%n", jobStatus.getFurthestStatusType());
         out.printf("Creation time: %s%n", jobStatus.getCreateUpdateTime());
         out.printf("Partition ID: %s%n", jobStatus.getPartitionId());
-        jobStatus.getJobRuns().forEach(this::printJobRun);
+        jobStatus.getRunsLatestFirst().forEach(this::printJobRun);
         out.println("--------------------------");
     }
 
-    private void printJobRun(JobRun run) {
+    private void printJobRun(CompactionJobRun run) {
         runReporter.printProcessJobRunWithUpdatePrinter(run,
                 printUpdateType(CompactionJobCommittedStatus.class, committedStatus -> printCommitStatus(run, committedStatus)));
-        CompactionJobStatusType runStatusType = CompactionJobStatusType.statusTypeOfJobRun(run);
-        if (runStatusType == CompactionJobStatusType.IN_PROGRESS) {
+        if (run.getStatusType() == CompactionJobStatusType.IN_PROGRESS) {
             out.println("Not finished");
-        } else if (runStatusType == CompactionJobStatusType.UNCOMMITTED) {
+        } else if (run.getStatusType() == CompactionJobStatusType.UNCOMMITTED) {
             out.println("Not committed");
         }
     }
 
-    private void printCommitStatus(JobRun run, CompactionJobCommittedStatus committedStatus) {
+    private void printCommitStatus(JobRunReport run, CompactionJobCommittedStatus committedStatus) {
         out.printf("State store commit time: %s%n", committedStatus.getCommitTime());
         if (run.isFinished()) {
             Duration delay = Duration.between(run.getFinishTime(), committedStatus.getCommitTime());
@@ -180,20 +180,20 @@ public class StandardCompactionJobStatusReporter implements CompactionJobStatusR
 
     private static AverageRecordRate recordRate(List<CompactionJobStatus> jobs) {
         return AverageRecordRate.of(jobs.stream()
-                .flatMap(job -> job.getJobRuns().stream()));
+                .flatMap(job -> job.getRunsLatestFirst().stream()));
     }
 
     private void writeJob(CompactionJobStatus job, TableWriter.Builder table) {
-        if (job.getJobRuns().isEmpty()) {
+        if (job.getRunsLatestFirst().isEmpty()) {
             table.row(row -> {
                 row.value(stateField, job.getFurthestStatusType());
                 writeJobFields(job, row);
             });
         } else {
-            job.getJobRuns().forEach(run -> table.row(row -> {
+            job.getRunsLatestFirst().forEach(run -> table.row(row -> {
                 writeJobFields(job, row);
-                row.value(stateField, CompactionJobStatusType.statusTypeOfJobRun(run));
-                row.value(commitTimeField, run.getLastStatusOfType(CompactionJobCommittedStatus.class)
+                row.value(stateField, run.getStatusType());
+                row.value(commitTimeField, run.getCommittedStatus()
                         .map(CompactionJobCommittedStatus::getCommitTime)
                         .orElse(null));
                 runReporter.writeRunFields(run, row);

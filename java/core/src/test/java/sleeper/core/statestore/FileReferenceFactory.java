@@ -25,6 +25,7 @@ import sleeper.core.table.TableFilePaths;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * A test helper factory to create file references for a state store.
@@ -183,8 +184,21 @@ public class FileReferenceFactory {
                 .build();
     }
 
+    /**
+     * Creates a single file in every leaf partition with a given number of records.
+     *
+     * @param  records the number of records
+     * @return         the files
+     */
+    public Stream<FileReference> singleFileInEachLeafPartitionWithRecords(long records) {
+        return partitionTree.streamLeavesInTreeOrder()
+                .map(partition -> fileForPartition(partition, records));
+    }
+
     private FileReference fileForPartition(Partition partition, long records) {
-        return fileForPartitionBuilder(partition.getId(), records).build();
+        return fileForPartitionBuilder(partition.getId(), records)
+                .filename(filePathGenerator.buildFilePath(partition.getId(), partition.getId() + ".parquet"))
+                .build();
     }
 
     private FileReference fileForPartition(Partition partition, String filename, long records) {

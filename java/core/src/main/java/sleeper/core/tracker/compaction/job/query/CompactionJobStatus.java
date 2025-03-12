@@ -40,6 +40,9 @@ import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.IN_PROGRESS;
 import static sleeper.core.tracker.compaction.job.query.CompactionJobStatusType.UNCOMMITTED;
 
+/**
+ * A report of a compaction job held in the job tracker.
+ */
 public class CompactionJobStatus {
 
     private final String jobId;
@@ -47,6 +50,7 @@ public class CompactionJobStatus {
     private final Integer inputFilesCount;
     private final Instant createUpdateTime;
     private final JobRuns jobRuns;
+    private final transient List<CompactionJobRun> runsLatestFirst;
     private final transient Map<CompactionJobStatusType, Integer> runsByStatusType;
     private final transient CompactionJobStatusType furthestRunStatusType;
     private final Instant expiryDate;
@@ -63,8 +67,11 @@ public class CompactionJobStatus {
             createUpdateTime = null;
         }
         jobRuns = builder.jobRuns;
-        runsByStatusType = jobRuns.getRunsLatestFirst().stream()
-                .collect(groupingBy(CompactionJobStatusType::statusTypeOfJobRun, summingInt(run -> 1)));
+        runsLatestFirst = jobRuns.getRunsLatestFirst().stream()
+                .map(CompactionJobRun::new)
+                .toList();
+        runsByStatusType = runsLatestFirst.stream()
+                .collect(groupingBy(CompactionJobRun::getStatusType, summingInt(run -> 1)));
         furthestRunStatusType = CompactionJobStatusType.furthestStatusTypeOfJob(runsByStatusType.keySet());
         expiryDate = builder.expiryDate;
     }
@@ -109,7 +116,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isStarted() {
-        return jobRuns.isStarted();
+        return !runsLatestFirst.isEmpty();
     }
 
     public boolean isUnstartedOrInProgress() {
@@ -149,13 +156,13 @@ public class CompactionJobStatus {
     }
 
     public Stream<Duration> runDelaysBetweenFinishAndCommit() {
-        return jobRuns.getRunsLatestFirst().stream()
+        return runsLatestFirst.stream()
                 .flatMap(run -> delayBetweenFinishAndCommit(run).stream());
     }
 
-    private Optional<Duration> delayBetweenFinishAndCommit(JobRun run) {
-        return run.getLastStatusOfType(CompactionJobCommittedStatus.class)
-                .flatMap(committedStatus -> run.getLastStatusOfType(CompactionJobFinishedStatus.class)
+    private Optional<Duration> delayBetweenFinishAndCommit(CompactionJobRun run) {
+        return run.getCommittedStatus()
+                .flatMap(committedStatus -> run.getSuccessfulFinishedStatus()
                         .map(finishedStatus -> Duration.between(
                                 finishedStatus.getFinishTime(),
                                 committedStatus.getCommitTime())));
@@ -170,7 +177,7 @@ public class CompactionJobStatus {
     }
 
     public boolean isMultipleRuns() {
-        return jobRuns.getRunsLatestFirst().size() > 1;
+        return runsLatestFirst.size() > 1;
     }
 
     public Instant getExpiryDate() {
@@ -195,8 +202,8 @@ public class CompactionJobStatus {
         }
     }
 
-    public List<JobRun> getJobRuns() {
-        return jobRuns.getRunsLatestFirst();
+    public List<CompactionJobRun> getRunsLatestFirst() {
+        return runsLatestFirst;
     }
 
     public CompactionJobStatusType getFurthestStatusType() {

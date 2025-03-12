@@ -7,8 +7,9 @@ use color_eyre::eyre::Error;
 use compaction::{merge_sorted_files, CompactionInput};
 use compaction_helpers::*;
 use tempfile::tempdir;
+use test_log::test;
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn should_merge_two_files() -> Result<(), Error> {
     // Given
     let dir = tempdir()?;
@@ -37,7 +38,7 @@ async fn should_merge_two_files() -> Result<(), Error> {
     Ok(())
 }
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     // Given
     let dir = tempdir()?;
@@ -66,7 +67,7 @@ async fn should_merge_files_with_overlapping_data() -> Result<(), Error> {
     Ok(())
 }
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     // Given
     let dir = tempdir()?;
@@ -95,7 +96,7 @@ async fn should_exclude_data_not_in_region() -> Result<(), Error> {
     Ok(())
 }
 
-#[tokio::test]
+#[test(tokio::test)]
 async fn should_exclude_data_not_in_multidimensional_region() -> Result<(), Error> {
     // Given
     let dir = tempdir()?;

@@ -17,7 +17,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionBodyStore;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.statestore.committer.StateStoreCommitter;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -27,7 +27,6 @@ import sleeper.systemtest.dsl.statestore.StateStoreCommitterDriver;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogs;
 import sleeper.systemtest.dsl.statestore.StateStoreCommitterLogsDriver;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -89,9 +88,9 @@ public class InMemoryStateStoreCommitter {
             instance = context.instance();
             TablePropertiesProvider tablePropertiesProvider = instance.getTablePropertiesProvider();
             committer = new StateStoreCommitter(
-                    instance.getInstanceProperties(), tablePropertiesProvider,
-                    instance.getStateStoreProvider(), compaction.jobTracker(), ingest.jobTracker(),
-                    transactionBodyStore, Instant::now);
+                    tablePropertiesProvider,
+                    instance.getStateStoreProvider(),
+                    transactionBodyStore);
         }
 
         @Override

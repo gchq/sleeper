@@ -19,8 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
-import sleeper.core.statestore.exception.SplitRequestsFailedException;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 
 import java.time.Instant;
 import java.util.List;
@@ -30,7 +29,7 @@ import java.util.stream.Stream;
 /**
  * A state store implementation that delegates to implementations of a file reference and partition store.
  */
-public class DelegatingStateStore implements StateStore {
+public abstract class DelegatingStateStore implements StateStore {
     public static final Logger LOGGER = LoggerFactory.getLogger(DelegatingStateStore.class);
     private final FileReferenceStore fileReferenceStore;
     private final PartitionStore partitionStore;
@@ -38,61 +37,6 @@ public class DelegatingStateStore implements StateStore {
     public DelegatingStateStore(FileReferenceStore fileReferenceStore, PartitionStore partitionStore) {
         this.fileReferenceStore = fileReferenceStore;
         this.partitionStore = partitionStore;
-    }
-
-    @Override
-    public void addFile(FileReference fileReference) throws StateStoreException {
-        fileReferenceStore.addFile(fileReference);
-    }
-
-    @Override
-    public void addFiles(List<FileReference> fileReferences) throws StateStoreException {
-        if (fileReferences.isEmpty()) {
-            LOGGER.info("Ignoring addFiles call with no files");
-            return;
-        }
-        fileReferenceStore.addFiles(fileReferences);
-    }
-
-    @Override
-    public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        if (files.isEmpty()) {
-            LOGGER.info("Ignoring addFilesWithReferences call with no files");
-            return;
-        }
-        fileReferenceStore.addFilesWithReferences(files);
-    }
-
-    @Override
-    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
-        if (splitRequests.isEmpty()) {
-            LOGGER.info("Ignoring splitFileReferences call with no requests");
-            return;
-        }
-        fileReferenceStore.splitFileReferences(splitRequests);
-    }
-
-    @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
-        fileReferenceStore.atomicallyReplaceFileReferencesWithNewOnes(requests);
-    }
-
-    @Override
-    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        if (requests.isEmpty()) {
-            LOGGER.info("Ignoring assignJobIds call with no requests");
-            return;
-        }
-        fileReferenceStore.assignJobIds(requests);
-    }
-
-    @Override
-    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
-        if (filenames.isEmpty()) {
-            LOGGER.info("Ignoring deleteGarbageCollectedFileReferenceCounts call with no files");
-            return;
-        }
-        fileReferenceStore.deleteGarbageCollectedFileReferenceCounts(filenames);
     }
 
     @Override
@@ -121,38 +65,6 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
-    public void initialise() throws StateStoreException {
-        if (!hasNoFiles()) {
-            throw new StateStoreException("Cannot initialise state store when files are present");
-        }
-        partitionStore.initialise();
-        fileReferenceStore.initialise();
-    }
-
-    @Override
-    public void initialise(List<Partition> partitions) throws StateStoreException {
-        if (!hasNoFiles()) {
-            throw new StateStoreException("Cannot initialise state store when files are present");
-        }
-        partitionStore.initialise(partitions);
-        fileReferenceStore.initialise();
-    }
-
-    /**
-     * Initialises just the file reference store.
-     *
-     * @throws StateStoreException thrown if the initialisation fails
-     */
-    public void setInitialFileReferences() throws StateStoreException {
-        fileReferenceStore.initialise();
-    }
-
-    @Override
-    public void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition, Partition newPartition1, Partition newPartition2) throws StateStoreException {
-        partitionStore.atomicallyUpdatePartitionAndCreateNewOnes(splitPartition, newPartition1, newPartition2);
-    }
-
-    @Override
     public List<Partition> getAllPartitions() throws StateStoreException {
         return partitionStore.getAllPartitions();
     }
@@ -163,18 +75,13 @@ public class DelegatingStateStore implements StateStore {
     }
 
     @Override
+    public Partition getPartition(String partitionId) throws StateStoreException {
+        return partitionStore.getPartition(partitionId);
+    }
+
+    @Override
     public boolean hasNoFiles() throws StateStoreException {
         return fileReferenceStore.hasNoFiles();
-    }
-
-    @Override
-    public void clearFileData() throws StateStoreException {
-        fileReferenceStore.clearFileData();
-    }
-
-    @Override
-    public void clearPartitionData() throws StateStoreException {
-        partitionStore.clearPartitionData();
     }
 
     @Override
@@ -185,5 +92,19 @@ public class DelegatingStateStore implements StateStore {
     @Override
     public void fixPartitionUpdateTime(Instant now) {
         partitionStore.fixPartitionUpdateTime(now);
+    }
+
+    @Override
+    public void addFilesTransaction(AddTransactionRequest request) {
+        if (request.checkBeforeAdd(this)) {
+            fileReferenceStore.addFilesTransaction(request);
+        }
+    }
+
+    @Override
+    public void addPartitionsTransaction(AddTransactionRequest request) {
+        if (request.checkBeforeAdd(this)) {
+            partitionStore.addPartitionsTransaction(request);
+        }
     }
 }

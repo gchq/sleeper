@@ -16,29 +16,15 @@
 package sleeper.core.statestore;
 
 import sleeper.core.partition.Partition;
-import sleeper.core.partition.PartitionTree;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Stores information about the partitions holding records in a Sleeper table.
  */
 public interface PartitionStore {
-
-    /**
-     * Atomically splits a partition to create child partitions. Updates the existing partition to record it as split,
-     * and creates new leaf partitions.
-     *
-     * @param  splitPartition      The {@link Partition} to be updated (must refer to the new leaves as children).
-     * @param  newPartition1       The first new {@link Partition} (must be a leaf partition).
-     * @param  newPartition2       The second new {@link Partition} (must be a leaf partition).
-     * @throws StateStoreException if split is not valid or update fails
-     */
-    void atomicallyUpdatePartitionAndCreateNewOnes(Partition splitPartition,
-            Partition newPartition1,
-            Partition newPartition2) throws StateStoreException;
 
     /**
      * Returns all partitions.
@@ -63,40 +49,19 @@ public interface PartitionStore {
      * @return                     the {@link Partition}
      * @throws StateStoreException if query fails
      */
-    default Partition getPartition(String partitionId) throws StateStoreException {
-        return getAllPartitions().stream()
-                .filter(p -> Objects.equals(partitionId, p.getId()))
-                .findFirst().orElseThrow(() -> new StateStoreException("Partition not found: " + partitionId));
-    }
-
-    /**
-     * Initialises the store with a single partition covering all keys. This is the root partition which may be split
-     * in the future.
-     *
-     * @throws StateStoreException if update fails
-     */
-    void initialise() throws StateStoreException;
-
-    /**
-     * Initialises the store with a list of all partitions. This must be a complete {@link PartitionTree}.
-     *
-     * @param  partitions          The initial list of {@link Partition}s
-     * @throws StateStoreException if partitions not provided or update fails
-     */
-    void initialise(List<Partition> partitions) throws StateStoreException;
-
-    /**
-     * Clears all partition data from the store. Note that this will invalidate any file references held in the store,
-     * so this should only be used when no files are present. The store must be initialised before the Sleeper table can
-     * be used again. Any file references will need to be added again.
-     */
-    void clearPartitionData() throws StateStoreException;
+    Partition getPartition(String partitionId) throws StateStoreException;
 
     /**
      * Used to fix the time of partition updates. Should only be called during tests.
      *
      * @param time the time that any future partition updates will be considered to occur
      */
-    default void fixPartitionUpdateTime(Instant time) {
-    }
+    void fixPartitionUpdateTime(Instant time);
+
+    /**
+     * Adds a partions transaction to the transaction log.
+     *
+     * @param request the request
+     */
+    void addPartitionsTransaction(AddTransactionRequest request);
 }

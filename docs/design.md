@@ -146,37 +146,12 @@ of a compaction job to be atomically committed in which the references to the in
 and a new reference is created for the output file. Note that a file with no references is still tracked in
 the state store.
 
-There are currently two state store implementations, one that stores the data in DynamoDB and one that stores it
-in Parquet files in S3 with a lightweight consistency layer in DynamoDB.
+See the [original design document](design/transaction-log-state-store.md) for the current state store backed by a
+transaction log. There's also [a potential design](design/postgresql-state-store.md) for a state store backed by
+PostgreSQL.
 
-### DynamoDB state store
-
-The DynamoDB state store uses three DynamoDB tables to store the state of a table. There is one table for file
-references, one for the number of references to a file (or the file reference count), and one for information about the
-partitions in the system. For the file reference and file reference count tables, the primary key is a concatenation of
-the filename and the partition id. For the partition table, the primary key is simply the id of the partition. Updates
-to the state that need to be executed atomically are wrapped in DynamoDB transactions. The number of items in a DynamoDB
-transaction is limited to 100. This has implications for the number of files that can be read in a compaction job. When
-the job finishes, the relevant references to the input files that the compaction job has read need to be removed, the
-output file need to be written, a new file reference to the output file needs to be added to the state store, and the
-file reference count needs to be updated. This means that at most 49 files can be read by a compaction job if the
-DynamoDB state store is used.
-
-### S3 state store
-
-This state store stores the state of a table in Parquet files in S3, within the same bucket used to store the data
-for the table. There is one file for information about file references, and one for the partitions. When an update
-happens a new file is written. This new file contains the complete information about the state, i.e., it does not just
-contain the updated information. As two processes may attempt to update the information simultaneously, there needs
-to be a consistency mechanism to ensure that only one update can succeed. A table in DynamoDB is used as this
-consistency layer.
-
-### Potential alternatives
-
-We are considering alternative designs for the state store:
-
-- [A transaction log stored in DynamoDB, with snapshots in S3](design/transaction-log-state-store.md)
-- [A PostgreSQL database](design/postgresql-state-store.md)
+Previous state store implementations stored the data in DynamoDB, or in Parquet files in S3 with a consistency layer in
+DynamoDB. See the design documents linked above for comparisons.
 
 ## Ingest of data
 
@@ -271,6 +246,8 @@ and atomically removing the original reference and creating 2 new references in 
 file references down one "level" on each execution of the lambda, so the lambda would need to be invoked multiple times
 for the file references in the root partition to be moved down to the bottom of the tree.
 
+![Compaction job creation design diagram](design/compaction-job-creation.png)
+
 The lambda then queries the state store for information about the partitions and the file
 references that do not have a job id (if a file reference has a job id it means that a compaction job has already been
 created for that file). It then uses a compaction strategy to decide what compaction jobs should be created.
@@ -279,14 +256,15 @@ create compaction jobs for files that are in leaf partitions at the time of crea
 happen after a job has been created, but before the job has run). Jobs that are created by the strategy are sent
 to an SQS queue.
 
-Compaction jobs are executed in containers. Currently, these containers are executed in Fargate tasks, but they could
-be executed on ECS running on EC2 instances, or anywhere that supports running Docker containers. These containers
+Compaction jobs are executed in ECS tasks running on either Fargate tasks or EC2 instances. These tasks
 retrieve compaction jobs from the SQS queue and execute them. Executing them involves a streaming merge of the
-N input files into one sorted file. Once the job is finished, the state store is updated. The number of Fargate
+N input files into one sorted file. Once the job is finished, the state store is updated. The number of ECS
 tasks that are running scales down naturally as the task terminates if there are no more messages on the SQS queue.
 To scale up the number of tasks, a Cloudwatch rule periodically triggers a lambda. This lambda looks at the number
 of messages on the queue that are not being processed and if necessary creates more Fargate tasks. The maximum
 number of concurrent compaction tasks is configurable.
+
+![Execution of compaction tasks design diagram](design/compaction-task-running.png)
 
 ## Garbage collection
 

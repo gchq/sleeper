@@ -27,7 +27,7 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
@@ -132,7 +132,7 @@ public class GarbageCollector {
                         tableProperties.get(TABLE_ID), new DeleteFilesTransaction(deletedFilenames)));
                 LOGGER.info("Submitted asynchronous request to state store committer for {} deleted files in table {}", deletedFilenames.size(), tableProperties.getStatus());
             } else {
-                stateStore.deleteGarbageCollectedFileReferenceCounts(deletedFilenames);
+                new DeleteFilesTransaction(deletedFilenames).synchronousCommit(stateStore);
                 LOGGER.info("Applied deletion to state store");
             }
         } catch (Exception e) {

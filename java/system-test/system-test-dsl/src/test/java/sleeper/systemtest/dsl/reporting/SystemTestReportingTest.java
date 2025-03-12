@@ -43,7 +43,7 @@ public class SystemTestReportingTest {
     @Test
     void shouldReportFinishedIngestJob(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         sleeper.sourceFiles().createWithNumberedRecords("test.parquet", LongStream.of(1, 2, 3));
         sleeper.ingest().byQueue().sendSourceFiles("test.parquet").waitForTask().waitForJobs();
 
@@ -56,7 +56,7 @@ public class SystemTestReportingTest {
     @Test
     void shouldReportFinishedCompactionJob(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         sleeper.ingest().direct(tempDir).numberedRecords(LongStream.of(1, 2, 3));
         sleeper.compaction().forceCreateJobs(1).waitForTasks(1).waitForJobs();
 
@@ -75,7 +75,7 @@ public class SystemTestReportingTest {
         afterTestReports.reportAlways(builder -> builder.compactionTasksAndJobs());
 
         // When
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         afterTestReports.afterTestPassed(TestContextFactory.testContext(info));
 
         // Then

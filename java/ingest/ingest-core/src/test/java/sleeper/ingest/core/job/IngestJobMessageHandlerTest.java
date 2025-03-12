@@ -26,8 +26,8 @@ import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
 import sleeper.core.tracker.ingest.job.InMemoryIngestJobTracker;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 
 import java.time.Instant;
 import java.util.List;

@@ -15,19 +15,35 @@
  */
 package sleeper.core.statestore;
 
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
+
 /**
  * Stores information about the data files and their status (i.e. {@link FileReference}s,
  * and the {@link sleeper.core.partition.Partition}s).
  */
 public interface StateStore extends FileReferenceStore, PartitionStore {
+
     /**
      * Clears all file data and partition data from the state store. Note that this does not delete any of the actual
      * files, and after calling this method the store must be initialised before the Sleeper table can be used again.
      *
      * @throws StateStoreException if the update fails
      */
-    default void clearSleeperTable() throws StateStoreException {
-        clearFileData();
-        clearPartitionData();
+    void clearSleeperTable();
+
+    /**
+     * Applies a transaction to the state store.
+     *
+     * @param request the request
+     * @see           AddTransactionRequest
+     */
+    default void addTransaction(AddTransactionRequest request) {
+        if (request.getTransaction() instanceof FileReferenceTransaction) {
+            addFilesTransaction(request);
+        } else if (request.getTransaction() instanceof PartitionTransaction) {
+            addPartitionsTransaction(request);
+        }
     }
 }

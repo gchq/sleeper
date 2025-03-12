@@ -19,6 +19,7 @@ package sleeper.ingest.runner;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -29,6 +30,8 @@ import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.example.iterator.AdditionIterator;
 import sleeper.sketches.testutils.SketchesDeciles;
 
@@ -41,12 +44,9 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_IN_MEMORY_BATCH_SIZE;
 import static sleeper.core.properties.instance.ArrayListIngestProperty.MAX_RECORDS_TO_WRITE_LOCALLY;
-import static sleeper.core.properties.table.TableProperty.COMPRESSION_CODEC;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILE_WRITING_STRATEGY;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getLotsOfRecords;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords;
 import static sleeper.ingest.runner.testutils.IngestRecordsTestDataHelper.getRecords2DimByteArrayKey;
@@ -67,13 +67,13 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsSplitByPartitionLongKey() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L)
                 .buildList());
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecords()).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, getRecords()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -118,14 +118,14 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     void shouldWriteRecordsSplitByPartitionByteArrayKey() throws Exception {
         // Given
         Field field = new Field("key", new ByteArrayType());
-        Schema schema = schemaWithRowKeys(field);
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+        setSchema(schemaWithRowKeys(field));
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", new byte[]{64, 64})
                 .buildList());
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecordsByteArrayKey()).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, getRecordsByteArrayKey()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -174,14 +174,14 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         // Given
         Field field1 = new Field("key1", new ByteArrayType());
         Field field2 = new Field("key2", new ByteArrayType());
-        Schema schema = schemaWithRowKeys(field1, field2);
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+        setSchema(schemaWithRowKeys(field1, field2));
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "L", "R", 0, new byte[]{10})
                 .buildList());
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecords2DimByteArrayKey()).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, getRecords2DimByteArrayKey()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -242,7 +242,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         // Given
         Field field1 = new Field("key1", new IntType());
         Field field2 = new Field("key2", new LongType());
-        Schema schema = schemaWithRowKeys(field1, field2);
+        setSchema(schemaWithRowKeys(field1, field2));
         // The original root partition was split on the second dimension.
         // Ordering (sorted using the first dimension with the second dimension
         // used to break ties):
@@ -268,7 +268,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         //                |
         // Long.MIN_VALUE |----------------------------
         //               Long.MIN_VALUE            null   Dimension 1
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "L", "R", 1, 10L)
                 .buildList());
@@ -276,9 +276,7 @@ class IngestRecordsIT extends IngestRecordsTestBase {
         // When
         //  - When sorted the records in getRecordsOscillateBetweenTwoPartitions
         //  appear in partition 1 then partition 2 then partition 1, then 2, etc
-        long numWritten = ingestRecordsWithTableProperties(schema, stateStore,
-                getRecordsOscillatingBetween2Partitions(),
-                tableProperties -> tableProperties.set(COMPRESSION_CODEC, "snappy")).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, getRecordsOscillatingBetween2Partitions()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -336,12 +334,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsSplitByPartitionWhenThereIsOnlyDataInOnePartition() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getRecordsInFirstPartitionOnly()).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, getRecordsInFirstPartitionOnly()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -374,12 +372,12 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteDuplicateRecords() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
         List<Record> records = new ArrayList<>(getRecords());
         records.addAll(getRecords());
-        long numWritten = ingestRecords(schema, stateStore, records).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -414,16 +412,15 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsInAPartitionThanCanFitInMemory() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
+        instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
         List<Record> records = getLotsOfRecords();
 
         // When
-        long numWritten = ingestRecordsWithInstanceProperties(schema, stateStore, records, instanceProperties -> {
-            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 1000L);
-            instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
-        }).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -474,16 +471,15 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldWriteRecordsWhenThereAreMoreRecordsThanCanFitInLocalFile() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(new PartitionsBuilder(schema)
+        instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
+        instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "L", "R", 2L).buildList());
         List<Record> records = getLotsOfRecords();
 
         // When
-        long numWritten = ingestRecordsWithInstanceProperties(schema, stateStore, records, instanceProperties -> {
-            instanceProperties.setNumber(MAX_RECORDS_TO_WRITE_LOCALLY, 10L);
-            instanceProperties.setNumber(MAX_IN_MEMORY_BATCH_SIZE, 5);
-        }).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, records).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -514,10 +510,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldSortRecords() throws Exception {
         // Given
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
-        long numWritten = ingestRecords(schema, stateStore, getUnsortedRecords()).getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, getUnsortedRecords()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -549,17 +545,16 @@ class IngestRecordsIT extends IngestRecordsTestBase {
     @Test
     void shouldApplyIterator() throws Exception {
         // Given
-        Schema schema = Schema.builder()
+        setSchema(Schema.builder()
                 .rowKeyFields(new Field("key", new ByteArrayType()))
                 .sortKeyFields(new Field("sort", new LongType()))
                 .valueFields(new Field("value", new LongType()))
-                .build();
-        StateStore stateStore = inMemoryStateStoreWithFixedSinglePartition(schema);
+                .build());
+        tableProperties.set(ITERATOR_CLASS_NAME, AdditionIterator.class.getName());
+        StateStore stateStore = initialiseStateStore(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         // When
-        long numWritten = ingestRecordsWithTableProperties(schema, stateStore, getRecordsForAggregationIteratorTest(),
-                tableProperties -> tableProperties.set(ITERATOR_CLASS_NAME, AdditionIterator.class.getName()))
-                .getRecordsWritten();
+        long numWritten = ingestRecords(stateStore, getRecordsForAggregationIteratorTest()).getRecordsWritten();
 
         // Then:
         //  - Check the correct number of records were written
@@ -593,5 +588,10 @@ class IngestRecordsIT extends IngestRecordsTestBase {
                                 .rankBytes(0.4, 1, 1).rankBytes(0.5, 11, 2).rankBytes(0.6, 11, 2)
                                 .rankBytes(0.7, 11, 2).rankBytes(0.8, 11, 2).rankBytes(0.9, 11, 2))
                         .build());
+    }
+
+    private StateStore initialiseStateStore(List<Partition> partitions) {
+        return InMemoryTransactionLogStateStore
+                .createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
     }
 }

@@ -26,6 +26,7 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -61,7 +62,7 @@ public class InitialiseStateStore {
             Configuration conf = HadoopConfigurationProvider.getConfigurationForClient();
             StateStore stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, conf).getStateStore(tableProperties);
 
-            stateStore.initialise();
+            InitialisePartitionsTransaction.singlePartition(tableProperties.getSchema()).synchronousCommit(stateStore);
         } finally {
             dynamoDBClient.shutdown();
             s3Client.shutdown();

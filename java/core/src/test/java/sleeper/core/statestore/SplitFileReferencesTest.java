@@ -20,17 +20,23 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 
 import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.SplitFileReference.referenceForChildPartition;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class SplitFileReferencesTest {
     private static final Instant DEFAULT_UPDATE_TIME = Instant.parse("2023-10-04T14:08:00Z");
@@ -38,7 +44,10 @@ public class SplitFileReferencesTest {
     private final PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("root")
             .splitToNewChildren("root", "L", "R", 5L);
     private final FileReferenceFactory factory = FileReferenceFactory.fromUpdatedAt(partitions.buildTree(), DEFAULT_UPDATE_TIME);
-    private final StateStore store = inMemoryStateStoreWithFixedPartitions(partitions.buildList());
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final StateStore store = InMemoryTransactionLogStateStore
+            .createAndInitialiseWithPartitions(partitions.buildList(), tableProperties, new InMemoryTransactionLogs());
 
     @BeforeEach
     void setUp() {
@@ -49,7 +58,7 @@ public class SplitFileReferencesTest {
     void shouldFindFileInNonLeafPartitionToSplit() throws Exception {
         // Given
         FileReference file = factory.rootFile("file1", 100L);
-        store.addFile(file);
+        update(store).addFile(file);
 
         // When
         SplitFileReferences.from(store).split();
@@ -64,7 +73,7 @@ public class SplitFileReferencesTest {
     void shouldIgnoreFileInLeafPartition() throws Exception {
         // Given
         FileReference file = factory.partitionFile("L", "file1", 100L);
-        store.addFile(file);
+        update(store).addFile(file);
 
         // When
         SplitFileReferences.from(store).split();
@@ -77,8 +86,8 @@ public class SplitFileReferencesTest {
     void shouldIgnoreFileWithJobIdAssigned() throws Exception {
         // Given
         FileReference file = factory.rootFile("file1", 100L);
-        store.addFile(file);
-        store.assignJobIds(List.of(
+        update(store).addFile(file);
+        update(store).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of("file1"))));
 
         // When

@@ -24,18 +24,18 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.PartitionTransaction;
-import sleeper.core.statestore.transactionlog.StateStoreTransaction;
-import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.InitialisePartitionsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
-import sleeper.core.statestore.transactionlog.transactions.TransactionType;
-import sleeper.statestore.testutil.LocalStackTestBase;
+import sleeper.core.statestore.transactionlog.log.StoreTransactionBodyResult;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.StateStoreTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDe;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionType;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
 
@@ -62,18 +62,16 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
     @DisplayName("Support all transactions")
     class SupportAllTransactions {
 
+        TransactionBodyStore store = storeAllTransactions();
+
         @Test
         void shouldSaveAndLoadPartitionTransactionByTableProperties() {
             // Given
-            TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, s3Client,
-                    TransactionSerDeProvider.forOneTable(tableProperties));
-            String key = TransactionBodyStore.createObjectKey(tableProperties);
             PartitionTransaction transaction = new InitialisePartitionsTransaction(
-                    new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
+                    new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
 
             // When
-            store.store(key, tableId, transaction);
-            StateStoreTransaction<?> found = store.getBody(key, tableId, TransactionType.INITIALISE_PARTITIONS);
+            StateStoreTransaction<?> found = saveAndLoad(store, transaction);
 
             // Then
             assertThat(found).isEqualTo(transaction);
@@ -82,15 +80,11 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         @Test
         void shouldSaveAndLoadPartitionTransactionByTableId() {
             // Given
-            TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, s3Client,
-                    TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties)));
-            String key = TransactionBodyStore.createObjectKey(tableId);
             PartitionTransaction transaction = new InitialisePartitionsTransaction(
-                    new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
+                    new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
 
             // When
-            store.store(key, tableId, transaction);
-            StateStoreTransaction<?> found = store.getBody(key, tableId, TransactionType.INITIALISE_PARTITIONS);
+            StateStoreTransaction<?> found = saveAndLoad(store, transaction);
 
             // Then
             assertThat(found).isEqualTo(transaction);
@@ -101,19 +95,17 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
     @DisplayName("Support only file transactions")
     class SupportOnlyFileTransactions {
 
-        TransactionBodyStore store = new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forFileTransactions());
+        TransactionBodyStore store = storeAllFileTransactions();
 
         @Test
         void shouldStoreFileTransaction() {
             // Given
-            String key = TransactionBodyStore.createObjectKey(tableId);
-            PartitionTree partitions = new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildTree();
-            FileReferenceTransaction transaction = new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(
-                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100))));
+            PartitionTree partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
+            FileReferenceTransaction transaction = AddFilesTransaction.fromReferences(List.of(
+                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100)));
 
             // When
-            store.store(key, tableId, transaction);
-            StateStoreTransaction<?> found = store.getBody(key, tableId, TransactionType.ADD_FILES);
+            StateStoreTransaction<?> found = saveAndLoad(store, transaction);
 
             // Then
             assertThat(found).isEqualTo(transaction);
@@ -122,18 +114,79 @@ public class S3TransactionBodyStoreIT extends LocalStackTestBase {
         @Test
         void shouldFailPartitionTransaction() {
             // Given
-            String key = TransactionBodyStore.createObjectKey(tableId);
             PartitionTransaction transaction = new InitialisePartitionsTransaction(
-                    new PartitionsBuilder(tableProperties.getSchema()).singlePartition("root").buildList());
+                    new PartitionsBuilder(tableProperties).singlePartition("root").buildList());
 
             // When / Then
-            assertThatThrownBy(() -> store.store(key, tableId, transaction))
+            assertThatThrownBy(() -> saveGetKey(store, transaction))
                     .isInstanceOf(UnsupportedOperationException.class);
-            new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties))
-                    .store(key, tableId, transaction);
+            String key = saveGetKey(storeAllTransactions(), transaction);
             assertThatThrownBy(() -> store.getBody(key, tableId, TransactionType.INITIALISE_PARTITIONS))
                     .isInstanceOf(UnsupportedOperationException.class);
         }
+    }
+
+    @Nested
+    @DisplayName("Retain serialised transaction")
+    class RetainSerialisedTransaction {
+
+        TransactionBodyStore store = storeTransactionsWithJsonLength(300);
+
+        @Test
+        void shouldNotStoreTransactionSmallerThanThreshold() {
+            // Given
+            PartitionTree partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
+            AddFilesTransaction transaction = AddFilesTransaction.fromReferences(List.of(
+                    FileReferenceFactory.from(partitions).rootFile("test.parquet", 100)));
+
+            // When
+            StoreTransactionBodyResult result = store.storeIfTooBig(tableId, transaction);
+
+            // Then
+            assertThat(result.getBodyKey()).isEmpty();
+            assertThat(result.getSerialisedTransaction())
+                    .map(json -> (AddFilesTransaction) TransactionSerDe.forFileTransactions().toTransaction(TransactionType.ADD_FILES, json))
+                    .contains(transaction);
+        }
+
+        @Test
+        void shouldStoreTransactionLargerThanThreshold() {
+            // Given
+            PartitionTree partitions = new PartitionsBuilder(tableProperties).singlePartition("root").buildTree();
+            AddFilesTransaction transaction = AddFilesTransaction.fromReferences(List.of(
+                    FileReferenceFactory.from(partitions).rootFile("test1.parquet", 100),
+                    FileReferenceFactory.from(partitions).rootFile("test2.parquet", 200),
+                    FileReferenceFactory.from(partitions).rootFile("test3.parquet", 300)));
+
+            // When
+            StoreTransactionBodyResult result = store.storeIfTooBig(tableId, transaction);
+
+            // Then
+            assertThat(result.getBodyKey()).isNotEmpty();
+            assertThat(result.getSerialisedTransaction()).isEmpty();
+        }
+    }
+
+    private TransactionBodyStore storeAllTransactions() {
+        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties), 0);
+    }
+
+    private TransactionBodyStore storeAllFileTransactions() {
+        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forFileTransactions(), 0);
+    }
+
+    private TransactionBodyStore storeTransactionsWithJsonLength(int jsonLengthToStore) {
+        return new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.forOneTable(tableProperties), jsonLengthToStore);
+    }
+
+    private StateStoreTransaction<?> saveAndLoad(TransactionBodyStore store, StateStoreTransaction<?> transaction) {
+        StoreTransactionBodyResult found = store.storeIfTooBig(tableId, transaction);
+        String foundKey = found.getBodyKey().orElseThrow();
+        return store.getBody(foundKey, tableId, TransactionType.getType(transaction));
+    }
+
+    private String saveGetKey(TransactionBodyStore store, StateStoreTransaction<?> transaction) {
+        return store.storeIfTooBig(tableId, transaction).getBodyKey().orElseThrow();
     }
 
 }

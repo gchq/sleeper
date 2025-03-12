@@ -30,6 +30,7 @@ import java.time.Instant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestBase {
 
@@ -40,15 +41,15 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
-        stateStore.initialise(partitionsBuilder.buildList());
+        update(stateStore).initialise(partitionsBuilder.buildList());
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile("test1.parquet", 123L));
+        update(stateStore).addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
 
-        stateStore.clearFileData();
-        stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
+        update(stateStore).clearFileData();
+        update(stateStore).initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile("test3.parquet", 789L));
+        update(stateStore).addFile(factory.rootFile("test3.parquet", 789L));
         createSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // When
@@ -78,15 +79,15 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
-        stateStore.initialise(partitionsBuilder.buildList());
+        update(stateStore).initialise(partitionsBuilder.buildList());
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile("test1.parquet", 123L));
+        update(stateStore).addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-27T11:23:00Z"));
 
-        stateStore.clearFileData();
-        stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
+        update(stateStore).clearFileData();
+        update(stateStore).initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile("test3.parquet", 789L));
+        update(stateStore).addFile(factory.rootFile("test3.parquet", 789L));
         createSnapshotsAt(table, Instant.parse("2024-04-27T11:24:00Z"));
 
         // When
@@ -121,9 +122,9 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         TableProperties table = createTable("test-table-id-1", "test-table-1");
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
-        stateStore.initialise();
+        update(stateStore).initialise(schema);
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile("test1.parquet", 123L));
+        update(stateStore).addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
 
         // When
@@ -154,14 +155,14 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
-        stateStore.initialise(partitionsBuilder.buildList());
+        update(stateStore).initialise(partitionsBuilder.buildList());
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile("test1.parquet", 123L));
+        update(stateStore).addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-24T11:24:00Z"));
-        stateStore.clearFileData();
-        stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
+        update(stateStore).clearFileData();
+        update(stateStore).initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile("test3.parquet", 789L));
+        update(stateStore).addFile(factory.rootFile("test3.parquet", 789L));
         createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
         IOException exception = new IOException("Failed to delete file");
 
@@ -197,14 +198,14 @@ public class TransactionLogSnapshotDeleterIT extends TransactionLogSnapshotTestB
         table.setNumber(TRANSACTION_LOG_SNAPSHOT_EXPIRY_IN_DAYS, 1);
         StateStore stateStore = createStateStoreWithInMemoryTransactionLog(table);
         PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema).rootFirst("root");
-        stateStore.initialise(partitionsBuilder.buildList());
+        update(stateStore).initialise(partitionsBuilder.buildList());
         FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile("test1.parquet", 123L));
+        update(stateStore).addFile(factory.rootFile("test1.parquet", 123L));
         createSnapshotsAt(table, Instant.parse("2024-04-24T11:24:00Z"));
-        stateStore.clearFileData();
-        stateStore.initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
+        update(stateStore).clearFileData();
+        update(stateStore).initialise(partitionsBuilder.splitToNewChildren("root", "L", "R", 123L).buildList());
         factory = FileReferenceFactory.from(stateStore);
-        stateStore.addFile(factory.rootFile("test3.parquet", 789L));
+        update(stateStore).addFile(factory.rootFile("test3.parquet", 789L));
         createSnapshotsAt(table, Instant.parse("2024-04-25T11:24:00Z"));
         // Delete files for snapshots that are eligible for deletion
         deleteFilesSnapshotFile(table, 1);

@@ -36,8 +36,9 @@ import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.core.job.IngestJob;
@@ -59,6 +60,7 @@ import java.util.function.Supplier;
 
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.INGEST_FILES_COMMIT_ASYNC;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 
 /**
  * An IngestJobRunner takes ingest jobs and runs them.
@@ -160,12 +162,11 @@ public class IngestJobRunner implements IngestJobHandler {
     }
 
     private AddFilesToStateStore addFilesToStateStore(IngestJob job, String jobRunId, TableProperties tableProperties) {
+        IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(tableProperties.get(TABLE_ID)).jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).build();
         if (tableProperties.getBoolean(INGEST_FILES_COMMIT_ASYNC)) {
-            return AddFilesToStateStore.bySqs(tableProperties, commitSender,
-                    transactionBuilder -> transactionBuilder.jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(timeSupplier.get()));
+            return AddFilesToStateStore.asynchronousWithJob(tableProperties, commitSender, timeSupplier, runIds);
         } else {
-            return AddFilesToStateStore.synchronous(stateStoreProvider.getStateStore(tableProperties), tracker,
-                    job.addedFilesEventBuilder(timeSupplier.get()).taskId(taskId).jobRunId(jobRunId));
+            return AddFilesToStateStore.synchronousWithJob(tableProperties, stateStoreProvider.getStateStore(tableProperties), tracker, timeSupplier, runIds);
         }
     }
 }

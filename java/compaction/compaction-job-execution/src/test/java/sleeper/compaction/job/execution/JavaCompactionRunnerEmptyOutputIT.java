@@ -35,6 +35,7 @@ import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestDat
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestData.writeRootFile;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
 
@@ -43,7 +44,7 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
-        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         List<Record> data = keyAndTwoValuesSortedEvenLongs();
         FileReference file1 = ingestRecordsGetFile(data);
@@ -67,7 +68,7 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
-        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         FileReference file1 = writeRootFile(schema, stateStore, dataFolderName + "/file1.parquet", List.of());
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());
@@ -90,7 +91,7 @@ class JavaCompactionRunnerEmptyOutputIT extends CompactionRunnerTestBase {
         // Given
         Schema schema = createSchemaWithTypesForKeyAndTwoValues(new LongType(), new LongType(), new LongType());
         tableProperties.setSchema(schema);
-        stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+        update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
 
         FileReference file1 = writeRootFile(schema, stateStore, dataFolderName + "/file1.parquet", List.of());
         FileReference file2 = writeRootFile(schema, stateStore, dataFolderName + "/file2.parquet", List.of());

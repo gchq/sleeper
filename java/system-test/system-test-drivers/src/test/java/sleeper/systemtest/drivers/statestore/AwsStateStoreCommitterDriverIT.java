@@ -24,12 +24,11 @@ import software.amazon.awssdk.services.sqs.model.MessageSystemAttributeName;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.systemtest.drivers.testutil.LocalStackDslTest;
 import sleeper.systemtest.drivers.testutil.LocalStackSystemTestDrivers;
 import sleeper.systemtest.dsl.SleeperSystemTest;
@@ -57,7 +56,7 @@ public class AwsStateStoreCommitterDriverIT {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, SystemTestContext context, LocalStackSystemTestDrivers drivers) {
-        sleeper.connectToInstance(LOCALSTACK_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(LOCALSTACK_MAIN);
         sqs = drivers.clients().getSqsV2();
         instance = context.instance();
     }
@@ -76,7 +75,7 @@ public class AwsStateStoreCommitterDriverIT {
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactly(tuple(tableId,
                         StateStoreCommitRequest.create(tableId,
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))))));
+                                AddFilesTransaction.fromReferences(List.of(file)))));
     }
 
     @Test
@@ -96,7 +95,7 @@ public class AwsStateStoreCommitterDriverIT {
                 .extracting(this::getMessageGroupId, this::readCommitRequest)
                 .containsExactlyInAnyOrderElementsOf(files.stream().map(file -> tuple(tableId,
                         StateStoreCommitRequest.create(tableId,
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file))))))
+                                AddFilesTransaction.fromReferences(List.of(file)))))
                         .collect(toUnmodifiableList()));
     }
 

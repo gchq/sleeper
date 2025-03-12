@@ -24,7 +24,7 @@ import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -35,6 +35,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.example.iterator.AdditionIterator;
 import sleeper.example.iterator.SecurityFilteringIterator;
@@ -62,14 +64,14 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final InMemoryDataStore recordStore = new InMemoryDataStore();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final StateStore stateStore = inMemoryStateStoreWithSinglePartition(schema);
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
 
     @Nested
     @DisplayName("Query records")
@@ -114,7 +116,7 @@ public class QueryExecutorTest {
         @Test
         void shouldNotFindRecordOutsidePartitionRangeWhenFileContainsAnInactiveRecord() throws Exception {
             // Given
-            stateStore.initialise(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", 5L)
                     .buildList());
@@ -159,7 +161,7 @@ public class QueryExecutorTest {
         @BeforeEach
         void setUp() throws Exception {
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
         }
 
         @Test
@@ -217,7 +219,7 @@ public class QueryExecutorTest {
         @BeforeEach
         void setUp() throws Exception {
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             addRootFile("file.parquet", List.of(
                     new Record(Map.of("key", "A", "value", 2L)),
                     new Record(Map.of("key", "A", "value", 2L)),
@@ -330,7 +332,7 @@ public class QueryExecutorTest {
     }
 
     private void addFileMetadata(FileReference fileReference) {
-        stateStore.addFile(fileReference);
+        update(stateStore).addFile(fileReference);
     }
 
     private QueryExecutor executor() throws Exception {
@@ -385,8 +387,8 @@ public class QueryExecutorTest {
     }
 
     private Region range(Object min, Object max) {
-        Field field = tableProperties.getSchema().getField("key").orElseThrow();
-        return new Region(new Range(field, min, max));
+        RangeFactory factory = new RangeFactory(tableProperties.getSchema());
+        return new Region(factory.createRange("key", min, max));
     }
 
     private PartitionTree partitionTree() {

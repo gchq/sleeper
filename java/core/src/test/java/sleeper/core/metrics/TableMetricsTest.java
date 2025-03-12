@@ -16,41 +16,50 @@
 
 package sleeper.core.metrics;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsBuilder;
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.testutils.StateStoreTestBuilder;
-import sleeper.core.table.TableStatus;
-import sleeper.core.table.TableStatusTestHelper;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CommonProperty.ID;
+import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TableMetricsTest {
     private final Schema schema = schemaWithKey("key", new LongType());
-    private String instanceId;
-    private TableStatus table;
-    private StateStore stateStore;
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
+
+    @BeforeEach
+    void setUp() {
+        instanceProperties.set(ID, "test-instance");
+        tableProperties.set(TABLE_NAME, "test-table");
+    }
 
     @Nested
     @DisplayName("One partition")
     class OnePartition {
         @Test
         void shouldReportMetricsWithEmptyTable() {
-            // Given
-            createInstance("test-instance");
-            createTable("test-table", inMemoryStateStoreWithFixedSinglePartition(schema));
-
             // When
             TableMetrics metrics = tableMetrics();
 
@@ -67,10 +76,7 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithOneFileInOnePartition() {
             // Given
-            createInstance("test-instance");
-            createTable("test-table", StateStoreTestBuilder.withSinglePartition(schema)
-                    .singleFileInEachLeafPartitionWithRecords(100L)
-                    .buildStateStore());
+            update(stateStore).addFile(fileFactory().rootFile(100L));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -88,13 +94,8 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsForMultipleFilesWithDifferentRecordCounts() {
             // Given
-            createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
-                    .singlePartition("root");
-            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("root", "file1.parquet", 100L)
-                    .partitionFileWithRecords("root", "file2.parquet", 200L)
-                    .buildStateStore());
+            update(stateStore).addFile(fileFactory().rootFile("file1.parquet", 100L));
+            update(stateStore).addFile(fileFactory().rootFile("file2.parquet", 200L));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -117,12 +118,10 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithMultiplePartitions() {
             // Given
-            createInstance("test-instance");
-            List<Partition> partitions = new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "left", "right", 10L)
-                    .buildList();
-            createTable("test-table", inMemoryStateStoreWithFixedPartitions(partitions));
+                    .buildList());
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -140,15 +139,13 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithTwoFilesInOnePartitionAndOneFileInOther() {
             // Given
-            createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 100L);
-            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("L", "left.parquet", 50L)
-                    .partitionFileWithRecords("R", "right1.parquet", 50L)
-                    .partitionFileWithRecords("R", "right2.parquet", 23L)
-                    .buildStateStore());
+                    .splitToNewChildren("root", "L", "R", 100L)
+                    .buildList());
+            update(stateStore).addFile(fileFactory().partitionFile("L", "left.parquet", 50));
+            update(stateStore).addFile(fileFactory().partitionFile("R", "right1.parquet", 50));
+            update(stateStore).addFile(fileFactory().partitionFile("R", "right2.parquet", 23));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -166,15 +163,13 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsForMultiplePartitionsWithDifferentFileCounts() {
             // Given
-            createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", 10L);
-            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("left", "file1.parquet", 10L)
-                    .partitionFileWithRecords("left", "file2.parquet", 10L)
-                    .partitionFileWithRecords("right", "file3.parquet", 10L)
-                    .buildStateStore());
+                    .splitToNewChildren("root", "left", "right", 10L)
+                    .buildList());
+            update(stateStore).addFile(fileFactory().partitionFile("left", "file1.parquet", 10));
+            update(stateStore).addFile(fileFactory().partitionFile("left", "file2.parquet", 10));
+            update(stateStore).addFile(fileFactory().partitionFile("right", "file3.parquet", 10));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -192,13 +187,11 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsForMultiplePartitionsWhenOneLeafPartitionHasNoFiles() {
             // Given
-            createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "left", "right", 10L);
-            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("left", "file1.parquet", 10L)
-                    .buildStateStore());
+                    .splitToNewChildren("root", "left", "right", 10L)
+                    .buildList());
+            update(stateStore).addFile(fileFactory().partitionFile("left", "file1.parquet", 10));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -221,14 +214,14 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithOneFileInMultiplePartitions() {
             // Given
-            createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 100L);
-            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("root", "test.parquet", 100L)
-                    .splitFileToPartitions("test.parquet", "L", "R")
-                    .buildStateStore());
+                    .splitToNewChildren("root", "L", "R", 100L)
+                    .buildList());
+            FileReference splitFile = fileFactory().rootFile("test.parquet", 100);
+            update(stateStore).addFiles(List.of(
+                    splitFile(splitFile, "L"),
+                    splitFile(splitFile, "R")));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -246,15 +239,15 @@ public class TableMetricsTest {
         @Test
         void shouldReportMetricsWithOneFileInMultiplePartitionsAndOneFileInOnePartition() {
             // Given
-            createInstance("test-instance");
-            PartitionsBuilder partitionsBuilder = new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", 100L);
-            createTable("test-table", StateStoreTestBuilder.from(partitionsBuilder)
-                    .partitionFileWithRecords("root", "test.parquet", 100L)
-                    .splitFileToPartitions("test.parquet", "L", "R")
-                    .partitionFileWithRecords("L", "left.parquet", 23L)
-                    .buildStateStore());
+                    .splitToNewChildren("root", "L", "R", 100L)
+                    .buildList());
+            FileReference splitFile = fileFactory().rootFile("test.parquet", 100);
+            update(stateStore).addFiles(List.of(
+                    fileFactory().partitionFile("L", "left.parquet", 23),
+                    splitFile(splitFile, "L"),
+                    splitFile(splitFile, "R")));
 
             // When
             TableMetrics metrics = tableMetrics();
@@ -270,16 +263,11 @@ public class TableMetricsTest {
         }
     }
 
-    private void createInstance(String instanceId) {
-        this.instanceId = instanceId;
-    }
-
-    private void createTable(String tableName, StateStore stateStore) {
-        this.table = TableStatusTestHelper.uniqueIdAndName(tableName, tableName);
-        this.stateStore = stateStore;
-    }
-
     private TableMetrics tableMetrics() {
-        return TableMetrics.from(instanceId, table, stateStore);
+        return TableMetrics.from(instanceProperties.get(ID), tableProperties.getStatus(), stateStore);
+    }
+
+    private FileReferenceFactory fileFactory() {
+        return FileReferenceFactory.from(stateStore);
     }
 }

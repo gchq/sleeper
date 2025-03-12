@@ -18,34 +18,30 @@ package sleeper.ingest.runner.impl;
 import org.apache.arrow.memory.OutOfMemoryException;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.record.Record;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.StateStore;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 import sleeper.ingest.runner.testutils.RecordGenerator;
 import sleeper.ingest.runner.testutils.TestFilesAndRecords;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.sketches.testutils.SketchesDecilesComparator;
 
-import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
-import static java.nio.file.Files.createTempDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_BATCH_BUFFER_BYTES;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_MAX_LOCAL_STORE_BYTES;
 import static sleeper.core.properties.instance.ArrowIngestProperty.ARROW_INGEST_WORKING_BUFFER_BYTES;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBackedByArrowTestBase {
     @Test
@@ -53,19 +49,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
+        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
-                .buildTree();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
+                .buildList());
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .stateStore(stateStore)
-                .schema(recordListAndSchema.sleeperSchema)
-                .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
         // When
@@ -105,19 +95,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        PartitionTree tree = new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
+        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 0L)
-                .buildTree();
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(tree.getAllPartitions());
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
+                .buildList());
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile1", "rightFile1", "leftFile2", "rightFile2"))
-                .stateStore(stateStore)
-                .schema(recordListAndSchema.sleeperSchema)
-                .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
         // When
@@ -162,18 +146,13 @@ class IngestCoordinatorUsingDirectWriteBackedByArrowIT extends DirectWriteBacked
         RecordGenerator.RecordListAndSchema recordListAndSchema = RecordGenerator.genericKey1D(
                 new LongType(),
                 LongStream.range(-10000, 10000).boxed().collect(Collectors.toList()));
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(
-                new PartitionsBuilder(recordListAndSchema.sleeperSchema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "left", "right", 0L).buildList());
-        String ingestLocalWorkingDirectory = createTempDirectory(temporaryFolder, null).toString();
-        Instant stateStoreUpdateTime = Instant.parse("2023-08-08T11:20:00Z");
-        stateStore.fixFileUpdateTime(stateStoreUpdateTime);
+        tableProperties.setSchema(recordListAndSchema.sleeperSchema);
+        update(stateStore).initialise(new PartitionsBuilder(recordListAndSchema.sleeperSchema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 0L)
+                .buildList());
         IngestCoordinatorTestParameters parameters = createTestParameterBuilder()
                 .fileNames(List.of("leftFile", "rightFile"))
-                .stateStore(stateStore)
-                .schema(recordListAndSchema.sleeperSchema)
-                .workingDir(ingestLocalWorkingDirectory)
                 .build();
 
         // When/Then

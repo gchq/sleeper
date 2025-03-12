@@ -27,8 +27,8 @@ import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionsFromSplitPoints;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 
 import java.io.IOException;
@@ -64,8 +64,8 @@ public class InitialiseStateStoreFromSplitPoints {
      * Initialises the state store.
      */
     public void run() {
-        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
-        stateStore.initialise(new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct());
+        List<Partition> partitions = new PartitionsFromSplitPoints(tableProperties.getSchema(), splitPoints).construct();
+        new InitialisePartitionsTransaction(partitions).synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
     }
 
     /**

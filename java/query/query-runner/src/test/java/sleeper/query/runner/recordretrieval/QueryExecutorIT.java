@@ -41,6 +41,8 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
 import sleeper.example.iterator.AgeOffIterator;
@@ -74,7 +76,7 @@ import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CONFIG;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithPartitions;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorIT {
     protected static ExecutorService executorService;
@@ -100,7 +102,7 @@ public class QueryExecutorIT {
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.setSchema(schema);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
         RangeFactory rangeFactory = new RangeFactory(schema);
@@ -136,7 +138,7 @@ public class QueryExecutorIT {
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         tableProperties.set(COMPRESSION_CODEC, "snappy");
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
@@ -206,7 +208,7 @@ public class QueryExecutorIT {
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleIdenticalRecords().iterator());
         List<String> files = stateStore.getFileReferences().stream()
@@ -268,7 +270,7 @@ public class QueryExecutorIT {
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
@@ -332,7 +334,7 @@ public class QueryExecutorIT {
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         Partition rootPartition = stateStore.getAllPartitions().get(0);
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecords().iterator());
@@ -462,8 +464,7 @@ public class QueryExecutorIT {
                 .rootFirst("root")
                 .splitToNewChildren("root", "left", "right", 5L)
                 .buildTree();
-        StateStore stateStore = inMemoryStateStoreWithPartitions(
-                tree.getAllPartitions());
+        StateStore stateStore = initialiseStateStore(tableProperties, tree.getAllPartitions());
         Partition leftPartition = tree.getPartition("left");
         Partition rightPartition = tree.getPartition("right");
 
@@ -568,11 +569,10 @@ public class QueryExecutorIT {
                 .build();
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(
-                new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "left", "right", 5L)
-                        .buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 5L)
+                .buildList());
         Partition leftPartition = stateStore.getLeafPartitions().stream()
                 .filter(p -> ((long) p.getRegion().getRange("key1").getMin() == Long.MIN_VALUE))
                 .findFirst()
@@ -716,10 +716,9 @@ public class QueryExecutorIT {
         Record record4 = createRecordMultidimensionalKey("P", "Z", 10000000L, 100000000L);
         List<Record> records = Arrays.asList(record1, record2, record3, record4);
 
-        StateStore stateStore = inMemoryStateStoreWithPartitions(
-                new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .buildList());
 
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
@@ -728,7 +727,7 @@ public class QueryExecutorIT {
                 .rootFirst("root")
                 .splitToNewChildrenOnDimension("root", "left", "right", 0, "I")
                 .buildTree();
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(partialTree.getPartition("root"),
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(partialTree.getPartition("root"),
                 partialTree.getPartition("left"), partialTree.getPartition("right"));
 
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
@@ -739,9 +738,9 @@ public class QueryExecutorIT {
                 .splitToNewChildrenOnDimension("left", "P1", "P3", 1, "T")
                 .splitToNewChildrenOnDimension("right", "P2", "P4", 1, "T")
                 .buildTree();
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("left"),
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("left"),
                 tree.getPartition("P1"), tree.getPartition("P3"));
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("right"),
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(tree.getPartition("right"),
                 tree.getPartition("P2"), tree.getPartition("P4"));
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
 
@@ -996,11 +995,10 @@ public class QueryExecutorIT {
                 .build();
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(
-                new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "left", "right", 5L)
-                        .buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 5L)
+                .buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getMultipleRecordsForTestingSorting().iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
@@ -1053,7 +1051,7 @@ public class QueryExecutorIT {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(ITERATOR_CLASS_NAME, AgeOffIterator.class.getName());
         tableProperties.set(ITERATOR_CONFIG, "timestamp,1000000");
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         List<Record> records = getRecordsForAgeOffIteratorTest();
         ingestData(instanceProperties, stateStore, tableProperties, records.iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
@@ -1108,11 +1106,10 @@ public class QueryExecutorIT {
         Field field = schema.getRowKeyFields().get(0);
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(
-                new PartitionsBuilder(schema)
-                        .rootFirst("root")
-                        .splitToNewChildren("root", "left", "right", 5L)
-                        .buildList());
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "left", "right", 5L)
+                .buildList());
         for (int i = 0; i < 10; i++) {
             ingestData(instanceProperties, stateStore, tableProperties,
                     getRecordsForQueryTimeIteratorTest(i % 2 == 0 ? "notsecret" : "secret").iterator());
@@ -1146,9 +1143,9 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getLongKeySchema();
         Field field = schema.getRowKeyFields().get(0);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getRecords().iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
@@ -1177,9 +1174,9 @@ public class QueryExecutorIT {
         // Given
         Schema schema = getSecurityLabelSchema();
         Field field = schema.getRowKeyFields().get(0);
-        StateStore stateStore = inMemoryStateStoreWithPartitions(new PartitionsBuilder(schema).rootFirst("root").buildList());
         InstanceProperties instanceProperties = createInstanceProperties();
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+        StateStore stateStore = initialiseStateStore(tableProperties, new PartitionsBuilder(schema).rootFirst("root").buildList());
         ingestData(instanceProperties, stateStore, tableProperties, getRecordsForQueryTimeIteratorTest("secret").iterator());
         QueryExecutor queryExecutor = queryExecutor(tableProperties, stateStore);
         queryExecutor.init();
@@ -1202,6 +1199,10 @@ public class QueryExecutorIT {
             // Then
             assertThat(results).hasNext().toIterable().allSatisfy(result -> assertThat(result.getKeys()).contains("key", "value", "securityLabel"));
         }
+    }
+
+    private StateStore initialiseStateStore(TableProperties tableProperties, List<Partition> partitions) {
+        return InMemoryTransactionLogStateStore.createAndInitialiseWithPartitions(partitions, tableProperties, new InMemoryTransactionLogs());
     }
 
     private QueryExecutor queryExecutor(TableProperties tableProperties, StateStore stateStore) {

@@ -29,18 +29,16 @@ import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSerDe;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.util.LoggedDuration;
 import sleeper.core.util.PollWithRetries;
 import sleeper.dynamodb.tools.DynamoDBUtils;
-import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
 import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.committer.StateStoreCommitter;
@@ -82,11 +80,8 @@ public class StateStoreCommitterLambda implements RequestHandler<SQSEvent, SQSBa
         stateStoreProvider = new StateStoreProvider(instanceProperties, stateStoreFactory);
         serDe = new StateStoreCommitRequestSerDe(tablePropertiesProvider);
         committer = new StateStoreCommitter(
-                instanceProperties,
-                tablePropertiesProvider,
-                stateStoreProvider, CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
-                IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties),
-                new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)), Instant::now);
+                tablePropertiesProvider, stateStoreProvider,
+                new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));
         throttlingRetriesConfig = PollWithRetries.intervalAndPollingTimeout(Duration.ofSeconds(5), Duration.ofMinutes(10));
     }
 

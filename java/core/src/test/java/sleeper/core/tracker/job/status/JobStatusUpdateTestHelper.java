@@ -48,9 +48,9 @@ public class JobStatusUpdateTestHelper {
      * @param  runDuration    the duration
      * @param  recordsRead    the number of records read
      * @param  recordsWritten the number of records written
-     * @return                a {@link JobRunFinishedStatus}
+     * @return                a {@link AggregatedTaskJobsFinishedStatus}
      */
-    public static JobRunFinishedStatus finishedStatus(
+    public static AggregatedTaskJobsFinishedStatus finishedStatus(
             JobRunStartedUpdate startedStatus, Duration runDuration, long recordsRead, long recordsWritten) {
         return finishedStatus(startedStatus.getStartTime(), runDuration, recordsRead, recordsWritten);
     }
@@ -62,14 +62,14 @@ public class JobStatusUpdateTestHelper {
      * @param  runDuration    the duration
      * @param  recordsRead    the number of records read
      * @param  recordsWritten the number of records written
-     * @return                a {@link JobRunFinishedStatus}
+     * @return                a {@link AggregatedTaskJobsFinishedStatus}
      */
-    public static JobRunFinishedStatus finishedStatus(
+    public static AggregatedTaskJobsFinishedStatus finishedStatus(
             Instant startTime, Duration runDuration, long recordsRead, long recordsWritten) {
         Instant finishTime = startTime.plus(runDuration);
         JobRunSummary summary = new JobRunSummary(
                 new RecordsProcessed(recordsRead, recordsWritten), startTime, finishTime);
-        return JobRunFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
+        return AggregatedTaskJobsFinishedStatus.updateTimeAndSummary(defaultUpdateTime(finishTime), summary);
     }
 
     /**

@@ -37,15 +37,18 @@ import sleeper.configuration.properties.S3TableProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
+import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
+import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
+import sleeper.core.tracker.ingest.job.update.IngestJobStartedEvent;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.LoggedDuration;
@@ -97,19 +100,24 @@ public class BulkImportJobDriver {
         TableProperties tableProperties = tablePropertiesProvider.getByName(job.getTableName());
         TableStatus table = tableProperties.getStatus();
         Instant startTime = getTime.get();
-        LOGGER.info("Received bulk import job with id {} at time {}", job.getId(), startTime);
+        IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(table.getTableUniqueId()).jobId(job.getId()).jobRunId(jobRunId).taskId(taskId).build();
+        LOGGER.info("Received bulk import job at time {}, {}", startTime, runIds);
         LOGGER.info("Job is for table {}: {}", table, job);
-        tracker.jobStarted(job.toIngestJob()
-                .startedAfterValidationEventBuilder(startTime)
-                .jobRunId(jobRunId).taskId(taskId).build());
+        tracker.jobStarted(IngestJobStartedEvent.builder()
+                .jobRunIds(runIds)
+                .startTime(startTime)
+                .fileCount(job.getFiles().size())
+                .build());
 
         BulkImportJobOutput output;
         try {
             output = sessionRunner.run(job);
         } catch (RuntimeException e) {
-            tracker.jobFailed(job.toIngestJob()
-                    .failedEventBuilder(getTime.get())
-                    .jobRunId(jobRunId).taskId(taskId).failure(e).build());
+            tracker.jobFailed(IngestJobFailedEvent.builder()
+                    .jobRunIds(runIds)
+                    .failureTime(getTime.get())
+                    .failure(e)
+                    .build());
             throw e;
         }
 
@@ -117,21 +125,24 @@ public class BulkImportJobDriver {
         boolean asyncCommit = tableProperties.getBoolean(BULK_IMPORT_FILES_COMMIT_ASYNC);
         try {
             if (asyncCommit) {
-                AddFilesTransaction transaction = AddFilesTransaction.builder()
-                        .jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).writtenTime(finishTime)
-                        .files(AllReferencesToAFile.newFilesWithReferences(output.fileReferences()))
-                        .build();
-                asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(), transaction));
-                LOGGER.info("Submitted asynchronous request to state store committer to add {} files for job {} in table {}", output.numFiles(), job.getId(), table);
+                asyncSender.send(StateStoreCommitRequest.create(table.getTableUniqueId(),
+                        AddFilesTransaction.builder()
+                                .jobRunIds(runIds)
+                                .writtenTime(finishTime)
+                                .fileReferences(output.fileReferences())
+                                .build()));
+                LOGGER.info("Submitted asynchronous request to state store committer to add {} files in table {}, {}", output.numFiles(), table, runIds);
             } else {
-                stateStoreProvider.getStateStore(tableProperties)
-                        .addFiles(output.fileReferences());
-                LOGGER.info("Added {} files to statestore for job {} in table {}", output.numFiles(), job.getId(), table);
+                AddFilesTransaction.fromReferences(output.fileReferences())
+                        .synchronousCommit(stateStoreProvider.getStateStore(tableProperties));
+                LOGGER.info("Added {} files to state store in table {}, {}", output.numFiles(), table, runIds);
             }
         } catch (RuntimeException e) {
-            tracker.jobFailed(job.toIngestJob()
-                    .failedEventBuilder(finishTime)
-                    .jobRunId(jobRunId).taskId(taskId).failure(e).build());
+            tracker.jobFailed(IngestJobFailedEvent.builder()
+                    .jobRunIds(runIds)
+                    .failureTime(finishTime)
+                    .failure(e)
+                    .build());
             throw new RuntimeException("Failed to add files to state store. Ensure this service account has write access. Files may need to "
                     + "be re-imported for clients to access data", e);
         }
@@ -142,9 +153,9 @@ public class BulkImportJobDriver {
         double rate = numRecords / (double) duration.getSeconds();
         LOGGER.info("Bulk import job {} took {} (rate of {} per second)", job.getId(), duration, rate);
 
-        tracker.jobFinished(job.toIngestJob()
-                .finishedEventBuilder(new JobRunSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
-                .jobRunId(jobRunId).taskId(taskId)
+        tracker.jobFinished(IngestJobFinishedEvent.builder()
+                .jobRunIds(runIds)
+                .summary(new JobRunSummary(new RecordsProcessed(numRecords, numRecords), startTime, finishTime))
                 .fileReferencesAddedByJob(output.fileReferences())
                 .committedBySeparateFileUpdates(asyncCommit)
                 .build());

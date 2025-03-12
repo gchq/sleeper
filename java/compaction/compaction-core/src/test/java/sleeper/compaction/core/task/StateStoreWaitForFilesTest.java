@@ -24,14 +24,14 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreException;
 import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.testutils.InMemoryFileReferenceStore;
-import sleeper.core.statestore.testutils.InMemoryPartitionStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.util.ThreadSleep;
 import sleeper.core.util.ThreadSleepTestHelper;
@@ -39,8 +39,8 @@ import sleeper.core.util.ThreadSleepTestHelper;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.DoubleSupplier;
 
 import static java.util.stream.Collectors.reducing;
@@ -50,6 +50,7 @@ import static sleeper.compaction.core.task.StateStoreWaitForFiles.JOB_ASSIGNMENT
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.constantJitterFraction;
 import static sleeper.core.util.ExponentialBackoffWithJitterTestHelper.fixJitterSeed;
 
@@ -57,8 +58,9 @@ public class StateStoreWaitForFilesTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-    private final InMemoryFileReferenceStore fileStore = new InMemoryFileReferenceStore();
-    private final StateStore stateStore = new DelegatingStateStore(fileStore, InMemoryPartitionStore.withSinglePartition(schema));
+    private final InMemoryTransactionLogs transactionLogs = new InMemoryTransactionLogs();
+    private final InMemoryTransactionLogStore filesLogStore = transactionLogs.getFilesLogStore();
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, transactionLogs);
     private final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
     private final List<Duration> foundWaits = new ArrayList<>();
     private ThreadSleep waiter = ThreadSleepTestHelper.recordWaits(foundWaits);
@@ -67,9 +69,9 @@ public class StateStoreWaitForFilesTest {
     void shouldSkipWaitIfFilesAreAlreadyAssignedToJob() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
-        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+        update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
 
         // When
         waitForFilesWithAttempts(2, job);
@@ -82,10 +84,10 @@ public class StateStoreWaitForFilesTest {
     void shouldRetryThenCheckFilesAreAssignedToJob() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
         actionAfterWait(() -> {
-            stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+            update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
         });
 
         // When
@@ -99,7 +101,7 @@ public class StateStoreWaitForFilesTest {
     void shouldTimeOutIfFilesAreNeverAssignedToJob() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
@@ -112,7 +114,7 @@ public class StateStoreWaitForFilesTest {
     void shouldWaitWithExponentialBackoffAndJitter() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
@@ -137,7 +139,7 @@ public class StateStoreWaitForFilesTest {
     void shouldWaitWithAverageExponentialBackoff() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
 
         // When / Then
@@ -163,17 +165,19 @@ public class StateStoreWaitForFilesTest {
     void shouldRetryTwiceWhenThrottledQueryingStateStore() throws Exception {
         // Given
         FileReference file = factory.rootFile("test.parquet", 123L);
-        stateStore.addFile(file);
+        update(stateStore).addFile(file);
         CompactionJob job = jobForFileAtRoot(file);
-        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+        update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
 
         AmazonDynamoDBException throttlingException = new AmazonDynamoDBException("Throttling exception");
         throttlingException.setErrorCode("ThrottlingException");
         StateStoreException exception = new StateStoreException("Throttled", throttlingException);
-        fileStore.setFailuresForExpectedQueries(List.of(
-                Optional.of(exception),
-                Optional.of(exception),
-                Optional.empty()));
+        Iterator<StateStoreException> exceptions = List.of(exception, exception).iterator();
+        filesLogStore.atStartOfReadTransactions(() -> {
+            if (exceptions.hasNext()) {
+                throw exceptions.next();
+            }
+        });
 
         // When
         waiterWithAttempts(1).wait(job, "test-task", "test-job-run");
@@ -181,6 +185,7 @@ public class StateStoreWaitForFilesTest {
         // Then
         assertThat(foundWaits).containsExactly(
                 Duration.ofMinutes(1), Duration.ofMinutes(1));
+        assertThat(exceptions).isExhausted();
     }
 
     private Duration foundWaitsTotal() {

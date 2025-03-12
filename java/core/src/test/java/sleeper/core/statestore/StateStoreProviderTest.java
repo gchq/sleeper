@@ -20,7 +20,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.core.statestore.testutils.StateStoreTestHelper;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,9 +55,9 @@ public class StateStoreProviderTest {
         StateStore retrievedStore3 = provider.getStateStore(table);
 
         // Then
-        assertThat(retrievedStore1).isEqualTo(store);
-        assertThat(retrievedStore2).isEqualTo(store);
-        assertThat(retrievedStore3).isEqualTo(store);
+        assertThat(retrievedStore1).isSameAs(store);
+        assertThat(retrievedStore2).isSameAs(store);
+        assertThat(retrievedStore3).isSameAs(store);
         assertThat(tablesLoaded).containsExactly("test-table-id");
     }
 
@@ -80,10 +81,10 @@ public class StateStoreProviderTest {
         StateStore retrievedStore4 = provider.getStateStore(table1);
 
         // Then
-        assertThat(retrievedStore1).isEqualTo(store1);
-        assertThat(retrievedStore2).isEqualTo(store2);
-        assertThat(retrievedStore3).isEqualTo(store3);
-        assertThat(retrievedStore4).isEqualTo(store1);
+        assertThat(retrievedStore1).isSameAs(store1);
+        assertThat(retrievedStore2).isSameAs(store2);
+        assertThat(retrievedStore3).isSameAs(store3);
+        assertThat(retrievedStore4).isSameAs(store1);
         assertThat(tablesLoaded).containsExactly(
                 "table-id-1",
                 "table-id-2",
@@ -99,7 +100,7 @@ public class StateStoreProviderTest {
     }
 
     private StateStore createStateStore(TableProperties table) {
-        StateStore stateStore = StateStoreTestHelper.inMemoryStateStoreWithFixedSinglePartition(schema);
+        StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(table, new InMemoryTransactionLogs());
         tableIdToStateStore.put(table.get(TABLE_ID), stateStore);
         return stateStore;
     }

@@ -26,8 +26,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Combines records with identical row keys and sort keys by summing the values in each column. Assumes that all value
- * fields are longs. This is an example implementation of {@link SortedRecordIterator}.
+ * Combines records with identical row keys and sort keys by summing the values in each column. It assumes that all
+ * value fields are longs. This is an example implementation of a {@link SortedRecordIterator}. This implementation
+ * is very generic and is provided as an example. More efficient implementations can be written for any specific
+ * schema, e.g. by directly comparing the key and sort fields in the equalRowAndSort method, rather than explicitly
+ * constructing a {@link Key} object.
  */
 public class AdditionIterator implements SortedRecordIterator {
     private List<String> rowKeyFieldNames;
@@ -62,8 +65,7 @@ public class AdditionIterator implements SortedRecordIterator {
         private final List<String> rowKeyFieldNames;
         private final List<String> sortKeyFieldNames;
         private final List<String> valueFieldNames;
-        private Record next;
-        private Record nextNext;
+        private Record current;
 
         public AdditionIteratorInternal(CloseableIterator<Record> input,
                 List<String> rowKeyFieldNames,
@@ -73,40 +75,27 @@ public class AdditionIterator implements SortedRecordIterator {
             this.rowKeyFieldNames = rowKeyFieldNames;
             this.sortKeyFieldNames = sortKeyFieldNames;
             this.valueFieldNames = valueFieldNames;
-            if (input.hasNext()) {
-                next = input.next();
-            }
-            if (input.hasNext()) {
-                nextNext = input.next();
-            }
+            this.current = getNextRecord();
         }
 
         @Override
         public boolean hasNext() {
-            return null != next;
+            return null != current;
         }
 
         @Override
         public Record next() {
-            Record record = new Record(next);
-            while (null != nextNext && equalRowAndSort(rowKeyFieldNames, sortKeyFieldNames, next, nextNext)) {
+            Record record = new Record(current);
+            Record next = getNextRecord();
+            while (null != next && equalRowAndSort(current, next)) {
                 for (String fieldName : valueFieldNames) {
                     Long number1 = (Long) record.get(fieldName);
-                    Long number2 = (Long) nextNext.get(fieldName);
+                    Long number2 = (Long) next.get(fieldName);
                     record.put(fieldName, number1 + number2);
                 }
-                if (input.hasNext()) {
-                    nextNext = input.next();
-                } else {
-                    nextNext = null;
-                }
+                next = getNextRecord();
             }
-            next = nextNext;
-            if (input.hasNext()) {
-                nextNext = input.next();
-            } else {
-                nextNext = null;
-            }
+            current = next;
             return record;
         }
 
@@ -114,20 +103,26 @@ public class AdditionIterator implements SortedRecordIterator {
         public void close() throws IOException {
             input.close();
         }
-    }
 
-    private static boolean equalRowAndSort(List<String> rowKeyFieldNames,
-            List<String> sortKeyFieldNames, Record record1, Record record2) {
-        List<Object> keys1 = new ArrayList<>();
-        List<Object> keys2 = new ArrayList<>();
-        for (String rowKey : rowKeyFieldNames) {
-            keys1.add(record1.get(rowKey));
-            keys2.add(record2.get(rowKey));
+        private Record getNextRecord() {
+            if (input.hasNext()) {
+                return input.next();
+            }
+            return null;
         }
-        for (String sortKey : sortKeyFieldNames) {
-            keys1.add(record1.get(sortKey));
-            keys2.add(record2.get(sortKey));
+
+        private boolean equalRowAndSort(Record record1, Record record2) {
+            List<Object> keys1 = new ArrayList<>();
+            List<Object> keys2 = new ArrayList<>();
+            for (String rowKey : rowKeyFieldNames) {
+                keys1.add(record1.get(rowKey));
+                keys2.add(record2.get(rowKey));
+            }
+            for (String sortKey : sortKeyFieldNames) {
+                keys1.add(record1.get(sortKey));
+                keys2.add(record2.get(sortKey));
+            }
+            return Key.create(keys1).equals(Key.create(keys2));
         }
-        return Key.create(keys1).equals(Key.create(keys2));
     }
 }

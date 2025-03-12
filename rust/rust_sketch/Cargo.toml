@@ -13,7 +13,7 @@
 #  limitations under the License.
 [package]
 name = "rust_sketch"
-version = "0.28.0"
+version = "0.29.0"
 edition = "2021"
 rust-version = "1.77"
 publish = false
@@ -23,15 +23,15 @@ keywords = ["datasketches", "sketch", "quantile_sketch"]
 license = "Apache-2.0"
 
 [dependencies]
-cxx = { version = "1.0.137" }
+cxx = { version = "1.0.143" }
 
 [build-dependencies]
-cxx-build = { version = "1.0.137" }
+cxx-build = { version = "1.0.143" }
 git2 = { version = "0.20.0" }
 
 [target.'cfg(target_os = "macos")'.build-dependencies]
 # Mac often won't have openssl library installed in place easy discoverable, if at all
-openssl = { version = '0.10.69', features = [
+openssl = { version = '0.10.71', features = [
     "vendored",
 ] } # Use vendored feature to build from source for cross compilation
 

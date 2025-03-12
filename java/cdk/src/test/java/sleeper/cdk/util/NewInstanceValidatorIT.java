@@ -19,13 +19,9 @@ package sleeper.cdk.util;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import sleeper.cdk.testutils.LocalStackTestBase;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.statestore.dynamodb.DynamoDBStateStore;
-import sleeper.statestore.dynamodb.DynamoDBStateStoreCreator;
-import sleeper.statestore.s3.S3StateStore;
-import sleeper.statestore.s3.S3StateStoreCreator;
-import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
+import sleeper.localstack.test.LocalStackTestBase;
+import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -48,7 +44,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldNotThrowAnErrorWhenNoBucketsOrTablesExist() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table");
 
         // When / Then
         assertThatCode(this::validate)
@@ -58,7 +54,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenDataBucketExists() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table", "sleeper.statestore.dynamodb.DynamoDBStateStore");
+        setupTablesPropertiesFile(temporaryFolder, "example-table");
         createBucket(instanceProperties.get(DATA_BUCKET));
 
         // When / Then
@@ -70,7 +66,7 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     @Test
     void shouldThrowAnErrorWhenTheQueryResultsBucketExists() throws IOException {
         // Given
-        setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBStateStore.class.getName());
+        setupTablesPropertiesFile(temporaryFolder, "example-table");
         createBucket(instanceProperties.get(QUERY_RESULTS_BUCKET));
 
         // When / Then
@@ -80,34 +76,10 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldThrowAnErrorWhenDynamoStateStoreExists() throws IOException {
-        // Given
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoClientV1).create();
-        setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBStateStore.class.getName());
-
-        // When
-        assertThatThrownBy(this::validate)
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageStartingWith("Sleeper state store table exists: ");
-    }
-
-    @Test
-    void shouldThrowAnErrorWhenS3StateStoreExists() throws IOException {
-        // Given
-        new S3StateStoreCreator(instanceProperties, dynamoClientV1).create();
-        setupTablesPropertiesFile(temporaryFolder, "example-table", S3StateStore.class.getName());
-
-        // When
-        assertThatThrownBy(this::validate)
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageStartingWith("Sleeper state store table exists: ");
-    }
-
-    @Test
     void shouldThrowAnErrorWhenTransactionLogStateStoreExists() throws IOException {
         // Given
-        new DynamoDBStateStoreCreator(instanceProperties, dynamoClientV1).create();
-        setupTablesPropertiesFile(temporaryFolder, "example-table", DynamoDBTransactionLogStateStore.class.getName());
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        setupTablesPropertiesFile(temporaryFolder, "example-table");
 
         // When
         assertThatThrownBy(this::validate)
@@ -118,6 +90,6 @@ class NewInstanceValidatorIT extends LocalStackTestBase {
     private void validate() throws IOException {
         Path instancePropertiesPath = temporaryFolder.resolve("instance.properties");
         Files.writeString(instancePropertiesPath, instanceProperties.saveAsString());
-        new NewInstanceValidator(s3Client, dynamoClient).validate(instanceProperties, instancePropertiesPath);
+        new NewInstanceValidator(s3ClientV2, dynamoClientV2).validate(instanceProperties, instancePropertiesPath);
     }
 }

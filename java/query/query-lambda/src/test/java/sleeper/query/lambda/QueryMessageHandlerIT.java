@@ -24,11 +24,10 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
-import sleeper.core.schema.Field;
 import sleeper.core.schema.type.LongType;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryOrLeafPartitionQuery;
 import sleeper.query.core.tracker.QueryState;
@@ -46,14 +45,14 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class QueryMessageHandlerIT extends DynamoDBTestBase {
+public class QueryMessageHandlerIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createInstanceProperties();
-    private final DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoDBClient);
+    private final DynamoDBQueryTracker queryTracker = new DynamoDBQueryTracker(instanceProperties, dynamoClient);
 
     @BeforeEach
     void setUp() {
-        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoDBClient).create();
+        new DynamoDBQueryTrackerCreator(instanceProperties, dynamoClient).create();
     }
 
     private final TableProperties tableProperties = createTable("table-1");
@@ -233,7 +232,7 @@ public class QueryMessageHandlerIT extends DynamoDBTestBase {
         assertThat(query).contains(new QueryOrLeafPartitionQuery(Query.builder()
                 .tableName("table-1")
                 .queryId("my-query")
-                .regions(List.of(new Region(new Range(new Field("key", new LongType()), 123L, 456L))))
+                .regions(List.of(new Region(rangeFactory().createRange("key", 123L, 456L))))
                 .build()));
         assertThat(queryTracker.getFailedQueries()).isEmpty();
     }
@@ -247,7 +246,11 @@ public class QueryMessageHandlerIT extends DynamoDBTestBase {
     private TableProperties createTable(String tableName) {
         TableProperties tableProperties = new TableProperties(instanceProperties);
         tableProperties.set(TABLE_NAME, tableName);
-        tableProperties.setSchema(schemaWithKey("key"));
+        tableProperties.setSchema(schemaWithKey("key", new LongType()));
         return tableProperties;
+    }
+
+    private RangeFactory rangeFactory() {
+        return new RangeFactory(tableProperties.getSchema());
     }
 }

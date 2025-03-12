@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.finishedStatus;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.startedStatus;
-import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJob;
+import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.forJobRunOnTask;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.records;
 
 public class JobStatusesBuilderTest {
@@ -35,14 +35,14 @@ public class JobStatusesBuilderTest {
     public void shouldBuildJobStatusesFromIndividualUpdates() {
         // Given
         TestJobStartedStatus started1 = startedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
-        JobRunFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
+        AggregatedTaskJobsFinishedStatus finished1 = finishedStatus(started1, Duration.ofSeconds(30), 200L, 100L);
         TestJobStartedStatus started2 = startedStatus(Instant.parse("2022-09-24T09:23:30.001Z"));
-        JobRunFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
+        AggregatedTaskJobsFinishedStatus finished2 = finishedStatus(started2, Duration.ofSeconds(30), 450L, 300L);
 
         // When
         List<JobStatusUpdates> statuses = jobStatusListFrom(records().fromUpdates(
-                forJob("job1", started1, finished1),
-                forJob("job2", started2, finished2)));
+                forJobRunOnTask("job1", started1, finished1),
+                forJobRunOnTask("job2", started2, finished2)));
 
         // Then
         assertThat(statuses)

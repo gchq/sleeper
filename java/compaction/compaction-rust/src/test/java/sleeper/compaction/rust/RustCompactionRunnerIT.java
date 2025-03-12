@@ -38,6 +38,8 @@ import sleeper.core.schema.type.IntType;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.table.TableFilePaths;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.parquet.record.ParquetReaderIterator;
@@ -62,13 +64,13 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithNoPartitions;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class RustCompactionRunnerIT {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
-    private final StateStore stateStore = inMemoryStateStoreWithNoPartitions();
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
     @TempDir
     public Path tempDir;
 
@@ -88,7 +90,7 @@ public class RustCompactionRunnerIT {
             // Given
             Schema schema = schemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", "record-1"));
             Record record2 = new Record(Map.of("key", "record-2"));
             String file1 = writeFileForPartition("root", List.of(record1));
@@ -111,7 +113,7 @@ public class RustCompactionRunnerIT {
             // Given
             Schema schema = schemaWithKey("key", new LongType());
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", 1L));
             Record record2 = new Record(Map.of("key", 2L));
             String file1 = writeFileForPartition("root", List.of(record1));
@@ -135,7 +137,7 @@ public class RustCompactionRunnerIT {
             // Given
             Schema schema = schemaWithKey("key", new IntType());
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", 1));
             Record record2 = new Record(Map.of("key", 2));
             String file1 = writeFileForPartition("root", List.of(record1));
@@ -159,7 +161,7 @@ public class RustCompactionRunnerIT {
             // Given
             Schema schema = schemaWithKey("key", new ByteArrayType());
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", new byte[]{1, 2}));
             Record record2 = new Record(Map.of("key", new byte[]{3, 4}));
             String file1 = writeFileForPartition("root", List.of(record1));
@@ -188,7 +190,7 @@ public class RustCompactionRunnerIT {
             // Given
             Schema schema = schemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record = new Record(Map.of("key", "test-value"));
             String emptyFile = writeFileForPartition("root", List.of());
             String nonEmptyFile = writeFileForPartition("root", List.of(record));
@@ -209,7 +211,7 @@ public class RustCompactionRunnerIT {
             // Given
             Schema schema = schemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             String file1 = writeFileForPartition("root", List.of());
             String file2 = writeFileForPartition("root", List.of());
             CompactionJob job = createCompactionForPartition("test-job", "root", List.of(file1, file2));
@@ -233,7 +235,7 @@ public class RustCompactionRunnerIT {
             // Given
             Schema schema = schemaWithKey("key", new StringType());
             tableProperties.setSchema(schema);
-            stateStore.initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
+            update(stateStore).initialise(new PartitionsBuilder(schema).singlePartition("root").buildList());
             Record record1 = new Record(Map.of("key", "record-1"));
             Record record2 = new Record(Map.of("key", "record-2"));
             String file1 = writeFileForPartition("root", List.of(record1));

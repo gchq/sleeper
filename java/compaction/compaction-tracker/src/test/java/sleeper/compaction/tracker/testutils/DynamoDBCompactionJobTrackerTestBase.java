@@ -37,7 +37,7 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -61,7 +61,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.st
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.uncommittedCompactionRun;
 import static sleeper.core.tracker.job.run.JobRunTestData.jobRunOnTask;
 
-public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
+public class DynamoDBCompactionJobTrackerTestBase extends LocalStackTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("createUpdateTime", "expiryDate")
@@ -77,16 +77,16 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
 
     protected final String tableId = tableProperties.get(TABLE_ID);
     protected final CompactionJobFactory jobFactory = new CompactionJobFactory(instanceProperties, tableProperties);
-    protected final CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+    protected final CompactionJobTracker tracker = CompactionJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @AfterEach
     public void tearDown() {
-        dynamoDBClient.deleteTable(jobStatusTableName);
+        dynamoClient.deleteTable(jobStatusTableName);
     }
 
     protected CompactionJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
@@ -99,7 +99,7 @@ public class DynamoDBCompactionJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected CompactionJobTracker trackerWithUpdateTimes(Instant... updateTimes) {
-        return new DynamoDBCompactionJobTracker(dynamoDBClient, instanceProperties,
+        return new DynamoDBCompactionJobTracker(dynamoClient, instanceProperties,
                 true, Arrays.stream(updateTimes).iterator()::next);
     }
 

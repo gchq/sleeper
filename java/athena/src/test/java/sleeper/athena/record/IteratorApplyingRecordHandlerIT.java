@@ -71,7 +71,7 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 import static sleeper.core.properties.table.TableProperty.ITERATOR_CLASS_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
-public class IteratorApplyingRecordHandlerIT extends AbstractRecordHandlerIT {
+public class IteratorApplyingRecordHandlerIT extends RecordHandlerITBase {
 
     @Test
     public void shouldReturnNoResultsIfPartitionDoesNotContainExactValue() throws Exception {

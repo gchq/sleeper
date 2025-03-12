@@ -90,7 +90,7 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
 
     private static AverageRecordRate recordRate(List<IngestTaskStatus> tasks) {
         return AverageRecordRate.of(tasks.stream()
-                .map(IngestTaskStatus::asAggregatedJobRun));
+                .map(IngestTaskStatus::asJobRunReport));
     }
 
     private void writeRow(IngestTaskStatus task, TableRow.Builder builder) {
@@ -98,6 +98,6 @@ public class StandardIngestTaskStatusReporter implements IngestTaskStatusReporte
                 .value(JOB_RUNS, task.getJobRunsOrNull())
                 .value(JOB_DURATION, StandardJobRunReporter.getOrNull(task.getFinishedStatus(),
                         status -> StandardJobRunReporter.formatDurationString(status.getTimeSpentOnJobs())));
-        jobRunReporter.writeRunFields(task.asAggregatedJobRun(), builder);
+        jobRunReporter.writeRunFields(task.asJobRunReport(), builder);
     }
 }

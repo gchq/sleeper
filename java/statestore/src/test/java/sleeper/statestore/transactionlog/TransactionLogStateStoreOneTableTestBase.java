@@ -20,16 +20,17 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver;
 
 import java.util.function.Consumer;
 
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
+import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStateStoreTestBase {
 
@@ -41,13 +42,13 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
     protected void initialiseWithSchema(Schema schema) {
         createStore(schema);
         setPartitions(new PartitionsBuilder(schema).singlePartition("root"));
-        store.initialise();
+        update(store).initialise(schema);
     }
 
     protected void initialiseWithPartitions(PartitionsBuilder partitions) {
         createStore(partitions.getSchema());
         setPartitions(partitions);
-        store.initialise(partitions.buildList());
+        update(store).initialise(partitions.buildList());
     }
 
     private void createStore(Schema schema) {
@@ -77,8 +78,8 @@ public class TransactionLogStateStoreOneTableTestBase extends TransactionLogStat
             long transactionNumber, SetupStateStore setupState) throws Exception {
         InMemoryTransactionLogSnapshotSetup snapshotSetup = setupSnapshotWithFreshState(
                 tableProperties.getStatus(), tableProperties.getSchema(), setupState);
-        DynamoDBTransactionLogSnapshotStore snapshotStore = new DynamoDBTransactionLogSnapshotStore(instanceProperties, tableProperties, dynamoDBClient, configuration);
-        snapshotStore.saveFilesSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
-        snapshotStore.savePartitionsSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
+        DynamoDBTransactionLogSnapshotSaver snapshotSaver = new DynamoDBTransactionLogSnapshotSaver(instanceProperties, tableProperties, dynamoClient, hadoopConf);
+        snapshotSaver.saveFilesSnapshot(snapshotSetup.createFilesSnapshot(transactionNumber));
+        snapshotSaver.savePartitionsSnapshot(snapshotSetup.createPartitionsSnapshot(transactionNumber));
     }
 }

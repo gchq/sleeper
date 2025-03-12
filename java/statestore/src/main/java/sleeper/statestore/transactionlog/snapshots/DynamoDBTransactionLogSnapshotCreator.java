@@ -23,19 +23,19 @@ import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.transactionlog.FileReferenceTransaction;
-import sleeper.core.statestore.transactionlog.PartitionTransaction;
-import sleeper.core.statestore.transactionlog.TransactionBodyStore;
-import sleeper.core.statestore.transactionlog.TransactionLogSnapshot;
-import sleeper.core.statestore.transactionlog.TransactionLogSnapshotCreator;
-import sleeper.core.statestore.transactionlog.TransactionLogStore;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshot;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotCreator;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
+import sleeper.core.statestore.transactionlog.transaction.PartitionTransaction;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.table.TableStatus;
+import sleeper.statestore.StateStoreArrowFileStore;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver.SnapshotMetadataSaver;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -50,7 +50,8 @@ public class DynamoDBTransactionLogSnapshotCreator {
     private final TransactionLogStore partitionsLogStore;
     private final TransactionBodyStore transactionBodyStore;
     private final LatestSnapshotsMetadataLoader latestMetadataLoader;
-    private final DynamoDBTransactionLogSnapshotStore snapshotStore;
+    private final DynamoDBTransactionLogSnapshotSaver snapshotSaver;
+    private final StateStoreArrowFileStore fileStore;
 
     /**
      * Builds a snapshot creator for a given Sleeper table.
@@ -80,14 +81,15 @@ public class DynamoDBTransactionLogSnapshotCreator {
     public DynamoDBTransactionLogSnapshotCreator(
             InstanceProperties instanceProperties, TableProperties tableProperties,
             TransactionLogStore filesLogStore, TransactionLogStore partitionsLogStore, TransactionBodyStore transactionBodyStore,
-            Configuration configuration, LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver snapshotSaver) {
+            Configuration configuration, LatestSnapshotsMetadataLoader latestMetadataLoader, SnapshotMetadataSaver metadataSaver) {
         this.tableStatus = tableProperties.getStatus();
         this.filesLogStore = filesLogStore;
         this.partitionsLogStore = partitionsLogStore;
         this.transactionBodyStore = transactionBodyStore;
         this.latestMetadataLoader = latestMetadataLoader;
-        this.snapshotStore = new DynamoDBTransactionLogSnapshotStore(
-                latestMetadataLoader, snapshotSaver, instanceProperties, tableProperties, configuration);
+        this.snapshotSaver = new DynamoDBTransactionLogSnapshotSaver(
+                latestMetadataLoader, metadataSaver, instanceProperties, tableProperties, configuration);
+        this.fileStore = new StateStoreArrowFileStore(tableProperties, configuration);
     }
 
     /**
@@ -102,12 +104,14 @@ public class DynamoDBTransactionLogSnapshotCreator {
     }
 
     private void updateFilesSnapshot(LatestSnapshots latestSnapshots) {
-        TransactionLogSnapshot oldSnapshot = snapshotStore.loadFilesSnapshot(latestSnapshots);
+        TransactionLogSnapshot oldSnapshot = latestSnapshots.getFilesSnapshot()
+                .map(fileStore::loadSnapshot)
+                .orElseGet(TransactionLogSnapshot::filesInitialState);
         try {
             Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
                     oldSnapshot, filesLogStore, transactionBodyStore, FileReferenceTransaction.class, tableStatus);
             if (newSnapshot.isPresent()) {
-                snapshotStore.saveFilesSnapshot(newSnapshot.get());
+                snapshotSaver.saveFilesSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new files snapshot");
             }
         } catch (DuplicateSnapshotException | IOException e) {
@@ -117,17 +121,32 @@ public class DynamoDBTransactionLogSnapshotCreator {
     }
 
     private void updatePartitionsSnapshot(LatestSnapshots latestSnapshots) {
-        TransactionLogSnapshot oldSnapshot = snapshotStore.loadPartitionsSnapshot(latestSnapshots);
+        TransactionLogSnapshot oldSnapshot = latestSnapshots.getPartitionsSnapshot()
+                .map(fileStore::loadSnapshot)
+                .orElseGet(TransactionLogSnapshot::partitionsInitialState);
         try {
             Optional<TransactionLogSnapshot> newSnapshot = TransactionLogSnapshotCreator.createSnapshotIfChanged(
                     oldSnapshot, partitionsLogStore, transactionBodyStore, PartitionTransaction.class, tableStatus);
             if (newSnapshot.isPresent()) {
-                snapshotStore.savePartitionsSnapshot(newSnapshot.get());
+                snapshotSaver.savePartitionsSnapshot(newSnapshot.get());
                 LOGGER.info("Saved new partitions snapshot");
             }
         } catch (DuplicateSnapshotException | IOException e) {
             LOGGER.error("Failed to create partitions snapshot for table {}", tableStatus);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Loads the metadata of the latest snapshots from the index.
+     */
+    public interface LatestSnapshotsMetadataLoader {
+
+        /**
+         * Loads the latest snapshots metadata.
+         *
+         * @return the metadata
+         */
+        LatestSnapshots load();
     }
 }

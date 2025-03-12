@@ -16,17 +16,10 @@
 package sleeper.compaction.job.execution;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import sleeper.compaction.core.job.CompactionJob;
@@ -40,7 +33,7 @@ import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.tracker.job.run.RecordsProcessed;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.localstack.test.SleeperLocalStackClients;
 import sleeper.sketches.testutils.SketchesDeciles;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -48,8 +41,6 @@ import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.DYNAMODB;
-import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.assignJobIdToInputFiles;
 import static sleeper.compaction.job.execution.testutils.CompactionRunnerTestUtils.createSchemaWithTypesForKeyAndTwoValues;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
@@ -57,34 +48,14 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
-import static sleeper.ingest.runner.testutils.LocalStackAwsV2ClientHelper.buildAwsV2Client;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-@Testcontainers
 public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(S3, DYNAMODB);
-    private static AmazonDynamoDB dynamoDBClient;
-    private static AmazonS3 s3Client;
-    private static S3AsyncClient s3AsyncClient;
-    private static Configuration configuration;
-
-    @BeforeAll
-    public static void beforeAll() {
-        dynamoDBClient = buildAwsV1Client(localStackContainer, DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-        s3Client = buildAwsV1Client(localStackContainer, S3, AmazonS3ClientBuilder.standard());
-        s3AsyncClient = buildAwsV2Client(localStackContainer, S3, S3AsyncClient.builder());
-        configuration = getHadoopConfiguration(localStackContainer);
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        dynamoDBClient.shutdown();
-        s3Client.shutdown();
-        s3AsyncClient.close();
-    }
+    private static AmazonDynamoDB dynamoClient = SleeperLocalStackClients.DYNAMO_CLIENT;
+    private static AmazonS3 s3Client = SleeperLocalStackClients.S3_CLIENT;
+    private static S3AsyncClient s3AsyncClient = SleeperLocalStackClients.S3_ASYNC_CLIENT;
+    private static Configuration configuration = SleeperLocalStackClients.HADOOP_CONF;
 
     @BeforeEach
     void setUp() {
@@ -93,8 +64,8 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         instanceProperties.set(DATA_BUCKET, dataBucket);
         instanceProperties.unset(DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE);
         s3Client.createBucket(dataBucket);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDBClient);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @Test
@@ -104,7 +75,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
         tableProperties.setSchema(schema);
         createStateStore();
         PartitionTree tree = new PartitionsBuilder(schema).singlePartition("root").buildTree();
-        stateStore.initialise(tree.getAllPartitions());
+        update(stateStore).initialise(tree.getAllPartitions());
 
         List<Record> data1 = CompactionRunnerTestData.keyAndTwoValuesSortedEvenLongs();
         List<Record> data2 = CompactionRunnerTestData.keyAndTwoValuesSortedOddLongs();
@@ -135,7 +106,7 @@ public class JavaCompactionRunnerLocalStackIT extends CompactionRunnerTestBase {
 
     private void createStateStore() {
         tableProperties.set(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, "0");
-        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoDBClient, configuration)
+        stateStore = new StateStoreFactory(instanceProperties, s3Client, dynamoClient, configuration)
                 .getStateStore(tableProperties);
     }
 }

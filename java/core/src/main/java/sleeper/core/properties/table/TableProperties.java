@@ -17,8 +17,6 @@ package sleeper.core.properties.table;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
@@ -36,9 +34,7 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static sleeper.core.properties.PropertiesUtils.loadProperties;
-import static sleeper.core.properties.table.TableProperty.COMPACTION_FILES_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.SCHEMA;
-import static sleeper.core.properties.table.TableProperty.STATESTORE_CLASSNAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -47,7 +43,6 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
  * Contains values of the properties to configure a Sleeper table.
  */
 public class TableProperties extends SleeperProperties<TableProperty> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(TableProperties.class);
 
     // Schema is cached for faster access
     private Schema schema;
@@ -117,16 +112,6 @@ public class TableProperties extends SleeperProperties<TableProperty> {
     @Override
     public void validate(SleeperPropertiesValidationReporter reporter) {
         super.validate(reporter);
-
-        // This limit is based on calls to WriteTransactItems in DynamoDBFileReferenceStore.atomicallyUpdateX.
-        // Also see the DynamoDB documentation:
-        // https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html
-        if ("sleeper.statestore.dynamodb.DynamoDBStateStore".equals(get(STATESTORE_CLASSNAME))
-                && getInt(COMPACTION_FILES_BATCH_SIZE) > 49) {
-            LOGGER.warn("Detected a compaction batch size for this table which would be incompatible with the " +
-                    "chosen statestore. Maximum value is 49.");
-            reporter.invalidProperty(COMPACTION_FILES_BATCH_SIZE, get(COMPACTION_FILES_BATCH_SIZE));
-        }
     }
 
     @Override

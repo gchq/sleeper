@@ -32,12 +32,12 @@ public class IngestJobFailedEvent implements IngestJobEvent {
     private final List<String> failureReasons;
 
     private IngestJobFailedEvent(Builder builder) {
-        this.jobId = builder.jobId;
-        this.tableId = builder.tableId;
-        this.jobRunId = builder.jobRunId;
-        this.taskId = builder.taskId;
-        this.failureTime = builder.failureTime;
-        this.failureReasons = builder.failureReasons;
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        jobRunId = Objects.requireNonNull(builder.jobRunId, "jobRunId must not be null");
+        taskId = builder.taskId;
+        failureTime = builder.failureTime;
+        failureReasons = builder.failureReasons;
     }
 
     public static Builder builder() {
@@ -102,6 +102,19 @@ public class IngestJobFailedEvent implements IngestJobEvent {
         private String taskId;
         private Instant failureTime;
         private List<String> failureReasons;
+
+        /**
+         * Sets the IDs relating to this run of the job.
+         *
+         * @param  jobRunIds the IDs
+         * @return           the builder
+         */
+        public Builder jobRunIds(IngestJobRunIds jobRunIds) {
+            return jobId(jobRunIds.getJobId())
+                    .tableId(jobRunIds.getTableId())
+                    .jobRunId(jobRunIds.getJobRunId())
+                    .taskId(jobRunIds.getTaskId());
+        }
 
         /**
          * Sets the ingest job ID.

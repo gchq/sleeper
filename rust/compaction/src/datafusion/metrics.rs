@@ -17,7 +17,7 @@
 
 use datafusion::{
     common::HashMap,
-    datasource::physical_plan::ParquetExec,
+    datasource::source::DataSourceExec,
     error::DataFusionError,
     physical_plan::{
         filter::FilterExec,
@@ -46,22 +46,6 @@ pub const FILE_METRICS: [&str; 10] = [
     "page_index_rows_matched",
 ];
 
-/// Log some collected per file metrics
-pub fn log_metrics(metric_map: &HashMap<Url, Vec<MetricValue>>) {
-    for (file, metrics) in metric_map {
-        let mut formatted_metrics = Vec::new();
-        for m in metrics {
-            write!(&mut formatted_metrics, "{} = {}, ", m.name(), m)
-                .expect("Write metrics to string failed: This is a bug");
-        }
-        info!(
-            "File {} {{ {} }}",
-            file.as_str(),
-            String::from_utf8(formatted_metrics).expect("Error in UTF-8 parsing! This is a bug")
-        );
-    }
-}
-
 /// Simple struct used for storing the collected statistics from an execution plan.
 pub struct RowCounts {
     pub rows_read: usize,
@@ -77,6 +61,22 @@ impl RowCounts {
             rows_written: 0,
             // Populate map with names
             file_metrics: inputs.iter().map(|n| (n.to_owned(), vec![])).collect(),
+        }
+    }
+    /// Log some collected per file metrics
+    pub fn log_metrics(&self) {
+        for (file, metrics) in &self.file_metrics {
+            let mut formatted_metrics = Vec::new();
+            for m in metrics {
+                write!(&mut formatted_metrics, "{} = {}, ", m.name(), m)
+                    .expect("Write metrics to string failed: This is a bug");
+            }
+            info!(
+                "File {} {{ {} }}",
+                file.as_str(),
+                String::from_utf8(formatted_metrics)
+                    .expect("Error in UTF-8 parsing! This is a bug")
+            );
         }
     }
 }
@@ -115,7 +115,7 @@ impl ExecutionPlanVisitor for RowCounts {
         // Read other metrics on a per file basis
         if let Some(m) = plan
             .as_any()
-            .downcast_ref::<ParquetExec>()
+            .downcast_ref::<DataSourceExec>()
             .and_then(ExecutionPlan::metrics)
         {
             for (file, file_metrics) in &mut self.file_metrics {

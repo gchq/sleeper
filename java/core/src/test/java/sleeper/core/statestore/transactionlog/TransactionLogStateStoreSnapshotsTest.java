@@ -26,7 +26,10 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.SetupStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshots;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStoreTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -36,7 +39,8 @@ import java.util.function.Consumer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.core.statestore.transactionlog.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
+import static sleeper.core.statestore.testutils.InMemoryTransactionLogSnapshotSetup.setupSnapshotWithFreshState;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLogStateStoreTestBase {
 
@@ -56,7 +60,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
-                stateStore.addFile(file);
+                update(stateStore).addFile(file);
             });
 
             // Then
@@ -70,7 +74,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(1, stateStore -> {
-                stateStore.initialise(partitions.buildList());
+                update(stateStore).initialise(partitions.buildList());
             });
 
             // Then
@@ -91,11 +95,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
                     .timeBetweenSnapshotChecks(Duration.ZERO));
             FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
             FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-            stateStore.addFile(logFile);
+            update(stateStore).addFile(logFile);
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
-                snapshotStateStore.addFile(snapshotFile);
+                update(snapshotStateStore).addFile(snapshotFile);
             });
 
             // Then
@@ -110,11 +114,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
                     .timeBetweenSnapshotChecks(Duration.ZERO));
             FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
             FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 123);
-            stateStore.addFile(logFile);
+            update(stateStore).addFile(logFile);
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-                snapshotStateStore.addFile(snapshotFile);
+                update(snapshotStateStore).addFile(snapshotFile);
             });
 
             // Then
@@ -129,11 +133,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
                     .timeBetweenSnapshotChecks(Duration.ZERO));
             List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
             List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
-            stateStore.initialise(logPartitions);
+            update(stateStore).initialise(logPartitions);
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(2, snapshotStateStore -> {
-                snapshotStateStore.initialise(snapshotPartitions);
+                update(snapshotStateStore).initialise(snapshotPartitions);
             });
 
             // Then
@@ -148,11 +152,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
                     .timeBetweenSnapshotChecks(Duration.ZERO));
             List<Partition> logPartitions = new PartitionsBuilder(schema).rootFirst("A").buildList();
             List<Partition> snapshotPartitions = new PartitionsBuilder(schema).rootFirst("B").buildList();
-            stateStore.initialise(logPartitions);
+            update(stateStore).initialise(logPartitions);
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-                snapshotStateStore.initialise(snapshotPartitions);
+                update(snapshotStateStore).initialise(snapshotPartitions);
             });
 
             // Then
@@ -167,7 +171,7 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(1, store -> {
-                store.addFile(file);
+                update(store).addFile(file);
             });
 
             // Then
@@ -192,10 +196,10 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
                             .iterator()::next));
             FileReference file1 = fileFactory().rootFile("file-1.parquet", 123);
             FileReference file2 = fileFactory().rootFile("file-2.parquet", 456);
-            stateStore.addFile(file1);
+            update(stateStore).addFile(file1);
 
             // When
-            otherProcess().addFile(file2);
+            update(otherProcess()).addFile(file2);
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(file1);
@@ -216,10 +220,10 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
                             .iterator()::next));
             FileReference file1 = fileFactory().rootFile("file-1.parquet", 123);
             FileReference file2 = fileFactory().rootFile("file-2.parquet", 456);
-            stateStore.addFile(file1);
+            update(stateStore).addFile(file1);
 
             // When
-            otherProcess().addFile(file2);
+            update(otherProcess()).addFile(file2);
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(file1, file2);
@@ -244,11 +248,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
             FileReference file1 = fileFactory().rootFile("file-1.parquet", 123);
             FileReference file2 = fileFactory().rootFile("file-2.parquet", 456);
             FileReference file3 = fileFactory().rootFile("file-3.parquet", 456);
-            stateStore.addFile(file1);
+            update(stateStore).addFile(file1);
 
             // When
-            otherProcess().addFile(file2);
-            stateStore.addFile(file3);
+            update(otherProcess()).addFile(file2);
+            update(stateStore).addFile(file3);
 
             // Then
             assertThat(stateStore.getFileReferences()).containsExactly(file1, file2, file3);
@@ -275,11 +279,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
                             .iterator()::next));
             FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
             FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 456);
-            stateStore.addFile(logFile);
+            update(stateStore).addFile(logFile);
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-                snapshotStateStore.addFile(snapshotFile);
+                update(snapshotStateStore).addFile(snapshotFile);
             });
 
             // Then
@@ -302,11 +306,11 @@ public class TransactionLogStateStoreSnapshotsTest extends InMemoryTransactionLo
                             .iterator()::next));
             FileReference logFile = fileFactory().rootFile("log-file.parquet", 123);
             FileReference snapshotFile = fileFactory().rootFile("snapshot-file.parquet", 456);
-            stateStore.addFile(logFile);
+            update(stateStore).addFile(logFile);
 
             // When
             createSnapshotWithFreshStateAtTransactionNumber(3, snapshotStateStore -> {
-                snapshotStateStore.addFile(snapshotFile);
+                update(snapshotStateStore).addFile(snapshotFile);
             });
 
             // Then

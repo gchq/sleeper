@@ -26,10 +26,10 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.core.tracker.ingest.job.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.IngestJobTracker;
 import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFinishedEvent;
@@ -38,12 +38,12 @@ import sleeper.core.tracker.job.run.JobRun;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.JobRunTime;
 import sleeper.core.tracker.job.run.RecordsProcessed;
-import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobTestData;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTracker;
 import sleeper.ingest.tracker.job.DynamoDBIngestJobTrackerCreator;
 import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -69,7 +69,7 @@ import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createInst
 import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createSchema;
 import static sleeper.ingest.tracker.testutils.IngestTrackerTestUtils.createTableProperties;
 
-public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
+public class DynamoDBIngestJobTrackerTestBase extends LocalStackTestBase {
 
     protected static final RecursiveComparisonConfiguration IGNORE_UPDATE_TIMES = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate")
@@ -77,6 +77,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     protected static final RecursiveComparisonConfiguration IGNORE_EXPIRY_DATE = RecursiveComparisonConfiguration.builder()
             .withIgnoredFields("expiryDate").build();
     public static final String DEFAULT_TASK_ID = "task-id";
+    public static final String DEFAULT_JOB_RUN_ID = "run-id";
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final String jobStatusTableName = DynamoDBIngestJobTracker.jobUpdatesTableName(instanceProperties.get(ID));
     protected final Schema schema = createSchema();
@@ -85,16 +86,16 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     protected final String tableName = tableProperties.get(TABLE_NAME);
     protected final TableStatus table = tableProperties.getStatus();
     protected final String tableId = tableProperties.get(TABLE_ID);
-    protected final IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+    protected final IngestJobTracker tracker = IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
     @BeforeEach
     public void setUp() {
-        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoDBClient);
+        DynamoDBIngestJobTrackerCreator.create(instanceProperties, dynamoClient);
     }
 
     @AfterEach
     public void tearDown() {
-        dynamoDBClient.deleteTable(jobStatusTableName);
+        dynamoClient.deleteTable(jobStatusTableName);
     }
 
     protected IngestJobTracker trackerWithTimeToLiveAndUpdateTimes(Duration timeToLive, Instant... updateTimes) {
@@ -103,7 +104,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected IngestJobTracker trackerWithUpdateTimes(Instant... updateTimes) {
-        return IngestJobTrackerFactory.getTracker(dynamoDBClient, instanceProperties,
+        return IngestJobTrackerFactory.getTracker(dynamoClient, instanceProperties,
                 Arrays.stream(updateTimes).iterator()::next);
     }
 
@@ -118,13 +119,14 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobStartedEvent defaultJobStartedEvent(IngestJob job, Instant startedTime) {
-        return job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).build();
+        return job.startedEventBuilder(startedTime).taskId(DEFAULT_TASK_ID).jobRunId(DEFAULT_JOB_RUN_ID).build();
     }
 
     protected static IngestJobAddedFilesEvent defaultJobAddedFilesEvent(IngestJob job, List<FileReference> files, Instant writtenTime) {
         return job.addedFilesEventBuilder(writtenTime)
                 .files(filesWithReferences(files))
                 .taskId(DEFAULT_TASK_ID)
+                .jobRunId(DEFAULT_JOB_RUN_ID)
                 .build();
     }
 
@@ -134,7 +136,7 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedEvent(IngestJob job, JobRunSummary summary) {
-        return job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).numFilesWrittenByJob(2).build();
+        return job.finishedEventBuilder(summary).taskId(DEFAULT_TASK_ID).jobRunId(DEFAULT_JOB_RUN_ID).numFilesWrittenByJob(2).build();
     }
 
     protected static IngestJobFinishedEvent defaultJobFinishedButUncommittedEvent(
@@ -143,13 +145,14 @@ public class DynamoDBIngestJobTrackerTestBase extends DynamoDBTestBase {
                 .committedBySeparateFileUpdates(true)
                 .numFilesWrittenByJob(numFilesAdded)
                 .taskId(DEFAULT_TASK_ID)
+                .jobRunId(DEFAULT_JOB_RUN_ID)
                 .build();
     }
 
     protected static IngestJobFailedEvent defaultJobFailedEvent(
             IngestJob job, Instant failureTime, List<String> failureReasons) {
         return job.failedEventBuilder(failureTime)
-                .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).build();
+                .failureReasons(failureReasons).taskId(DEFAULT_TASK_ID).jobRunId(DEFAULT_JOB_RUN_ID).build();
     }
 
     protected static IngestJobStatus defaultJobStartedStatus(IngestJob job, Instant startedTime) {

@@ -27,22 +27,22 @@ import sleeper.core.table.TableIdGenerator;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 import sleeper.core.table.TableStatusTestHelper;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBTableIndexIT extends DynamoDBTestBase {
+public class DynamoDBTableIndexIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final DynamoDBTableIndex index = new DynamoDBTableIndex(instanceProperties, dynamoDBClient);
+    private final DynamoDBTableIndex index = new DynamoDBTableIndex(instanceProperties, dynamoClient);
     private final TableIdGenerator idGenerator = new TableIdGenerator();
 
     @BeforeEach
     void setUp() {
-        DynamoDBTableIndexCreator.create(dynamoDBClient, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
     }
 
     @Nested

@@ -35,8 +35,9 @@ import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.transactionlog.transaction.impl.ReplaceFileReferencesTransaction;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
@@ -48,11 +49,9 @@ import sleeper.core.util.ThreadSleepTestHelper;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.UUID;
@@ -69,7 +68,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithSinglePartition;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class CompactionTaskTestBase {
     protected static final String DEFAULT_TABLE_ID = "test-table-id";
@@ -80,7 +79,8 @@ public class CompactionTaskTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final Schema schema = schemaWithKey("key");
     private final List<TableProperties> tables = new ArrayList<>();
-    private final Map<String, StateStore> stateStoreByTableId = new HashMap<>();
+    protected final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
+    private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore.createProvider(instanceProperties, transactionLogs);
     protected final TableProperties tableProperties = createTable(DEFAULT_TABLE_ID, DEFAULT_TABLE_NAME);
     protected final StateStore stateStore = stateStore(tableProperties);
     protected final FileReferenceFactory factory = FileReferenceFactory.from(stateStore);
@@ -106,12 +106,12 @@ public class CompactionTaskTestBase {
         tableProperties.set(TABLE_ID, tableId);
         tableProperties.set(TABLE_NAME, tableName);
         tables.add(tableProperties);
-        stateStoreByTableId.put(tableId, inMemoryStateStoreWithSinglePartition(schema));
+        update(stateStore(tableProperties)).initialise(schema);
         return tableProperties;
     }
 
     protected StateStore stateStore(TableProperties table) {
-        return stateStoreByTableId.get(table.get(TABLE_ID));
+        return stateStoreProvider.getStateStore(table);
     }
 
     protected void runTask(CompactionRunner compactor) throws Exception {
@@ -178,7 +178,7 @@ public class CompactionTaskTestBase {
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return FixedStateStoreProvider.byTableId(stateStoreByTableId);
+        return stateStoreProvider;
     }
 
     private Supplier<String> jobRunIdsInSequence() {
@@ -227,12 +227,12 @@ public class CompactionTaskTestBase {
 
     private void addInputFiles(CompactionJob job, StateStore stateStore) throws Exception {
         for (String inputFile : job.getInputFiles()) {
-            stateStore.addFile(factory.rootFile(inputFile, 123L));
+            update(stateStore).addFile(factory.rootFile(inputFile, 123L));
         }
     }
 
     protected void assignFilesToJob(CompactionJob job, StateStore stateStore) throws Exception {
-        stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+        update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
     }
 
     protected void send(CompactionJob job) {

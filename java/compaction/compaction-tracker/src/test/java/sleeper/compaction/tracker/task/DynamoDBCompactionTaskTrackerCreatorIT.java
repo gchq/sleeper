@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,7 +30,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.instance.CompactionProperty.COMPACTION_TRACKER_ENABLED;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
-public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
+public class DynamoDBCompactionTaskTrackerCreatorIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final String tableName = DynamoDBCompactionTaskTracker.taskStatusTableName(instanceProperties.get(ID));
@@ -38,11 +38,11 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
     @Test
     public void shouldCreateStore() {
         // When
-        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThat(dynamoDBClient.describeTable(tableName))
+        assertThat(dynamoClient.describeTable(tableName))
                 .extracting(DescribeTableResult::getTable).isNotNull();
         assertThat(tracker).isInstanceOf(DynamoDBCompactionTaskTracker.class);
     }
@@ -53,11 +53,11 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
         instanceProperties.set(COMPACTION_TRACKER_ENABLED, "false");
 
         // When
-        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoDBClient);
-        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoDBClient, instanceProperties);
+        DynamoDBCompactionTaskTrackerCreator.create(instanceProperties, dynamoClient);
+        CompactionTaskTracker tracker = CompactionTaskTrackerFactory.getTracker(dynamoClient, instanceProperties);
 
         // Then
-        assertThatThrownBy(() -> dynamoDBClient.describeTable(tableName))
+        assertThatThrownBy(() -> dynamoClient.describeTable(tableName))
                 .isInstanceOf(ResourceNotFoundException.class);
         assertThat(tracker).isSameAs(CompactionTaskTracker.NONE);
         assertThatThrownBy(tracker::getAllTasks).isInstanceOf(UnsupportedOperationException.class);
@@ -67,6 +67,6 @@ public class DynamoDBCompactionTaskTrackerCreatorIT extends DynamoDBTestBase {
 
     @AfterEach
     public void tearDown() {
-        DynamoDBCompactionTaskTrackerCreator.tearDown(instanceProperties, dynamoDBClient);
+        DynamoDBCompactionTaskTrackerCreator.tearDown(instanceProperties, dynamoClient);
     }
 }

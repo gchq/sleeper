@@ -20,34 +20,36 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.partition.PartitionsBuilderSplitsFirst;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReference;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.testutils.StateStoreTestBuilder;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
-import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
-import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createPartitionsBuilder;
-import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
-import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createTableProperties;
-import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createTablePropertiesWithSplitThreshold;
+import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.statestore.FileReferenceTestData.splitFile;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 class PartitionsStatusTest {
 
     private final Schema schema = Schema.builder()
             .rowKeyFields(new Field("key", new StringType()))
             .build();
+    private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
+    private final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
 
     @Nested
     @DisplayName("Count known & estimated records")
@@ -56,16 +58,18 @@ class PartitionsStatusTest {
         @Test
         void shouldCountRecordsFromReferencesOnLeaves() throws Exception {
             // Given
-            StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("parent")
-                    .splitToNewChildren("parent", "A", "B", "aaa"))
-                    .partitionFileWithRecords("A", "file-a.parquet", 5)
-                    .partitionFileWithRecords("parent", "file-ab.parquet", 10)
-                    .splitFileToPartitions("file-ab.parquet", "A", "B")
-                    .buildStateStore();
+                    .splitToNewChildren("parent", "A", "B", "aaa")
+                    .buildList());
+            update(stateStore).addFile(fileFactory().partitionFile("A", "file-a.parquet", 5));
+            FileReference splitFile = fileFactory().rootFile("file-ab.parquet", 10);
+            update(stateStore).addFiles(List.of(
+                    splitFile(splitFile, "A"),
+                    splitFile(splitFile, "B")));
 
             // When
-            PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
+            PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
 
             // Then
             assertThat(status.getPartitions())
@@ -79,15 +83,15 @@ class PartitionsStatusTest {
         @Test
         void shouldCountRecordsFromReferenceOnLeafAndRoot() throws Exception {
             // Given
-            StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("parent")
-                    .splitToNewChildren("parent", "A", "B", "aaa"))
-                    .partitionFileWithRecords("A", "file-a.parquet", 5)
-                    .partitionFileWithRecords("parent", "file-parent.parquet", 10)
-                    .buildStateStore();
+                    .splitToNewChildren("parent", "A", "B", "aaa")
+                    .buildList());
+            update(stateStore).addFile(fileFactory().partitionFile("A", "file-a.parquet", 5));
+            update(stateStore).addFile(fileFactory().rootFile("file-parent.parquet", 10));
 
             // When
-            PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
+            PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
 
             // Then
             assertThat(status.getPartitions())
@@ -101,17 +105,17 @@ class PartitionsStatusTest {
         @Test
         void shouldCountRecordsFromNestedTree() throws Exception {
             // Given
-            StateStore store = StateStoreTestBuilder.from(new PartitionsBuilder(schema)
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
                     .splitToNewChildren("root", "L", "R", "aaa")
-                    .splitToNewChildren("R", "RL", "RR", "bbb"))
-                    .partitionFileWithRecords("root", "file-root.parquet", 20)
-                    .partitionFileWithRecords("R", "file-R.parquet", 10)
-                    .partitionFileWithRecords("RR", "file-RR.parquet", 5)
-                    .buildStateStore();
+                    .splitToNewChildren("R", "RL", "RR", "bbb")
+                    .buildList());
+            update(stateStore).addFile(fileFactory().rootFile("file-root.parquet", 20));
+            update(stateStore).addFile(fileFactory().partitionFile("R", "file-R.parquet", 10));
+            update(stateStore).addFile(fileFactory().partitionFile("RR", "file-RR.parquet", 5));
 
             // When
-            PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
+            PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
 
             // Then
             assertThat(status.getPartitions())
@@ -132,10 +136,13 @@ class PartitionsStatusTest {
         @Test
         void shouldCountLeafPartitions() {
             // Given
-            StateStore store = createRootPartitionWithTwoChildren().buildStateStore();
+            update(stateStore).initialise(new PartitionsBuilder(schema)
+                    .rootFirst("parent")
+                    .splitToNewChildren("parent", "A", "B", "aaa")
+                    .buildList());
 
             // When
-            PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
+            PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
 
             // Then
             assertThat(status.getNumLeafPartitions()).isEqualTo(2);
@@ -144,12 +151,15 @@ class PartitionsStatusTest {
         @Test
         void shouldFindNoSplittingPartitionsWhenThresholdNotExceeded() {
             // Given
-            TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
-            StateStore store = createRootPartitionWithTwoChildren()
-                    .singleFileInEachLeafPartitionWithRecords(5).buildStateStore();
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
+            update(stateStore).initialise(new PartitionsBuilder(schema)
+                    .rootFirst("parent")
+                    .splitToNewChildren("parent", "A", "B", "aaa")
+                    .buildList());
+            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(5).toList());
 
             // When
-            PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
+            PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
 
             // Then
             assertThat(status.getNumLeafPartitionsThatWillBeSplit()).isZero();
@@ -158,12 +168,15 @@ class PartitionsStatusTest {
         @Test
         void shouldFindSplittingPartitionsWhenThresholdExceeded() {
             // Given
-            TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
-            StateStore store = createRootPartitionWithTwoChildren()
-                    .singleFileInEachLeafPartitionWithRecords(100).buildStateStore();
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
+            update(stateStore).initialise(new PartitionsBuilder(schema)
+                    .rootFirst("parent")
+                    .splitToNewChildren("parent", "A", "B", "aaa")
+                    .buildList());
+            update(stateStore).addFiles(fileFactory().singleFileInEachLeafPartitionWithRecords(100).toList());
 
             // When
-            PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
+            PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
 
             // Then
             assertThat(status.getNumLeafPartitionsThatWillBeSplit()).isEqualTo(2);
@@ -172,15 +185,15 @@ class PartitionsStatusTest {
         @Test
         void shouldExcludeNonLeafPartitionsInNeedsSplittingCount() {
             // Given
-            TableProperties tableProperties = createTablePropertiesWithSplitThreshold(10);
-            StateStore store = StateStoreTestBuilder.from(createPartitionsBuilder()
+            tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10);
+            update(stateStore).initialise(new PartitionsBuilder(schema)
                     .rootFirst("root")
-                    .splitToNewChildren("root", "L", "R", "abc"))
-                    .partitionFileWithRecords("root", "not-split-yet.parquet", 100L)
-                    .buildStateStore();
+                    .splitToNewChildren("root", "L", "R", "abc")
+                    .buildList());
+            update(stateStore).addFile(fileFactory().rootFile("not-split-yet.parquet", 100));
 
             // When
-            PartitionsStatus status = PartitionsStatus.from(tableProperties, store);
+            PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
 
             // Then
             assertThat(status.getNumLeafPartitionsThatWillBeSplit()).isEqualTo(0);
@@ -190,24 +203,23 @@ class PartitionsStatusTest {
     @Test
     void shouldOrderPartitionsByTreeLeavesFirst() {
         // Given
-        Schema schema = schemaWithKey("key", new StringType());
-        PartitionTree partitions = PartitionsBuilderSplitsFirst.leavesWithSplits(schema,
-                List.of("some-leaf", "other-leaf", "third-leaf", "fourth-leaf"),
-                List.of("aaa", "bbb", "ccc"))
-                .parentJoining("some-middle", "some-leaf", "other-leaf")
-                .parentJoining("other-middle", "third-leaf", "fourth-leaf")
-                .parentJoining("root", "some-middle", "other-middle")
-                .buildTree();
-        StateStore store = inMemoryStateStoreWithFixedPartitions(
-                Stream.of("other-leaf", "fourth-leaf", "root", "other-middle", "some-leaf", "third-leaf", "some-middle")
-                        .map(partitions::getPartition).collect(Collectors.toList()));
+        update(stateStore).initialise(new PartitionsBuilder(schema)
+                .rootFirst("root")
+                .splitToNewChildren("root", "some-middle", "other-middle", "bbb")
+                .splitToNewChildren("some-middle", "some-leaf", "other-leaf", "aaa")
+                .splitToNewChildren("other-middle", "third-leaf", "fourth-leaf", "ccc")
+                .buildList());
 
         // When
-        PartitionsStatus status = PartitionsStatus.from(createTableProperties(), store);
+        PartitionsStatus status = PartitionsStatus.from(tableProperties, stateStore);
 
         // Then
         assertThat(status.getPartitions()).extracting("partition.id").containsExactly(
                 "some-leaf", "other-leaf", "third-leaf", "fourth-leaf",
                 "some-middle", "other-middle", "root");
+    }
+
+    private FileReferenceFactory fileFactory() {
+        return FileReferenceFactory.from(stateStore);
     }
 }

@@ -15,19 +15,10 @@
  */
 package sleeper.statestore.committer;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.compaction.tracker.job.CompactionJobTrackerFactory;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
@@ -37,16 +28,13 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
 import sleeper.core.util.LoggedDuration;
-import sleeper.ingest.tracker.job.IngestJobTrackerFactory;
-import sleeper.localstack.test.SleeperLocalStackContainer;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.S3TransactionBodyStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
@@ -64,28 +52,21 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-@Testcontainers
-@Disabled("For manual testing")
-public class StateStoreCommitterThroughputIT {
+public class StateStoreCommitterThroughputIT extends LocalStackTestBase {
     public static final Logger LOGGER = LoggerFactory.getLogger(StateStoreCommitterThroughputIT.class);
 
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
     private final InstanceProperties instanceProperties = createInstance();
 
     @Test
     void shouldSendManyAddFilesRequestsWithNoJob() throws Exception {
         Stats stats10 = runAddFilesRequestsWithNoJobGetStats(10);
-        Stats stats200 = runAddFilesRequestsWithNoJobGetStats(200);
-        Stats stats1000 = runAddFilesRequestsWithNoJobGetStats(1000);
+        // Stats stats200 = runAddFilesRequestsWithNoJobGetStats(200);
+        // Stats stats1000 = runAddFilesRequestsWithNoJobGetStats(1000);
         stats10.log();
-        stats200.log();
-        stats1000.log();
+        // stats200.log();
+        // stats1000.log();
     }
 
     private Stats runAddFilesRequestsWithNoJobGetStats(int numberOfRequests) throws Exception {
@@ -94,13 +75,13 @@ public class StateStoreCommitterThroughputIT {
         StateStoreCommitter committer = committer();
         FileReferenceFactory fileFactory = FileReferenceFactory.from(new PartitionsBuilder(schema).singlePartition("root").buildTree());
         committer.apply(StateStoreCommitRequest.create(tableId,
-                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(
-                        List.of(fileFactory.rootFile("prewarm-file.parquet", 123))))));
+                AddFilesTransaction.fromReferences(
+                        List.of(fileFactory.rootFile("prewarm-file.parquet", 123)))));
 
         return runRequestsGetStats(committer, IntStream.rangeClosed(1, numberOfRequests)
                 .mapToObj(i -> StateStoreCommitRequest.create(tableId,
-                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(
-                                List.of(fileFactory.rootFile("file-" + i + ".parquet", i)))))));
+                        AddFilesTransaction.fromReferences(
+                                List.of(fileFactory.rootFile("file-" + i + ".parquet", i))))));
     }
 
     private Stats runRequestsGetStats(StateStoreCommitter committer, Stream<StateStoreCommitRequest> requests) throws Exception {
@@ -138,39 +119,35 @@ public class StateStoreCommitterThroughputIT {
 
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3, instanceProperties);
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
         return instanceProperties;
     }
 
     private TableProperties createTable(Schema schema) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3, dynamoDB).createTable(tableProperties);
-        stateStoreProvider().getStateStore(tableProperties).initialise();
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient).createTable(tableProperties);
+        update(stateStoreProvider().getStateStore(tableProperties)).initialise(schema);
         return tableProperties;
     }
 
     private StateStoreCommitter committer() {
         TablePropertiesProvider tablePropertiesProvider = tablePropertiesProvider();
         return new StateStoreCommitter(
-                instanceProperties,
                 tablePropertiesProvider,
                 stateStoreProvider(),
-                CompactionJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
-                IngestJobTrackerFactory.getTracker(dynamoDB, instanceProperties),
-                new S3TransactionBodyStore(instanceProperties, s3, TransactionSerDeProvider.from(tablePropertiesProvider)), Instant::now);
+                new S3TransactionBodyStore(instanceProperties, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));
     }
 
     private TablePropertiesProvider tablePropertiesProvider() {
-        return S3TableProperties.createProvider(instanceProperties, s3, dynamoDB);
+        return S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
     }
 
     private StateStoreProvider stateStoreProvider() {
-        return StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB,
-                HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer));
+        return StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
     }
 
 }

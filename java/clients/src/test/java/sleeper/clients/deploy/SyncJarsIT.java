@@ -212,7 +212,7 @@ class SyncJarsIT extends JarsBucketITBase {
             uploadJarsToBucket(bucketName);
 
             // Then
-            assertThat(s3.headObject(builder -> builder.bucket(bucketName).key("test.jar")))
+            assertThat(s3ClientV2.headObject(builder -> builder.bucket(bucketName).key("test.jar")))
                     .extracting(HeadObjectResponse::versionId)
                     .isNotNull();
         }
@@ -229,7 +229,7 @@ class SyncJarsIT extends JarsBucketITBase {
             uploadJarsToBucket(bucketName);
 
             // Then
-            assertThat(s3.listObjectVersionsPaginator(builder -> builder
+            assertThat(s3ClientV2.listObjectVersionsPaginator(builder -> builder
                     .bucket(bucketName).prefix("test.jar").maxKeys(1)))
                     .flatMap(ListObjectVersionsResponse::versions)
                     .hasSize(2);

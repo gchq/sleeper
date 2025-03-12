@@ -44,7 +44,7 @@ public class QueryST {
 
     @BeforeEach
     void setup(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @Nested

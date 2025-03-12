@@ -15,15 +15,14 @@
  */
 package sleeper.ingest.batcher.store;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.dynamodb.test.DynamoDBTestBase;
 import sleeper.ingest.batcher.core.IngestBatcherStore;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
 
@@ -33,7 +32,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class DynamoDBIngestBatcherStoreTestBase extends DynamoDBTestBase {
+public class DynamoDBIngestBatcherStoreTestBase extends LocalStackTestBase {
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
     protected final TableProperties table1 = createTestTableProperties(instanceProperties, schemaWithKey("key"));
     protected final TableProperties table2 = createTestTableProperties(instanceProperties, schemaWithKey("key"));
@@ -44,19 +43,14 @@ public class DynamoDBIngestBatcherStoreTestBase extends DynamoDBTestBase {
             List.of(table1, table2));
     protected final String requestsTableName = DynamoDBIngestBatcherStore.ingestRequestsTableName(instanceProperties.get(ID));
     protected final IngestBatcherStore store = new DynamoDBIngestBatcherStore(
-            dynamoDBClient, instanceProperties, tablePropertiesProvider);
+            dynamoClient, instanceProperties, tablePropertiesProvider);
 
     @BeforeEach
     void setUp() {
-        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoDBClient);
-    }
-
-    @AfterEach
-    void tearDown() {
-        DynamoDBIngestBatcherStoreCreator.tearDown(instanceProperties, dynamoDBClient);
+        DynamoDBIngestBatcherStoreCreator.create(instanceProperties, dynamoClient);
     }
 
     protected IngestBatcherStore storeWithFilesInAssignJobBatch(int filesInAssignJobBatch) {
-        return new DynamoDBIngestBatcherStore(dynamoDBClient, instanceProperties, tablePropertiesProvider, filesInAssignJobBatch);
+        return new DynamoDBIngestBatcherStore(dynamoClient, instanceProperties, tablePropertiesProvider, filesInAssignJobBatch);
     }
 }

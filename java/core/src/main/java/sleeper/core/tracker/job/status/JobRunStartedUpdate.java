@@ -20,23 +20,11 @@ import java.time.Instant;
 /**
  * Interface for a status update that marks the start of a run of a job.
  */
-public interface JobRunStartedUpdate extends JobStatusUpdate {
+public interface JobRunStartedUpdate extends JobRunStatusUpdate {
     /**
      * Get the start time of this run.
      *
      * @return the start time
      */
     Instant getStartTime();
-
-    default boolean isStartOfRun() {
-        return true;
-    }
-
-    default boolean isTimeForRunSummary() {
-        return true;
-    }
-
-    default boolean isPartOfRun() {
-        return true;
-    }
 }

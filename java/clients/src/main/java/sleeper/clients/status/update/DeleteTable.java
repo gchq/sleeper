@@ -41,17 +41,18 @@ import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfiguration
 
 public class DeleteTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteTable.class);
+
     private final AmazonS3 s3Client;
     private final InstanceProperties instanceProperties;
     private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
 
     public DeleteTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(instanceProperties, s3Client, S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB),
+        this(s3Client, instanceProperties, S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB),
                 StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDB, getConfigurationForClient()));
     }
 
-    public DeleteTable(InstanceProperties instanceProperties, AmazonS3 s3Client, TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
+    public DeleteTable(AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
         this.s3Client = s3Client;
         this.instanceProperties = instanceProperties;
         this.tablePropertiesStore = tablePropertiesStore;

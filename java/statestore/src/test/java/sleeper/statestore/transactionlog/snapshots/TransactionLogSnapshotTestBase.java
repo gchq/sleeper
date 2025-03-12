@@ -15,36 +15,25 @@
  */
 package sleeper.statestore.transactionlog.snapshots;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.LongType;
+import sleeper.core.statestore.testutils.InMemoryTransactionBodyStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
-import sleeper.localstack.test.SleeperLocalStackContainer;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStateStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.LatestSnapshotsMetadataLoader;
-import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.SnapshotMetadataSaver;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator.LatestSnapshotsMetadataLoader;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver.SnapshotMetadataSaver;
 import sleeper.statestore.transactionlog.snapshots.TransactionLogSnapshotDeleter.SnapshotFileDeleter;
 
 import java.io.IOException;
@@ -62,40 +51,22 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 import static sleeper.core.statestore.FileReferenceTestData.DEFAULT_UPDATE_TIME;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotStore.getBasePath;
+import static sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotSaver.getBasePath;
 
-@Testcontainers
-public class TransactionLogSnapshotTestBase {
+public class TransactionLogSnapshotTestBase extends LocalStackTestBase {
     @TempDir
     private java.nio.file.Path tempDir;
     private FileSystem fs;
     protected final Schema schema = schemaWithKey("key", new LongType());
     private final InMemoryTransactionLogsPerTable transactionLogs = new InMemoryTransactionLogsPerTable();
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-    protected static AmazonDynamoDB dynamoDBClient;
-    protected static AmazonS3 s3Client;
     protected final InstanceProperties instanceProperties = createTestInstanceProperties();
-    protected final Configuration configuration = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
-
-    @BeforeAll
-    public static void initDynamoClient() {
-        dynamoDBClient = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-        s3Client = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    }
-
-    @AfterAll
-    public static void shutdownDynamoClient() {
-        dynamoDBClient.shutdown();
-    }
 
     @BeforeEach
     public void setup() throws IOException {
         instanceProperties.set(FILE_SYSTEM, "file://");
         instanceProperties.set(DATA_BUCKET, tempDir.toString());
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDBClient).create();
-        fs = FileSystem.get(configuration);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        fs = FileSystem.get(hadoopConf);
     }
 
     protected TransactionLogSnapshotMetadata getLatestPartitionsSnapshot(TableProperties table) {
@@ -108,7 +79,7 @@ public class TransactionLogSnapshotTestBase {
 
     protected void deleteSnapshotFile(TransactionLogSnapshotMetadata snapshot) throws Exception {
         org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(snapshot.getPath());
-        FileSystem fs = path.getFileSystem(configuration);
+        FileSystem fs = path.getFileSystem(hadoopConf);
         fs.delete(path, false);
     }
 
@@ -130,7 +101,7 @@ public class TransactionLogSnapshotTestBase {
 
     protected void createSnapshotsAt(TableProperties table, Instant creationTime) throws Exception {
         DynamoDBTransactionLogSnapshotMetadataStore snapshotStore = new DynamoDBTransactionLogSnapshotMetadataStore(
-                instanceProperties, table, dynamoDBClient, () -> creationTime);
+                instanceProperties, table, dynamoClient, () -> creationTime);
         createSnapshots(table, snapshotStore::getLatestSnapshots, snapshotStore::saveSnapshot);
     }
 
@@ -141,19 +112,19 @@ public class TransactionLogSnapshotTestBase {
                 transactionLogs.forTable(table).getFilesLogStore(),
                 transactionLogs.forTable(table).getPartitionsLogStore(),
                 transactionLogs.getTransactionBodyStore(),
-                configuration, latestSnapshotsLoader, snapshotSaver)
+                hadoopConf, latestSnapshotsLoader, snapshotSaver)
                 .createSnapshot();
     }
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoDBClient, configuration)
+                instanceProperties, table, dynamoClient, hadoopConf)
                 .deleteSnapshots(deletionTime);
     }
 
     protected SnapshotDeletionTracker deleteSnapshotsAt(TableProperties table, Instant deletionTime, SnapshotFileDeleter fileDeleter) {
         return new TransactionLogSnapshotDeleter(
-                instanceProperties, table, dynamoDBClient, fileDeleter)
+                instanceProperties, table, dynamoClient, fileDeleter)
                 .deleteSnapshots(deletionTime);
     }
 
@@ -169,7 +140,7 @@ public class TransactionLogSnapshotTestBase {
     }
 
     protected DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties table) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoDBClient);
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, table, dynamoClient);
     }
 
     protected TableProperties createTable(String tableId, String tableName) {

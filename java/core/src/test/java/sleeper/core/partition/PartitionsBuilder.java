@@ -15,6 +15,7 @@
  */
 package sleeper.core.partition;
 
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.StateStore;
 
@@ -23,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 /**
  * A convenience class for specifying a partition tree. This includes methods to define a tree to be readable in a test,
@@ -33,6 +36,10 @@ public class PartitionsBuilder {
     private final Schema schema;
     protected final PartitionFactory factory;
     protected final Map<String, Partition> partitionById;
+
+    public PartitionsBuilder(TableProperties tableProperties) {
+        this(tableProperties.getSchema());
+    }
 
     public PartitionsBuilder(Schema schema) {
         this(schema, new PartitionFactory(schema), new LinkedHashMap<>());
@@ -117,7 +124,7 @@ public class PartitionsBuilder {
         Partition toSplit = partitionById(partitionId);
         Partition left = partitionById(toSplit.getChildPartitionIds().get(0));
         Partition right = partitionById(toSplit.getChildPartitionIds().get(1));
-        stateStore.atomicallyUpdatePartitionAndCreateNewOnes(toSplit, left, right);
+        update(stateStore).atomicallyUpdatePartitionAndCreateNewOnes(toSplit, left, right);
     }
 
     /**

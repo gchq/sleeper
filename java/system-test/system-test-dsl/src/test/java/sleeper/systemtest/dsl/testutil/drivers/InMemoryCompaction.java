@@ -17,6 +17,7 @@
 package sleeper.systemtest.dsl.testutil.drivers;
 
 import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.commit.CompactionCommitMessage;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateBatchId;
 import sleeper.compaction.core.job.creation.CreateCompactionJobs.GenerateJobId;
@@ -30,15 +31,17 @@ import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
+import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.tracker.compaction.job.CompactionJobTracker;
 import sleeper.core.tracker.compaction.job.InMemoryCompactionJobTracker;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
+import sleeper.core.tracker.compaction.job.update.CompactionJobCommittedEvent;
 import sleeper.core.tracker.compaction.task.CompactionTaskFinishedStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskStatus;
 import sleeper.core.tracker.compaction.task.CompactionTaskTracker;
 import sleeper.core.tracker.compaction.task.InMemoryCompactionTaskTracker;
-import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunReport;
 import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
@@ -59,8 +62,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class InMemoryCompaction {
     private final List<CompactionJob> queuedJobs = new ArrayList<>();
@@ -143,6 +148,25 @@ public class InMemoryCompaction {
             return jobs;
         }
 
+        @Override
+        public void sendCompactionCommits(Stream<CompactionCommitMessage> commits) {
+            TablePropertiesProvider tablesProvider = instance.getTablePropertiesProvider();
+            commits.forEach(commit -> {
+                ReplaceFileReferencesRequest request = commit.request();
+                TableProperties tableProperties = tablesProvider.getById(commit.tableId());
+                update(instance.getStateStore(tableProperties)).atomicallyReplaceFileReferencesWithNewOnes(List.of(request));
+                if (request.getJobRunId() != null) {
+                    jobTracker.jobCommitted(CompactionJobCommittedEvent.builder()
+                            .jobId(request.getJobId())
+                            .tableId(commit.tableId())
+                            .taskId(request.getTaskId())
+                            .jobRunId(request.getJobRunId())
+                            .commitTime(Instant.now())
+                            .build());
+                }
+            });
+        }
+
         private CreateCompactionJobs jobCreator() {
             return new CreateCompactionJobs(ObjectFactory.noUserJars(), instance.getInstanceProperties(),
                     instance.getStateStoreProvider(), batchJobsWriter(),
@@ -158,10 +182,10 @@ public class InMemoryCompaction {
         for (CompactionJob job : queuedJobs) {
             TableProperties tableProperties = tablesProvider.getById(job.getTableId());
             CompactionJobStatus status = jobTracker.getJob(job.getId()).orElseThrow();
-            JobRun run = status.getJobRuns().stream().findFirst().orElseThrow();
+            JobRunReport run = status.getRunsLatestFirst().stream().findFirst().orElseThrow();
             JobRunSummary summary = compact(job, tableProperties, instance.getStateStore(tableProperties), run);
-            jobTracker.jobFinished(job.finishedEventBuilder(summary).taskId(run.getTaskId()).build());
-            jobTracker.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).build());
+            jobTracker.jobFinished(job.finishedEventBuilder(summary).taskId(run.getTaskId()).jobRunId(job.getId()).build());
+            jobTracker.jobCommitted(job.committedEventBuilder(summary.getFinishTime().plus(Duration.ofMinutes(1))).taskId(run.getTaskId()).jobRunId(job.getId()).build());
         }
         queuedJobs.clear();
     }
@@ -177,14 +201,14 @@ public class InMemoryCompaction {
         runningTasks.clear();
     }
 
-    private JobRunSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, JobRun run) {
+    private JobRunSummary compact(CompactionJob job, TableProperties tableProperties, StateStore stateStore, JobRunReport run) {
         Instant startTime = run.getStartTime();
         Schema schema = tableProperties.getSchema();
         Partition partition = getPartitionForJob(stateStore, job);
         RecordsProcessed recordsProcessed = mergeInputFiles(job, partition, schema);
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(
-                List.of(job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
-                        .taskId(run.getTaskId()).build()));
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(
+                job.replaceFileReferencesRequestBuilder(recordsProcessed.getRecordsWritten())
+                        .taskId(run.getTaskId()).jobRunId(job.getId()).build()));
         Instant finishTime = startTime.plus(Duration.ofMinutes(1));
         return new JobRunSummary(recordsProcessed, startTime, finishTime);
     }
@@ -229,7 +253,7 @@ public class InMemoryCompaction {
                     .build();
             taskTracker.taskStarted(task);
             runningTasks.add(task);
-            jobTracker.jobStarted(job.startedEventBuilder(Instant.now()).taskId(task.getTaskId()).build());
+            jobTracker.jobStarted(job.startedEventBuilder(Instant.now()).taskId(task.getTaskId()).jobRunId(job.getId()).build());
         });
     }
 

@@ -23,10 +23,11 @@ import sleeper.core.tracker.compaction.job.query.CompactionJobCreatedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobFinishedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStartedStatus;
 import sleeper.core.tracker.compaction.job.query.CompactionJobStatus;
-import sleeper.core.tracker.job.run.JobRun;
+import sleeper.core.tracker.job.run.JobRunReport;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -34,7 +35,7 @@ import static sleeper.core.tracker.compaction.job.CompactionJobEventTestData.def
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionCommittedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionFinishedStatus;
 import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.compactionStartedStatus;
-import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromUpdates;
+import static sleeper.core.tracker.compaction.job.CompactionJobStatusTestData.jobStatusFromSingleRunUpdates;
 import static sleeper.core.tracker.job.run.JobRunSummaryTestHelper.summary;
 import static sleeper.core.tracker.job.status.TestJobStatusUpdateRecords.DEFAULT_TASK_ID;
 
@@ -47,10 +48,10 @@ public class CompactionJobRunTest {
                 defaultCompactionJobCreatedEvent(), Instant.parse("2022-09-23T09:23:00.012Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(createdStatus);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(createdStatus);
 
         // Then
-        assertThat(status.getJobRuns())
+        assertThat(status.getRunsLatestFirst())
                 .isEmpty();
         assertThat(status.isUnstartedOrInProgress()).isTrue();
     }
@@ -61,13 +62,13 @@ public class CompactionJobRunTest {
         CompactionJobStartedStatus started = compactionStartedStatus(Instant.parse("2022-09-23T09:23:30.001Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(started);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(started);
 
         // Then
-        assertThat(status.getJobRuns())
-                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
+        assertThat(status.getRunsLatestFirst())
+                .extracting(JobRunReport::getTaskId, JobRunReport::getStatusUpdates)
                 .containsExactly(
-                        tuple(DEFAULT_TASK_ID, started, null));
+                        tuple(DEFAULT_TASK_ID, List.of(started)));
         assertThat(status.isUnstartedOrInProgress()).isTrue();
     }
 
@@ -78,13 +79,13 @@ public class CompactionJobRunTest {
         CompactionJobFinishedStatus finished = compactionFinishedStatus(summary(started, Duration.ofSeconds(30), 450L, 300L));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(started, finished);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(started, finished);
 
         // Then
-        assertThat(status.getJobRuns())
-                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
+        assertThat(status.getRunsLatestFirst())
+                .extracting(JobRunReport::getTaskId, JobRunReport::getStatusUpdates)
                 .containsExactly(
-                        tuple(DEFAULT_TASK_ID, started, finished));
+                        tuple(DEFAULT_TASK_ID, List.of(started, finished)));
         assertThat(status.isUnstartedOrInProgress()).isTrue();
     }
 
@@ -96,13 +97,13 @@ public class CompactionJobRunTest {
         CompactionJobCommittedStatus committed = compactionCommittedStatus(Instant.parse("2022-09-24T09:24:30.001Z"));
 
         // When
-        CompactionJobStatus status = jobStatusFromUpdates(started, finished, committed);
+        CompactionJobStatus status = jobStatusFromSingleRunUpdates(started, finished, committed);
 
         // Then
-        assertThat(status.getJobRuns())
-                .extracting(JobRun::getTaskId, JobRun::getStartedStatus, JobRun::getFinishedStatus)
+        assertThat(status.getRunsLatestFirst())
+                .extracting(JobRunReport::getTaskId, JobRunReport::getStatusUpdates)
                 .containsExactly(
-                        tuple(DEFAULT_TASK_ID, started, finished));
+                        tuple(DEFAULT_TASK_ID, List.of(started, finished, committed)));
         assertThat(status.isUnstartedOrInProgress()).isFalse();
     }
 }

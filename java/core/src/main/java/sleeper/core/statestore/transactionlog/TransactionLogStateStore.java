@@ -15,9 +15,15 @@
  */
 package sleeper.core.statestore.transactionlog;
 
-import sleeper.core.schema.Schema;
 import sleeper.core.statestore.DelegatingStateStore;
 import sleeper.core.statestore.StateStoreException;
+import sleeper.core.statestore.transactionlog.log.TransactionBodyStore;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.log.TransactionLogStore;
+import sleeper.core.statestore.transactionlog.snapshot.TransactionLogSnapshotLoader;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.state.StateStorePartitions;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ExponentialBackoffWithJitter;
 import sleeper.core.util.ExponentialBackoffWithJitter.WaitRange;
@@ -54,12 +60,11 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     }
 
     private TransactionLogStateStore(Builder builder, TransactionLogHead.Builder<?> headBuilder) {
-        this(builder.schema,
-                headBuilder.forFiles()
-                        .logStore(builder.filesLogStore)
-                        .snapshotLoader(builder.filesSnapshotLoader)
-                        .stateUpdateClock(builder.filesStateUpdateClock)
-                        .build(),
+        this(headBuilder.forFiles()
+                .logStore(builder.filesLogStore)
+                .snapshotLoader(builder.filesSnapshotLoader)
+                .stateUpdateClock(builder.filesStateUpdateClock)
+                .build(),
                 headBuilder.forPartitions()
                         .logStore(builder.partitionsLogStore)
                         .snapshotLoader(builder.partitionsSnapshotLoader)
@@ -67,9 +72,9 @@ public class TransactionLogStateStore extends DelegatingStateStore {
                         .build());
     }
 
-    private TransactionLogStateStore(Schema schema, TransactionLogHead<StateStoreFiles> filesHead, TransactionLogHead<StateStorePartitions> partitionsHead) {
+    private TransactionLogStateStore(TransactionLogHead<StateStoreFiles> filesHead, TransactionLogHead<StateStorePartitions> partitionsHead) {
         this(new TransactionLogFileReferenceStore(filesHead),
-                new TransactionLogPartitionStore(schema, partitionsHead));
+                new TransactionLogPartitionStore(partitionsHead));
     }
 
     private TransactionLogStateStore(TransactionLogFileReferenceStore files, TransactionLogPartitionStore partitions) {
@@ -89,17 +94,25 @@ public class TransactionLogStateStore extends DelegatingStateStore {
     }
 
     /**
-     * Adds a transaction to the transaction log. The transaction may or may not already be held in S3. If it is already
-     * held in S3, we don't need to write it to S3 again.
+     * Applies a transaction log entry to the local state, and applies some action based on the state before it. Will
+     * read from the transaction log if entries are missing between the last read entry and the given entry. The given
+     * entry must already exist in the transaction log.
      *
-     * @param request the request
+     * @param logEntry the log entry
+     * @param listener a listener to apply some action before the entry is added
      */
-    public void addTransaction(AddTransactionRequest request) {
-        if (request.getTransaction() instanceof FileReferenceTransaction) {
-            files.addTransaction(request);
-        } else if (request.getTransaction() instanceof PartitionTransaction) {
-            partitions.addTransaction(request);
+    public void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
+        if (logEntry.getTransactionType().isFileTransaction()) {
+            files.applyEntryFromLog(logEntry, listener);
+        } else {
+            partitions.applyEntryFromLog(logEntry, listener);
         }
+    }
+
+    @Override
+    public void clearSleeperTable() {
+        files.clearTransactionLog();
+        partitions.clearTransactionLog();
     }
 
     public static Builder builder() {
@@ -111,7 +124,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
      */
     public static class Builder {
         private TableStatus sleeperTable;
-        private Schema schema;
         private TransactionLogStore filesLogStore;
         private TransactionLogStore partitionsLogStore;
         private TransactionBodyStore transactionBodyStore;
@@ -137,17 +149,6 @@ public class TransactionLogStateStore extends DelegatingStateStore {
          */
         public Builder sleeperTable(TableStatus sleeperTable) {
             this.sleeperTable = sleeperTable;
-            return this;
-        }
-
-        /**
-         * Sets the schema of the Sleeper table. Used to initialise partitions.
-         *
-         * @param  schema the schema
-         * @return        the builder
-         */
-        public Builder schema(Schema schema) {
-            this.schema = schema;
             return this;
         }
 

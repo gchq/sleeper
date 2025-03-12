@@ -15,27 +15,23 @@
  */
 package sleeper.clients.status.report.partitions;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
 import sleeper.configuration.properties.S3InstancePropertiesTestHelper;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndexCreator;
+import sleeper.core.partition.PartitionTree;
+import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
+import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -48,20 +44,12 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.table.TableProperty.PARTITION_SPLIT_THRESHOLD;
 import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
-import static sleeper.parquet.utils.HadoopConfigurationLocalStackUtils.getHadoopConfiguration;
-import static sleeper.splitter.core.status.PartitionsStatusTestHelper.createRootPartitionWithTwoChildren;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-@Testcontainers
-public class PartitionsStatusReportIT {
+public class PartitionsStatusReportIT extends LocalStackTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.DYNAMODB);
-
-    private final AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    private final AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
     private final InstanceProperties instanceProperties = createTestInstance();
-    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3, dynamoDB);
+    private final TablePropertiesStore tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
     private final Schema schema = Schema.builder().rowKeyFields(new Field("key", new StringType())).build();
     private final TableProperties tableProperties = createTestTable(
             tableProperties -> tableProperties.setNumber(PARTITION_SPLIT_THRESHOLD, 10));
@@ -69,9 +57,12 @@ public class PartitionsStatusReportIT {
     @Test
     void shouldGetReportWhenTwoLeafPartitionsBothNeedSplitting() throws Exception {
         // Given
-        createRootPartitionWithTwoChildren()
-                .singleFileInEachLeafPartitionWithRecords(100)
-                .setupStateStore(stateStore());
+        PartitionTree tree = new PartitionsBuilder(tableProperties).rootFirst("parent")
+                .splitToNewChildren("parent", "A", "B", "aaa")
+                .buildTree();
+        StateStore stateStore = stateStore();
+        update(stateStore).initialise(tree.getAllPartitions());
+        update(stateStore).addFiles(FileReferenceFactory.from(tree).singleFileInEachLeafPartitionWithRecords(100).toList());
 
         // When / Then
         assertThat(runReport()).isEqualTo(
@@ -81,20 +72,20 @@ public class PartitionsStatusReportIT {
     private String runReport() throws Exception {
         ToStringConsoleOutput out = new ToStringConsoleOutput();
         PartitionsStatusReportArguments.fromArgs(instanceProperties.get(ID), tableProperties.get(TABLE_NAME))
-                .runReport(s3, dynamoDB, out.getPrintStream());
+                .runReport(s3Client, dynamoClient, out.getPrintStream());
         return out.toString();
     }
 
     private StateStore stateStore() {
-        return new StateStoreFactory(instanceProperties, s3, dynamoDB, getHadoopConfiguration(localStackContainer))
+        return new StateStoreFactory(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .getStateStore(tableProperties);
     }
 
     private InstanceProperties createTestInstance() {
-        InstanceProperties properties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3);
-        s3.createBucket(properties.get(DATA_BUCKET));
-        DynamoDBTableIndexCreator.create(dynamoDB, properties);
-        new TransactionLogStateStoreCreator(properties, dynamoDB).create();
+        InstanceProperties properties = S3InstancePropertiesTestHelper.createTestInstanceProperties(s3Client);
+        createBucket(properties.get(DATA_BUCKET));
+        DynamoDBTableIndexCreator.create(dynamoClient, properties);
+        new TransactionLogStateStoreCreator(properties, dynamoClient).create();
         return properties;
     }
 

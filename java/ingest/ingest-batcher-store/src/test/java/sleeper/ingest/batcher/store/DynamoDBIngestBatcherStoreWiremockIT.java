@@ -18,6 +18,7 @@ package sleeper.ingest.batcher.store;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.retry.PredefinedRetryPolicies;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.RequestPatternBuilder;
@@ -48,8 +49,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.dynamodb.test.DynamoDBWiremockTestHelper.wiremockDynamoDBClient;
-import static sleeper.dynamodb.test.DynamoDBWiremockTestHelper.wiremockDynamoDBClientBuilder;
+import static sleeper.localstack.test.WiremockAwsV1ClientHelper.buildAwsV1Client;
 
 @WireMockTest
 public class DynamoDBIngestBatcherStoreWiremockIT {
@@ -115,15 +115,15 @@ public class DynamoDBIngestBatcherStoreWiremockIT {
 
     private IngestBatcherStore store(WireMockRuntimeInfo runtimeInfo) {
         return new DynamoDBIngestBatcherStore(
-                wiremockDynamoDBClient(runtimeInfo), instanceProperties, tablePropertiesProvider);
+                buildAwsV1Client(runtimeInfo, AmazonDynamoDBClientBuilder.standard()),
+                instanceProperties, tablePropertiesProvider);
     }
 
     private IngestBatcherStore storeWithNoRetry(WireMockRuntimeInfo runtimeInfo) {
         return new DynamoDBIngestBatcherStore(
-                wiremockDynamoDBClientBuilder(runtimeInfo)
+                buildAwsV1Client(runtimeInfo, AmazonDynamoDBClientBuilder.standard()
                         .withClientConfiguration(new ClientConfiguration()
-                                .withRetryPolicy(PredefinedRetryPolicies.NO_RETRY_POLICY))
-                        .build(),
+                                .withRetryPolicy(PredefinedRetryPolicies.NO_RETRY_POLICY))),
                 instanceProperties, tablePropertiesProvider);
     }
 

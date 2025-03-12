@@ -20,7 +20,7 @@
     <parent>
         <artifactId>compaction</artifactId>
         <groupId>sleeper</groupId>
-        <version>0.28.0</version>
+        <version>0.29.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>compaction-rust</artifactId>
@@ -58,9 +58,20 @@
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>
+            <artifactId>localstack-test</artifactId>
+            <version>${project.parent.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
             <artifactId>parquet</artifactId>
             <version>${project.parent.version}</version>
-            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>sketches</artifactId>
+            <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -68,19 +79,6 @@
             <artifactId>sketches</artifactId>
             <version>${project.parent.version}</version>
             <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>ingest-runner</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>localstack-test</artifactId>
-            <version>${project.parent.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -146,8 +144,9 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>cross</executable>
+                                    <executable>${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
+                                    <useMavenLogger>true</useMavenLogger>
                                     <arguments>
                                         <argument>build</argument>
                                         <argument>--release</argument>
@@ -163,8 +162,9 @@
                                     <goal>exec</goal>
                                 </goals>
                                 <configuration>
-                                    <executable>cross</executable>
+                                    <executable>${maven.multiModuleProjectDirectory}/../rust/buildForMaven.sh</executable>
                                     <workingDirectory>${maven.multiModuleProjectDirectory}/../rust</workingDirectory>
+                                    <useMavenLogger>true</useMavenLogger>
                                     <arguments>
                                         <argument>build</argument>
                                         <argument>--release</argument>

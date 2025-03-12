@@ -29,6 +29,7 @@ import com.amazonaws.services.dynamodbv2.model.Update;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TableProperty;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
@@ -189,6 +190,32 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
             return getLatestSnapshotsFromItem(result.getItems().get(0));
         } else {
             return LatestSnapshots.empty();
+        }
+    }
+
+    /**
+     * Retrieves the latest snapshot of a given type that was made against a transaction number in the given range.
+     *
+     * @param  type  the snapshot type
+     * @param  range the range of transactions
+     * @return       the snapshot metadata, pointing to the latest snapshot file, if any
+     */
+    public Optional<TransactionLogSnapshotMetadata> getLatestSnapshotInRange(SnapshotType type, TransactionLogRange range) {
+        if (range.isMaxTransactionBounded()) {
+            QueryResult result = dynamo.query(new QueryRequest()
+                    .withTableName(allSnapshotsTable)
+                    .withKeyConditionExpression("#TableIdAndType = :table_id_and_type AND #Number BETWEEN :startInclusive AND :endInclusive")
+                    .withExpressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE, "#Number", TRANSACTION_NUMBER))
+                    .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                            .string(":table_id_and_type", tableAndType(sleeperTableId, type))
+                            .number(":startInclusive", range.startInclusive())
+                            .number(":endInclusive", range.endExclusive() - 1)
+                            .build())
+                    .withScanIndexForward(false));
+            return result.getItems().stream().findFirst().map(item -> getSnapshotFromItem(item));
+        } else {
+            return getLatestSnapshots().getSnapshot(type)
+                    .filter(metadata -> metadata.getTransactionNumber() >= range.startInclusive());
         }
     }
 

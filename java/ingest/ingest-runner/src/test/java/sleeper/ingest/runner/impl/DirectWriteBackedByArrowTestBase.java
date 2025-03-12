@@ -19,27 +19,41 @@ package sleeper.ingest.runner.impl;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.io.TempDir;
 
+import sleeper.core.properties.instance.InstanceProperties;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.validation.IngestFileWritingStrategy;
 import sleeper.core.record.Record;
+import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.ingest.runner.testutils.IngestCoordinatorTestParameters;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTablePropertiesWithNoSchema;
 
 public abstract class DirectWriteBackedByArrowTestBase {
     @TempDir
     protected Path temporaryFolder;
     protected final Configuration configuration = new Configuration();
+    protected final InstanceProperties instanceProperties = createTestInstanceProperties();
+    protected final TableProperties tableProperties = createTestTablePropertiesWithNoSchema(instanceProperties);
+    protected final StateStore stateStore = InMemoryTransactionLogStateStore.create(tableProperties, new InMemoryTransactionLogs());
 
-    protected IngestCoordinatorTestParameters.Builder createTestParameterBuilder() {
+    protected IngestCoordinatorTestParameters.Builder createTestParameterBuilder() throws Exception {
         return IngestCoordinatorTestParameters.builder()
-                .temporaryFolder(temporaryFolder)
+                .localDataPath(Files.createTempDirectory(temporaryFolder, null).toString())
+                .localWorkingDir(Files.createTempDirectory(temporaryFolder, null).toString())
                 .hadoopConfiguration(configuration)
-                .ingestFileWritingStrategy(IngestFileWritingStrategy.ONE_FILE_PER_LEAF);
+                .ingestFileWritingStrategy(IngestFileWritingStrategy.ONE_FILE_PER_LEAF)
+                .schema(tableProperties.getSchema())
+                .stateStore(stateStore);
     }
 
     static void assertThatRecordsHaveFieldValuesThatAllAppearInRangeInSameOrder(List<Record> records, String fieldName, LongStream range) {

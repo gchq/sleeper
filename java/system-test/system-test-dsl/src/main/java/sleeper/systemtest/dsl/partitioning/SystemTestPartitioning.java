@@ -19,6 +19,8 @@ package sleeper.systemtest.dsl.partitioning;
 import sleeper.core.partition.Partition;
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.AddTransactionRequest;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
@@ -76,6 +78,7 @@ public class SystemTestPartitioning {
     }
 
     public void setPartitions(PartitionTree tree) {
-        instance.getStateStore().initialise(tree.getAllPartitions());
+        instance.getStateStore().addTransaction(AddTransactionRequest.withTransaction(
+                new InitialisePartitionsTransaction(tree.getAllPartitions())).build());
     }
 }

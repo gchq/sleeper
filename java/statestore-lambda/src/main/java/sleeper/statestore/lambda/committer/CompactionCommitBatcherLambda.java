@@ -33,7 +33,7 @@ import sleeper.compaction.core.job.commit.CompactionCommitMessageHandle;
 import sleeper.compaction.core.job.commit.CompactionCommitMessageSerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
-import sleeper.core.statestore.transactionlog.transactions.TransactionSerDeProvider;
+import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
 import java.util.ArrayList;

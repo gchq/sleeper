@@ -18,28 +18,19 @@ package sleeper.core.statestore.transactionlog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.AllReferencesToAllFiles;
-import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceStore;
-import sleeper.core.statestore.ReplaceFileReferencesRequest;
-import sleeper.core.statestore.SplitFileReferenceRequest;
 import sleeper.core.statestore.StateStoreException;
-import sleeper.core.statestore.exception.ReplaceRequestsFailedException;
-import sleeper.core.statestore.exception.SplitRequestsFailedException;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ClearFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.ReplaceFileReferencesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.SplitFileReferencesTransaction;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.state.StateListenerBeforeApply;
+import sleeper.core.statestore.transactionlog.state.StateStoreFiles;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -53,46 +44,8 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
     private final TransactionLogHead<StateStoreFiles> head;
     private Clock clock = Clock.systemUTC();
 
-    TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> state) {
-        this.head = state;
-    }
-
-    @Override
-    public void addFilesWithReferences(List<AllReferencesToAFile> files) throws StateStoreException {
-        head.addTransaction(clock.instant(), new AddFilesTransaction(files));
-    }
-
-    @Override
-    public void assignJobIds(List<AssignJobIdRequest> requests) throws StateStoreException {
-        Optional<AssignJobIdsTransaction> transaction = AssignJobIdsTransaction.ignoringEmptyRequests(requests);
-        if (transaction.isPresent()) {
-            head.addTransaction(clock.instant(), transaction.get());
-        } else {
-            LOGGER.info("Ignoring assignJobIds call with no file assignments, received requests: {}", requests);
-        }
-    }
-
-    @Override
-    public void atomicallyReplaceFileReferencesWithNewOnes(List<ReplaceFileReferencesRequest> requests) throws ReplaceRequestsFailedException {
-        try {
-            for (ReplaceFileReferencesRequest request : requests) {
-                request.validateNewReference();
-                request.validateStateChange(head.state());
-            }
-            head.addTransaction(clock.instant(), new ReplaceFileReferencesTransaction(requests));
-        } catch (StateStoreException e) {
-            throw new ReplaceRequestsFailedException(requests, e);
-        }
-    }
-
-    @Override
-    public void clearFileData() throws StateStoreException {
-        head.addTransaction(clock.instant(), new ClearFilesTransaction());
-    }
-
-    @Override
-    public void deleteGarbageCollectedFileReferenceCounts(List<String> filenames) throws StateStoreException {
-        head.addTransaction(clock.instant(), new DeleteFilesTransaction(filenames));
+    TransactionLogFileReferenceStore(TransactionLogHead<StateStoreFiles> head) {
+        this.head = head;
     }
 
     @Override
@@ -127,30 +80,25 @@ class TransactionLogFileReferenceStore implements FileReferenceStore {
         return files().isEmpty();
     }
 
-    @Override
-    public void initialise() throws StateStoreException {
-    }
-
-    @Override
-    public void splitFileReferences(List<SplitFileReferenceRequest> splitRequests) throws SplitRequestsFailedException {
-        try {
-            head.addTransaction(clock.instant(), new SplitFileReferencesTransaction(splitRequests));
-        } catch (StateStoreException e) {
-            throw new SplitRequestsFailedException(List.of(), splitRequests, e);
-        }
-    }
-
     void updateFromLog() throws StateStoreException {
         head.update();
     }
 
-    void addTransaction(AddTransactionRequest request) {
+    @Override
+    public void addFilesTransaction(AddTransactionRequest request) {
         head.addTransaction(clock.instant(), request);
+    }
+
+    void applyEntryFromLog(TransactionLogEntry logEntry, StateListenerBeforeApply listener) {
+        head.applyTransactionUpdatingIfNecessary(logEntry, listener);
+    }
+
+    void clearTransactionLog() {
+        head.clearTransactionLog(new ClearFilesTransaction(), clock.instant());
     }
 
     private StateStoreFiles files() throws StateStoreException {
         head.update();
         return head.state();
     }
-
 }

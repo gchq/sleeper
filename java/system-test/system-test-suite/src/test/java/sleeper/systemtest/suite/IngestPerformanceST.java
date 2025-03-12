@@ -45,7 +45,7 @@ public class IngestPerformanceST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(INGEST_PERFORMANCE);
+        sleeper.connectToInstanceAddOnlineTable(INGEST_PERFORMANCE);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
     }
 

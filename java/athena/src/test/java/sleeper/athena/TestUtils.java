@@ -55,6 +55,7 @@ import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGE
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.properties.validation.IngestFileWritingStrategy.ONE_FILE_PER_LEAF;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class TestUtils {
 
@@ -86,7 +87,7 @@ public class TestUtils {
         S3TableProperties.createStore(instance, s3Client, dynamoDB).save(tableProperties);
 
         StateStore stateStore = new StateStoreFactory(instance, s3Client, dynamoDB, configuration).getStateStore(tableProperties);
-        stateStore.initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
+        update(stateStore).initialise(new PartitionsFromSplitPoints(schema, List.of(splitPoints)).construct());
 
         return tableProperties;
     }

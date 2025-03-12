@@ -23,15 +23,14 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.AllReferencesToAFile;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
-import sleeper.core.statestore.transactionlog.TransactionLogEntry;
-import sleeper.core.statestore.transactionlog.transactions.AddFilesTransaction;
-import sleeper.core.statestore.transactionlog.transactions.SplitPartitionTransaction;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
+import sleeper.core.statestore.transactionlog.log.TransactionLogEntry;
+import sleeper.core.statestore.transactionlog.transaction.impl.AddFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.SplitPartitionTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.statestore.transactionlog.TransactionLogTransactionDeleter;
 
@@ -45,6 +44,8 @@ import static sleeper.core.properties.table.TableProperty.TRANSACTION_LOG_SNAPSH
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
+import static sleeper.core.statestore.transactionlog.log.TransactionLogRange.toUpdateLocalStateAt;
 
 public class TransactionLogTransactionDeleterTest {
     private final Schema schema = schemaWithKey("key", new StringType());
@@ -64,8 +65,8 @@ public class TransactionLogTransactionDeleterTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
         // And we have a snapshot at the head of the file log
         Instant snapshotTime = Instant.parse("2024-06-24T15:46:30Z");
         snapshots.addFilesSnapshotAt(2, snapshotTime);
@@ -77,9 +78,9 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime.plus(Duration.ofMinutes(2)));
 
         // Then the transaction is deleted
-        assertThat(filesLogStore.readTransactionsAfter(0))
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
-                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))));
+                        AddFilesTransaction.fromReferences(List.of(file2))));
     }
 
     @Test
@@ -88,8 +89,8 @@ public class TransactionLogTransactionDeleterTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
         // And we have a snapshot at the head of the file log
         Instant snapshotTime = Instant.parse("2024-06-24T15:46:30Z");
         snapshots.addFilesSnapshotAt(2, snapshotTime);
@@ -101,12 +102,12 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime.plus(Duration.ofMinutes(1)));
 
         // Then nothing is deleted
-        assertThat(filesLogStore.readTransactionsAfter(0))
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(
                         new TransactionLogEntry(1, Instant.parse("2024-06-24T15:45:45Z"),
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))),
+                                AddFilesTransaction.fromReferences(List.of(file1))),
                         new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))));
+                                AddFilesTransaction.fromReferences(List.of(file2))));
     }
 
     @Test
@@ -116,9 +117,9 @@ public class TransactionLogTransactionDeleterTest {
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
         FileReference file3 = fileFactory.rootFile("file3.parquet", 789L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
-        setupAtTime(Instant.parse("2024-06-24T15:47:00Z"), () -> stateStore.addFile(file3));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:47:00Z"), () -> update(stateStore).addFile(file3));
         // And we have two snapshots
         Instant snapshotTime1 = Instant.parse("2024-06-24T15:46:30Z");
         Instant snapshotTime2 = Instant.parse("2024-06-24T15:47:30Z");
@@ -132,11 +133,11 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime2.plus(Duration.ofSeconds(50)));
 
         // Then a transaction is deleted behind the first snapshot
-        assertThat(filesLogStore.readTransactionsAfter(0)).containsExactly(
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0))).containsExactly(
                 new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
-                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))),
+                        AddFilesTransaction.fromReferences(List.of(file2))),
                 new TransactionLogEntry(3, Instant.parse("2024-06-24T15:47:00Z"),
-                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file3)))));
+                        AddFilesTransaction.fromReferences(List.of(file3))));
     }
 
     @Test
@@ -145,8 +146,8 @@ public class TransactionLogTransactionDeleterTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
         // And we have a snapshot at the head of the file log
         Instant snapshotTime = Instant.parse("2024-06-24T15:46:30Z");
         snapshots.addFilesSnapshotAt(2, snapshotTime);
@@ -158,12 +159,12 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime.plus(Duration.ofMinutes(2)));
 
         // Then nothing is deleted
-        assertThat(filesLogStore.readTransactionsAfter(0))
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(
                         new TransactionLogEntry(1, Instant.parse("2024-06-24T15:45:00Z"),
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))),
+                                AddFilesTransaction.fromReferences(List.of(file1))),
                         new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))));
+                                AddFilesTransaction.fromReferences(List.of(file2))));
     }
 
     @Test
@@ -172,8 +173,8 @@ public class TransactionLogTransactionDeleterTest {
         FileReferenceFactory fileFactory = FileReferenceFactory.from(partitions.buildTree());
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:45:45Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
         // And we configure to delete any transactions more than one before the latest snapshot
         tableProperties.setNumber(TRANSACTION_LOG_NUMBER_BEHIND_TO_DELETE, 1);
         tableProperties.setNumber(TRANSACTION_LOG_SNAPSHOT_MIN_AGE_MINUTES_TO_DELETE_TRANSACTIONS, 1);
@@ -182,19 +183,19 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(Instant.parse("2024-06-25T02:00:00Z"));
 
         // Then nothing is deleted
-        assertThat(filesLogStore.readTransactionsAfter(0))
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(
                         new TransactionLogEntry(1, Instant.parse("2024-06-24T15:45:45Z"),
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file1)))),
+                                AddFilesTransaction.fromReferences(List.of(file1))),
                         new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
-                                new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))));
+                                AddFilesTransaction.fromReferences(List.of(file2))));
     }
 
     @Test
     void shouldDeleteOldPartitionTransactionWhenTwoAreBeforeLatestSnapshot() throws Exception {
         // Given we have two partitions transactions
         PartitionsBuilder partitions = new PartitionsBuilder(schema).rootFirst("root");
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.initialise(partitions.buildList()));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).initialise(partitions.buildList()));
         setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> partitions
                 .splitToNewChildren("root", "L", "R", "m")
                 .applySplit(stateStore, "root"));
@@ -210,7 +211,7 @@ public class TransactionLogTransactionDeleterTest {
 
         // Then
         PartitionTree partitionTree = partitions.buildTree();
-        assertThat(partitionsLogStore.readTransactionsAfter(0))
+        assertThat(partitionsLogStore.readTransactions(toUpdateLocalStateAt(0)))
                 .containsExactly(new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
                         new SplitPartitionTransaction(partitionTree.getRootPartition(), List.of(
                                 partitionTree.getPartition("L"),
@@ -224,9 +225,9 @@ public class TransactionLogTransactionDeleterTest {
         FileReference file1 = fileFactory.rootFile("file1.parquet", 123L);
         FileReference file2 = fileFactory.rootFile("file2.parquet", 456L);
         FileReference file3 = fileFactory.rootFile("file3.parquet", 789L);
-        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> stateStore.addFile(file1));
-        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> stateStore.addFile(file2));
-        setupAtTime(Instant.parse("2024-06-24T15:47:00Z"), () -> stateStore.addFile(file3));
+        setupAtTime(Instant.parse("2024-06-24T15:45:00Z"), () -> update(stateStore).addFile(file1));
+        setupAtTime(Instant.parse("2024-06-24T15:46:00Z"), () -> update(stateStore).addFile(file2));
+        setupAtTime(Instant.parse("2024-06-24T15:47:00Z"), () -> update(stateStore).addFile(file3));
         // And we have two snapshots
         Instant snapshotTime1 = Instant.parse("2024-06-24T15:46:10Z");
         Instant snapshotTime2 = Instant.parse("2024-06-24T15:46:30Z");
@@ -242,11 +243,11 @@ public class TransactionLogTransactionDeleterTest {
         deleteOldTransactionsAt(snapshotTime3.plus(Duration.ofSeconds(50)));
 
         // Then transactions are deleted behind the second snapshot
-        assertThat(filesLogStore.readTransactionsAfter(0)).containsExactly(
+        assertThat(filesLogStore.readTransactions(toUpdateLocalStateAt(0))).containsExactly(
                 new TransactionLogEntry(2, Instant.parse("2024-06-24T15:46:00Z"),
-                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file2)))),
+                        AddFilesTransaction.fromReferences(List.of(file2))),
                 new TransactionLogEntry(3, Instant.parse("2024-06-24T15:47:00Z"),
-                        new AddFilesTransaction(AllReferencesToAFile.newFilesWithReferences(List.of(file3)))));
+                        AddFilesTransaction.fromReferences(List.of(file3))));
     }
 
     private void setupAtTime(Instant time, SetupFunction setup) throws Exception {

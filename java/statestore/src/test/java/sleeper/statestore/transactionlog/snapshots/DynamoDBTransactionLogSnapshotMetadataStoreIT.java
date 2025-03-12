@@ -23,7 +23,8 @@ import org.junit.jupiter.api.Test;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
 import java.time.Instant;
@@ -37,7 +38,7 @@ import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.cre
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
 
-public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestBase {
+public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends LocalStackTestBase {
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
     private final Schema schema = schemaWithKey("key");
@@ -46,7 +47,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestB
 
     @BeforeEach
     void setup() {
-        new DynamoDBTransactionLogSnapshotMetadataStoreCreator(instanceProperties, dynamoDBClient).create();
+        new DynamoDBTransactionLogSnapshotMetadataStoreCreator(instanceProperties, dynamoClient).create();
     }
 
     @Nested
@@ -177,6 +178,76 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestB
         // Given / When / Then
         assertThat(store.getLatestSnapshots()).isEqualTo(
                 LatestSnapshots.empty());
+    }
+
+    @Test
+    void shouldRetrieveLatestFilesSnapshotByRange() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(2));
+        store.saveSnapshot(filesSnapshot(3));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.FILES, new TransactionLogRange(1, 3)))
+                .contains(filesSnapshot(2));
+    }
+
+    @Test
+    void shouldRetrieveLatestPartitionsSnapshotByRange() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(3));
+        store.saveSnapshot(partitionsSnapshot(1));
+        store.saveSnapshot(partitionsSnapshot(2));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.PARTITIONS, new TransactionLogRange(1, 5)))
+                .contains(partitionsSnapshot(2));
+    }
+
+    @Test
+    void shouldRetrieveNoLatestSnapshotByRange() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(4));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.FILES, new TransactionLogRange(2, 3)))
+                .isEmpty();
+    }
+
+    @Test
+    void shouldRetrieveLatestFilesSnapshotByUnboundedRange() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+        store.saveSnapshot(filesSnapshot(2));
+        store.saveSnapshot(filesSnapshot(3));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.FILES, TransactionLogRange.fromMinimum(2)))
+                .contains(filesSnapshot(3));
+    }
+
+    @Test
+    void shouldRetrieveLatestPartitionsSnapshotByUnboundedRange() throws Exception {
+        // Given
+        store.saveSnapshot(partitionsSnapshot(1));
+        store.saveSnapshot(partitionsSnapshot(2));
+        store.saveSnapshot(partitionsSnapshot(3));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.PARTITIONS, TransactionLogRange.fromMinimum(2)))
+                .contains(partitionsSnapshot(3));
+    }
+
+    @Test
+    void shouldRetrieveNoSnapshotByUnboundedRangeWhenMinimumIsNotMet() throws Exception {
+        // Given
+        store.saveSnapshot(filesSnapshot(1));
+
+        // When / Then
+        assertThat(store.getLatestSnapshotInRange(SnapshotType.FILES, TransactionLogRange.fromMinimum(2)))
+                .isEmpty();
     }
 
     @Test
@@ -314,7 +385,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStoreIT extends DynamoDBTestB
     }
 
     private DynamoDBTransactionLogSnapshotMetadataStore snapshotStore(TableProperties tableProperties, Supplier<Instant> timeSupplier) {
-        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoDBClient, timeSupplier);
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient, timeSupplier);
     }
 
     private TransactionLogSnapshotMetadata filesSnapshot(long transactionNumber) {

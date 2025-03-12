@@ -2,7 +2,35 @@ Releases
 =========
 
 This page documents the releases of Sleeper. Performance figures for each release
-are available [here](docs/development/system-tests.md#performance-benchmarks)
+are available [here](docs/development/system-tests.md#performance-benchmarks). A roadmap of current and future work is
+available [here](docs/development/roadmap.md).
+
+## Version 0.29.0
+
+State store:
+- Removed DynamoDB & S3 state store implementations
+- Introduced a transaction log follower lambda following a DynamoDB stream
+- Moved job tracker updates derived from state store commits from state store committer lambda to follower lambda
+- Split table state snapshots into Arrow record batches
+- Replaced method signatures to apply updates to the state store
+  - Ensured all updates are defined as transactions
+  - Clarified differences between synchronous and asynchronous commit
+
+Documentation:
+- Added design diagrams of how compaction jobs are created and run
+
+Build:
+- Use LocalStack for all DynamoDB tests, avoiding intermittent test failures due to lack of transactional integrity in DynamoDB local
+- Fixed intermittent failures where built jars had Hadoop file system implementations set incorrectly
+- Suppressed Rust build output in Maven quiet mode builds
+
+System tests:
+- System test for throughput of compaction commits
+- Parallelised emptying and draining SQS queues in system tests
+- Tools for debugging table state after a system test has run, in `CheckTransactionLogs`
+
+Bugfixes:
+- Prevented state store transactions being uploaded to S3 multiple times
 
 ## Version 0.28.0
 

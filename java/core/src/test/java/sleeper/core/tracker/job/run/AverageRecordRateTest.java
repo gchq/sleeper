@@ -17,9 +17,9 @@ package sleeper.core.tracker.job.run;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.tracker.compaction.job.CompactionJobStatusTestData;
+import sleeper.core.tracker.compaction.job.query.CompactionJobRun;
 import sleeper.core.tracker.job.status.JobRunFailedStatus;
-import sleeper.core.tracker.job.status.JobRunFinishedStatus;
-import sleeper.core.tracker.job.status.JobStatusUpdateTestHelper;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -183,13 +183,13 @@ public class AverageRecordRateTest {
         Instant finishTime = Instant.parse("2022-10-13T10:19:00.000Z");
 
         assertThat(AverageRecordRate.of(Stream.of(
-                jobRunOnTask(DEFAULT_TASK_ID,
-                        JobStatusUpdateTestHelper.startedStatus(startTime),
+                new CompactionJobRun(jobRunOnTask(DEFAULT_TASK_ID,
+                        CompactionJobStatusTestData.compactionStartedStatus(startTime),
                         JobRunFailedStatus.builder()
                                 .updateTime(defaultUpdateTime(finishTime))
                                 .failureTime(finishTime)
                                 .failureReasons(List.of("Unexpected failure", "Some IO problem"))
-                                .build()))))
+                                .build())))))
                 .extracting("runCount", "recordsRead", "recordsWritten", "totalDuration")
                 .containsExactly(0, 0L, 0L, Duration.ofSeconds(0));
     }
@@ -197,8 +197,9 @@ public class AverageRecordRateTest {
     private static AverageRecordRate rateFrom(JobRunSummary... summaries) {
         return AverageRecordRate.of(Stream.of(summaries)
                 .map(summary -> jobRunOnTask(DEFAULT_TASK_ID,
-                        JobStatusUpdateTestHelper.startedStatus(summary.getStartTime()),
-                        JobRunFinishedStatus.updateTimeAndSummary(summary.getFinishTime(), summary))));
+                        CompactionJobStatusTestData.compactionStartedStatus(summary.getStartTime()),
+                        CompactionJobStatusTestData.compactionFinishedStatus(summary.getFinishTime(), summary.getRecordsProcessed())))
+                .map(CompactionJobRun::new));
     }
 
 }

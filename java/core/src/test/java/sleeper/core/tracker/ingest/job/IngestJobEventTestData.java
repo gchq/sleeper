@@ -46,10 +46,10 @@ public class IngestJobEventTestData {
     public static IngestJobStartedEvent.Builder ingestJobStartedEventBuilder(Instant startTime) {
         return IngestJobStartedEvent.builder()
                 .jobId(UUID.randomUUID().toString())
+                .jobRunId(UUID.randomUUID().toString())
                 .tableId(DEFAULT_TABLE_ID)
                 .fileCount(1)
-                .startTime(startTime)
-                .startOfRun(true);
+                .startTime(startTime);
     }
 
     /**
@@ -61,10 +61,10 @@ public class IngestJobEventTestData {
     public static IngestJobStartedEvent.Builder ingestJobStartedAfterValidationEventBuilder(IngestJobValidatedEvent validatedEvent, Instant startTime) {
         return IngestJobStartedEvent.builder()
                 .jobId(validatedEvent.getJobId())
+                .jobRunId(validatedEvent.getJobRunId())
                 .tableId(validatedEvent.getTableId())
                 .fileCount(validatedEvent.getFileCount())
-                .startTime(startTime)
-                .startOfRun(false);
+                .startTime(startTime);
     }
 
     /**
@@ -97,6 +97,7 @@ public class IngestJobEventTestData {
     public static IngestJobValidatedEvent.Builder ingestJobValidatedEventBuilder(Instant validationTime) {
         return IngestJobValidatedEvent.builder()
                 .jobId(UUID.randomUUID().toString())
+                .jobRunId(UUID.randomUUID().toString())
                 .tableId(DEFAULT_TABLE_ID)
                 .validationTime(validationTime);
     }
@@ -109,11 +110,22 @@ public class IngestJobEventTestData {
      * @return             the builder
      */
     public static IngestJobAddedFilesEvent.Builder ingestJobAddedFilesEventBuilder(IngestJobEvent job, Instant writtenTime) {
+        return ingestJobAddedFilesEventBuilder(job)
+                .writtenTime(writtenTime);
+    }
+
+    /**
+     * Creates a builder for an ingest job added files event.
+     *
+     * @param  job a previous event for the same job
+     * @return     the builder
+     */
+    public static IngestJobAddedFilesEvent.Builder ingestJobAddedFilesEventBuilder(IngestJobEvent job) {
         return IngestJobAddedFilesEvent.builder()
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
-                .writtenTime(writtenTime);
+                .jobRunId(job.getJobRunId());
     }
 
     /**
@@ -128,6 +140,7 @@ public class IngestJobEventTestData {
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
+                .jobRunId(job.getJobRunId())
                 .summary(summary);
     }
 
@@ -143,6 +156,7 @@ public class IngestJobEventTestData {
                 .jobId(job.getJobId())
                 .tableId(job.getTableId())
                 .taskId(job.getTaskId())
+                .jobRunId(job.getJobRunId())
                 .failureTime(failureTime)
                 .failureReasons(reasons);
     }

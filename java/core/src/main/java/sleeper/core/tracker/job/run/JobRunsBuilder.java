@@ -15,8 +15,7 @@
  */
 package sleeper.core.tracker.job.run;
 
-import sleeper.core.tracker.job.status.JobRunStartedUpdate;
-import sleeper.core.tracker.job.status.JobStatusUpdate;
+import sleeper.core.tracker.job.status.JobRunStatusUpdate;
 import sleeper.core.tracker.job.status.JobStatusUpdateRecord;
 
 import java.util.ArrayList;
@@ -45,11 +44,10 @@ import java.util.stream.Collectors;
  */
 class JobRunsBuilder {
     private final Map<String, JobRun.Builder> builderByJobRunId = new HashMap<>();
-    private final Map<String, JobRun.Builder> builderByTaskId = new HashMap<>();
     private final List<JobRun.Builder> orderedBuilders = new ArrayList<>();
 
     void add(JobStatusUpdateRecord record) {
-        if (!record.getStatusUpdate().isPartOfRun()) {
+        if (!(record.getStatusUpdate() instanceof JobRunStatusUpdate)) {
             return;
         }
         getBuilderIfCorrelatable(record)
@@ -62,17 +60,14 @@ class JobRunsBuilder {
     }
 
     private Optional<JobRun.Builder> getBuilderIfCorrelatable(JobStatusUpdateRecord record) {
+        if (!(record.getStatusUpdate() instanceof JobRunStatusUpdate)) {
+            return Optional.empty();
+        }
         String jobRunId = record.getJobRunId();
-        String taskId = record.getTaskId();
-        JobStatusUpdate statusUpdate = record.getStatusUpdate();
         if (jobRunId != null) {
             return Optional.of(builderByJobRunId.computeIfAbsent(jobRunId, id -> createOrderedBuilder()));
-        } else if (isStartedUpdateAndStartOfRun(statusUpdate)) {
-            JobRun.Builder builder = createOrderedBuilder();
-            builderByTaskId.put(taskId, builder);
-            return Optional.of(builder);
         } else {
-            return Optional.ofNullable(builderByTaskId.get(taskId));
+            return Optional.of(createOrderedBuilder());
         }
     }
 
@@ -87,11 +82,6 @@ class JobRunsBuilder {
                 .map(JobRun.Builder::build)
                 .collect(Collectors.toList());
         Collections.reverse(jobRuns);
-        return new JobRuns(jobRuns);
-    }
-
-    private static boolean isStartedUpdateAndStartOfRun(JobStatusUpdate statusUpdate) {
-        return statusUpdate instanceof JobRunStartedUpdate
-                && ((JobRunStartedUpdate) statusUpdate).isStartOfRun();
+        return JobRuns.latestFirst(jobRuns);
     }
 }

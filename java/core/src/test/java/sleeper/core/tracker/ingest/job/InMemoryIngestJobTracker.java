@@ -20,6 +20,7 @@ import sleeper.core.tracker.ingest.job.query.IngestJobAddedFilesStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobFinishedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobRejectedStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobStartedStatus;
+import sleeper.core.tracker.ingest.job.query.IngestJobStatus;
 import sleeper.core.tracker.ingest.job.query.IngestJobValidatedStatus;
 import sleeper.core.tracker.ingest.job.update.IngestJobAddedFilesEvent;
 import sleeper.core.tracker.ingest.job.update.IngestJobFailedEvent;
@@ -39,7 +40,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static sleeper.core.tracker.ingest.job.IngestJobStatusType.REJECTED;
+import static sleeper.core.tracker.ingest.job.query.IngestJobStatusType.REJECTED;
 import static sleeper.core.tracker.job.status.JobStatusUpdateTestHelper.defaultUpdateTime;
 
 /**
@@ -55,7 +56,6 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
                         .jobId(event.getJobId())
                         .statusUpdate(toStatusUpdate(event, defaultUpdateTime(event.getValidationTime())))
                         .jobRunId(event.getJobRunId())
-                        .taskId(event.getTaskId())
                         .build());
     }
 
@@ -64,7 +64,7 @@ public class InMemoryIngestJobTracker implements IngestJobTracker {
         tableIdToJobs.computeIfAbsent(event.getTableId(), tableId -> new TableJobs()).jobIdToUpdateRecords.computeIfAbsent(event.getJobId(), jobId -> new ArrayList<>())
                 .add(JobStatusUpdateRecord.builder()
                         .jobId(event.getJobId())
-                        .statusUpdate(IngestJobStartedStatus.withStartOfRun(event.isStartOfRun())
+                        .statusUpdate(IngestJobStartedStatus.builder()
                                 .inputFileCount(event.getFileCount())
                                 .startTime(event.getStartTime())
                                 .updateTime(defaultUpdateTime(event.getStartTime()))

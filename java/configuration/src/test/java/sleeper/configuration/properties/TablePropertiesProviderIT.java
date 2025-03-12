@@ -19,7 +19,6 @@ package sleeper.configuration.properties;
 import org.junit.jupiter.api.Test;
 
 import sleeper.configuration.table.index.DynamoDBTableIndex;
-import sleeper.configuration.testutils.TablePropertiesITBase;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.table.TableNotFoundException;
@@ -30,7 +29,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 
 class TablePropertiesProviderIT extends TablePropertiesITBase {
 
-    private final TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
+    private final TablePropertiesProvider provider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoClient);
 
     @Test
     void shouldLoadByName() {
@@ -77,7 +76,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     @Test
     void shouldThrowExceptionWhenTableExistsInIndexButNotConfigBucket() {
         // Given
-        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+        new DynamoDBTableIndex(instanceProperties, dynamoClient)
                 .create(tableProperties.getStatus());
 
         // When / Then
@@ -89,7 +88,7 @@ class TablePropertiesProviderIT extends TablePropertiesITBase {
     void shouldNotLoadByIdWhenNotInIndex() {
         // Given
         store.save(tableProperties);
-        new DynamoDBTableIndex(instanceProperties, dynamoDBClient)
+        new DynamoDBTableIndex(instanceProperties, dynamoClient)
                 .delete(tableProperties.getStatus());
 
         // When / Then

@@ -41,6 +41,9 @@ public class InstancePropertyGroup {
     public static final PropertyGroup INGEST = instanceGroup("Ingest")
             .description("The following properties relate to standard ingest.")
             .build();
+    public static final PropertyGroup BULK_EXPORT = instanceGroup("Bulk Export")
+            .description("The following properties relate to bulk export.")
+            .build();
     public static final PropertyGroup BULK_IMPORT = instanceGroup("Bulk Import")
             .description("The following properties relate to bulk import, " +
                     "i.e. ingesting data using Spark jobs running on EMR or EKS.")

@@ -79,9 +79,9 @@ sleeper.retain.infra.after.destroy=true
 
 # The optional stacks to deploy. Not case sensitive.
 # Valid values: [IngestStack, IngestBatcherStack, EmrServerlessBulkImportStack, EmrBulkImportStack,
-# PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, QueryStack, WebSocketQueryStack,
-# AthenaStack, KeepLambdaWarmStack, CompactionStack, GarbageCollectorStack, PartitionSplittingStack,
-# DashboardStack, TableMetricsStack]
+# PersistentEmrBulkImportStack, EksBulkImportStack, EmrStudioStack, BulkExportStack, QueryStack,
+# WebSocketQueryStack, AthenaStack, KeepLambdaWarmStack, CompactionStack, GarbageCollectorStack,
+# PartitionSplittingStack, DashboardStack, TableMetricsStack]
 sleeper.optional.stacks=IngestStack,IngestBatcherStack,EmrServerlessBulkImportStack,EmrStudioStack,QueryStack,AthenaStack,CompactionStack,GarbageCollectorStack,PartitionSplittingStack,DashboardStack,TableMetricsStack
 
 # The deployment type for AWS Lambda. Not case sensitive.
@@ -255,6 +255,26 @@ sleeper.statestore.transaction.deletion.concurrency.max=10
 
 # The maximum timeout for the transaction deletion lambda in seconds.
 sleeper.statestore.transaction.deletion.lambda.timeout.seconds=900
+
+# The reserved concurrency for the lambda that follows the state store transaction log to trigger
+# updates.
+# See reserved concurrency overview at:
+# https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html
+# sleeper.statestore.transaction.follower.concurrency.reserved=
+
+# The maximum given concurrency allowed for the lambda that follows the state store transaction log to
+# trigger updates.
+# See maximum concurrency overview at:
+# https://aws.amazon.com/blogs/compute/introducing-maximum-concurrency-of-aws-lambda-functions-when-using-amazon-sqs-as-an-event-source/
+sleeper.statestore.transaction.follower.concurrency.max=10
+
+# The maximum timeout in seconds for the lambda that follows the state store transaction log to
+# trigger updates.
+sleeper.statestore.transaction.follower.lambda.timeout.seconds=900
+
+# The amount of memory in MB for the lambda that follows the state store transaction log to trigger
+# updates.
+sleeper.statestore.transaction.follower.memory.mb=4096
 
 # This specifies whether point in time recovery is enabled for the Sleeper table index. This is set on
 # the DynamoDB tables.
@@ -1169,11 +1189,6 @@ sleeper.default.compaction.strategy.class=sleeper.compaction.core.job.creation.s
 
 # The maximum number of files to read in a compaction job. Note that the state store must support
 # atomic updates for this many files.
-# The DynamoDBStateStore must be able to atomically apply 2 updates for each input file to remove the
-# file references and update the file reference count, and another 2 updates for an output file to add
-# a new file reference and update the reference count. There's a limit of 100 atomic updates, which
-# equates to 49 files in a compaction.
-# See also: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html.
 # Also note that this many files may need to be open simultaneously. The value of
 # 'sleeper.fs.s3a.max-connections' must be at least the value of this plus one. The extra one is for
 # the output file.
@@ -1396,6 +1411,17 @@ sleeper.default.statestore.transactionlog.add.transaction.first.retry.wait.ceili
 # https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
 # This default can be overridden by a table property.
 sleeper.default.statestore.transactionlog.add.transaction.max.retry.wait.ceiling.ms=30000
+
+# The number of elements to include per Arrow record batch in a snapshot derived from the transaction
+# log, of the state of files in a Sleeper table. Each file includes some number of references on
+# different partitions. Each reference will count for one element in a record batch, but a file cannot
+# currently be split between record batches. A record batch may contain more file references than this
+# if a single file overflows the batch. A file with no references counts as one element.
+sleeper.default.statestore.transactionlog.files.snapshot.batch.size=1000
+
+# The number of partitions to include per Arrow record batch in a snapshot derived from the
+# transaction log, of the state of partitions in a Sleeper table.
+sleeper.default.statestore.transactionlog.partitions.snapshot.batch.size=1000
 
 # The number of seconds to wait after we've loaded a snapshot before looking for a new snapshot. This
 # should relate to the rate at which new snapshots are created, configured in the instance property

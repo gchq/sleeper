@@ -15,68 +15,53 @@
  */
 package sleeper.job.common.action;
 
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.CreateQueueRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-import sleeper.localstack.test.SleeperLocalStackContainer;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
 
-@Testcontainers
-public class DeleteMessageActionIT {
+public class DeleteMessageActionIT extends LocalStackTestBase {
 
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.SQS);
-
-    private AmazonSQS createSQSClient() {
-        return buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
-    }
-
-    private String createQueue(AmazonSQS sqs) {
+    private String createQueue() {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("VisibilityTimeout", "5");
         CreateQueueRequest createQueueRequest = new CreateQueueRequest()
                 .withQueueName(UUID.randomUUID().toString())
                 .withAttributes(attributes);
-        return sqs.createQueue(createQueueRequest).getQueueUrl();
+        return sqsClient.createQueue(createQueueRequest).getQueueUrl();
     }
 
     @Test
     public void shouldChangeMessageVisibilityTimeout() throws InterruptedException, ActionException {
         // Given
         //  - Create queue with visibility timeout of 5 seconds
-        AmazonSQS sqs = createSQSClient();
-        String queueUrl = createQueue(sqs);
+        String queueUrl = createQueue();
         //  - Put message on to queue
         String message = "A message";
         SendMessageRequest sendMessageRequest = new SendMessageRequest()
                 .withQueueUrl(queueUrl)
                 .withMessageBody(message);
-        sqs.sendMessage(sendMessageRequest);
+        sqsClient.sendMessage(sendMessageRequest);
         //  - Retrieve message from queue
         ReceiveMessageRequest receiveMessageRequest = new ReceiveMessageRequest()
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(1);
-        ReceiveMessageResult result = sqs.receiveMessage(receiveMessageRequest);
+        ReceiveMessageResult result = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(result.getMessages()).hasSize(1);
         String receiptHandle = result.getMessages().get(0).getReceiptHandle();
 
         // When
         //  - Delete the message
-        DeleteMessageAction action = new MessageReference(sqs, queueUrl, "test", receiptHandle).deleteAction();
+        DeleteMessageAction action = new MessageReference(sqsClient, queueUrl, "test", receiptHandle).deleteAction();
         action.call();
 
         // Then
@@ -86,9 +71,7 @@ public class DeleteMessageActionIT {
                 .withQueueUrl(queueUrl)
                 .withMaxNumberOfMessages(1)
                 .withWaitTimeSeconds(0);
-        result = sqs.receiveMessage(receiveMessageRequest);
+        result = sqsClient.receiveMessage(receiveMessageRequest);
         assertThat(result.getMessages()).isEmpty();
-
-        sqs.shutdown();
     }
 }

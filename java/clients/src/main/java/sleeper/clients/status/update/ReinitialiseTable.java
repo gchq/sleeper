@@ -30,11 +30,13 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearFilesTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.ClearPartitionsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.statestore.StateStoreFactory;
-import sleeper.statestore.s3.S3StateStore;
 
-import java.io.IOException;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static sleeper.clients.util.BucketUtils.deleteObjectsInBucketWithPrefix;
 import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
@@ -71,7 +73,11 @@ public class ReinitialiseTable {
         }
     }
 
-    public void run() throws IOException {
+    public void run() {
+        run(tableProperties -> InitialisePartitionsTransaction.singlePartition(tableProperties.getSchema()));
+    }
+
+    public void run(Function<TableProperties, InitialisePartitionsTransaction> buildPartitions) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, s3Client, dynamoDBClient);
         TableProperties tableProperties = tablePropertiesProvider.getByName(tableName);
@@ -84,25 +90,16 @@ public class ReinitialiseTable {
 
         LOGGER.info("State store type: {}", stateStore.getClass().getName());
 
+        new ClearFilesTransaction().synchronousCommit(stateStore);
         if (deletePartitions) {
-            stateStore.clearSleeperTable();
-        } else {
-            stateStore.clearFileData();
+            ClearPartitionsTransaction.create().synchronousCommit(stateStore);
         }
         deleteObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID),
                 key -> key.matches(tableProperties.get(TABLE_ID) + "/partition.*/.*"));
         if (deletePartitions) {
             LOGGER.info("Fully reinitialising table");
-            initialiseStateStore(tableProperties, stateStore);
-        } else if (stateStore instanceof S3StateStore) {
-            LOGGER.info("Recreating files information file and adding it into the revisions table");
-            S3StateStore s3StateStore = (S3StateStore) stateStore;
-            s3StateStore.setInitialFileReferences();
+            buildPartitions.apply(tableProperties).synchronousCommit(stateStore);
         }
-    }
-
-    protected void initialiseStateStore(TableProperties tableProperties, StateStore stateStore) throws IOException {
-        stateStore.initialise();
     }
 
     public static void main(String[] args) {
@@ -132,7 +129,7 @@ public class ReinitialiseTable {
             ReinitialiseTable reinitialiseTable = new ReinitialiseTable(s3Client, dynamoDBClient, instanceId, tableName, deletePartitions);
             reinitialiseTable.run();
             LOGGER.info("Table reinitialised successfully");
-        } catch (RuntimeException | IOException e) {
+        } catch (RuntimeException e) {
             LOGGER.error("\nAn Error occurred while trying to reinitialise the table. " +
                     "The error message is as follows:\n\n" + e.getMessage()
                     + "\n\nCause:" + e.getCause());

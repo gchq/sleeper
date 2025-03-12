@@ -47,6 +47,23 @@ public class LatestSnapshots {
         return Optional.ofNullable(partitionsSnapshot);
     }
 
+    /**
+     * Returns the snapshot of the given type.
+     *
+     * @param  type the snapshot type
+     * @return      the snapshot metadata
+     */
+    public Optional<TransactionLogSnapshotMetadata> getSnapshot(SnapshotType type) {
+        switch (type) {
+            case FILES:
+                return getFilesSnapshot();
+            case PARTITIONS:
+                return getPartitionsSnapshot();
+            default:
+                throw new IllegalArgumentException("Unrecognised snapshot type: " + type);
+        }
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(filesSnapshot, partitionsSnapshot);

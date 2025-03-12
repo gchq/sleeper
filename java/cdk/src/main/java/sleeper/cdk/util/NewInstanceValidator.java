@@ -39,8 +39,6 @@ class NewInstanceValidator {
     void validate(InstanceProperties instanceProperties, Path instancePropertyPath) {
         checkQueryResultsBucketDoesNotExist(instanceProperties);
         checkDataBucketDoesNotExist(instanceProperties);
-        checkDynamoDBStateStoreDoesNotExist(instanceProperties);
-        checkS3StateStoreDoesNotExist(instanceProperties);
         checkTransactionLogStateStoreDoesNotExist(instanceProperties);
     }
 
@@ -55,20 +53,6 @@ class NewInstanceValidator {
         String bucketName = String.join("-", "sleeper", instanceProperties.get(ID), "table", "data");
         if (doesBucketExist(bucketName)) {
             throw new IllegalArgumentException("Sleeper data bucket exists: " + bucketName);
-        }
-    }
-
-    private void checkDynamoDBStateStoreDoesNotExist(InstanceProperties instanceProperties) {
-        String dynamodbTableName = String.join("-", "sleeper", instanceProperties.get(ID), "partitions");
-        if (doesDynamoTableExist(dynamodbTableName)) {
-            throw new IllegalArgumentException("Sleeper state store table exists: " + dynamodbTableName);
-        }
-    }
-
-    private void checkS3StateStoreDoesNotExist(InstanceProperties instanceProperties) {
-        String dynamodbTableName = String.join("-", "sleeper", instanceProperties.get(ID), "table", "revisions");
-        if (doesDynamoTableExist(dynamodbTableName)) {
-            throw new IllegalArgumentException("Sleeper state store table exists: " + dynamodbTableName);
         }
     }
 

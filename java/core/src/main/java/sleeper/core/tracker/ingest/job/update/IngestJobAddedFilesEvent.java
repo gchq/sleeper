@@ -33,12 +33,12 @@ public class IngestJobAddedFilesEvent implements IngestJobEvent {
     private final int fileCount;
 
     private IngestJobAddedFilesEvent(Builder builder) {
-        this.jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
-        this.tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
-        this.jobRunId = builder.jobRunId;
-        this.taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
-        this.writtenTime = Objects.requireNonNull(builder.writtenTime, "writtenTime must not be null");
-        this.fileCount = builder.fileCount;
+        jobId = Objects.requireNonNull(builder.jobId, "jobId must not be null");
+        tableId = Objects.requireNonNull(builder.tableId, "tableId must not be null");
+        jobRunId = Objects.requireNonNull(builder.jobRunId, "jobRunId must not be null");
+        taskId = Objects.requireNonNull(builder.taskId, "taskId must not be null");
+        writtenTime = Objects.requireNonNull(builder.writtenTime, "writtenTime must not be null");
+        fileCount = builder.fileCount;
     }
 
     public static Builder builder() {
@@ -102,6 +102,19 @@ public class IngestJobAddedFilesEvent implements IngestJobEvent {
         private String taskId;
         private Instant writtenTime;
         private int fileCount;
+
+        /**
+         * Sets the IDs relating to this run of the job.
+         *
+         * @param  jobRunIds the IDs
+         * @return           the builder
+         */
+        public Builder jobRunIds(IngestJobRunIds jobRunIds) {
+            return jobId(jobRunIds.getJobId())
+                    .tableId(jobRunIds.getTableId())
+                    .jobRunId(jobRunIds.getJobRunId())
+                    .taskId(jobRunIds.getTaskId());
+        }
 
         /**
          * Sets the job ID.

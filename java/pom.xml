@@ -21,7 +21,7 @@
     <groupId>sleeper</groupId>
     <artifactId>aws</artifactId>
     <packaging>pom</packaging>
-    <version>0.28.0</version>
+    <version>0.29.0</version>
 
     <modules>
         <module>core</module>
@@ -96,9 +96,9 @@
         <!-- Parquet uses Aircompressor. -->
         <aircompressor.version>2.0.2</aircompressor.version>
         <!-- Hadoop declares an old version of Protobuf with vulnerabilities. Managed from 3.23.4. -->
-        <protobuf.version>4.29.3</protobuf.version>
+        <protobuf.version>4.30.0</protobuf.version>
         <!-- Hadoop declares an old version of Nimbus with vulnerabilities. Managed from 9.8.1. -->
-        <nimbus-jose-jwt.version>10.0.1</nimbus-jose-jwt.version>
+        <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
         <!-- Spark declares an old version of Avro with vulnerabilities. Managed from 1.11.2. -->
         <avro.version>1.12.0</avro.version>
         <!-- Hadoop declares an old version of Kerby with vulnerabilities. Managed from 1.0.1. -->
@@ -123,13 +123,13 @@
         <okio.version>3.10.2</okio.version>
         <!-- Trino testing declares an old version. Managed from 1.2.3. -->
         <!-- jungrapht-visualization-samples also declares an old version, which is a dependency of the build module. -->
-        <logback.version>1.5.16</logback.version>
+        <logback.version>1.5.17</logback.version>
         <aws-java-sdk.version>1.12.498</aws-java-sdk.version>
-        <aws-java-sdk-v2.version>2.30.8</aws-java-sdk-v2.version>
-        <aws-crt.version>0.33.10</aws-crt.version>
-        <aws-lambda-java-events.version>3.14.0</aws-lambda-java-events.version>
+        <aws-java-sdk-v2.version>2.30.37</aws-java-sdk-v2.version>
+        <aws-crt.version>0.36.1</aws-crt.version>
+        <aws-lambda-java-events.version>3.15.0</aws-lambda-java-events.version>
         <aws-lambda-java-core.version>1.2.3</aws-lambda-java-core.version>
-        <aws-lambda-powertools.version>1.18.0</aws-lambda-powertools.version>
+        <aws-lambda-powertools.version>1.19.0</aws-lambda-powertools.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-codec.version>1.18.0</commons-codec.version>
@@ -140,17 +140,17 @@
         <janino.version>3.1.12</janino.version>
         <commons-net.version>3.11.1</commons-net.version>
         <commons-fileupload.version>1.5</commons-fileupload.version>
-        <jackson.version>2.18.2</jackson.version>
+        <jackson.version>2.18.3</jackson.version>
         <!-- Trino integration uses a different version of JJWT, this is the version used in the build module -->
         <jjwt.build.version>0.12.6</jjwt.build.version>
         <facebook.collections.version>0.1.32</facebook.collections.version>
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.0-jre</guava.version>
-        <cdk.version>2.177.0</cdk.version>
+        <cdk.version>2.182.0</cdk.version>
         <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
         <constructs.version>10.4.2</constructs.version>
-        <gson.version>2.12.0</gson.version>
-        <slf4j.version>2.0.16</slf4j.version>
+        <gson.version>2.12.1</gson.version>
+        <slf4j.version>2.0.17</slf4j.version>
         <reload4j.version>1.2.26</reload4j.version>
         <java-websocket.version>1.6.0</java-websocket.version>
         <bouncycastle.version>1.80</bouncycastle.version>
@@ -164,7 +164,7 @@
         <jersey.version>2.45</jersey.version>
         <jakarta.ws.version>2.1.6</jakarta.ws.version>
         <!-- Netty version is managed because S3, Athena and Arrow depend on it but use incompatible versions -->
-        <netty.version>4.1.117.Final</netty.version>
+        <netty.version>4.1.119.Final</netty.version>
         <!-- Versions of Jetty and its dependencies are managed because WireMock and Hadoop use different versions. -->
         <!-- We want to avoid mixing them but they should be compatible. -->
         <jetty.version>9.4.57.v20241219</jetty.version>
@@ -173,21 +173,22 @@
         <jungrapht-visualization.version>1.4</jungrapht-visualization.version>
         <jgrapht.version>1.5.2</jgrapht.version>
         <apfloat.version>1.14.0</apfloat.version>
-        <joda-time.version>2.13.0</joda-time.version>
+        <joda-time.version>2.13.1</joda-time.version>
+        <json-smart.version>2.5.2</json-smart.version>
         <jnr.ffi.version>2.2.17</jnr.ffi.version>
         <scijava.native.version>2.5.0</scijava.native.version>
         <!-- Testing -->
-        <junit.version>5.11.4</junit.version>
-        <junit.platform.version>1.11.4</junit.platform.version>
-        <mockito.version>5.15.2</mockito.version>
-        <testcontainers.version>1.20.4</testcontainers.version>
+        <junit.version>5.12.0</junit.version>
+        <junit.platform.version>1.12.0</junit.platform.version>
+        <mockito.version>5.16.0</mockito.version>
+        <testcontainers.version>1.20.6</testcontainers.version>
         <wiremock.version>2.35.2</wiremock.version>
         <assertj.version>3.27.3</assertj.version>
-        <approvaltests.version>24.14.2</approvaltests.version>
+        <approvaltests.version>24.17.0</approvaltests.version>
         <json-path.version>2.9.0</json-path.version>
         <xmlunit.version>2.10.0</xmlunit.version>
         <jsonunit.version>4.1.0</jsonunit.version>
-        <checkstyle.version>10.21.2</checkstyle.version>
+        <checkstyle.version>10.21.4</checkstyle.version>
         <sleeper.system.test.short.id/>
         <sleeper.system.test.vpc.id/>
         <sleeper.system.test.subnet.ids/>
@@ -207,14 +208,14 @@
         <shade.plugin.version>3.6.0</shade.plugin.version>
         <assembly.plugin.version>3.7.1</assembly.plugin.version>
         <jar.plugin.version>3.4.2</jar.plugin.version>
-        <compiler.plugin.version>3.13.0</compiler.plugin.version>
+        <compiler.plugin.version>3.14.0</compiler.plugin.version>
         <enforcer.plugin.version>3.5.0</enforcer.plugin.version>
         <distribution.format>dir</distribution.format>
-        <spotbugs.version>4.9.0</spotbugs.version>
+        <spotbugs.version>4.9.2</spotbugs.version>
         <spotbugs.plugin.version>4.8.3.1</spotbugs.plugin.version>
         <dependency.plugin.version>3.8.1</dependency.plugin.version>
         <go-offline.plugin.version>1.2.8</go-offline.plugin.version>
-        <dependency-check.plugin.version>12.0.1</dependency-check.plugin.version>
+        <dependency-check.plugin.version>12.1.0</dependency-check.plugin.version>
         <site.plugin.version>3.21.0</site.plugin.version>
         <exec.plugin.version>3.5.0</exec.plugin.version>
         <resources.plugin.version>3.3.1</resources.plugin.version>
@@ -880,6 +881,11 @@
                 <artifactId>joda-time</artifactId>
                 <version>${joda-time.version}</version>
             </dependency>
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json-smart.version}</version>
+            </dependency>
             <!-- Apache commons -->
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -1323,6 +1329,20 @@
                                     <excludes>
                                     </excludes>
                                 </artifactSet>
+                                <transformers>
+                                    <!--
+                                    This is needed to merge META-INFO/services/org.apache.hadoop.fs.FileSystem, which
+                                    is provided by different libraries.
+                                    Otherwise depending on the order Maven processes the jars, sometimes it takes the
+                                    version of this file from hadoop-aws, which only declares
+                                    org.apache.hadoop.fs.s3native.NativeS3FileSystem.
+                                    This prevents Hadoop from loading the local file system, and we see errors like this:
+                                    org.apache.hadoop.fs.UnsupportedFileSystemException: No FileSystem for scheme "file"
+                                    This is only strictly needed for modules that use Hadoop, but in practice this is
+                                    most fat jars.
+                                    -->
+                                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                </transformers>
                             </configuration>
                         </execution>
                     </executions>

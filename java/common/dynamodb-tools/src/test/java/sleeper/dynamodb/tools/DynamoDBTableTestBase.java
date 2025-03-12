@@ -23,13 +23,13 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-import sleeper.dynamodb.test.DynamoDBTestBase;
+import sleeper.localstack.test.LocalStackTestBase;
 
 import java.util.List;
 
 import static sleeper.dynamodb.tools.DynamoDBUtils.initialiseTable;
 
-public class DynamoDBTableTestBase extends DynamoDBTestBase {
+public class DynamoDBTableTestBase extends LocalStackTestBase {
     public static final String TEST_KEY = "test-key";
     public static final String TEST_VALUE = "test-value";
     public static final String TEST_TABLE_NAME = "dynamodb-tools-test-table";
@@ -41,11 +41,11 @@ public class DynamoDBTableTestBase extends DynamoDBTestBase {
 
     @AfterEach
     public void tearDown() {
-        dynamoDBClient.deleteTable(TEST_TABLE_NAME);
+        dynamoClient.deleteTable(TEST_TABLE_NAME);
     }
 
     public void createTable() {
-        initialiseTable(dynamoDBClient, TEST_TABLE_NAME,
+        initialiseTable(dynamoClient, TEST_TABLE_NAME,
                 List.of(
                         new AttributeDefinition(TEST_KEY, ScalarAttributeType.S)),
                 List.of(

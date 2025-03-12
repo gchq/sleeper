@@ -33,6 +33,7 @@ import sleeper.cdk.stack.DashboardStack;
 import sleeper.cdk.stack.GarbageCollectorStack;
 import sleeper.cdk.stack.PartitionSplittingStack;
 import sleeper.cdk.stack.TableMetricsStack;
+import sleeper.cdk.stack.bulkexport.BulkExportStack;
 import sleeper.cdk.stack.bulkimport.BulkImportBucketStack;
 import sleeper.cdk.stack.bulkimport.CommonEmrBulkImportStack;
 import sleeper.cdk.stack.bulkimport.EksBulkImportStack;
@@ -44,11 +45,9 @@ import sleeper.cdk.stack.compaction.CompactionStack;
 import sleeper.cdk.stack.compaction.CompactionTrackerResources;
 import sleeper.cdk.stack.core.ConfigBucketStack;
 import sleeper.cdk.stack.core.CoreStacks;
-import sleeper.cdk.stack.core.DynamoDBStateStoreStack;
 import sleeper.cdk.stack.core.LoggingStack;
 import sleeper.cdk.stack.core.ManagedPoliciesStack;
 import sleeper.cdk.stack.core.PropertiesStack;
-import sleeper.cdk.stack.core.S3StateStoreStack;
 import sleeper.cdk.stack.core.StateStoreCommitterStack;
 import sleeper.cdk.stack.core.StateStoreStacks;
 import sleeper.cdk.stack.core.TableDataStack;
@@ -138,10 +137,7 @@ public class SleeperCdkApp extends Stack {
         TableDataStack dataStack = new TableDataStack(this, "TableData", instanceProperties, loggingStack, policiesStack, jars);
         TransactionLogStateStoreStack transactionLogStateStoreStack = new TransactionLogStateStoreStack(
                 this, "TransactionLogStateStore", instanceProperties, dataStack);
-        StateStoreStacks stateStoreStacks = new StateStoreStacks(
-                new DynamoDBStateStoreStack(this, "DynamoDBStateStore", instanceProperties),
-                new S3StateStoreStack(this, "S3StateStore", instanceProperties, dataStack),
-                transactionLogStateStoreStack, policiesStack);
+        StateStoreStacks stateStoreStacks = new StateStoreStacks(transactionLogStateStoreStack, policiesStack);
         IngestTrackerResources ingestTracker = IngestTrackerResources.from(
                 this, "IngestTracker", instanceProperties, policiesStack);
         CompactionTrackerResources compactionTracker = CompactionTrackerResources.from(
@@ -222,6 +218,15 @@ public class SleeperCdkApp extends Stack {
                     bulkImportBucketStack,
                     coreStacks,
                     errorMetrics);
+        }
+
+        // Stack to run bulk export jobs
+        if (optionalStacks.contains(OptionalStack.BulkExportStack)) {
+            new BulkExportStack(this,
+                "BulkExport",
+                instanceProperties,
+                jars,
+                coreStacks);
         }
 
         // Stack to garbage collect old files

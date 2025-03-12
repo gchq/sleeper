@@ -15,20 +15,10 @@
  */
 package sleeper.compaction.job.creation.lambda;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.ReceiveMessageResult;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import sleeper.compaction.core.job.CompactionJob;
 import sleeper.compaction.core.job.CompactionJobFactory;
@@ -49,8 +39,7 @@ import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
-import sleeper.localstack.test.SleeperLocalStackContainer;
-import sleeper.parquet.utils.HadoopConfigurationLocalStackUtils;
+import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 
@@ -69,21 +58,12 @@ import static sleeper.core.properties.table.TableProperty.COMPACTION_JOB_SEND_TI
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.schema.SchemaTestHelper.schemaWithKey;
-import static sleeper.localstack.test.LocalStackAwsV1ClientHelper.buildAwsV1Client;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-@Testcontainers
-public class CompactionJobDispatchLambdaIT {
-
-    @Container
-    public static LocalStackContainer localStackContainer = SleeperLocalStackContainer.create(LocalStackContainer.Service.S3, LocalStackContainer.Service.SQS, LocalStackContainer.Service.DYNAMODB);
-
-    AmazonS3 s3 = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.S3, AmazonS3ClientBuilder.standard());
-    AmazonDynamoDB dynamoDB = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.DYNAMODB, AmazonDynamoDBClientBuilder.standard());
-    AmazonSQS sqs = buildAwsV1Client(localStackContainer, LocalStackContainer.Service.SQS, AmazonSQSClientBuilder.standard());
-    Configuration conf = HadoopConfigurationLocalStackUtils.getHadoopConfiguration(localStackContainer);
+public class CompactionJobDispatchLambdaIT extends LocalStackTestBase {
 
     InstanceProperties instanceProperties = createInstance();
-    StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3, dynamoDB, conf);
+    StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
     Schema schema = schemaWithKey("key");
     PartitionTree partitions = new PartitionsBuilder(schema).singlePartition("root").buildTree();
     TableProperties tableProperties = addTable(instanceProperties, schema, partitions);
@@ -99,7 +79,7 @@ public class CompactionJobDispatchLambdaIT {
         FileReference file2 = fileFactory.rootFile("test2.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-1", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-2", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
         assignJobIds(List.of(job1, job2));
 
         CompactionJobDispatchRequest request = generateBatchRequestAtTime(
@@ -121,7 +101,7 @@ public class CompactionJobDispatchLambdaIT {
         FileReference file2 = fileFactory.rootFile("test4.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
         tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 0);
@@ -147,7 +127,7 @@ public class CompactionJobDispatchLambdaIT {
         FileReference file2 = fileFactory.rootFile("test4.parquet", 5678);
         CompactionJob job1 = compactionFactory.createCompactionJob("test-job-3", List.of(file1), "root");
         CompactionJob job2 = compactionFactory.createCompactionJob("test-job-4", List.of(file2), "root");
-        stateStore.addFiles(List.of(file1, file2));
+        update(stateStore).addFiles(List.of(file1, file2));
 
         tableProperties.setNumber(COMPACTION_JOB_SEND_TIMEOUT_SECS, 123);
         tableProperties.setNumber(COMPACTION_JOB_SEND_RETRY_DELAY_SECS, 0);
@@ -168,38 +148,38 @@ public class CompactionJobDispatchLambdaIT {
 
     private InstanceProperties createInstance() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
-        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
-        instanceProperties.set(COMPACTION_PENDING_DLQ_URL, sqs.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(COMPACTION_JOB_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(COMPACTION_PENDING_QUEUE_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
+        instanceProperties.set(COMPACTION_PENDING_DLQ_URL, sqsClient.createQueue(UUID.randomUUID().toString()).getQueueUrl());
 
-        DynamoDBTableIndexCreator.create(dynamoDB, instanceProperties);
-        new TransactionLogStateStoreCreator(instanceProperties, dynamoDB).create();
-        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoDB);
+        DynamoDBTableIndexCreator.create(dynamoClient, instanceProperties);
+        new TransactionLogStateStoreCreator(instanceProperties, dynamoClient).create();
+        DynamoDBCompactionJobTrackerCreator.create(instanceProperties, dynamoClient);
 
-        s3.createBucket(instanceProperties.get(CONFIG_BUCKET));
-        s3.createBucket(instanceProperties.get(DATA_BUCKET));
-        S3InstanceProperties.saveToS3(s3, instanceProperties);
+        createBucket(instanceProperties.get(CONFIG_BUCKET));
+        createBucket(instanceProperties.get(DATA_BUCKET));
+        S3InstanceProperties.saveToS3(s3Client, instanceProperties);
 
         return instanceProperties;
     }
 
     private TableProperties addTable(InstanceProperties instanceProperties, Schema schema, PartitionTree partitions) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-        S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                 .createTable(tableProperties);
-        stateStoreProvider.getStateStore(tableProperties)
+        update(stateStoreProvider.getStateStore(tableProperties))
                 .initialise(partitions.getAllPartitions());
         return tableProperties;
     }
 
     private void saveTableProperties() {
-        S3TableProperties.createStore(instanceProperties, s3, dynamoDB)
+        S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient)
                 .save(tableProperties);
     }
 
     private void assignJobIds(List<CompactionJob> jobs) {
         for (CompactionJob job : jobs) {
-            stateStore.assignJobIds(List.of(job.createAssignJobIdRequest()));
+            update(stateStore).assignJobIds(List.of(job.createAssignJobIdRequest()));
         }
     }
 
@@ -209,7 +189,7 @@ public class CompactionJobDispatchLambdaIT {
     }
 
     private void putCompactionJobBatch(CompactionJobDispatchRequest request, List<CompactionJob> jobs) {
-        s3.putObject(
+        putObject(
                 instanceProperties.get(DATA_BUCKET),
                 request.getBatchKey(),
                 new CompactionJobSerDe().toJson(jobs));
@@ -224,11 +204,11 @@ public class CompactionJobDispatchLambdaIT {
     }
 
     private CompactionJobDispatcher dispatcher(List<Instant> times) {
-        return CompactionJobDispatchLambda.dispatcher(s3, dynamoDB, sqs, conf, instanceProperties, times.iterator()::next);
+        return CompactionJobDispatchLambda.dispatcher(s3Client, dynamoClient, sqsClient, hadoopConf, instanceProperties, times.iterator()::next);
     }
 
     private List<CompactionJob> receiveCompactionJobs() {
-        ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest()
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_JOB_QUEUE_URL))
                 .withMaxNumberOfMessages(10));
         return result.getMessages().stream()
@@ -237,7 +217,7 @@ public class CompactionJobDispatchLambdaIT {
     }
 
     private List<CompactionJobDispatchRequest> recievePendingBatches() {
-        ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest()
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_QUEUE_URL))
                 .withMaxNumberOfMessages(10));
         return result.getMessages().stream()
@@ -246,7 +226,7 @@ public class CompactionJobDispatchLambdaIT {
     }
 
     private List<CompactionJobDispatchRequest> receiveDeadLetters() {
-        ReceiveMessageResult result = sqs.receiveMessage(new ReceiveMessageRequest()
+        ReceiveMessageResult result = sqsClient.receiveMessage(new ReceiveMessageRequest()
                 .withQueueUrl(instanceProperties.get(COMPACTION_PENDING_DLQ_URL))
                 .withMaxNumberOfMessages(10));
         return result.getMessages().stream()

@@ -22,7 +22,7 @@ import sleeper.core.statestore.AssignJobIdRequest;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
-import sleeper.core.statestore.transactionlog.transactions.AssignJobIdsTransaction;
+import sleeper.core.statestore.transactionlog.transaction.impl.AssignJobIdsTransaction;
 import sleeper.core.table.TableStatus;
 
 import java.util.List;
@@ -35,7 +35,7 @@ public interface AssignJobIdToFiles {
 
     static AssignJobIdToFiles synchronous(StateStore stateStore) {
         return (assignJobIdRequests, tableStatus) -> {
-            stateStore.assignJobIds(assignJobIdRequests);
+            new AssignJobIdsTransaction(assignJobIdRequests).synchronousCommit(stateStore);
         };
     }
 

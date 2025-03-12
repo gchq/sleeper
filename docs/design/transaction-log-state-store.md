@@ -6,15 +6,16 @@ Accepted
 
 ## Context
 
-We have two implementations of the state store that tracks partitions and files in a Sleeper table. This takes some
-effort to keep both working as the system changes, and both have problems.
+There were originally two implementations of the state store that tracks partitions and files in a Sleeper table. This
+took some effort to keep both working as the system changed, and both had problems. Both of these have now been deleted.
 
-The DynamoDB state store holds partitions and files as individual items in DynamoDB tables. This means that updates
+The DynamoDB state store held partitions and files as individual items in DynamoDB tables. This means that updates
 which affect many items at once require splitting into separate transactions, and we can't always apply changes as
-atomically or quickly as we would like. There's also a consistency issue when working with many items at once. As we
-page through items to load them into memory, the data may change in DynamoDB in between pages.
+atomically or quickly as we would like. There's also a consistency issue when working with many items at once, because
+DynamoDB does not support snapshot isolation. As we page through items to load them into memory, the data may change in
+DynamoDB in between pages.
 
-The S3 state store keeps one file for partitions and one for files, both in an S3 bucket. A DynamoDB table is used to
+The S3 state store kept one file for partitions and one for files, both in an S3 bucket. A DynamoDB table is used to
 track the current revision of each file, and each change means writing a whole new file. This means that each change
 takes some time to process, and if two changes happen to the same file at once, it backs out and has to retry. Under
 contention, many retries may happen. It's common for updates to fail entirely due to too many retries, or to take a long

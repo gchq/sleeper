@@ -35,9 +35,11 @@ import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
+import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.testutils.FixedStateStoreProvider;
-import sleeper.core.statestore.transactionlog.transactions.DeleteFilesTransaction;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
+import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
+import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFile;
@@ -49,9 +51,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -61,7 +61,6 @@ import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.properties.table.TableProperty.TABLE_NAME;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
@@ -71,7 +70,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
-import static sleeper.core.statestore.testutils.StateStoreTestHelper.inMemoryStateStoreWithFixedPartitions;
+import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
 
 public class GarbageCollectorIT {
@@ -81,8 +80,10 @@ public class GarbageCollectorIT {
     public Path tempDir;
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final List<TableProperties> tables = new ArrayList<>();
-    private final Map<String, StateStore> stateStoreByTableName = new HashMap<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
+    private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore
+            .createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
+
     private final List<StateStoreCommitRequest> sentCommits = new ArrayList<>();
 
     @BeforeEach
@@ -228,7 +229,7 @@ public class GarbageCollectorIT {
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
-            stateStore.addFilesWithReferences(List.of(
+            update(stateStore).addFilesWithReferences(List.of(
                     fileWithNoReferences("/tmp/not-a-file.parquet")));
             Path oldFile2 = tempDir.resolve("old-file-2.parquet");
             Path newFile2 = tempDir.resolve("new-file-2.parquet");
@@ -291,8 +292,8 @@ public class GarbageCollectorIT {
             StateStore stateStore2 = stateStoreWithFixedTime(table2, oldEnoughTime);
             String file1 = "file-1.parquet";
             String file2 = "file-2.parquet";
-            stateStore1.addFilesWithReferences(List.of(fileWithNoReferences(file1)));
-            stateStore2.addFilesWithReferences(List.of(fileWithNoReferences(file2)));
+            update(stateStore1).addFilesWithReferences(List.of(fileWithNoReferences(file1)));
+            update(stateStore2).addFilesWithReferences(List.of(fileWithNoReferences(file2)));
 
             // When
             List<String> deletedFiles = new ArrayList<>();
@@ -415,7 +416,7 @@ public class GarbageCollectorIT {
         String filename = filePath.toString();
         FileReference fileReference = FileReferenceFactory.from(partitions).rootFile(filename, 100L);
         writeFile(filename);
-        stateStore.addFile(fileReference);
+        update(stateStore).addFile(fileReference);
         return fileReference;
     }
 
@@ -423,9 +424,9 @@ public class GarbageCollectorIT {
             Path oldFilePath, Path newFilePath) throws Exception {
         FileReference oldFile = createActiveFile(oldFilePath, stateStore);
         writeFile(newFilePath.toString());
-        stateStore.assignJobIds(List.of(
+        update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
-        stateStore.atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
                 "job1", List.of(oldFile.getFilename()), FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100))));
     }
 
@@ -448,8 +449,7 @@ public class GarbageCollectorIT {
     private TableProperties createTable() {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
         tables.add(tableProperties);
-        StateStore stateStore = inMemoryStateStoreWithFixedPartitions(partitions.getAllPartitions());
-        stateStoreByTableName.put(tableProperties.get(TABLE_NAME), stateStore);
+        update(stateStoreProvider.getStateStore(tableProperties)).initialise(partitions.getAllPartitions());
         return tableProperties;
     }
 
@@ -460,7 +460,7 @@ public class GarbageCollectorIT {
     }
 
     private StateStore stateStore(TableProperties table) {
-        return stateStoreByTableName.get(table.get(TABLE_NAME));
+        return stateStoreProvider.getStateStore(table);
     }
 
     private StateStore stateStoreWithFixedTime(TableProperties table, Instant fixedTime) {
@@ -475,14 +475,11 @@ public class GarbageCollectorIT {
 
     private GarbageCollector collector() throws Exception {
         return new GarbageCollector(deleteFileAndSketches(new Configuration()), instanceProperties,
-                FixedStateStoreProvider.byTableName(stateStoreByTableName),
-                sentCommits::add);
+                stateStoreProvider, sentCommits::add);
     }
 
     private GarbageCollector collectorWithDeleteAction(DeleteFile deleteFile) throws Exception {
-        return new GarbageCollector(deleteFile, instanceProperties,
-                FixedStateStoreProvider.byTableName(stateStoreByTableName),
-                sentCommits::add);
+        return new GarbageCollector(deleteFile, instanceProperties, stateStoreProvider, sentCommits::add);
     }
 
     private static Schema getSchema() {

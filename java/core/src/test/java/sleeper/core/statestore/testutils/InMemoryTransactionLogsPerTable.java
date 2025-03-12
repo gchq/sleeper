@@ -16,9 +16,8 @@
 package sleeper.core.statestore.testutils;
 
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionBodyStore;
-import sleeper.core.statestore.transactionlog.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.TransactionLogStateStore;
+import sleeper.core.statestore.transactionlog.transaction.FileReferenceTransaction;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -75,5 +74,27 @@ public class InMemoryTransactionLogsPerTable {
 
     public List<Duration> getRetryWaits() {
         return retryWaits;
+    }
+
+    /**
+     * Initialises the state store for the given table.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @return                 this object for chaining
+     */
+    public InMemoryTransactionLogsPerTable initialiseTable(TableProperties tableProperties) {
+        InMemoryTransactionLogs tableLogs = forTable(tableProperties);
+        InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, tableLogs);
+        return this;
+    }
+
+    /**
+     * Gets the last transaction from the files transaction log store.
+     *
+     * @param  tableProperties the table properties
+     * @return                 the file reference transaction
+     */
+    public FileReferenceTransaction getLastFilesTransaction(TableProperties tableProperties) {
+        return forTable(tableProperties).getLastFilesTransaction(tableProperties);
     }
 }

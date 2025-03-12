@@ -32,15 +32,11 @@ import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordBatchFactory;
 import sleeper.ingest.runner.impl.recordbatch.arrow.ArrowRecordWriter;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static java.nio.file.Files.createTempDirectory;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.TableDefaultProperty.DEFAULT_INGEST_PARTITION_FILE_WRITER_TYPE;
@@ -55,7 +51,7 @@ public class IngestCoordinatorTestParameters {
 
     private final StateStore stateStore;
     private final Schema schema;
-    private final String workingDir;
+    private final String localWorkingDir;
     private final String dataBucketName;
     private final String localDataPath;
     private final Configuration hadoopConfiguration;
@@ -67,7 +63,7 @@ public class IngestCoordinatorTestParameters {
     private IngestCoordinatorTestParameters(Builder builder) {
         stateStore = Objects.requireNonNull(builder.stateStore, "stateStore must not be null");
         schema = Objects.requireNonNull(builder.schema, "schema must not be null");
-        workingDir = Objects.requireNonNull(builder.workingDir, "workingDir must not be null");
+        localWorkingDir = Objects.requireNonNull(builder.localWorkingDir, "localWorkingDir must not be null");
         dataBucketName = builder.dataBucketName;
         localDataPath = builder.localDataPath;
         hadoopConfiguration = Objects.requireNonNull(builder.hadoopConfiguration, "hadoopConfiguration must not be null");
@@ -79,6 +75,10 @@ public class IngestCoordinatorTestParameters {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public String getLocalWorkingDir() {
+        return localWorkingDir;
     }
 
     public String getLocalFilePrefix() {
@@ -102,7 +102,7 @@ public class IngestCoordinatorTestParameters {
         setProperties.setProperties(instanceProperties, tableProperties, this);
         ArrowRecordBatchFactory.Builder<U> arrowConfigBuilder = ArrowRecordBatchFactory.builderWith(instanceProperties)
                 .schema(schema)
-                .localWorkingDirectory(workingDir)
+                .localWorkingDirectory(localWorkingDir)
                 .recordWriter(recordWriter);
         return coordinatorBuilder(instanceProperties, tableProperties)
                 .recordBatchFactory(arrowConfigBuilder.build())
@@ -114,7 +114,7 @@ public class IngestCoordinatorTestParameters {
         return IngestFactory.builder()
                 .instanceProperties(instanceProperties)
                 .hadoopConfiguration(hadoopConfiguration)
-                .localDir(workingDir)
+                .localDir(localWorkingDir)
                 .objectFactory(ObjectFactory.noUserJars())
                 .s3AsyncClient(s3AsyncClient)
                 .stateStoreProvider(new FixedStateStoreProvider(tableProperties, stateStore))
@@ -129,7 +129,7 @@ public class IngestCoordinatorTestParameters {
     public static final class Builder {
         private StateStore stateStore;
         private Schema schema;
-        private String workingDir;
+        private String localWorkingDir;
         private String dataBucketName;
         private String localDataPath;
         private Configuration hadoopConfiguration;
@@ -144,7 +144,7 @@ public class IngestCoordinatorTestParameters {
         private Builder(IngestCoordinatorTestParameters parameters) {
             this.stateStore = parameters.stateStore;
             this.schema = parameters.schema;
-            this.workingDir = parameters.workingDir;
+            this.localWorkingDir = parameters.localWorkingDir;
             this.dataBucketName = parameters.dataBucketName;
             this.localDataPath = parameters.localDataPath;
             this.hadoopConfiguration = parameters.hadoopConfiguration;
@@ -168,8 +168,8 @@ public class IngestCoordinatorTestParameters {
             return setTableProperties(properties -> properties.set(ITERATOR_CLASS_NAME, iteratorClassName));
         }
 
-        public Builder workingDir(String workingDir) {
-            this.workingDir = workingDir;
+        public Builder localWorkingDir(String localWorkingDir) {
+            this.localWorkingDir = localWorkingDir;
             return this;
         }
 
@@ -181,14 +181,6 @@ public class IngestCoordinatorTestParameters {
         public Builder localDataPath(String localDataPath) {
             this.localDataPath = localDataPath;
             return this;
-        }
-
-        public Builder temporaryFolder(Path temporaryFolder) {
-            try {
-                return localDataPath(createTempDirectory(temporaryFolder, null).toString());
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
 
         public Builder hadoopConfiguration(Configuration hadoopConfiguration) {
