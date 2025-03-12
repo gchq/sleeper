@@ -41,7 +41,7 @@ use datafusion::{
 };
 use functions::{validate_aggregations, Aggregate, FilterAggregationConfig};
 use log::{error, info, warn};
-use metrics::{log_metrics, RowCounts};
+use metrics::RowCounts;
 use num_format::{Locale, ToFormattedString};
 use std::{collections::HashMap, iter::once, sync::Arc};
 use url::Url;
@@ -347,7 +347,7 @@ async fn collect_stats(
     let _ = collect(physical_plan.clone(), Arc::new(task_ctx)).await?;
     let mut stats = RowCounts::new(input_paths);
     accept(physical_plan.as_ref(), &mut stats)?;
-    log_metrics(&stats.file_metrics);
+    stats.log_metrics();
     Ok(stats)
 }
 
