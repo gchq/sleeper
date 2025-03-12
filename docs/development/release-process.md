@@ -5,7 +5,8 @@ The following steps explain how to prepare and publish a release for Sleeper, by
 
 1. Update CHANGELOG.md with a summary of the issues fixed and improvements made in this version.
 
-2. Update the [roadmap](roadmap.md) and remove any planned features that have been implemented in this release.
+2. Update the [roadmap](roadmap.md) to remove any planned features that have been implemented in this release, and give
+   an up to date view of upcoming work.
 
 3. Make sure the [NOTICES](../../NOTICES) file is up to date, particularly from any version changes made by Dependabot.
 

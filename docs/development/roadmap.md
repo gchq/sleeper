@@ -1,45 +1,41 @@
+Roadmap
+=======
 
+This section documents some of the improvements that we plan to make to Sleeper.
 
-This section documents some of the planned functionality and improvements:
+The following improvements are actively being worked on:
 
-- Query optimisation:
-    - Add an option for the system to automatically keep the lambdas warm by periodically
-    calling them with dummy queries.
-    - Optimise the start-up time of the lambdas, see https://docs.aws.amazon.com/lambda/latest/dg/snapstart.html
-    and https://aws.amazon.com/blogs/compute/optimizing-aws-lambda-function-performance-for-java/.
-    - Optimise the parameters used when reading and writing Parquet files. These parameters include whether
-    dictionary encoding is used, the row group and page sizes, the readahead size, etc.
+- https://github.com/gchq/sleeper/issues/3446 Bulk export.
+- https://github.com/gchq/sleeper/issues/1330 Support deploying a published version of Sleeper.
+- https://github.com/gchq/sleeper/issues/4155 Java API improvements.
+- https://github.com/gchq/sleeper/issues/3687 Update design documentation.
+- https://github.com/gchq/sleeper/issues/4401 Garbage collector batching.
 
-- Python API improvements: This is currently basic and needs further work.
+The following are likely to be worked on in the near future:
 
-- Iterators: Currently a single iterator can be provided. This should be extended so
-    that a stack of iterators can be provided.
+- https://github.com/gchq/sleeper/issues/4393 Batch up partition splitting commits.
+- https://github.com/gchq/sleeper/issues/3693 Declarative deployment for infrastructure as code.
+- https://github.com/gchq/sleeper/issues/1389 Upgrade to AWS SDK v2.
+- https://github.com/gchq/sleeper/issues/1391 Create a library of repeatable, sustained, large-scale performance tests.
+- https://github.com/gchq/sleeper/issues/1388 Rust implementations for operations on data files.
 
-- Bulk export: Add the ability to perform a bulk export, i.e. read over all the data in
-    a table, filter it and then export it to Parquet. This will not be done in a lambda.
+The following improvements will be worked on in future (these are in no particular order):
 
-- Metrics page: Review and extend the metrics produced.
-
-- Purge: Add the ability to purge data from a table, i.e. delete any items matching a
-    predicate.
-
-- Create a predicate language for specifying filters on queries.
-
-- Create a suite of automated system tests.
-
-- Create a library of repeatable, sustained, large-scale performance tests.
-
-- Review and extend the integrations with Athena and Trino. Review how Trino can
-    be used to run SQL queries over the entire table.
-
-- Extend the range of supported types: we should be able to support the full range
-    of Arrow / Parquet types. A Sleeper schema could be specified as an Arrow schema
-    with additional information about which are the row keys and sort keys.
-
-- Service that maintains an up-to-date cache of the statestore: Various parts of the
-    system need to query the state store. We could potentially reduce the cost and
-    latency of these queries if we had a long-running service that maintained an
-    up-to-date cache of the statestore.
-
-- Review whether some of the performance sensitive parts of the code can be rewritten
-    in Rust to take advantage of the improvements to the Parquet and Arrow Rust libraries.
+- https://github.com/gchq/sleeper/issues/576 Use Arrow types in the table schema.
+- https://github.com/gchq/sleeper/issues/4396 Failure handling / backpressure for state store updates.
+- https://github.com/gchq/sleeper/issues/4398 Trigger compaction dispatch in transaction log follower.
+- Scaling improvements.
+    - https://github.com/gchq/sleeper/issues/4215 Service that maintains an up-to-date cache of the state store.
+    - https://github.com/gchq/sleeper/issues/4218 Batch up updates to job trackers from state store commits.
+    - https://github.com/gchq/sleeper/issues/3117 Improve throughput of transactions with multiple Sleeper tables.
+    - https://github.com/gchq/sleeper/issues/4214 Mitigate memory limitations with multiple Sleeper tables.
+    - https://github.com/gchq/sleeper/issues/4395 Table state partitioning.
+    - https://github.com/gchq/sleeper/issues/4394 Parallelise garbage collection.
+- Usability improvements.
+    - https://github.com/gchq/sleeper/issues/1328 Unify admin client and related scripts.
+    - https://github.com/gchq/sleeper/issues/1786 REST API.
+    - Python API improvements. This is currently basic and needs further work.
+- https://github.com/gchq/sleeper/issues/1392 Create a predicate language for specifying filters on queries.
+- https://github.com/gchq/sleeper/issues/1390 Review and extend the integrations with Athena and Trino.
+- Metrics page. Review and extend the metrics produced.
+- Purge data from a table, i.e. delete any items matching a predicate.
