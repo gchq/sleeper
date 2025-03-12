@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 
 import sleeper.clients.testutil.ToStringConsoleOutput;
 
+import java.io.IOException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.clients.testutil.ClientTestUtils.example;
 
@@ -92,5 +94,27 @@ class TableWriterTest {
 
         // Then
         assertThat(output).hasToString(example("reports/table/twoFields.txt"));
+    }
+
+    @Test
+    void shouldVerifyTableWhenStructureSet() throws IOException {
+
+        // Given
+        TableStructure structure = TableStructure.builder()
+                .paddingBeforeRow("<Start>")
+                .paddingAfterRow("<End>")
+                .paddingBetweenColumns(" |-*-| ")
+                .horizontalBorderCharacter('#').build();
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
+        factoryBuilder.addField("First Column");
+        factoryBuilder.addField("Second Column");
+        TableWriterFactory factory = factoryBuilder.build();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
+
+        // When
+        factory.tableBuilder()
+                .build().write(output.getPrintStream());
+        // Then
+        assertThat(output).hasToString(example("reports/table/structure.txt"));
     }
 }
