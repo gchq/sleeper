@@ -61,7 +61,7 @@ chrono = { version = "0.4.39" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
 
 # Transitive dependency
-ring = { version = "0.17.12" }
+ring = { version = "0.17.14" }
 
 [dev-dependencies]
 tempfile = { version = "3.18.0" }                                 # Create temporary files
