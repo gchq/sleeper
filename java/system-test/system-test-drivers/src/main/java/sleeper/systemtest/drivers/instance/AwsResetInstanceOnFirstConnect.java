@@ -25,7 +25,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.S3Object;
-import software.amazon.awssdk.services.sqs.SqsClient;
 
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -59,12 +58,16 @@ public class AwsResetInstanceOnFirstConnect {
     public static final Logger LOGGER = LoggerFactory.getLogger(AwsResetInstanceOnFirstConnect.class);
     private final S3Client s3;
     private final AmazonDynamoDB dynamoDB;
-    private final SqsClient sqs;
+    private final AwsDrainSqsQueue drainSqsQueue;
 
     public AwsResetInstanceOnFirstConnect(SystemTestClients clients) {
+        this(clients, AwsDrainSqsQueue.forSystemTests(clients.getSqsV2()));
+    }
+
+    public AwsResetInstanceOnFirstConnect(SystemTestClients clients, AwsDrainSqsQueue drainSqsQueue) {
         this.s3 = clients.getS3V2();
         this.dynamoDB = clients.getDynamoDB();
-        this.sqs = clients.getSqsV2();
+        this.drainSqsQueue = drainSqsQueue;
     }
 
     public void reset(InstanceProperties instanceProperties) {
@@ -93,11 +96,10 @@ public class AwsResetInstanceOnFirstConnect {
     }
 
     private void drainAllQueues(InstanceProperties instanceProperties) {
-        List<String> queueUrls = SqsQueues.ALL_QUEUE_URL_PROPERTIES.stream()
+        drainSqsQueue.empty(SqsQueues.ALL_QUEUE_URL_PROPERTIES.stream()
                 .map(instanceProperties::get)
                 .filter(queueUrl -> queueUrl != null)
-                .toList();
-        queueUrls.stream().parallel().forEach(queueUrl -> AwsDrainSqsQueue.emptyQueueForWholeInstance(sqs, queueUrl));
+                .toList());
     }
 
     private void clearBucket(String bucketName) {

@@ -46,13 +46,25 @@ public class SupplierTestHelper {
     }
 
     /**
+     * Creates a supplier of IDs. The IDs will be generated with a prefix followed by an autoincrementing number.
+     *
+     * @param  prefix the string to start each ID, at most 8 characters
+     * @return        the supplier
+     */
+    public static Supplier<String> supplyNumberedIdsWithPrefix(String prefix) {
+        return IntStream.iterate(1, i -> i + 1)
+                .mapToObj(i -> prefix + i)
+                .iterator()::next;
+    }
+
+    /**
      * Creates a supplier of IDs that would usually be generated with UUID.randomUUID. The IDs will be generated with
      * each number embedded in the digits of the UUID.
      *
      * @param  prefix the string to start each ID, at most 8 characters
      * @return        the supplier
      */
-    public static Supplier<String> supplyNumberedIdsWithPrefix(String prefix) {
+    public static Supplier<String> supplyNumberedUuidsWithPrefix(String prefix) {
         return IntStream.range(1, 10)
                 .mapToObj(i -> numberedUUID(prefix, i))
                 .iterator()::next;

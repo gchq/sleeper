@@ -47,16 +47,16 @@ public class CompactionJobEventTestData {
         return CompactionJobStartedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).startTime(startTime).jobRunId(UUID.randomUUID().toString());
     }
 
-    public static CompactionJobFinishedEvent.Builder compactionFinishedEventBuilder(CompactionJobStartedEvent started, JobRunSummary summary) {
-        return CompactionJobFinishedEvent.builder().jobId(started.getJobId()).tableId(started.getTableId()).taskId(started.getTaskId()).jobRunId(started.getJobRunId()).summary(summary);
+    public static CompactionJobFinishedEvent compactionFinishedEvent(CompactionJobStartedEvent started, JobRunSummary summary) {
+        return CompactionJobFinishedEvent.builder().jobId(started.getJobId()).tableId(started.getTableId()).taskId(started.getTaskId()).jobRunId(started.getJobRunId()).summary(summary).build();
     }
 
     public static CompactionJobFinishedEvent.Builder compactionFinishedEventBuilder(CompactionJobCreatedEvent created, JobRunSummary summary) {
         return CompactionJobFinishedEvent.builder().jobId(created.getJobId()).tableId(created.getTableId()).summary(summary);
     }
 
-    public static CompactionJobCommittedEvent.Builder compactionCommittedEventBuilder(CompactionJobStartedEvent started, Instant commitTime) {
-        return CompactionJobCommittedEvent.builder().jobId(started.getJobId()).tableId(started.getTableId()).taskId(started.getTaskId()).jobRunId(started.getJobRunId()).commitTime(commitTime);
+    public static CompactionJobCommittedEvent compactionCommittedEvent(CompactionJobStartedEvent started, Instant commitTime) {
+        return CompactionJobCommittedEvent.builder().jobId(started.getJobId()).tableId(started.getTableId()).taskId(started.getTaskId()).jobRunId(started.getJobRunId()).commitTime(commitTime).build();
     }
 
     public static CompactionJobCommittedEvent.Builder compactionCommittedEventBuilder(CompactionJobCreatedEvent created, Instant commitTime) {

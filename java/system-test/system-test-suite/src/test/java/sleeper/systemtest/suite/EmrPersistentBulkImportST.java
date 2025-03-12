@@ -50,7 +50,7 @@ public class EmrPersistentBulkImportST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(BULK_IMPORT_PERSISTENT_EMR);
+        sleeper.connectToInstanceAddOnlineTable(BULK_IMPORT_PERSISTENT_EMR);
         sleeper.enableOptionalStack(OptionalStack.PersistentEmrBulkImportStack);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
         // Note that we don't purge the bulk import job queue when the test fails,

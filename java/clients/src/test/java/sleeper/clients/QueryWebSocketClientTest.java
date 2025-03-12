@@ -30,7 +30,7 @@ import sleeper.clients.exception.WebSocketErrorException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.testutils.FixedTablePropertiesProvider;
-import sleeper.core.range.Range;
+import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
@@ -372,7 +372,7 @@ public class QueryWebSocketClientTest {
         return Query.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .queryId(queryId)
-                .regions(List.of(new Region(new Range(rowKey, value, true, value, true))))
+                .regions(List.of(new Region(rangeFactory().createExactRange(rowKey, value))))
                 .build();
     }
 
@@ -380,8 +380,12 @@ public class QueryWebSocketClientTest {
         return Query.builder()
                 .tableName(tableProperties.get(TABLE_NAME))
                 .queryId(queryId)
-                .regions(List.of(new Region(new Range(rowKey, min, true, max, false))))
+                .regions(List.of(new Region(rangeFactory().createRange(rowKey, min, max))))
                 .build();
+    }
+
+    private RangeFactory rangeFactory() {
+        return new RangeFactory(tableProperties.getSchema());
     }
 
     protected CompletableFuture<List<String>> runQueryFuture(Query query, Client webSocketClient) throws Exception {

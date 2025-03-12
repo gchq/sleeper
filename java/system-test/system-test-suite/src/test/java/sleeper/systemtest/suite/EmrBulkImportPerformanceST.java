@@ -44,7 +44,7 @@ public class EmrBulkImportPerformanceST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper, AfterTestReports reporting) {
-        sleeper.connectToInstance(BULK_IMPORT_PERFORMANCE);
+        sleeper.connectToInstanceAddOnlineTable(BULK_IMPORT_PERFORMANCE);
         reporting.reportAlways(SystemTestReports.SystemTestBuilder::ingestJobs);
     }
 

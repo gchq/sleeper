@@ -44,7 +44,7 @@ public class RedeployOptionalStacksST {
 
     @BeforeEach
     void setUp(SleeperSystemTest sleeper) {
-        sleeper.connectToInstance(REENABLE_OPTIONAL_STACKS);
+        sleeper.connectToInstanceAddOnlineTable(REENABLE_OPTIONAL_STACKS);
     }
 
     @AfterEach

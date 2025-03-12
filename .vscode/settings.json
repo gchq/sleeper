@@ -8,6 +8,7 @@
     120
   ],
   "files.autoSave": "onFocusChange",
+  "files.trimTrailingWhitespace": true,
   "java.checkstyle.configuration": "./code-style/checkstyle-idea/checkstyle.xml",
   "java.checkstyle.version": "10.18.0",
   "java.compile.nullAnalysis.mode": "automatic",
@@ -37,6 +38,7 @@
     "sleeper.core.tracker.compaction.job.CompactionJobStatusTestData",
     "sleeper.core.tracker.ingest.job.IngestJobEventTestData",
     "sleeper.core.tracker.ingest.job.IngestJobStatusTestData",
+    "sleeper.core.tracker.job.run.JobRunTestData",
     "sleeper.core.statestore.testutils.StateStoreUpdatesWrapper"
   ],
   "comment.java.configuration.runtimes": [

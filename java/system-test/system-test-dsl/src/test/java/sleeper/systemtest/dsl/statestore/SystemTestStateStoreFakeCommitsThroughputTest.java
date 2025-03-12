@@ -43,7 +43,7 @@ public class SystemTestStateStoreFakeCommitsThroughputTest {
     @Test
     void shouldAssertOnCommitsPerSecond(SleeperSystemTest sleeper) {
         // Given
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
         committer.setFakeCommitsPerSecond(sleeper, 10.0);
 
         // When / Then

@@ -37,7 +37,7 @@ public class PythonBulkImportST {
     @BeforeEach
     void setup(SleeperSystemTest sleeper, AfterTestReports reporting) {
         reporting.reportIfTestFailed(SystemTestReports.SystemTestBuilder::ingestTasksAndJobs);
-        sleeper.connectToInstance(MAIN);
+        sleeper.connectToInstanceAddOnlineTable(MAIN);
     }
 
     @Test

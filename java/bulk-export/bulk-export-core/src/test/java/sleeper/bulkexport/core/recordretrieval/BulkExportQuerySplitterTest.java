@@ -75,8 +75,8 @@ public class BulkExportQuerySplitterTest {
         BulkExportQuery export = bulkExportQuery();
         PartitionTree tree = new PartitionsBuilder(schema)
                 .rootFirst("root")
-                .splitToNewChildren("root", "L", "R", 5L)
-                .splitToNewChildren("L", "LL", "LR", 15L)
+                .splitToNewChildren("root", "L", "R", 15L)
+                .splitToNewChildren("L", "LL", "LR", 5L)
                 .buildTree();
         update(stateStore).initialise(tree.traverseLeavesFirst().toList());
         addRootFile("root.parquet", List.of(new Record(Map.of("key", 123L))));

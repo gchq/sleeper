@@ -38,7 +38,7 @@ public class SystemTestSourceFilesTest {
                 "key", "some-id",
                 "timestamp", 1234L,
                 "value", "Some value"));
-        sleeper.connectToInstance(IN_MEMORY_MAIN);
+        sleeper.connectToInstanceAddOnlineTable(IN_MEMORY_MAIN);
 
         // When
         sleeper.sourceFiles().create("test.parquet", record);

@@ -48,6 +48,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.LongStream;
 
+import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
+
 /**
  * The entry point that all system tests use to interact with the system. This is the starting point for all steps of
  * the Domain Specific Language (DSL) for system tests. The purpose of this is to make it as easy as possible to read
@@ -79,9 +81,14 @@ public class SleeperSystemTest {
         this.context = context;
     }
 
-    public void connectToInstance(SystemTestInstanceConfiguration configuration) {
+    public void connectToInstanceAddOnlineTable(SystemTestInstanceConfiguration configuration) {
         context.instance().connectTo(configuration);
-        context.instance().addDefaultTables();
+        context.instance().addDefaultTables(Map.of(TABLE_ONLINE, "true"));
+    }
+
+    public void connectToInstanceAddOfflineTable(SystemTestInstanceConfiguration configuration) {
+        context.instance().connectTo(configuration);
+        context.instance().addDefaultTables(Map.of(TABLE_ONLINE, "false"));
     }
 
     public void connectToInstanceNoTables(SystemTestInstanceConfiguration configuration) {

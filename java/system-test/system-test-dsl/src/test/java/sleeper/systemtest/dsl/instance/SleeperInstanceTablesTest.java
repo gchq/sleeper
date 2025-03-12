@@ -194,7 +194,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldGenerateNameForPredefinedTable(SleeperSystemTest sleeper) {
             // When
-            sleeper.connectToInstance(PREDEFINED_TABLE);
+            sleeper.connectToInstanceAddOnlineTable(PREDEFINED_TABLE);
 
             // Then
             assertThat(sleeper.tableProperties().get(TABLE_NAME))
@@ -204,7 +204,7 @@ public class SleeperInstanceTablesTest {
         @Test
         void shouldRefusePredefinedTableWithNoName(SleeperSystemTest sleeper) {
             // When / Then
-            assertThatThrownBy(() -> sleeper.connectToInstance(PREDEFINED_TABLE_NO_NAME))
+            assertThatThrownBy(() -> sleeper.connectToInstanceAddOnlineTable(PREDEFINED_TABLE_NO_NAME))
                     .isInstanceOf(SleeperPropertiesInvalidException.class);
         }
     }
