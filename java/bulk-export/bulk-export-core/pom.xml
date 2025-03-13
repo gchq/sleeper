@@ -31,28 +31,37 @@
             <artifactId>core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
-       <dependency>
+        <dependency>
             <groupId>sleeper</groupId>
             <artifactId>common-task</artifactId>
-            <version>${project.parent.version}</version> 
+            <version>${project.parent.version}</version>
         </dependency>
-            <dependency>
+        <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>ecs</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+        </dependency>
+    </dependency>
+    <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>s3</artifactId>
+    </dependency>
 
-        <!-- Test dependencies -->
-        <dependency>
-            <groupId>sleeper</groupId>
-            <artifactId>core</artifactId>
-            <version>${project.parent.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.approvaltests</groupId>
-            <artifactId>approvaltests</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <!-- Test dependencies -->
+    <dependency>
+        <groupId>sleeper</groupId>
+        <artifactId>core</artifactId>
+        <version>${project.parent.version}</version>
+        <type>test-jar</type>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>com.approvaltests</groupId>
+        <artifactId>approvaltests</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
 </project>

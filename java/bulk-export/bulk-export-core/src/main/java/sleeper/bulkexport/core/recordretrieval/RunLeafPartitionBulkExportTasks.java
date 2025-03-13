@@ -15,11 +15,10 @@
  */
 package sleeper.bulkexport.core.recordretrieval;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +42,7 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
+import sleeper.core.deploy.SqsQueues;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -236,8 +236,8 @@ public class RunLeafPartitionBulkExportTasks {
         }
         String instanceId = args[0];
         int numberOfTasks = Integer.parseInt(args[1]);
-        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
-        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        SqsClient sqsClient = SqsClient.create();
+        S3Client s3Client = S3Client.create();
         try (EcsClient ecsClient = EcsClient.create();
                 AutoScalingClient asClient = AutoScalingClient.create();) {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);

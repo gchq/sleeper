@@ -106,9 +106,9 @@ public class LambdaHandler {
             .jar(LambdaJar.BULK_EXPORT)
             .handler("sleeper.bulkexport.lambda.SqsBulkExportProcessorLambda::handleRequest")
             .optionalStack(BulkExportStack).add();
-            public static final LambdaHandler LEAF_PARTITION_BULK_EXPORT = builder()
+    public static final LambdaHandler LEAF_PARTITION_BULK_EXPORT = builder()
             .jar(LambdaJar.BULK_EXPORT)
-            .handler("sleeper.bulkexport.lambda.RunSqsLeafPartitionBulkExportLambda::handleRequest")
+            .handler("sleeper.bulkexport.runner.RunSqsLeafPartitionBulkExportLambda::handleRequest")
             .optionalStack(BulkExportStack).add();
     public static final LambdaHandler QUERY_EXECUTOR = builder()
             .jar(LambdaJar.QUERY)

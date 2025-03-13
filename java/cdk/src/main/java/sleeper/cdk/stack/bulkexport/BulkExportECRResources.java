@@ -137,7 +137,7 @@ public class BulkExportECRResources {
                 .build();
         instanceProperties.set(BULK_EXPORT_CLUSTER, cluster.getClusterName());
 
-        IRepository repository = Repository.fromRepositoryName(stack, "ECR1",
+        IRepository repository = Repository.fromRepositoryName(stack, "BE- ECR1",
                 instanceProperties.get(BULK_EXPORT_ECR_REPO));
         ContainerImage containerImage = ContainerImage.fromEcrRepository(repository, instanceProperties.get(VERSION));
 
