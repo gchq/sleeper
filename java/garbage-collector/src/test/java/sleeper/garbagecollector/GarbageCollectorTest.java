@@ -38,15 +38,15 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
-import sleeper.garbagecollector.GarbageCollector.DeleteFile;
+import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -257,7 +257,7 @@ public class GarbageCollectorTest {
 
             // When
             List<String> deletedFiles = new ArrayList<>();
-            IOException failure = new IOException();
+            RuntimeException failure = new RuntimeException();
             GarbageCollector collector = collectorWithDeleteAction(filename -> {
                 if (filename.equals(file1)) {
                     throw failure;
@@ -418,11 +418,19 @@ public class GarbageCollectorTest {
     }
 
     private GarbageCollector collectorNew() throws Exception {
-        return collectorWithDeleteAction(filesInBucket::remove);
+        return new GarbageCollector(deleteAction(), instanceProperties, stateStoreProvider, sentCommits::add);
     }
 
-    private GarbageCollector collectorWithDeleteAction(DeleteFile deleteFile) throws Exception {
-        return new GarbageCollector(deleteFile, instanceProperties, stateStoreProvider, sentCommits::add);
+    private GarbageCollector collectorWithDeleteAction(Consumer<String> deleteFile) throws Exception {
+        return new GarbageCollector(deleteFile::accept, instanceProperties, stateStoreProvider, sentCommits::add);
+    }
+
+    private DeleteFiles deleteAction() {
+        return (filenames, deleted) -> {
+            filesInBucket.removeAll(filenames);
+            filenames.forEach(deleted::deleted);
+            return List.copyOf(filenames);
+        };
     }
 
     private static Schema getSchema() {
