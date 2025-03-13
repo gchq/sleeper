@@ -35,6 +35,7 @@ import sleeper.core.statestore.testutils.FixedStateStoreProvider;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
+import sleeper.core.table.TableFilePaths;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
@@ -50,8 +51,10 @@ import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
+import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
@@ -60,7 +63,6 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
 
     private static final Schema TEST_SCHEMA = getSchema();
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
-    private final FileReferenceFactory factory = FileReferenceFactory.from(partitions);
     private final String testBucket = UUID.randomUUID().toString();
     private final InstanceProperties instanceProperties = createInstanceProperties();
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
@@ -84,32 +86,42 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
         stateStore.fixFileUpdateTime(oldEnoughTime);
         // Create a FileReference referencing a file in a bucket that does not exist
-        FileReference oldFile1 = factory.rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
+        FileReference oldFile1 = FileReferenceFactory.from(partitions).rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
         update(stateStore).addFile(oldFile1);
         // Perform a compaction on an existing file to create a readyForGC file
-        s3Client.putObject(testBucket, "old-file-2.parquet", "abc");
-        s3Client.putObject(testBucket, "new-file-2.parquet", "def");
-        FileReference oldFile2 = factory.rootFile("s3a://" + testBucket + "/old-file-2.parquet", 100L);
-        FileReference newFile2 = factory.rootFile("s3a://" + testBucket + "/new-file-2.parquet", 100L);
-        update(stateStore).addFile(oldFile2);
-        update(stateStore).assignJobIds(List.of(
-                assignJobOnPartitionToFiles("job1", "root",
-                        List.of(oldFile1.getFilename(), oldFile2.getFilename()))));
-        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "job1", List.of(oldFile1.getFilename(), oldFile2.getFilename()), newFile2)));
+        createFileWithNoReferencesByCompaction("old-file-2.parquet", "new-file-2.parquet");
 
-        // When
-        GarbageCollector collector = createGarbageCollector(instanceProperties, tableProperties, stateStore);
-
-        // And / Then
-        assertThatThrownBy(() -> collector.runAtTime(currentTime, List.of(tableProperties)))
+        // When / Then
+        assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
                 .isInstanceOf(FailedGarbageCollectionException.class);
         assertThat(s3Client.doesObjectExist(testBucket, "old-file-2.parquet")).isFalse();
         assertThat(s3Client.doesObjectExist(testBucket, "new-file-2.parquet")).isTrue();
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime,
-                        List.of(newFile2),
+                        List.of(activeReference("new-file-2.parquet")),
                         List.of(oldFile1.getFilename())));
+    }
+
+    @Test
+    void shouldContinueCollectingFilesIfFileDoesNotExist() throws Exception {
+        // Given
+        Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+        Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+        stateStore.fixFileUpdateTime(oldEnoughTime);
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+        update(stateStore).addFilesWithReferences(List.of(
+                fileWithNoReferences("/tmp/not-a-file.parquet")));
+        createFileWithNoReferencesByCompaction("old-file.parquet", "new-file.parquet");
+
+        // When
+        collectGarbageAtTime(currentTime);
+
+        // Then
+        assertThat(s3Client.doesObjectExist(testBucket, objectKey("old-file.parquet"))).isFalse();
+        assertThat(s3Client.doesObjectExist(testBucket, objectKey("new-file.parquet"))).isTrue();
+        assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
+                .isEqualTo(activeFilesReport(oldEnoughTime,
+                        activeReference("new-file.parquet")));
     }
 
     private InstanceProperties createInstanceProperties() {
@@ -119,7 +131,45 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         return instanceProperties;
     }
 
-    private GarbageCollector createGarbageCollector(InstanceProperties instanceProperties, TableProperties tableProperties, StateStore stateStore) {
+    private FileReference activeReference(String filePath) {
+        return fileFactory().rootFile(filePath, 100);
+    }
+
+    private void createFileWithNoReferencesByCompaction(
+            String oldFilePath, String newFilePath) throws Exception {
+        FileReference oldFile = createActiveFile("old-file.parquet");
+        FileReference newFile = fileFactory().rootFile(newFilePath, 100);
+        writeFile(newFilePath);
+        update(stateStore).assignJobIds(List.of(
+                assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
+        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
+                "job1", List.of(oldFile.getFilename()), newFile)));
+    }
+
+    private FileReference createActiveFile(String filename) throws Exception {
+        FileReference fileReference = fileFactory().rootFile(filename, 100L);
+        update(stateStore).addFile(fileReference);
+        writeFile(filename);
+        return fileReference;
+    }
+
+    private void writeFile(String filename) {
+        s3Client.putObject(testBucket, objectKey(filename), filename);
+    }
+
+    private String objectKey(String filename) {
+        return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructPartitionParquetFilePath("root", filename);
+    }
+
+    private FileReferenceFactory fileFactory() {
+        return FileReferenceFactory.from(instanceProperties, tableProperties, partitions);
+    }
+
+    private void collectGarbageAtTime(Instant time) throws Exception {
+        createGarbageCollector().runAtTime(time, List.of(tableProperties));
+    }
+
+    private GarbageCollector createGarbageCollector() {
         return new GarbageCollector(deleteFileAndSketches(hadoopConf), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
