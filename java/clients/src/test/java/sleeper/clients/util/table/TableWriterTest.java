@@ -105,8 +105,10 @@ class TableWriterTest {
                 .paddingAfterRow("<End>")
                 .paddingBetweenColumns(" |-*-| ")
                 .horizontalBorderCharacter('#')
-                .headrowCharacter("@")
-                .hasDedicatedHeaderRow(true).build();
+                .hasHorizontalBorder(true)
+                .separatorRowCharacter('@')
+                .hasSeparatorBelowHeader(true)
+                .build();
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
         TableField field1 = factoryBuilder.addField("First Column");
         TableField field2 = factoryBuilder.addField("Second Column");

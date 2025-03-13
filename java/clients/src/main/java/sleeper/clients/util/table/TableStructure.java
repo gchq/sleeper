@@ -36,16 +36,16 @@ public class TableStructure {
             .paddingBeforeRow("| ")
             .paddingAfterRow(" |")
             .paddingBetweenColumns(" | ")
-            .headrowCharacter("-")
-            .hasDedicatedHeaderRow(true).build();
+            .separatorRowCharacter('-')
+            .hasSeparatorBelowHeader(true).build();
 
     private final String paddingBeforeRow;
     private final String paddingAfterRow;
     private final String paddingBetweenColumns;
     private final char horizontalBorderCharacter;
     private final boolean hasHorizontalBorder;
-    private final String headrowCharacter;
-    private final Boolean hasDedicatedHeaderRow;
+    private final char separatorRowCharacter;
+    private final boolean hasSeparatorBelowHeader;
 
     private TableStructure(Builder builder) {
         paddingBeforeRow = Objects.requireNonNull(builder.paddingBeforeRow, "paddingBeforeRow must not be null");
@@ -53,8 +53,8 @@ public class TableStructure {
         paddingBetweenColumns = Objects.requireNonNull(builder.paddingBetweenColumns, "paddingBetweenColumns must not be null");
         horizontalBorderCharacter = builder.horizontalBorderCharacter;
         hasHorizontalBorder = builder.hasHorizontalBorder;
-        headrowCharacter = builder.headrowCharacter;
-        hasDedicatedHeaderRow = builder.hasDedicatedHeaderRow;
+        separatorRowCharacter = builder.separatorRowCharacter;
+        hasSeparatorBelowHeader = builder.hasSeparatorBelowHeader;
     }
 
     int paddingLengthForFields(int fields) {
@@ -71,15 +71,15 @@ public class TableStructure {
 
     String headerRow(List<TableField> fields, List<TableFieldSummary> fieldSummaries) {
         String output = paddedLine(index -> fields.get(index).getHeader(), fieldSummaries);
-        if (hasDedicatedHeaderRow) {
+        if (hasSeparatorBelowHeader) {
             output += "\n" + paddedLine(index -> generateFiller(fields.get(index).getHeader(), fieldSummaries.get(index).getMaxValueLength()), fieldSummaries)
-                    .replaceAll(" ", headrowCharacter);
+                    .replace(' ', separatorRowCharacter);
         }
         return output;
     }
 
     private String generateFiller(String header, int maxLength) {
-        return StringUtils.repeat(headrowCharacter, maxLength);
+        return StringUtils.repeat(separatorRowCharacter, maxLength);
     }
 
     String row(TableRow row, List<TableFieldSummary> fieldSummaries) {
@@ -120,8 +120,8 @@ public class TableStructure {
         private String paddingBetweenColumns;
         private char horizontalBorderCharacter;
         private boolean hasHorizontalBorder = false;
-        private String headrowCharacter;
-        private Boolean hasDedicatedHeaderRow = false;
+        private char separatorRowCharacter;
+        private boolean hasSeparatorBelowHeader = false;
 
         private Builder() {
         }
@@ -152,13 +152,14 @@ public class TableStructure {
             return this;
         }
 
-        public Builder headrowCharacter(String headrowCharacter) {
-            this.headrowCharacter = headrowCharacter;
+        public Builder separatorRowCharacter(char separatorRowCharacter) {
+            this.separatorRowCharacter = separatorRowCharacter;
+            this.hasSeparatorBelowHeader = true;
             return this;
         }
 
-        public Builder hasDedicatedHeaderRow(Boolean hasHeaderRow) {
-            this.hasDedicatedHeaderRow = hasHeaderRow;
+        public Builder hasSeparatorBelowHeader(boolean hasSeparatorBelowHeader) {
+            this.hasSeparatorBelowHeader = hasSeparatorBelowHeader;
             return this;
         }
 
