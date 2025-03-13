@@ -46,7 +46,7 @@
         </dependency>
         <dependency>
             <groupId>software.amazon.awscdk</groupId>
-            <artifactId>cdk-lambda-layer-kubectl-v24</artifactId>
+            <artifactId>cdk-lambda-layer-kubectl-v32</artifactId>
         </dependency>
         <dependency>
             <groupId>software.constructs</groupId>
