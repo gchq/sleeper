@@ -27,14 +27,14 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Serialises an BulkExportLeafPartitionQuery to and from JSON.
+ * Serialises an leaf partition query for bulk export to and from JSON.
  */
 public class BulkExportLeafPartitionQuerySerDe {
     private final Gson gson;
     private final Gson gsonPrettyPrinting;
     private final SchemaLoader schemaLoader;
 
-    public BulkExportLeafPartitionQuerySerDe(SchemaLoader schemaLoader) {
+    private BulkExportLeafPartitionQuerySerDe(SchemaLoader schemaLoader) {
         GsonBuilder builder = new GsonBuilder();
         gson = builder.create();
         gsonPrettyPrinting = builder.setPrettyPrinting().create();
@@ -50,10 +50,9 @@ public class BulkExportLeafPartitionQuerySerDe {
     }
 
     /**
-     * Formats a BulkExportLeafPartitionQuery as a JSON string.
+     * Formats a query as a JSON string.
      *
-     * @param  query to format
-     *
+     * @param  query the query to format
      * @return       a JSON string of the query
      */
     public String toJson(BulkExportLeafPartitionQuery query) {
@@ -61,12 +60,10 @@ public class BulkExportLeafPartitionQuerySerDe {
     }
 
     /**
-     * Formats a BulkExportLeafPartitionQuery as a JSON string with the option to
-     * pretty print.
+     * Formats a query as a JSON string with the option to pretty print.
      *
-     * @param  query       to format
+     * @param  query       the query to format
      * @param  prettyPrint option to pretty print
-     *
      * @return             a JSON string of the query
      */
     public String toJson(BulkExportLeafPartitionQuery query, boolean prettyPrint) {
@@ -77,11 +74,10 @@ public class BulkExportLeafPartitionQuerySerDe {
     }
 
     /**
-     * Formats a JSON string to a BulkExportLeafPartitionQuery object.
+     * Parses a JSON string as a query.
      *
-     * @param  json The JSON string to format.
-     *
-     * @return      The parsed object as BulkExportLeafPartitionQuery.
+     * @param  json the JSON string to parse
+     * @return      the parsed query
      */
     public BulkExportLeafPartitionQuery fromJson(String json) {
         BulkExportLeafPartitionQueryJson query = gson.fromJson(json, BulkExportLeafPartitionQueryJson.class);
@@ -89,21 +85,20 @@ public class BulkExportLeafPartitionQuerySerDe {
     }
 
     /**
-     * Interface for the SchemaLoader.
+     * Loads the schema of a Sleeper table.
      */
     public interface SchemaLoader {
         /**
          * Get a schema by using the table id.
          *
-         * @param  tableId The id of the table to get the schema for.
-         *
-         * @return         a Schema.
+         * @param  tableId the id of the table to get the schema for
+         * @return         the schema
          */
         Optional<Schema> getSchemaByTableId(String tableId);
     }
 
     /**
-     * Implements a SchemaLoader interface from a TablePropertiesProvider.
+     * Loads the schema of a Sleeper table from a properties provider.
      */
     private static class SchemaLoaderFromTableProvider implements SchemaLoader {
 
@@ -129,7 +124,7 @@ public class BulkExportLeafPartitionQuerySerDe {
     }
 
     /**
-     * Implements a SchemaLoader interface but uses a fixed schema.
+     * Loads a fixed Sleeper table schema.
      */
     private static class FixedSchemaLoader implements SchemaLoader {
         private final Schema schema;
