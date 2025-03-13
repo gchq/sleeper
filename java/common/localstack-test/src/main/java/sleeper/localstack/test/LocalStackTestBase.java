@@ -33,11 +33,11 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.sts.StsClient;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static sleeper.localstack.test.SleeperLocalStackClients.S3_CLIENT_V2;
 
 /**
@@ -68,10 +68,10 @@ public abstract class LocalStackTestBase {
                 RequestBody.fromString(content));
     }
 
-    protected static List<String> listObjectKeys(String bucketName) {
+    protected static Set<String> listObjectKeys(String bucketName) {
         return S3_CLIENT_V2.listObjectsV2Paginator(builder -> builder.bucket(bucketName))
                 .contents().stream().map(S3Object::key)
-                .collect(toUnmodifiableList());
+                .collect(toUnmodifiableSet());
     }
 
     protected String createFifoQueueGetUrl() {
