@@ -1057,7 +1057,7 @@ dependencies = [
 
 [[package]]
 name = "compaction"
-version = "0.29.0-SNAPSHOT"
+version = "0.29.0"
 dependencies = [
  "arrow",
  "async-trait",
@@ -1088,7 +1088,7 @@ dependencies = [
 
 [[package]]
 name = "compactor"
-version = "0.29.0-SNAPSHOT"
+version = "0.29.0"
 dependencies = [
  "chrono",
  "clap",
@@ -2682,9 +2682,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.170"
+version = "0.2.171"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "875b3680cb2f8f71bdcf9a30f38d48282f5d3c95cbf9b3fa57269bb5d5c06828"
+checksum = "c19937216e9d3aa9956d9bb8dfc0b0c8beb6058fc4f7a4dc4d850edf86a237d6"
 
 [[package]]
 name = "libgit2-sys"
@@ -3546,9 +3546,9 @@ dependencies = [
 
 [[package]]
 name = "ring"
-version = "0.17.13"
+version = "0.17.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70ac5d832aa16abd7d1def883a8545280c20a60f523a370aa3a9617c2b8550ee"
+checksum = "a4689e6c2294d81e88dc6261c768b63bc4fcdb852be6d1352498b114f61383b7"
 dependencies = [
  "cc",
  "cfg-if",
@@ -3560,7 +3560,7 @@ dependencies = [
 
 [[package]]
 name = "rust_sketch"
-version = "0.29.0-SNAPSHOT"
+version = "0.29.0"
 dependencies = [
  "cxx",
  "cxx-build",
