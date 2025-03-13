@@ -42,6 +42,7 @@ import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -79,7 +80,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     @Test
-    void shouldContinueCollectingFilesIfTryingToDeleteFileThrowsIOException() throws Exception {
+    void shouldContinueCollectingFilesIfBucketDoesNotExist() throws Exception {
         // Given
         tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
@@ -89,16 +90,16 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         FileReference oldFile1 = FileReferenceFactory.from(partitions).rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
         update(stateStore).addFile(oldFile1);
         // Perform a compaction on an existing file to create a readyForGC file
+        createFileWithNoReferencesByCompaction(oldFile1, "new-file-1.parquet");
         createFileWithNoReferencesByCompaction("old-file-2.parquet", "new-file-2.parquet");
 
         // When / Then
         assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
                 .isInstanceOf(FailedGarbageCollectionException.class);
-        assertThat(s3Client.doesObjectExist(testBucket, "old-file-2.parquet")).isFalse();
-        assertThat(s3Client.doesObjectExist(testBucket, "new-file-2.parquet")).isTrue();
+        assertThat(listObjectKeys(testBucket)).isEqualTo(Set.of(objectKey("new-file-1.parquet"), objectKey("new-file-2.parquet")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime,
-                        List.of(activeReference("new-file-2.parquet")),
+                        List.of(activeReference("new-file-1.parquet"), activeReference("new-file-2.parquet")),
                         List.of(oldFile1.getFilename())));
     }
 
@@ -117,8 +118,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         collectGarbageAtTime(currentTime);
 
         // Then
-        assertThat(s3Client.doesObjectExist(testBucket, objectKey("old-file.parquet"))).isFalse();
-        assertThat(s3Client.doesObjectExist(testBucket, objectKey("new-file.parquet"))).isTrue();
+        assertThat(listObjectKeys(testBucket)).isEqualTo(Set.of(objectKey("new-file.parquet")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeFilesReport(oldEnoughTime,
                         activeReference("new-file.parquet")));
@@ -138,6 +138,11 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     private void createFileWithNoReferencesByCompaction(
             String oldFilePath, String newFilePath) throws Exception {
         FileReference oldFile = createActiveFile("old-file.parquet");
+        createFileWithNoReferencesByCompaction(oldFile, newFilePath);
+    }
+
+    private void createFileWithNoReferencesByCompaction(
+            FileReference oldFile, String newFilePath) throws Exception {
         FileReference newFile = fileFactory().rootFile(newFilePath, 100);
         writeFile(newFilePath);
         update(stateStore).assignJobIds(List.of(
