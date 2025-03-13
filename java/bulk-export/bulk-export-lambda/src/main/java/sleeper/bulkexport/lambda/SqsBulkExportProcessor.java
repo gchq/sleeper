@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import java.util.List;
 
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 
-
 /**
  * Lambda to start the bulk export job.
  */
@@ -67,8 +66,8 @@ public class SqsBulkExportProcessor {
     /**
      * Processes a bulk export query by splitting it into leaf partition queries.
      *
-     * @param bulkExportQuery The bulk export query to be processed.
-     * @throws ObjectFactoryException If there is an error creating the necessary objects.
+     * @param  bulkExportQuery        the bulk export query to be processed
+     * @throws ObjectFactoryException if there is an error creating the necessary objects
      */
     public void processExport(BulkExportQuery bulkExportQuery) throws ObjectFactoryException {
         String sqsUrl = instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL);
@@ -79,36 +78,30 @@ public class SqsBulkExportProcessor {
         splitter.initIfNeeded();
         List<BulkExportLeafPartitionQuery> leafPartitionQueries = splitter.splitIntoLeafPartitionQueries(bulkExportQuery);
         LOGGER.debug("Got {} leaf partition export queries for bulk export query {}.",
-            leafPartitionQueries.size(), bulkExportQuery.getExportId());
-        leafPartitionQueries.forEach(query ->  {
+                leafPartitionQueries.size(), bulkExportQuery.getExportId());
+        leafPartitionQueries.forEach(query -> {
             LOGGER.debug("Sending leaf partition export query {} to queue {}.", query.getSubExportId(), sqsUrl);
             sqsClient.sendMessage(sqsUrl, querySerDe.toJson(query));
         });
     }
 
-    /**
-     * Creates a new instance of the Builder class.
-     *
-     * @return a new Builder instance
-     */
     public static Builder builder() {
         return new Builder();
     }
 
     /**
-     * Builder class for constructing instances of SqsBulkExportProcessor.
-     * This builder allows for the configuration of various clients and properties
-     * required by the SqsBulkExportProcessor.
+     * Builder to create a bulk export processor.
      *
      * <p>Example usage:</p>
+     *
      * <pre>{@code
      * SqsBulkExportProcessor processor = SqsBulkExportProcessor.builder()
-     *     .sqsClient(sqsClient)
-     *     .s3Client(s3Client)
-     *     .dynamoClient(dynamoClient)
-     *     .instanceProperties(instanceProperties)
-     *     .tablePropertiesProvider(tablePropertiesProvider)
-     *     .build();
+     *         .sqsClient(sqsClient)
+     *         .s3Client(s3Client)
+     *         .dynamoClient(dynamoClient)
+     *         .instanceProperties(instanceProperties)
+     *         .tablePropertiesProvider(tablePropertiesProvider)
+     *         .build();
      * }</pre>
      */
     public static final class Builder {
@@ -122,10 +115,10 @@ public class SqsBulkExportProcessor {
         }
 
         /**
-         * Sets the Amazon S3 client to be used by this builder.
+         * Sets the S3 client.
          *
-         * @param s3Client the Amazon S3 client to set
-         * @return the builder instance with the specified Amazon S3 client
+         * @param  s3Client the S3 client
+         * @return          the builder for method chaining
          */
         public Builder s3Client(AmazonS3 s3Client) {
             this.s3Client = s3Client;
@@ -133,10 +126,10 @@ public class SqsBulkExportProcessor {
         }
 
         /**
-         * Sets the AmazonSQS client to be used by the SqsBulkExportProcessor.
+         * Sets the SQS client.
          *
-         * @param sqsClient the AmazonSQS client to set
-         * @return the Builder instance for method chaining
+         * @param  sqsClient the SQS client
+         * @return           the builder for method chaining
          */
         public Builder sqsClient(AmazonSQS sqsClient) {
             this.sqsClient = sqsClient;
@@ -144,10 +137,10 @@ public class SqsBulkExportProcessor {
         }
 
         /**
-         * Sets the AmazonDynamoDB client to be used by the SqsBulkExportProcessor.
+         * Sets the DynamoDB client.
          *
-         * @param dynamoClient the AmazonDynamoDB client instance
-         * @return the Builder instance for method chaining
+         * @param  dynamoClient the DynamoDB client
+         * @return              the builder for method chaining
          */
         public Builder dynamoClient(AmazonDynamoDB dynamoClient) {
             this.dynamoClient = dynamoClient;
@@ -155,10 +148,10 @@ public class SqsBulkExportProcessor {
         }
 
         /**
-         * Sets the instance properties for the SqsBulkExportProcessor.
+         * Sets the instance properties.
          *
-         * @param instanceProperties the instance properties to set
-         * @return the Builder instance for method chaining
+         * @param  instanceProperties the instance properties
+         * @return                    the builder for method chaining
          */
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
@@ -166,22 +159,16 @@ public class SqsBulkExportProcessor {
         }
 
         /**
-         * Sets the TablePropertiesProvider for this builder.
+         * Sets the table properties provider.
          *
-         * @param tablePropertiesProvider the TablePropertiesProvider to set
-         * @return the Builder instance for method chaining
+         * @param  tablePropertiesProvider the table properties provider
+         * @return                         the builder for method chaining
          */
         public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
             this.tablePropertiesProvider = tablePropertiesProvider;
             return this;
         }
 
-        /**
-         * Builds and returns a new instance of SqsBulkExportProcessor.
-         *
-         * @return A new instance of {@link SqsBulkExportProcessor}.
-         * @throws ObjectFactoryException If there is an error during the creation of the {@link SqsBulkExportProcessor} instance.
-         */
         public SqsBulkExportProcessor build() throws ObjectFactoryException {
             return new SqsBulkExportProcessor(this);
         }

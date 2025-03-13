@@ -1,11 +1,11 @@
-#  Copyright 2022-2024 Crown Copyright
-# 
+#  Copyright 2022-2025 Crown Copyright
+#
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -55,7 +55,7 @@ def _create_writer(stream: BinaryIO, record: Mapping[str, str]) -> pq.ParquetWri
 def _non_nullable(fields: List[pa.Field], deep: bool = True) -> List[pa.Field]:
     """
     Converts a list of Arrow Fields into non-nullable (i.e. required, not optional)
-    fields. This function will recurse down into nested types (List, Struct) if 
+    fields. This function will recurse down into nested types (List, Struct) if
     deep is True. Otherwise, a shallow copy will result where lists and nested
     types may contain optional fields.
 
@@ -138,7 +138,7 @@ class ParquetSerialiser():
     def _getsize(self, record: Mapping[str, str]) -> int:
         """
         A hacky way to estimate the size of the object.
-        
+
         :param record: the record to estimate the size of
         """
         record_in_json = json.dumps(record)
