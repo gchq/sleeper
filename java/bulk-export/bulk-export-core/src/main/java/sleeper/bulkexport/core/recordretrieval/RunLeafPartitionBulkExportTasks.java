@@ -15,14 +15,11 @@
  */
 package sleeper.bulkexport.core.recordretrieval;
 
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.sqs.SqsClient;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.ecs.model.AwsVpcConfiguration;
 import software.amazon.awssdk.services.ecs.model.ContainerOverride;
 import software.amazon.awssdk.services.ecs.model.LaunchType;
@@ -31,7 +28,6 @@ import software.amazon.awssdk.services.ecs.model.PropagateTags;
 import software.amazon.awssdk.services.ecs.model.RunTaskRequest;
 import software.amazon.awssdk.services.ecs.model.TaskOverride;
 
-import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.task.common.ECSTaskCount;
 import sleeper.task.common.QueueMessageCount;
@@ -42,7 +38,6 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
 import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
-import sleeper.core.deploy.SqsQueues;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -227,25 +222,5 @@ public class RunLeafPartitionBulkExportTasks {
         return NetworkConfiguration.builder()
                 .awsvpcConfiguration(vpcConfiguration)
                 .build();
-    }
-
-    public static void main(String[] args) {
-        if (args.length != 2) {
-            System.out.println("Usage: <instance-id> <number-of-tasks>");
-            return;
-        }
-        String instanceId = args[0];
-        int numberOfTasks = Integer.parseInt(args[1]);
-        SqsClient sqsClient = SqsClient.create();
-        S3Client s3Client = S3Client.create();
-        try (EcsClient ecsClient = EcsClient.create();
-                AutoScalingClient asClient = AutoScalingClient.create();) {
-            InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
-            //new RunCompactionTasks(instanceProperties, ecsClient, asClient)
-            //        .runToMeetTargetTasks(numberOfTasks);
-        } finally {
-            sqsClient.shutdown();
-            s3Client.shutdown();
-        }
     }
 }
