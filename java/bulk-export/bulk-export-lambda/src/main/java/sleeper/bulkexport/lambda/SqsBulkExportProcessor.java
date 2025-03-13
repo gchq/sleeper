@@ -100,7 +100,7 @@ public class SqsBulkExportProcessor {
      * required by the SqsBulkExportProcessor.
      *
      * <p>Example usage:</p>
-     * 
+     *
      * <pre>{@code
      * SqsBulkExportProcessor processor = SqsBulkExportProcessor.builder()
      *         .sqsClient(sqsClient)
