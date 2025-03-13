@@ -15,19 +15,15 @@
  */
 package sleeper.garbagecollector;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.parquet.hadoop.ParquetWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.record.Record;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.IntType;
@@ -43,10 +39,8 @@ import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransa
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFile;
-import sleeper.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -56,7 +50,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
@@ -72,13 +65,10 @@ import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
 
-public class GarbageCollectorIT {
+public class GarbageCollectorTest {
     private static final Schema TEST_SCHEMA = getSchema();
 
-    @TempDir
-    public Path tempDir;
     private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
     private final List<TableProperties> tables = new ArrayList<>();
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
@@ -91,7 +81,6 @@ public class GarbageCollectorIT {
     @BeforeEach
     void setUp() throws Exception {
         instanceProperties.set(FILE_SYSTEM, "file://");
-        instanceProperties.set(DATA_BUCKET, tempDir.toString());
     }
 
     @Nested
@@ -110,7 +99,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, "old-file.parquet", "new-file.parquet");
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).containsExactly("new-file.parquet");
@@ -128,7 +117,7 @@ public class GarbageCollectorIT {
             createActiveFile("test-file.parquet", stateStore);
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).containsExactly("test-file.parquet");
@@ -146,7 +135,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, "old-file.parquet", "new-file.parquet");
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("old-file.parquet", "new-file.parquet"));
@@ -167,7 +156,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, "old-file-2.parquet", "new-file-2.parquet");
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet"));
@@ -190,7 +179,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, "old-file-3.parquet", "new-file-3.parquet");
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet", "new-file-3.parquet"));
@@ -213,7 +202,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, "old-file.parquet", "new-file.parquet");
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file.parquet"));
@@ -241,7 +230,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore2, "old-file-2.parquet", "new-file-2.parquet");
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet"));
@@ -308,7 +297,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, "old-file.parquet", "new-file.parquet");
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file.parquet"));
@@ -334,7 +323,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, "old-file-3.parquet", "new-file-3.parquet");
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet", "new-file-3.parquet"));
@@ -364,7 +353,7 @@ public class GarbageCollectorIT {
             createFileWithNoReferencesByCompaction(stateStore, "old-file.parquet", "new-file.parquet");
 
             // When
-            collectGarbageAtTimeNew(currentTime);
+            collectGarbageAtTime(currentTime);
 
             // Then
             assertThat(filesInBucket).isEqualTo(Set.of("new-file.parquet"));
@@ -380,29 +369,11 @@ public class GarbageCollectorIT {
                 List.of());
     }
 
-    private FileReference createActiveFile(Path filePath, StateStore stateStore) throws Exception {
-        String filename = filePath.toString();
-        FileReference fileReference = FileReferenceFactory.from(partitions).rootFile(filename, 100L);
-        writeFile(filename);
-        update(stateStore).addFile(fileReference);
-        return fileReference;
-    }
-
     private FileReference createActiveFile(String filename, StateStore stateStore) throws Exception {
         FileReference fileReference = FileReferenceFactory.from(partitions).rootFile(filename, 100L);
         update(stateStore).addFile(fileReference);
         filesInBucket.add(filename);
         return fileReference;
-    }
-
-    private void createFileWithNoReferencesByCompaction(StateStore stateStore,
-            Path oldFilePath, Path newFilePath) throws Exception {
-        FileReference oldFile = createActiveFile(oldFilePath, stateStore);
-        writeFile(newFilePath.toString());
-        update(stateStore).assignJobIds(List.of(
-                assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
-        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "job1", List.of(oldFile.getFilename()), FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100))));
     }
 
     private void createFileWithNoReferencesByCompaction(StateStore stateStore,
@@ -415,24 +386,8 @@ public class GarbageCollectorIT {
                 "job1", List.of(oldFile.getFilename()), FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100))));
     }
 
-    private FileReference activeReference(Path filePath) {
-        return FileReferenceFactory.from(partitions).rootFile(filePath.toString(), 100);
-    }
-
     private FileReference activeReference(String filePath) {
         return FileReferenceFactory.from(partitions).rootFile(filePath, 100);
-    }
-
-    private void writeFile(String filename) throws Exception {
-        ParquetWriter<Record> writer = ParquetRecordWriterFactory.createParquetRecordWriter(
-                new org.apache.hadoop.fs.Path(filename), TEST_SCHEMA);
-        for (int i = 0; i < 100; i++) {
-            Record record = new Record();
-            record.put("key", i);
-            record.put("value", "" + i);
-            writer.write(record);
-        }
-        writer.close();
     }
 
     private TableProperties createTable() {
@@ -459,15 +414,7 @@ public class GarbageCollectorIT {
     }
 
     private void collectGarbageAtTime(Instant time) throws Exception {
-        collector().runAtTime(time, tables);
-    }
-
-    private void collectGarbageAtTimeNew(Instant time) throws Exception {
         collectorNew().runAtTime(time, tables);
-    }
-
-    private GarbageCollector collector() throws Exception {
-        return collectorWithDeleteAction(deleteFileAndSketches(new Configuration()));
     }
 
     private GarbageCollector collectorNew() throws Exception {
