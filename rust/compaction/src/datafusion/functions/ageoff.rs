@@ -46,7 +46,7 @@ pub struct AgeOff {
 }
 
 impl AgeOff {
-    /// Create a new sketch function based on the schema of the row key fields.
+    /// Create a new age-off filter expression with the given threshold.
     ///
     pub fn new(threshold: i64) -> Self {
         Self {
