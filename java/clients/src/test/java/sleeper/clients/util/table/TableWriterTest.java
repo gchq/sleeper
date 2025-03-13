@@ -104,7 +104,7 @@ class TableWriterTest {
                 .paddingBeforeRow("<Start>")
                 .paddingAfterRow("<End>")
                 .paddingBetweenColumns(" |-*-| ")
-                .horizontalBorderCharacter("#")
+                .horizontalBorderCharacter('#')
                 .headrowCharacter("@")
                 .hasDedicatedHeaderRow(true).build();
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);

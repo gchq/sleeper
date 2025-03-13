@@ -28,7 +28,8 @@ public class TableStructure {
             .paddingBeforeRow("| ")
             .paddingBetweenColumns(" | ")
             .paddingAfterRow(" |")
-            .horizontalBorderCharacter("-")
+            .horizontalBorderCharacter('-')
+            .hasHorizontalBorder(true)
             .build();
 
     public static final TableStructure MARKDOWN_FORMAT = TableStructure.builder()
@@ -36,13 +37,13 @@ public class TableStructure {
             .paddingAfterRow(" |")
             .paddingBetweenColumns(" | ")
             .headrowCharacter("-")
-            .hasDedicatedHeaderRow(true)
-            .horizontalBorderCharacter("").build();
+            .hasDedicatedHeaderRow(true).build();
 
     private final String paddingBeforeRow;
     private final String paddingAfterRow;
     private final String paddingBetweenColumns;
-    private final String horizontalBorderCharacter;
+    private final char horizontalBorderCharacter;
+    private final boolean hasHorizontalBorder;
     private final String headrowCharacter;
     private final Boolean hasDedicatedHeaderRow;
 
@@ -51,6 +52,7 @@ public class TableStructure {
         paddingAfterRow = Objects.requireNonNull(builder.paddingAfterRow, "paddingAfterRow must not be null");
         paddingBetweenColumns = Objects.requireNonNull(builder.paddingBetweenColumns, "paddingBetweenColumns must not be null");
         horizontalBorderCharacter = builder.horizontalBorderCharacter;
+        hasHorizontalBorder = builder.hasHorizontalBorder;
         headrowCharacter = builder.headrowCharacter;
         hasDedicatedHeaderRow = builder.hasDedicatedHeaderRow;
     }
@@ -64,7 +66,7 @@ public class TableStructure {
     }
 
     String horizontalBorder(int length) {
-        return ((horizontalBorderCharacter != null) ? StringUtils.repeat(horizontalBorderCharacter, length) : "");
+        return (hasHorizontalBorder ? StringUtils.repeat(horizontalBorderCharacter, length) : "");
     }
 
     String headerRow(List<TableField> fields, List<TableFieldSummary> fieldSummaries) {
@@ -116,7 +118,8 @@ public class TableStructure {
         private String paddingBeforeRow;
         private String paddingAfterRow;
         private String paddingBetweenColumns;
-        private String horizontalBorderCharacter;
+        private char horizontalBorderCharacter;
+        private boolean hasHorizontalBorder = false;
         private String headrowCharacter;
         private Boolean hasDedicatedHeaderRow = false;
 
@@ -138,8 +141,14 @@ public class TableStructure {
             return this;
         }
 
-        public Builder horizontalBorderCharacter(String horizontalBorderCharacter) {
+        public Builder horizontalBorderCharacter(char horizontalBorderCharacter) {
             this.horizontalBorderCharacter = horizontalBorderCharacter;
+            this.hasHorizontalBorder = true;
+            return this;
+        }
+
+        public Builder hasHorizontalBorder(boolean hasHorizontalBorder) {
+            this.hasHorizontalBorder = hasHorizontalBorder;
             return this;
         }
 
