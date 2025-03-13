@@ -19,7 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * Serialises an BulkExportQuery to and from JSON.
+ * Serialises a bulk export query to and from JSON.
  */
 public class BulkExportQuerySerDe {
     private final Gson gson;
@@ -32,24 +32,21 @@ public class BulkExportQuerySerDe {
     }
 
     /**
-     * Formats a BulkExportQuery as a JSON string.
+     * Formats a bulk export query as a JSON string.
      *
-     * @param  query to format
-     *
-     * @return       a JSON string of the query
+     * @param  query the query
+     * @return       a JSON string representation of the query
      */
     public String toJson(BulkExportQuery query) {
         return gson.toJson(query);
     }
 
     /**
-     * Formats a BulkExportQuery as a JSON string with the option to pretty
-     * print.
+     * Formats a bulk export query as a JSON string with the option to pretty print.
      *
-     * @param  query       to format
+     * @param  query       to query
      * @param  prettyPrint option to pretty print
-     *
-     * @return             a JSON string of the query
+     * @return             a JSON string representation of the query
      */
     public String toJson(BulkExportQuery query, boolean prettyPrint) {
         if (prettyPrint) {
@@ -59,11 +56,10 @@ public class BulkExportQuerySerDe {
     }
 
     /**
-     * Formats a JSON string to a BulkExportQuery object.
+     * Parses a JSON string as a bulk export query.
      *
-     * @param  json The JSON string to format.
-     *
-     * @return      The parsed object as BulkExportQuery.
+     * @param  json the JSON string
+     * @return      the parsed query
      */
     public BulkExportQuery fromJson(String json) {
         BulkExportQuery query = gson.fromJson(json, BulkExportQuery.class);
