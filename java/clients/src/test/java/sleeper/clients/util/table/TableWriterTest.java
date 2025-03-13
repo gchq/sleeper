@@ -104,17 +104,56 @@ class TableWriterTest {
                 .paddingBeforeRow("<Start>")
                 .paddingAfterRow("<End>")
                 .paddingBetweenColumns(" |-*-| ")
-                .horizontalBorderCharacter('#').build();
+                .horizontalBorderCharacter("#")
+                .headrowCharacter("@")
+                .hasDedicatedHeaderRow(true).build();
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
-        factoryBuilder.addField("First Column");
-        factoryBuilder.addField("Second Column");
+        TableField field1 = factoryBuilder.addField("First Column");
+        TableField field2 = factoryBuilder.addField("Second Column");
         TableWriterFactory factory = factoryBuilder.build();
         ToStringConsoleOutput output = new ToStringConsoleOutput();
 
         // When
         factory.tableBuilder()
+                .row(row -> {
+                    row.value(field1, "Data here");
+                    row.value(field2, "Vaule here");
+                })
                 .build().write(output.getPrintStream());
         // Then
         assertThat(output).hasToString(example("reports/table/structure.txt"));
+    }
+
+    @Test
+    void shouldValidteMarkupTableDesign() throws IOException {
+        // Given
+        TableStructure structure = TableStructure.MARKDOWN_FORMAT;
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
+        TableField field1 = factoryBuilder.addField("Column 1");
+        TableField field2 = factoryBuilder.addField("Column 2");
+        TableField field3 = factoryBuilder.addField("Column 3");
+        TableWriterFactory factory = factoryBuilder.build();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
+
+        // When
+        factory.tableBuilder()
+                .row(row -> {
+                    row.value(field1, "0.11.0");
+                    row.value(field2, "13/06/2022");
+                    row.value(field3, "366,000");
+                })
+                .row(row -> {
+                    row.value(field1, "0.12.0");
+                    row.value(field2, "18/10/2022");
+                    row.value(field3, "378,000");
+                })
+                .row(row -> {
+                    row.value(field1, "0.13.0");
+                    row.value(field2, "06/01/2023");
+                    row.value(field3, "326,000");
+                })
+                .build().write(output.getPrintStream());
+        // Then
+        assertThat(output).hasToString(example("reports/table/markdown.txt"));
     }
 }

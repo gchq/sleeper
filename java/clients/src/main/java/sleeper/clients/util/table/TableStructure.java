@@ -28,19 +28,31 @@ public class TableStructure {
             .paddingBeforeRow("| ")
             .paddingBetweenColumns(" | ")
             .paddingAfterRow(" |")
-            .horizontalBorderCharacter('-')
+            .horizontalBorderCharacter("-")
             .build();
+
+    public static final TableStructure MARKDOWN_FORMAT = TableStructure.builder()
+            .paddingBeforeRow("| ")
+            .paddingAfterRow(" |")
+            .paddingBetweenColumns(" | ")
+            .headrowCharacter("-")
+            .hasDedicatedHeaderRow(true)
+            .horizontalBorderCharacter("").build();
 
     private final String paddingBeforeRow;
     private final String paddingAfterRow;
     private final String paddingBetweenColumns;
-    private final char horizontalBorderCharacter;
+    private final String horizontalBorderCharacter;
+    private final String headrowCharacter;
+    private final Boolean hasDedicatedHeaderRow;
 
     private TableStructure(Builder builder) {
         paddingBeforeRow = Objects.requireNonNull(builder.paddingBeforeRow, "paddingBeforeRow must not be null");
         paddingAfterRow = Objects.requireNonNull(builder.paddingAfterRow, "paddingAfterRow must not be null");
         paddingBetweenColumns = Objects.requireNonNull(builder.paddingBetweenColumns, "paddingBetweenColumns must not be null");
         horizontalBorderCharacter = builder.horizontalBorderCharacter;
+        headrowCharacter = builder.headrowCharacter;
+        hasDedicatedHeaderRow = builder.hasDedicatedHeaderRow;
     }
 
     int paddingLengthForFields(int fields) {
@@ -52,11 +64,20 @@ public class TableStructure {
     }
 
     String horizontalBorder(int length) {
-        return StringUtils.repeat(horizontalBorderCharacter, length);
+        return ((horizontalBorderCharacter != null) ? StringUtils.repeat(horizontalBorderCharacter, length) : "");
     }
 
     String headerRow(List<TableField> fields, List<TableFieldSummary> fieldSummaries) {
-        return paddedLine(index -> fields.get(index).getHeader(), fieldSummaries);
+        String output = paddedLine(index -> fields.get(index).getHeader(), fieldSummaries);
+        if (hasDedicatedHeaderRow) {
+            output += "\n" + paddedLine(index -> generateFiller(fields.get(index).getHeader(), fieldSummaries.get(index).getMaxValueLength()), fieldSummaries)
+                    .replaceAll(" ", headrowCharacter);
+        }
+        return output;
+    }
+
+    private String generateFiller(String header, int maxLength) {
+        return StringUtils.repeat(headrowCharacter, maxLength);
     }
 
     String row(TableRow row, List<TableFieldSummary> fieldSummaries) {
@@ -95,7 +116,9 @@ public class TableStructure {
         private String paddingBeforeRow;
         private String paddingAfterRow;
         private String paddingBetweenColumns;
-        private char horizontalBorderCharacter;
+        private String horizontalBorderCharacter;
+        private String headrowCharacter;
+        private Boolean hasDedicatedHeaderRow = false;
 
         private Builder() {
         }
@@ -115,8 +138,18 @@ public class TableStructure {
             return this;
         }
 
-        public Builder horizontalBorderCharacter(char horizontalBorderCharacter) {
+        public Builder horizontalBorderCharacter(String horizontalBorderCharacter) {
             this.horizontalBorderCharacter = horizontalBorderCharacter;
+            return this;
+        }
+
+        public Builder headrowCharacter(String headrowCharacter) {
+            this.headrowCharacter = headrowCharacter;
+            return this;
+        }
+
+        public Builder hasDedicatedHeaderRow(Boolean hasHeaderRow) {
+            this.hasDedicatedHeaderRow = hasHeaderRow;
             return this;
         }
 
