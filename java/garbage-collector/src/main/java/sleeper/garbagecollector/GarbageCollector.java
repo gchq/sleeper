@@ -183,11 +183,22 @@ public class GarbageCollector {
         List<String> deleteFiles(List<String> filenames, TableFilesDeleted deleted);
     }
 
-    public static DeleteFile deleteFileAndSketches(Configuration conf) {
-        return filename -> {
-            deleteFile(filename, conf);
-            String sketchesFile = filename.replace(".parquet", ".sketches");
-            deleteFile(sketchesFile, conf);
+    public static DeleteFiles deleteFilesAndSketches(Configuration conf) {
+        return (filenames, deleted) -> {
+            List<String> deletedFilenames = new ArrayList<>(filenames.size());
+            for (String filename : filenames) {
+                try {
+                    deleteFile(filename, conf);
+                    String sketchesFile = filename.replace(".parquet", ".sketches");
+                    deleteFile(sketchesFile, conf);
+                    deleted.deleted(filename);
+                    deletedFilenames.add(filename);
+                } catch (Exception e) {
+                    LOGGER.error("Failed to delete file: {}", filename, e);
+                    deleted.failed(filename, e);
+                }
+            }
+            return deletedFilenames;
         };
     }
 
