@@ -46,7 +46,6 @@ import sleeper.garbagecollector.GarbageCollector.DeleteFile;
 import sleeper.parquet.record.ParquetRecordWriterFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -238,23 +237,18 @@ public class GarbageCollectorIT {
             Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
             StateStore stateStore1 = stateStoreWithFixedTime(table1, oldEnoughTime);
             StateStore stateStore2 = stateStoreWithFixedTime(table2, oldEnoughTime);
-            Path oldFile1 = tempDir.resolve("old-file-1.parquet");
-            Path oldFile2 = tempDir.resolve("old-file-2.parquet");
-            Path newFile1 = tempDir.resolve("new-file-1.parquet");
-            Path newFile2 = tempDir.resolve("new-file-2.parquet");
-            createFileWithNoReferencesByCompaction(stateStore1, oldFile1, newFile1);
-            createFileWithNoReferencesByCompaction(stateStore2, oldFile2, newFile2);
+            createFileWithNoReferencesByCompaction(stateStore1, "old-file-1.parquet", "new-file-1.parquet");
+            createFileWithNoReferencesByCompaction(stateStore2, "old-file-2.parquet", "new-file-2.parquet");
 
             // When
-            collectGarbageAtTime(currentTime);
+            collectGarbageAtTimeNew(currentTime);
 
             // Then
-            assertThat(Files.exists(oldFile1)).isFalse();
-            assertThat(Files.exists(oldFile2)).isFalse();
+            assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet"));
             assertThat(stateStore1.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(oldEnoughTime, activeReference(newFile1)));
+                    activeFilesReport(oldEnoughTime, activeReference("new-file-1.parquet")));
             assertThat(stateStore2.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
-                    activeFilesReport(oldEnoughTime, activeReference(newFile2)));
+                    activeFilesReport(oldEnoughTime, activeReference("new-file-2.parquet")));
         }
 
         @Test
@@ -311,19 +305,18 @@ public class GarbageCollectorIT {
             stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             table.set(GARBAGE_COLLECTOR_ASYNC_COMMIT, "true");
-            Path oldFile = tempDir.resolve("old-file.parquet");
-            Path newFile = tempDir.resolve("new-file.parquet");
-            createFileWithNoReferencesByCompaction(stateStore, oldFile, newFile);
+            createFileWithNoReferencesByCompaction(stateStore, "old-file.parquet", "new-file.parquet");
 
             // When
-            collectGarbageAtTime(currentTime);
+            collectGarbageAtTimeNew(currentTime);
 
             // Then
+            assertThat(filesInBucket).isEqualTo(Set.of("new-file.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference(newFile)), List.of(oldFile.toString())));
+                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference("new-file.parquet")), List.of("old-file.parquet")));
             assertThat(sentCommits).containsExactly(
                     StateStoreCommitRequest.create(table.get(TABLE_ID),
-                            new DeleteFilesTransaction(List.of(oldFile.toString()))));
+                            new DeleteFilesTransaction(List.of("old-file.parquet"))));
         }
 
         @Test
@@ -335,29 +328,29 @@ public class GarbageCollectorIT {
             stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             table.set(GARBAGE_COLLECTOR_ASYNC_COMMIT, "true");
-            Path oldFile1 = tempDir.resolve("old-file-1.parquet");
-            Path oldFile2 = tempDir.resolve("old-file-2.parquet");
-            Path newFile1 = tempDir.resolve("new-file-1.parquet");
-            Path newFile2 = tempDir.resolve("new-file-2.parquet");
-            Path oldFile3 = tempDir.resolve("old-file-3.parquet");
-            Path newFile3 = tempDir.resolve("new-file-3.parquet");
-            createFileWithNoReferencesByCompaction(stateStore, oldFile1, newFile1);
-            createFileWithNoReferencesByCompaction(stateStore, oldFile2, newFile2);
-            createFileWithNoReferencesByCompaction(stateStore, oldFile3, newFile3);
+
+            createFileWithNoReferencesByCompaction(stateStore, "old-file-1.parquet", "new-file-1.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, "old-file-2.parquet", "new-file-2.parquet");
+            createFileWithNoReferencesByCompaction(stateStore, "old-file-3.parquet", "new-file-3.parquet");
 
             // When
-            collectGarbageAtTime(currentTime);
+            collectGarbageAtTimeNew(currentTime);
 
             // Then
+            assertThat(filesInBucket).isEqualTo(Set.of("new-file-1.parquet", "new-file-2.parquet", "new-file-3.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime,
-                            List.of(activeReference(newFile1), activeReference(newFile2), activeReference(newFile3)),
-                            List.of(oldFile1.toString(), oldFile2.toString(), oldFile3.toString())));
+                            List.of(activeReference("new-file-1.parquet"),
+                                    activeReference("new-file-2.parquet"),
+                                    activeReference("new-file-3.parquet")),
+                            List.of("old-file-1.parquet",
+                                    "old-file-2.parquet",
+                                    "old-file-3.parquet")));
             assertThat(sentCommits).containsExactly(
                     StateStoreCommitRequest.create(table.get(TABLE_ID),
-                            new DeleteFilesTransaction(List.of(oldFile1.toString(), oldFile2.toString()))),
+                            new DeleteFilesTransaction(List.of("old-file-1.parquet", "old-file-2.parquet"))),
                     StateStoreCommitRequest.create(table.get(TABLE_ID),
-                            new DeleteFilesTransaction(List.of(oldFile3.toString()))));
+                            new DeleteFilesTransaction(List.of("old-file-3.parquet"))));
         }
 
         @Test
@@ -368,17 +361,15 @@ public class GarbageCollectorIT {
             stateStore.fixFileUpdateTime(oldEnoughTime);
             table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
             table.set(GARBAGE_COLLECTOR_ASYNC_COMMIT, "false");
-            Path oldFile = tempDir.resolve("old-file.parquet");
-            Path newFile = tempDir.resolve("new-file.parquet");
-            createFileWithNoReferencesByCompaction(stateStore, oldFile, newFile);
+            createFileWithNoReferencesByCompaction(stateStore, "old-file.parquet", "new-file.parquet");
 
             // When
-            collectGarbageAtTime(currentTime);
+            collectGarbageAtTimeNew(currentTime);
 
             // Then
-            assertThat(Files.exists(oldFile)).isFalse();
+            assertThat(filesInBucket).isEqualTo(Set.of("new-file.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference(newFile)), List.of()));
+                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference("new-file.parquet")), List.of()));
             assertThat(sentCommits).isEmpty();
         }
     }
