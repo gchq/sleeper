@@ -72,14 +72,14 @@ public class TableStructure {
     String headerRow(List<TableField> fields, List<TableFieldSummary> fieldSummaries) {
         String output = paddedLine(index -> fields.get(index).getHeader(), fieldSummaries);
         if (hasSeparatorBelowHeader) {
-            output += "\n" + paddedLine(index -> generateFiller(fields.get(index).getHeader(), fieldSummaries.get(index).getMaxValueLength()), fieldSummaries)
+            output += "\n" + paddedLine(index -> generateFiller(index, fieldSummaries), fieldSummaries)
                     .replace(' ', separatorRowCharacter);
         }
         return output;
     }
 
-    private String generateFiller(String header, int maxLength) {
-        return StringUtils.repeat(separatorRowCharacter, maxLength);
+    private String generateFiller(int index, List<TableFieldSummary> fieldSummaries) {
+        return StringUtils.repeat(separatorRowCharacter, fieldSummaries.get(index).getMaxValueLength());
     }
 
     String row(TableRow row, List<TableFieldSummary> fieldSummaries) {
