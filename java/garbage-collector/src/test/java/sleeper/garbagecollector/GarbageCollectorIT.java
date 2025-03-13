@@ -150,7 +150,7 @@ public class GarbageCollectorIT {
             collectGarbageAtTimeNew(currentTime);
 
             // Then
-            assertThat(filesInBucket).containsExactly("old-file.parquet", "new-file.parquet");
+            assertThat(filesInBucket).isEqualTo(Set.of("old-file.parquet", "new-file.parquet"));
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
                     activeAndReadyForGCFilesReport(notOldEnoughTime,
                             List.of(activeReference("new-file.parquet")),
