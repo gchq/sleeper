@@ -13,7 +13,7 @@
 # limitations under the License.
 [package]
 name = "compaction"
-version = "0.29.0-SNAPSHOT"
+version = "0.30.0-SNAPSHOT"
 edition = "2021"
 authors = ["GCHQ"]
 rust-version = "1.79"
@@ -32,9 +32,9 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cxx = { version = "1.0.143" } # Exception handling for Rust
+cxx = { version = "1.0.144" } # Exception handling for Rust
 
-libc = { version = "0.2.170" } # FFI type support
+libc = { version = "0.2.171" } # FFI type support
 log = { version = "0.4.26" } # Logging support
 
 arrow = { version = "54.2.1", features = ["prettyprint"] } # Batch of reading from Parquet files
@@ -47,8 +47,8 @@ object_store = { version = "0.11.2", features = [
 thiserror = { version = "2.0.12" } # Derivable error enums
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
 tokio = { version = "1.44.0", features = ["full"] }
-aws-config = { version = "1.5.18" } # Credential loading
-aws-credential-types = { version = "1.2.1", features = [
+aws-config = { version = "1.6.0" } # Credential loading
+aws-credential-types = { version = "1.2.2", features = [
     "hardcoded-credentials",
 ] } # Credential provider types
 aws-types = { version = "1.3.5" } # for Region
@@ -61,7 +61,7 @@ chrono = { version = "0.4.39" } # Log helper
 color-eyre = { version = "0.6.3" } # Error handling
 
 # Transitive dependency
-ring = { version = "0.17.12" }
+ring = { version = "0.17.14" }
 
 [dev-dependencies]
 tempfile = { version = "3.18.0" }                                 # Create temporary files
