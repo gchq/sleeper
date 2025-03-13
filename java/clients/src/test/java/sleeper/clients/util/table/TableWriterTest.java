@@ -97,7 +97,7 @@ class TableWriterTest {
     }
 
     @Test
-    void shouldVerifyTableWhenStructureSet() throws IOException {
+    void shouldUseCustomStructureDefinitionToOutputTable() throws IOException {
 
         // Given
         TableStructure structure = TableStructure.builder()
@@ -117,7 +117,7 @@ class TableWriterTest {
         factory.tableBuilder()
                 .row(row -> {
                     row.value(field1, "Data here");
-                    row.value(field2, "Vaule here");
+                    row.value(field2, "Value here");
                 })
                 .build().write(output.getPrintStream());
         // Then
@@ -125,7 +125,7 @@ class TableWriterTest {
     }
 
     @Test
-    void shouldValidteMarkupTableDesign() throws IOException {
+    void shouldUseMarkdownFormatToGenerateAndOutputTable() throws IOException {
         // Given
         TableStructure structure = TableStructure.MARKDOWN_FORMAT;
         TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
