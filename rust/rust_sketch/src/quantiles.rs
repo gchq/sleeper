@@ -54,7 +54,7 @@
 //! );
 //! ```
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -888,7 +888,7 @@ pub mod str {
         /// for documentation.
         ///
         /// # Errors
-        /// If an error in the serialization stream occurs, then the exception is wrapped in the error message.        
+        /// If an error in the serialization stream occurs, then the exception is wrapped in the error message.
         fn serialize(self: &string_sketch_t, header_size_bytes: u32) -> Result<Vec<u8>>;
 
         /// Please see [quantiles sketch](https://github.com/apache/datasketches-cpp/blob/master/quantiles/include/quantiles_sketch.hpp)

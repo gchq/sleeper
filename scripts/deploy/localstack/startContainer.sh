@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2022-2024 Crown Copyright
+# Copyright 2022-2025 Crown Copyright
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ set -e
 unset CDPATH
 
 THIS_DIR=$(cd "$(dirname "$0")" && pwd)
-docker compose -f "$THIS_DIR/docker-compose.yml" up -d 
+docker compose -f "$THIS_DIR/docker-compose.yml" up -d
 echo "Running localstack container on port 4566"
 echo "To use sleeper with this container, set the AWS_ENDPOINT_URL environment variable:"
 if [ "$IN_CLI_CONTAINER" = "true" ]; then
