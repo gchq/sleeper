@@ -1,3 +1,4 @@
+#![allow(dead_code)] // TODO: REMOVE THIS
 /// A specialised version of [`NullState`] for map column types.
 /// Adapted from (https://docs.rs/datafusion/latest/datafusion/physical_expr/struct.NullState.html)
 /*
