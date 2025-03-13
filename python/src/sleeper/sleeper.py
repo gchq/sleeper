@@ -1,11 +1,11 @@
-#  Copyright 2022-2024 Crown Copyright
-# 
+#  Copyright 2022-2025 Crown Copyright
+#
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
-# 
+#
 #      http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #  Unless required by applicable law or agreed to in writing, software
 #  distributed under the License is distributed on an "AS IS" BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -74,7 +74,7 @@ class SleeperClient:
 
         :param table_name: the table name to write to
         :param records_to_write: list of the dictionaries containing the records to write
-        :param job_id: the id of the ingest job, will be randomly generated if not provided 
+        :param job_id: the id of the ingest job, will be randomly generated if not provided
         """
         # Generate a filename to write to
         databucket: str = _make_ingest_bucket_name(self._basename)
@@ -95,7 +95,7 @@ class SleeperClient:
 
         :param table_name: the table name to write to
         :param files: list of the files containing the records to ingest
-        :param job_id: the id of the ingest job, will be randomly generated if not provided 
+        :param job_id: the id of the ingest job, will be randomly generated if not provided
         """
         _ingest(table_name, files, self._ingest_queue, job_id)
 
@@ -128,7 +128,7 @@ class SleeperClient:
         stack is deployed.
 
         :param table_name: the table to query
-        :param keys: either a single dict where the key is the row-key field name and the value is a list of values 
+        :param keys: either a single dict where the key is the row-key field name and the value is a list of values
         to query for, or a list of dicts where the key is a row-key field name and the value is the value to query for
         :param query_id: the query ID, will be randomly generated if not provided
 
@@ -265,7 +265,7 @@ class SleeperClient:
         See the examples for how to use this method.
 
         :param table_name: the table to ingest to
-        :param job_id: the id of the ingest job, will be randomly generated if not provided 
+        :param job_id: the id of the ingest job, will be randomly generated if not provided
         :return: an object for use with context managers
         """
         # Create a temporary file to write data to as it is batched
@@ -422,7 +422,7 @@ def _bulk_import(table_name: str, files_to_ingest: list,
     :param emr_bulk_import_queue: name of the Sleeper instance's non-persistent EMR bulk import queue
     :param persistent_emr_bulk_import_queue: name of the Sleeper instance's persistent EMR bulk import queue
     :param eks_bulk_import_queue: name of the Sleeper instance's EKS bulk import queue
-    :param job_id: the id of the bulk import job, will be randomly generated if not provided 
+    :param job_id: the id of the bulk import job, will be randomly generated if not provided
     :param platform: the platform to use - either "EMR", "PersistentEMR", "EKS", or "EMRServerless"
     :param platform_spec: a dict containing details of the platform to use - see docs/usage/python-api.md
     """
