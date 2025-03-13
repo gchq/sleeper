@@ -42,7 +42,8 @@ public interface CompactionProperty {
                     "This will be the batch size for a lambda as an SQS FIFO event source. This can be a maximum of 10.")
             .defaultValue("1")
             .validationPredicate(SleeperPropertyValueUtils::isPositiveIntegerLtEq10)
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCH_SIZE = Index.propertyBuilder("sleeper.compaction.job.commit.batch.size")
             .description("The number of finished compaction commits to gather in the batcher before committing to " +
                     "the state store. This will be the batch size for a lambda as an SQS event source.\n" +
@@ -51,14 +52,16 @@ public interface CompactionProperty {
                     "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html")
             .defaultValue("1000")
             .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 10_000))
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_COMMIT_BATCHING_WINDOW_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.job.commit.batching.window.seconds")
             .description("The time in seconds that the batcher will wait for compaction commits to appear if the " +
                     "batch size is not filled. This will be set in the SQS event source for the lambda. This can be " +
                     "a maximum of 300, i.e. 5 minutes.")
             .defaultValue("30")
             .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 300))
-            .propertyGroup(InstancePropertyGroup.COMPACTION).build();
+            .propertyGroup(InstancePropertyGroup.COMPACTION)
+            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty COMPACTION_QUEUE_VISIBILITY_TIMEOUT_IN_SECONDS = Index.propertyBuilder("sleeper.compaction.queue.visibility.timeout.seconds")
             .description("The visibility timeout for the queue of compaction jobs.")
             .defaultValue("900")
