@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,10 +70,10 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
     /**
      * Constructs an instance of SqsBulkExportProcessorLambda.
      *
-     * @param sqsClient    The Amazon SQS client used for interacting with SQS.
-     * @param s3Client     The Amazon S3 client used for interacting with S3.
-     * @param dynamoClient The Amazon DynamoDB client used for interacting with
-     *                     DynamoDB.
+     * @param  sqsClient              The Amazon SQS client used for interacting with SQS.
+     * @param  s3Client               The Amazon S3 client used for interacting with S3.
+     * @param  dynamoClient           The Amazon DynamoDB client used for interacting with
+     *                                DynamoDB.
      * @throws ObjectFactoryException If there is an error creating the object.
      */
     public SqsBulkExportProcessorLambda(AmazonSQS sqsClient, AmazonS3 s3Client, AmazonDynamoDB dynamoClient)
@@ -100,9 +100,9 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
      * Handles the incoming SQS event, processes each message, and performs the bulk
      * export operation.
      *
-     * @param event   The SQS event containing the messages to be processed.
-     * @param context The AWS Lambda context object providing runtime information.
-     * @return Always returns null.
+     * @param  event   The SQS event containing the messages to be processed.
+     * @param  context The AWS Lambda context object providing runtime information.
+     * @return         Always returns null.
      */
     @Override
     public Void handleRequest(SQSEvent event, Context context) {
@@ -125,9 +125,9 @@ public class SqsBulkExportProcessorLambda implements RequestHandler<SQSEvent, Vo
      * If the deserialization or validation fails, logs the error and returns an
      * empty Optional.
      *
-     * @param message the JSON string representing the BulkExportQuery
-     * @return an Optional containing the deserialized BulkExportQuery if
-     *         successful, otherwise an empty Optional
+     * @param  message the JSON string representing the BulkExportQuery
+     * @return         an Optional containing the deserialized BulkExportQuery if
+     *                 successful, otherwise an empty Optional
      */
     public Optional<BulkExportQuery> deserialiseAndValidate(String message) {
         try {

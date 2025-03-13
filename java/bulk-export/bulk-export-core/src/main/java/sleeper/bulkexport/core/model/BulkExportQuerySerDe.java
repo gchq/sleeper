@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ public class BulkExportQuerySerDe {
     /**
      * Formats a BulkExportQuery as a JSON string.
      *
-     * @param query to format
+     * @param  query to format
      *
-     * @return a JSON string of the query
+     * @return       a JSON string of the query
      */
     public String toJson(BulkExportQuery query) {
         return gson.toJson(query);
@@ -46,10 +46,10 @@ public class BulkExportQuerySerDe {
      * Formats a BulkExportQuery as a JSON string with the option to pretty
      * print.
      *
-     * @param query       to format
-     * @param prettyPrint option to pretty print
+     * @param  query       to format
+     * @param  prettyPrint option to pretty print
      *
-     * @return a JSON string of the query
+     * @return             a JSON string of the query
      */
     public String toJson(BulkExportQuery query, boolean prettyPrint) {
         if (prettyPrint) {
@@ -61,9 +61,9 @@ public class BulkExportQuerySerDe {
     /**
      * Formats a JSON string to a BulkExportQuery object.
      *
-     * @param json The JSON string to format.
+     * @param  json The JSON string to format.
      *
-     * @return The parsed object as BulkExportQuery.
+     * @return      The parsed object as BulkExportQuery.
      */
     public BulkExportQuery fromJson(String json) {
         BulkExportQuery query = gson.fromJson(json, BulkExportQuery.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,9 @@ public class BulkExportLeafPartitionQuerySerDe {
     /**
      * Formats a BulkExportLeafPartitionQuery as a JSON string.
      *
-     * @param query to format
+     * @param  query to format
      *
-     * @return a JSON string of the query
+     * @return       a JSON string of the query
      */
     public String toJson(BulkExportLeafPartitionQuery query) {
         return gson.toJson(BulkExportLeafPartitionQueryJson.from(query, schemaLoader));
@@ -64,10 +64,10 @@ public class BulkExportLeafPartitionQuerySerDe {
      * Formats a BulkExportLeafPartitionQuery as a JSON string with the option to
      * pretty print.
      *
-     * @param query       to format
-     * @param prettyPrint option to pretty print
+     * @param  query       to format
+     * @param  prettyPrint option to pretty print
      *
-     * @return a JSON string of the query
+     * @return             a JSON string of the query
      */
     public String toJson(BulkExportLeafPartitionQuery query, boolean prettyPrint) {
         if (prettyPrint) {
@@ -79,9 +79,9 @@ public class BulkExportLeafPartitionQuerySerDe {
     /**
      * Formats a JSON string to a BulkExportLeafPartitionQuery object.
      *
-     * @param json The JSON string to format.
+     * @param  json The JSON string to format.
      *
-     * @return The parsed object as BulkExportLeafPartitionQuery.
+     * @return      The parsed object as BulkExportLeafPartitionQuery.
      */
     public BulkExportLeafPartitionQuery fromJson(String json) {
         BulkExportLeafPartitionQueryJson query = gson.fromJson(json, BulkExportLeafPartitionQueryJson.class);
@@ -95,9 +95,9 @@ public class BulkExportLeafPartitionQuerySerDe {
         /**
          * Get a schema by using the table id.
          *
-         * @param tableId The id of the table to get the schema for.
+         * @param  tableId The id of the table to get the schema for.
          *
-         * @return a Schema.
+         * @return         a Schema.
          */
         Optional<Schema> getSchemaByTableId(String tableId);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,9 +97,9 @@ public class BulkExportQuery {
     /**
      * Gets the table properties.
      *
-     * @param tablePropertiesProvider the provider to get the properties from.
+     * @param  tablePropertiesProvider the provider to get the properties from.
      *
-     * @return TableProperties
+     * @return                         TableProperties
      */
     public TableProperties getTableProperties(TablePropertiesProvider tablePropertiesProvider) {
         if (tableId != null) {
@@ -151,9 +151,9 @@ public class BulkExportQuery {
         /**
          * Provide the tableId.
          *
-         * @param tableId the id for the table.
+         * @param  tableId the id for the table.
          *
-         * @return the builder object.
+         * @return         the builder object.
          */
         public Builder tableId(String tableId) {
             this.tableId = tableId;
@@ -163,9 +163,9 @@ public class BulkExportQuery {
         /**
          * Provide the tableName.
          *
-         * @param tableName the name for the table.
+         * @param  tableName the name for the table.
          *
-         * @return the builder object.
+         * @return           the builder object.
          */
         public Builder tableName(String tableName) {
             this.tableName = tableName;
@@ -175,9 +175,9 @@ public class BulkExportQuery {
         /**
          * Provide the exportId.
          *
-         * @param exportId the id for the export job.
+         * @param  exportId the id for the export job.
          *
-         * @return the builder object.
+         * @return          the builder object.
          */
         public Builder exportId(String exportId) {
             this.exportId = exportId;
