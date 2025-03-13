@@ -33,6 +33,7 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -51,16 +52,39 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class GarbageCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollector.class);
 
-    private final DeleteFile deleteFile;
+    private final DeleteFiles deleteFiles;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
     private final StateStoreCommitRequestSender sendAsyncCommit;
+
+    public GarbageCollector(DeleteFiles deleteFiles,
+            InstanceProperties instanceProperties,
+            StateStoreProvider stateStoreProvider,
+            StateStoreCommitRequestSender sendAsyncCommit) {
+        this.deleteFiles = deleteFiles;
+        this.instanceProperties = instanceProperties;
+        this.stateStoreProvider = stateStoreProvider;
+        this.sendAsyncCommit = sendAsyncCommit;
+    }
 
     public GarbageCollector(DeleteFile deleteFile,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
             StateStoreCommitRequestSender sendAsyncCommit) {
-        this.deleteFile = deleteFile;
+        this.deleteFiles = (filenames, deleted) -> {
+            List<String> deletedFilenames = new ArrayList<>(filenames.size());
+            for (String filename : filenames) {
+                try {
+                    deleteFile.deleteFileAndSketches(filename);
+                    deleted.deleted(filename);
+                    deletedFilenames.add(filename);
+                } catch (Exception e) {
+                    LOGGER.error("Failed to delete file: {}", filename, e);
+                    deleted.failed(filename, e);
+                }
+            }
+            return deletedFilenames;
+        };
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
         this.sendAsyncCommit = sendAsyncCommit;
@@ -123,7 +147,7 @@ public class GarbageCollector {
     }
 
     private void deleteBatch(List<String> batch, TableProperties tableProperties, StateStore stateStore, TableFilesDeleted deleted) {
-        List<String> deletedFilenames = deleteFiles(batch, deleted);
+        List<String> deletedFilenames = deleteFiles.deleteFiles(batch, deleted);
         LOGGER.info("Deleted {} files in batch", deletedFilenames.size());
         try {
             boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
@@ -141,24 +165,22 @@ public class GarbageCollector {
         }
     }
 
-    private List<String> deleteFiles(List<String> filenames, TableFilesDeleted deleted) {
-        List<String> deletedFilenames = new ArrayList<>(filenames.size());
-        for (String filename : filenames) {
-            try {
-                deleteFile.deleteFileAndSketches(filename);
-                deleted.deleted(filename);
-                deletedFilenames.add(filename);
-            } catch (Exception e) {
-                LOGGER.error("Failed to delete file: {}", filename, e);
-                deleted.failed(filename, e);
-            }
-        }
-        return deletedFilenames;
-    }
-
     @FunctionalInterface
     public interface DeleteFile {
         void deleteFileAndSketches(String filename) throws IOException;
+
+        default void deleteFileAndSketchesCatching(String filename) {
+            try {
+                deleteFileAndSketches(filename);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    @FunctionalInterface
+    public interface DeleteFiles {
+        List<String> deleteFiles(List<String> filenames, TableFilesDeleted deleted);
     }
 
     public static DeleteFile deleteFileAndSketches(Configuration conf) {
