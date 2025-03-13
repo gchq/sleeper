@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 Crown Copyright
+ * Copyright 2022-2025 Crown Copyright
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,9 +134,9 @@ public class BulkExportStack extends NestedStack {
     /**
      * Create a queue and a dead letter queue for the queue.
      *
-     * @param id                 the id of the queue
-     * @param instanceProperties the instance properties
-     * @return the queue and the dead letter queue
+     * @param  id                 the id of the queue
+     * @param  instanceProperties the instance properties
+     * @return                    the queue and the dead letter queue
      */
     private List<Queue> createQueueAndDeadLetterQueue(String id, InstanceProperties instanceProperties) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);

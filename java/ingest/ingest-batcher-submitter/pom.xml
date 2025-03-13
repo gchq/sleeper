@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2024 Crown Copyright
+  ~ Copyright 2022-2025 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     <parent>
         <groupId>sleeper</groupId>
         <artifactId>ingest</artifactId>
-        <version>0.29.0-SNAPSHOT</version>
+        <version>0.30.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>ingest-batcher-submitter</artifactId>
