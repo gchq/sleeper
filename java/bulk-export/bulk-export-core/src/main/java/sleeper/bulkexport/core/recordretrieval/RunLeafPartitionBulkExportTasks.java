@@ -15,11 +15,9 @@
  */
 package sleeper.bulkexport.core.recordretrieval;
 
-import software.amazon.awssdk.services.ecs.EcsClient;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import software.amazon.awssdk.services.ecs.EcsClient;
 import software.amazon.awssdk.services.ecs.model.AwsVpcConfiguration;
 import software.amazon.awssdk.services.ecs.model.ContainerOverride;
 import software.amazon.awssdk.services.ecs.model.LaunchType;
@@ -37,9 +35,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
-import static sleeper.core.ContainerConstants.COMPACTION_CONTAINER_NAME;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_TASK_FARGATE_DEFINITION_FAMILY;
+import static sleeper.core.ContainerConstants.BULK_EXPORT_CONTAINER_NAME;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_PARTITION_BULK_EXPORT_QUEUE_URL;
 import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
@@ -61,7 +59,7 @@ public class RunLeafPartitionBulkExportTasks {
     public RunLeafPartitionBulkExportTasks(
             InstanceProperties instanceProperties, EcsClient ecsClient) {
         this(instanceProperties,
-                () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(COMPACTION_CLUSTER), ecsClient),
+                () -> ECSTaskCount.getNumPendingAndRunningTasks(instanceProperties.get(BULK_EXPORT_CLUSTER), ecsClient),
                 (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort));
     }
 
@@ -176,7 +174,7 @@ public class RunLeafPartitionBulkExportTasks {
     private static RunTaskRequest createRunTaskRequest(InstanceProperties instanceProperties) {
         TaskOverride override = createOverride(instanceProperties);
         RunTaskRequest.Builder runTaskRequest = RunTaskRequest.builder()
-                .cluster(instanceProperties.get(COMPACTION_CLUSTER))
+                .cluster(instanceProperties.get(BULK_EXPORT_CLUSTER))
                 .overrides(override)
                 .propagateTags(PropagateTags.TASK_DEFINITION);
 
@@ -187,7 +185,7 @@ public class RunLeafPartitionBulkExportTasks {
                 .launchType(LaunchType.FARGATE)
                 .platformVersion(fargateVersion)
                 .networkConfiguration(networkConfiguration)
-                .taskDefinition(instanceProperties.get(COMPACTION_TASK_FARGATE_DEFINITION_FAMILY));
+                .taskDefinition(instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY));
 
         return runTaskRequest.build();
     }
@@ -200,7 +198,7 @@ public class RunLeafPartitionBulkExportTasks {
      */
     private static TaskOverride createOverride(InstanceProperties instanceProperties) {
         ContainerOverride containerOverride = ContainerOverride.builder()
-                .name(COMPACTION_CONTAINER_NAME)
+                .name(BULK_EXPORT_CONTAINER_NAME)
                 .command(List.of(instanceProperties.get(CONFIG_BUCKET)))
                 .build();
         return TaskOverride.builder()

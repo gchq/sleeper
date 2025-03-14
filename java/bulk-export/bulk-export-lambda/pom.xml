@@ -49,6 +49,16 @@
             <groupId>sleeper</groupId>
             <artifactId>bulk-export-core</artifactId>
             <version>${project.parent.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>sleeper</groupId>
+                    <artifactId>common-task</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>software.amazon.awssdk</groupId>
+                    <artifactId>ecs</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>sleeper</groupId>

@@ -128,7 +128,7 @@ public class BulkExportStack extends NestedStack {
                 .build();
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
 
-        new BulkExportECRResources(this,coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ);
+        new BulkExportECRResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ);
         }
 
     /**

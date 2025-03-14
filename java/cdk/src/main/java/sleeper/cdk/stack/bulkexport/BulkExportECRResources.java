@@ -79,12 +79,13 @@ public class BulkExportECRResources {
 
     private void lambdaToCreateTasks(
             CoreStacks coreStacks, LambdaCode lambdaCode, Queue jobsQueue, InstanceProperties instanceProperties) {
+        String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
-                Utils.cleanInstanceId(instanceProperties), "bulk-export-tasks-creator");
+                instanceId, "leaf-partition-bulk-export-runner");
 
         // We want to use the existing compaction code for the bulk export.
         IFunction handler = lambdaCode.buildFunction(
-                stack, LambdaHandler.COMPACTION_TASK_CREATOR, "BulkExportTasksCreator", builder -> builder
+                stack, LambdaHandler.LEAF_PARTITION_BULK_EXPORT, "LeafPartitionBulkExportRunner", builder -> builder
                         .functionName(functionName)
                         .description("If there are leaf partition bulk export jobs on queue create tasks to run them")
                         .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
@@ -156,15 +157,7 @@ public class BulkExportECRResources {
                 .actions(List.of("ecs:DescribeContainerInstances"))
                 .build());
 
-        /*
-         * CompactionJobResources jobResources = new
-         * CompactionJobResources(instanceProperties, stack, coreStacks,
-         * taskDefinition.getTaskRole());
-         * jobResources.getCompactionJobsQueue().grantConsumeMessages(taskDefinition.
-         * getTaskRole());
-         * jobResources.getCommitBatcherQueue().grantSendMessages(taskDefinition.
-         * getTaskRole());
-         */
+
         CfnOutputProps bulkExportClusterProps = new CfnOutputProps.Builder()
                 .value(cluster.getClusterName())
                 .build();
