@@ -132,7 +132,7 @@
 //     }
 // }
 
-use std::{borrow::Borrow, hash::Hash, ops::AddAssign};
+use std::{borrow::Borrow, hash::Hash, marker::PhantomData};
 
 use arrow::{
     array::{
@@ -145,14 +145,11 @@ use datafusion::common::HashMap;
 
 /// Trait that unifies the iterator function for byte and primitive array types.
 trait ArrayIterable: From<ArrayData> {
-    type Element<'a>
+    type Element<'a>: ArrayAccessor
     where
         Self: 'a;
     const DATA_TYPE: DataType;
-    type Native: ?Sized + ToOwned;
-    fn iter(&self) -> ArrayIter<Self::Element<'_>>
-    where
-        for<'a> <Self as ArrayIterable>::Element<'a>: ArrayAccessor;
+    fn iter(&self) -> ArrayIter<Self::Element<'_>>;
 }
 
 /// Enable iteration for byte/binary/string types
@@ -163,7 +160,6 @@ where
 {
     type Element<'a> = &'a GenericByteArray<T>;
     const DATA_TYPE: DataType = T::DATA_TYPE;
-    type Native = T::Native;
 
     fn iter(&self) -> ArrayIter<Self::Element<'_>> {
         GenericByteArray::<T>::iter(self)
@@ -174,47 +170,63 @@ where
 impl<T: ArrowPrimitiveType> ArrayIterable for PrimitiveArray<T> {
     type Element<'a> = &'a PrimitiveArray<T>;
     const DATA_TYPE: DataType = T::DATA_TYPE;
-    type Native = T::Native;
 
     fn iter(&self) -> ArrayIter<Self::Element<'_>> {
         PrimitiveArray::<T>::iter(self)
     }
 }
 
-fn update_map<KeyArrayType, ValueArrayType>(
-    input: &Option<StructArray>,
-    map: &mut HashMap<
-        <<KeyArrayType as ArrayIterable>::Native as ToOwned>::Owned,
-        <<ValueArrayType as ArrayIterable>::Native as ToOwned>::Owned,
-    >,
+struct Baz<K> {
+    _p: PhantomData<K>,
+}
+
+impl<K> Baz<K> {
+    fn funky<'c, 'd>(&'c self, k: K) {}
+}
+
+fn update_map<'a, K, P, Q>(
+    input: Option<&'a StructArray>,
+    map: &'a mut HashMap<K, <<Q as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
+    baz: &Baz<<<P as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
 ) where
-    KeyArrayType: ArrayIterable,
-    ValueArrayType: ArrayIterable,
-    // Constrain map key to be hash able and equality comparable
-    for<'a> <<KeyArrayType as ArrayIterable>::Native as ToOwned>::Owned:
-        Hash + Eq + Borrow<<<KeyArrayType as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
-    for<'a> <<KeyArrayType as ArrayIterable>::Element<'a> as ArrayAccessor>::Item: Hash + Eq,
-    // Constrain map values to be primitive type
-    <ValueArrayType as ArrayIterable>::Native: ArrowNativeTypeOp + AddAssign,
-    // Both element types of the iterables must be array accessors
-    for<'a> <KeyArrayType as ArrayIterable>::Element<'a>: ArrayAccessor,
-    for<'a> <ValueArrayType as ArrayIterable>::Element<'a>: ArrayAccessor,
+    K: Eq
+        + Hash
+        + for<'c> From<&'c K>
+        + From<<<P as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
+    P: ArrayIterable + 'a,
+    Q: ArrayIterable + 'a,
 {
     if let Some(entries) = input {
-        let map_keys = downcast_array::<KeyArrayType>(entries.column(0).as_ref());
-        let map_vals = downcast_array::<ValueArrayType>(entries.column(1).as_ref());
-        for (k, v) in map_keys.iter().zip(map_vals.iter()) {
+        let mp = entries.column(0).as_ref();
+        let mv = entries.column(1).as_ref();
+        let map_keys = downcast_array::<P>(mp);
+        let map_vals = downcast_array::<Q>(mv);
+        let m1 = map_keys.iter();
+        let m2 = map_vals.iter();
+        let zippy = m1.zip(m2);
+        for (k, v) in zippy {
             match (k, v) {
                 (Some(key), Some(value)) => {
-                    let y = map.entry_ref(&key).and_modify(|v| *v += value);
+                    // fun_name::<K, Q>(key.into(), value, map);
+                    let baz_arg: <<P as ArrayIterable>::Element<'_> as ArrayAccessor>::Item =
+                        key.into();
+                    baz.funky(baz_arg);
                 }
-                // Nothing to do if keys or values are null
                 _ => {}
             }
         }
-        //     .and_modify(|v| *v += value)
-        //     .or_insert(value);
     }
+}
+
+fn fun_name<'a, K, V>(
+    key: K,
+    value: <<V as ArrayIterable>::Element<'a> as ArrayAccessor>::Item,
+    map: &mut HashMap<K, <<V as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
+) where
+    K: Eq + Hash + for<'c> From<&'c K>,
+    V: ArrayIterable,
+{
+    map.entry_ref(&key).or_insert(value);
 }
 
 // /// Single value accumulator function for maps.
