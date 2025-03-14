@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.statestore.StateStoreFactory;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
 
 import static sleeper.clients.util.BucketUtils.deleteAllObjectsInBucketWithPrefix;
 import static sleeper.clients.util.ClientUtils.optionalArgument;
@@ -42,21 +44,18 @@ import static sleeper.parquet.utils.HadoopConfigurationProvider.getConfiguration
 public class DeleteTable {
     private static final Logger LOGGER = LoggerFactory.getLogger(DeleteTable.class);
 
-    private final AmazonS3 s3Client;
     private final InstanceProperties instanceProperties;
+    private final AmazonS3 s3Client;
+    private final AmazonDynamoDB dynamoClient;
     private final TablePropertiesStore tablePropertiesStore;
     private final StateStoreProvider stateStoreProvider;
 
-    public DeleteTable(AmazonS3 s3Client, AmazonDynamoDB dynamoDB, InstanceProperties instanceProperties) {
-        this(s3Client, instanceProperties, S3TableProperties.createStore(instanceProperties, s3Client, dynamoDB),
-                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDB, getConfigurationForClient()));
-    }
-
-    public DeleteTable(AmazonS3 s3Client, InstanceProperties instanceProperties, TablePropertiesStore tablePropertiesStore, StateStoreProvider stateStoreProvider) {
-        this.s3Client = s3Client;
+    public DeleteTable(InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf) {
         this.instanceProperties = instanceProperties;
-        this.tablePropertiesStore = tablePropertiesStore;
-        this.stateStoreProvider = stateStoreProvider;
+        this.s3Client = s3Client;
+        this.dynamoClient = dynamoClient;
+        this.tablePropertiesStore = S3TableProperties.createStore(instanceProperties, s3Client, dynamoClient);
+        this.stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
     }
 
     public void delete(String tableName) {
@@ -70,9 +69,14 @@ public class DeleteTable {
          * table existed.
          */
         stateStoreProvider.getStateStore(tableProperties).clearSleeperTable();
+        snapshotMetadataStore(tableProperties).deleteAllSnapshots();
         deleteAllObjectsInBucketWithPrefix(s3Client, instanceProperties.get(DATA_BUCKET), tableProperties.get(TABLE_ID));
         tablePropertiesStore.deleteByName(tableName);
         LOGGER.info("Successfully deleted table {}", tableProperties.getStatus());
+    }
+
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotMetadataStore(TableProperties tableProperties) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient);
     }
 
     public static void main(String[] args) {
@@ -92,7 +96,7 @@ public class DeleteTable {
         AmazonDynamoDB dynamoDBClient = buildAwsV1Client(AmazonDynamoDBClientBuilder.standard());
         try {
             InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, args[0]);
-            new DeleteTable(s3Client, dynamoDBClient, instanceProperties).delete(tableName);
+            new DeleteTable(instanceProperties, s3Client, dynamoDBClient, getConfigurationForClient()).delete(tableName);
         } finally {
             dynamoDBClient.shutdown();
             s3Client.shutdown();
