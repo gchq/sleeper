@@ -147,7 +147,7 @@
         <!-- Facebook Collections brings in a vulnerable version of Guava, so we manage this -->
         <guava.version>33.4.0-jre</guava.version>
         <cdk.version>2.184.0</cdk.version>
-        <cdk.kubectl.24.version>2.0.242</cdk.kubectl.24.version>
+        <cdk.kubectl.32.version>2.0.3</cdk.kubectl.32.version>
         <constructs.version>10.4.2</constructs.version>
         <gson.version>2.12.1</gson.version>
         <slf4j.version>2.0.17</slf4j.version>
@@ -254,8 +254,8 @@
             </dependency>
             <dependency>
                 <groupId>software.amazon.awscdk</groupId>
-                <artifactId>cdk-lambda-layer-kubectl-v24</artifactId>
-                <version>${cdk.kubectl.24.version}</version>
+                <artifactId>cdk-lambda-layer-kubectl-v32</artifactId>
+                <version>${cdk.kubectl.32.version}</version>
             </dependency>
             <dependency>
                 <groupId>software.constructs</groupId>
