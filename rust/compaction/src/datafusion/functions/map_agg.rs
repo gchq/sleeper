@@ -132,7 +132,7 @@
 //     }
 // }
 
-use std::{borrow::Borrow, hash::Hash};
+use std::{borrow::Borrow, hash::Hash, ops::AddAssign};
 
 use arrow::{
     array::{
@@ -195,7 +195,7 @@ fn update_map<KeyArrayType, ValueArrayType>(
         Hash + Eq + Borrow<<<KeyArrayType as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
     for<'a> <<KeyArrayType as ArrayIterable>::Element<'a> as ArrayAccessor>::Item: Hash + Eq,
     // Constrain map values to be primitive type
-    <ValueArrayType as ArrayIterable>::Native: ArrowNativeTypeOp,
+    <ValueArrayType as ArrayIterable>::Native: ArrowNativeTypeOp + AddAssign,
     // Both element types of the iterables must be array accessors
     for<'a> <KeyArrayType as ArrayIterable>::Element<'a>: ArrayAccessor,
     for<'a> <ValueArrayType as ArrayIterable>::Element<'a>: ArrayAccessor,
@@ -205,7 +205,7 @@ fn update_map<KeyArrayType, ValueArrayType>(
         let map_vals = downcast_array::<ValueArrayType>(entries.column(1).as_ref());
         for (k, v) in map_keys.iter().zip(map_vals.iter()) {
             match (k, v) {
-                (Some(key), value) => {
+                (Some(key), Some(value)) => {
                     let y = map.entry_ref(&key).and_modify(|v| *v += value);
                 }
                 // Nothing to do if keys or values are null
