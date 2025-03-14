@@ -132,7 +132,7 @@
 //     }
 // }
 
-use std::hash::Hash;
+use std::{borrow::Borrow, hash::Hash};
 
 use arrow::{
     array::{
@@ -144,35 +144,39 @@ use arrow::{
 use datafusion::common::HashMap;
 
 /// Trait that unifies the iterator function for byte and primitive array types.
-trait ArrayIterable<'a>: From<ArrayData> {
-    type Element: ArrayAccessor;
+trait ArrayIterable: From<ArrayData> {
+    type Element<'a>
+    where
+        Self: 'a;
     const DATA_TYPE: DataType;
     type Native: ?Sized + ToOwned;
-    fn iter(&'a self) -> ArrayIter<Self::Element>;
+    fn iter(&self) -> ArrayIter<Self::Element<'_>>
+    where
+        for<'a> <Self as ArrayIterable>::Element<'a>: ArrayAccessor;
 }
 
 /// Enable iteration for byte/binary/string types
-impl<'a, T> ArrayIterable<'a> for GenericByteArray<T>
+impl<T> ArrayIterable for GenericByteArray<T>
 where
     T: ByteArrayType,
     <T as ByteArrayType>::Native: ToOwned,
 {
-    type Element = &'a GenericByteArray<T>;
+    type Element<'a> = &'a GenericByteArray<T>;
     const DATA_TYPE: DataType = T::DATA_TYPE;
     type Native = T::Native;
 
-    fn iter(&'a self) -> ArrayIter<Self::Element> {
+    fn iter(&self) -> ArrayIter<Self::Element<'_>> {
         GenericByteArray::<T>::iter(self)
     }
 }
 
 /// Enable for all primitive types
-impl<'a, T: ArrowPrimitiveType> ArrayIterable<'a> for PrimitiveArray<T> {
-    type Element = &'a PrimitiveArray<T>;
+impl<T: ArrowPrimitiveType> ArrayIterable for PrimitiveArray<T> {
+    type Element<'a> = &'a PrimitiveArray<T>;
     const DATA_TYPE: DataType = T::DATA_TYPE;
     type Native = T::Native;
 
-    fn iter(&'a self) -> ArrayIter<Self::Element> {
+    fn iter(&self) -> ArrayIter<Self::Element<'_>> {
         PrimitiveArray::<T>::iter(self)
     }
 }
@@ -180,14 +184,21 @@ impl<'a, T: ArrowPrimitiveType> ArrayIterable<'a> for PrimitiveArray<T> {
 fn update_map<KeyArrayType, ValueArrayType>(
     input: &Option<StructArray>,
     map: &mut HashMap<
-        <<KeyArrayType as ArrayIterable<'_>>::Native as ToOwned>::Owned,
-        <<ValueArrayType as ArrayIterable<'_>>::Native as ToOwned>::Owned,
+        <<KeyArrayType as ArrayIterable>::Native as ToOwned>::Owned,
+        <<ValueArrayType as ArrayIterable>::Native as ToOwned>::Owned,
     >,
 ) where
-    KeyArrayType: for<'a> ArrayIterable<'a>,
-    ValueArrayType: for<'a> ArrayIterable<'a>,
-    for<'a> <<KeyArrayType as ArrayIterable<'a>>::Native as ToOwned>::Owned: Hash + Eq,
-    for<'a> <ValueArrayType as ArrayIterable<'a>>::Native: ArrowNativeTypeOp,
+    KeyArrayType: ArrayIterable,
+    ValueArrayType: ArrayIterable,
+    // Constrain map key to be hash able and equality comparable
+    for<'a> <<KeyArrayType as ArrayIterable>::Native as ToOwned>::Owned:
+        Hash + Eq + Borrow<<<KeyArrayType as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
+    for<'a> <<KeyArrayType as ArrayIterable>::Element<'a> as ArrayAccessor>::Item: Hash + Eq,
+    // Constrain map values to be primitive type
+    <ValueArrayType as ArrayIterable>::Native: ArrowNativeTypeOp,
+    // Both element types of the iterables must be array accessors
+    for<'a> <KeyArrayType as ArrayIterable>::Element<'a>: ArrayAccessor,
+    for<'a> <ValueArrayType as ArrayIterable>::Element<'a>: ArrayAccessor,
 {
     if let Some(entries) = input {
         let map_keys = downcast_array::<KeyArrayType>(entries.column(0).as_ref());
@@ -195,19 +206,14 @@ fn update_map<KeyArrayType, ValueArrayType>(
         for (k, v) in map_keys.iter().zip(map_vals.iter()) {
             match (k, v) {
                 (Some(key), value) => {
-                    let t = map.entry_ref(&k);
+                    let y = map.entry_ref(&key);
                 }
                 // Nothing to do if keys or values are null
                 _ => {}
             }
         }
-        // for (k, v) in map_keys.iter().zip(map_vals) {
-        // match (k, v) {
-        // (Some(key), Some(value)) => {
-        // map.entry_ref(key)
         //     .and_modify(|v| *v += value)
         //     .or_insert(value);
-        // }
     }
 }
 
