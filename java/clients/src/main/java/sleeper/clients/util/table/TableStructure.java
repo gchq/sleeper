@@ -71,6 +71,9 @@ public class TableStructure {
 
     String headerRow(List<TableField> fields, List<TableFieldSummary> fieldSummaries) {
         String output = paddedLine(index -> fields.get(index).getHeader(), fieldSummaries);
+
+        // Padded line results in extra spaces at start and end column of column for readability.
+        // Spaces are replaced with the seperator character to provide full line.
         if (hasSeparatorBelowHeader) {
             output += "\n" + paddedLine(index -> generateFiller(index, fieldSummaries), fieldSummaries)
                     .replace(' ', separatorRowCharacter);
