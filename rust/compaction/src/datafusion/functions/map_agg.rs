@@ -206,7 +206,7 @@ fn update_map<KeyArrayType, ValueArrayType>(
         for (k, v) in map_keys.iter().zip(map_vals.iter()) {
             match (k, v) {
                 (Some(key), value) => {
-                    let y = map.entry_ref(&key);
+                    let y = map.entry_ref(&key).and_modify(|v| *v += value);
                 }
                 // Nothing to do if keys or values are null
                 _ => {}
