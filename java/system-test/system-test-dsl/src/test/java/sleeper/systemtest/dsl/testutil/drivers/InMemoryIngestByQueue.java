@@ -33,7 +33,7 @@ import sleeper.ingest.core.IngestTask;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
-import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
+import sleeper.ingest.runner.testutils.InMemoryIngest;
 import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.ingest.IngestByQueueDriver;
@@ -167,10 +167,9 @@ public class InMemoryIngestByQueue {
         TableProperties tableProperties = context.instance().getTablePropertiesProvider().getById(job.getTableId());
         StateStore stateStore = context.instance().getStateStore(tableProperties);
         IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(job.getTableId()).jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).build();
-        AddFilesToStateStore addFilesToStateStore = AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds);
         Iterator<Record> iterator = sourceFiles.streamRecords(filesWithFs(instanceProperties, job)).iterator();
-        return new InMemoryDirectIngestDriver(context.instance(), data, sketches)
-                .ingest(instanceProperties, tableProperties, stateStore, addFilesToStateStore, iterator);
+        return new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches)
+                .ingestWithJob(jobTracker, runIds, timeSupplier, iterator);
     }
 
     private List<String> filesWithFs(InstanceProperties instanceProperties, IngestJob job) {
