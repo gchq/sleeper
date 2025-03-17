@@ -27,6 +27,8 @@ import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
+import sleeper.ingest.runner.testutils.InMemoryPartitionFileWriter;
+import sleeper.ingest.runner.testutils.InMemoryRecordBatch;
 import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
