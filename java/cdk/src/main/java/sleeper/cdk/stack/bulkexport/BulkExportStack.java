@@ -98,8 +98,7 @@ public class BulkExportStack extends NestedStack {
         List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
         Queue bulkExportQ = bulkExportQueues.get(0);
         Queue bulkExportQueueQueryDlq = bulkExportQueues.get(1);
-        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq,
-                QueueType.EXPORT);
+        setQueueOutputProps(instanceProperties, bulkExportQ, bulkExportQueueQueryDlq, QueueType.EXPORT);
 
         // Add the queue as a source of events for the lambdas
         SqsEventSourceProps eventSourceProps = SqsEventSourceProps.builder()
