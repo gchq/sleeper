@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2022-2024 Crown Copyright
+  ~ Copyright 2022-2025 Crown Copyright
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@
         </dependency>
         <dependency>
             <groupId>software.amazon.awscdk</groupId>
-            <artifactId>cdk-lambda-layer-kubectl-v24</artifactId>
+            <artifactId>cdk-lambda-layer-kubectl-v32</artifactId>
         </dependency>
         <dependency>
             <groupId>software.constructs</groupId>

@@ -1,4 +1,4 @@
-#  Copyright 2022-2024 Crown Copyright
+#  Copyright 2022-2025 Crown Copyright
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ keywords = ["datasketches", "sketch", "quantile_sketch"]
 license = "Apache-2.0"
 
 [dependencies]
-cxx = { version = "1.0.144" }
+cxx = { version = "1.0.148" }
 
 [build-dependencies]
-cxx-build = { version = "1.0.144" }
+cxx-build = { version = "1.0.148" }
 git2 = { version = "0.20.0" }
 
 [target.'cfg(target_os = "macos")'.build-dependencies]
