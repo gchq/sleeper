@@ -29,18 +29,32 @@ public class TableStructure {
             .paddingBetweenColumns(" | ")
             .paddingAfterRow(" |")
             .horizontalBorderCharacter('-')
+            .hasHorizontalBorder(true)
             .build();
+
+    public static final TableStructure MARKDOWN_FORMAT = TableStructure.builder()
+            .paddingBeforeRow("| ")
+            .paddingAfterRow(" |")
+            .paddingBetweenColumns(" | ")
+            .separatorRowCharacter('-')
+            .hasSeparatorBelowHeader(true).build();
 
     private final String paddingBeforeRow;
     private final String paddingAfterRow;
     private final String paddingBetweenColumns;
     private final char horizontalBorderCharacter;
+    private final boolean hasHorizontalBorder;
+    private final char separatorRowCharacter;
+    private final boolean hasSeparatorBelowHeader;
 
     private TableStructure(Builder builder) {
         paddingBeforeRow = Objects.requireNonNull(builder.paddingBeforeRow, "paddingBeforeRow must not be null");
         paddingAfterRow = Objects.requireNonNull(builder.paddingAfterRow, "paddingAfterRow must not be null");
         paddingBetweenColumns = Objects.requireNonNull(builder.paddingBetweenColumns, "paddingBetweenColumns must not be null");
         horizontalBorderCharacter = builder.horizontalBorderCharacter;
+        hasHorizontalBorder = builder.hasHorizontalBorder;
+        separatorRowCharacter = builder.separatorRowCharacter;
+        hasSeparatorBelowHeader = builder.hasSeparatorBelowHeader;
     }
 
     int paddingLengthForFields(int fields) {
@@ -52,11 +66,23 @@ public class TableStructure {
     }
 
     String horizontalBorder(int length) {
-        return StringUtils.repeat(horizontalBorderCharacter, length);
+        return (hasHorizontalBorder ? StringUtils.repeat(horizontalBorderCharacter, length) : "");
     }
 
     String headerRow(List<TableField> fields, List<TableFieldSummary> fieldSummaries) {
-        return paddedLine(index -> fields.get(index).getHeader(), fieldSummaries);
+        String output = paddedLine(index -> fields.get(index).getHeader(), fieldSummaries);
+
+        // Padded line results in extra spaces at start and end column of column for readability.
+        // Spaces are replaced with the seperator character to provide full line.
+        if (hasSeparatorBelowHeader) {
+            output += "\n" + paddedLine(index -> generateFiller(index, fieldSummaries), fieldSummaries)
+                    .replace(' ', separatorRowCharacter);
+        }
+        return output;
+    }
+
+    private String generateFiller(int index, List<TableFieldSummary> fieldSummaries) {
+        return StringUtils.repeat(separatorRowCharacter, fieldSummaries.get(index).getMaxValueLength());
     }
 
     String row(TableRow row, List<TableFieldSummary> fieldSummaries) {
@@ -96,6 +122,9 @@ public class TableStructure {
         private String paddingAfterRow;
         private String paddingBetweenColumns;
         private char horizontalBorderCharacter;
+        private boolean hasHorizontalBorder = false;
+        private char separatorRowCharacter;
+        private boolean hasSeparatorBelowHeader = false;
 
         private Builder() {
         }
@@ -117,6 +146,23 @@ public class TableStructure {
 
         public Builder horizontalBorderCharacter(char horizontalBorderCharacter) {
             this.horizontalBorderCharacter = horizontalBorderCharacter;
+            this.hasHorizontalBorder = true;
+            return this;
+        }
+
+        public Builder hasHorizontalBorder(boolean hasHorizontalBorder) {
+            this.hasHorizontalBorder = hasHorizontalBorder;
+            return this;
+        }
+
+        public Builder separatorRowCharacter(char separatorRowCharacter) {
+            this.separatorRowCharacter = separatorRowCharacter;
+            this.hasSeparatorBelowHeader = true;
+            return this;
+        }
+
+        public Builder hasSeparatorBelowHeader(boolean hasSeparatorBelowHeader) {
+            this.hasSeparatorBelowHeader = hasSeparatorBelowHeader;
             return this;
         }
 
