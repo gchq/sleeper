@@ -40,13 +40,11 @@ public class AwsSleeperClient {
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
 
-    private AwsSleeperClient(
-            InstanceProperties instanceProperties, TableIndex tableIndex, TablePropertiesProvider tablePropertiesProvider,
-            StateStoreProvider stateStoreProvider) {
-        this.instanceProperties = instanceProperties;
-        this.tableIndex = tableIndex;
-        this.tablePropertiesProvider = tablePropertiesProvider;
-        this.stateStoreProvider = stateStoreProvider;
+    private AwsSleeperClient(Builder builder) {
+        instanceProperties = builder.instanceProperties;
+        tableIndex = builder.tableIndex;
+        tablePropertiesProvider = builder.tablePropertiesProvider;
+        stateStoreProvider = builder.stateStoreProvider;
     }
 
     public static AwsSleeperClient byInstanceId(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf, String instanceId) {
@@ -54,7 +52,16 @@ public class AwsSleeperClient {
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
-        return new AwsSleeperClient(instanceProperties, tableIndex, tablePropertiesProvider, stateStoreProvider);
+        return builder()
+                .instanceProperties(instanceProperties)
+                .tableIndex(tableIndex)
+                .tablePropertiesProvider(tablePropertiesProvider)
+                .stateStoreProvider(stateStoreProvider)
+                .build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public InstanceProperties getInstanceProperties() {
@@ -75,6 +82,37 @@ public class AwsSleeperClient {
 
     public StateStore getStateStore(String tableName) {
         return stateStoreProvider.getStateStore(getTableProperties(tableName));
+    }
+
+    public static class Builder {
+        private InstanceProperties instanceProperties;
+        private TableIndex tableIndex;
+        private TablePropertiesProvider tablePropertiesProvider;
+        private StateStoreProvider stateStoreProvider;
+
+        public Builder instanceProperties(InstanceProperties instanceProperties) {
+            this.instanceProperties = instanceProperties;
+            return this;
+        }
+
+        public Builder tableIndex(TableIndex tableIndex) {
+            this.tableIndex = tableIndex;
+            return this;
+        }
+
+        public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
+            this.tablePropertiesProvider = tablePropertiesProvider;
+            return this;
+        }
+
+        public Builder stateStoreProvider(StateStoreProvider stateStoreProvider) {
+            this.stateStoreProvider = stateStoreProvider;
+            return this;
+        }
+
+        public AwsSleeperClient build() {
+            return new AwsSleeperClient(this);
+        }
     }
 
 }
