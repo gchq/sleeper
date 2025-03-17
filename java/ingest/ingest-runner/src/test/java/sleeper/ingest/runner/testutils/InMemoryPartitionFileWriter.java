@@ -36,10 +36,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
-import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-
 public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryPartitionFileWriter.class);
 
@@ -60,9 +56,7 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
 
     public static PartitionFileWriterFactory factory(
             InMemoryRecordStore data, InMemorySketchesStore sketches, InstanceProperties instanceProperties, TableProperties tableProperties) {
-        TableFilePaths filePaths = TableFilePaths.fromPrefix(instanceProperties.get(FILE_SYSTEM)
-                + instanceProperties.get(DATA_BUCKET) + "/"
-                + tableProperties.get(TABLE_ID));
+        TableFilePaths filePaths = TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
         return partition -> new InMemoryPartitionFileWriter(
                 data, sketches, partition, filePaths.constructPartitionParquetFilePath(partition, UUID.randomUUID().toString()), tableProperties.getSchema());
     }
