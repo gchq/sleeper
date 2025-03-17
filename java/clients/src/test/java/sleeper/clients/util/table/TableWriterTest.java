@@ -182,4 +182,27 @@ class TableWriterTest {
         // Then
         assertThat(output).hasToString(example("reports/table/property.txt"));
     }
+
+    @Test
+    void shouldCreateMarkdownTableWithLongDescriptionEntry() throws IOException {
+        // Given
+        TableStructure structure = TableStructure.MARKDOWN_FORMAT;
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
+        factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
+
+        TableWriterFactory factory = factoryBuilder.build();
+        ToStringConsoleOutput output = new ToStringConsoleOutput();
+
+        InstanceProperty property1 = CommonProperty.TASK_RUNNER_LAMBDA_MEMORY_IN_MB;
+        InstanceProperty property2 = CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
+
+        // When
+        factory.tableBuilder()
+                .row(TableWriterPropertyHelper.generatePropertyDetails(factoryBuilder.getFields(), property1))
+                .row(TableWriterPropertyHelper.generatePropertyDetails(factoryBuilder.getFields(), property2))
+                .build().write(output.getPrintStream());
+        // Then
+        assertThat(output).hasToString(example("reports/table/propertyLong.txt"));
+
+    }
 }
