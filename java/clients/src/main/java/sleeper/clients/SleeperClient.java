@@ -16,9 +16,12 @@
 package sleeper.clients;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.configuration.ReadSplitPoints;
 import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
@@ -26,8 +29,10 @@ import sleeper.configuration.table.index.DynamoDBTableIndex;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
+import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
+import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartitionsTransaction;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
@@ -40,29 +45,36 @@ import sleeper.statestore.StateStoreFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
-public class AwsSleeperClient {
+public class SleeperClient {
 
     private final InstanceProperties instanceProperties;
     private final TableIndex tableIndex;
+    private final TablePropertiesStore tablePropertiesStore;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
     private final ObjectFactory objectFactory;
     private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
 
-    private AwsSleeperClient(Builder builder) {
+    private SleeperClient(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableIndex = builder.tableIndex;
+        tablePropertiesStore = builder.tablePropertiesStore;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         stateStoreProvider = builder.stateStoreProvider;
         objectFactory = builder.objectFactory;
         recordRetrieverProvider = builder.recordRetrieverProvider;
     }
 
-    public static AwsSleeperClient byInstanceId(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf, String instanceId) throws IOException, ObjectFactoryException {
+    public static SleeperClient createForInstanceId(String instanceId) throws IOException, ObjectFactoryException {
+        return createForInstanceId(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(), new Configuration(), instanceId);
+    }
+
+    public static SleeperClient createForInstanceId(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf, String instanceId) throws IOException, ObjectFactoryException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         String userJarsDir = Files.createTempDirectory("sleeper-user-jars").toString();
@@ -89,6 +101,17 @@ public class AwsSleeperClient {
         return tableIndex.streamAllTables();
     }
 
+    public void addTable(TableProperties tableProperties) throws IOException {
+        addTable(tableProperties, ReadSplitPoints.readSplitPoints(tableProperties));
+    }
+
+    public void addTable(TableProperties tableProperties, List<Object> splitPoints) {
+        tableProperties.validate();
+        tablePropertiesStore.createTable(tableProperties);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        InitialisePartitionsTransaction.fromSplitPoints(tableProperties, splitPoints).synchronousCommit(stateStore);
+    }
+
     public TableProperties getTableProperties(TableStatus tableStatus) {
         return tablePropertiesProvider.get(tableStatus);
     }
@@ -113,6 +136,7 @@ public class AwsSleeperClient {
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
+        private TablePropertiesStore tablePropertiesStore;
         private TablePropertiesProvider tablePropertiesProvider;
         private StateStoreProvider stateStoreProvider;
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
@@ -125,6 +149,11 @@ public class AwsSleeperClient {
 
         public Builder tableIndex(TableIndex tableIndex) {
             this.tableIndex = tableIndex;
+            return this;
+        }
+
+        public Builder tablePropertiesStore(TablePropertiesStore tablePropertiesStore) {
+            this.tablePropertiesStore = tablePropertiesStore;
             return this;
         }
 
@@ -148,8 +177,8 @@ public class AwsSleeperClient {
             return this;
         }
 
-        public AwsSleeperClient build() {
-            return new AwsSleeperClient(this);
+        public SleeperClient build() {
+            return new SleeperClient(this);
         }
     }
 

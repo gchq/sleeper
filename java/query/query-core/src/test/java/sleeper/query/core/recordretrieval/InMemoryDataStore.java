@@ -18,6 +18,7 @@ package sleeper.query.core.recordretrieval;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.key.Key;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
@@ -34,7 +35,7 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class InMemoryDataStore implements LeafPartitionRecordRetriever {
+public class InMemoryDataStore implements LeafPartitionRecordRetriever, LeafPartitionRecordRetrieverProvider {
 
     private final Map<String, List<Record>> recordsByFilename = new HashMap<>();
 
@@ -44,6 +45,11 @@ public class InMemoryDataStore implements LeafPartitionRecordRetriever {
                 .filter(record -> isRecordInRegion(record, leafPartitionQuery, dataReadSchema))
                 .map(record -> mapToReadSchema(record, dataReadSchema))
                 .iterator());
+    }
+
+    @Override
+    public LeafPartitionRecordRetriever getRecordRetriever(TableProperties tableProperties) {
+        return this;
     }
 
     public void addFile(String filename, List<Record> records) {
