@@ -1,0 +1,6 @@
+
+| Property Name       | Description                                                       | Default Value | Run CdkDeploy When Changed |
+|---------------------|-------------------------------------------------------------------|---------------|----------------------------|
+| sleeper.jars.bucket | The S3 bucket containing the jar files of the Sleeper components. |               | true                       |
+| sleeper.filesystem  | The Hadoop filesystem used to connect to S3.                      | s3a://        | false                      |
+
