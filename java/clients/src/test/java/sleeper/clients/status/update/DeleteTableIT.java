@@ -46,6 +46,8 @@ import sleeper.statestore.StateStoreFactory;
 import sleeper.statestore.transactionlog.DynamoDBTransactionLogStore;
 import sleeper.statestore.transactionlog.TransactionLogStateStoreCreator;
 import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotCreator;
+import sleeper.statestore.transactionlog.snapshots.DynamoDBTransactionLogSnapshotMetadataStore;
+import sleeper.statestore.transactionlog.snapshots.LatestSnapshots;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -195,6 +197,11 @@ public class DeleteTableIT extends LocalStackTestBase {
         assertThatThrownBy(() -> propertiesStore.loadByName("table-1"))
                 .isInstanceOf(TableNotFoundException.class);
         assertThat(streamTableObjects(table)).isEmpty();
+        // And
+        var snapshotMetadataStore = snapshotMetadataStore(table);
+        assertThat(snapshotMetadataStore.getLatestSnapshots()).isEqualTo(LatestSnapshots.empty());
+        assertThat(snapshotMetadataStore.getFilesSnapshots()).isEmpty();
+        assertThat(snapshotMetadataStore.getPartitionsSnapshots()).isEmpty();
     }
 
     @Test
@@ -205,8 +212,7 @@ public class DeleteTableIT extends LocalStackTestBase {
     }
 
     private void deleteTable(String tableName) throws Exception {
-        new DeleteTable(s3Client, instanceProperties, propertiesStore,
-                StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
+        new DeleteTable(instanceProperties, s3Client, dynamoClient, hadoopConf)
                 .delete(tableName);
     }
 
@@ -255,5 +261,9 @@ public class DeleteTableIT extends LocalStackTestBase {
     private Stream<TransactionLogEntry> streamTablePartitionTransactions(TableProperties tableProperties) {
         return DynamoDBTransactionLogStore.forPartitions(instanceProperties, tableProperties, dynamoClient, s3Client)
                 .readTransactions(TransactionLogRange.fromMinimum(1));
+    }
+
+    private DynamoDBTransactionLogSnapshotMetadataStore snapshotMetadataStore(TableProperties tableProperties) {
+        return new DynamoDBTransactionLogSnapshotMetadataStore(instanceProperties, tableProperties, dynamoClient);
     }
 }

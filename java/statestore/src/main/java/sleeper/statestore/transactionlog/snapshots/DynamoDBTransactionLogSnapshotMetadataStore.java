@@ -17,6 +17,7 @@ package sleeper.statestore.transactionlog.snapshots;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -25,11 +26,13 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.amazonaws.services.dynamodbv2.model.Update;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.properties.table.TableProperty;
 import sleeper.core.statestore.transactionlog.log.TransactionLogRange;
+import sleeper.core.table.TableStatus;
 import sleeper.dynamodb.tools.DynamoDBRecordBuilder;
 import sleeper.statestore.transactionlog.DuplicateSnapshotException;
 
@@ -50,11 +53,14 @@ import static sleeper.dynamodb.tools.DynamoDBAttributes.getLongAttribute;
 import static sleeper.dynamodb.tools.DynamoDBAttributes.getStringAttribute;
 import static sleeper.dynamodb.tools.DynamoDBUtils.hasConditionalCheckFailure;
 import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedItems;
+import static sleeper.dynamodb.tools.DynamoDBUtils.streamPagedResults;
 
 /**
  * Stores an index of snapshots derived from a transaction log. The index is backed by DynamoDB.
  */
 public class DynamoDBTransactionLogSnapshotMetadataStore {
+    public static final Logger LOGGER = LoggerFactory.getLogger(DynamoDBTransactionLogSnapshotMetadataStore.class);
+
     private static final String DELIMITER = "|";
     public static final String TABLE_ID = "TABLE_ID";
     public static final String TABLE_ID_AND_SNAPSHOT_TYPE = "TABLE_ID_AND_SNAPSHOT_TYPE";
@@ -68,6 +74,7 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     private static final String PARTITIONS_SNAPSHOT_PATH = "PARTITIONS_SNAPSHOT_PATH";
     private final String allSnapshotsTable;
     private final String latestSnapshotsTable;
+    private final TableStatus sleeperTable;
     private final String sleeperTableId;
     private final AmazonDynamoDB dynamo;
     private final Supplier<Instant> timeSupplier;
@@ -79,7 +86,8 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
     public DynamoDBTransactionLogSnapshotMetadataStore(InstanceProperties instanceProperties, TableProperties tableProperties, AmazonDynamoDB dynamo, Supplier<Instant> timeSupplier) {
         this.allSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_ALL_SNAPSHOTS_TABLENAME);
         this.latestSnapshotsTable = instanceProperties.get(TRANSACTION_LOG_LATEST_SNAPSHOTS_TABLENAME);
-        this.sleeperTableId = tableProperties.get(TableProperty.TABLE_ID);
+        this.sleeperTable = tableProperties.getStatus();
+        this.sleeperTableId = sleeperTable.getTableUniqueId();
         this.dynamo = dynamo;
         this.timeSupplier = timeSupplier;
     }
@@ -273,6 +281,34 @@ public class DynamoDBTransactionLogSnapshotMetadataStore {
         return Stream.concat(
                 getExpiredSnapshotsExcludingLatest(latestFilesTransactionNumber, SnapshotType.FILES, expiryDate),
                 getExpiredSnapshotsExcludingLatest(latestPartitionsTransactionNumber, SnapshotType.PARTITIONS, expiryDate));
+    }
+
+    /**
+     * Deletes all snapshot metadata for this Sleeper table. Used when deleting a Sleeper table.
+     */
+    public void deleteAllSnapshots() {
+        deleteAllSnapshots(SnapshotType.FILES);
+        deleteAllSnapshots(SnapshotType.PARTITIONS);
+        dynamo.deleteItem(latestSnapshotsTable, new DynamoDBRecordBuilder()
+                .string(TABLE_ID, sleeperTableId)
+                .build());
+    }
+
+    private void deleteAllSnapshots(SnapshotType type) {
+        streamPagedResults(dynamo, new QueryRequest().withTableName(allSnapshotsTable)
+                .withKeyConditionExpression("#TableIdAndType = :table_and_type")
+                .withExpressionAttributeNames(Map.of("#TableIdAndType", TABLE_ID_AND_SNAPSHOT_TYPE))
+                .withExpressionAttributeValues(new DynamoDBRecordBuilder()
+                        .string(":table_and_type", tableAndType(sleeperTableId, type))
+                        .build()))
+                .flatMap(result -> result.getItems().stream())
+                .parallel()
+                .map(item -> Map.of(
+                        TABLE_ID_AND_SNAPSHOT_TYPE, item.get(TABLE_ID_AND_SNAPSHOT_TYPE),
+                        TRANSACTION_NUMBER, item.get(TRANSACTION_NUMBER)))
+                .forEach(key -> dynamo.deleteItem(new DeleteItemRequest()
+                        .withTableName(allSnapshotsTable)
+                        .withKey(key)));
     }
 
     private Stream<TransactionLogSnapshotMetadata> getExpiredSnapshotsExcludingLatest(long latestSnapshotNumber, SnapshotType type, Instant time) {
