@@ -17,6 +17,7 @@ package sleeper.clients;
 
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -24,6 +25,9 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
+import sleeper.core.range.Range.RangeFactory;
+import sleeper.core.range.Region;
+import sleeper.core.record.Record;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
@@ -31,9 +35,16 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.ingest.runner.testutils.InMemoryIngest;
+import sleeper.ingest.runner.testutils.InMemorySketchesStore;
+import sleeper.query.core.model.Query;
 import sleeper.query.core.recordretrieval.InMemoryLeafPartitionRecordRetriever;
+import sleeper.query.core.recordretrieval.QueryExecutor;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -50,6 +61,7 @@ class SleeperClientTest {
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance(tableIndex);
     Schema schema = schemaWithKey("key", new StringType());
     InMemoryRecordStore dataStore = new InMemoryRecordStore();
+    InMemorySketchesStore sketchesStore = new InMemorySketchesStore();
     SleeperClient sleeperClient = SleeperClient.builder()
             .instanceProperties(instanceProperties)
             .tableIndex(tableIndex)
@@ -87,10 +99,50 @@ class SleeperClientTest {
         assertThat(sleeperClient.streamAllTables()).isEmpty();
     }
 
+    @Test
+    void shouldQueryTable() throws Exception {
+        // Given
+        addTable("test-table");
+        ingest("test-table", List.of(
+                new Record(Map.of("key", "A")),
+                new Record(Map.of("key", "B"))));
+        QueryExecutor queryExecutor = sleeperClient.getQueryExecutor("test-table");
+
+        // When
+        List<Record> records = new ArrayList<>();
+        try (CloseableIterator<Record> iterator = queryExecutor.execute(Query.builder()
+                .tableName("test-table").queryId(UUID.randomUUID().toString())
+                .regions(List.of(new Region(rangeFactory().createExactRange("key", "B"))))
+                .build())) {
+            iterator.forEachRemaining(records::add);
+        }
+
+        // Then
+        assertThat(records).containsExactly(
+                new Record(Map.of("key", "B")));
+    }
+
     private TableProperties createTableProperties(String tableName) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
         tableProperties.set(TABLE_NAME, tableName);
         return tableProperties;
+    }
+
+    private void addTable(String tableName) {
+        TableProperties tableProperties = createTableProperties("test-table");
+        sleeperClient.addTable(tableProperties, List.of());
+    }
+
+    private void ingest(String tableName, List<Record> records) {
+        InMemoryIngest ingest = new InMemoryIngest(instanceProperties,
+                sleeperClient.getTableProperties(tableName),
+                sleeperClient.getStateStore(tableName),
+                dataStore, sketchesStore);
+        ingest.ingestNoJob(records.iterator());
+    }
+
+    private RangeFactory rangeFactory() {
+        return new RangeFactory(schema);
     }
 
 }
