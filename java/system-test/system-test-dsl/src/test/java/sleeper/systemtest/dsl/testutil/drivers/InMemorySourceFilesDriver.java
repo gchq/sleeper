@@ -20,6 +20,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.testutils.InMemoryRecordStore;
+import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 

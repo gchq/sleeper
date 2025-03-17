@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.testutil.drivers;
+package sleeper.ingest.runner.testutils;
 
 import sleeper.sketches.Sketches;
 
