@@ -32,14 +32,14 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cxx = { version = "1.0.146" } # Exception handling for Rust
+cxx = { version = "1.0.148" } # Exception handling for Rust
 
 libc = { version = "0.2.171" } # FFI type support
 log = { version = "0.4.26" } # Logging support
 
 arrow = { version = "54.2.1", features = ["prettyprint"] } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
-async-trait = { version = "0.1.87" }
+async-trait = { version = "0.1.88" }
 datafusion = { version = "46.0.0", features = ["backtrace"] }
 object_store = { version = "0.11.2", features = [
     "aws",
