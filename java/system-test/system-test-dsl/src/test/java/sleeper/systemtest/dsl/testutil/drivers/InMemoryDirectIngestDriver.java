@@ -16,16 +16,19 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
+import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
 import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Iterator;
 
@@ -45,7 +48,13 @@ public class InMemoryDirectIngestDriver implements DirectIngestDriver {
         InstanceProperties instanceProperties = instance.getInstanceProperties();
         TableProperties tableProperties = instance.getTableProperties();
         StateStore stateStore = instance.getStateStore(tableProperties);
-        new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches)
-                .ingestNoJob(records);
+        InMemoryIngest ingest = new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches);
+        try (IngestCoordinator<Record> coordinator = ingest.createCoordinator()) {
+            while (records.hasNext()) {
+                coordinator.write(records.next());
+            }
+        } catch (IteratorCreationException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

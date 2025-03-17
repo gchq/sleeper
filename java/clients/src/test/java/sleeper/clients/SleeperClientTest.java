@@ -18,6 +18,7 @@ package sleeper.clients;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.iterator.CloseableIterator;
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.SleeperPropertiesInvalidException;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -35,12 +36,14 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
+import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
 import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.recordretrieval.InMemoryLeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.QueryExecutor;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -138,7 +141,13 @@ class SleeperClientTest {
                 sleeperClient.getTableProperties(tableName),
                 sleeperClient.getStateStore(tableName),
                 dataStore, sketchesStore);
-        ingest.ingestNoJob(records.iterator());
+        try (IngestCoordinator<Record> coordinator = ingest.createCoordinator()) {
+            for (Record record : records) {
+                coordinator.write(record);
+            }
+        } catch (IteratorCreationException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private RangeFactory rangeFactory() {

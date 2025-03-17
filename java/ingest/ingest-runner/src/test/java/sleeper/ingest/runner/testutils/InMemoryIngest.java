@@ -15,24 +15,13 @@
  */
 package sleeper.ingest.runner.testutils;
 
-import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
 import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.tracker.ingest.job.IngestJobTracker;
-import sleeper.core.tracker.ingest.job.update.IngestJobRunIds;
 import sleeper.core.util.ObjectFactory;
-import sleeper.ingest.core.IngestResult;
-import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
-import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Iterator;
-import java.util.function.Supplier;
 
 public class InMemoryIngest {
 
@@ -51,25 +40,11 @@ public class InMemoryIngest {
         this.sketchesStore = sketchesStore;
     }
 
-    public IngestResult ingestNoJob(Iterator<Record> records) {
-        return ingest(ingestCoordinatorBuilder(), records);
+    public IngestCoordinator<Record> createCoordinator() {
+        return coordinatorBuilder().build();
     }
 
-    public IngestResult ingestWithJob(IngestJobTracker jobTracker, IngestJobRunIds runIds, Supplier<Instant> timeSupplier, Iterator<Record> records) {
-        return ingest(ingestCoordinatorBuilder()
-                .addFilesToStateStore(AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds)),
-                records);
-    }
-
-    private IngestResult ingest(IngestCoordinator.Builder<Record> coordinatorBuilder, Iterator<Record> records) {
-        try (IngestCoordinator<Record> coordinator = coordinatorBuilder.build()) {
-            return new IngestRecordsFromIterator(coordinator, records).write();
-        } catch (IteratorCreationException | IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder() {
+    public IngestCoordinator.Builder<Record> coordinatorBuilder() {
         return IngestCoordinator.builderWith(instanceProperties, tableProperties)
                 .objectFactory(ObjectFactory.noUserJars())
                 .recordBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))

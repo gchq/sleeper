@@ -16,6 +16,7 @@
 
 package sleeper.systemtest.dsl.testutil.drivers;
 
+import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
@@ -33,6 +34,9 @@ import sleeper.ingest.core.IngestTask;
 import sleeper.ingest.core.job.IngestJob;
 import sleeper.ingest.core.job.IngestJobHandler;
 import sleeper.ingest.core.job.IngestJobMessageHandler;
+import sleeper.ingest.runner.IngestRecordsFromIterator;
+import sleeper.ingest.runner.impl.IngestCoordinator;
+import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
 import sleeper.ingest.runner.testutils.InMemoryIngest;
 import sleeper.ingest.runner.testutils.InMemorySketchesStore;
 import sleeper.systemtest.dsl.SystemTestContext;
@@ -44,6 +48,7 @@ import sleeper.systemtest.dsl.util.PollWithRetriesDriver;
 import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -168,8 +173,14 @@ public class InMemoryIngestByQueue {
         StateStore stateStore = context.instance().getStateStore(tableProperties);
         IngestJobRunIds runIds = IngestJobRunIds.builder().tableId(job.getTableId()).jobId(job.getId()).taskId(taskId).jobRunId(jobRunId).build();
         Iterator<Record> iterator = sourceFiles.streamRecords(filesWithFs(instanceProperties, job)).iterator();
-        return new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches)
-                .ingestWithJob(jobTracker, runIds, timeSupplier, iterator);
+        InMemoryIngest ingest = new InMemoryIngest(instanceProperties, tableProperties, stateStore, data, sketches);
+        try (IngestCoordinator<Record> coordinator = ingest.coordinatorBuilder()
+                .addFilesToStateStore(AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds))
+                .build()) {
+            return new IngestRecordsFromIterator(coordinator, iterator).write();
+        } catch (IteratorCreationException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private List<String> filesWithFs(InstanceProperties instanceProperties, IngestJob job) {
