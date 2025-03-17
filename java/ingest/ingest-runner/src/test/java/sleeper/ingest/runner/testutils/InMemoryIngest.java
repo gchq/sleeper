@@ -52,25 +52,29 @@ public class InMemoryIngest {
     }
 
     public IngestResult ingestNoJob(Iterator<Record> records) {
-        return ingest(AddFilesToStateStore.synchronousNoJob(stateStore), records);
+        return ingest(ingestCoordinatorBuilder(), records);
     }
 
     public IngestResult ingestWithJob(IngestJobTracker jobTracker, IngestJobRunIds runIds, Supplier<Instant> timeSupplier, Iterator<Record> records) {
-        return ingest(AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds), records);
+        return ingest(ingestCoordinatorBuilder()
+                .addFilesToStateStore(AddFilesToStateStore.synchronousWithJob(tableProperties, stateStore, jobTracker, timeSupplier, runIds)),
+                records);
     }
 
-    private IngestResult ingest(AddFilesToStateStore addFilesToStateStore, Iterator<Record> records) {
-        try (IngestCoordinator<Record> coordinator = IngestCoordinator.builderWith(instanceProperties, tableProperties)
-                .objectFactory(ObjectFactory.noUserJars())
-                .recordBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))
-                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(recordStore, sketchesStore, instanceProperties, tableProperties))
-                .stateStore(stateStore)
-                .addFilesToStateStore(addFilesToStateStore)
-                .build()) {
+    private IngestResult ingest(IngestCoordinator.Builder<Record> coordinatorBuilder, Iterator<Record> records) {
+        try (IngestCoordinator<Record> coordinator = coordinatorBuilder.build()) {
             return new IngestRecordsFromIterator(coordinator, records).write();
         } catch (IteratorCreationException | IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public IngestCoordinator.Builder<Record> ingestCoordinatorBuilder() {
+        return IngestCoordinator.builderWith(instanceProperties, tableProperties)
+                .objectFactory(ObjectFactory.noUserJars())
+                .recordBatchFactory(() -> new InMemoryRecordBatch(tableProperties.getSchema()))
+                .partitionFileWriterFactory(InMemoryPartitionFileWriter.factory(recordStore, sketchesStore, instanceProperties, tableProperties))
+                .stateStore(stateStore);
     }
 
 }
