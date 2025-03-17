@@ -19,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.s3.AmazonS3;
 import org.apache.hadoop.conf.Configuration;
 
+import sleeper.configuration.jars.S3UserJarsLoader;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.configuration.properties.S3TableProperties;
 import sleeper.configuration.table.index.DynamoDBTableIndex;
@@ -29,8 +30,18 @@ import sleeper.core.statestore.StateStore;
 import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
+import sleeper.core.util.ObjectFactory;
+import sleeper.core.util.ObjectFactoryException;
+import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
+import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
+import sleeper.query.core.recordretrieval.QueryExecutor;
+import sleeper.query.runner.recordretrieval.LeafPartitionRecordRetrieverImpl;
 import sleeper.statestore.StateStoreFactory;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 public class AwsSleeperClient {
@@ -39,24 +50,30 @@ public class AwsSleeperClient {
     private final TableIndex tableIndex;
     private final TablePropertiesProvider tablePropertiesProvider;
     private final StateStoreProvider stateStoreProvider;
+    private final ObjectFactory objectFactory;
+    private final LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
 
     private AwsSleeperClient(Builder builder) {
         instanceProperties = builder.instanceProperties;
         tableIndex = builder.tableIndex;
         tablePropertiesProvider = builder.tablePropertiesProvider;
         stateStoreProvider = builder.stateStoreProvider;
+        objectFactory = builder.objectFactory;
+        recordRetrieverProvider = builder.recordRetrieverProvider;
     }
 
-    public static AwsSleeperClient byInstanceId(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf, String instanceId) {
+    public static AwsSleeperClient byInstanceId(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf, String instanceId) throws IOException, ObjectFactoryException {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
-        TablePropertiesProvider tablePropertiesProvider = S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client);
-        StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf);
+        String userJarsDir = Files.createTempDirectory("sleeper-user-jars").toString();
+        ExecutorService queryExecutorService = Executors.newFixedThreadPool(10);
         return builder()
                 .instanceProperties(instanceProperties)
                 .tableIndex(tableIndex)
-                .tablePropertiesProvider(tablePropertiesProvider)
-                .stateStoreProvider(stateStoreProvider)
+                .tablePropertiesProvider(S3TableProperties.createProvider(instanceProperties, tableIndex, s3Client))
+                .stateStoreProvider(StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoClient, hadoopConf))
+                .objectFactory(new S3UserJarsLoader(instanceProperties, s3Client, userJarsDir).buildObjectFactory())
+                .recordRetrieverProvider(LeafPartitionRecordRetrieverImpl.createProvider(queryExecutorService, hadoopConf))
                 .build();
     }
 
@@ -84,11 +101,22 @@ public class AwsSleeperClient {
         return stateStoreProvider.getStateStore(getTableProperties(tableName));
     }
 
+    public QueryExecutor getQueryExecutor(String tableName) {
+        TableProperties tableProperties = getTableProperties(tableName);
+        StateStore stateStore = stateStoreProvider.getStateStore(tableProperties);
+        LeafPartitionRecordRetriever recordRetriever = recordRetrieverProvider.getRecordRetriever(tableProperties);
+        QueryExecutor executor = new QueryExecutor(objectFactory, tableProperties, stateStore, recordRetriever);
+        executor.init();
+        return executor;
+    }
+
     public static class Builder {
         private InstanceProperties instanceProperties;
         private TableIndex tableIndex;
         private TablePropertiesProvider tablePropertiesProvider;
         private StateStoreProvider stateStoreProvider;
+        private ObjectFactory objectFactory = ObjectFactory.noUserJars();
+        private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
 
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
@@ -107,6 +135,16 @@ public class AwsSleeperClient {
 
         public Builder stateStoreProvider(StateStoreProvider stateStoreProvider) {
             this.stateStoreProvider = stateStoreProvider;
+            return this;
+        }
+
+        public Builder objectFactory(ObjectFactory objectFactory) {
+            this.objectFactory = objectFactory;
+            return this;
+        }
+
+        public Builder recordRetrieverProvider(LeafPartitionRecordRetrieverProvider recordRetrieverProvider) {
+            this.recordRetrieverProvider = recordRetrieverProvider;
             return this;
         }
 
