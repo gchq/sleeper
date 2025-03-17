@@ -23,12 +23,12 @@ import sleeper.core.partition.Partition;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.table.TableFilePaths;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriter;
 import sleeper.ingest.runner.impl.partitionfilewriter.PartitionFileWriterFactory;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.sketches.Sketches;
 
 import java.util.ArrayList;
@@ -43,14 +43,14 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     public static final Logger LOGGER = LoggerFactory.getLogger(InMemoryPartitionFileWriter.class);
 
-    private final InMemoryDataStore dataStore;
+    private final InMemoryRecordStore dataStore;
     private final InMemorySketchesStore sketchesStore;
     private final Partition partition;
     private final String filename;
     private final List<Record> records = new ArrayList<>();
     private final Sketches sketches;
 
-    private InMemoryPartitionFileWriter(InMemoryDataStore dataStore, InMemorySketchesStore sketchesStore, Partition partition, String filename, Schema schema) {
+    private InMemoryPartitionFileWriter(InMemoryRecordStore dataStore, InMemorySketchesStore sketchesStore, Partition partition, String filename, Schema schema) {
         this.dataStore = dataStore;
         this.sketchesStore = sketchesStore;
         this.partition = partition;
@@ -59,7 +59,7 @@ public class InMemoryPartitionFileWriter implements PartitionFileWriter {
     }
 
     public static PartitionFileWriterFactory factory(
-            InMemoryDataStore data, InMemorySketchesStore sketches, InstanceProperties instanceProperties, TableProperties tableProperties) {
+            InMemoryRecordStore data, InMemorySketchesStore sketches, InstanceProperties instanceProperties, TableProperties tableProperties) {
         TableFilePaths filePaths = TableFilePaths.fromPrefix(instanceProperties.get(FILE_SYSTEM)
                 + instanceProperties.get(DATA_BUCKET) + "/"
                 + tableProperties.get(TABLE_ID));

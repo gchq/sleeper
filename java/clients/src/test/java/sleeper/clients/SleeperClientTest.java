@@ -24,13 +24,14 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
 import sleeper.core.properties.testutils.InMemoryTableProperties;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.StringType;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.table.InMemoryTableIndex;
 import sleeper.core.table.TableIndex;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryLeafPartitionRecordRetriever;
 
 import java.util.List;
 
@@ -48,14 +49,14 @@ class SleeperClientTest {
     TableIndex tableIndex = new InMemoryTableIndex();
     TablePropertiesStore tablePropertiesStore = InMemoryTableProperties.getStoreReturningExactInstance(tableIndex);
     Schema schema = schemaWithKey("key", new StringType());
-    InMemoryDataStore dataStore = new InMemoryDataStore();
+    InMemoryRecordStore dataStore = new InMemoryRecordStore();
     SleeperClient sleeperClient = SleeperClient.builder()
             .instanceProperties(instanceProperties)
             .tableIndex(tableIndex)
             .tablePropertiesStore(tablePropertiesStore)
             .tablePropertiesProvider(new TablePropertiesProvider(instanceProperties, tablePropertiesStore))
             .stateStoreProvider(InMemoryTransactionLogStateStore.createProvider(instanceProperties, new InMemoryTransactionLogsPerTable()))
-            .recordRetrieverProvider(dataStore)
+            .recordRetrieverProvider(new InMemoryLeafPartitionRecordRetriever(dataStore))
             .build();
 
     @Test

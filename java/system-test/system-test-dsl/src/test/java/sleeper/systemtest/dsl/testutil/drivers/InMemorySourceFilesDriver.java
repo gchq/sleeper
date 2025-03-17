@@ -19,7 +19,7 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.sourcedata.IngestSourceFilesDriver;
 
@@ -31,12 +31,12 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_B
 
 public class InMemorySourceFilesDriver implements IngestSourceFilesDriver {
 
-    private final InMemoryDataStore sourceFiles;
-    private final InMemoryDataStore dataStore;
+    private final InMemoryRecordStore sourceFiles;
+    private final InMemoryRecordStore dataStore;
     private final InMemorySketchesStore sketchesStore;
 
     public InMemorySourceFilesDriver(
-            InMemoryDataStore sourceFiles, InMemoryDataStore dataStore, InMemorySketchesStore sketchesStore) {
+            InMemoryRecordStore sourceFiles, InMemoryRecordStore dataStore, InMemorySketchesStore sketchesStore) {
         this.sourceFiles = sourceFiles;
         this.dataStore = dataStore;
         this.sketchesStore = sketchesStore;

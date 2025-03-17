@@ -20,13 +20,13 @@ import sleeper.core.iterator.IteratorCreationException;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.ingest.core.IngestResult;
 import sleeper.ingest.runner.IngestRecordsFromIterator;
 import sleeper.ingest.runner.impl.IngestCoordinator;
 import sleeper.ingest.runner.impl.commit.AddFilesToStateStore;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.systemtest.dsl.ingest.DirectIngestDriver;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 
@@ -36,10 +36,10 @@ import java.util.Iterator;
 
 public class InMemoryDirectIngestDriver implements DirectIngestDriver {
     private final SystemTestInstanceContext instance;
-    private final InMemoryDataStore data;
+    private final InMemoryRecordStore data;
     private final InMemorySketchesStore sketches;
 
-    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryDataStore data, InMemorySketchesStore sketches) {
+    public InMemoryDirectIngestDriver(SystemTestInstanceContext instance, InMemoryRecordStore data, InMemorySketchesStore sketches) {
         this.instance = instance;
         this.data = data;
         this.sketches = sketches;

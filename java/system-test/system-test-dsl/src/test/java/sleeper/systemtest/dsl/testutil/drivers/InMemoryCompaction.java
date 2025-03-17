@@ -30,6 +30,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.core.statestore.ReplaceFileReferencesRequest;
 import sleeper.core.statestore.StateStore;
@@ -46,7 +47,6 @@ import sleeper.core.tracker.job.run.JobRunSummary;
 import sleeper.core.tracker.job.run.RecordsProcessed;
 import sleeper.core.util.ObjectFactory;
 import sleeper.core.util.ObjectFactoryException;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
 import sleeper.sketches.Sketches;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.compaction.CompactionDriver;
@@ -72,10 +72,10 @@ public class InMemoryCompaction {
     private final List<CompactionTaskStatus> runningTasks = new ArrayList<>();
     private final CompactionJobTracker jobTracker = new InMemoryCompactionJobTracker();
     private final CompactionTaskTracker taskTracker = new InMemoryCompactionTaskTracker();
-    private final InMemoryDataStore dataStore;
+    private final InMemoryRecordStore dataStore;
     private final InMemorySketchesStore sketchesStore;
 
-    public InMemoryCompaction(InMemoryDataStore dataStore, InMemorySketchesStore sketchesStore) {
+    public InMemoryCompaction(InMemoryRecordStore dataStore, InMemorySketchesStore sketchesStore) {
         this.dataStore = dataStore;
         this.sketchesStore = sketchesStore;
     }
