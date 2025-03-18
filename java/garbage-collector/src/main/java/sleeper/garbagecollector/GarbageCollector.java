@@ -179,13 +179,17 @@ public class GarbageCollector {
                 Map<String, String> filenameByObjectKey = files.stream()
                         .flatMap(FileToDelete::thisAndSketches)
                         .collect(toMap(FileToDelete::objectKey, FileToDelete::filename));
-                DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(bucketName).withKeys(
-                        files.stream()
-                                .flatMap(FileToDelete::thisAndSketches)
-                                .map(file -> new KeyVersion(file.objectKey()))
-                                .toList()));
-                for (DeletedObject object : result.getDeletedObjects()) {
-                    deleted.deleted(filenameByObjectKey.get(object.getKey()));
+                try {
+                    DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(bucketName).withKeys(
+                            files.stream()
+                                    .flatMap(FileToDelete::thisAndSketches)
+                                    .map(file -> new KeyVersion(file.objectKey()))
+                                    .toList()));
+                    for (DeletedObject object : result.getDeletedObjects()) {
+                        deleted.deleted(filenameByObjectKey.get(object.getKey()));
+                    }
+                } catch (Exception e) {
+                    deleted.failed(bucketName, e);
                 }
             });
         };

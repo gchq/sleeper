@@ -17,7 +17,6 @@
 package sleeper.garbagecollector;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.partition.PartitionTree;
@@ -81,7 +80,6 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldContinueCollectingFilesIfBucketDoesNotExist() throws Exception {
         // Given
         tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
