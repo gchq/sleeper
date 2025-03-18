@@ -36,7 +36,6 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
-import sleeper.core.table.TableFilePaths;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
@@ -46,13 +45,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.entry;
-import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
@@ -376,98 +372,6 @@ public class GarbageCollectorTest {
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference("new-file.parquet")), List.of()));
             assertThat(sentCommits).isEmpty();
-        }
-    }
-
-    @Nested
-    @DisplayName("Find bucket names and object keys from filenames")
-    class FindBucketNamesAndObjectKeys {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
-
-        // Tests:
-        // - Read bucket name and object key from one file
-        // - Read multiple files for one bucket
-        // - Read files on multiple buckets
-        // - Handle when file system scheme is missing
-        // - Handle when file system scheme is not s3/s3a
-        // - Fail when path includes bucket name but not object key
-        // - Fail when path includes scheme but not bucket name or object key
-
-        @Test
-        void shouldReadBucketNameAndObjectKey() {
-            // Given
-            instanceProperties.set(DATA_BUCKET, "test-bucket");
-            String filename = buildFullFilename().constructPartitionParquetFilePath("root", "test-file");
-
-            // When
-            Map<String, List<String>> objectKeysByBucket = GarbageCollector.getObjectsToDeleteByBucketName(List.of(filename));
-
-            // Then
-            assertThat(objectKeysByBucket).containsOnly(
-                    entry("test-bucket", List.of(
-                            buildObjectKey().constructPartitionParquetFilePath("root", "test-file"),
-                            buildObjectKey().constructQuantileSketchesFilePath("root", "test-file"))));
-        }
-
-        @Test
-        void shouldReadMultipleFiles() {
-            // Given
-            instanceProperties.set(DATA_BUCKET, "test-bucket");
-            String filename1 = buildFullFilename().constructPartitionParquetFilePath("root", "test-file1");
-            String filename2 = buildFullFilename().constructPartitionParquetFilePath("root", "test-file2");
-
-            // When
-            Map<String, List<String>> objectKeysByBucket = GarbageCollector.getObjectsToDeleteByBucketName(List.of(filename1, filename2));
-
-            // Then
-            assertThat(objectKeysByBucket).containsOnly(
-                    entry("test-bucket", List.of(
-                            buildObjectKey().constructPartitionParquetFilePath("root", "test-file1"),
-                            buildObjectKey().constructQuantileSketchesFilePath("root", "test-file1"),
-                            buildObjectKey().constructPartitionParquetFilePath("root", "test-file2"),
-                            buildObjectKey().constructQuantileSketchesFilePath("root", "test-file2"))));
-        }
-
-        @Test
-        void shouldReadMultipleBuckets() {
-            // Given
-            InstanceProperties instance1 = createTestInstanceProperties();
-            TableProperties table1 = createTestTableProperties(instance1, TEST_SCHEMA);
-            instance1.set(DATA_BUCKET, "test-bucket1");
-            String filename1 = buildFullFilename(instance1, table1).constructPartitionParquetFilePath("root", "test-file1");
-
-            InstanceProperties instance2 = createTestInstanceProperties();
-            TableProperties table2 = createTestTableProperties(instance2, TEST_SCHEMA);
-            instance2.set(DATA_BUCKET, "test-bucket2");
-            String filename2 = buildFullFilename(instance2, table2).constructPartitionParquetFilePath("root", "test-file2");
-
-            // When
-            Map<String, List<String>> objectKeysByBucket = GarbageCollector.getObjectsToDeleteByBucketName(List.of(filename1, filename2));
-
-            // Then
-            assertThat(objectKeysByBucket).containsOnly(
-                    entry("test-bucket1", List.of(
-                            buildObjectKey(table1).constructPartitionParquetFilePath("root", "test-file1"),
-                            buildObjectKey(table1).constructQuantileSketchesFilePath("root", "test-file1"))),
-                    entry("test-bucket2", List.of(
-                            buildObjectKey(table2).constructPartitionParquetFilePath("root", "test-file2"),
-                            buildObjectKey(table2).constructQuantileSketchesFilePath("root", "test-file2"))));
-        }
-
-        private TableFilePaths buildFullFilename() {
-            return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
-        }
-
-        private TableFilePaths buildFullFilename(InstanceProperties instPropIn, TableProperties tablePropIn) {
-            return TableFilePaths.buildDataFilePathPrefix(instPropIn, tablePropIn);
-        }
-
-        private TableFilePaths buildObjectKey() {
-            return TableFilePaths.buildObjectKeyInDataBucket(tableProperties);
-        }
-
-        private TableFilePaths buildObjectKey(TableProperties tablePropIn) {
-            return TableFilePaths.buildObjectKeyInDataBucket(tablePropIn);
         }
     }
 
