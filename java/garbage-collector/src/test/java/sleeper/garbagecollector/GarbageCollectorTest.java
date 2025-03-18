@@ -388,6 +388,7 @@ public class GarbageCollectorTest {
         // - Read bucket name and object key from one file
         // - Read multiple files for one bucket
         // - Read files on multiple buckets
+        // - Handle when file system scheme is missing
         // - Handle when file system scheme is not s3/s3a
         // - Fail when path includes bucket name but not object key
         // - Fail when path includes scheme but not bucket name or object key
