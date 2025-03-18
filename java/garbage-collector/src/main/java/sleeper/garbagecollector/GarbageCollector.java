@@ -33,7 +33,6 @@ import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -62,26 +61,6 @@ public class GarbageCollector {
             StateStoreProvider stateStoreProvider,
             StateStoreCommitRequestSender sendAsyncCommit) {
         this.deleteFiles = deleteFiles;
-        this.instanceProperties = instanceProperties;
-        this.stateStoreProvider = stateStoreProvider;
-        this.sendAsyncCommit = sendAsyncCommit;
-    }
-
-    public GarbageCollector(DeleteFile deleteFile,
-            InstanceProperties instanceProperties,
-            StateStoreProvider stateStoreProvider,
-            StateStoreCommitRequestSender sendAsyncCommit) {
-        this.deleteFiles = (filenames, deleted) -> {
-            for (String filename : filenames) {
-                try {
-                    deleteFile.deleteFileAndSketches(filename);
-                    deleted.deleted(filename);
-                } catch (Exception e) {
-                    LOGGER.error("Failed to delete file: {}", filename, e);
-                    deleted.failed(filename, e);
-                }
-            }
-        };
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
         this.sendAsyncCommit = sendAsyncCommit;
@@ -162,19 +141,6 @@ public class GarbageCollector {
         } catch (Exception e) {
             LOGGER.error("Failed to update state store for files: {}", deletedFilenames, e);
             deleted.failedStateStoreUpdate(deletedFilenames, e);
-        }
-    }
-
-    @FunctionalInterface
-    public interface DeleteFile {
-        void deleteFileAndSketches(String filename) throws IOException;
-
-        default void deleteFileAndSketchesCatching(String filename) {
-            try {
-                deleteFileAndSketches(filename);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
     }
 
