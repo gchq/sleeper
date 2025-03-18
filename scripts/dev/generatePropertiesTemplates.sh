@@ -26,4 +26,7 @@ echo "Regenerating templates..."
 mvn exec:java -q -pl core \
   -Dexec.mainClass="sleeper.core.deploy.GeneratePropertiesTemplates" \
   -Dexec.args="$PROJECT_ROOT"
+mvn exec:java -q -pl core \
+  -Dexec.mainClass="sleeper.core.deploy.GeneratePropertiesDocumentation" \
+  -Dexec.args="$PROJECT_ROOT"
 popd
