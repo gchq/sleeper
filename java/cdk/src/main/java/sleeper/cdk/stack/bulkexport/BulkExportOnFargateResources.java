@@ -82,7 +82,7 @@ public class BulkExportOnFargateResources {
                 .environment(environment)
                 .cpu(requirements.getCpu())
                 .memoryLimitMiB(requirements.getMemoryLimitMiB())
-                .logging(Utils.createECSContainerLogDriver(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_TASKS_FARGATE)))
+                .logging(Utils.createECSContainerLogDriver(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_TASKS)))
                 .build();
     }
 }
