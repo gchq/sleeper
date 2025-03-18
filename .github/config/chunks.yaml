@@ -48,8 +48,8 @@ chunks:
       - splitter/splitter-lambda
       - garbage-collector
       - bulk-export/bulk-export-core
-      - bulk-export/bulk-export-runner
-      - bulk-export/bulk-export-lambda
+      - bulk-export/bulk-export-planner
+      - bulk-export/bulk-export-task-creation
   rust:
     name: Rust
     workflow: chunk-rust.yaml
