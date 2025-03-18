@@ -50,8 +50,8 @@ class TableFilesDeleted {
         stateStoreUpdateFailures.add(new StateStoreUpdateFailure(filenames, failure));
     }
 
-    List<String> getDeletedFilenames() {
-        return deletedFilenames;
+    int getDeletedFilesCount() {
+        return deletedFilenames.size();
     }
 
     TableFailures buildTableFailures(Exception tableFailure) {

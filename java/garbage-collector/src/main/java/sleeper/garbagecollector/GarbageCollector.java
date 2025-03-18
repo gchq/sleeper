@@ -104,8 +104,8 @@ public class GarbageCollector {
             try {
                 LOGGER.info("Starting GC for table {}", table);
                 deleteInBatches(tableProperties, startTime, deleted);
-                LOGGER.info("{} files deleted for table {}", deleted.getDeletedFilenames().size(), table);
-                totalDeleted += deleted.getDeletedFilenames().size();
+                LOGGER.info("{} files deleted for table {}", deleted.getDeletedFilesCount(), table);
+                totalDeleted += deleted.getDeletedFilesCount();
                 deleted.buildTableFailures().ifPresent(failedTables::add);
             } catch (Exception e) {
                 LOGGER.info("Failed to collect garbage for table {}", table, e);
