@@ -32,21 +32,21 @@ crate-type = ["cdylib", "rlib"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cxx = { version = "1.0.144" } # Exception handling for Rust
+cxx = { version = "1.0.148" } # Exception handling for Rust
 
 libc = { version = "0.2.171" } # FFI type support
 log = { version = "0.4.26" } # Logging support
 
 arrow = { version = "54.2.1", features = ["prettyprint"] } # Batch of reading from Parquet files
 futures = { version = "0.3.31" } # Async processing
-async-trait = { version = "0.1.87" }
+async-trait = { version = "0.1.88" }
 datafusion = { version = "46.0.0", features = ["backtrace"] }
 object_store = { version = "0.11.2", features = [
     "aws",
 ] } # Remote cloud storage access
 thiserror = { version = "2.0.12" } # Derivable error enums
 rust_sketch = { path = "../rust_sketch" } # DataSketches wrapper
-tokio = { version = "1.44.0", features = ["full"] }
+tokio = { version = "1.44.1", features = ["full"] }
 aws-config = { version = "1.6.0" } # Credential loading
 aws-credential-types = { version = "1.2.2", features = [
     "hardcoded-credentials",
@@ -64,7 +64,7 @@ color-eyre = { version = "0.6.3" } # Error handling
 ring = { version = "0.17.14" }
 
 [dev-dependencies]
-tempfile = { version = "3.18.0" }                                 # Create temporary files
+tempfile = { version = "3.19.0" }                                 # Create temporary files
 object_store = { version = "0.11.2", features = ["integration"] }
 testing_logger = { version = "0.1.1" }                            # Assert on logger output in tests
 test-log = { version = "0.2.17" }                                 # Enable logging in tests
