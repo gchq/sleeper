@@ -23,7 +23,6 @@ import sleeper.core.properties.validation.LambdaDeployType;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.createTestPopulateInstanceProperties;
 import static sleeper.core.deploy.PopulatePropertiesTestHelper.testPopulateInstancePropertiesBuilder;
 import static sleeper.core.properties.instance.BulkExportProperty.BULK_EXPORT_ECR_REPO;
