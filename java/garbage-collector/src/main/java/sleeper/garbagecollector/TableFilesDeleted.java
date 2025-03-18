@@ -30,16 +30,21 @@ import java.util.Optional;
 class TableFilesDeleted {
 
     private final TableStatus table;
-    private final List<String> deletedFilenames = new ArrayList<>();
+    private final List<String> filesDeletedInBatch = new ArrayList<>();
     private final List<FileFailure> fileFailures = new ArrayList<>();
     private final List<StateStoreUpdateFailure> stateStoreUpdateFailures = new ArrayList<>();
+    private int deletedFileCount = 0;
 
     TableFilesDeleted(TableStatus table) {
         this.table = table;
     }
 
+    List<String> getFilesDeletedInBatch() {
+        return filesDeletedInBatch;
+    }
+
     void deleted(String filename) {
-        deletedFilenames.add(filename);
+        deletedFileCount++;
     }
 
     void failed(String filename, Exception failure) {
@@ -50,8 +55,8 @@ class TableFilesDeleted {
         stateStoreUpdateFailures.add(new StateStoreUpdateFailure(filenames, failure));
     }
 
-    int getDeletedFilesCount() {
-        return deletedFilenames.size();
+    int getDeletedFileCount() {
+        return deletedFileCount;
     }
 
     TableFailures buildTableFailures(Exception tableFailure) {
