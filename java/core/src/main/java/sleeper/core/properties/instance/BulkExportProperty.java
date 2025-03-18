@@ -44,13 +44,6 @@ public interface BulkExportProperty {
             .defaultValue("800")
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
-    UserDefinedInstanceProperty BULK_EXPORT_LEAF_PARTITION_LANGUAGE = Index
-            .propertyBuilder("sleeper.bulk.export.leaf.partition.language")
-            .description("The language to use for the leaf partition bulk export processor.")
-            .defaultValue("java")
-            .validationPredicate(SleeperPropertyValueUtils::isValidBulkExportLanguage)
-            .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
-            .runCdkDeployWhenChanged(true).build();
     UserDefinedInstanceProperty BULK_EXPORT_TASK_CPU_ARCHITECTURE = Index
             .propertyBuilder("sleeper.bulk.export.task.cpu.architecture")
             .description("The CPU architecture to run bulk export tasks on. Valid values are X86_64 and ARM64.\n" +
@@ -96,6 +89,11 @@ public interface BulkExportProperty {
             .validationPredicate(SleeperPropertyValueUtils::isPositiveInteger)
             .propertyGroup(InstancePropertyGroup.BULK_EXPORT)
             .runCdkDeployWhenChanged(true).build();
+    UserDefinedInstanceProperty MAXIMUM_CONCURRENT_BULK_EXPORT_TASKS = Index
+            .propertyBuilder("sleeper.bulk.export.max.concurrent.tasks")
+            .description("The maximum number of concurrent bulk export tasks to run.")
+            .defaultValue("300")
+            .propertyGroup(InstancePropertyGroup.BULK_EXPORT).build();
 
     static List<UserDefinedInstanceProperty> getAll() {
         return Index.INSTANCE.getAll();

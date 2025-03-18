@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.function.BooleanSupplier;
 
 import static sleeper.core.ContainerConstants.BULK_EXPORT_CONTAINER_NAME;
+import static sleeper.core.properties.instance.BulkExportProperty.MAXIMUM_CONCURRENT_BULK_EXPORT_TASKS;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
@@ -43,7 +44,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.LEAF_P
 import static sleeper.core.properties.instance.CommonProperty.ECS_SECURITY_GROUPS;
 import static sleeper.core.properties.instance.CommonProperty.FARGATE_VERSION;
 import static sleeper.core.properties.instance.CommonProperty.SUBNETS;
-import static sleeper.core.properties.instance.CompactionProperty.MAXIMUM_CONCURRENT_COMPACTION_TASKS;
 
 /**
  * Finds the number of messages on a queue, and starts up a Fargate
@@ -63,7 +63,8 @@ public class RunLeafPartitionBulkExportTasks {
                 (numberOfTasks, checkAbort) -> launchTasks(ecsClient, instanceProperties, numberOfTasks, checkAbort));
     }
 
-    public RunLeafPartitionBulkExportTasks(InstanceProperties instanceProperties, TaskCounts taskCounts, TaskLauncher taskLauncher) {
+    public RunLeafPartitionBulkExportTasks(InstanceProperties instanceProperties, TaskCounts taskCounts,
+            TaskLauncher taskLauncher) {
         this.instanceProperties = instanceProperties;
         this.taskCounts = taskCounts;
         this.taskLauncher = taskLauncher;
@@ -89,7 +90,8 @@ public class RunLeafPartitionBulkExportTasks {
          * Launches tasks.
          *
          * @param numberOfTasksToCreate the number of tasks to create
-         * @param checkAbort a condition under which launching will be aborted
+         * @param checkAbort            a condition under which launching will be
+         *                              aborted
          */
         void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort);
     }
@@ -102,7 +104,7 @@ public class RunLeafPartitionBulkExportTasks {
     public void run(QueueMessageCount.Client queueMessageCount) {
         long startTime = System.currentTimeMillis();
         String sqsJobQueueUrl = instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL);
-        int maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_COMPACTION_TASKS);
+        int maximumRunningTasks = instanceProperties.getInt(MAXIMUM_CONCURRENT_BULK_EXPORT_TASKS);
         LOGGER.info("Queue URL is {}", sqsJobQueueUrl);
         // Find out number of messages in queue that are not being processed
         int queueSize = queueMessageCount.getQueueMessageCount(sqsJobQueueUrl)
@@ -129,7 +131,7 @@ public class RunLeafPartitionBulkExportTasks {
     }
 
     /**
-     * Ensure that a given number of compaction tasks are running.
+     * Ensure that a given number of bulk export tasks are running.
      *
      * If there are currently less tasks running, then new ones will be started.
      * The scaler will be invoked to ensure the ECS cluster can accommodate the
@@ -155,10 +157,11 @@ public class RunLeafPartitionBulkExportTasks {
     private void scaleToHostsAndLaunchTasks(int targetTasks, int createTasks, BooleanSupplier checkAbort) {
         LOGGER.info("Target number of tasks is {}", targetTasks);
         LOGGER.info("Tasks to create is {}", createTasks);
+
         if (targetTasks < 0) {
             throw new IllegalArgumentException("targetTasks is < 0");
         }
-        //hostScaler.scaleTo(targetTasks);
+
         if (createTasks < 1) {
             LOGGER.info("Finishing as no new tasks are needed");
             return;
@@ -203,8 +206,7 @@ public class RunLeafPartitionBulkExportTasks {
         String fargateVersion = Objects.requireNonNull(instanceProperties.get(FARGATE_VERSION),
                 "fargateVersion cannot be null");
         NetworkConfiguration networkConfiguration = networkConfig(instanceProperties);
-        runTaskRequest
-                .launchType(LaunchType.FARGATE)
+        runTaskRequest.launchType(LaunchType.FARGATE)
                 .platformVersion(fargateVersion)
                 .networkConfiguration(networkConfiguration)
                 .taskDefinition(instanceProperties.get(BULK_EXPORT_TASK_FARGATE_DEFINITION_FAMILY));
