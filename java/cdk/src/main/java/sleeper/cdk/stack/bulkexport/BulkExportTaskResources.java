@@ -65,13 +65,13 @@ import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
 @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-public class BulkExportECRResources {
+public class BulkExportTaskResources {
     private static final String BULK_EXPORT_CLUSTER_NAME = "BulkExportClusterName";
 
     private final InstanceProperties instanceProperties;
     private final Stack stack;
 
-    public BulkExportECRResources(Stack stack, CoreStacks coreStacks, InstanceProperties instanceProperties,
+    public BulkExportTaskResources(Stack stack, CoreStacks coreStacks, InstanceProperties instanceProperties,
             LambdaCode lambdaCode, IBucket jarsBucket, Queue jobsQueue) {
         this.instanceProperties = instanceProperties;
         this.stack = stack;
@@ -83,18 +83,17 @@ public class BulkExportECRResources {
             CoreStacks coreStacks, LambdaCode lambdaCode, Queue jobsQueue, InstanceProperties instanceProperties) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
-                instanceId, "leaf-partition-bulk-export-runner");
+                instanceId, "bulk-export-tasks-creator");
 
-        // We want to use the existing compaction code for the bulk export.
         IFunction handler = lambdaCode.buildFunction(
-                stack, LambdaHandler.LEAF_PARTITION_BULK_EXPORT, "LeafPartitionBulkExportRunner", builder -> builder
+                stack, LambdaHandler.BULK_EXPORT_TASK_CREATOR, "BulkExportTasksCreator", builder -> builder
                         .functionName(functionName)
                         .description("If there are leaf partition bulk export jobs on queue create tasks to run them")
                         .memorySize(instanceProperties.getInt(TASK_RUNNER_LAMBDA_MEMORY_IN_MB))
                         .timeout(Duration.seconds(instanceProperties.getInt(TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS)))
                         .environment(Utils.createDefaultEnvironment(instanceProperties))
                         .reservedConcurrentExecutions(1)
-                        .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_TASKS_FARGATE_CREATOR)));
+                        .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT_TASKS_CREATOR)));
 
         // Grant this function permission to read from the S3 bucket
         coreStacks.grantReadInstanceConfig(handler);

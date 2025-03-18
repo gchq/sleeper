@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkexport.runner;
+package sleeper.bulkexport.taskcreation;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -32,22 +32,17 @@ import sleeper.task.common.QueueMessageCount;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 
 /**
- * A lambda that is triggered when a serialised leaf partition export query
- * arrives on an SQS
- * queue. A processor executes the request and publishes the results to S3.
+ * Lambda function triggered by an SQS message from a CloudWatch schedule.
+ * Initiates bulk export ECS tasks based on the count of leaf partition bulk export jobs in the queue.
  */
 @SuppressWarnings("unused")
-public class RunSqsLeafPartitionBulkExportLambda {
-    private static final Logger LOGGER = LoggerFactory.getLogger(RunSqsLeafPartitionBulkExportLambda.class);
+public class SqsTriggeredBulkExportTaskRunner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqsTriggeredBulkExportTaskRunner.class);
 
     private final QueueMessageCount.Client queueMessageCount;
     private final RunLeafPartitionBulkExportTasks runLeafPartitionBulkExportTasks;
 
-    /**
-     * Constructs an instance of RunSqsLeafPartitionBulkExportLambda using
-     * default clients for Amazon SQS, Amazon S3, and Amazon DynamoDB.
-     */
-    public RunSqsLeafPartitionBulkExportLambda() {
+    public SqsTriggeredBulkExportTaskRunner() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
@@ -58,7 +53,7 @@ public class RunSqsLeafPartitionBulkExportLambda {
     }
 
     /**
-     * Constructs an instance of RunSqsLeafPartitionBulkExportLambda using
+     * Constructs an instance of SqsTriggeredBulkExportTaskRunner using
      * the provided clients for Amazon SQS, Amazon S3, and Amazon DynamoDB.
      *
      * @param input   the SQS event

@@ -102,13 +102,13 @@ public class LambdaHandler {
             .jar(LambdaJar.QUERY)
             .handler("sleeper.query.lambda.WarmQueryExecutorLambda::handleRequest")
             .optionalStack(OptionalStack.KeepLambdaWarmStack).add();
-    public static final LambdaHandler BULK_EXPORT = builder()
-            .jar(LambdaJar.BULK_EXPORT)
+    public static final LambdaHandler BULK_EXPORT_PLANNER = builder()
+            .jar(LambdaJar.BULK_EXPORT_PLANNER)
             .handler("sleeper.bulkexport.lambda.SqsBulkExportProcessorLambda::handleRequest")
             .optionalStack(BulkExportStack).add();
-    public static final LambdaHandler LEAF_PARTITION_BULK_EXPORT = builder()
-            .jar(LambdaJar.LEAF_PARTITION_BULK_EXPORT)
-            .handler("sleeper.bulkexport.runner.RunSqsLeafPartitionBulkExportLambda::handleRequest")
+    public static final LambdaHandler BULK_EXPORT_TASK_CREATOR = builder()
+            .jar(LambdaJar.BULK_EXPORT_TASK_CREATOR)
+            .handler("sleeper.bulkexport.runner.SqsTriggeredBulkExportTaskRunner::handleRequest")
             .optionalStack(BulkExportStack).add();
     public static final LambdaHandler QUERY_EXECUTOR = builder()
             .jar(LambdaJar.QUERY)

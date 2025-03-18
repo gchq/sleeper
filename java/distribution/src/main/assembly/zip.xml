@@ -226,17 +226,17 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../bulk-export/bulk-export-lambda/target/bulk-export-lambda-${project.version}-utility.jar
+                ${project.basedir}/../bulk-export/bulk-export-planner/target/bulk-export-planner-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars/</outputDirectory>
-            <destName>bulk-export-lambda-${project.version}.jar</destName>
+            <destName>bulk-export-planner-${project.version}.jar</destName>
         </file>
         <file>
             <source>
-                ${project.basedir}/../bulk-export/bulk-export-runner/target/bulk-export-runner-${project.version}-utility.jar
+                ${project.basedir}/../bulk-export/bulk-export-task-creation/target/bulk-export-task-creation-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars/</outputDirectory>
-            <destName>bulk-export-runner-${project.version}.jar</destName>
+            <destName>bulk-export-task-creation-${project.version}.jar</destName>
         </file>
     </files>
 </assembly>

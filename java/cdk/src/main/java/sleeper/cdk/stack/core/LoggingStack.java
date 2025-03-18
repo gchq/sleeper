@@ -79,7 +79,7 @@ public class LoggingStack extends NestedStack {
         METRICS_PUBLISHER("metrics-publisher"),
         BULK_EXPORT("bulk-export"),
         BULK_EXPORT_TASKS_FARGATE("bulk-export-fargate-tasks"),
-        BULK_EXPORT_TASKS_FARGATE_CREATOR("bulk-export-fargate-creator"),
+        BULK_EXPORT_TASKS_CREATOR("bulk-export-task-creator"),
         BULK_IMPORT_EMR_SERVERLESS_START("bulk-import-EMRServerless-start"),
         BULK_IMPORT_EMR_NON_PERSISTENT_START("bulk-import-NonPersistentEMR-start"),
         BULK_IMPORT_EMR_PERSISTENT_START("bulk-import-PersistentEMR-start"),

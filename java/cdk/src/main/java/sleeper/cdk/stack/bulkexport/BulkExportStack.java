@@ -77,12 +77,12 @@ public class BulkExportStack extends NestedStack {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper",
-                instanceId, "bulk-export");
+                instanceId, "bulk-export_planner");
 
         IBucket jarsBucket = Bucket.fromBucketName(this, "JarsBucket", jars.bucketName());
         LambdaCode lambdaCode = jars.lambdaCode(jarsBucket);
 
-        IFunction bulkExportLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT, "BulkExportLambda",
+        IFunction bulkExportLambda = lambdaCode.buildFunction(this, LambdaHandler.BULK_EXPORT_PLANNER, "BulkExportPlanner",
                 builder -> builder
                         .functionName(functionName)
                         .description("Sends a message to export for a leaf partition")
@@ -93,7 +93,7 @@ public class BulkExportStack extends NestedStack {
                         .reservedConcurrentExecutions(1)
                         .logGroup(coreStacks.getLogGroup(LogGroupRef.BULK_EXPORT)));
 
-        attachPolicy(bulkExportLambda, "BulkExportLambda");
+        attachPolicy(bulkExportLambda, "BulkExportPlanner");
 
         List<Queue> bulkExportQueues = createQueueAndDeadLetterQueue("BulkExport", instanceProperties);
         Queue bulkExportQ = bulkExportQueues.get(0);
@@ -128,7 +128,7 @@ public class BulkExportStack extends NestedStack {
                 .build();
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
 
-        new BulkExportECRResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ);
+        new BulkExportTaskResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ);
     }
 
     /**

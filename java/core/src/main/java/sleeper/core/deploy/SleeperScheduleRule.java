@@ -47,7 +47,7 @@ public class SleeperScheduleRule {
     private static final List<SleeperScheduleRule> RULES = new ArrayList<>();
     public static final SleeperScheduleRule BULK_EXPORT_TASK_CREATION = add(
             BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, "%s-BulkExportJobCreationRule",
-            "Triggers creation of bulk export jobs for a Sleeper table");
+            "Triggers scaling bulk export tasks to run bulk export jobs");
     public static final SleeperScheduleRule COMPACTION_JOB_CREATION = add(
             COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "%s-CompactionJobCreationRule",
             "Triggers creation of compaction jobs for online Sleeper tables");
