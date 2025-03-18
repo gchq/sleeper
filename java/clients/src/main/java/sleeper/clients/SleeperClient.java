@@ -34,6 +34,7 @@ import sleeper.core.statestore.transactionlog.transaction.impl.InitialisePartiti
 import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.ObjectFactory;
+import sleeper.parquet.utils.HadoopConfigurationProvider;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.LeafPartitionRecordRetrieverProvider;
 import sleeper.query.core.recordretrieval.QueryExecutor;
@@ -44,6 +45,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
+
+import static sleeper.configuration.utils.AwsV1ClientHelper.buildAwsV1Client;
 
 /**
  * A client to interact with an instance of Sleeper.
@@ -77,9 +80,9 @@ public class SleeperClient {
      */
     public static SleeperClient createForInstanceId(String instanceId) {
         return createForInstanceId(
-                AmazonS3ClientBuilder.defaultClient(),
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                new Configuration(),
+                buildAwsV1Client(AmazonS3ClientBuilder.standard()),
+                buildAwsV1Client(AmazonDynamoDBClientBuilder.standard()),
+                HadoopConfigurationProvider.getConfigurationForClient(),
                 instanceId);
     }
 
