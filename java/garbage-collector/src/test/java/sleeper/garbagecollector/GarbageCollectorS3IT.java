@@ -90,16 +90,20 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         FileReference oldFile1 = FileReferenceFactory.from(partitions).rootFile("s3a://not-a-bucket/old-file-1.parquet", 100L);
         update(stateStore).addFile(oldFile1);
         // Perform a compaction on an existing file to create a readyForGC file
-        createFileWithNoReferencesByCompaction(oldFile1, "new-file-1.parquet");
-        createFileWithNoReferencesByCompaction("old-file-2.parquet", "new-file-2.parquet");
+        createFileWithNoReferencesByCompaction(oldFile1, "new-file-1");
+        createFileWithNoReferencesByCompaction("old-file-2", "new-file-2");
 
         // When / Then
         assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
                 .isInstanceOf(FailedGarbageCollectionException.class);
-        assertThat(listObjectKeys(testBucket)).isEqualTo(Set.of(objectKey("new-file-1.parquet"), objectKey("new-file-2.parquet")));
+        assertThat(listObjectKeys(testBucket)).isEqualTo(Set.of(
+                dataFileObjectKey("new-file-1"),
+                sketchesFileObjectKey("new-file-1"),
+                dataFileObjectKey("new-file-2"),
+                sketchesFileObjectKey("new-file-2")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime,
-                        List.of(activeReference("new-file-1.parquet"), activeReference("new-file-2.parquet")),
+                        List.of(activeReference("new-file-1"), activeReference("new-file-2")),
                         List.of(oldFile1.getFilename())));
     }
 
@@ -112,16 +116,18 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
         update(stateStore).addFilesWithReferences(List.of(
                 fileWithNoReferences("/tmp/not-a-file.parquet")));
-        createFileWithNoReferencesByCompaction("old-file.parquet", "new-file.parquet");
+        createFileWithNoReferencesByCompaction("old-file", "new-file");
 
         // When
         collectGarbageAtTime(currentTime);
 
         // Then
-        assertThat(listObjectKeys(testBucket)).isEqualTo(Set.of(objectKey("new-file.parquet")));
+        assertThat(listObjectKeys(testBucket)).isEqualTo(Set.of(
+                dataFileObjectKey("new-file"),
+                sketchesFileObjectKey("new-file")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeFilesReport(oldEnoughTime,
-                        activeReference("new-file.parquet")));
+                        activeReference("new-file")));
     }
 
     private InstanceProperties createInstanceProperties() {
@@ -137,14 +143,14 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
 
     private void createFileWithNoReferencesByCompaction(
             String oldFilePath, String newFilePath) throws Exception {
-        FileReference oldFile = createActiveFile("old-file.parquet");
+        FileReference oldFile = createActiveFile(oldFilePath);
         createFileWithNoReferencesByCompaction(oldFile, newFilePath);
     }
 
     private void createFileWithNoReferencesByCompaction(
             FileReference oldFile, String newFilePath) throws Exception {
         FileReference newFile = fileFactory().rootFile(newFilePath, 100);
-        writeFile(newFilePath);
+        writeFileAndSketches(newFilePath);
         update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
@@ -154,16 +160,21 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     private FileReference createActiveFile(String filename) throws Exception {
         FileReference fileReference = fileFactory().rootFile(filename, 100L);
         update(stateStore).addFile(fileReference);
-        writeFile(filename);
+        writeFileAndSketches(filename);
         return fileReference;
     }
 
-    private void writeFile(String filename) {
-        s3Client.putObject(testBucket, objectKey(filename), filename);
+    private void writeFileAndSketches(String filename) {
+        s3Client.putObject(testBucket, dataFileObjectKey(filename), filename);
+        s3Client.putObject(testBucket, sketchesFileObjectKey(filename), filename);
     }
 
-    private String objectKey(String filename) {
+    private String dataFileObjectKey(String filename) {
         return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructPartitionParquetFilePath("root", filename);
+    }
+
+    private String sketchesFileObjectKey(String filename) {
+        return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructQuantileSketchesFilePath("root", filename);
     }
 
     private FileReferenceFactory fileFactory() {
