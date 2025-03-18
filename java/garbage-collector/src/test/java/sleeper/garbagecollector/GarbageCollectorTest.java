@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -61,8 +60,6 @@ import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoR
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.noFilesReport;
-import static sleeper.core.statestore.FilesReportTestHelper.readyForGCFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
@@ -252,18 +249,12 @@ public class GarbageCollectorTest {
             StateStore stateStore2 = stateStoreWithFixedTime(table2, oldEnoughTime);
             String file1 = "file-1.parquet";
             String file2 = "file-2.parquet";
-            update(stateStore1).addFilesWithReferences(List.of(fileWithNoReferences(file1)));
-            update(stateStore2).addFilesWithReferences(List.of(fileWithNoReferences(file2)));
+            createFileWithNoReferencesByCompaction(stateStore1, file1, "new-file-1.parquet");
+            createFileWithNoReferencesByCompaction(stateStore2, file2, "new-file-2.parquet");
 
             // When
-            List<String> deletedFiles = new ArrayList<>();
             RuntimeException failure = new RuntimeException();
-            GarbageCollector collector = collectorWithDeleteAction(filename -> {
-                if (filename.equals(file1)) {
-                    throw failure;
-                }
-                deletedFiles.add(filename);
-            });
+            GarbageCollector collector = collectorWithDeleteAction(deleteAllFilesExcept(file1, failure));
 
             // And / Then
             assertThatThrownBy(() -> collector.runAtTime(currentTime, tables))
@@ -271,11 +262,11 @@ public class GarbageCollectorTest {
                             e -> assertThat(e.getTableFailures())
                                     .usingRecursiveFieldByFieldElementComparator()
                                     .containsExactly(fileFailure(table1, file1, failure)));
-            assertThat(deletedFiles).containsExactly(file2);
+            assertThat(filesInBucket).isEqualTo(Set.of(file1, "new-file-1.parquet", "new-file-2.parquet"));
             assertThat(stateStore1.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(readyForGCFilesReport(oldEnoughTime, file1));
+                    .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference("new-file-1.parquet")), List.of(file1)));
             assertThat(stateStore2.getAllFilesWithMaxUnreferenced(10))
-                    .isEqualTo(noFilesReport());
+                    .isEqualTo(activeFilesReport(oldEnoughTime, List.of(activeReference("new-file-2.parquet"))));
         }
 
         @Test
@@ -439,17 +430,30 @@ public class GarbageCollectorTest {
     }
 
     private GarbageCollector collectorNew() throws Exception {
-        return new GarbageCollector(deleteAction(), instanceProperties, stateStoreProvider, sentCommits::add);
+        return new GarbageCollector(deleteAllFilesSuccessfully(), instanceProperties, stateStoreProvider, sentCommits::add);
     }
 
-    private GarbageCollector collectorWithDeleteAction(Consumer<String> deleteFile) throws Exception {
-        return new GarbageCollector(deleteFile::accept, instanceProperties, stateStoreProvider, sentCommits::add);
+    private GarbageCollector collectorWithDeleteAction(DeleteFiles deleteFiles) throws Exception {
+        return new GarbageCollector(deleteFiles, instanceProperties, stateStoreProvider, sentCommits::add);
     }
 
-    private DeleteFiles deleteAction() {
+    private DeleteFiles deleteAllFilesSuccessfully() {
         return (filenames, deleted) -> {
             filesInBucket.removeAll(filenames);
             filenames.forEach(deleted::deleted);
+        };
+    }
+
+    private DeleteFiles deleteAllFilesExcept(String failFilename, Exception failure) {
+        return (filenames, deleted) -> {
+            for (String filename : filenames) {
+                if (failFilename.equals(filename)) {
+                    deleted.failed(filename, failure);
+                } else {
+                    deleted.deleted(filename);
+                    filesInBucket.remove(filename);
+                }
+            }
         };
     }
 
