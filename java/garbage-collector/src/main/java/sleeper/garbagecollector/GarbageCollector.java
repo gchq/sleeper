@@ -15,6 +15,11 @@
  */
 package sleeper.garbagecollector;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
+import com.amazonaws.services.s3.model.DeleteObjectsResult;
+import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -38,6 +43,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
@@ -162,6 +168,20 @@ public class GarbageCollector {
                     deleted.failed(filename, e);
                 }
             }
+        };
+    }
+
+    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client) {
+        return (filenames, deleted) -> {
+            Map<String, List<FileToDelete>> filesByBucket = FileToDelete.readAndGroupByBucketName(filenames);
+            filesByBucket.forEach((bucketName, files) -> {
+                DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(bucketName).withKeys(
+                        files.stream()
+                                .flatMap(FileToDelete::objectKeyAndSketches)
+                                .map(objectKey -> new KeyVersion(objectKey))
+                                .toList()));
+                LOGGER.info("{}", result.getDeletedObjects().stream().map(DeletedObject::getKey).toList());
+            });
         };
     }
 

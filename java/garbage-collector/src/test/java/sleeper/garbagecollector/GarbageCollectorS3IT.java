@@ -115,7 +115,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         stateStore.fixFileUpdateTime(oldEnoughTime);
         tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
         update(stateStore).addFilesWithReferences(List.of(
-                fileWithNoReferences("/tmp/not-a-file.parquet")));
+                fileWithNoReferences(dataFileFullFilename("not-a-file"))));
         createFileWithNoReferencesByCompaction("old-file", "new-file");
 
         // When
@@ -167,6 +167,10 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     private void writeFileAndSketches(String filename) {
         s3Client.putObject(testBucket, dataFileObjectKey(filename), filename);
         s3Client.putObject(testBucket, sketchesFileObjectKey(filename), filename);
+    }
+
+    private String dataFileFullFilename(String filename) {
+        return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties).constructPartitionParquetFilePath("root", filename);
     }
 
     private String dataFileObjectKey(String filename) {
