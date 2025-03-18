@@ -69,14 +69,18 @@ public class SleeperClient {
     }
 
     /**
-     * Creates a client to interact with the instance of Sleeper with the given ID. Will use the default AWS
-     * configuration.
+     * Creates a client to interact with the instance of Sleeper with the given ID.
+     * Will use the default AWS configuration.
      *
      * @param  instanceId the instance ID
      * @return            the client
      */
     public static SleeperClient createForInstanceId(String instanceId) {
-        return createForInstanceId(AmazonS3ClientBuilder.defaultClient(), AmazonDynamoDBClientBuilder.defaultClient(), new Configuration(), instanceId);
+        return createForInstanceId(
+                AmazonS3ClientBuilder.defaultClient(),
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                new Configuration(),
+                instanceId);
     }
 
     /**
@@ -88,7 +92,8 @@ public class SleeperClient {
      * @param  instanceId   the instance ID
      * @return              the client
      */
-    public static SleeperClient createForInstanceId(AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf, String instanceId) {
+    public static SleeperClient createForInstanceId(
+            AmazonS3 s3Client, AmazonDynamoDB dynamoClient, Configuration hadoopConf, String instanceId) {
         InstanceProperties instanceProperties = S3InstanceProperties.loadGivenInstanceId(s3Client, instanceId);
         TableIndex tableIndex = new DynamoDBTableIndex(instanceProperties, dynamoClient);
         ExecutorService queryExecutorService = Executors.newFixedThreadPool(10);
@@ -191,36 +196,78 @@ public class SleeperClient {
         private ObjectFactory objectFactory = ObjectFactory.noUserJars();
         private LeafPartitionRecordRetrieverProvider recordRetrieverProvider;
 
+        /**
+         * Sets the instance properties of the instance to interact with.
+         *
+         * @param  instanceProperties the instance properties
+         * @return                    this builder for chaining
+         */
         public Builder instanceProperties(InstanceProperties instanceProperties) {
             this.instanceProperties = instanceProperties;
             return this;
         }
 
+        /**
+         * Sets the index of Sleeper tables.
+         *
+         * @param  tableIndex the table index
+         * @return            this builder for chaining
+         */
         public Builder tableIndex(TableIndex tableIndex) {
             this.tableIndex = tableIndex;
             return this;
         }
 
+        /**
+         * Sets the store of table properties.
+         *
+         * @param  tablePropertiesStore the table properties store
+         * @return                      this builder for chaining
+         */
         public Builder tablePropertiesStore(TablePropertiesStore tablePropertiesStore) {
             this.tablePropertiesStore = tablePropertiesStore;
             return this;
         }
 
+        /**
+         * Sets the provider to cache loaded table properties.
+         *
+         * @param  tablePropertiesProvider the provider
+         * @return                         this builder for chaining
+         */
         public Builder tablePropertiesProvider(TablePropertiesProvider tablePropertiesProvider) {
             this.tablePropertiesProvider = tablePropertiesProvider;
             return this;
         }
 
+        /**
+         * Sets the provider to interact with and cache table state.
+         *
+         * @param  stateStoreProvider the provider
+         * @return                    this builder for chaining
+         */
         public Builder stateStoreProvider(StateStoreProvider stateStoreProvider) {
             this.stateStoreProvider = stateStoreProvider;
             return this;
         }
 
+        /**
+         * Sets the object factory to interact with classes loaded from user jars.
+         *
+         * @param  objectFactory the object factory
+         * @return               this builder for chaining
+         */
         public Builder objectFactory(ObjectFactory objectFactory) {
             this.objectFactory = objectFactory;
             return this;
         }
 
+        /**
+         * Sets the provider for record retrievers to read table data files.
+         *
+         * @param  recordRetrieverProvider the record retriever
+         * @return                         this builder for chaining
+         */
         public Builder recordRetrieverProvider(LeafPartitionRecordRetrieverProvider recordRetrieverProvider) {
             this.recordRetrieverProvider = recordRetrieverProvider;
             return this;
