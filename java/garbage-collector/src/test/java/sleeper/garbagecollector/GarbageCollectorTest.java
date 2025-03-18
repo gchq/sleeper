@@ -408,6 +408,25 @@ public class GarbageCollectorTest {
                             buildObjectKey().constructQuantileSketchesFilePath("root", "test-file"))));
         }
 
+        @Test
+        void shouldReadMultipleFiles() {
+            // Given
+            instanceProperties.set(DATA_BUCKET, "test-bucket");
+            String filename1 = buildFullFilename().constructPartitionParquetFilePath("root", "test-file1");
+            String filename2 = buildFullFilename().constructPartitionParquetFilePath("root", "test-file2");
+
+            // When
+            Map<String, List<String>> objectKeysByBucket = GarbageCollector.getObjectsToDeleteByBucketName(List.of(filename1, filename2));
+
+            // Then
+            assertThat(objectKeysByBucket).containsExactly(
+                    entry("test-bucket", List.of(
+                            buildObjectKey().constructPartitionParquetFilePath("root", "test-file1"),
+                            buildObjectKey().constructQuantileSketchesFilePath("root", "test-file1"),
+                            buildObjectKey().constructPartitionParquetFilePath("root", "test-file2"),
+                            buildObjectKey().constructQuantileSketchesFilePath("root", "test-file2"))));
+        }
+
         private TableFilePaths buildFullFilename() {
             return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
         }
