@@ -45,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.stream.Collectors.toMap;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -175,12 +176,17 @@ public class GarbageCollector {
         return (filenames, deleted) -> {
             Map<String, List<FileToDelete>> filesByBucket = FileToDelete.readAndGroupByBucketName(filenames);
             filesByBucket.forEach((bucketName, files) -> {
+                Map<String, String> filenameByObjectKey = files.stream()
+                        .flatMap(FileToDelete::thisAndSketches)
+                        .collect(toMap(FileToDelete::objectKey, FileToDelete::filename));
                 DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(bucketName).withKeys(
                         files.stream()
-                                .flatMap(FileToDelete::objectKeyAndSketches)
-                                .map(objectKey -> new KeyVersion(objectKey))
+                                .flatMap(FileToDelete::thisAndSketches)
+                                .map(file -> new KeyVersion(file.objectKey()))
                                 .toList()));
-                LOGGER.info("{}", result.getDeletedObjects().stream().map(DeletedObject::getKey).toList());
+                for (DeletedObject object : result.getDeletedObjects()) {
+                    deleted.deleted(filenameByObjectKey.get(object.getKey()));
+                }
             });
         };
     }
