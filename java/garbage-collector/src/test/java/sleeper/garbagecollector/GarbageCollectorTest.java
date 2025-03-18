@@ -36,6 +36,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequest;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
+import sleeper.core.table.TableFilePaths;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
@@ -45,10 +46,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.entry;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
@@ -77,7 +81,7 @@ public class GarbageCollectorTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(FILE_SYSTEM, "s3a://");
     }
 
     @Nested
@@ -372,6 +376,41 @@ public class GarbageCollectorTest {
             assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(activeAndReadyForGCFilesReport(oldEnoughTime, List.of(activeReference("new-file.parquet")), List.of()));
             assertThat(sentCommits).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Find bucket names and object keys from filenames")
+    class FindBucketNamesAndObjectKeys {
+        TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
+
+        // Tests:
+        // - Read bucket name and object key from one file
+        // - Read multiple files for one bucket
+        // - Read files on multiple buckets
+        // - Handle when file system scheme is not s3/s3a
+
+        @Test
+        void shouldReadBucketNameAndObjectKey() {
+            // Given
+            instanceProperties.set(DATA_BUCKET, "test-bucket");
+            String filename = buildFullFilename().constructPartitionParquetFilePath("root", "test-file");
+
+            // When
+            Map<String, List<String>> objectKeysByBucket = GarbageCollector.getObjectsToDeleteByBucketName(List.of(filename));
+
+            // Then
+            assertThat(objectKeysByBucket).containsExactly(
+                    entry("test-bucket", List.of(
+                            buildObjectKey().constructPartitionParquetFilePath("root", "test-file"))));
+        }
+
+        private TableFilePaths buildFullFilename() {
+            return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
+        }
+
+        private TableFilePaths buildObjectKey() {
+            return TableFilePaths.buildObjectKeyInDataBucket(tableProperties);
         }
     }
 

@@ -38,7 +38,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -163,6 +167,22 @@ public class GarbageCollector {
                 }
             }
         };
+    }
+
+    public static Map<String, List<String>> getObjectsToDeleteByBucketName(List<String> filenames) {
+        return filenames.stream()
+                .map(FilenameParts::fromFilename)
+                .collect(groupingBy(FilenameParts::bucketName,
+                        mapping(FilenameParts::objectKey, toUnmodifiableList())));
+    }
+
+    private record FilenameParts(String bucketName, String objectKey) {
+
+        public static FilenameParts fromFilename(String filename) {
+            int schemeEnd = filename.indexOf("://") + 3;
+            int bucketNameEnd = filename.indexOf("/", schemeEnd);
+            return new FilenameParts(filename.substring(schemeEnd, bucketNameEnd), filename.substring(bucketNameEnd + 1));
+        }
     }
 
     private static void deleteFile(String filename, Configuration conf) throws IOException {
