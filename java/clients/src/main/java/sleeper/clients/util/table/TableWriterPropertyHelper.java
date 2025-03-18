@@ -16,7 +16,7 @@
 package sleeper.clients.util.table;
 
 import sleeper.clients.util.table.TableRow.Builder;
-import sleeper.core.properties.instance.InstanceProperty;
+import sleeper.core.properties.SleeperProperty;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -30,7 +30,7 @@ public class TableWriterPropertyHelper {
         return List.of("Property Name", "Description", "Default Value", "Run CdkDeploy When Changed");
     }
 
-    public static Consumer<Builder> generatePropertyDetails(List<TableField> fields, InstanceProperty property) {
+    public static Consumer<Builder> generatePropertyDetails(List<TableField> fields, SleeperProperty property) {
         return row -> {
             row.value(fields.get(0), property.getPropertyName());
             row.value(fields.get(1), adjustLoneEntryForMarkdown(property.getDescription()));
