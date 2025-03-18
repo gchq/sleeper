@@ -32,7 +32,7 @@ public class TableFilesDeleted {
     private final TableStatus table;
     private final List<FileFailure> fileFailures = new ArrayList<>();
     private final List<StateStoreUpdateFailure> stateStoreUpdateFailures = new ArrayList<>();
-    private List<String> filesDeletedInBatch;
+    private List<String> filesDeletedInBatch = null;
     private int deletedFileCount = 0;
 
     TableFilesDeleted(TableStatus table) {
