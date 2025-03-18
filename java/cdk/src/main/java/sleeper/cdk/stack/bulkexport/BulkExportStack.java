@@ -114,7 +114,8 @@ public class BulkExportStack extends NestedStack {
 
         /*
          * Output the role arn of the lambda as a property so that clients that want the
-         * results of queries written to their own SQS queue can give the role permission
+         * results of queries written to their own SQS queue can give the role
+         * permission
          * to write to their queue
          */
         IRole bulkExportLambdaRole = Objects.requireNonNull(bulkExportLambda.getRole());
@@ -128,14 +129,14 @@ public class BulkExportStack extends NestedStack {
         new CfnOutput(this, BULK_EXPORT_LAMBDA_ROLE_ARN, bulkExportLambdaRoleOutputProps);
 
         new BulkExportECRResources(this, coreStacks, instanceProperties, lambdaCode, jarsBucket, leafPartitionQueuesQ);
-        }
+    }
 
     /**
      * Create a queue and a dead letter queue for the queue.
      *
-     * @param  id                 the id of the queue
-     * @param  instanceProperties the instance properties
-     * @return                    the queue and the dead letter queue
+     * @param id                 the id of the queue
+     * @param instanceProperties the instance properties
+     * @return the queue and the dead letter queue
      */
     private List<Queue> createQueueAndDeadLetterQueue(String id, InstanceProperties instanceProperties) {
         String instanceId = Utils.cleanInstanceId(instanceProperties);

@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ecs.EcsClient;
 
-import sleeper.bulkexport.core.model.BulkExportLeafPartitionQuerySerDe;
 import sleeper.configuration.properties.S3InstanceProperties;
 import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.task.common.QueueMessageCount;
@@ -41,10 +40,6 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
 public class RunSqsLeafPartitionBulkExportLambda {
     private static final Logger LOGGER = LoggerFactory.getLogger(RunSqsLeafPartitionBulkExportLambda.class);
 
-    private final AmazonSQS sqsClient;
-    private final AmazonS3 s3Client;
-    private final EcsClient ecsClient;
-    private BulkExportLeafPartitionQuerySerDe querySerDe;
     private final QueueMessageCount.Client queueMessageCount;
     private final RunLeafPartitionBulkExportTasks runLeafPartitionBulkExportTasks;
 
@@ -54,14 +49,21 @@ public class RunSqsLeafPartitionBulkExportLambda {
      */
     public RunSqsLeafPartitionBulkExportLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
-        sqsClient = AmazonSQSClientBuilder.defaultClient();
-        ecsClient = EcsClient.create();
-        s3Client = AmazonS3ClientBuilder.defaultClient();
+        AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
+        AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
+        EcsClient ecsClient = EcsClient.create();
         InstanceProperties instanceProperties = S3InstanceProperties.loadFromBucket(s3Client, s3Bucket);
         runLeafPartitionBulkExportTasks = new RunLeafPartitionBulkExportTasks(instanceProperties, ecsClient);
         queueMessageCount = QueueMessageCount.withSqsClient(sqsClient);
     }
 
+    /**
+     * Constructs an instance of RunSqsLeafPartitionBulkExportLambda using
+     * the provided clients for Amazon SQS, Amazon S3, and Amazon DynamoDB.
+     *
+     * @param input   the SQS event
+     * @param context the lambda context
+     */
     public void handleRequest(SQSEvent input, Context context) {
         runLeafPartitionBulkExportTasks.run(queueMessageCount);
     }

@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.bulkexport;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -63,6 +64,7 @@ import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA
 import static sleeper.core.properties.instance.CommonProperty.TASK_RUNNER_LAMBDA_TIMEOUT_IN_SECONDS;
 import static sleeper.core.properties.instance.CommonProperty.VPC_ID;
 
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class BulkExportECRResources {
     private static final String BULK_EXPORT_CLUSTER_NAME = "BulkExportClusterName";
 
@@ -75,7 +77,7 @@ public class BulkExportECRResources {
         this.stack = stack;
         lambdaToCreateTasks(coreStacks, lambdaCode, jobsQueue, instanceProperties);
         ecsClusterForBulkExportTasks(coreStacks, jarsBucket, lambdaCode);
-    };
+    }
 
     private void lambdaToCreateTasks(
             CoreStacks coreStacks, LambdaCode lambdaCode, Queue jobsQueue, InstanceProperties instanceProperties) {

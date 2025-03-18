@@ -69,14 +69,36 @@ public class RunLeafPartitionBulkExportTasks {
         this.taskLauncher = taskLauncher;
     }
 
+    /**
+     * Interface for getting the number of running and pending tasks.
+     */
     public interface TaskCounts {
+        /**
+         * Get the number of running and pending tasks.
+         *
+         * @return the number of running and pending tasks
+         */
         int getRunningAndPending();
     }
 
+    /**
+     * Interface for launching tasks.
+     */
     public interface TaskLauncher {
+        /**
+         * Launches tasks.
+         *
+         * @param numberOfTasksToCreate the number of tasks to create
+         * @param checkAbort a condition under which launching will be aborted
+         */
         void launchTasks(int numberOfTasksToCreate, BooleanSupplier checkAbort);
     }
 
+    /**
+     * Run the tasks in batches.
+     *
+     * @param queueMessageCount the queue message count
+     */
     public void run(QueueMessageCount.Client queueMessageCount) {
         long startTime = System.currentTimeMillis();
         String sqsJobQueueUrl = instanceProperties.get(LEAF_PARTITION_BULK_EXPORT_QUEUE_URL);
