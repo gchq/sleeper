@@ -50,7 +50,7 @@ public class FileToDeleteTest {
     void shouldReadBucketNameAndObjectKey() {
         // Given
         instanceProperties.set(DATA_BUCKET, "test-bucket");
-        String filename = buildFullFilename().constructPartitionParquetFilePath("root", "test-file");
+        String filename = buildFullFilename("root", "test-file");
 
         // When
         Map<String, List<FileToDelete>> objectKeysByBucket = FileToDelete.readAndGroupByBucketName(List.of(filename));
@@ -66,8 +66,8 @@ public class FileToDeleteTest {
     void shouldReadMultipleFiles() {
         // Given
         instanceProperties.set(DATA_BUCKET, "test-bucket");
-        String filename1 = buildFullFilename().constructPartitionParquetFilePath("root", "test-file1");
-        String filename2 = buildFullFilename().constructPartitionParquetFilePath("root", "test-file2");
+        String filename1 = buildFullFilename("root", "test-file1");
+        String filename2 = buildFullFilename("root", "test-file2");
 
         // When
         Map<String, List<FileToDelete>> objectKeysByBucket = FileToDelete.readAndGroupByBucketName(List.of(filename1, filename2));
@@ -85,12 +85,12 @@ public class FileToDeleteTest {
         InstanceProperties instance1 = createTestInstanceProperties();
         TableProperties table1 = createTestTableProperties(instance1, schema);
         instance1.set(DATA_BUCKET, "test-bucket1");
-        String filename1 = buildFullFilename(instance1, table1).constructPartitionParquetFilePath("root", "test-file1");
+        String filename1 = buildFullFilename(instance1, table1, "root", "test-file1");
 
         InstanceProperties instance2 = createTestInstanceProperties();
         TableProperties table2 = createTestTableProperties(instance2, schema);
         instance2.set(DATA_BUCKET, "test-bucket2");
-        String filename2 = buildFullFilename(instance2, table2).constructPartitionParquetFilePath("root", "test-file2");
+        String filename2 = buildFullFilename(instance2, table2, "root", "test-file2");
 
         // When
         Map<String, List<FileToDelete>> objectKeysByBucket = FileToDelete.readAndGroupByBucketName(List.of(filename1, filename2));
@@ -103,12 +103,12 @@ public class FileToDeleteTest {
                         new FileToDelete(filename2, "test-bucket2", buildObjectKey(table2, "root", "test-file2")))));
     }
 
-    private TableFilePaths buildFullFilename() {
-        return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
+    private String buildFullFilename(String partitionId, String fileName) {
+        return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties).constructPartitionParquetFilePath(partitionId, fileName);
     }
 
-    private TableFilePaths buildFullFilename(InstanceProperties instPropIn, TableProperties tablePropIn) {
-        return TableFilePaths.buildDataFilePathPrefix(instPropIn, tablePropIn);
+    private String buildFullFilename(InstanceProperties instPropIn, TableProperties tablePropIn, String partitionId, String fileName) {
+        return TableFilePaths.buildDataFilePathPrefix(instPropIn, tablePropIn).constructPartitionParquetFilePath(partitionId, fileName);
     }
 
     private String buildObjectKey(String partitionId, String fileName) {
