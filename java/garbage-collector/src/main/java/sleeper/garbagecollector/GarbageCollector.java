@@ -51,26 +51,26 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 public class GarbageCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger(GarbageCollector.class);
 
-    private final DeleteFile deleteFile;
+    private final DeleteFiles deleteFiles;
     private final InstanceProperties instanceProperties;
     private final StateStoreProvider stateStoreProvider;
     private final StateStoreCommitRequestSender sendAsyncCommit;
 
-    public GarbageCollector(DeleteFile deleteFile,
+    public GarbageCollector(DeleteFiles deleteFiles,
             InstanceProperties instanceProperties,
             StateStoreProvider stateStoreProvider,
             StateStoreCommitRequestSender sendAsyncCommit) {
-        this.deleteFile = deleteFile;
+        this.deleteFiles = deleteFiles;
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
         this.sendAsyncCommit = sendAsyncCommit;
     }
 
-    public void run(List<TableProperties> tables) throws FailedGarbageCollectionException {
-        runAtTime(Instant.now(), tables);
+    public int run(List<TableProperties> tables) throws FailedGarbageCollectionException {
+        return runAtTime(Instant.now(), tables);
     }
 
-    public void runAtTime(Instant startTime, List<TableProperties> tables) throws FailedGarbageCollectionException {
+    public int runAtTime(Instant startTime, List<TableProperties> tables) throws FailedGarbageCollectionException {
         LOGGER.info("Obtained list of {} tables", tables.size());
         int totalDeleted = 0;
         List<TableFailures> failedTables = new ArrayList<>();
@@ -80,8 +80,8 @@ public class GarbageCollector {
             try {
                 LOGGER.info("Starting GC for table {}", table);
                 deleteInBatches(tableProperties, startTime, deleted);
-                LOGGER.info("{} files deleted for table {}", deleted.getDeletedFilenames().size(), table);
-                totalDeleted += deleted.getDeletedFilenames().size();
+                LOGGER.info("{} files deleted for table {}", deleted.getDeletedFileCount(), table);
+                totalDeleted += deleted.getDeletedFileCount();
                 deleted.buildTableFailures().ifPresent(failedTables::add);
             } catch (Exception e) {
                 LOGGER.info("Failed to collect garbage for table {}", table, e);
@@ -93,6 +93,7 @@ public class GarbageCollector {
         if (!failedTables.isEmpty()) {
             throw new FailedGarbageCollectionException(failedTables);
         }
+        return totalDeleted;
     }
 
     private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) {
@@ -123,7 +124,9 @@ public class GarbageCollector {
     }
 
     private void deleteBatch(List<String> batch, TableProperties tableProperties, StateStore stateStore, TableFilesDeleted deleted) {
-        List<String> deletedFilenames = deleteFiles(batch, deleted);
+        deleted.startBatch(batch);
+        deleteFiles.deleteFiles(batch, deleted);
+        List<String> deletedFilenames = deleted.getFilesDeletedInBatch();
         LOGGER.info("Deleted {} files in batch", deletedFilenames.size());
         try {
             boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
@@ -141,31 +144,24 @@ public class GarbageCollector {
         }
     }
 
-    private List<String> deleteFiles(List<String> filenames, TableFilesDeleted deleted) {
-        List<String> deletedFilenames = new ArrayList<>(filenames.size());
-        for (String filename : filenames) {
-            try {
-                deleteFile.deleteFileAndSketches(filename);
-                deleted.deleted(filename);
-                deletedFilenames.add(filename);
-            } catch (Exception e) {
-                LOGGER.error("Failed to delete file: {}", filename, e);
-                deleted.failed(filename, e);
-            }
-        }
-        return deletedFilenames;
-    }
-
     @FunctionalInterface
-    public interface DeleteFile {
-        void deleteFileAndSketches(String filename) throws IOException;
+    public interface DeleteFiles {
+        void deleteFiles(List<String> filenames, TableFilesDeleted deleted);
     }
 
-    public static DeleteFile deleteFileAndSketches(Configuration conf) {
-        return filename -> {
-            deleteFile(filename, conf);
-            String sketchesFile = filename.replace(".parquet", ".sketches");
-            deleteFile(sketchesFile, conf);
+    public static DeleteFiles deleteFilesAndSketches(Configuration conf) {
+        return (filenames, deleted) -> {
+            for (String filename : filenames) {
+                try {
+                    deleteFile(filename, conf);
+                    String sketchesFile = filename.replace(".parquet", ".sketches");
+                    deleteFile(sketchesFile, conf);
+                    deleted.deleted(filename);
+                } catch (Exception e) {
+                    LOGGER.error("Failed to delete file: {}", filename, e);
+                    deleted.failed(filename, e);
+                }
+            }
         };
     }
 

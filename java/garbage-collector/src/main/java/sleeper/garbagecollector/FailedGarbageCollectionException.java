@@ -90,6 +90,11 @@ public class FailedGarbageCollectionException extends RuntimeException {
                     fileFailures.stream().map(FileFailure::getCause))
                     .flatMap(s -> s);
         }
+
+        @Override
+        public String toString() {
+            return "TableFailures{table=" + table + ", tableFailure=" + tableFailure + ", fileFailures=" + fileFailures + ", stateStoreUpdateFailures=" + stateStoreUpdateFailures + "}";
+        }
     }
 
     public static class FileFailure {
