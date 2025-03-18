@@ -36,6 +36,13 @@ sleeper.subnets=changeme
 sleeper.ingest.repo=changeme
 
 
+## The following properties relate to bulk export.
+
+# The name of the repository for the bulk export container. The Docker image should have beenuploaded
+# to an ECR repository of this name in this account.
+sleeper.bulk.export.ecr.repo=changeme
+
+
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
 ## or EKS.
 
@@ -54,9 +61,6 @@ sleeper.bulk.import.eks.repo=changeme
 # compaction-job-execution module should have been uploaded to an ECR repository of this name in this
 # account.
 sleeper.compaction.repo=changeme
-
-# The following properties are not recognised by Sleeper.
-sleeper.bulk.export.ecr.repo=changeme
 
 
 ##################
@@ -456,6 +460,50 @@ sleeper.ingest.batcher.job.creation.timeout.seconds=900
 
 # The rate at which the ingest batcher job creation lambda runs (in minutes, must be >=1).
 sleeper.ingest.batcher.job.creation.period.minutes=1
+
+
+## The following properties relate to bulk export.
+
+# The amount of memory in MB for lambda functions that start bulk export jobs.
+sleeper.bulk.export.memory.mb=4096
+
+# The default timeout in seconds for the bulk export lambda.
+sleeper.bulk.export.timeout.seconds=800
+
+# The visibility timeout in seconds for the bulk export queue.
+sleeper.bulk.export.queue.visibility.timeout.seconds=800
+
+# The language to use for the leaf partition bulk export processor.
+sleeper.bulk.export.leaf.partition.language=java
+
+# The CPU architecture to run bulk export tasks on. Valid values are X86_64 and ARM64.
+# See Task CPU architecture at
+# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html
+sleeper.bulk.export.task.cpu.architecture=X86_64
+
+# The CPU for a bulk. export task using an ARM64 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.bulk.export.task.arm.cpu=1024
+
+# The amount of memory in MB for a bulk export task using an ARM64 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.bulk.export.task.arm.memory.mb=4096
+
+# The CPU for a bulk export task using an x86_64 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.bulk.export.task.x86.cpu=1024
+
+# The amount of memory in MB for a bulk export task using an x86_64 architecture.
+# See https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html for valid
+# options.
+sleeper.bulk.export.task.x86.memory.mb=4096
+
+# The rate at which a check to see if bulk export ECS tasks need to be created is made (in minutes,
+# must be >= 1).
+sleeper.bulk.export.task.creation.period.minutes=1
 
 
 ## The following properties relate to bulk import, i.e. ingesting data using Spark jobs running on EMR
@@ -1595,6 +1643,3 @@ sleeper.default.statestore.committer.update.every.commit=false
 # When using the transaction log state store, this sets whether to update from the transaction log
 # before adding a batch of transactions in the asynchronous state store committer.
 sleeper.default.statestore.committer.update.every.batch=true
-
-# The following properties are not recognised by Sleeper.
-sleeper.bulk.export.ecr.repo=changeme
