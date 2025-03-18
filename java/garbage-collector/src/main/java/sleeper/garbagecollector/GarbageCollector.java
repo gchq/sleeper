@@ -72,18 +72,15 @@ public class GarbageCollector {
             StateStoreProvider stateStoreProvider,
             StateStoreCommitRequestSender sendAsyncCommit) {
         this.deleteFiles = (filenames, deleted) -> {
-            List<String> deletedFilenames = new ArrayList<>(filenames.size());
             for (String filename : filenames) {
                 try {
                     deleteFile.deleteFileAndSketches(filename);
                     deleted.deleted(filename);
-                    deletedFilenames.add(filename);
                 } catch (Exception e) {
                     LOGGER.error("Failed to delete file: {}", filename, e);
                     deleted.failed(filename, e);
                 }
             }
-            return deletedFilenames;
         };
         this.instanceProperties = instanceProperties;
         this.stateStoreProvider = stateStoreProvider;
@@ -183,25 +180,22 @@ public class GarbageCollector {
 
     @FunctionalInterface
     public interface DeleteFiles {
-        List<String> deleteFiles(List<String> filenames, TableFilesDeleted deleted);
+        void deleteFiles(List<String> filenames, TableFilesDeleted deleted);
     }
 
     public static DeleteFiles deleteFilesAndSketches(Configuration conf) {
         return (filenames, deleted) -> {
-            List<String> deletedFilenames = new ArrayList<>(filenames.size());
             for (String filename : filenames) {
                 try {
                     deleteFile(filename, conf);
                     String sketchesFile = filename.replace(".parquet", ".sketches");
                     deleteFile(sketchesFile, conf);
                     deleted.deleted(filename);
-                    deletedFilenames.add(filename);
                 } catch (Exception e) {
                     LOGGER.error("Failed to delete file: {}", filename, e);
                     deleted.failed(filename, e);
                 }
             }
-            return deletedFilenames;
         };
     }
 

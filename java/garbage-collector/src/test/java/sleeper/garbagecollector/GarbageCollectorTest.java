@@ -450,7 +450,6 @@ public class GarbageCollectorTest {
         return (filenames, deleted) -> {
             filesInBucket.removeAll(filenames);
             filenames.forEach(deleted::deleted);
-            return List.copyOf(filenames);
         };
     }
 
