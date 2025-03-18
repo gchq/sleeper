@@ -148,7 +148,9 @@ public class GarbageCollector {
     }
 
     private void deleteBatch(List<String> batch, TableProperties tableProperties, StateStore stateStore, TableFilesDeleted deleted) {
-        List<String> deletedFilenames = deleteFiles.deleteFiles(batch, deleted);
+        deleted.startBatch(batch);
+        deleteFiles.deleteFiles(batch, deleted);
+        List<String> deletedFilenames = deleted.getFilesDeletedInBatch();
         LOGGER.info("Deleted {} files in batch", deletedFilenames.size());
         try {
             boolean asyncCommit = tableProperties.getBoolean(GARBAGE_COLLECTOR_ASYNC_COMMIT);
