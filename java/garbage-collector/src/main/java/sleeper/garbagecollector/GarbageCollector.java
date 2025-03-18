@@ -90,11 +90,11 @@ public class GarbageCollector {
         this.sendAsyncCommit = sendAsyncCommit;
     }
 
-    public void run(List<TableProperties> tables) throws FailedGarbageCollectionException {
-        runAtTime(Instant.now(), tables);
+    public int run(List<TableProperties> tables) throws FailedGarbageCollectionException {
+        return runAtTime(Instant.now(), tables);
     }
 
-    public void runAtTime(Instant startTime, List<TableProperties> tables) throws FailedGarbageCollectionException {
+    public int runAtTime(Instant startTime, List<TableProperties> tables) throws FailedGarbageCollectionException {
         LOGGER.info("Obtained list of {} tables", tables.size());
         int totalDeleted = 0;
         List<TableFailures> failedTables = new ArrayList<>();
@@ -117,6 +117,7 @@ public class GarbageCollector {
         if (!failedTables.isEmpty()) {
             throw new FailedGarbageCollectionException(failedTables);
         }
+        return totalDeleted;
     }
 
     private void deleteInBatches(TableProperties tableProperties, Instant startTime, TableFilesDeleted deleted) {

@@ -277,6 +277,27 @@ public class GarbageCollectorTest {
             assertThat(stateStore2.getAllFilesWithMaxUnreferenced(10))
                     .isEqualTo(noFilesReport());
         }
+
+        @Test
+        void shouldCountFilesDeletedOverMultipleTables() throws Exception {
+            // Given
+            instanceProperties.setNumber(GARBAGE_COLLECTOR_BATCH_SIZE, 2);
+            TableProperties table1 = createTableWithGcDelayMinutes(10);
+            TableProperties table2 = createTableWithGcDelayMinutes(10);
+            Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+            Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+            StateStore stateStore1 = stateStoreWithFixedTime(table1, oldEnoughTime);
+            StateStore stateStore2 = stateStoreWithFixedTime(table2, oldEnoughTime);
+            createFileWithNoReferencesByCompaction(stateStore1, "old-file-1a.parquet", "new-file-1a.parquet");
+            createFileWithNoReferencesByCompaction(stateStore1, "old-file-1b.parquet", "new-file-1b.parquet");
+            createFileWithNoReferencesByCompaction(stateStore2, "old-file-2.parquet", "new-file-2.parquet");
+
+            // When
+            int totalDeleted = collectGarbageAtTime(currentTime);
+
+            // Then
+            assertThat(totalDeleted).isEqualTo(3);
+        }
     }
 
     @Nested
@@ -413,8 +434,8 @@ public class GarbageCollectorTest {
         return store;
     }
 
-    private void collectGarbageAtTime(Instant time) throws Exception {
-        collectorNew().runAtTime(time, tables);
+    private int collectGarbageAtTime(Instant time) throws Exception {
+        return collectorNew().runAtTime(time, tables);
     }
 
     private GarbageCollector collectorNew() throws Exception {
