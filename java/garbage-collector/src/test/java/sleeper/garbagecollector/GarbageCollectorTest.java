@@ -402,7 +402,7 @@ public class GarbageCollectorTest {
             Map<String, List<String>> objectKeysByBucket = GarbageCollector.getObjectsToDeleteByBucketName(List.of(filename));
 
             // Then
-            assertThat(objectKeysByBucket).containsExactly(
+            assertThat(objectKeysByBucket).containsOnly(
                     entry("test-bucket", List.of(
                             buildObjectKey().constructPartitionParquetFilePath("root", "test-file"),
                             buildObjectKey().constructQuantileSketchesFilePath("root", "test-file"))));
@@ -419,7 +419,7 @@ public class GarbageCollectorTest {
             Map<String, List<String>> objectKeysByBucket = GarbageCollector.getObjectsToDeleteByBucketName(List.of(filename1, filename2));
 
             // Then
-            assertThat(objectKeysByBucket).containsExactly(
+            assertThat(objectKeysByBucket).containsOnly(
                     entry("test-bucket", List.of(
                             buildObjectKey().constructPartitionParquetFilePath("root", "test-file1"),
                             buildObjectKey().constructQuantileSketchesFilePath("root", "test-file1"),
