@@ -58,7 +58,7 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCF
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
-import static sleeper.garbagecollector.GarbageCollector.deleteFileAndSketches;
+import static sleeper.garbagecollector.GarbageCollector.deleteFilesAndSketches;
 
 public class GarbageCollectorS3IT extends LocalStackTestBase {
 
@@ -175,7 +175,7 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private GarbageCollector createGarbageCollector() {
-        return new GarbageCollector(deleteFileAndSketches(hadoopConf), instanceProperties,
+        return new GarbageCollector(deleteFilesAndSketches(hadoopConf), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }

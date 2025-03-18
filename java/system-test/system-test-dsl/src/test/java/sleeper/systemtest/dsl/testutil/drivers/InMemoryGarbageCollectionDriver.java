@@ -35,7 +35,12 @@ public class InMemoryGarbageCollectionDriver implements GarbageCollectionDriver 
     @Override
     public void invokeGarbageCollection() {
         GarbageCollector collector = new GarbageCollector(
-                data::deleteFile,
+                (filenames, deletedTracker) -> {
+                    filenames.forEach(filename -> {
+                        data.deleteFile(filename);
+                        deletedTracker.deleted(filename);
+                    });
+                },
                 instance.getInstanceProperties(),
                 instance.getStateStoreProvider(),
                 request -> {
