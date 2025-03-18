@@ -427,12 +427,46 @@ public class GarbageCollectorTest {
                             buildObjectKey().constructQuantileSketchesFilePath("root", "test-file2"))));
         }
 
+        @Test
+        void shouldReadMultipleBuckets() {
+            // Given
+            InstanceProperties instance1 = createTestInstanceProperties();
+            TableProperties table1 = createTestTableProperties(instance1, TEST_SCHEMA);
+            instance1.set(DATA_BUCKET, "test-bucket1");
+            String filename1 = buildFullFilename(instance1, table1).constructPartitionParquetFilePath("root", "test-file1");
+
+            InstanceProperties instance2 = createTestInstanceProperties();
+            TableProperties table2 = createTestTableProperties(instance2, TEST_SCHEMA);
+            instance2.set(DATA_BUCKET, "test-bucket2");
+            String filename2 = buildFullFilename(instance2, table2).constructPartitionParquetFilePath("root", "test-file2");
+
+            // When
+            Map<String, List<String>> objectKeysByBucket = GarbageCollector.getObjectsToDeleteByBucketName(List.of(filename1, filename2));
+
+            // Then
+            assertThat(objectKeysByBucket).containsOnly(
+                    entry("test-bucket1", List.of(
+                            buildObjectKey(table1).constructPartitionParquetFilePath("root", "test-file1"),
+                            buildObjectKey(table1).constructQuantileSketchesFilePath("root", "test-file1"))),
+                    entry("test-bucket2", List.of(
+                            buildObjectKey(table2).constructPartitionParquetFilePath("root", "test-file2"),
+                            buildObjectKey(table2).constructQuantileSketchesFilePath("root", "test-file2"))));
+        }
+
         private TableFilePaths buildFullFilename() {
             return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties);
         }
 
+        private TableFilePaths buildFullFilename(InstanceProperties instPropIn, TableProperties tablePropIn) {
+            return TableFilePaths.buildDataFilePathPrefix(instPropIn, tablePropIn);
+        }
+
         private TableFilePaths buildObjectKey() {
             return TableFilePaths.buildObjectKeyInDataBucket(tableProperties);
+        }
+
+        private TableFilePaths buildObjectKey(TableProperties tablePropIn) {
+            return TableFilePaths.buildObjectKeyInDataBucket(tablePropIn);
         }
     }
 
