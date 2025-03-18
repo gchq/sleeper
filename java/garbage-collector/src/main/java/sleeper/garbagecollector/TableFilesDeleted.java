@@ -27,7 +27,7 @@ import java.util.Optional;
 /**
  * Tracks which files have been deleted from a table by the garbage collector. Used by {@link GarbageCollector}.
  */
-class TableFilesDeleted {
+public class TableFilesDeleted {
 
     private final TableStatus table;
     private final List<FileFailure> fileFailures = new ArrayList<>();
@@ -43,12 +43,12 @@ class TableFilesDeleted {
         filesDeletedInBatch = new ArrayList<>(filenames.size());
     }
 
-    void deleted(String filename) {
+    public void deleted(String filename) {
         deletedFileCount++;
         filesDeletedInBatch.add(filename);
     }
 
-    void failed(String filename, Exception failure) {
+    public void failed(String filename, Exception failure) {
         fileFailures.add(new FileFailure(filename, failure));
     }
 
