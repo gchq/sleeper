@@ -34,6 +34,7 @@ import sleeper.core.util.ThreadSleep;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_EXPORT_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.COMPACTION_CLUSTER;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.INGEST_CLUSTER;
 import static sleeper.core.properties.instance.CommonProperty.ID;
@@ -79,6 +80,7 @@ public class ShutdownSystemProcesses {
     private void stopECSTasks(InstanceProperties instanceProperties, List<String> extraClusters) {
         stopTasks(ecs, instanceProperties, INGEST_CLUSTER);
         stopTasks(ecs, instanceProperties, COMPACTION_CLUSTER);
+        stopTasks(ecs, instanceProperties, BULK_EXPORT_CLUSTER);
         extraClusters.forEach(clusterName -> stopTasks(ecs, clusterName));
     }
 
