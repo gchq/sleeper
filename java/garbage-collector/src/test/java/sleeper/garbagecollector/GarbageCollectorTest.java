@@ -404,7 +404,8 @@ public class GarbageCollectorTest {
             // Then
             assertThat(objectKeysByBucket).containsExactly(
                     entry("test-bucket", List.of(
-                            buildObjectKey().constructPartitionParquetFilePath("root", "test-file"))));
+                            buildObjectKey().constructPartitionParquetFilePath("root", "test-file"),
+                            buildObjectKey().constructQuantileSketchesFilePath("root", "test-file"))));
         }
 
         private TableFilePaths buildFullFilename() {
