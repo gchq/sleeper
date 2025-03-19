@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 /**
- * Converts a filename from the state store to prepare for deletion from S3.
+ * Parses a filename from the state store to prepare for deletion from S3.
  *
  * @param filename   the full path of the file as recorded in the state store
  * @param bucketName the bucket name where the file is located
@@ -33,7 +33,7 @@ public record FileToDelete(String filename, String bucketName, String objectKey)
      * Reads a filename from the state store.
      *
      * @param  filename the filename from the state store
-     * @return          the converted file details
+     * @return          the parsed file details
      */
     public static FileToDelete fromFilename(String filename) {
         int schemeEnd = filename.indexOf("://");
