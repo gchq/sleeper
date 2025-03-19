@@ -18,15 +18,14 @@ package sleeper.query.core.recordretrieval;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.iterator.WrappedIterator;
 import sleeper.core.key.Key;
+import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -34,9 +33,13 @@ import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-public class InMemoryDataStore implements LeafPartitionRecordRetriever {
+public class InMemoryLeafPartitionRecordRetriever implements LeafPartitionRecordRetriever, LeafPartitionRecordRetrieverProvider {
 
-    private final Map<String, List<Record>> recordsByFilename = new HashMap<>();
+    private final InMemoryRecordStore recordStore;
+
+    public InMemoryLeafPartitionRecordRetriever(InMemoryRecordStore recordStore) {
+        this.recordStore = recordStore;
+    }
 
     @Override
     public CloseableIterator<Record> getRecords(LeafPartitionQuery leafPartitionQuery, Schema dataReadSchema) throws RecordRetrievalException {
@@ -46,45 +49,19 @@ public class InMemoryDataStore implements LeafPartitionRecordRetriever {
                 .iterator());
     }
 
-    public void addFile(String filename, List<Record> records) {
-        if (recordsByFilename.containsKey(filename)) {
-            throw new IllegalArgumentException("File already exists: " + filename);
-        }
-        recordsByFilename.put(filename, records);
-    }
-
-    public void deleteFile(String filename) {
-        recordsByFilename.remove(filename);
-    }
-
-    public Collection<String> files() {
-        return recordsByFilename.keySet();
-    }
-
-    public void deleteAllFiles() {
-        recordsByFilename.clear();
-    }
-
-    public Stream<Record> streamRecords(List<String> files) {
-        return files.stream()
-                .flatMap(this::getRecordsOrThrow);
+    @Override
+    public LeafPartitionRecordRetriever getRecordRetriever(TableProperties tableProperties) {
+        return this;
     }
 
     private Stream<Record> getRecordsOrRecordRetrievalException(List<String> files) throws RecordRetrievalException {
         try {
-            return streamRecords(files)
+            return recordStore.streamRecords(files)
                     .collect(toUnmodifiableList())
                     .stream();
         } catch (NoSuchElementException e) {
             throw new RecordRetrievalException("", e);
         }
-    }
-
-    private Stream<Record> getRecordsOrThrow(String filename) throws NoSuchElementException {
-        if (!recordsByFilename.containsKey(filename)) {
-            throw new NoSuchElementException("File not found: " + filename);
-        }
-        return recordsByFilename.get(filename).stream();
     }
 
     private static boolean isRecordInRegion(Record record, LeafPartitionQuery query, Schema tableSchema) {
