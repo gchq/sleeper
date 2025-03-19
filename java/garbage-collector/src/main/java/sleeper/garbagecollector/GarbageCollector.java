@@ -163,7 +163,7 @@ public class GarbageCollector {
                         deleted.deleted(files.getFilenameForObjectKey(object.getKey()));
                     }
                 } catch (Exception e) {
-                    LOGGER.error("Failed to delete batch", e);
+                    LOGGER.error("Failed to delete batch: {}", objectKeys, e);
                     deleted.failed(files.getFilenamesForObjectKeys(objectKeys), e);
                 }
             });
