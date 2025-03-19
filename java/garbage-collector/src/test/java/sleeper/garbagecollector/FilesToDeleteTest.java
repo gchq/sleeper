@@ -139,12 +139,12 @@ public class FilesToDeleteTest {
     @Test
     void shouldRefuseFilenameWithNonS3Scheme() {
         // Given
-        String filename = "hfs://test-bucket/test-file.parquet";
+        String filename = "file://test-bucket/test-file.parquet";
 
         // When / Then
         assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Unexpected scheme: hfs");
+                .hasMessage("Unexpected scheme: file");
     }
 
     @Test
