@@ -151,21 +151,26 @@ public class GarbageCollector {
     }
 
     public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client) {
+        return deleteFilesAndSketches(s3Client, 1000);
+    }
+
+    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client, int batchSize) {
         return (filenames, deleted) -> {
             FilesToDelete files = FilesToDelete.from(filenames);
             for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
-                try {
-                    DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(filesInBucket.bucketName()).withKeys(
-                            filesInBucket.getObjectKeys().stream()
-                                    .map(objectKey -> new KeyVersion(objectKey))
-                                    .toList()));
-                    for (DeletedObject object : result.getDeletedObjects()) {
-                        deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
+                filesInBucket.objectKeysInBatchesOf(batchSize).forEach(batch -> {
+                    try {
+                        DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(filesInBucket.bucketName()).withKeys(
+                                batch.stream().map(objectKey -> new KeyVersion(objectKey)).toList()));
+                        for (DeletedObject object : result.getDeletedObjects()) {
+                            deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to delete batch: {}", batch, e);
+                        deleted.failed(filesInBucket.getAllFilenamesInBatch(batch), e);
                     }
-                } catch (Exception e) {
-                    LOGGER.error("Failed to delete batch: {}", filesInBucket.getObjectKeys(), e);
-                    deleted.failed(filesInBucket.getAllFilenames(), e);
-                }
+                });
+
             }
         };
     }

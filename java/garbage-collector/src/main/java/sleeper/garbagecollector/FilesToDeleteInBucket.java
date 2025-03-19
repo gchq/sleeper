@@ -60,8 +60,8 @@ public record FilesToDeleteInBucket(String bucketName, Map<String, String> objec
         return objectKeyToFilename.get(objectKey);
     }
 
-    public List<String> getAllFilenames() {
-        return objectKeyToFilename.values().stream().distinct().toList();
+    public List<String> getAllFilenamesInBatch(List<String> objectKeysForBatch) {
+        return objectKeysForBatch.stream().map(this::getFilenameForObjectKey).distinct().toList();
     }
 
 }

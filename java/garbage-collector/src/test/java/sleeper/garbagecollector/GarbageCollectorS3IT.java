@@ -141,6 +141,35 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
                         activeReference("new-file")));
     }
 
+    @Test
+    void shouldDeleteMoreThanS3BatchSize() throws Exception {
+        // Given
+        Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+        Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+        stateStore.fixFileUpdateTime(oldEnoughTime);
+        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+        createFileWithNoReferencesByCompaction("old-file1", "new-file1");
+        createFileWithNoReferencesByCompaction("old-file2", "new-file2");
+        createFileWithNoReferencesByCompaction("old-file3", "new-file3");
+
+        // When
+        collectGarbageAtTimeWithS3BatchSize(currentTime, 2);
+
+        //Then
+        assertThat(listObjectKeys(testBucket)).isEqualTo(Set.of(
+                dataFileObjectKey("new-file1"),
+                sketchesFileObjectKey("new-file1"),
+                dataFileObjectKey("new-file2"),
+                sketchesFileObjectKey("new-file2"),
+                dataFileObjectKey("new-file3"),
+                sketchesFileObjectKey("new-file3")));
+        assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
+                .isEqualTo(activeFilesReport(oldEnoughTime,
+                        activeReference("new-file1"),
+                        activeReference("new-file2"),
+                        activeReference("new-file3")));
+    }
+
     private InstanceProperties createInstanceProperties() {
         InstanceProperties instanceProperties = createTestInstanceProperties();
         instanceProperties.set(FILE_SYSTEM, "s3a://");
@@ -200,8 +229,18 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
         createGarbageCollector().runAtTime(time, List.of(tableProperties));
     }
 
+    private void collectGarbageAtTimeWithS3BatchSize(Instant time, int batchSize) throws Exception {
+        createGarbageCollector(batchSize).runAtTime(time, List.of(tableProperties));
+    }
+
     private GarbageCollector createGarbageCollector() {
         return new GarbageCollector(deleteFilesAndSketches(s3Client), instanceProperties,
+                new FixedStateStoreProvider(tableProperties, stateStore),
+                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
+    }
+
+    private GarbageCollector createGarbageCollector(int batchSize) {
+        return new GarbageCollector(deleteFilesAndSketches(s3Client, batchSize), instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }
