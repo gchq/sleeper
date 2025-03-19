@@ -53,4 +53,8 @@ public class FilesToDelete {
         return objectKeyToFilename.get(objectKey);
     }
 
+    public List<String> getFilenamesForObjectKeys(List<String> objectKeys) {
+        return objectKeys.stream().map(this::getFilenameForObjectKey).distinct().toList();
+    }
+
 }

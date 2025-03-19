@@ -184,8 +184,7 @@ public class GarbageCollector {
                     }
                 } catch (Exception e) {
                     LOGGER.error("Failed to delete batch", e);
-                    List<String> bucketFilenames = objectKeys.stream().map(files::getFilenameForObjectKey).toList();
-                    deleted.failed(bucketFilenames, e);
+                    deleted.failed(files.getFilenamesForObjectKeys(objectKeys), e);
                 }
             });
         };
