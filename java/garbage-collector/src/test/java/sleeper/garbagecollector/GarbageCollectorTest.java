@@ -377,7 +377,7 @@ public class GarbageCollectorTest {
 
     private static TableFailures fileFailure(TableProperties table, String filename, Exception failure) {
         return new TableFailures(table.getStatus(), null,
-                List.of(new FileFailure(filename, failure)),
+                List.of(new FileFailure(List.of(filename), failure)),
                 List.of());
     }
 
