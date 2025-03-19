@@ -241,7 +241,7 @@ public class CompactionJobResources {
         pendingQueue.grantSendMessages(grantee);
     }
 
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // Queue.getDeadLetterQueue is marked as nullable but will always be set
     private IFunction lambdaToSendCompactionJobBatches(
             CoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue) {
 
