@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package sleeper.systemtest.dsl.testutil.drivers;
+package sleeper.ingest.runner.testutils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

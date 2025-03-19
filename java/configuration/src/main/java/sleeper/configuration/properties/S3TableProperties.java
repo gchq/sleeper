@@ -28,6 +28,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.properties.table.TablePropertiesProvider;
 import sleeper.core.properties.table.TablePropertiesStore;
+import sleeper.core.table.TableIndex;
 import sleeper.core.table.TableNotFoundException;
 import sleeper.core.table.TableStatus;
 
@@ -73,6 +74,20 @@ public class S3TableProperties implements TablePropertiesStore.Client {
     public static TablePropertiesProvider createProvider(
             InstanceProperties instanceProperties, AmazonS3 s3Client, AmazonDynamoDB dynamoClient) {
         return new TablePropertiesProvider(instanceProperties, createStore(instanceProperties, s3Client, dynamoClient));
+    }
+
+    /**
+     * Creates a provider for loading and caching table properties from S3, via the table index.
+     *
+     * @param  instanceProperties the instance properties
+     * @param  tableIndex         the index of Sleeper tables
+     * @param  s3Client           the S3 client
+     * @return                    the store
+     */
+    public static TablePropertiesProvider createProvider(
+            InstanceProperties instanceProperties, TableIndex tableIndex, AmazonS3 s3Client) {
+        return new TablePropertiesProvider(instanceProperties,
+                new TablePropertiesStore(tableIndex, new S3TableProperties(instanceProperties, s3Client)));
     }
 
     @Override

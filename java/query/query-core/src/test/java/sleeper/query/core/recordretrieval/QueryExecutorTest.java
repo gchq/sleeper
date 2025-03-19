@@ -27,6 +27,7 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.range.Range.RangeFactory;
 import sleeper.core.range.Region;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.schema.Field;
 import sleeper.core.schema.Schema;
 import sleeper.core.schema.type.ByteArrayType;
@@ -68,7 +69,7 @@ import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
 public class QueryExecutorTest {
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final InMemoryDataStore recordStore = new InMemoryDataStore();
+    private final InMemoryRecordStore recordStore = new InMemoryRecordStore();
     private final Schema schema = schemaWithKey("key");
     private final TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
     private final StateStore stateStore = InMemoryTransactionLogStateStore.createAndInitialise(tableProperties, new InMemoryTransactionLogs());
@@ -346,7 +347,8 @@ public class QueryExecutorTest {
     }
 
     private QueryExecutor uninitialisedExecutorAtTime(Instant time) {
-        return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, recordStore, time);
+        return new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
+                new InMemoryLeafPartitionRecordRetriever(recordStore), time);
     }
 
     private List<Record> getRecords(Query query) throws Exception {

@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.systemtest.dsl.testutil.drivers;
+package sleeper.query.core.recordretrieval;
 
-import sleeper.sketches.Sketches;
+import sleeper.core.properties.table.TableProperties;
 
-import java.util.HashMap;
-import java.util.Map;
+/**
+ * Creates record retrievers to read underlying data files.
+ */
+@FunctionalInterface
+public interface LeafPartitionRecordRetrieverProvider {
 
-public class InMemorySketchesStore {
-    private final Map<String, Sketches> filenameToSketches = new HashMap<>();
+    /**
+     * Creates a record retriever to read files in a given Sleeper table.
+     *
+     * @param  tableProperties the Sleeper table properties
+     * @return                 the record retriever
+     */
+    LeafPartitionRecordRetriever getRecordRetriever(TableProperties tableProperties);
 
-    public void addSketchForFile(String filename, Sketches sketches) {
-        filenameToSketches.put(filename.replace(".parquet", ".sketches"), sketches);
-    }
-
-    public Sketches load(String filename) {
-        return filenameToSketches.get(filename);
-    }
 }

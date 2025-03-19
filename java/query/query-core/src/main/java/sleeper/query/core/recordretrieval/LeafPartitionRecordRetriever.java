@@ -20,6 +20,9 @@ import sleeper.core.record.Record;
 import sleeper.core.schema.Schema;
 import sleeper.query.core.model.LeafPartitionQuery;
 
+/**
+ * Retrieves records in the regions and files specified by a sub query.
+ */
 @FunctionalInterface
 public interface LeafPartitionRecordRetriever {
 

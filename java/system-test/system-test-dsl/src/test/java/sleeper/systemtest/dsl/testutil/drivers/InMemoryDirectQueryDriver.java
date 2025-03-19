@@ -19,11 +19,12 @@ package sleeper.systemtest.dsl.testutil.drivers;
 import sleeper.core.iterator.CloseableIterator;
 import sleeper.core.properties.table.TableProperties;
 import sleeper.core.record.Record;
+import sleeper.core.record.testutils.InMemoryRecordStore;
 import sleeper.core.statestore.StateStore;
 import sleeper.core.util.ObjectFactory;
 import sleeper.query.core.model.Query;
 import sleeper.query.core.model.QueryException;
-import sleeper.query.core.recordretrieval.InMemoryDataStore;
+import sleeper.query.core.recordretrieval.InMemoryLeafPartitionRecordRetriever;
 import sleeper.query.core.recordretrieval.QueryExecutor;
 import sleeper.systemtest.dsl.instance.SystemTestInstanceContext;
 import sleeper.systemtest.dsl.query.QueryAllTablesDriver;
@@ -38,14 +39,14 @@ import java.util.List;
 public class InMemoryDirectQueryDriver implements QueryDriver {
 
     private final SystemTestInstanceContext instance;
-    private final InMemoryDataStore dataStore;
+    private final InMemoryRecordStore dataStore;
 
-    InMemoryDirectQueryDriver(SystemTestInstanceContext instance, InMemoryDataStore dataStore) {
+    InMemoryDirectQueryDriver(SystemTestInstanceContext instance, InMemoryRecordStore dataStore) {
         this.instance = instance;
         this.dataStore = dataStore;
     }
 
-    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryDataStore dataStore) {
+    public static QueryAllTablesDriver allTablesDriver(SystemTestInstanceContext instance, InMemoryRecordStore dataStore) {
         return new QueryAllTablesInParallelDriver(instance, new InMemoryDirectQueryDriver(instance, dataStore));
     }
 
@@ -53,7 +54,8 @@ public class InMemoryDirectQueryDriver implements QueryDriver {
     public List<Record> run(Query query) {
         TableProperties tableProperties = instance.getTablePropertiesByDeployedName(query.getTableName()).orElseThrow();
         StateStore stateStore = instance.getStateStore(tableProperties);
-        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties, dataStore, Instant.now());
+        QueryExecutor executor = new QueryExecutor(ObjectFactory.noUserJars(), stateStore, tableProperties,
+                new InMemoryLeafPartitionRecordRetriever(dataStore), Instant.now());
         executor.init();
         try (CloseableIterator<Record> iterator = executor.execute(query)) {
             List<Record> records = new ArrayList<>();
