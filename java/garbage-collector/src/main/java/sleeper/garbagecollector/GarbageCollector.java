@@ -20,9 +20,6 @@ import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
 import com.amazonaws.services.s3.model.DeleteObjectsResult;
 import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +34,6 @@ import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -154,22 +150,6 @@ public class GarbageCollector {
         void deleteFiles(List<String> filenames, TableFilesDeleted deleted);
     }
 
-    public static DeleteFiles deleteFilesAndSketches(Configuration conf) {
-        return (filenames, deleted) -> {
-            for (String filename : filenames) {
-                try {
-                    deleteFile(filename, conf);
-                    String sketchesFile = filename.replace(".parquet", ".sketches");
-                    deleteFile(sketchesFile, conf);
-                    deleted.deleted(filename);
-                } catch (Exception e) {
-                    LOGGER.error("Failed to delete file: {}", filename, e);
-                    deleted.failed(List.of(filename), e);
-                }
-            }
-        };
-    }
-
     public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client) {
         return (filenames, deleted) -> {
             FilesToDelete files = FilesToDelete.from(filenames);
@@ -188,19 +168,5 @@ public class GarbageCollector {
                 }
             });
         };
-    }
-
-    private static void deleteFile(String filename, Configuration conf) throws IOException {
-        Path path = new Path(filename);
-        FileSystem fileSystem = path.getFileSystem(conf);
-        if (!fileSystem.exists(path)) {
-            LOGGER.warn("File did not exist: {}", filename);
-            return;
-        }
-        boolean success = path.getFileSystem(conf).delete(path, false);
-        if (!success) {
-            throw new IOException("File could not be deleted: " + filename);
-        }
-        LOGGER.info("Deleted file {}", filename);
     }
 }
