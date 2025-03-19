@@ -15,6 +15,9 @@
  */
 package sleeper.garbagecollector;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +25,7 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 public class FilesToDelete {
+    public static final Logger LOGGER = LoggerFactory.getLogger(FilesToDelete.class);
 
     private final Map<String, List<String>> bucketNameToObjectKey;
     private final Map<String, String> objectKeyToFilename;
@@ -35,12 +39,16 @@ public class FilesToDelete {
         Map<String, List<String>> bucketNameToObjectKey = new HashMap<>();
         Map<String, String> objectKeyToFilename = new HashMap<>();
         for (String filename : filenames) {
-            FileToDelete file = FileToDelete.fromFilename(filename);
-            List<String> objectKeys = bucketNameToObjectKey.computeIfAbsent(file.bucketName(), name -> new ArrayList<>());
-            file.streamObjectKeys().forEach(objectKey -> {
-                objectKeys.add(objectKey);
-                objectKeyToFilename.put(objectKey, filename);
-            });
+            try {
+                FileToDelete file = FileToDelete.fromFilename(filename);
+                List<String> objectKeys = bucketNameToObjectKey.computeIfAbsent(file.bucketName(), name -> new ArrayList<>());
+                file.streamObjectKeys().forEach(objectKey -> {
+                    objectKeys.add(objectKey);
+                    objectKeyToFilename.put(objectKey, filename);
+                });
+            } catch (Exception e) {
+                LOGGER.warn("Failed reading filename: {}", filename, e);
+            }
         }
         return new FilesToDelete(bucketNameToObjectKey, objectKeyToFilename);
     }

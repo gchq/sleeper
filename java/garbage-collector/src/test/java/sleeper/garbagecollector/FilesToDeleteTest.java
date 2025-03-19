@@ -120,6 +120,19 @@ public class FilesToDeleteTest {
                 buildObjectKeyForSketches(table2, "root", "test-file2"), filename2));
     }
 
+    @Test
+    void shouldIgnoreFileWithMissingScheme() {
+        // Given
+        String filename = "test-bucket/test-file.parquet";
+
+        // When
+        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
+
+        // Then
+        assertThat(filesToDelete.getBucketNameToObjectKey()).isEmpty();
+        assertThat(filesToDelete.getObjectKeyToFilename()).isEmpty();
+    }
+
     private String buildFullFilename(String partitionId, String fileName) {
         return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties).constructPartitionParquetFilePath(partitionId, fileName);
     }

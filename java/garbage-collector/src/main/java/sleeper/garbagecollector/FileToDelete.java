@@ -15,25 +15,19 @@
  */
 package sleeper.garbagecollector;
 
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.groupingBy;
 
 public record FileToDelete(String filename, String bucketName, String objectKey) {
 
-    public static Map<String, List<FileToDelete>> readAndGroupByBucketName(List<String> filenames) {
-        return filenames.stream()
-                .map(FileToDelete::fromFilename)
-                .collect(groupingBy(FileToDelete::bucketName));
-    }
-
     public static FileToDelete fromFilename(String filename) {
-        int schemeEnd = filename.indexOf("://") + 3;
-        int bucketNameEnd = filename.indexOf("/", schemeEnd);
+        int schemeEnd = filename.indexOf("://");
+        if (schemeEnd < 0) {
+            throw new IllegalArgumentException("Filename is missing scheme");
+        }
+        int bucketNameStart = schemeEnd + 3;
+        int bucketNameEnd = filename.indexOf("/", bucketNameStart);
         return new FileToDelete(filename,
-                filename.substring(schemeEnd, bucketNameEnd),
+                filename.substring(bucketNameStart, bucketNameEnd),
                 filename.substring(bucketNameEnd + 1));
     }
 
