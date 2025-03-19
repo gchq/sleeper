@@ -174,7 +174,7 @@ fn update_map<'a, V>(
     <V as ArrowPrimitiveType>::Native: AddAssign,
 {
     if let Some(entries) = input {
-        let c1 = entries.column(0).as_string::<i32>();
+        let c1 = downcast_array::<GenericStringArray>(entries.column(0));
         let c2 = entries.column(1).as_primitive::<V>();
         for (k, v) in c1.iter().zip(c2) {
             match (k, v) {
