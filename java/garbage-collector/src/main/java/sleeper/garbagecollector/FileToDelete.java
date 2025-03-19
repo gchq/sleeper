@@ -23,7 +23,7 @@ import java.util.stream.Stream;
  *
  * @param filename   the full path of the file as recorded in the state store
  * @param bucketName the bucket name where the file is located
- * @param objectKey  the path within the bucket including the full file name
+ * @param objectKey  the path within the bucket including the file name and extension
  */
 public record FileToDelete(String filename, String bucketName, String objectKey) {
 
@@ -32,8 +32,8 @@ public record FileToDelete(String filename, String bucketName, String objectKey)
     /**
      * Reads a filename from the state store.
      *
-     * @param  filename path from the state store
-     * @return          converted file details
+     * @param  filename the filename from the state store
+     * @return          the converted file details
      */
     public static FileToDelete fromFilename(String filename) {
         int schemeEnd = filename.indexOf("://");
@@ -55,21 +55,17 @@ public record FileToDelete(String filename, String bucketName, String objectKey)
     }
 
     /**
-     * Returns the location of the associated sketches file within the S3 bucket.
+     * Returns the locations of files stored in S3, for the file held in the state store. This includes the data file
+     * and the sketches file.
      *
-     * @return object key of associated sketches file
-     */
-    public String sketchesObjectKey() {
-        return objectKey.replace(".parquet", ".sketches");
-    }
-
-    /**
-     * Produces a stream of locations of files stored in S3, for the file held in the state store.
-     *
-     * @return stream of object keys
+     * @return the S3 object keys
      */
     public Stream<String> streamObjectKeys() {
         return Stream.of(objectKey, sketchesObjectKey());
+    }
+
+    private String sketchesObjectKey() {
+        return objectKey.replace(".parquet", ".sketches");
     }
 
 }
