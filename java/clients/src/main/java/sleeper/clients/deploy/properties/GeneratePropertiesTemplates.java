@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.core.deploy;
+package sleeper.clients.deploy.properties;
 
 import sleeper.core.properties.PropertyGroup;
 import sleeper.core.properties.SleeperProperties;
