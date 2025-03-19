@@ -69,10 +69,8 @@ public interface GarbageCollectionProperty {
     UserDefinedInstanceProperty GARBAGE_COLLECTOR_BATCH_SIZE = Index.propertyBuilder("sleeper.gc.batch.size")
             .description("The number of deleted files recorded to the state store in a single commit.\n" +
                     "The garbage collector keeps deleting files as long as there are files to delete in the state " +
-                    "store, and updates the state store whenever it has deleted this many files.\n" +
-                    "This is temporarily restricted to a maximum of 500 to stay within a single request to S3.")
-            .defaultValue("500")
-            .validationPredicate(value -> SleeperPropertyValueUtils.isPositiveIntLtEqValue(value, 500))
+                    "store, and updates the state store whenever it has deleted this many files.")
+            .defaultValue("10000")
             .propertyGroup(InstancePropertyGroup.GARBAGE_COLLECTOR).build();
     UserDefinedInstanceProperty DEFAULT_GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION = Index.propertyBuilder("sleeper.default.gc.delay.minutes")
             .description("A file will not be deleted until this number of minutes have passed after it has been marked as ready for " +
