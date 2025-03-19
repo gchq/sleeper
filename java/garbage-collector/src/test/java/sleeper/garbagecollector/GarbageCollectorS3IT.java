@@ -38,6 +38,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.table.TableFilePaths;
 import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
+import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
@@ -234,13 +235,15 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private GarbageCollector createGarbageCollector() {
-        return new GarbageCollector(deleteFilesAndSketches(s3Client), instanceProperties,
-                new FixedStateStoreProvider(tableProperties, stateStore),
-                new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
+        return createGarbageCollector(deleteFilesAndSketches(s3Client));
     }
 
     private GarbageCollector createGarbageCollector(int batchSize) {
-        return new GarbageCollector(deleteFilesAndSketches(s3Client, batchSize), instanceProperties,
+        return createGarbageCollector(deleteFilesAndSketches(s3Client, batchSize));
+    }
+
+    private GarbageCollector createGarbageCollector(DeleteFiles deleteFiles) {
+        return new GarbageCollector(deleteFiles, instanceProperties,
                 new FixedStateStoreProvider(tableProperties, stateStore),
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(new FixedTablePropertiesProvider(tableProperties))));
     }
