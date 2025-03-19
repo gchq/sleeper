@@ -72,13 +72,20 @@ public class FileToDeleteTest {
         String filename2 = buildFullFilename("root", "test-file2");
 
         // When
-        Map<String, List<FileToDelete>> objectKeysByBucket = FileToDelete.readAndGroupByBucketName(List.of(filename1, filename2));
+        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename1, filename2));
 
         // Then
-        assertThat(objectKeysByBucket).containsOnly(
-                entry("test-bucket", List.of(
-                        new FileToDelete(filename1, "test-bucket", buildObjectKey("root", "test-file1")),
-                        new FileToDelete(filename2, "test-bucket", buildObjectKey("root", "test-file2")))));
+        assertThat(filesToDelete.getBucketNameToObjectKey()).isEqualTo(Map.of("test-bucket",
+                List.of(buildObjectKey("root", "test-file1"),
+                        buildObjectKeyForSketches("root", "test-file1"),
+                        buildObjectKey("root", "test-file2"),
+                        buildObjectKeyForSketches("root", "test-file2"))));
+
+        assertThat(filesToDelete.getObjectKeyToFilename()).isEqualTo(Map.of(
+                buildObjectKey("root", "test-file1"), filename1,
+                buildObjectKeyForSketches("root", "test-file1"), filename1,
+                buildObjectKey("root", "test-file2"), filename2,
+                buildObjectKeyForSketches("root", "test-file2"), filename2));
     }
 
     @Test
