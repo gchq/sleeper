@@ -37,8 +37,12 @@ public record FileToDelete(String filename, String bucketName, String objectKey)
                 filename.substring(bucketNameEnd + 1));
     }
 
-    public Stream<FileToDelete> thisAndSketches() {
-        return Stream.of(this, new FileToDelete(filename, bucketName, objectKey.replace(".parquet", ".sketches")));
+    public String sketchesObjectKey() {
+        return objectKey.replace(".parquet", ".sketches");
+    }
+
+    public Stream<String> streamObjectKeys() {
+        return Stream.of(objectKey, sketchesObjectKey());
     }
 
 }

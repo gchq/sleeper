@@ -43,9 +43,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
-import static java.util.stream.Collectors.toMap;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
@@ -174,23 +172,20 @@ public class GarbageCollector {
 
     public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client) {
         return (filenames, deleted) -> {
-            Map<String, List<FileToDelete>> filesByBucket = FileToDelete.readAndGroupByBucketName(filenames);
-            filesByBucket.forEach((bucketName, files) -> {
-                Map<String, String> filenameByObjectKey = files.stream()
-                        .flatMap(FileToDelete::thisAndSketches)
-                        .collect(toMap(FileToDelete::objectKey, FileToDelete::filename));
+            FilesToDelete files = FilesToDelete.from(filenames);
+            files.forEachBucketObjectKeys((bucketName, objectKeys) -> {
                 try {
                     DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(bucketName).withKeys(
-                            files.stream()
-                                    .flatMap(FileToDelete::thisAndSketches)
-                                    .map(file -> new KeyVersion(file.objectKey()))
+                            objectKeys.stream()
+                                    .map(objectKey -> new KeyVersion(objectKey))
                                     .toList()));
                     for (DeletedObject object : result.getDeletedObjects()) {
-                        deleted.deleted(filenameByObjectKey.get(object.getKey()));
+                        deleted.deleted(files.getFilenameForObjectKey(object.getKey()));
                     }
                 } catch (Exception e) {
                     LOGGER.error("Failed to delete batch", e);
-                    deleted.failed(files.stream().map(FileToDelete::filename).toList(), e);
+                    List<String> bucketFilenames = objectKeys.stream().map(files::getFilenameForObjectKey).toList();
+                    deleted.failed(bucketFilenames, e);
                 }
             });
         };
