@@ -190,8 +190,10 @@ public class FilesToDeleteTest {
         @Test
         void shouldRetrieveTwoBatches() {
             // Given
-            FilesToDeleteInBucket files = new FilesToDeleteInBucket("test-bucket",
-                    Map.of("key-1", "file-1", "key-2", "file-2", "key-3", "file-3"));
+            FilesToDeleteInBucket files = new FilesToDeleteInBucket("test-bucket", Map.of(
+                    "key-1", "file-1",
+                    "key-2", "file-2",
+                    "key-3", "file-3"));
 
             // When / Then
             assertThat(files.objectKeysInBatchesOf(2))
