@@ -88,17 +88,18 @@ import static sleeper.core.properties.instance.TableStateProperty.TABLE_BATCHING
 
 /**
  * Deploys the resources needed to create and commit compaction jobs. Specifically, there are the following resources:
- * <p>
- * - A Cloudwatch Rule that periodically triggers a lambda named sleeper-id-compaction-job-creation-trigger. The
- * purpose of this lambda is to identify online tables and send the table ids to an SQS FIFO queue.
- * - This SQS FIFO queue triggers a lambda named sleeper-id-compaction-job-creation-handler. The purpose of this
+ * <ul>
+ * <li>A Cloudwatch Rule that periodically triggers a lambda named sleeper-id-compaction-job-creation-trigger. The
+ * purpose of this lambda is to identify online tables and send the table ids to an SQS FIFO queue.</li>
+ * <li>This SQS FIFO queue triggers a lambda named sleeper-id-compaction-job-creation-handler. The purpose of this
  * lambda is to split any file references that need splitting and to create batches of compaction jobs in leaf
  * partitions. The lambda sends updates to the state store and sends batches of compaction jobs to an SQS queue
- * named sleeper-id-PendingCompactionJobBatch Q.
- * - This queue triggers a lambda named sleeper-compaction-job-dispatcher that checks whether the state store
+ * named sleeper-id-PendingCompactionJobBatchQ.</li>
+ * <li>This queue triggers a lambda named sleeper-id-compaction-job-dispatcher that checks whether the state store
  * has been upated with these compaction jobs. If so then the jobs in the batch are sent to an SQS queue named
- * sleeper-compactionJobQ; if not then the batch is returned to the queue for processing later.
- * - Jobs will be processed from the compaction job queue by resources defined in CompactionTaskResources.
+ * sleeper-id-CompactionJobQ; if not then the batch is returned to the queue for processing later.</li>
+ * <li>Jobs will be processed from the compaction job queue by resources defined in CompactionTaskResources.</li>
+ * </ul>
  */
 public class CompactionJobResources {
     private static final String COMPACTION_STACK_QUEUE_URL = "CompactionStackQueueUrlKey";
