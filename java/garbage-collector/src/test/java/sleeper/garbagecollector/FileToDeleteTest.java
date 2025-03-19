@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -102,14 +101,23 @@ public class FileToDeleteTest {
         String filename2 = buildFullFilename(instance2, table2, "root", "test-file2");
 
         // When
-        Map<String, List<FileToDelete>> objectKeysByBucket = FileToDelete.readAndGroupByBucketName(List.of(filename1, filename2));
+        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename1, filename2));
 
         // Then
-        assertThat(objectKeysByBucket).containsOnly(
-                entry("test-bucket1", List.of(
-                        new FileToDelete(filename1, "test-bucket1", buildObjectKey(table1, "root", "test-file1")))),
-                entry("test-bucket2", List.of(
-                        new FileToDelete(filename2, "test-bucket2", buildObjectKey(table2, "root", "test-file2")))));
+        assertThat(filesToDelete.getBucketNameToObjectKey())
+                .isEqualTo(Map.of(
+                        "test-bucket1",
+                        List.of(buildObjectKey(table1, "root", "test-file1"),
+                                buildObjectKeyForSketches(table1, "root", "test-file1")),
+                        "test-bucket2",
+                        List.of(buildObjectKey(table2, "root", "test-file2"),
+                                buildObjectKeyForSketches(table2, "root", "test-file2"))));
+
+        assertThat(filesToDelete.getObjectKeyToFilename()).isEqualTo(Map.of(
+                buildObjectKey(table1, "root", "test-file1"), filename1,
+                buildObjectKeyForSketches(table1, "root", "test-file1"), filename1,
+                buildObjectKey(table2, "root", "test-file2"), filename2,
+                buildObjectKeyForSketches(table2, "root", "test-file2"), filename2));
     }
 
     private String buildFullFilename(String partitionId, String fileName) {
@@ -124,12 +132,16 @@ public class FileToDeleteTest {
         return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructPartitionParquetFilePath(partitionId, fileName);
     }
 
+    private String buildObjectKey(TableProperties tableProperties, String partitionId, String fileName) {
+        return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructPartitionParquetFilePath(partitionId, fileName);
+    }
+
     private String buildObjectKeyForSketches(String partitionId, String fileName) {
         return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructQuantileSketchesFilePath(partitionId, fileName);
     }
 
-    private String buildObjectKey(TableProperties tableProperties, String partitionId, String fileName) {
-        return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructPartitionParquetFilePath(partitionId, fileName);
+    private String buildObjectKeyForSketches(TableProperties tableProperties, String partitionId, String fileName) {
+        return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructQuantileSketchesFilePath(partitionId, fileName);
     }
 
 }
