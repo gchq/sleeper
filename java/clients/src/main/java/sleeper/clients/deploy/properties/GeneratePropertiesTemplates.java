@@ -94,7 +94,8 @@ public class GeneratePropertiesTemplates {
     }
 
     public static void main(String[] args) throws IOException {
-        fromRepositoryPath(Path.of(args[0]));
+        createTemplates(Path.of(args[0]));
+        createDocumentation(Path.of(args[0]));
     }
 
     /**
@@ -103,7 +104,7 @@ public class GeneratePropertiesTemplates {
      * @param  repositoryRoot the root directory of the Sleeper repository
      * @throws IOException    if any files could not be written
      */
-    public static void fromRepositoryPath(Path repositoryRoot) throws IOException {
+    public static void createTemplates(Path repositoryRoot) throws IOException {
 
         Path fullExampleDir = Files.createDirectories(repositoryRoot.resolve("example/full"));
         writeFile(fullExampleDir.resolve("instance.properties"),
@@ -122,6 +123,10 @@ public class GeneratePropertiesTemplates {
                 GeneratePropertiesTemplates::writeInstancePropertiesTemplate);
         writeFile(scriptsTemplateDir.resolve("tableproperties.template"),
                 GeneratePropertiesTemplates::writeTablePropertiesTemplate);
+    }
+
+    private static void createDocumentation(Path path) throws IOException {
+        GeneratePropertiesDocumentation.generateDocumentation(path);
     }
 
     private static InstanceProperties generateExampleFullInstanceProperties() {

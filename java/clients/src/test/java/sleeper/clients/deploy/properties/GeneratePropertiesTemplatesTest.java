@@ -58,7 +58,7 @@ class GeneratePropertiesTemplatesTest {
 
     @BeforeAll
     static void setUp() throws Exception {
-        GeneratePropertiesTemplates.fromRepositoryPath(tempDir);
+        GeneratePropertiesTemplates.createTemplates(tempDir);
     }
 
     static class MandatoryInstancePropertyTemplateValues implements ArgumentsProvider {
