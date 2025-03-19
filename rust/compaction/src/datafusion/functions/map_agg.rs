@@ -144,89 +144,57 @@ use arrow::{
 use datafusion::common::HashMap;
 
 /// Trait that unifies the iterator function for byte and primitive array types.
-trait ArrayIterable: From<ArrayData> {
-    type Element<'a>: ArrayAccessor
-    where
-        Self: 'a;
+trait ArrayIterable: IntoIterator {
     const DATA_TYPE: DataType;
-    fn iter(&self) -> ArrayIter<Self::Element<'_>>;
 }
 
 /// Enable iteration for byte/binary/string types
-impl<T> ArrayIterable for GenericByteArray<T>
+impl<T> ArrayIterable for &GenericByteArray<T>
 where
     T: ByteArrayType,
     <T as ByteArrayType>::Native: ToOwned,
 {
-    type Element<'a> = &'a GenericByteArray<T>;
     const DATA_TYPE: DataType = T::DATA_TYPE;
-
-    fn iter(&self) -> ArrayIter<Self::Element<'_>> {
-        GenericByteArray::<T>::iter(self)
-    }
 }
 
 /// Enable for all primitive types
-impl<T: ArrowPrimitiveType> ArrayIterable for PrimitiveArray<T> {
-    type Element<'a> = &'a PrimitiveArray<T>;
+impl<T: ArrowPrimitiveType> ArrayIterable for &PrimitiveArray<T> {
     const DATA_TYPE: DataType = T::DATA_TYPE;
-
-    fn iter(&self) -> ArrayIter<Self::Element<'_>> {
-        PrimitiveArray::<T>::iter(self)
-    }
 }
 
-struct Baz<K> {
-    _p: PhantomData<K>,
-}
-
-impl<K> Baz<K> {
-    fn funky<'c, 'd>(&'c self, k: K) {}
-}
-
-fn update_map<'a, K, P, Q>(
-    input: Option<&'a StructArray>,
-    map: &'a mut HashMap<K, <<Q as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
-    baz: &Baz<<<P as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
-) where
-    K: Eq
-        + Hash
-        + for<'c> From<&'c K>
-        + From<<<P as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
-    P: ArrayIterable + 'a,
-    Q: ArrayIterable + 'a,
+fn update_map<P, Q>(input: &Option<StructArray>, map: &mut HashMap<String, i64>)
+where
+    P: From<ArrayData>,
+    Q: From<ArrayData>,
+    for<'a> &'a P: IntoIterator,
+    for<'a> &'a Q: ArrayIterable,
 {
     if let Some(entries) = input {
-        let mp = entries.column(0).as_ref();
-        let mv = entries.column(1).as_ref();
-        let map_keys = downcast_array::<P>(mp);
-        let map_vals = downcast_array::<Q>(mv);
-        let m1 = map_keys.iter();
-        let m2 = map_vals.iter();
-        let zippy = m1.zip(m2);
-        for (k, v) in zippy {
-            match (k, v) {
-                (Some(key), Some(value)) => {
-                    // fun_name::<K, Q>(key.into(), value, map);
-                    let baz_arg: <<P as ArrayIterable>::Element<'_> as ArrayAccessor>::Item =
-                        key.into();
-                    baz.funky(baz_arg);
-                }
-                _ => {}
-            }
+        let col1 = entries.column(0);
+        let m1 = downcast_array::<P>(col1);
+        let col2 = entries.column(1);
+        let m2 = downcast_array::<Q>(col2);
+        let m: <&P as IntoIterator>::IntoIter = m1.into_iter();
+        let m2: <&Q as IntoIterator>::IntoIter = m2.into_iter();
+        let zip = m.zip(m2);
+        let mut count = 0;
+        for (k, v) in zip {
+            count += 1;
+            math
         }
+        // let m2_iter = m2.into_iter();
+        // let zippy = m1_iter.zip(m2_iter);
+        // for (k, v) in zippy {
+        // match (k, v) {
+        //     (Some(key), Some(value)) => {
+        //         map.entry_ref(key)
+        //             .and_modify(|v| *v += value)
+        //             .or_insert(value);
+        //     }
+        //     _ => panic!("Nullable entries aren't supported"),
+        // }
+        // }
     }
-}
-
-fn fun_name<'a, K, V>(
-    key: K,
-    value: <<V as ArrayIterable>::Element<'a> as ArrayAccessor>::Item,
-    map: &mut HashMap<K, <<V as ArrayIterable>::Element<'a> as ArrayAccessor>::Item>,
-) where
-    K: Eq + Hash + for<'c> From<&'c K>,
-    V: ArrayIterable,
-{
-    map.entry_ref(&key).or_insert(value);
 }
 
 // /// Single value accumulator function for maps.

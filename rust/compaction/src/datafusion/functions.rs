@@ -16,6 +16,8 @@
 * limitations under the License.
 */
 use ageoff::AgeOff;
+use arrow::array::GenericByteArray;
+use arrow::datatypes::ByteArrayType;
 use datafusion::common::{config_err, DFSchema, HashSet};
 use datafusion::functions_aggregate::expr_fn::{count, max, min, sum};
 use datafusion::logical_expr::col;
