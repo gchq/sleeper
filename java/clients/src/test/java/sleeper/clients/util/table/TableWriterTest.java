@@ -164,8 +164,7 @@ class TableWriterTest {
     @Test
     void shouldCreateMarkdownTableWithProvidedInstanceProperties() throws IOException {
         // Given
-        TableStructure structure = TableStructure.MARKDOWN_FORMAT;
-        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(structure);
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
         factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
 
         TableWriterFactory factory = factoryBuilder.build();

@@ -17,13 +17,27 @@ package sleeper.clients.util.table;
 
 import sleeper.clients.util.table.TableRow.Builder;
 import sleeper.core.properties.SleeperProperty;
+import sleeper.core.properties.instance.InstanceProperty;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 public class TableWriterPropertyHelper {
 
     private TableWriterPropertyHelper() {
+    }
+
+    public static TableWriter generateTableBuildForGroup(Stream<InstanceProperty> propertyStream) {
+        TableWriterFactory.Builder factoryBuilder = TableWriterFactory.builder().structure(TableStructure.MARKDOWN_FORMAT);
+        factoryBuilder.addFields(TableWriterPropertyHelper.getMarkdownFields());
+        TableWriterFactory factory = factoryBuilder.build();
+
+        propertyStream.forEach(property -> {
+            factory.tableBuilder().row(generatePropertyDetails(factoryBuilder.getFields(), property));
+        });
+
+        return factory.tableBuilder().build();
     }
 
     public static List<String> getMarkdownFields() {

@@ -15,7 +15,10 @@
  */
 package sleeper.clients.deploy.properties;
 
+import sleeper.clients.util.table.TableWriter;
+import sleeper.clients.util.table.TableWriterPropertyHelper;
 import sleeper.core.properties.PropertyGroup;
+import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.instance.InstancePropertyGroup;
 import sleeper.core.properties.table.TablePropertyGroup;
 
@@ -68,6 +71,8 @@ public class GeneratePropertiesDocumentation {
     private static void writeInstancePropertiesMarkdownTable(PropertyGroup group, Writer out) {
         PrintWriter writer = new PrintWriter(out);
         writer.println(">>>>>>>>>>>>>" + group.getName() + "<<<<<<<<<<");
+        InstanceProperties properties = new InstanceProperties();
+        TableWriter tableWriter = TableWriterPropertyHelper.generateTableBuildForGroup(properties.getPropertiesIndex().getAllInGroup(group).stream());
     }
 
     /**
