@@ -154,11 +154,11 @@ public class GarbageCollector {
         return deleteFilesAndSketches(s3Client, 1000);
     }
 
-    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client, int batchSize) {
+    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client, int s3BatchSize) {
         return (filenames, deleted) -> {
             FilesToDelete files = FilesToDelete.from(filenames);
             for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
-                filesInBucket.objectKeysInBatchesOf(batchSize).forEach(batch -> {
+                filesInBucket.objectKeysInBatchesOf(s3BatchSize).forEach(batch -> {
                     try {
                         DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(filesInBucket.bucketName()).withKeys(
                                 batch.stream().map(objectKey -> new KeyVersion(objectKey)).toList()));
