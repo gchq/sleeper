@@ -172,6 +172,33 @@ public class FilesToDeleteTest {
         }
     }
 
+    @Nested
+    @DisplayName("Split object keys to delete into batches for S3")
+    class BatchesOfObjectKeys {
+
+        @Test
+        void shouldRetrieveSingleBatchBelowBatchSize() {
+            // Given
+            FilesToDeleteInBucket files = new FilesToDeleteInBucket("test-bucket",
+                    Map.of("object-key", "test-file"));
+
+            // When / Then
+            assertThat(files.objectKeysInBatchesOf(2))
+                    .containsExactly(List.of("object-key"));
+        }
+
+        @Test
+        void shouldRetrieveTwoBatches() {
+            // Given
+            FilesToDeleteInBucket files = new FilesToDeleteInBucket("test-bucket",
+                    Map.of("key-1", "file-1", "key-2", "file-2", "key-3", "file-3"));
+
+            // When / Then
+            assertThat(files.objectKeysInBatchesOf(2))
+                    .containsExactly(List.of("key-3", "key-2"), List.of("key-1"));
+        }
+    }
+
     private String buildFullFilename(String partitionId, String fileName) {
         return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties).constructPartitionParquetFilePath(partitionId, fileName);
     }
