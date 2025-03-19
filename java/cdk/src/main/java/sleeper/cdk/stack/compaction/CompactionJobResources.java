@@ -41,6 +41,7 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
@@ -260,7 +261,8 @@ public class CompactionJobResources {
                 .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
 
-        pendingQueue.getDeadLetterQueue().getQueue().grantSendMessages(function);
+        DeadLetterQueue deadLetterQueue = Objects.requireNonNull(pendingQueue.getDeadLetterQueue());
+        deadLetterQueue.getQueue().grantSendMessages(function);
         return function;
     }
 
