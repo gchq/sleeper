@@ -33,13 +33,13 @@ public class TableWriterPropertyHelper {
     public static Consumer<Builder> generatePropertyDetails(List<TableField> fields, SleeperProperty property) {
         return row -> {
             row.value(fields.get(0), property.getPropertyName());
-            row.value(fields.get(1), adjustLoneEntryForMarkdown(property.getDescription()));
+            row.value(fields.get(1), adjustLongEntryForMarkdown(property.getDescription()));
             row.value(fields.get(2), property.getDefaultValue());
             row.value(fields.get(3), property.isRunCdkDeployWhenChanged());
         };
     }
 
-    private static String adjustLoneEntryForMarkdown(String valueIn) {
+    private static String adjustLongEntryForMarkdown(String valueIn) {
         return valueIn.replaceAll("\n", "<br>");
     }
 }
