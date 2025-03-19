@@ -49,7 +49,7 @@ chunks:
       - garbage-collector
       - bulk-export/bulk-export-core
       - bulk-export/bulk-export-planner
-      - bulk-export/bulk-export-task-creation
+      - bulk-export/bulk-export-task-creator
   rust:
     name: Rust
     workflow: chunk-rust.yaml
