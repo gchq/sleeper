@@ -164,8 +164,33 @@ impl<T: ArrowPrimitiveType> ArrayType for PrimitiveArray<T> {
     type NATIVE = T::Native;
 }
 
-unsafe fn extend_lifetime<'b, 'a, T>(r: &'b T) -> &'a T {
-    std::mem::transmute::<&'b T, &'a T>(r)
+unsafe fn extend_lifetime<'src, 'dst, T>(r: &'src T) -> &'dst T {
+    std::mem::transmute::<&'src T, &'dst T>(r)
+}
+
+fn update_map<'a, K, V>(
+    input: &'a Option<StructArray>,
+    map: &mut HashMap<&'a str, <V as ArrowPrimitiveType>::Native>,
+) where
+    K: From<ArrayData>,
+    V: ArrowPrimitiveType,
+    <V as ArrowPrimitiveType>::Native: AddAssign,
+{
+    if let Some(entries) = input {
+        let col1 = downcast_array::<K>(entries.column(0));
+        let extended_col1 = unsafe { extend_lifetime(&col1) };
+        let col2 = entries.column(1).as_primitive::<V>();
+        for (k, v) in extended_col1.into_iter().zip(col2) {
+            match (k, v) {
+                (Some(key), Some(value)) => {
+                    map.entry_ref(key)
+                        .and_modify(|v| *v += value)
+                        .or_insert(value);
+                }
+                _ => panic!("Nullable entries aren't supported"),
+            }
+        }
+    }
 }
 
 fn update_string_map<'a, V>(
