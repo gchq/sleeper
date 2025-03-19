@@ -27,22 +27,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
-/**
- * Words go here.
- */
 public class GeneratePropertiesDocumentation {
 
     private GeneratePropertiesDocumentation() {
-    }
-
-    public static void main(String[] args) throws IOException {
-        //fromRepositoryPath(Path.of(args[0]));
-        try {
-            System.out.println(" >>> Called this here!: " + args[0]);
-            generateDocumentation(Path.of(args[0]));
-        } catch (Exception ex) {
-            System.out.println("Exception: " + ex);
-        }
     }
 
     public static void generateDocumentation(Path root) throws IOException {
@@ -63,7 +50,7 @@ public class GeneratePropertiesDocumentation {
         Path tablePath = Files.createDirectories(headPath.resolve("table/"));
         TablePropertyGroup.getAll().forEach(tablePropertyGroup -> {
             try {
-                writeFile(instancePath.resolve(tablePropertyGroup.getName().toLowerCase().replace(" ", "_") + ".md"),
+                writeFile(tablePath.resolve(tablePropertyGroup.getName().toLowerCase().replace(" ", "_") + ".md"),
                         writer -> writeTablePropertiesMarkdownTable(tablePropertyGroup, writer));
             } catch (IOException e) {
                 System.out.println("Unable to write property file for group: " + tablePropertyGroup.getName());
@@ -78,7 +65,7 @@ public class GeneratePropertiesDocumentation {
      * @param group the group of properties
      * @param out   the writer for the files
      */
-    public static void writeInstancePropertiesMarkdownTable(PropertyGroup group, Writer out) {
+    private static void writeInstancePropertiesMarkdownTable(PropertyGroup group, Writer out) {
         PrintWriter writer = new PrintWriter(out);
         writer.println(">>>>>>>>>>>>>" + group.getName() + "<<<<<<<<<<");
     }
@@ -90,7 +77,7 @@ public class GeneratePropertiesDocumentation {
      * @param group the group of properties
      * @param out   the writer for the file
      */
-    public static void writeTablePropertiesMarkdownTable(PropertyGroup group, Writer out) {
+    private static void writeTablePropertiesMarkdownTable(PropertyGroup group, Writer out) {
         PrintWriter writer = new PrintWriter(out);
         writer.println(">>>>>>>>>>>>>" + group.getName() + "<<<<<<<<<<");
     }
