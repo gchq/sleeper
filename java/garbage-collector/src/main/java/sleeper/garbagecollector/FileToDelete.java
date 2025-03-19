@@ -18,10 +18,23 @@ package sleeper.garbagecollector;
 import java.util.Set;
 import java.util.stream.Stream;
 
+/**
+ * Converts a filename from the state store to prepare for deletion from S3.
+ *
+ * @param filename   the full path of the file as recorded in the state store
+ * @param bucketName the bucket name where the file is located
+ * @param objectKey  the path within the bucket including the full file name
+ */
 public record FileToDelete(String filename, String bucketName, String objectKey) {
 
     private static final Set<String> SCHEMES = Set.of("s3", "s3a");
 
+    /**
+     * Reads a filename from the state store.
+     *
+     * @param  filename path from the state store
+     * @return          converted file details
+     */
     public static FileToDelete fromFilename(String filename) {
         int schemeEnd = filename.indexOf("://");
         if (schemeEnd < 0) {
@@ -41,10 +54,20 @@ public record FileToDelete(String filename, String bucketName, String objectKey)
                 filename.substring(bucketNameEnd + 1));
     }
 
+    /**
+     * Returns the location of the associated sketches file within the S3 bucket.
+     *
+     * @return object key of associated sketches file
+     */
     public String sketchesObjectKey() {
         return objectKey.replace(".parquet", ".sketches");
     }
 
+    /**
+     * Produces a stream of locations of files stored in S3, for the file held in the state store.
+     *
+     * @return stream of object keys
+     */
     public Stream<String> streamObjectKeys() {
         return Stream.of(objectKey, sketchesObjectKey());
     }
