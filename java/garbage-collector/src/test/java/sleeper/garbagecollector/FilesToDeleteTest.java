@@ -15,6 +15,8 @@
  */
 package sleeper.garbagecollector;
 
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.instance.InstanceProperties;
@@ -39,125 +41,135 @@ public class FilesToDeleteTest {
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
 
-    @Test
-    void shouldReadBucketNameAndObjectKey() {
-        // Given
-        instanceProperties.set(DATA_BUCKET, "test-bucket");
-        String filename = buildFullFilename("root", "test-file");
+    @Nested
+    @DisplayName("Index files for deletion")
+    class IndexFiles {
 
-        // When
-        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
+        @Test
+        void shouldReadBucketNameAndObjectKey() {
+            // Given
+            instanceProperties.set(DATA_BUCKET, "test-bucket");
+            String filename = buildFullFilename("root", "test-file");
 
-        // Then
-        assertThat(filesToDelete.getBuckets()).containsExactly(
-                new FilesToDeleteInBucket("test-bucket",
-                        Map.of(
-                                buildObjectKey("root", "test-file"), filename,
-                                buildObjectKeyForSketches("root", "test-file"), filename)));
+            // When
+            FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
+
+            // Then
+            assertThat(filesToDelete.getBuckets()).containsExactly(
+                    new FilesToDeleteInBucket("test-bucket",
+                            Map.of(
+                                    buildObjectKey("root", "test-file"), filename,
+                                    buildObjectKeyForSketches("root", "test-file"), filename)));
+        }
+
+        @Test
+        void shouldReadMultipleFiles() {
+            // Given
+            instanceProperties.set(DATA_BUCKET, "test-bucket");
+            String filename1 = buildFullFilename("root", "test-file1");
+            String filename2 = buildFullFilename("root", "test-file2");
+
+            // When
+            FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename1, filename2));
+
+            // Then
+            assertThat(filesToDelete.getBuckets()).containsExactly(
+                    new FilesToDeleteInBucket("test-bucket",
+                            Map.of(
+                                    buildObjectKey("root", "test-file1"), filename1,
+                                    buildObjectKeyForSketches("root", "test-file1"), filename1,
+                                    buildObjectKey("root", "test-file2"), filename2,
+                                    buildObjectKeyForSketches("root", "test-file2"), filename2)));
+        }
+
+        @Test
+        void shouldReadMultipleBuckets() {
+            // Given
+            InstanceProperties instance1 = createTestInstanceProperties();
+            TableProperties table1 = createTestTableProperties(instance1, schema);
+            instance1.set(DATA_BUCKET, "test-bucket1");
+            String filename1 = buildFullFilename(instance1, table1, "root", "test-file1");
+
+            InstanceProperties instance2 = createTestInstanceProperties();
+            TableProperties table2 = createTestTableProperties(instance2, schema);
+            instance2.set(DATA_BUCKET, "test-bucket2");
+            String filename2 = buildFullFilename(instance2, table2, "root", "test-file2");
+
+            // When
+            FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename1, filename2));
+
+            // Then
+            assertThat(new HashSet<>(filesToDelete.getBuckets())).isEqualTo(Set.of(
+                    new FilesToDeleteInBucket("test-bucket1",
+                            Map.of(
+                                    buildObjectKey(table1, "root", "test-file1"), filename1,
+                                    buildObjectKeyForSketches(table1, "root", "test-file1"), filename1)),
+                    new FilesToDeleteInBucket("test-bucket2",
+                            Map.of(
+                                    buildObjectKey(table2, "root", "test-file2"), filename2,
+                                    buildObjectKeyForSketches(table2, "root", "test-file2"), filename2))));
+        }
     }
 
-    @Test
-    void shouldReadMultipleFiles() {
-        // Given
-        instanceProperties.set(DATA_BUCKET, "test-bucket");
-        String filename1 = buildFullFilename("root", "test-file1");
-        String filename2 = buildFullFilename("root", "test-file2");
+    @Nested
+    @DisplayName("Handle invalid filenames")
+    class InvalidFilenames {
 
-        // When
-        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename1, filename2));
+        @Test
+        void shouldIgnoreInvalidFilename() {
+            // Given
+            String filename = "%^<";
 
-        // Then
-        assertThat(filesToDelete.getBuckets()).containsExactly(
-                new FilesToDeleteInBucket("test-bucket",
-                        Map.of(
-                                buildObjectKey("root", "test-file1"), filename1,
-                                buildObjectKeyForSketches("root", "test-file1"), filename1,
-                                buildObjectKey("root", "test-file2"), filename2,
-                                buildObjectKeyForSketches("root", "test-file2"), filename2)));
-    }
+            // When
+            FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
 
-    @Test
-    void shouldReadMultipleBuckets() {
-        // Given
-        InstanceProperties instance1 = createTestInstanceProperties();
-        TableProperties table1 = createTestTableProperties(instance1, schema);
-        instance1.set(DATA_BUCKET, "test-bucket1");
-        String filename1 = buildFullFilename(instance1, table1, "root", "test-file1");
+            // Then
+            assertThat(filesToDelete.getBuckets()).isEmpty();
+        }
 
-        InstanceProperties instance2 = createTestInstanceProperties();
-        TableProperties table2 = createTestTableProperties(instance2, schema);
-        instance2.set(DATA_BUCKET, "test-bucket2");
-        String filename2 = buildFullFilename(instance2, table2, "root", "test-file2");
+        @Test
+        void shouldRefuseFilenameWithMissingScheme() {
+            // Given
+            String filename = "test-bucket/test-file.parquet";
 
-        // When
-        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename1, filename2));
+            // When / Then
+            assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Filename is missing scheme");
+        }
 
-        // Then
-        assertThat(new HashSet<>(filesToDelete.getBuckets())).isEqualTo(Set.of(
-                new FilesToDeleteInBucket("test-bucket1",
-                        Map.of(
-                                buildObjectKey(table1, "root", "test-file1"), filename1,
-                                buildObjectKeyForSketches(table1, "root", "test-file1"), filename1)),
-                new FilesToDeleteInBucket("test-bucket2",
-                        Map.of(
-                                buildObjectKey(table2, "root", "test-file2"), filename2,
-                                buildObjectKeyForSketches(table2, "root", "test-file2"), filename2))));
-    }
+        @Test
+        void shouldRefuseFilenameWithNonS3Scheme() {
+            // Given
+            String filename = "file://test-bucket/test-file.parquet";
 
-    @Test
-    void shouldIgnoreInvalidFilename() {
-        // Given
-        String filename = "%^<";
+            // When / Then
+            assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Unexpected scheme: file");
+        }
 
-        // When
-        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
+        @Test
+        void shouldRefuseFilenameWithNoObjectKey() {
+            // Given
+            String filename = "s3a://test-bucket";
 
-        // Then
-        assertThat(filesToDelete.getBuckets()).isEmpty();
-    }
+            // When / Then
+            assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Filename is missing object key");
+        }
 
-    @Test
-    void shouldRefuseFilenameWithMissingScheme() {
-        // Given
-        String filename = "test-bucket/test-file.parquet";
+        @Test
+        void shouldRefuseFilenameWithNoBucketNameOrObjectKey() {
+            // Given
+            String filename = "s3a://";
 
-        // When / Then
-        assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Filename is missing scheme");
-    }
-
-    @Test
-    void shouldRefuseFilenameWithNonS3Scheme() {
-        // Given
-        String filename = "file://test-bucket/test-file.parquet";
-
-        // When / Then
-        assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Unexpected scheme: file");
-    }
-
-    @Test
-    void shouldRefuseFilenameWithNoObjectKey() {
-        // Given
-        String filename = "s3a://test-bucket";
-
-        // When / Then
-        assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Filename is missing object key");
-    }
-
-    @Test
-    void shouldRefuseFilenameWithNoBucketNameOrObjectKey() {
-        // Given
-        String filename = "s3a://";
-
-        // When / Then
-        assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Filename is missing object key");
+            // When / Then
+            assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Filename is missing object key");
+        }
     }
 
     private String buildFullFilename(String partitionId, String fileName) {
