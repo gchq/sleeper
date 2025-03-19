@@ -227,19 +227,13 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private void collectGarbageAtTime(Instant time) throws Exception {
-        createGarbageCollector().runAtTime(time, List.of(tableProperties));
+        createGarbageCollector(deleteFilesAndSketches(s3Client))
+                .runAtTime(time, List.of(tableProperties));
     }
 
-    private void collectGarbageAtTimeWithS3BatchSize(Instant time, int batchSize) throws Exception {
-        createGarbageCollector(batchSize).runAtTime(time, List.of(tableProperties));
-    }
-
-    private GarbageCollector createGarbageCollector() {
-        return createGarbageCollector(deleteFilesAndSketches(s3Client));
-    }
-
-    private GarbageCollector createGarbageCollector(int batchSize) {
-        return createGarbageCollector(deleteFilesAndSketches(s3Client, batchSize));
+    private void collectGarbageAtTimeWithS3BatchSize(Instant time, int s3BatchSize) throws Exception {
+        createGarbageCollector(deleteFilesAndSketches(s3Client, s3BatchSize))
+                .runAtTime(time, List.of(tableProperties));
     }
 
     private GarbageCollector createGarbageCollector(DeleteFiles deleteFiles) {
