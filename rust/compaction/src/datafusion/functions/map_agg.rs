@@ -132,12 +132,12 @@
 //     }
 // }
 
-use std::{borrow::Borrow, hash::Hash, marker::PhantomData};
+use std::{borrow::Borrow, hash::Hash, marker::PhantomData, ops::AddAssign};
 
 use arrow::{
     array::{
-        downcast_array, ArrayAccessor, ArrayData, ArrayIter, ArrowNativeTypeOp, ArrowPrimitiveType,
-        GenericByteArray, PrimitiveArray, StructArray,
+        downcast_array, Array, ArrayAccessor, ArrayData, ArrayIter, ArrowNativeTypeOp,
+        ArrowPrimitiveType, AsArray, GenericByteArray, PrimitiveArray, StructArray,
     },
     datatypes::{ByteArrayType, DataType},
 };
@@ -162,38 +162,30 @@ impl<T: ArrowPrimitiveType> ArrayIterable for &PrimitiveArray<T> {
     const DATA_TYPE: DataType = T::DATA_TYPE;
 }
 
-fn update_map<P, Q>(input: &Option<StructArray>, map: &mut HashMap<String, i64>)
-where
-    P: From<ArrayData>,
-    Q: From<ArrayData>,
-    for<'a> &'a P: IntoIterator,
-    for<'a> &'a Q: ArrayIterable,
+unsafe fn extend_lifetime<'b, P>(r: &'b P) -> &'static P {
+    std::mem::transmute::<&'b P, &'static P>(r)
+}
+
+fn update_map<'a, V>(
+    input: &'a Option<StructArray>,
+    map: &mut HashMap<&'a str, <V as ArrowPrimitiveType>::Native>,
+) where
+    V: ArrowPrimitiveType,
+    <V as ArrowPrimitiveType>::Native: AddAssign,
 {
     if let Some(entries) = input {
-        let col1 = entries.column(0);
-        let m1 = downcast_array::<P>(col1);
-        let col2 = entries.column(1);
-        let m2 = downcast_array::<Q>(col2);
-        let m: <&P as IntoIterator>::IntoIter = m1.into_iter();
-        let m2: <&Q as IntoIterator>::IntoIter = m2.into_iter();
-        let zip = m.zip(m2);
-        let mut count = 0;
-        for (k, v) in zip {
-            count += 1;
-            math
+        let c1 = entries.column(0).as_string::<i32>();
+        let c2 = entries.column(1).as_primitive::<V>();
+        for (k, v) in c1.iter().zip(c2) {
+            match (k, v) {
+                (Some(key), Some(value)) => {
+                    map.entry_ref(key)
+                        .and_modify(|v| *v += value)
+                        .or_insert(value);
+                }
+                _ => panic!("Nullable entries aren't supported"),
+            }
         }
-        // let m2_iter = m2.into_iter();
-        // let zippy = m1_iter.zip(m2_iter);
-        // for (k, v) in zippy {
-        // match (k, v) {
-        //     (Some(key), Some(value)) => {
-        //         map.entry_ref(key)
-        //             .and_modify(|v| *v += value)
-        //             .or_insert(value);
-        //     }
-        //     _ => panic!("Nullable entries aren't supported"),
-        // }
-        // }
     }
 }
 
