@@ -155,7 +155,7 @@ public class GarbageCollector {
             FilesToDelete files = FilesToDelete.from(filenames);
             for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
                 try {
-                    DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(filesInBucket.getBucketName()).withKeys(
+                    DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(filesInBucket.bucketName()).withKeys(
                             filesInBucket.getObjectKeys().stream()
                                     .map(objectKey -> new KeyVersion(objectKey))
                                     .toList()));

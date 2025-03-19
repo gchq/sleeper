@@ -15,32 +15,24 @@
  */
 package sleeper.garbagecollector;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.toMap;
 
-public record FilesToDeleteInBucket(String bucketName, List<String> objectKeys, Map<String, String> objectKeyToFilename) {
+public record FilesToDeleteInBucket(String bucketName, Map<String, String> objectKeyToFilename) {
 
     public static FilesToDeleteInBucket from(String bucketName, List<FileToDelete> files) {
-        List<String> objectKeys = files.stream().flatMap(FileToDelete::streamObjectKeys).toList();
         Map<String, String> objectKeyToFilename = files.stream()
                 .flatMap(file -> file.streamObjectKeys().map(key -> Map.entry(key, file.filename())))
                 .collect(toMap(Entry::getKey, Entry::getValue));
-        return new FilesToDeleteInBucket(bucketName, objectKeys, objectKeyToFilename);
+        return new FilesToDeleteInBucket(bucketName, objectKeyToFilename);
     }
 
-    public String getBucketName() {
-        return bucketName;
-    }
-
-    public List<String> getObjectKeys() {
-        return objectKeys;
-    }
-
-    public Map<String, String> getObjectKeyToFilename() {
-        return objectKeyToFilename;
+    public Collection<String> getObjectKeys() {
+        return objectKeyToFilename.keySet();
     }
 
     public String getFilenameForObjectKey(String objectKey) {
@@ -48,7 +40,7 @@ public record FilesToDeleteInBucket(String bucketName, List<String> objectKeys, 
     }
 
     public List<String> getAllFilenames() {
-        return objectKeys.stream().map(this::getFilenameForObjectKey).distinct().toList();
+        return objectKeyToFilename.values().stream().distinct().toList();
     }
 
 }

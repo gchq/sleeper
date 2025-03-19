@@ -51,8 +51,6 @@ public class FilesToDeleteTest {
         // Then
         assertThat(filesToDelete.getBuckets()).containsExactly(
                 new FilesToDeleteInBucket("test-bucket",
-                        List.of(buildObjectKey("root", "test-file"),
-                                buildObjectKeyForSketches("root", "test-file")),
                         Map.of(
                                 buildObjectKey("root", "test-file"), filename,
                                 buildObjectKeyForSketches("root", "test-file"), filename)));
@@ -71,11 +69,6 @@ public class FilesToDeleteTest {
         // Then
         assertThat(filesToDelete.getBuckets()).containsExactly(
                 new FilesToDeleteInBucket("test-bucket",
-                        List.of(
-                                buildObjectKey("root", "test-file1"),
-                                buildObjectKeyForSketches("root", "test-file1"),
-                                buildObjectKey("root", "test-file2"),
-                                buildObjectKeyForSketches("root", "test-file2")),
                         Map.of(
                                 buildObjectKey("root", "test-file1"), filename1,
                                 buildObjectKeyForSketches("root", "test-file1"), filename1,
@@ -102,16 +95,10 @@ public class FilesToDeleteTest {
         // Then
         assertThat(new HashSet<>(filesToDelete.getBuckets())).isEqualTo(Set.of(
                 new FilesToDeleteInBucket("test-bucket1",
-                        List.of(
-                                buildObjectKey(table1, "root", "test-file1"),
-                                buildObjectKeyForSketches(table1, "root", "test-file1")),
                         Map.of(
                                 buildObjectKey(table1, "root", "test-file1"), filename1,
                                 buildObjectKeyForSketches(table1, "root", "test-file1"), filename1)),
                 new FilesToDeleteInBucket("test-bucket2",
-                        List.of(
-                                buildObjectKey(table2, "root", "test-file2"),
-                                buildObjectKeyForSketches(table2, "root", "test-file2")),
                         Map.of(
                                 buildObjectKey(table2, "root", "test-file2"), filename2,
                                 buildObjectKeyForSketches(table2, "root", "test-file2"), filename2))));
