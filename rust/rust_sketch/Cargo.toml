@@ -26,7 +26,7 @@ license = "Apache-2.0"
 cxx = { version = "1.0.148" }
 
 [build-dependencies]
-cxx-build = { version = "1.0.148" }
+cxx-build = { version = "1.0.149" }
 git2 = { version = "0.20.1" }
 
 [target.'cfg(target_os = "macos")'.build-dependencies]
