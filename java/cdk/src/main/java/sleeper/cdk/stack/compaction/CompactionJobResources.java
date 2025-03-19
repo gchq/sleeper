@@ -124,7 +124,7 @@ public class CompactionJobResources {
         compactionJobsQueue = sqsQueueForCompactionJobs(coreStacks, topic, errorMetrics);
         IFunction creationFunction = lambdaToCreateCompactionJobBatches(coreStacks, topic, errorMetrics, jarsBucket,
                 lambdaCode, compactionJobsQueue);
-        IFunction sendFunction = lambdaToSendCompactionJobBatches(coreStacks, lambdaCode, pendingQueue, compactionJobsQueue);
+        IFunction sendFunction = lambdaToSendCompactionJobBatches(coreStacks, lambdaCode, pendingQueue);
         lambdaToBatchUpCompactionCommits(coreStacks, lambdaCode, commitBatcherQueue);
 
         grantCreateCompactionJobs(coreStacks, jarsBucket, pendingQueue, creationFunction);
@@ -240,7 +240,7 @@ public class CompactionJobResources {
     }
 
     private IFunction lambdaToSendCompactionJobBatches(
-            CoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue, Queue compactionJobsQueue) {
+            CoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue) {
 
         String instanceId = Utils.cleanInstanceId(instanceProperties);
         String functionName = String.join("-", "sleeper", instanceId, "compaction-job-dispatcher");
@@ -258,6 +258,8 @@ public class CompactionJobResources {
                 .batchSize(1)
                 .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
+
+        pendingQueue.getDeadLetterQueue().getQueue().grantSendMessages(function);
         return function;
     }
 
