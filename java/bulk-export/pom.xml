@@ -28,6 +28,6 @@
     <modules>
         <module>bulk-export-core</module>
         <module>bulk-export-planner</module>
-        <module>bulk-export-task-creation</module>
+        <module>bulk-export-task-creator</module>
     </modules>
 </project>

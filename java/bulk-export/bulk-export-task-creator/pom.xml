@@ -22,7 +22,7 @@
         <version>0.30.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>bulk-export-task-creation</artifactId>
+    <artifactId>bulk-export-task-creator</artifactId>
 
     <dependencies>
         <dependency>

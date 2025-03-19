@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.bulkexport.taskcreation;
+package sleeper.bulkexport.taskcreator;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
@@ -36,13 +36,13 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG
  * Initiates bulk export ECS tasks based on the count of leaf partition bulk export jobs in the queue.
  */
 @SuppressWarnings("unused")
-public class SqsTriggeredBulkExportTaskRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SqsTriggeredBulkExportTaskRunner.class);
+public class SqsTriggeredBulkExportTaskRunnerLambda {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SqsTriggeredBulkExportTaskRunnerLambda.class);
 
     private final QueueMessageCount.Client queueMessageCount;
     private final RunLeafPartitionBulkExportTasks runLeafPartitionBulkExportTasks;
 
-    public SqsTriggeredBulkExportTaskRunner() {
+    public SqsTriggeredBulkExportTaskRunnerLambda() {
         String s3Bucket = validateParameter(CONFIG_BUCKET.toEnvironmentVariable());
         AmazonSQS sqsClient = AmazonSQSClientBuilder.defaultClient();
         AmazonS3 s3Client = AmazonS3ClientBuilder.defaultClient();
@@ -53,8 +53,8 @@ public class SqsTriggeredBulkExportTaskRunner {
     }
 
     /**
-     * Constructs an instance of SqsTriggeredBulkExportTaskRunner using
-     * the provided clients for Amazon SQS, Amazon S3, and Amazon DynamoDB.
+     * Initiates bulk export ECS tasks based on the count of leaf partition bulk
+     * export jobs in the queue.
      *
      * @param input   the SQS event
      * @param context the lambda context

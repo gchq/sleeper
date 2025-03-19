@@ -104,11 +104,11 @@ public class LambdaHandler {
             .optionalStack(OptionalStack.KeepLambdaWarmStack).add();
     public static final LambdaHandler BULK_EXPORT_PLANNER = builder()
             .jar(LambdaJar.BULK_EXPORT_PLANNER)
-            .handler("sleeper.bulkexport.lambda.SqsBulkExportProcessorLambda::handleRequest")
+            .handler("sleeper.bulkexport.planner.SqsBulkExportProcessorLambda::handleRequest")
             .optionalStack(BulkExportStack).add();
     public static final LambdaHandler BULK_EXPORT_TASK_CREATOR = builder()
             .jar(LambdaJar.BULK_EXPORT_TASK_CREATOR)
-            .handler("sleeper.bulkexport.runner.SqsTriggeredBulkExportTaskRunner::handleRequest")
+            .handler("sleeper.bulkexport.taskcreation.SqsTriggeredBulkExportTaskRunnerLambda::handleRequest")
             .optionalStack(BulkExportStack).add();
     public static final LambdaHandler QUERY_EXECUTOR = builder()
             .jar(LambdaJar.QUERY)

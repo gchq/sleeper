@@ -233,10 +233,10 @@
         </file>
         <file>
             <source>
-                ${project.basedir}/../bulk-export/bulk-export-task-creation/target/bulk-export-task-creation-${project.version}-utility.jar
+                ${project.basedir}/../bulk-export/bulk-export-task-creator/target/bulk-export-task-creator-${project.version}-utility.jar
             </source>
             <outputDirectory>scripts/jars/</outputDirectory>
-            <destName>bulk-export-task-creation-${project.version}.jar</destName>
+            <destName>bulk-export-task-creator-${project.version}.jar</destName>
         </file>
     </files>
 </assembly>
