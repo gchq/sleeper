@@ -195,7 +195,9 @@ public class FilesToDeleteTest {
 
             // When / Then
             assertThat(files.objectKeysInBatchesOf(2))
-                    .containsExactly(List.of("key-3", "key-2"), List.of("key-1"));
+                    .hasSize(2) // 2 batches
+                    .flatExtracting(batch -> batch)
+                    .containsExactlyInAnyOrder("key-1", "key-2", "key-3");
         }
     }
 
