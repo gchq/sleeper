@@ -17,18 +17,27 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>aws</artifactId>
         <groupId>sleeper</groupId>
+        <artifactId>bulk-export</artifactId>
         <version>0.30.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>bulk-export</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>bulk-export-task-execution</artifactId>
 
-    <modules>
-        <module>bulk-export-core</module>
-        <module>bulk-export-planner</module>
-        <module>bulk-export-task-creator</module>
-        <module>bulk-export-task-execution</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>sleeper</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>
