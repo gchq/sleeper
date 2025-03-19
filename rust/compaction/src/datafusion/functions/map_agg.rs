@@ -172,7 +172,7 @@ fn update_map<'a, K, V>(
     input: &'a Option<StructArray>,
     map: &mut HashMap<&'a str, <V as ArrowPrimitiveType>::Native>,
 ) where
-    K: From<ArrayData>,
+    K: From<ArrayData> + IntoIterator + ArrayType,
     V: ArrowPrimitiveType,
     <V as ArrowPrimitiveType>::Native: AddAssign,
 {
