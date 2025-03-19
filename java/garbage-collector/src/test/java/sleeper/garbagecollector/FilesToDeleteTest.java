@@ -22,8 +22,10 @@ import sleeper.core.properties.table.TableProperties;
 import sleeper.core.schema.Schema;
 import sleeper.core.table.TableFilePaths;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -47,12 +49,13 @@ public class FilesToDeleteTest {
         FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
 
         // Then
-        assertThat(filesToDelete.getBucketNameToObjectKey()).isEqualTo(Map.of("test-bucket",
-                List.of(buildObjectKey("root", "test-file"),
-                        buildObjectKeyForSketches("root", "test-file"))));
-        assertThat(filesToDelete.getObjectKeyToFilename()).isEqualTo(Map.of(
-                buildObjectKey("root", "test-file"), filename,
-                buildObjectKeyForSketches("root", "test-file"), filename));
+        assertThat(filesToDelete.getBuckets()).containsExactly(
+                new FilesToDeleteInBucket("test-bucket",
+                        List.of(buildObjectKey("root", "test-file"),
+                                buildObjectKeyForSketches("root", "test-file")),
+                        Map.of(
+                                buildObjectKey("root", "test-file"), filename,
+                                buildObjectKeyForSketches("root", "test-file"), filename)));
     }
 
     @Test
@@ -66,17 +69,18 @@ public class FilesToDeleteTest {
         FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename1, filename2));
 
         // Then
-        assertThat(filesToDelete.getBucketNameToObjectKey()).isEqualTo(Map.of("test-bucket",
-                List.of(buildObjectKey("root", "test-file1"),
-                        buildObjectKeyForSketches("root", "test-file1"),
-                        buildObjectKey("root", "test-file2"),
-                        buildObjectKeyForSketches("root", "test-file2"))));
-
-        assertThat(filesToDelete.getObjectKeyToFilename()).isEqualTo(Map.of(
-                buildObjectKey("root", "test-file1"), filename1,
-                buildObjectKeyForSketches("root", "test-file1"), filename1,
-                buildObjectKey("root", "test-file2"), filename2,
-                buildObjectKeyForSketches("root", "test-file2"), filename2));
+        assertThat(filesToDelete.getBuckets()).containsExactly(
+                new FilesToDeleteInBucket("test-bucket",
+                        List.of(
+                                buildObjectKey("root", "test-file1"),
+                                buildObjectKeyForSketches("root", "test-file1"),
+                                buildObjectKey("root", "test-file2"),
+                                buildObjectKeyForSketches("root", "test-file2")),
+                        Map.of(
+                                buildObjectKey("root", "test-file1"), filename1,
+                                buildObjectKeyForSketches("root", "test-file1"), filename1,
+                                buildObjectKey("root", "test-file2"), filename2,
+                                buildObjectKeyForSketches("root", "test-file2"), filename2)));
     }
 
     @Test
@@ -96,20 +100,21 @@ public class FilesToDeleteTest {
         FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename1, filename2));
 
         // Then
-        assertThat(filesToDelete.getBucketNameToObjectKey())
-                .isEqualTo(Map.of(
-                        "test-bucket1",
-                        List.of(buildObjectKey(table1, "root", "test-file1"),
+        assertThat(new HashSet<>(filesToDelete.getBuckets())).isEqualTo(Set.of(
+                new FilesToDeleteInBucket("test-bucket1",
+                        List.of(
+                                buildObjectKey(table1, "root", "test-file1"),
                                 buildObjectKeyForSketches(table1, "root", "test-file1")),
-                        "test-bucket2",
-                        List.of(buildObjectKey(table2, "root", "test-file2"),
-                                buildObjectKeyForSketches(table2, "root", "test-file2"))));
-
-        assertThat(filesToDelete.getObjectKeyToFilename()).isEqualTo(Map.of(
-                buildObjectKey(table1, "root", "test-file1"), filename1,
-                buildObjectKeyForSketches(table1, "root", "test-file1"), filename1,
-                buildObjectKey(table2, "root", "test-file2"), filename2,
-                buildObjectKeyForSketches(table2, "root", "test-file2"), filename2));
+                        Map.of(
+                                buildObjectKey(table1, "root", "test-file1"), filename1,
+                                buildObjectKeyForSketches(table1, "root", "test-file1"), filename1)),
+                new FilesToDeleteInBucket("test-bucket2",
+                        List.of(
+                                buildObjectKey(table2, "root", "test-file2"),
+                                buildObjectKeyForSketches(table2, "root", "test-file2")),
+                        Map.of(
+                                buildObjectKey(table2, "root", "test-file2"), filename2,
+                                buildObjectKeyForSketches(table2, "root", "test-file2"), filename2))));
     }
 
     @Test
@@ -121,8 +126,7 @@ public class FilesToDeleteTest {
         FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
 
         // Then
-        assertThat(filesToDelete.getBucketNameToObjectKey()).isEmpty();
-        assertThat(filesToDelete.getObjectKeyToFilename()).isEmpty();
+        assertThat(filesToDelete.getBuckets()).isEmpty();
     }
 
     @Test

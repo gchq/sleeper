@@ -153,20 +153,20 @@ public class GarbageCollector {
     public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client) {
         return (filenames, deleted) -> {
             FilesToDelete files = FilesToDelete.from(filenames);
-            files.forEachBucketObjectKeys((bucketName, objectKeys) -> {
+            for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
                 try {
-                    DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(bucketName).withKeys(
-                            objectKeys.stream()
+                    DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(filesInBucket.getBucketName()).withKeys(
+                            filesInBucket.getObjectKeys().stream()
                                     .map(objectKey -> new KeyVersion(objectKey))
                                     .toList()));
                     for (DeletedObject object : result.getDeletedObjects()) {
-                        deleted.deleted(files.getFilenameForObjectKey(object.getKey()));
+                        deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
                     }
                 } catch (Exception e) {
-                    LOGGER.error("Failed to delete batch: {}", objectKeys, e);
-                    deleted.failed(files.getFilenamesForObjectKeys(objectKeys), e);
+                    LOGGER.error("Failed to delete batch: {}", filesInBucket.getObjectKeys(), e);
+                    deleted.failed(filesInBucket.getAllFilenames(), e);
                 }
-            });
+            }
         };
     }
 }

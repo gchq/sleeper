@@ -18,59 +18,39 @@ package sleeper.garbagecollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.groupingBy;
 
 public class FilesToDelete {
     public static final Logger LOGGER = LoggerFactory.getLogger(FilesToDelete.class);
 
-    private final Map<String, List<String>> bucketNameToObjectKey;
-    private final Map<String, String> objectKeyToFilename;
+    private final List<FilesToDeleteInBucket> buckets;
 
-    private FilesToDelete(Map<String, List<String>> bucketNameToObjectKey, Map<String, String> objectKeyToFilename) {
-        this.bucketNameToObjectKey = bucketNameToObjectKey;
-        this.objectKeyToFilename = objectKeyToFilename;
+    private FilesToDelete(List<FilesToDeleteInBucket> buckets) {
+        this.buckets = buckets;
     }
 
     public static FilesToDelete from(List<String> filenames) {
-        Map<String, List<String>> bucketNameToObjectKey = new HashMap<>();
-        Map<String, String> objectKeyToFilename = new HashMap<>();
-        for (String filename : filenames) {
-            try {
-                FileToDelete file = FileToDelete.fromFilename(filename);
-                List<String> objectKeys = bucketNameToObjectKey.computeIfAbsent(file.bucketName(), name -> new ArrayList<>());
-                file.streamObjectKeys().forEach(objectKey -> {
-                    objectKeys.add(objectKey);
-                    objectKeyToFilename.put(objectKey, filename);
-                });
-            } catch (Exception e) {
-                LOGGER.warn("Failed reading filename: {}", filename, e);
-            }
-        }
-        return new FilesToDelete(bucketNameToObjectKey, objectKeyToFilename);
+        Map<String, List<FileToDelete>> bucketToFiles = filenames.stream()
+                .flatMap(filename -> {
+                    try {
+                        return Stream.of(FileToDelete.fromFilename(filename));
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed reading filename: {}", filename, e);
+                        return Stream.empty();
+                    }
+                })
+                .collect(groupingBy(FileToDelete::bucketName));
+        return new FilesToDelete(bucketToFiles.entrySet().stream()
+                .map(entry -> FilesToDeleteInBucket.from(entry.getKey(), entry.getValue()))
+                .toList());
     }
 
-    public void forEachBucketObjectKeys(BiConsumer<String, List<String>> consumer) {
-        bucketNameToObjectKey.forEach(consumer);
-    }
-
-    public String getFilenameForObjectKey(String objectKey) {
-        return objectKeyToFilename.get(objectKey);
-    }
-
-    public List<String> getFilenamesForObjectKeys(List<String> objectKeys) {
-        return objectKeys.stream().map(this::getFilenameForObjectKey).distinct().toList();
-    }
-
-    public Map<String, List<String>> getBucketNameToObjectKey() {
-        return bucketNameToObjectKey;
-    }
-
-    public Map<String, String> getObjectKeyToFilename() {
-        return objectKeyToFilename;
+    public List<FilesToDeleteInBucket> getBuckets() {
+        return buckets;
     }
 
 }
