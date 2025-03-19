@@ -133,6 +133,19 @@ public class FilesToDeleteTest {
         assertThat(filesToDelete.getObjectKeyToFilename()).isEmpty();
     }
 
+    @Test
+    void shouldIgnoreFileWithNonS3Scheme() {
+        // Given
+        String filename = "hfs://test-bucket/test-file.parquet";
+
+        // When
+        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
+
+        // Then
+        assertThat(filesToDelete.getBucketNameToObjectKey()).isEmpty();
+        assertThat(filesToDelete.getObjectKeyToFilename()).isEmpty();
+    }
+
     private String buildFullFilename(String partitionId, String fileName) {
         return TableFilePaths.buildDataFilePathPrefix(instanceProperties, tableProperties).constructPartitionParquetFilePath(partitionId, fileName);
     }

@@ -15,14 +15,21 @@
  */
 package sleeper.garbagecollector;
 
+import java.util.Set;
 import java.util.stream.Stream;
 
 public record FileToDelete(String filename, String bucketName, String objectKey) {
+
+    private static final Set<String> SCHEMES = Set.of("s3", "s3a");
 
     public static FileToDelete fromFilename(String filename) {
         int schemeEnd = filename.indexOf("://");
         if (schemeEnd < 0) {
             throw new IllegalArgumentException("Filename is missing scheme");
+        }
+        String scheme = filename.substring(0, schemeEnd);
+        if (!SCHEMES.contains(scheme)) {
+            throw new IllegalArgumentException("Unexpected scheme: " + scheme);
         }
         int bucketNameStart = schemeEnd + 3;
         int bucketNameEnd = filename.indexOf("/", bucketNameStart);
