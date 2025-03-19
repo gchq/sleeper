@@ -15,6 +15,7 @@
  */
 package sleeper.cdk.stack.compaction;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import software.amazon.awscdk.CfnOutput;
 import software.amazon.awscdk.CfnOutputProps;
 import software.amazon.awscdk.Duration;
@@ -41,7 +42,6 @@ import sleeper.core.properties.instance.InstanceProperties;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static sleeper.cdk.util.Utils.createAlarmForDlq;
 import static sleeper.cdk.util.Utils.shouldDeployPaused;
@@ -241,6 +241,7 @@ public class CompactionJobResources {
         pendingQueue.grantSendMessages(grantee);
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private IFunction lambdaToSendCompactionJobBatches(
             CoreStacks coreStacks, LambdaCode lambdaCode, Queue pendingQueue) {
 
@@ -261,8 +262,7 @@ public class CompactionJobResources {
                 .maxConcurrency(instanceProperties.getIntOrNull(COMPACTION_JOB_DISPATCH_LAMBDA_CONCURRENCY_MAXIMUM))
                 .build());
 
-        DeadLetterQueue deadLetterQueue = Objects.requireNonNull(pendingQueue.getDeadLetterQueue());
-        deadLetterQueue.getQueue().grantSendMessages(function);
+        pendingQueue.getDeadLetterQueue().getQueue().grantSendMessages(function);
         return function;
     }
 
