@@ -33,6 +33,9 @@ public record FileToDelete(String filename, String bucketName, String objectKey)
         }
         int bucketNameStart = schemeEnd + 3;
         int bucketNameEnd = filename.indexOf("/", bucketNameStart);
+        if (bucketNameEnd < 0) {
+            throw new IllegalArgumentException("Filename is missing object key");
+        }
         return new FileToDelete(filename,
                 filename.substring(bucketNameStart, bucketNameEnd),
                 filename.substring(bucketNameEnd + 1));

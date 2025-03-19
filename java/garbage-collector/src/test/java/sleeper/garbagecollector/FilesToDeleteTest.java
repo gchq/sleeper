@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
@@ -35,15 +36,6 @@ public class FilesToDeleteTest {
     Schema schema = schemaWithKey("key");
     InstanceProperties instanceProperties = createTestInstanceProperties();
     TableProperties tableProperties = createTestTableProperties(instanceProperties, schema);
-
-    // Tests:
-    // - Read bucket name and object key from one file
-    // - Read multiple files for one bucket
-    // - Read files on multiple buckets
-    // - Handle when file system scheme is missing
-    // - Handle when file system scheme is not s3/s3a
-    // - Fail when path includes bucket name but not object key
-    // - Fail when path includes scheme but not bucket name or object key
 
     @Test
     void shouldReadBucketNameAndObjectKey() {
@@ -121,9 +113,9 @@ public class FilesToDeleteTest {
     }
 
     @Test
-    void shouldIgnoreFileWithMissingScheme() {
+    void shouldIgnoreInvalidFilename() {
         // Given
-        String filename = "test-bucket/test-file.parquet";
+        String filename = "%^<";
 
         // When
         FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
@@ -134,16 +126,47 @@ public class FilesToDeleteTest {
     }
 
     @Test
-    void shouldIgnoreFileWithNonS3Scheme() {
+    void shouldRefuseFilenameWithMissingScheme() {
+        // Given
+        String filename = "test-bucket/test-file.parquet";
+
+        // When / Then
+        assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Filename is missing scheme");
+    }
+
+    @Test
+    void shouldRefuseFilenameWithNonS3Scheme() {
         // Given
         String filename = "hfs://test-bucket/test-file.parquet";
 
-        // When
-        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
+        // When / Then
+        assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Unexpected scheme: hfs");
+    }
 
-        // Then
-        assertThat(filesToDelete.getBucketNameToObjectKey()).isEmpty();
-        assertThat(filesToDelete.getObjectKeyToFilename()).isEmpty();
+    @Test
+    void shouldRefuseFilenameWithNoObjectKey() {
+        // Given
+        String filename = "s3a://test-bucket";
+
+        // When / Then
+        assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Filename is missing object key");
+    }
+
+    @Test
+    void shouldRefuseFilenameWithNoBucketNameOrObjectKey() {
+        // Given
+        String filename = "s3a://";
+
+        // When / Then
+        assertThatThrownBy(() -> FileToDelete.fromFilename(filename))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Filename is missing object key");
     }
 
     private String buildFullFilename(String partitionId, String fileName) {
