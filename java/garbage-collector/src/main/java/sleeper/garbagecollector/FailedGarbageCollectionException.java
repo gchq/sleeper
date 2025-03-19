@@ -62,7 +62,7 @@ public class FailedGarbageCollectionException extends RuntimeException {
         }
     }
 
-    public record FileFailure(String filename, Exception cause) {
+    public record FileFailure(List<String> filenames, Exception cause) {
     }
 
     public record StateStoreUpdateFailure(List<String> filenames, Exception cause) {

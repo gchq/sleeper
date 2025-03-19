@@ -16,6 +16,7 @@
 
 package sleeper.garbagecollector;
 
+import com.amazonaws.SdkClientException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +37,7 @@ import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
 import sleeper.core.statestore.testutils.InMemoryTransactionLogs;
 import sleeper.core.statestore.transactionlog.transaction.TransactionSerDeProvider;
 import sleeper.core.table.TableFilePaths;
+import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
 import sleeper.localstack.test.LocalStackTestBase;
 import sleeper.statestore.commit.SqsFifoStateStoreCommitRequestSender;
 
@@ -95,8 +97,16 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
 
         // When / Then
         assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
-                .isInstanceOfSatisfying(FailedGarbageCollectionException.class, e -> {
-                });
+                .isInstanceOfSatisfying(FailedGarbageCollectionException.class,
+                        e -> assertThat(e.getTableFailures()).singleElement().satisfies(failure -> {
+                            assertThat(failure.table()).isEqualTo(tableProperties.getStatus());
+                            assertThat(failure.streamFailures())
+                                    .singleElement()
+                                    .isInstanceOf(SdkClientException.class);
+                            assertThat(failure.fileFailures())
+                                    .flatExtracting(FileFailure::filenames)
+                                    .containsExactly("s3a://not-a-bucket/old-file-1.parquet");
+                        }));
         assertThat(listObjectKeys(testBucket)).isEqualTo(Set.of(
                 dataFileObjectKey("new-file-1"),
                 sketchesFileObjectKey("new-file-1"),

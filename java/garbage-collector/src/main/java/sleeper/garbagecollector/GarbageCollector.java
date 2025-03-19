@@ -190,7 +190,7 @@ public class GarbageCollector {
                     }
                 } catch (Exception e) {
                     LOGGER.error("Failed to delete batch", e);
-                    deleted.failed(bucketName, e);
+                    deleted.failed(files.stream().map(FileToDelete::filename).toList(), e);
                 }
             });
         };

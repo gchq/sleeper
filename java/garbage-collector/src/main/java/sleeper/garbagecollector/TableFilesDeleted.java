@@ -49,7 +49,11 @@ public class TableFilesDeleted {
     }
 
     public void failed(String filename, Exception failure) {
-        fileFailures.add(new FileFailure(filename, failure));
+        fileFailures.add(new FileFailure(List.of(filename), failure));
+    }
+
+    public void failed(List<String> filenames, Exception failure) {
+        fileFailures.add(new FileFailure(filenames, failure));
     }
 
     void failedStateStoreUpdate(List<String> filenames, Exception failure) {
