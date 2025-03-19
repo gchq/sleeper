@@ -164,7 +164,7 @@ public class GarbageCollector {
                     deleted.deleted(filename);
                 } catch (Exception e) {
                     LOGGER.error("Failed to delete file: {}", filename, e);
-                    deleted.failed(filename, e);
+                    deleted.failed(List.of(filename), e);
                 }
             }
         };

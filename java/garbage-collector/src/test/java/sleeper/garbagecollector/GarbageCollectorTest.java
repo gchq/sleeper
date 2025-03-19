@@ -448,7 +448,7 @@ public class GarbageCollectorTest {
         return (filenames, deleted) -> {
             for (String filename : filenames) {
                 if (failFilename.equals(filename)) {
-                    deleted.failed(filename, failure);
+                    deleted.failed(List.of(filename), failure);
                 } else {
                     deleted.deleted(filename);
                     filesInBucket.remove(filename);
