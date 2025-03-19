@@ -57,4 +57,12 @@ public class FilesToDelete {
         return objectKeys.stream().map(this::getFilenameForObjectKey).distinct().toList();
     }
 
+    public Map<String, List<String>> getBucketNameToObjectKey() {
+        return bucketNameToObjectKey;
+    }
+
+    public Map<String, String> getObjectKeyToFilename() {
+        return objectKeyToFilename;
+    }
+
 }

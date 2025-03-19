@@ -53,13 +53,15 @@ public class FileToDeleteTest {
         String filename = buildFullFilename("root", "test-file");
 
         // When
-        Map<String, List<FileToDelete>> objectKeysByBucket = FileToDelete.readAndGroupByBucketName(List.of(filename));
+        FilesToDelete filesToDelete = FilesToDelete.from(List.of(filename));
 
         // Then
-        assertThat(objectKeysByBucket).containsOnly(
-                entry("test-bucket", List.of(
-                        new FileToDelete(filename, "test-bucket",
-                                buildObjectKey("root", "test-file")))));
+        assertThat(filesToDelete.getBucketNameToObjectKey()).isEqualTo(Map.of("test-bucket",
+                List.of(buildObjectKey("root", "test-file"),
+                        buildObjectKeyForSketches("root", "test-file"))));
+        assertThat(filesToDelete.getObjectKeyToFilename()).isEqualTo(Map.of(
+                buildObjectKey("root", "test-file"), filename,
+                buildObjectKeyForSketches("root", "test-file"), filename));
     }
 
     @Test
@@ -113,6 +115,10 @@ public class FileToDeleteTest {
 
     private String buildObjectKey(String partitionId, String fileName) {
         return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructPartitionParquetFilePath(partitionId, fileName);
+    }
+
+    private String buildObjectKeyForSketches(String partitionId, String fileName) {
+        return TableFilePaths.buildObjectKeyInDataBucket(tableProperties).constructQuantileSketchesFilePath(partitionId, fileName);
     }
 
     private String buildObjectKey(TableProperties tableProperties, String partitionId, String fileName) {
