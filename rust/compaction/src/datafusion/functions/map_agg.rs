@@ -137,36 +137,38 @@ use std::{borrow::Borrow, hash::Hash, marker::PhantomData, ops::AddAssign};
 use arrow::{
     array::{
         downcast_array, Array, ArrayAccessor, ArrayData, ArrayIter, ArrowNativeTypeOp,
-        ArrowPrimitiveType, AsArray, GenericByteArray, PrimitiveArray, StructArray,
+        ArrowPrimitiveType, AsArray, GenericByteArray, PrimitiveArray, StringArray, StructArray,
     },
     datatypes::{ByteArrayType, DataType},
 };
 use datafusion::common::HashMap;
 
 /// Trait that unifies the iterator function for byte and primitive array types.
-trait ArrayIterable: IntoIterator {
+trait ArrayType: From<ArrayData> {
     const DATA_TYPE: DataType;
+    type NATIVE: ?Sized;
 }
 
 /// Enable iteration for byte/binary/string types
-impl<T> ArrayIterable for &GenericByteArray<T>
+impl<T> ArrayType for GenericByteArray<T>
 where
     T: ByteArrayType,
-    <T as ByteArrayType>::Native: ToOwned,
 {
     const DATA_TYPE: DataType = T::DATA_TYPE;
+    type NATIVE = T::Native;
 }
 
 /// Enable for all primitive types
-impl<T: ArrowPrimitiveType> ArrayIterable for &PrimitiveArray<T> {
+impl<T: ArrowPrimitiveType> ArrayType for PrimitiveArray<T> {
     const DATA_TYPE: DataType = T::DATA_TYPE;
+    type NATIVE = T::Native;
 }
 
-unsafe fn extend_lifetime<'b, P>(r: &'b P) -> &'static P {
-    std::mem::transmute::<&'b P, &'static P>(r)
+unsafe fn extend_lifetime<'b, 'a, T>(r: &'b T) -> &'a T {
+    std::mem::transmute::<&'b T, &'a T>(r)
 }
 
-fn update_map<'a, V>(
+fn update_string_map<'a, V>(
     input: &'a Option<StructArray>,
     map: &mut HashMap<&'a str, <V as ArrowPrimitiveType>::Native>,
 ) where
@@ -174,12 +176,38 @@ fn update_map<'a, V>(
     <V as ArrowPrimitiveType>::Native: AddAssign,
 {
     if let Some(entries) = input {
-        let c1 = downcast_array::<GenericStringArray>(entries.column(0));
-        let c2 = entries.column(1).as_primitive::<V>();
-        for (k, v) in c1.iter().zip(c2) {
+        let col1 = entries.column(0).as_string::<i32>();
+        let col2 = entries.column(1).as_primitive::<V>();
+        for (k, v) in col1.into_iter().zip(col2) {
             match (k, v) {
                 (Some(key), Some(value)) => {
                     map.entry_ref(key)
+                        .and_modify(|v| *v += value)
+                        .or_insert(value);
+                }
+                _ => panic!("Nullable entries aren't supported"),
+            }
+        }
+    }
+}
+
+fn update_prim_map<'a, K, V>(
+    input: &'a Option<StructArray>,
+    map: &mut HashMap<<K as ArrowPrimitiveType>::Native, <V as ArrowPrimitiveType>::Native>,
+) where
+    K: ArrowPrimitiveType,
+    V: ArrowPrimitiveType,
+    <K as ArrowPrimitiveType>::Native:
+        Hash + Eq + for<'b> From<&'b <K as ArrowPrimitiveType>::Native>,
+    <V as ArrowPrimitiveType>::Native: AddAssign,
+{
+    if let Some(entries) = input {
+        let col1 = entries.column(0).as_primitive::<K>();
+        let col2 = entries.column(1).as_primitive::<V>();
+        for (k, v) in col1.into_iter().zip(col2) {
+            match (k, v) {
+                (Some(key), Some(value)) => {
+                    map.entry_ref(&key)
                         .and_modify(|v| *v += value)
                         .or_insert(value);
                 }
