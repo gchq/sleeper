@@ -47,8 +47,6 @@ public class SleeperPropertyValueUtils {
 
     private static final Set<String> VALID_EBS_VOLUME_TYPES = Sets.newHashSet("gp2", "gp3", "io1", "io2");
 
-    private static final Set<String> VALID_BULK_EXPORT_LANGUAGES = Sets.newHashSet("java", "rust");
-
     /**
      * Checks if a property value is a positive integer.
      *
@@ -243,16 +241,6 @@ public class SleeperPropertyValueUtils {
             return false;
         }
         return BYTES_PATTERN.matcher(numberOfBytes).matches();
-    }
-
-    /**
-     * Checks if a property value is a valid language for a leaf partition bulk export processor.
-     *
-     * @param  language the value
-     * @return          true if the value meets the requirement
-     */
-    public static boolean isValidBulkExportLanguage(String language) {
-        return VALID_BULK_EXPORT_LANGUAGES.contains(language);
     }
 
     /**
