@@ -189,6 +189,7 @@ public class GarbageCollector {
                         deleted.deleted(filenameByObjectKey.get(object.getKey()));
                     }
                 } catch (Exception e) {
+                    LOGGER.error("Failed to delete batch", e);
                     deleted.failed(bucketName, e);
                 }
             });

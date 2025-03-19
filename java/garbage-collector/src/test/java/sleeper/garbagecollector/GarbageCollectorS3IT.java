@@ -95,7 +95,8 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
 
         // When / Then
         assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
-                .isInstanceOf(FailedGarbageCollectionException.class);
+                .isInstanceOfSatisfying(FailedGarbageCollectionException.class, e -> {
+                });
         assertThat(listObjectKeys(testBucket)).isEqualTo(Set.of(
                 dataFileObjectKey("new-file-1"),
                 sketchesFileObjectKey("new-file-1"),

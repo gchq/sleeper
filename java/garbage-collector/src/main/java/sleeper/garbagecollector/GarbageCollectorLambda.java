@@ -103,7 +103,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         } catch (FailedGarbageCollectionException e) {
             LOGGER.error("Found {} tables with failures", e.getTableFailures().size(), e);
             e.getTableFailures().stream()
-                    .map(TableFailures::getTable)
+                    .map(TableFailures::table)
                     .map(TableStatus::getTableUniqueId)
                     .flatMap(tableId -> messagesByTableId.get(tableId).stream())
                     .map(SQSMessage::getMessageId)
