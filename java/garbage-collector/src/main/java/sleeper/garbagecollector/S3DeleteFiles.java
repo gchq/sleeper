@@ -29,6 +29,9 @@ import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 
 import java.util.List;
 
+/**
+ * Deletes files from S3 by their filename in the state store. Used during garbage collection.
+ */
 public class S3DeleteFiles implements DeleteFiles {
     public static final Logger LOGGER = LoggerFactory.getLogger(S3DeleteFiles.class);
 
