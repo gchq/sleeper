@@ -15,12 +15,16 @@
  */
 package sleeper.bulkexport.taskexecution;
 
-import java.time.Instant;
-
 import org.slf4j.Logger;
-import sleeper.core.util.LoggedDuration;
 import org.slf4j.LoggerFactory;
 
+import sleeper.core.util.LoggedDuration;
+
+import java.time.Instant;
+
+/**
+ * Main class to run the ECS bulk export task.
+ */
 public class ECSBulkExportTaskRunner {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ECSBulkExportTaskRunner.class);
@@ -28,6 +32,11 @@ public class ECSBulkExportTaskRunner {
     private ECSBulkExportTaskRunner() {
     }
 
+    /**
+     * Main method to run the task.
+     *
+     * @param args command line arguments
+     */
     public static void main(String[] args) {
         Instant startTime = Instant.now();
 
