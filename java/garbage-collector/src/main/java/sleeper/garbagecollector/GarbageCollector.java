@@ -170,16 +170,33 @@ public class GarbageCollector {
                                 deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
                             }
                         } catch (AmazonS3Exception e) {
-                            retry = true;
+                            if (e.getErrorCode().equals("SlowDown")) {
+                                retry = true;
+                            } else {
+
+                            }
                         } catch (Exception e) {
-                            LOGGER.error("Failed to delete batch: {}", batch, e);
-                            deleted.failed(filesInBucket.getAllFilenamesInBatch(batch), e);
+                            retry = checkIfSlowDownException(e);
+                            if (!retry) {
+                                LOGGER.error("Failed to delete batch: {}", batch, e);
+                                deleted.failed(filesInBucket.getAllFilenamesInBatch(batch), e);
+                            }
                         }
                     } while (retry);
                 });
 
             }
         };
+    }
+
+    private static boolean checkIfSlowDownException(Exception e) {
+        if (e instanceof AmazonS3Exception) {
+            AmazonS3Exception s3e = (AmazonS3Exception) e;
+            if (s3e.getErrorCode().equals("SlowDown")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static DeleteObjectsRequest createDeleteObjectsRequest(FilesToDeleteInBucket filesInBucket, List<String> batch) {

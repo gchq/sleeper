@@ -31,6 +31,7 @@ import sleeper.localstack.test.WiremockAwsV1ClientHelper;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -42,6 +43,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.garbagecollector.GarbageCollector.deleteFilesAndSketches;
 
@@ -95,6 +97,33 @@ public class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
                                 "<Object><Key>test-table/data/partition_root/old-file.sketches</Key></Object></Delete>")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
                 .isEqualTo(activeFilesReport(oldEnoughTime, activeReference("new-file")));
+    }
+
+    @Test
+    void shouldNotAttemptRetryOnNonRateS3Exception() throws Exception {
+        // Given
+        Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+        Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+        stateStore.fixFileUpdateTime(oldEnoughTime);
+        table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+        createFileWithNoReferencesByCompaction(stateStore, "old-file", "new-file");
+        stubFor(post("/test-bucket/?delete")
+                .willReturn(aResponse()
+                        .withStatus(503)
+                        .withBody("<Error><Code>ServiceUnavailable</Code><Message>Service is unable to handle request.</Message></Error>")));
+
+        // When
+        collectGarbageAtTime(currentTime);
+
+        // Then
+        verify(1, postRequestedFor(urlEqualTo("/test-bucket/?delete"))
+                .withRequestBody(equalTo(
+                        "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +
+                                "<Object><Key>test-table/data/partition_root/old-file.sketches</Key></Object></Delete>")));
+        assertThat(stateStore.getAllFilesWithMaxUnreferenced(10)).isEqualTo(
+                activeAndReadyForGCFilesReport(oldEnoughTime,
+                        List.of(activeReference("new-file")),
+                        List.of("s3a://test-bucket/test-table/data/partition_root/old-file.parquet")));
     }
 
     protected FileReferenceFactory fileReferenceFactory() {
