@@ -33,14 +33,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-use std::{fmt::Debug, hash::Hash, ops::AddAssign, sync::Arc};
+use std::{fmt::Debug, hash::Hash, marker::PhantomData, ops::AddAssign, sync::Arc};
 
 use arrow::{
     array::{
-        downcast_array, make_builder, ArrayAccessor, ArrayData, ArrayIter, ArrayRef,
-        ArrowPrimitiveType, AsArray, MapBuilder, StringArray, StructArray,
+        downcast_array, make_builder, ArrayAccessor, ArrayBuilder, ArrayData, ArrayIter, ArrayRef,
+        ArrowPrimitiveType, AsArray, GenericByteBuilder, Int64Builder, MapBuilder, PrimitiveArray,
+        PrimitiveBuilder, StringArray, StringBuilder, StructArray,
     },
-    datatypes::{DataType, Int64Type},
+    datatypes::{ByteArrayType, DataType, Int64Type},
 };
 use datafusion::{
     common::{exec_err, internal_err, HashMap},
@@ -97,7 +98,12 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
-        Ok(Box::new(MapAccumulator::new(acc_args.return_type)))
+        Ok(Box::new(MapAccumulator::<
+            String,
+            StringBuilder,
+            i64,
+            Int64Builder,
+        >::new(acc_args.return_type)))
     }
 
     fn is_nullable(&self) -> bool {
@@ -184,12 +190,26 @@ fn update_primitive_map<'a, K, V>(
 
 /// Single value accumulator function for maps.
 #[derive(Debug)]
-struct MapAccumulator<K, KBuilder, V, VBuilder> {
+struct MapAccumulator<K, KBuilder, V, VBuilder>
+where
+    K: Debug + Sync + Send,
+    V: Debug + Sync + Send,
+    KBuilder: ArrayBuilder + Debug,
+    VBuilder: ArrayBuilder + Debug,
+{
     map_type: DataType,
     values: HashMap<K, V>,
+    _p: PhantomData<KBuilder>,
+    _p2: PhantomData<VBuilder>,
 }
 
-impl MapAccumulator {
+impl<K, KBuilder, V, VBuilder> MapAccumulator<K, KBuilder, V, VBuilder>
+where
+    K: Debug + Sync + Send,
+    V: Debug + Sync + Send,
+    KBuilder: ArrayBuilder + Debug,
+    VBuilder: ArrayBuilder + Debug,
+{
     // Creates a new accumulator.
     //
     // The type of the map must be specified so that the correct sort
@@ -198,11 +218,38 @@ impl MapAccumulator {
         Self {
             map_type: map_type.clone(),
             values: HashMap::default(),
+            _p: PhantomData,
+            _p2: PhantomData,
         }
     }
 }
 
-impl Accumulator for MapAccumulator {
+trait AppendValue<T>
+where
+    T: ?Sized,
+{
+    fn append_value<'a>(&mut self, v: &'a T);
+}
+
+impl<T: ArrowPrimitiveType> AppendValue<T::Native> for PrimitiveBuilder<T> {
+    fn append_value<'a>(&mut self, v: &'a T::Native) {
+        self.append_value(*v);
+    }
+}
+
+impl<T: ByteArrayType> AppendValue<T::Native> for GenericByteBuilder<T> {
+    fn append_value<'a>(&mut self, v: &'a T::Native) {
+        self.append_value(v);
+    }
+}
+
+impl<K, KBuilder, V, VBuilder> Accumulator for MapAccumulator<K, KBuilder, V, VBuilder>
+where
+    K: Debug + Sync + Send,
+    V: Debug + Sync + Send,
+    KBuilder: ArrayBuilder + Debug + AppendValue<K>,
+    VBuilder: ArrayBuilder + Debug + AppendValue<V>,
+{
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
         if values.len() != 1 {
             return exec_err!("MapAccumulator only accepts single column input");
@@ -217,13 +264,14 @@ impl Accumulator for MapAccumulator {
     }
 
     fn evaluate(&mut self) -> Result<ScalarValue> {
-        let mut builder = make_builder(&self.map_type, self.values.len())
+        let mut build_binding = make_builder(&self.map_type, self.values.len());
+        let builder = build_binding
             .as_any_mut()
-            .downcast_mut::<MapBuilder<KB, VB>>()
+            .downcast_mut::<MapBuilder<KBuilder, VBuilder>>()
             .expect("Builder downcast failed");
         for (key, val) in &self.values {
             builder.keys().append_value(key);
-            builder.values().append_value(*val);
+            builder.values().append_value(val);
         }
         builder.append(true).expect("Can't finish MapBuilder");
         Ok(ScalarValue::Map(Arc::new(builder.finish())))
