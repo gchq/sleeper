@@ -23,7 +23,7 @@ on:
       - 'java/bulk-export/bulk-export-core/**'
       - 'java/bulk-export/bulk-export-planner/**'
       - 'java/bulk-export/bulk-export-task-creator/**'
-      - 'java/bulk-export/bulk-export-task-executor/**'
+      - 'java/bulk-export/bulk-export-task-execution/**'
       - 'java/compaction/compaction-rust/**'
       - 'java/common/common-task/**'
       - 'java/ingest/ingest-runner/**'

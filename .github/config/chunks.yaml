@@ -50,7 +50,7 @@ chunks:
       - bulk-export/bulk-export-core
       - bulk-export/bulk-export-planner
       - bulk-export/bulk-export-task-creator
-      - bulk-export/bulk-export-task-executor
+      - bulk-export/bulk-export-task-execution
   rust:
     name: Rust
     workflow: chunk-rust.yaml
