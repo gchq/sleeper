@@ -19,6 +19,8 @@ package sleeper.systemtest.dsl.compaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sleeper.compaction.core.job.CompactionJob;
+import sleeper.compaction.core.job.CompactionJobFactory;
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
@@ -155,8 +157,10 @@ public class SystemTestCompaction {
         return this;
     }
 
-    public SystemTestCompaction sendFakeSingleCompactionBatch(String jobId, List<FileReference> inputFiles) {
-        lastBatchKeys = List.of(baseDriver.sendCompactionBatchGetKey(List.of()));
+    public SystemTestCompaction sendSingleCompactionBatch(String jobId, List<FileReference> inputFiles) {
+        CompactionJobFactory jobFactory = new CompactionJobFactory(instance.getInstanceProperties(), instance.getTableProperties());
+        CompactionJob job = jobFactory.createCompactionJob(jobId, inputFiles, inputFiles.get(0).getPartitionId());
+        lastBatchKeys = List.of(baseDriver.sendCompactionBatchGetKey(List.of(job)));
         return this;
     }
 

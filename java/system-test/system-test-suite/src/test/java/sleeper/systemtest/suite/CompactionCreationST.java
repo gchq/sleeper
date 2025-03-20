@@ -94,7 +94,7 @@ public class CompactionCreationST {
 
         // When
         sleeper.compaction()
-                .sendFakeSingleCompactionBatch("job-2", List.of(inputFile))
+                .sendSingleCompactionBatch("job-2", List.of(inputFile))
                 // Then
                 .waitForCompactionBatchOnDeadLetterQueue();
     }
