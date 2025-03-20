@@ -16,6 +16,7 @@
 package sleeper.garbagecollector;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
 import com.amazonaws.services.s3.model.DeleteObjectsResult;
@@ -159,19 +160,30 @@ public class GarbageCollector {
             FilesToDelete files = FilesToDelete.from(filenames);
             for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
                 filesInBucket.objectKeysInBatchesOf(s3BatchSize).forEach(batch -> {
-                    try {
-                        DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(filesInBucket.bucketName()).withKeys(
-                                batch.stream().map(objectKey -> new KeyVersion(objectKey)).toList()));
-                        for (DeletedObject object : result.getDeletedObjects()) {
-                            deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
+                    DeleteObjectsRequest deleteRequest = createDeleteObjectsRequest(filesInBucket, batch);
+                    boolean retry = false;
+                    do {
+                        retry = false;
+                        try {
+                            DeleteObjectsResult result = s3Client.deleteObjects(deleteRequest);
+                            for (DeletedObject object : result.getDeletedObjects()) {
+                                deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
+                            }
+                        } catch (AmazonS3Exception e) {
+                            retry = true;
+                        } catch (Exception e) {
+                            LOGGER.error("Failed to delete batch: {}", batch, e);
+                            deleted.failed(filesInBucket.getAllFilenamesInBatch(batch), e);
                         }
-                    } catch (Exception e) {
-                        LOGGER.error("Failed to delete batch: {}", batch, e);
-                        deleted.failed(filesInBucket.getAllFilenamesInBatch(batch), e);
-                    }
+                    } while (retry);
                 });
 
             }
         };
+    }
+
+    private static DeleteObjectsRequest createDeleteObjectsRequest(FilesToDeleteInBucket filesInBucket, List<String> batch) {
+        return new DeleteObjectsRequest(filesInBucket.bucketName())
+                .withKeys(batch.stream().map(objectKey -> new KeyVersion(objectKey)).toList());
     }
 }

@@ -22,7 +22,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import sleeper.core.properties.table.TableProperties;
@@ -64,7 +63,6 @@ public class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
     }
 
     @Test
-    @Disabled("TODO")
     void shouldTriggerRateLimitExceptionAndReduceRate() throws Exception {
         // Given
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
