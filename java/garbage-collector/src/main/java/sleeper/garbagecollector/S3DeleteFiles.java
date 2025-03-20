@@ -84,9 +84,9 @@ public class S3DeleteFiles implements DeleteFiles {
                 && "SlowDown".equals(s3e.getErrorCode());
     }
 
-    private static DeleteObjectsRequest createDeleteObjectsRequest(FilesToDeleteInBucket filesInBucket, List<String> batch) {
+    private static DeleteObjectsRequest createDeleteObjectsRequest(FilesToDeleteInBucket filesInBucket, List<String> objectKeys) {
         return new DeleteObjectsRequest(filesInBucket.bucketName())
-                .withKeys(batch.stream().map(objectKey -> new KeyVersion(objectKey)).toList());
+                .withKeys(objectKeys.stream().map(objectKey -> new KeyVersion(objectKey)).toList());
     }
 
 }
