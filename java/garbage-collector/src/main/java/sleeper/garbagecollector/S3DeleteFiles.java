@@ -50,28 +50,32 @@ public class S3DeleteFiles implements DeleteFiles {
     public void deleteFiles(List<String> filenames, TableFilesDeleted deleted) {
         FilesToDelete files = FilesToDelete.from(filenames);
         for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
-            filesInBucket.objectKeysInBatchesOf(s3BatchSize).forEach(batch -> {
-                DeleteObjectsRequest deleteRequest = createDeleteObjectsRequest(filesInBucket, batch);
-                boolean retry;
-                do {
-                    retry = false;
-                    try {
-                        DeleteObjectsResult result = s3Client.deleteObjects(deleteRequest);
-                        for (DeletedObject object : result.getDeletedObjects()) {
-                            deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
-                        }
-                    } catch (Exception e) {
-                        if (isSlowDownException(e)) {
-                            retry = true;
-                            sleep.waitForMillisWrappingInterrupt(1000);
-                        } else {
-                            LOGGER.error("Failed to delete batch: {}", batch, e);
-                            deleted.failed(filesInBucket.getAllFilenamesInBatch(batch), e);
-                        }
-                    }
-                } while (retry);
-            });
+            filesInBucket.objectKeysInBatchesOf(s3BatchSize)
+                    .forEach(batch -> deleteS3Batch(filesInBucket, batch, deleted));
         }
+    }
+
+    private void deleteS3Batch(FilesToDeleteInBucket filesInBucket, List<String> objectKeys, TableFilesDeleted deleted) {
+        DeleteObjectsRequest deleteRequest = createDeleteObjectsRequest(filesInBucket, objectKeys);
+        boolean retry;
+        do {
+            retry = false;
+            try {
+                DeleteObjectsResult result = s3Client.deleteObjects(deleteRequest);
+                for (DeletedObject object : result.getDeletedObjects()) {
+                    deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
+                }
+            } catch (Exception e) {
+                if (isSlowDownException(e)) {
+                    retry = true;
+                    LOGGER.warn("Found slow down response, retrying after 1s");
+                    sleep.waitForMillisWrappingInterrupt(1000);
+                } else {
+                    LOGGER.error("Failed to delete batch: {}", objectKeys, e);
+                    deleted.failed(filesInBucket.getAllFilenamesInBatch(objectKeys), e);
+                }
+            }
+        } while (retry);
     }
 
     private static boolean isSlowDownException(Exception e) {
