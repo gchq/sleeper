@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -64,23 +65,32 @@ public class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
         Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
         stateStore.fixFileUpdateTime(oldEnoughTime);
         table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
-        createFileWithNoReferencesByCompaction(stateStore, "old-file.parquet", "new-file.parquet");
+        createFileWithNoReferencesByCompaction(stateStore, "old-file", "new-file");
         stubFor(post("/test-bucket/?delete")
+                .inScenario("retry")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willSetStateTo("retry")
+                .willReturn(aResponse()
+                        .withStatus(503)
+                        .withBody("<DeleteResult><Error><Code>SlowDown</Code><Message>Reduce your request rate.</Message></Error></DeleteResult>")));
+        stubFor(post("/test-bucket/?delete")
+                .inScenario("retry")
+                .whenScenarioStateIs("retry")
                 .willReturn(aResponse()
                         .withStatus(200)
-                        .withBody("<DeleteResult><Deleted><Key>test-table/data/partition_root/old-file.parquet.parquet</Key>" +
-                                "<Key>test-table/data/partition_root/old-file.sketches.sketches</Key></Deleted></DeleteResult>")));
+                        .withBody("<DeleteResult><Deleted><Key>test-table/data/partition_root/old-file.parquet</Key></Deleted>" +
+                                "<Deleted><Key>test-table/data/partition_root/old-file.sketches</Key></Deleted></DeleteResult>")));
 
         // When
         collectGarbageAtTime(currentTime);
 
         // Then
-        verify(1, postRequestedFor(urlEqualTo("/test-bucket/?delete"))
+        verify(2, postRequestedFor(urlEqualTo("/test-bucket/?delete"))
                 .withRequestBody(equalTo(
-                        "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet.parquet</Key></Object>" +
-                                "<Object><Key>test-table/data/partition_root/old-file.sketches.sketches</Key></Object></Delete>")));
+                        "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +
+                                "<Object><Key>test-table/data/partition_root/old-file.sketches</Key></Object></Delete>")));
         assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
-                .isEqualTo(activeFilesReport(oldEnoughTime, activeReference("new-file.parquet")));
+                .isEqualTo(activeFilesReport(oldEnoughTime, activeReference("new-file")));
     }
 
     protected FileReferenceFactory fileReferenceFactory() {
