@@ -18,6 +18,7 @@ package sleeper.garbagecollector;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.Scenario;
@@ -41,6 +42,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
@@ -100,7 +102,7 @@ public class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
     }
 
     @Test
-    void shouldNotAttemptRetryOnNonRateS3Exception() throws Exception {
+    void shouldNotAttemptRetryOnNonSlowDownS3Exception() throws Exception {
         // Given
         Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
         Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
@@ -112,10 +114,10 @@ public class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
                         .withStatus(503)
                         .withBody("<Error><Code>ServiceUnavailable</Code><Message>Service is unable to handle request.</Message></Error>")));
 
-        // When
-        collectGarbageAtTime(currentTime);
-
-        // Then
+        // When / Then
+        assertThatThrownBy(() -> collectGarbageAtTime(currentTime))
+                .isInstanceOf(FailedGarbageCollectionException.class)
+                .hasCauseInstanceOf(AmazonS3Exception.class);
         verify(1, postRequestedFor(urlEqualTo("/test-bucket/?delete"))
                 .withRequestBody(equalTo(
                         "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet</Key></Object>" +

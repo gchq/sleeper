@@ -161,19 +161,13 @@ public class GarbageCollector {
             for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
                 filesInBucket.objectKeysInBatchesOf(s3BatchSize).forEach(batch -> {
                     DeleteObjectsRequest deleteRequest = createDeleteObjectsRequest(filesInBucket, batch);
-                    boolean retry = false;
+                    boolean retry;
                     do {
                         retry = false;
                         try {
                             DeleteObjectsResult result = s3Client.deleteObjects(deleteRequest);
                             for (DeletedObject object : result.getDeletedObjects()) {
                                 deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
-                            }
-                        } catch (AmazonS3Exception e) {
-                            if (e.getErrorCode().equals("SlowDown")) {
-                                retry = true;
-                            } else {
-
                             }
                         } catch (Exception e) {
                             retry = checkIfSlowDownException(e);
@@ -190,13 +184,8 @@ public class GarbageCollector {
     }
 
     private static boolean checkIfSlowDownException(Exception e) {
-        if (e instanceof AmazonS3Exception) {
-            AmazonS3Exception s3e = (AmazonS3Exception) e;
-            if (s3e.getErrorCode().equals("SlowDown")) {
-                return true;
-            }
-        }
-        return false;
+        return e instanceof AmazonS3Exception s3e
+                && "SlowDown".equals(s3e.getErrorCode());
     }
 
     private static DeleteObjectsRequest createDeleteObjectsRequest(FilesToDeleteInBucket filesInBucket, List<String> batch) {
