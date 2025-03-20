@@ -67,7 +67,7 @@ public class PopulateInstancePropertiesTest {
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
-        expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export");
+        expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(ACCOUNT, "test-account-id");
         expected.set(REGION, "test-region");
         return expected;
@@ -96,7 +96,7 @@ public class PopulateInstancePropertiesTest {
         expected.set(ECR_REPOSITORY_PREFIX, "test-ecr-prefix");
         expected.set(ECR_COMPACTION_REPO, "test-ecr-prefix/compaction-job-execution");
         expected.set(ECR_INGEST_REPO, "test-ecr-prefix/ingest");
-        expected.set(BULK_EXPORT_ECR_REPO, "test-ecr-prefix/bulk-export");
+        expected.set(BULK_EXPORT_ECR_REPO, "test-ecr-prefix/bulk-export-task-execution");
         expected.set(BULK_IMPORT_REPO, "test-ecr-prefix/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-ecr-prefix/bulk-import-runner-emr-serverless");
         assertThat(properties).isEqualTo(expected);
@@ -154,7 +154,7 @@ public class PopulateInstancePropertiesTest {
         expected.set(ECR_INGEST_REPO, "test-instance/ingest");
         expected.set(BULK_IMPORT_REPO, "test-instance/bulk-import-runner");
         expected.set(BULK_IMPORT_EMR_SERVERLESS_CUSTOM_IMAGE_REPO, "test-instance/bulk-import-runner-emr-serverless");
-        expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export");
+        expected.set(BULK_EXPORT_ECR_REPO, "test-instance/bulk-export-task-execution");
         expected.set(BULK_EXPORT_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-BulkExportJobCreationRule");
         expected.set(COMPACTION_JOB_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionJobCreationRule");
         expected.set(COMPACTION_TASK_CREATION_CLOUDWATCH_RULE, "test-instance-CompactionTasksCreationRule");
