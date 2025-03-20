@@ -1005,8 +1005,7 @@ sleeper.gc.offline.enabled=false
 # The number of deleted files recorded to the state store in a single commit.
 # The garbage collector keeps deleting files as long as there are files to delete in the state store,
 # and updates the state store whenever it has deleted this many files.
-# This is temporarily restricted to a maximum of 500 to stay within a single request to S3.
-sleeper.gc.batch.size=500
+sleeper.gc.batch.size=10000
 
 # A file will not be deleted until this number of minutes have passed after it has been marked as
 # ready for garbage collection. The reason for not deleting files immediately after they have been

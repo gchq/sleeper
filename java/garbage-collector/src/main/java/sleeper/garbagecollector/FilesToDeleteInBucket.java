@@ -15,10 +15,13 @@
  */
 package sleeper.garbagecollector;
 
+import sleeper.core.util.SplitIntoBatches;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -49,12 +52,16 @@ public record FilesToDeleteInBucket(String bucketName, Map<String, String> objec
         return objectKeyToFilename.keySet();
     }
 
+    public Stream<List<String>> objectKeysInBatchesOf(int batchSize) {
+        return SplitIntoBatches.streamBatchesOf(batchSize, objectKeyToFilename.keySet().stream());
+    }
+
     public String getFilenameForObjectKey(String objectKey) {
         return objectKeyToFilename.get(objectKey);
     }
 
-    public List<String> getAllFilenames() {
-        return objectKeyToFilename.values().stream().distinct().toList();
+    public List<String> getAllFilenamesInBatch(List<String> objectKeysForBatch) {
+        return objectKeysForBatch.stream().map(this::getFilenameForObjectKey).distinct().toList();
     }
 
 }
