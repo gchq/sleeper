@@ -237,8 +237,11 @@ impl<T: ArrowPrimitiveType> AppendValue<T::Native> for PrimitiveBuilder<T> {
     }
 }
 
-impl<T: ByteArrayType> AppendValue<T::Native> for GenericByteBuilder<T> {
-    fn append_value<'a>(&mut self, v: &'a T::Native) {
+impl<T: ByteArrayType> AppendValue<String> for GenericByteBuilder<T>
+where
+    String: AsRef<<T as ByteArrayType>::Native>,
+{
+    fn append_value<'a>(&mut self, v: &'a String) {
         self.append_value(v);
     }
 }
