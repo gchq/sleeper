@@ -77,7 +77,7 @@ public class GarbageCollectorTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        instanceProperties.set(FILE_SYSTEM, "file://");
+        instanceProperties.set(FILE_SYSTEM, "s3a://");
     }
 
     @Nested
@@ -377,7 +377,7 @@ public class GarbageCollectorTest {
 
     private static TableFailures fileFailure(TableProperties table, String filename, Exception failure) {
         return new TableFailures(table.getStatus(), null,
-                List.of(new FileFailure(filename, failure)),
+                List.of(new FileFailure(List.of(filename), failure)),
                 List.of());
     }
 
@@ -448,7 +448,7 @@ public class GarbageCollectorTest {
         return (filenames, deleted) -> {
             for (String filename : filenames) {
                 if (failFilename.equals(filename)) {
-                    deleted.failed(filename, failure);
+                    deleted.failed(List.of(filename), failure);
                 } else {
                     deleted.deleted(filename);
                     filesInBucket.remove(filename);

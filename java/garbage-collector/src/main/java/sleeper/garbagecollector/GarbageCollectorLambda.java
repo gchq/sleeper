@@ -83,7 +83,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         propertiesReloader = S3PropertiesReloader.ifConfigured(s3Client, instanceProperties, tablePropertiesProvider);
         Configuration conf = HadoopConfigurationProvider.getConfigurationForLambdas(instanceProperties);
         StateStoreProvider stateStoreProvider = StateStoreFactory.createProvider(instanceProperties, s3Client, dynamoDBClient, conf);
-        garbageCollector = new GarbageCollector(deleteFilesAndSketches(conf),
+        garbageCollector = new GarbageCollector(deleteFilesAndSketches(s3Client),
                 instanceProperties, stateStoreProvider,
                 new SqsFifoStateStoreCommitRequestSender(instanceProperties, sqsClient, s3Client, TransactionSerDeProvider.from(tablePropertiesProvider)));
     }
@@ -103,7 +103,7 @@ public class GarbageCollectorLambda implements RequestHandler<SQSEvent, SQSBatch
         } catch (FailedGarbageCollectionException e) {
             LOGGER.error("Found {} tables with failures", e.getTableFailures().size(), e);
             e.getTableFailures().stream()
-                    .map(TableFailures::getTable)
+                    .map(TableFailures::table)
                     .map(TableStatus::getTableUniqueId)
                     .flatMap(tableId -> messagesByTableId.get(tableId).stream())
                     .map(SQSMessage::getMessageId)
