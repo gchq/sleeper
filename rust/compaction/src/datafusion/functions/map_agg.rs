@@ -43,7 +43,7 @@ use arrow::{
     datatypes::{DataType, Int64Type},
 };
 use datafusion::{
-    common::{exec_datafusion_err, internal_err, HashMap},
+    common::{exec_err, internal_err, HashMap},
     error::Result,
     logical_expr::{
         function::AccumulatorArgs, utils::AggregateOrderSensitivity, Accumulator, AggregateUDFImpl,
@@ -182,65 +182,65 @@ fn update_primitive_map<'a, K, V>(
     }
 }
 
-// /// Single value accumulator function for maps.
-// #[derive(Debug)]
-// struct MapAccumulator<K, KBuilder, V, VBuilder> {
-//     map_type: DataType,
-//     values: HashMap<K, V>,
-// }
+/// Single value accumulator function for maps.
+#[derive(Debug)]
+struct MapAccumulator<K, KBuilder, V, VBuilder> {
+    map_type: DataType,
+    values: HashMap<K, V>,
+}
 
-// impl MapAccumulator {
-//     // Creates a new accumulator.
-//     //
-//     // The type of the map must be specified so that the correct sort
-//     // of map builder can be created.
-//     fn new(map_type: &DataType) -> Self {
-//         Self {
-//             map_type: map_type.clone(),
-//             values: HashMap::default(),
-//         }
-//     }
-// }
+impl MapAccumulator {
+    // Creates a new accumulator.
+    //
+    // The type of the map must be specified so that the correct sort
+    // of map builder can be created.
+    fn new(map_type: &DataType) -> Self {
+        Self {
+            map_type: map_type.clone(),
+            values: HashMap::default(),
+        }
+    }
+}
 
-// impl Accumulator for MapAccumulator {
-//     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
-//         if values.len() != 1 {
-//             exec_datafusion_err!("MapAccumulator only accepts single column input");
-//         }
+impl Accumulator for MapAccumulator {
+    fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
+        if values.len() != 1 {
+            return exec_err!("MapAccumulator only accepts single column input");
+        }
 
-//         let input = values[0].as_map();
-//         // For each map we get, feed it into our internal aggregated map
-//         for map in input.iter() {
-//             update_map(&map, &mut self.values);
-//         }
-//         Ok(())
-//     }
+        let input = values[0].as_map();
+        // For each map we get, feed it into our internal aggregated map
+        // for map in input.iter() {
+        //     update_map(&map, &mut self.values);
+        // }
+        Ok(())
+    }
 
-//     fn evaluate(&mut self) -> Result<ScalarValue> {
-//         let mut builder = make_builder(&self.map_type, self.values.len())
-//             .as_any_mut()
-//             .downcast_mut::<MapBuilder<KB, VB>>()
-//             .expect("Builder downcast failed");
-//         for (key, val) in &self.values {
-//             builder.keys().append_value(key);
-//             builder.values().append_value(*val);
-//         }
-//         builder.append(true).expect("Can't finish MapBuilder");
-//         Ok(ScalarValue::Map(Arc::new(builder.finish())))
-//     }
+    fn evaluate(&mut self) -> Result<ScalarValue> {
+        let mut builder = make_builder(&self.map_type, self.values.len())
+            .as_any_mut()
+            .downcast_mut::<MapBuilder<KB, VB>>()
+            .expect("Builder downcast failed");
+        for (key, val) in &self.values {
+            builder.keys().append_value(key);
+            builder.values().append_value(*val);
+        }
+        builder.append(true).expect("Can't finish MapBuilder");
+        Ok(ScalarValue::Map(Arc::new(builder.finish())))
+    }
 
-//     fn size(&self) -> usize {
-//         size_of_val(self)
-//     }
+    fn size(&self) -> usize {
+        size_of_val(self)
+    }
 
-//     fn state(&mut self) -> Result<Vec<ScalarValue>> {
-//         self.evaluate().map(|e| vec![e])
-//     }
+    fn state(&mut self) -> Result<Vec<ScalarValue>> {
+        self.evaluate().map(|e| vec![e])
+    }
 
-//     fn merge_batch(&mut self, states: &[ArrayRef]) -> Result<()> {
-//         self.update_batch(states)
-//     }
-// }
+    fn merge_batch(&mut self, states: &[ArrayRef]) -> Result<()> {
+        self.update_batch(states)
+    }
+}
 
 // #[derive(Debug, Default)]
 // struct GroupMapAccumulator {
