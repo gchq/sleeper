@@ -16,6 +16,8 @@
 
 package sleeper.systemtest.dsl.compaction;
 
+import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
+import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
 import sleeper.systemtest.dsl.SystemTestContext;
 import sleeper.systemtest.dsl.SystemTestDrivers;
@@ -26,8 +28,10 @@ import sleeper.systemtest.dsl.util.WaitForJobs;
 import sleeper.systemtest.dsl.util.WaitForTasks;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
@@ -42,6 +46,7 @@ public class SystemTestCompaction {
     private final WaitForCompactionJobCreation waitForJobCreation;
     private final WaitForJobs waitForJobs;
     private List<String> lastJobIds;
+    private List<String> lastBatchKeys;
 
     public SystemTestCompaction(SystemTestContext context, SystemTestDrivers baseDrivers) {
         this.instance = context.instance();
@@ -143,6 +148,22 @@ public class SystemTestCompaction {
     public SystemTestCompaction sendFakeCommits(StreamFakeCompactions compactions) {
         baseDriver.sendCompactionCommits(compactions.streamCommitMessages(instance.getTableProperties().get(TABLE_ID)));
         lastJobIds = compactions.listJobIds();
+        return this;
+    }
+
+    public SystemTestCompaction sendFakeSingleCompactionBatch(String jobId, List<FileReference> inputFiles) {
+        lastBatchKeys = List.of(baseDriver.sendCompactionBatchGetKey(List.of()));
+        return this;
+    }
+
+    public SystemTestCompaction waitForCompactionBatchOnDeadLetterQueue() throws Exception {
+        Set<String> remainingBatchKeys = new HashSet<>(lastBatchKeys);
+        pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
+                .pollUntil("batches are found on the dead letter queue", () -> {
+                    List<CompactionJobDispatchRequest> batches = baseDriver.drainPendingDeadLetterQueueForWholeInstance();
+                    batches.stream().map(CompactionJobDispatchRequest::getBatchKey).forEach(remainingBatchKeys::remove);
+                    return remainingBatchKeys.isEmpty();
+                });
         return this;
     }
 }
