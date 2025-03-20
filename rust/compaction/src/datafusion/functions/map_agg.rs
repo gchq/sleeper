@@ -198,11 +198,7 @@ where
     _p2: PhantomData<VBuilder>,
 }
 
-impl<KBuilder, VBuilder> MapAccumulator<KBuilder, VBuilder>
-where
-    KBuilder: ArrayBuilder + Debug + AppendValue,
-    VBuilder: ArrayBuilder + Debug + AppendValue,
-{
+impl<KBuilder, VBuilder> MapAccumulator<KBuilder, VBuilder> {
     // Creates a new accumulator.
     //
     // The type of the map must be specified so that the correct sort
