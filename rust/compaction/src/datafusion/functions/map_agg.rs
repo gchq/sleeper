@@ -1,23 +1,23 @@
-#![allow(unused_variables, dead_code)]
-//! Implementation of [`AggregateUDFImpl`] for aggregating maps of integers.
-//! For example, given:
-//!
-//! | Key |Total | Items |
-//! |--|--|--|
-//! | a | 6 | { 'k1' = 2, 'k2' = 1, 'k3' = 4} |
-//! | a | 3 | { 'k2' = 2, 'k4' = 1} |
-//! | b | 1 | { 'k1' = 1 } |
-//! | b | 2 | { 'k1' = 1, 'k3' = 1 } |
-//! | ....|
-//!
-//!
-//! Given a "map_sum" aggregator configured, the query `SELECT Key, sum(Total), map_sum(Items) FROM table` we would get:
-//! | Key |Total | Items |
-//! |--|--|--|
-//! | a | 9 | { 'k1' = 2, 'k2' = 3, 'k3' = 4, 'k4' = 1} |
-//! | b | 3 | { 'k1' = 2, 'k3 = 1 } |
-//! | ....|
-//!
+#![allow(unused_imports)]
+/// Implementation of [`AggregateUDFImpl`] for aggregating maps of integers.
+/// For example, given:
+///
+/// | Key |Total | Items |
+/// |--|--|--|
+/// | a | 6 | { 'k1' = 2, 'k2' = 1, 'k3' = 4} |
+/// | a | 3 | { 'k2' = 2, 'k4' = 1} |
+/// | b | 1 | { 'k1' = 1 } |
+/// | b | 2 | { 'k1' = 1, 'k3' = 1 } |
+/// | ....|
+///
+///
+/// Given a "map_sum" aggregator configured, the query `SELECT Key, sum(Total), map_sum(Items) FROM table` we would get:
+/// | Key |Total | Items |
+/// |--|--|--|
+/// | a | 9 | { 'k1' = 2, 'k2' = 3, 'k3' = 4, 'k4' = 1} |
+/// | b | 3 | { 'k1' = 2, 'k3 = 1 } |
+/// | ....|
+///
 /*
  * Copyright 2022-2025 Crown Copyright
  *
@@ -33,163 +33,103 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-// use std::{fmt::Debug, sync::Arc};
-
-// use arrow::{
-//     array::{
-//         downcast_array, make_builder, ArrayAccessor, ArrayData, ArrayIter, ArrayRef, AsArray,
-//         MapBuilder, StringArray, StructArray,
-//     },
-//     datatypes::{DataType, Int64Type},
-// };
-// use datafusion::{
-//     common::{exec_datafusion_err, internal_err, HashMap},
-//     error::Result,
-//     logical_expr::{
-//         function::AccumulatorArgs, utils::AggregateOrderSensitivity, Accumulator, AggregateUDFImpl,
-//         GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature, Volatility,
-//     },
-//     scalar::ScalarValue,
-// };
-
-// /// A aggregator for map columns. See module documentation.
-// #[derive(Debug)]
-// pub struct MapAggregator {
-//     /// Defines what column types this function can work on
-//     signature: Signature,
-// }
-
-// impl MapAggregator {
-//     /// Create a map aggregation function for the given column.
-//     ///
-//     /// # Errors
-//     /// If the given column is not a map column
-//     pub fn new(column_type: &DataType) -> Result<Self> {
-//         if !matches!(column_type, DataType::Map(_, _)) {
-//             internal_err!("MapAggregator can only be used on Map column types");
-//         }
-//         Ok(Self {
-//             signature: Signature::exact(vec![column_type.clone()], Volatility::Immutable),
-//         })
-//     }
-// }
-
-// impl AggregateUDFImpl for MapAggregator {
-//     fn as_any(&self) -> &dyn std::any::Any {
-//         self
-//     }
-
-//     fn name(&self) -> &str {
-//         "map_agg"
-//     }
-
-//     fn signature(&self) -> &Signature {
-//         &self.signature
-//     }
-
-//     fn return_type(&self, arg_types: &[DataType]) -> Result<DataType> {
-//         if arg_types.len() != 1 {
-//             internal_err!("MapAggregator expects a single column of Map type");
-//         }
-//         Ok(arg_types[0])
-//     }
-
-//     fn accumulator(&self, _acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
-//         Ok(Box::new(MapAccumulator::new(&self.return_type()?)))
-//     }
-
-//     fn is_nullable(&self) -> bool {
-//         true
-//     }
-
-//     fn groups_accumulator_supported(&self, _args: AccumulatorArgs) -> bool {
-//         false
-//     }
-
-//     fn create_groups_accumulator(
-//         &self,
-//         _args: AccumulatorArgs,
-//     ) -> Result<Box<dyn GroupsAccumulator>> {
-//         // Ok(Box::new(GroupMapAccumulator::new()))
-//         unimplemented!();
-//     }
-
-//     fn order_sensitivity(&self) -> AggregateOrderSensitivity {
-//         // Aggregation doesn't have an opinion on ordering
-//         AggregateOrderSensitivity::Insensitive
-//     }
-
-//     fn reverse_expr(&self) -> ReversedUDAF {
-//         ReversedUDAF::Identical
-//     }
-
-//     /// Although the aggregations of individual map values may increase or decrease if signed integers are used,
-//     /// the size of the maps will only increase as more map keys are aggregated in, hence
-//     /// this function is monotonically increasing.
-//     fn set_monotonicity(&self, _data_type: &DataType) -> SetMonotonicity {
-//         SetMonotonicity::Increasing
-//     }
-// }
-
-use std::{borrow::Borrow, hash::Hash, marker::PhantomData, ops::AddAssign};
+use std::{fmt::Debug, hash::Hash, ops::AddAssign, sync::Arc};
 
 use arrow::{
     array::{
-        downcast_array, Array, ArrayAccessor, ArrayData, ArrayIter, ArrowNativeTypeOp,
-        ArrowPrimitiveType, AsArray, GenericByteArray, PrimitiveArray, StringArray, StructArray,
+        downcast_array, make_builder, ArrayAccessor, ArrayData, ArrayIter, ArrayRef,
+        ArrowPrimitiveType, AsArray, MapBuilder, StringArray, StructArray,
     },
-    datatypes::{ByteArrayType, DataType},
+    datatypes::{DataType, Int64Type},
 };
-use datafusion::common::HashMap;
+use datafusion::{
+    common::{exec_datafusion_err, internal_err, HashMap},
+    error::Result,
+    logical_expr::{
+        function::AccumulatorArgs, utils::AggregateOrderSensitivity, Accumulator, AggregateUDFImpl,
+        GroupsAccumulator, ReversedUDAF, SetMonotonicity, Signature, Volatility,
+    },
+    scalar::ScalarValue,
+};
 
-/// Trait that unifies the iterator function for byte and primitive array types.
-trait ArrayType: From<ArrayData> {
-    const DATA_TYPE: DataType;
-    type NATIVE: ?Sized;
+/// A aggregator for map columns. See module documentation.
+#[derive(Debug)]
+pub struct MapAggregator {
+    /// Defines what column types this function can work on
+    signature: Signature,
 }
 
-/// Enable iteration for byte/binary/string types
-impl<T> ArrayType for GenericByteArray<T>
-where
-    T: ByteArrayType,
-{
-    const DATA_TYPE: DataType = T::DATA_TYPE;
-    type NATIVE = T::Native;
-}
-
-/// Enable for all primitive types
-impl<T: ArrowPrimitiveType> ArrayType for PrimitiveArray<T> {
-    const DATA_TYPE: DataType = T::DATA_TYPE;
-    type NATIVE = T::Native;
-}
-
-unsafe fn extend_lifetime<'src, 'dst, T>(r: &'src T) -> &'dst T {
-    std::mem::transmute::<&'src T, &'dst T>(r)
-}
-
-fn update_map<'a, K, V>(
-    input: &'a Option<StructArray>,
-    map: &mut HashMap<&'a str, <V as ArrowPrimitiveType>::Native>,
-) where
-    K: From<ArrayData> + IntoIterator + ArrayType,
-    V: ArrowPrimitiveType,
-    <V as ArrowPrimitiveType>::Native: AddAssign,
-{
-    if let Some(entries) = input {
-        let col1 = downcast_array::<K>(entries.column(0));
-        let extended_col1 = unsafe { extend_lifetime(&col1) };
-        let col2 = entries.column(1).as_primitive::<V>();
-        for (k, v) in extended_col1.into_iter().zip(col2) {
-            match (k, v) {
-                (Some(key), Some(value)) => {
-                    map.entry_ref(key)
-                        .and_modify(|v| *v += value)
-                        .or_insert(value);
-                }
-                _ => panic!("Nullable entries aren't supported"),
-            }
+impl MapAggregator {
+    /// Create a map aggregation function for the given column.
+    ///
+    /// # Errors
+    /// If the given column is not a map column
+    pub fn new(column_type: &DataType) -> Result<Self> {
+        if !matches!(column_type, DataType::Map(_, _)) {
+            internal_err!("MapAggregator can only be used on Map column types")
+        } else {
+            Ok(Self {
+                signature: Signature::exact(vec![column_type.clone()], Volatility::Immutable),
+            })
         }
+    }
+}
+
+impl AggregateUDFImpl for MapAggregator {
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn name(&self) -> &str {
+        "map_agg"
+    }
+
+    fn signature(&self) -> &Signature {
+        &self.signature
+    }
+
+    fn return_type(&self, arg_types: &[DataType]) -> Result<DataType> {
+        if arg_types.len() != 1 {
+            internal_err!("MapAggregator expects a single column of Map type")
+        } else {
+            Ok(arg_types[0].clone())
+        }
+    }
+
+    fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
+        Ok(Box::new(MapAccumulator::new(acc_args.return_type)))
+    }
+
+    fn is_nullable(&self) -> bool {
+        true
+    }
+
+    fn groups_accumulator_supported(&self, _args: AccumulatorArgs) -> bool {
+        false
+    }
+
+    fn create_groups_accumulator(
+        &self,
+        _args: AccumulatorArgs,
+    ) -> Result<Box<dyn GroupsAccumulator>> {
+        // Ok(Box::new(GroupMapAccumulator::new()))
+        unimplemented!();
+    }
+
+    fn order_sensitivity(&self) -> AggregateOrderSensitivity {
+        // Aggregation doesn't have an opinion on ordering
+        AggregateOrderSensitivity::Insensitive
+    }
+
+    fn reverse_expr(&self) -> ReversedUDAF {
+        ReversedUDAF::Identical
+    }
+
+    /// Although the aggregations of individual map values may increase or decrease if signed integers are used,
+    /// the size of the maps will only increase as more map keys are aggregated in, hence
+    /// this function is monotonically increasing.
+    fn set_monotonicity(&self, _data_type: &DataType) -> SetMonotonicity {
+        SetMonotonicity::Increasing
     }
 }
 
@@ -216,7 +156,7 @@ fn update_string_map<'a, V>(
     }
 }
 
-fn update_prim_map<'a, K, V>(
+fn update_primitive_map<'a, K, V>(
     input: &'a Option<StructArray>,
     map: &mut HashMap<<K as ArrowPrimitiveType>::Native, <V as ArrowPrimitiveType>::Native>,
 ) where
