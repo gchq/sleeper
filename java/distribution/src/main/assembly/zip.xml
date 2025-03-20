@@ -88,7 +88,7 @@
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../bulk-export/bulk-export-task-execution/docker</directory>
-            <outputDirectory>scripts/docker/bulk-export-task-job-execution</outputDirectory>
+            <outputDirectory>scripts/docker/bulk-export-task-execution</outputDirectory>
             <excludes>
                 <exclude>*.jar</exclude>
             </excludes>
@@ -130,6 +130,13 @@
             </source>
             <outputDirectory>scripts/docker/compaction-job-execution/</outputDirectory>
             <destName>compaction-job-execution.jar</destName>
+        </file>
+        <file>
+            <source>
+                ${project.basedir}/../bulk-export/bulk-export-task-execution/target/bulk-export-task-execution-${project.version}-utility.jar
+            </source>
+            <outputDirectory>scripts/docker/bulk-export-task-execution</outputDirectory>
+            <destName>bulk-export-task-execution.jar</destName>
         </file>
         <file>
             <source>
