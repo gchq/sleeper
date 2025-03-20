@@ -62,7 +62,6 @@ import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 import static sleeper.core.util.ThreadSleepTestHelper.refuseWaits;
-import static sleeper.garbagecollector.GarbageCollector.deleteFilesAndSketches;
 
 public class GarbageCollectorS3IT extends LocalStackTestBase {
 
@@ -228,12 +227,11 @@ public class GarbageCollectorS3IT extends LocalStackTestBase {
     }
 
     private void collectGarbageAtTime(Instant time) throws Exception {
-        createGarbageCollector(deleteFilesAndSketches(s3Client))
-                .runAtTime(time, List.of(tableProperties));
+        collectGarbageAtTimeWithS3BatchSize(time, 1000);
     }
 
     private void collectGarbageAtTimeWithS3BatchSize(Instant time, int s3BatchSize) throws Exception {
-        createGarbageCollector(deleteFilesAndSketches(s3Client, s3BatchSize, refuseWaits()))
+        createGarbageCollector(new S3DeleteFiles(s3Client, s3BatchSize, refuseWaits()))
                 .runAtTime(time, List.of(tableProperties));
     }
 

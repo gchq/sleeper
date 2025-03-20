@@ -15,12 +15,6 @@
  */
 package sleeper.garbagecollector;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
-import com.amazonaws.services.s3.model.DeleteObjectsResult;
-import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +27,6 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
-import sleeper.core.util.ThreadSleep;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 
 import java.time.Instant;
@@ -150,49 +143,5 @@ public class GarbageCollector {
     @FunctionalInterface
     public interface DeleteFiles {
         void deleteFiles(List<String> filenames, TableFilesDeleted deleted);
-    }
-
-    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client) {
-        return deleteFilesAndSketches(s3Client, 1000, Thread::sleep);
-    }
-
-    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client, int s3BatchSize, ThreadSleep sleep) {
-        return (filenames, deleted) -> {
-            FilesToDelete files = FilesToDelete.from(filenames);
-            for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
-                filesInBucket.objectKeysInBatchesOf(s3BatchSize).forEach(batch -> {
-                    DeleteObjectsRequest deleteRequest = createDeleteObjectsRequest(filesInBucket, batch);
-                    boolean retry;
-                    do {
-                        retry = false;
-                        try {
-                            DeleteObjectsResult result = s3Client.deleteObjects(deleteRequest);
-                            for (DeletedObject object : result.getDeletedObjects()) {
-                                deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
-                            }
-                        } catch (Exception e) {
-                            if (isSlowDownException(e)) {
-                                retry = true;
-                                sleep.waitForMillisWrappingInterrupt(1000);
-                            } else {
-                                LOGGER.error("Failed to delete batch: {}", batch, e);
-                                deleted.failed(filesInBucket.getAllFilenamesInBatch(batch), e);
-                            }
-                        }
-                    } while (retry);
-                });
-
-            }
-        };
-    }
-
-    private static boolean isSlowDownException(Exception e) {
-        return e instanceof AmazonS3Exception s3e
-                && "SlowDown".equals(s3e.getErrorCode());
-    }
-
-    private static DeleteObjectsRequest createDeleteObjectsRequest(FilesToDeleteInBucket filesInBucket, List<String> batch) {
-        return new DeleteObjectsRequest(filesInBucket.bucketName())
-                .withKeys(batch.stream().map(objectKey -> new KeyVersion(objectKey)).toList());
     }
 }

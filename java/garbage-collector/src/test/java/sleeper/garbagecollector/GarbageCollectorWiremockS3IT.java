@@ -49,7 +49,6 @@ import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELA
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.core.util.ThreadSleepTestHelper.recordWaits;
-import static sleeper.garbagecollector.GarbageCollector.deleteFilesAndSketches;
 
 @WireMockTest
 class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
@@ -138,7 +137,7 @@ class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
     }
 
     protected int collectGarbageAtTime(Instant time) throws Exception {
-        return collectorWithDeleteAction(deleteFilesAndSketches(s3Client, 10, recordWaits(threadSleeps)))
+        return collectorWithDeleteAction(new S3DeleteFiles(s3Client, 10, recordWaits(threadSleeps)))
                 .runAtTime(time, tables);
     }
 }
