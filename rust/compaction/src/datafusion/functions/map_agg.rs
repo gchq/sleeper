@@ -98,12 +98,9 @@ impl AggregateUDFImpl for MapAggregator {
     }
 
     fn accumulator(&self, acc_args: AccumulatorArgs) -> Result<Box<dyn Accumulator>> {
-        Ok(Box::new(MapAccumulator::<
-            String,
-            StringBuilder,
-            i64,
-            Int64Builder,
-        >::new(acc_args.return_type)))
+        Ok(Box::new(
+            MapAccumulator::<StringBuilder, Int64Builder>::new(acc_args.return_type),
+        ))
     }
 
     fn is_nullable(&self) -> bool {
@@ -190,25 +187,21 @@ fn update_primitive_map<'a, K, V>(
 
 /// Single value accumulator function for maps.
 #[derive(Debug)]
-struct MapAccumulator<K, KBuilder, V, VBuilder>
+struct MapAccumulator<KBuilder, VBuilder>
 where
-    K: Debug + Sync + Send,
-    V: Debug + Sync + Send,
-    KBuilder: ArrayBuilder + Debug,
-    VBuilder: ArrayBuilder + Debug,
+    KBuilder: ArrayBuilder + Debug + AppendValue,
+    VBuilder: ArrayBuilder + Debug + AppendValue,
 {
     map_type: DataType,
-    values: HashMap<K, V>,
+    values: HashMap<<KBuilder as AppendValue>::T, <VBuilder as AppendValue>::T>,
     _p: PhantomData<KBuilder>,
     _p2: PhantomData<VBuilder>,
 }
 
-impl<K, KBuilder, V, VBuilder> MapAccumulator<K, KBuilder, V, VBuilder>
+impl<KBuilder, VBuilder> MapAccumulator<KBuilder, VBuilder>
 where
-    K: Debug + Sync + Send,
-    V: Debug + Sync + Send,
-    KBuilder: ArrayBuilder + Debug,
-    VBuilder: ArrayBuilder + Debug,
+    KBuilder: ArrayBuilder + Debug + AppendValue,
+    VBuilder: ArrayBuilder + Debug + AppendValue,
 {
     // Creates a new accumulator.
     //
@@ -224,36 +217,35 @@ where
     }
 }
 
-trait AppendValue<T>
-where
-    T: ?Sized,
-{
-    fn append_value<'a>(&mut self, v: &'a T);
+trait AppendValue {
+    type T: Debug + Sync + Send + Sized;
+    fn append_value<'a>(&mut self, v: &'a Self::T);
 }
 
-impl<T: ArrowPrimitiveType> AppendValue<T::Native> for PrimitiveBuilder<T> {
-    fn append_value<'a>(&mut self, v: &'a T::Native) {
+impl<T: ArrowPrimitiveType> AppendValue for PrimitiveBuilder<T> {
+    type T = T::Native;
+    fn append_value<'a>(&mut self, v: &'a Self::T) {
         self.append_value(*v);
     }
 }
 
-impl<T> AppendValue<<<T as ByteArrayType>::Native as ToOwned>::Owned> for GenericByteBuilder<T>
+impl<T> AppendValue for GenericByteBuilder<T>
 where
     T: ByteArrayType,
     <T as ByteArrayType>::Native: ToOwned,
-    <<T as ByteArrayType>::Native as ToOwned>::Owned: AsRef<<T as ByteArrayType>::Native>,
+    <<T as ByteArrayType>::Native as ToOwned>::Owned:
+        AsRef<<T as ByteArrayType>::Native> + Debug + Send + Sync + Sized,
 {
-    fn append_value<'a>(&mut self, v: &'a <<T as ByteArrayType>::Native as ToOwned>::Owned) {
+    type T = <<T as ByteArrayType>::Native as ToOwned>::Owned;
+    fn append_value<'a>(&mut self, v: &'a Self::T) {
         self.append_value(v);
     }
 }
 
-impl<K, KBuilder, V, VBuilder> Accumulator for MapAccumulator<K, KBuilder, V, VBuilder>
+impl<KBuilder, VBuilder> Accumulator for MapAccumulator<KBuilder, VBuilder>
 where
-    K: Debug + Sync + Send,
-    V: Debug + Sync + Send,
-    KBuilder: ArrayBuilder + Debug + AppendValue<K>,
-    VBuilder: ArrayBuilder + Debug + AppendValue<V>,
+    KBuilder: ArrayBuilder + Debug + AppendValue,
+    VBuilder: ArrayBuilder + Debug + AppendValue,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
         if values.len() != 1 {
