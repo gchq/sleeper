@@ -138,7 +138,7 @@ impl AggregateUDFImpl for MapAggregator {
 
 fn update_string_map<'a, V>(
     input: &'a Option<StructArray>,
-    map: &mut HashMap<&'a str, <V as ArrowPrimitiveType>::Native>,
+    map: &mut HashMap<String, <V as ArrowPrimitiveType>::Native>,
 ) where
     V: ArrowPrimitiveType,
     <V as ArrowPrimitiveType>::Native: AddAssign,
@@ -198,7 +198,11 @@ where
     _p2: PhantomData<VBuilder>,
 }
 
-impl<KBuilder, VBuilder> MapAccumulator<KBuilder, VBuilder> {
+impl<KBuilder, VBuilder> MapAccumulator<KBuilder, VBuilder>
+where
+    KBuilder: ArrayBuilder + Debug + AppendValue,
+    VBuilder: ArrayBuilder + Debug + AppendValue,
+{
     // Creates a new accumulator.
     //
     // The type of the map must be specified so that the correct sort
@@ -250,9 +254,10 @@ where
 
         let input = values[0].as_map();
         // For each map we get, feed it into our internal aggregated map
-        // for map in input.iter() {
-        //     update_map(&map, &mut self.values);
-        // }
+        for map in input.iter() {
+            update_string_map(&map, &mut self.values);
+            //     update_map(&map, &mut self.values);
+        }
         Ok(())
     }
 
