@@ -61,6 +61,7 @@ public class S3DeleteFiles implements DeleteFiles {
         do {
             retry = false;
             try {
+                LOGGER.debug("Sending request to delete {} objects", objectKeys.size());
                 DeleteObjectsResult result = s3Client.deleteObjects(deleteRequest);
                 for (DeletedObject object : result.getDeletedObjects()) {
                     deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
