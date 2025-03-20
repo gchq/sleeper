@@ -237,11 +237,13 @@ impl<T: ArrowPrimitiveType> AppendValue<T::Native> for PrimitiveBuilder<T> {
     }
 }
 
-impl<T: ByteArrayType> AppendValue<String> for GenericByteBuilder<T>
+impl<T> AppendValue<<<T as ByteArrayType>::Native as ToOwned>::Owned> for GenericByteBuilder<T>
 where
-    String: AsRef<<T as ByteArrayType>::Native>,
+    T: ByteArrayType,
+    <T as ByteArrayType>::Native: ToOwned,
+    <<T as ByteArrayType>::Native as ToOwned>::Owned: AsRef<<T as ByteArrayType>::Native>,
 {
-    fn append_value<'a>(&mut self, v: &'a String) {
+    fn append_value<'a>(&mut self, v: &'a <<T as ByteArrayType>::Native as ToOwned>::Owned) {
         self.append_value(v);
     }
 }
