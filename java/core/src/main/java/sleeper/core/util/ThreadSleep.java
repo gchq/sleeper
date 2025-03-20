@@ -27,4 +27,13 @@ public interface ThreadSleep {
      * @throws InterruptedException if the thread is interrupted while waiting
      */
     void waitForMillis(long milliseconds) throws InterruptedException;
+
+    default void waitForMillisWrappingInterrupt(long milliseconds) {
+        try {
+            waitForMillis(milliseconds);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
 }

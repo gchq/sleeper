@@ -33,6 +33,7 @@ import sleeper.core.statestore.commit.StateStoreCommitRequestSender;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
 import sleeper.core.table.TableStatus;
 import sleeper.core.util.LoggedDuration;
+import sleeper.core.util.ThreadSleep;
 import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
 
 import java.time.Instant;
@@ -152,10 +153,10 @@ public class GarbageCollector {
     }
 
     public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client) {
-        return deleteFilesAndSketches(s3Client, 1000);
+        return deleteFilesAndSketches(s3Client, 1000, Thread::sleep);
     }
 
-    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client, int s3BatchSize) {
+    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client, int s3BatchSize, ThreadSleep sleep) {
         return (filenames, deleted) -> {
             FilesToDelete files = FilesToDelete.from(filenames);
             for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
@@ -170,8 +171,10 @@ public class GarbageCollector {
                                 deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
                             }
                         } catch (Exception e) {
-                            retry = checkIfSlowDownException(e);
-                            if (!retry) {
+                            if (isSlowDownException(e)) {
+                                retry = true;
+                                sleep.waitForMillisWrappingInterrupt(1000);
+                            } else {
                                 LOGGER.error("Failed to delete batch: {}", batch, e);
                                 deleted.failed(filesInBucket.getAllFilenamesInBatch(batch), e);
                             }
@@ -183,7 +186,7 @@ public class GarbageCollector {
         };
     }
 
-    private static boolean checkIfSlowDownException(Exception e) {
+    private static boolean isSlowDownException(Exception e) {
         return e instanceof AmazonS3Exception s3e
                 && "SlowDown".equals(s3e.getErrorCode());
     }
