@@ -16,6 +16,9 @@
 
 package sleeper.systemtest.dsl.compaction;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sleeper.compaction.core.job.dispatch.CompactionJobDispatchRequest;
 import sleeper.core.statestore.FileReference;
 import sleeper.core.util.PollWithRetries;
@@ -37,6 +40,7 @@ import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.table.TableProperty.TABLE_ONLINE;
 
 public class SystemTestCompaction {
+    public static final Logger LOGGER = LoggerFactory.getLogger(SystemTestCompaction.class);
 
     private final SystemTestInstanceContext instance;
     private final IngestSourceFilesContext sourceFiles;
@@ -161,6 +165,7 @@ public class SystemTestCompaction {
         pollDriver.pollWithIntervalAndTimeout(Duration.ofSeconds(1), Duration.ofSeconds(30))
                 .pollUntil("batches are found on the dead letter queue", () -> {
                     List<CompactionJobDispatchRequest> batches = baseDriver.drainPendingDeadLetterQueueForWholeInstance();
+                    LOGGER.info("Found compaction batches on dead letter queue: {}", batches);
                     batches.stream().map(CompactionJobDispatchRequest::getBatchKey).forEach(remainingBatchKeys::remove);
                     return remainingBatchKeys.isEmpty();
                 });
