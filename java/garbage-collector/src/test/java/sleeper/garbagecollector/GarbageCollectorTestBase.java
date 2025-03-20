@@ -15,8 +15,6 @@
  */
 package sleeper.garbagecollector;
 
-import org.junit.jupiter.api.BeforeEach;
-
 import sleeper.core.partition.PartitionTree;
 import sleeper.core.partition.PartitionsBuilder;
 import sleeper.core.properties.instance.InstanceProperties;
@@ -42,8 +40,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.properties.table.TableProperty.TABLE_ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
@@ -63,19 +61,18 @@ public class GarbageCollectorTestBase {
     protected final List<StateStoreCommitRequest> sentCommits = new ArrayList<>();
     protected final Set<String> filesInBucket = new HashSet<>();
 
-    @BeforeEach
-    void setUp() throws Exception {
-        instanceProperties.set(FILE_SYSTEM, "s3a://");
-    }
-
     protected static TableFailures fileFailure(TableProperties table, String filename, Exception failure) {
         return new TableFailures(table.getStatus(), null,
                 List.of(new FileFailure(List.of(filename), failure)),
                 List.of());
     }
 
+    protected FileReferenceFactory fileReferenceFactory() {
+        return FileReferenceFactory.from(partitions);
+    }
+
     protected FileReference createActiveFile(String filename, StateStore stateStore) throws Exception {
-        FileReference fileReference = FileReferenceFactory.from(partitions).rootFile(filename, 100L);
+        FileReference fileReference = fileReferenceFactory().rootFile(filename, 100L);
         update(stateStore).addFile(fileReference);
         filesInBucket.add(filename);
         return fileReference;
@@ -88,15 +85,24 @@ public class GarbageCollectorTestBase {
         update(stateStore).assignJobIds(List.of(
                 assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
         update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "job1", List.of(oldFile.getFilename()), FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100))));
+                "job1", List.of(oldFile.getFilename()), fileReferenceFactory().rootFile(newFilePath.toString(), 100))));
     }
 
     protected FileReference activeReference(String filePath) {
-        return FileReferenceFactory.from(partitions).rootFile(filePath, 100);
+        return fileReferenceFactory().rootFile(filePath, 100);
     }
 
     protected TableProperties createTable() {
+        return createTable(createTestTableProperties(instanceProperties, TEST_SCHEMA));
+    }
+
+    protected TableProperties createTableWithId(String tableId) {
         TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
+        tableProperties.set(TABLE_ID, tableId);
+        return createTable(tableProperties);
+    }
+
+    protected TableProperties createTable(TableProperties tableProperties) {
         tables.add(tableProperties);
         update(stateStoreProvider.getStateStore(tableProperties)).initialise(partitions.getAllPartitions());
         return tableProperties;

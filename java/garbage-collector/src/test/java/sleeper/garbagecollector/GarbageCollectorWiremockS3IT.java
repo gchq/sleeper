@@ -20,29 +20,71 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import sleeper.core.properties.table.TableProperties;
+import sleeper.core.statestore.FileReferenceFactory;
+import sleeper.core.statestore.StateStore;
 import sleeper.localstack.test.WiremockAwsV1ClientHelper;
 
+import java.time.Duration;
 import java.time.Instant;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+import static org.assertj.core.api.Assertions.assertThat;
+import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.DATA_BUCKET;
+import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
+import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
 import static sleeper.garbagecollector.GarbageCollector.deleteFilesAndSketches;
 
 @WireMockTest
 public class GarbageCollectorWiremockS3IT extends GarbageCollectorTestBase {
 
     private AmazonS3 s3Client;
+    private final TableProperties table = createTableWithId("test-table");
+    private final StateStore stateStore = stateStore(table);
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        s3Client = WiremockAwsV1ClientHelper.buildAwsV1Client(runtimeInfo, AmazonS3ClientBuilder.standard());
+        s3Client = WiremockAwsV1ClientHelper.buildAwsV1Client(runtimeInfo,
+                AmazonS3ClientBuilder.standard().withPathStyleAccessEnabled(true));
+        instanceProperties.set(DATA_BUCKET, "test-bucket");
     }
 
     @Test
-    @Disabled
-    void shouldTriggerRateLimitExceptionAndReduceRate() {
+    void shouldTriggerRateLimitExceptionAndReduceRate() throws Exception {
+        // Given
+        Instant currentTime = Instant.parse("2023-06-28T13:46:00Z");
+        Instant oldEnoughTime = currentTime.minus(Duration.ofMinutes(11));
+        stateStore.fixFileUpdateTime(oldEnoughTime);
+        table.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, 10);
+        createFileWithNoReferencesByCompaction(stateStore, "old-file.parquet", "new-file.parquet");
+        stubFor(post("/test-bucket/?delete")
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody("<DeleteResult><Deleted><Key>test-table/data/partition_root/old-file.parquet.parquet</Key>" +
+                                "<Key>test-table/data/partition_root/old-file.sketches.sketches</Key></Deleted></DeleteResult>")));
 
+        // When
+        collectGarbageAtTime(currentTime);
+
+        // Then
+        verify(1, postRequestedFor(urlEqualTo("/test-bucket/?delete"))
+                .withRequestBody(equalTo(
+                        "<Delete><Object><Key>test-table/data/partition_root/old-file.parquet.parquet</Key></Object>" +
+                                "<Object><Key>test-table/data/partition_root/old-file.sketches.sketches</Key></Object></Delete>")));
+        assertThat(stateStore.getAllFilesWithMaxUnreferenced(10))
+                .isEqualTo(activeFilesReport(oldEnoughTime, activeReference("new-file.parquet")));
+    }
+
+    protected FileReferenceFactory fileReferenceFactory() {
+        return FileReferenceFactory.from(instanceProperties, table, partitions);
     }
 
     protected int collectGarbageAtTime(Instant time) throws Exception {
