@@ -48,8 +48,8 @@ public class TableFilesDeleted {
         filesDeletedInBatch.add(filename);
     }
 
-    public void failed(String filename, Exception failure) {
-        fileFailures.add(new FileFailure(filename, failure));
+    public void failed(List<String> filenames, Exception failure) {
+        fileFailures.add(new FileFailure(filenames, failure));
     }
 
     void failedStateStoreUpdate(List<String> filenames, Exception failure) {
