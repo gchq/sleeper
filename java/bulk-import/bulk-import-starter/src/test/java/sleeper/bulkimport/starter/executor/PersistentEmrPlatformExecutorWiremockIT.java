@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.retries.api.BackoffStrategy;
 import software.amazon.awssdk.services.emr.EmrClient;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
@@ -142,7 +143,14 @@ public class PersistentEmrPlatformExecutorWiremockIT {
     }
 
     private PersistentEmrPlatformExecutor executor(WireMockRuntimeInfo runtimeInfo) {
-        return new PersistentEmrPlatformExecutor(wiremockAwsV2Client(runtimeInfo, EmrClient.builder()), instanceProperties);
+        return new PersistentEmrPlatformExecutor(
+                wiremockAwsV2Client(runtimeInfo, EmrClient.builder()
+                        .overrideConfiguration(config -> config
+                                .retryStrategy(retry -> retry
+                                        .maxAttempts(2)
+                                        .backoffStrategy(BackoffStrategy.retryImmediately())
+                                        .throttlingBackoffStrategy(BackoffStrategy.retryImmediately())))),
+                instanceProperties);
     }
 
 }
