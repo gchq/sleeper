@@ -1,0 +1,21 @@
+{
+  "Clusters": [
+    {
+      "ClusterArn": "test-cluster-arn",
+      "Id": "test-cluster-id",
+      "Name": "test-cluster",
+      "NormalizedInstanceHours": 123,
+      "Status": {
+        "State": "WAITING",
+        "StateChangeReason": {
+          "Code": "USER_REQUEST",
+          "Message": "Cluster started"
+        },
+        "Timeline": {
+          "CreationDateTime": 1742549879,
+          "ReadyDateTime": 1742550179
+        }
+      }
+    }
+  ]
+}

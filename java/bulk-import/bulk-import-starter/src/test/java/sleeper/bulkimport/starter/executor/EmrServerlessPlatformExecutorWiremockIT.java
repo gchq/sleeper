@@ -21,17 +21,11 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.emrserverless.EmrServerlessClient;
 
 import sleeper.bulkimport.core.job.BulkImportJob;
 import sleeper.core.properties.instance.InstanceProperties;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -55,12 +49,10 @@ import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.BULK_I
 import static sleeper.core.properties.instance.CdkDefinedInstanceProperty.CONFIG_BUCKET;
 import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
+import static sleeper.localstack.test.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 public class EmrServerlessPlatformExecutorWiremockIT {
-
-    public static final String WIREMOCK_ACCESS_KEY = "wiremock-access-key";
-    public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
 
     private final InstanceProperties instanceProperties = createTestInstanceProperties();
 
@@ -129,26 +121,6 @@ public class EmrServerlessPlatformExecutorWiremockIT {
     }
 
     private EmrServerlessPlatformExecutor executor(WireMockRuntimeInfo runtimeInfo) {
-        return new EmrServerlessPlatformExecutor(wiremockEmrClient(runtimeInfo), instanceProperties);
-    }
-
-    private static EmrServerlessClient wiremockEmrClient(WireMockRuntimeInfo runtimeInfo) {
-        return EmrServerlessClient.builder()
-                .endpointOverride(wiremockEndpointOverride(runtimeInfo))
-                .credentialsProvider(wiremockCredentialsProvider())
-                .region(Region.AWS_GLOBAL)
-                .build();
-    }
-
-    private static URI wiremockEndpointOverride(WireMockRuntimeInfo runtimeInfo) {
-        try {
-            return new URI(runtimeInfo.getHttpBaseUrl());
-        } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    private static AwsCredentialsProvider wiremockCredentialsProvider() {
-        return StaticCredentialsProvider.create(AwsBasicCredentials.create(WIREMOCK_ACCESS_KEY, WIREMOCK_SECRET_KEY));
+        return new EmrServerlessPlatformExecutor(wiremockAwsV2Client(runtimeInfo, EmrServerlessClient.builder()), instanceProperties);
     }
 }
