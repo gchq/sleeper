@@ -167,16 +167,19 @@ where
     }
 }
 
-fn update_string_map<'a, V>(
+fn update_string_map<'a, VBuilder>(
     input: &'a Option<StructArray>,
-    map: &mut HashMap<String, <V as ArrowPrimitiveType>::Native>,
+    map: &mut HashMap<String, <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native>,
 ) where
-    V: ArrowPrimitiveType,
-    <V as ArrowPrimitiveType>::Native: AddAssign,
+    VBuilder: ArrayBuilder + Debug + AppendValue,
+    <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
+    <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
 {
     if let Some(entries) = input {
         let col1 = entries.column(0).as_string::<i32>();
-        let col2 = entries.column(1).as_primitive::<V>();
+        let col2 = entries
+            .column(1)
+            .as_primitive::<<VBuilder as AppendValue>::ArrowType>();
         for (k, v) in col1.into_iter().zip(col2) {
             match (k, v) {
                 (Some(key), Some(value)) => {
@@ -223,6 +226,7 @@ where
     KBuilder: ArrayBuilder + Debug + AppendValue,
     VBuilder: ArrayBuilder + Debug + AppendValue,
     <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
+    <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
 {
     map_type: DataType,
     values: HashMap<<KBuilder as AppendValue>::Native, <VBuilder as AppendValue>::Native>,
@@ -235,6 +239,7 @@ where
     KBuilder: ArrayBuilder + Debug + AppendValue,
     VBuilder: ArrayBuilder + Debug + AppendValue,
     <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
+    <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
 {
     // Creates a new accumulator.
     //
@@ -259,6 +264,7 @@ where
     KBuilder: ArrayBuilder + Debug + AppendValue,
     VBuilder: ArrayBuilder + Debug + AppendValue,
     <VBuilder as AppendValue>::ArrowType: ArrowPrimitiveType,
+    <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native: AddAssign,
 {
     fn update_batch(&mut self, values: &[ArrayRef]) -> Result<()> {
         if values.len() != 1 {
@@ -277,7 +283,7 @@ where
                             <<VBuilder as AppendValue>::ArrowType as ArrowPrimitiveType>::Native,
                         >>()
                         .expect("Couldn't downcast string map correctly");
-                    update_string_map::<<VBuilder as AppendValue>::ArrowType>(&map, mappy);
+                    update_string_map::<VBuilder>(&map, mappy);
                 }
                 _ => {
                     unimplemented!()
