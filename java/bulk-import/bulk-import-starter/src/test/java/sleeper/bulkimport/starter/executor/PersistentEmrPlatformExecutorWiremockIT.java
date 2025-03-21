@@ -17,7 +17,7 @@ package sleeper.bulkimport.starter.executor;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -64,6 +64,7 @@ public class PersistentEmrPlatformExecutorWiremockIT {
 
     @Test
     void shouldRunAJob(WireMockRuntimeInfo runtimeInfo) {
+        // Given
         BulkImportJob job = BulkImportJob.builder()
                 .id("test-job")
                 .files(List.of("file.parquet"))
@@ -81,17 +82,62 @@ public class PersistentEmrPlatformExecutorWiremockIT {
                 .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))
                 .willReturn(aResponse().withStatus(200)));
 
+        // When
         executor(runtimeInfo).runJobOnPlatform(arguments);
 
+        // Then
         assertThat(findAll(postRequestedFor(urlEqualTo("/"))
                 .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))))
-                .singleElement().extracting(LoggedRequest::getBodyAsString)
-                .satisfies(body -> assertThatJson(body)
+                .singleElement().satisfies(request -> assertThatJson(request.getBodyAsString())
                         .isEqualTo("{\"ClusterStates\":[\"BOOTSTRAPPING\",\"RUNNING\",\"STARTING\",\"WAITING\"]}"));
         assertThat(findAll(postRequestedFor(urlEqualTo("/"))
                 .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))))
-                .singleElement().extracting(LoggedRequest::getBodyAsString)
-                .satisfies(body -> assertThatJson(body)
+                .singleElement().satisfies(request -> assertThatJson(request.getBodyAsString())
+                        .isEqualTo(exampleString("example/persistent-emr/addjobflow-request.json")));
+    }
+
+    @Test
+    void shouldRetryWhenRateLimitedOnListClusters(WireMockRuntimeInfo runtimeInfo) {
+        // Given
+        BulkImportJob job = BulkImportJob.builder()
+                .id("test-job")
+                .files(List.of("file.parquet"))
+                .tableName("table-name")
+                .build();
+        BulkImportArguments arguments = BulkImportArguments.builder()
+                .instanceProperties(instanceProperties)
+                .bulkImportJob(job).jobRunId("test-run")
+                .build();
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))
+                .inScenario("retry")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willSetStateTo("retry")
+                .willReturn(aResponse().withStatus(400)
+                        .withHeader("X-Amzn-ErrorType", "ThrottlingException")
+                        .withHeader("X-Amzn-Error-Message", "Rate limit exceeded")));
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))
+                .inScenario("retry")
+                .whenScenarioStateIs("retry")
+                .willReturn(aResponse().withStatus(200)
+                        .withBody(exampleString("example/persistent-emr/listclusters-response.json"))));
+        stubFor(post("/")
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))
+                .willReturn(aResponse().withStatus(200)));
+
+        // When
+        executor(runtimeInfo).runJobOnPlatform(arguments);
+
+        // Then
+        assertThat(findAll(postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.ListClusters"))))
+                .hasSize(2)
+                .allSatisfy(request -> assertThatJson(request.getBodyAsString())
+                        .isEqualTo("{\"ClusterStates\":[\"BOOTSTRAPPING\",\"RUNNING\",\"STARTING\",\"WAITING\"]}"));
+        assertThat(findAll(postRequestedFor(urlEqualTo("/"))
+                .withHeader("X-Amz-Target", equalTo("ElasticMapReduce.AddJobFlowSteps"))))
+                .singleElement().satisfies(request -> assertThatJson(request.getBodyAsString())
                         .isEqualTo(exampleString("example/persistent-emr/addjobflow-request.json")));
     }
 
