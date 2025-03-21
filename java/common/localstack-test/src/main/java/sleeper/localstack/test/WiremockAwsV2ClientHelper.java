@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package sleeper.task.common;
+package sleeper.localstack.test;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
