@@ -22,17 +22,28 @@ import software.amazon.awssdk.retries.api.RetryStrategy;
 
 import java.time.Duration;
 
+/**
+ * A strategy for retrying attempts to start a bulk import job.
+ */
 public class BulkImportStarterRetryStrategy {
 
     private BulkImportStarterRetryStrategy() {
     }
 
-    public static <B extends SdkClientBuilder<B, C>, C> C applyAndBuildAwsClient(B builder) {
+    /**
+     * Overrides the retry strategy and builds an AWS client.
+     *
+     * @param  <B>     the type of the AWS client builder
+     * @param  <C>     the type of the AWS client
+     * @param  builder the AWS client builder
+     * @return         the AWS client
+     */
+    public static <B extends SdkClientBuilder<B, C>, C> C overrideAndBuildAwsClient(B builder) {
         builder.overrideConfiguration(config -> config.retryStrategy(create()));
         return builder.build();
     }
 
-    public static RetryStrategy create() {
+    private static RetryStrategy create() {
         // Start with default AWS client retry strategy
         return LegacyRetryStrategy.builder()
                 // Setting this close to the sustained rate of EMR API of 0.5 requests/second
