@@ -61,6 +61,17 @@ public class ThreadSleepTestHelper {
     }
 
     /**
+     * Creates an implementation of a waiter that throws an exception if it waits.
+     *
+     * @return a {@link ThreadSleep} that throws an exception
+     */
+    public static ThreadSleep refuseWaits() {
+        return millis -> {
+            throw new IllegalStateException("Unexpected wait for " + millis + "ms");
+        };
+    }
+
+    /**
      * Extends an implementation of a waiter to also perform another action.
      *
      * @param  waiter the waiter to extend
