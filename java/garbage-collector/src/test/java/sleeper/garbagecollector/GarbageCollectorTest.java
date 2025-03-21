@@ -15,70 +15,32 @@
  */
 package sleeper.garbagecollector;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import sleeper.core.partition.PartitionTree;
-import sleeper.core.partition.PartitionsBuilder;
-import sleeper.core.properties.instance.InstanceProperties;
 import sleeper.core.properties.table.TableProperties;
-import sleeper.core.schema.Field;
-import sleeper.core.schema.Schema;
-import sleeper.core.schema.type.IntType;
-import sleeper.core.schema.type.StringType;
-import sleeper.core.statestore.FileReference;
-import sleeper.core.statestore.FileReferenceFactory;
 import sleeper.core.statestore.StateStore;
-import sleeper.core.statestore.StateStoreProvider;
 import sleeper.core.statestore.commit.StateStoreCommitRequest;
-import sleeper.core.statestore.testutils.InMemoryTransactionLogStateStore;
-import sleeper.core.statestore.testutils.InMemoryTransactionLogsPerTable;
 import sleeper.core.statestore.transactionlog.transaction.impl.DeleteFilesTransaction;
-import sleeper.garbagecollector.FailedGarbageCollectionException.FileFailure;
-import sleeper.garbagecollector.FailedGarbageCollectionException.TableFailures;
-import sleeper.garbagecollector.GarbageCollector.DeleteFiles;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static sleeper.core.properties.instance.CommonProperty.FILE_SYSTEM;
 import static sleeper.core.properties.instance.GarbageCollectionProperty.GARBAGE_COLLECTOR_BATCH_SIZE;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_ASYNC_COMMIT;
 import static sleeper.core.properties.table.TableProperty.GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION;
 import static sleeper.core.properties.table.TableProperty.TABLE_ID;
-import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
-import static sleeper.core.properties.testutils.TablePropertiesTestHelper.createTestTableProperties;
 import static sleeper.core.statestore.AllReferencesToAFileTestHelper.fileWithNoReferences;
-import static sleeper.core.statestore.AssignJobIdRequest.assignJobOnPartitionToFiles;
 import static sleeper.core.statestore.FilesReportTestHelper.activeAndReadyForGCFilesReport;
 import static sleeper.core.statestore.FilesReportTestHelper.activeFilesReport;
-import static sleeper.core.statestore.ReplaceFileReferencesRequest.replaceJobFileReferences;
 import static sleeper.core.statestore.testutils.StateStoreUpdatesWrapper.update;
 
-public class GarbageCollectorTest {
-    private static final Schema TEST_SCHEMA = getSchema();
-
-    private final PartitionTree partitions = new PartitionsBuilder(TEST_SCHEMA).singlePartition("root").buildTree();
-    private final List<TableProperties> tables = new ArrayList<>();
-    private final InstanceProperties instanceProperties = createTestInstanceProperties();
-    private final StateStoreProvider stateStoreProvider = InMemoryTransactionLogStateStore
-            .createProvider(instanceProperties, new InMemoryTransactionLogsPerTable());
-
-    private final List<StateStoreCommitRequest> sentCommits = new ArrayList<>();
-    private final Set<String> filesInBucket = new HashSet<>();
-
-    @BeforeEach
-    void setUp() throws Exception {
-        instanceProperties.set(FILE_SYSTEM, "s3a://");
-    }
+public class GarbageCollectorTest extends GarbageCollectorTestBase {
 
     @Nested
     @DisplayName("Collecting from single table")
@@ -375,92 +337,4 @@ public class GarbageCollectorTest {
         }
     }
 
-    private static TableFailures fileFailure(TableProperties table, String filename, Exception failure) {
-        return new TableFailures(table.getStatus(), null,
-                List.of(new FileFailure(List.of(filename), failure)),
-                List.of());
-    }
-
-    private FileReference createActiveFile(String filename, StateStore stateStore) throws Exception {
-        FileReference fileReference = FileReferenceFactory.from(partitions).rootFile(filename, 100L);
-        update(stateStore).addFile(fileReference);
-        filesInBucket.add(filename);
-        return fileReference;
-    }
-
-    private void createFileWithNoReferencesByCompaction(StateStore stateStore,
-            String oldFilePath, String newFilePath) throws Exception {
-        FileReference oldFile = createActiveFile(oldFilePath, stateStore);
-        filesInBucket.add(newFilePath);
-        update(stateStore).assignJobIds(List.of(
-                assignJobOnPartitionToFiles("job1", "root", List.of(oldFile.getFilename()))));
-        update(stateStore).atomicallyReplaceFileReferencesWithNewOnes(List.of(replaceJobFileReferences(
-                "job1", List.of(oldFile.getFilename()), FileReferenceFactory.from(partitions).rootFile(newFilePath.toString(), 100))));
-    }
-
-    private FileReference activeReference(String filePath) {
-        return FileReferenceFactory.from(partitions).rootFile(filePath, 100);
-    }
-
-    private TableProperties createTable() {
-        TableProperties tableProperties = createTestTableProperties(instanceProperties, TEST_SCHEMA);
-        tables.add(tableProperties);
-        update(stateStoreProvider.getStateStore(tableProperties)).initialise(partitions.getAllPartitions());
-        return tableProperties;
-    }
-
-    private TableProperties createTableWithGcDelayMinutes(int delay) {
-        TableProperties tableProperties = createTable();
-        tableProperties.setNumber(GARBAGE_COLLECTOR_DELAY_BEFORE_DELETION, delay);
-        return tableProperties;
-    }
-
-    private StateStore stateStore(TableProperties table) {
-        return stateStoreProvider.getStateStore(table);
-    }
-
-    private StateStore stateStoreWithFixedTime(TableProperties table, Instant fixedTime) {
-        StateStore store = stateStore(table);
-        store.fixFileUpdateTime(fixedTime);
-        return store;
-    }
-
-    private int collectGarbageAtTime(Instant time) throws Exception {
-        return collectorNew().runAtTime(time, tables);
-    }
-
-    private GarbageCollector collectorNew() throws Exception {
-        return new GarbageCollector(deleteAllFilesSuccessfully(), instanceProperties, stateStoreProvider, sentCommits::add);
-    }
-
-    private GarbageCollector collectorWithDeleteAction(DeleteFiles deleteFiles) throws Exception {
-        return new GarbageCollector(deleteFiles, instanceProperties, stateStoreProvider, sentCommits::add);
-    }
-
-    private DeleteFiles deleteAllFilesSuccessfully() {
-        return (filenames, deleted) -> {
-            filesInBucket.removeAll(filenames);
-            filenames.forEach(deleted::deleted);
-        };
-    }
-
-    private DeleteFiles deleteAllFilesExcept(String failFilename, Exception failure) {
-        return (filenames, deleted) -> {
-            for (String filename : filenames) {
-                if (failFilename.equals(filename)) {
-                    deleted.failed(List.of(filename), failure);
-                } else {
-                    deleted.deleted(filename);
-                    filesInBucket.remove(filename);
-                }
-            }
-        };
-    }
-
-    private static Schema getSchema() {
-        return Schema.builder()
-                .rowKeyFields(new Field("key", new IntType()))
-                .valueFields(new Field("value", new StringType()))
-                .build();
-    }
 }

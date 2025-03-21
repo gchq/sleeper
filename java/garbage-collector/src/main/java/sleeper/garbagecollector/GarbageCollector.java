@@ -15,11 +15,6 @@
  */
 package sleeper.garbagecollector;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest.KeyVersion;
-import com.amazonaws.services.s3.model.DeleteObjectsResult;
-import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,30 +143,5 @@ public class GarbageCollector {
     @FunctionalInterface
     public interface DeleteFiles {
         void deleteFiles(List<String> filenames, TableFilesDeleted deleted);
-    }
-
-    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client) {
-        return deleteFilesAndSketches(s3Client, 1000);
-    }
-
-    public static DeleteFiles deleteFilesAndSketches(AmazonS3 s3Client, int s3BatchSize) {
-        return (filenames, deleted) -> {
-            FilesToDelete files = FilesToDelete.from(filenames);
-            for (FilesToDeleteInBucket filesInBucket : files.getBuckets()) {
-                filesInBucket.objectKeysInBatchesOf(s3BatchSize).forEach(batch -> {
-                    try {
-                        DeleteObjectsResult result = s3Client.deleteObjects(new DeleteObjectsRequest(filesInBucket.bucketName()).withKeys(
-                                batch.stream().map(objectKey -> new KeyVersion(objectKey)).toList()));
-                        for (DeletedObject object : result.getDeletedObjects()) {
-                            deleted.deleted(filesInBucket.getFilenameForObjectKey(object.getKey()));
-                        }
-                    } catch (Exception e) {
-                        LOGGER.error("Failed to delete batch: {}", batch, e);
-                        deleted.failed(filesInBucket.getAllFilenamesInBatch(batch), e);
-                    }
-                });
-
-            }
-        };
     }
 }
