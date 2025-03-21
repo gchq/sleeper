@@ -57,7 +57,7 @@ import static sleeper.core.properties.instance.CommonProperty.ID;
 import static sleeper.core.properties.testutils.InstancePropertiesTestHelper.createTestInstanceProperties;
 
 @WireMockTest
-public class EmrServerlessPlatformExecutorIT {
+public class EmrServerlessPlatformExecutorWiremockIT {
 
     public static final String WIREMOCK_ACCESS_KEY = "wiremock-access-key";
     public static final String WIREMOCK_SECRET_KEY = "wiremock-secret-key";
