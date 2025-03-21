@@ -23,7 +23,8 @@ import software.amazon.awssdk.retries.api.RetryStrategy;
 import java.time.Duration;
 
 /**
- * A strategy for retrying attempts to start a bulk import job.
+ * A strategy for retrying attempts to start a bulk import job. Customised to handle rate limits for job creation, and
+ * stay within the timeout of the bulk import starter lambda. Based on a lambda timeout of 2 minutes.
  */
 public class BulkImportStarterRetryStrategy {
 
@@ -69,14 +70,14 @@ public class BulkImportStarterRetryStrategy {
                 // m = 20r - 50
                 // m + 50 = 20r
                 // r = (m + 50) / 20
-                // Setting m to 15 minutes for the lambda timeout:
-                // m = 15 * 60 = 900
-                // r = (900 + 50) / 20 = 47.5
-                // Round that down to 47, then add 1 to convert from retries to attempts.
+                // Setting m to 2 minutes for the lambda timeout:
+                // m = 2 * 60 = 120
+                // r = (120 + 50) / 20 = 8.5
+                // Round that down to 8, then add 1 to convert from retries to attempts.
                 // Let's calculate the effective maximum and average wait times when throttled indefinitely:
-                // m = 30 + (47 - 4) * 20 = 890s = 14m 50s
-                // w = 22.5 + (47 - 4) * 15 = 667.5s = 11m 7.5s
-                .maxAttempts(48)
+                // m = 30 + (8 - 4) * 20 = 110s = 1m 50s
+                // w = 22.5 + (8 - 4) * 15 = 82.5s = 1m 22.5s
+                .maxAttempts(9)
                 .build();
     }
 
