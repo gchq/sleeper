@@ -49,7 +49,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
-import static sleeper.task.common.WiremockTestHelper.wiremockEcsClient;
+import static sleeper.task.common.WiremockAwsV2ClientHelper.wiremockAwsV2Client;
 
 @WireMockTest
 class RunECSTasksIT {
@@ -61,7 +61,7 @@ class RunECSTasksIT {
 
     @BeforeEach
     void setUp(WireMockRuntimeInfo runtimeInfo) {
-        ecsClient = wiremockEcsClient(runtimeInfo);
+        ecsClient = wiremockAwsV2Client(runtimeInfo, EcsClient.builder());
     }
 
     @Nested
