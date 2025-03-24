@@ -74,7 +74,7 @@ You can then use these files to ingest some data into the `system-test` table in
 following command:
 
 ```shell
-./scripts/deploy/localstack/ingestFiles.sh <instance-id> <table-name> <file1.parquet> <file2.parquet> <file3.parquet> ....
+./scripts/deploy/localstack/ingestFiles.sh <instance-id> <file1.parquet> <file2.parquet> <file3.parquet> ....
 ```
 
 This script will upload the provided files to an ingest source bucket in LocalStack, create ingest jobs, and
