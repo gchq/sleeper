@@ -64,7 +64,7 @@ instance, as well as running partition and file status reports.
 You can generate some random data for your instance by running the following command:
 
 ```shell
-./scripts/deploy/localstack/generateRandomData.sh <instance-id> <table-name> <optional-number-of-records>
+./scripts/deploy/localstack/generateRandomData.sh <instance-id> <optional-number-of-records>
 ```
 
 This will place randomly generated parquet files in the `scripts/deploy/localstack/output` directory. The number of files
